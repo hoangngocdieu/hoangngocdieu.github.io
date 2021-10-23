@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình Nagios để kiểm tra trạng thái up/down của Oracle Database"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình Nagios để kiểm tra trạng thái up/down của Oracle Database"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình Nagios để kiểm tra trạng thái up/down của Oracle Database</title>
+				<description><![CDATA[ <b><font color='yellow'>1)         Giới thiệu</font></b>
+
+Bài này sẽ trình bày việc cấu hình cho Nagios để giám sát dịch vụ Oracle Database có đang hoạt động hay không (up/down). Dưới đây là 2 trong vài cách thức để thực hiện:
+
+-- Sử dụng plugin check_tcp có sẵn trong Nagios để kiểm tra xem cổng mạng (port) của database có được mở và ở trạng thái lắng nghe, chờ kết nối hay không. Hầu hết các database đều mở một TCP port để cung cấp khả năng truy cập qua mạng cho các ứng dụng. Đối với Orace thì cổng mặc định khi cài đặt là TCP 1521. 
+
+Tuy nhiên, nếu các ứng dụng đó cùng nằm trên một máy chủ với database thì việc mở thêm một port cho các kết nối mạng là không cần thiết vì chúng sẽ liên lạc với nhau nhờ cơ chế IPC (Interprocess Communication). Nhưng điều này lại gây trở ngại cho việc giám sát từ xa thông qua việc kiểm tra port mạng của database. 
+
+Ngoài ra thì với Oracle, các kết nối mạng tới database được xử lý bởi một tiến trình listener tách biệt với tiến trình chính của Oracle. Nên nếu chỉ kiểm tra port đang up/down thôi thì chưa đủ vì có thể listener ngưng chạy nhưng hoạt động của Oracle vẫn bình thường và ngược lại.
+
+-- Sử dụng plugin check_oracle có sẵn trong Nagios để kiểm tra thông qua một thao tác đăng nhập từ xa thực sự vào database. Cách này không những xác định được port đang mở hay không mà có cho biết một thực thể (instance) của Orace đang chạy và có thể đăng nhập vào. 
+
+Yêu cầu  ở đây là máy Nagios cần được cài chương trình Oracle client hoặc tối thiểu là bộ thư viện Oracle instantclient và câu lệnh sqlplus. Ngoài ra, cũng cần tạo thêm trong Oracle một tài khoản dành riêng với các quyền bị giới hạn chặt chẽ chỉ đủ để kiểm tra đăng nhập vào database.
+
+Thử nghiệm dưới đây sử dụng addon NRPE để thực thi plugin check_tcp trên máy chủ Oracle Database.
+
+
+<b><font color='yellow'>2)         Yêu cầu và chuẩn bị</font></b>
+
++ Một máy chủ chạy Nagios có sẵn plugin NRPE.
++ Một máy chủ chạy Oracle Database với port của listener là 1521 và được cài daemon NRPE
+
+Xem thêm 2 bài sau:<span class="link"> http://manthang.wordpress.com/2012/07/06/giam-sat-may-linuxunix-su-dung-plugin-nrpe-cho-nagios-tren-centos-6-2/</span>
+và<span class="link"> http://manthang.wordpress.com/2012/06/27/cai-dat-nagios-tren-centos-6-2/</span>
+
+<b><font color='yellow'>3)         Các bước thực hiện</font></b>
+
+<b>Thực hiện trên máy Oracle Database</b>
+
+1.      Mở tập tin cấu hình cho NRPE là <i>/usr/local/nagios/etc/nrpe.cfg</i> và thêm vào định nghĩa cho câu lệnh check_tcp như mẫu sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>command&#91;check_tcp&#93;=/usr/local/nagios/libexec/check_tcp –p 1521</pre>
+		</div>
+
+2.      Nếu đang chạy daemon NRPE dưới dịch vụ xinetd thì không cần khởi động lại daemon này và ngược lại, cần khởi động lại NRPE nếu nó chạy độc lập.
+
+<b>Thực hiện trên máy Nagios</b>
+
+1.      Định nghĩa một service mới để kiểm tra listener port trên máy Orace Database bằng cách tạo mới một tập tin <i>/usr/local/nagios/etc/objects/oracle.cfg</i> với nội dung mẫu như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define host{
+use                                linux-server
+host_name                          oracle-db
+alias                              Oracle DB 11g
+address                            192.168.1.14
+}
+
+//kiểm tra listener port của Oracle
+
+define service{
+use                                generic-service
+host_name                          oracle-db
+service_description                Oracle Listener Port
+check_command                      check_nrpe!check_tcp
+}</pre>
+		</div>
+
+2.      Thêm object trên vào tập tin cấu hình  chính của Nagios bằng cách mở tập tin <i>/usr/local/nagios/etc/nagios.cfg</i> và thêm vào dòng sau
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cfg_file=/usr/local/nagios/etc/objects/oracle.cfg</pre>
+		</div>
+
+Kiểm tra lại các tập tin cấu hình và khởi động lại Nagios
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+# /etc/init.d/nagios restart</pre>
+		</div>
+
+<b>Tham khảo:</b><span class="link"> http://nagios.frank4dd.com/howto/db-monitoring.htm</span>
+
+<b>–manthang</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267243</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267243</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 03:33:45]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nagios để kiểm tra trạng thái up/down của Oracle Database</title>
+				<description><![CDATA[ Nếu dùng `check_tcp` sao không check luôn từ Nagios server, cần gì phải check trên Oracle server rồi lại gọi qua NRPE:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define service{
+use                                generic-service
+host_name                          oracle-db
+service_description                Oracle Listener Port
+check_command                      check_tcp!1521
+}</pre>
+		</div>
+
+<p></p>
+		<cite class="blockquote">manthang wrote:</cite><br>
+		<blockquote>
+-- Sử dụng plugin check_oracle có sẵn trong Nagios để kiểm tra thông qua một thao tác đăng nhập từ xa thực sự vào database. Cách này không những xác định được port đang mở hay không mà có cho biết một thực thể (instance) của Orace đang chạy và có thể đăng nhập vào. 
+
+Yêu cầu  ở đây là máy Nagios cần được cài chương trình Oracle client hoặc tối thiểu là bộ thư viện Oracle instantclient và câu lệnh sqlplus. Ngoài ra, cũng cần tạo thêm trong Oracle một tài khoản dành riêng với các quyền bị giới hạn chặt chẽ chỉ đủ để kiểm tra đăng nhập vào database.
+&nbsp;
+		</blockquote>
+Không cần. Bạn có thể viết một plugin gọi sqlplus để check trên chính Oracle server rồi truyền kết quả qua NRPE cho Nagios.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267247</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267247</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 03:56:55]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nagios để kiểm tra trạng thái up/down của Oracle Database</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Nếu dùng `check_tcp` sao không check luôn từ Nagios server, cần gì phải check trên Oracle server rồi lại gọi qua NRPE:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define service{
+use                                generic-service
+host_name                          oracle-db
+service_description                Oracle Listener Port
+check_command                      check_tcp!1521
+}</pre>
+		</div>
+
+<p></p>
+		<cite class="blockquote">manthang wrote:</cite><br>
+		<blockquote>
+-- Sử dụng plugin check_oracle có sẵn trong Nagios để kiểm tra thông qua một thao tác đăng nhập từ xa thực sự vào database. Cách này không những xác định được port đang mở hay không mà có cho biết một thực thể (instance) của Orace đang chạy và có thể đăng nhập vào. 
+
+Yêu cầu  ở đây là máy Nagios cần được cài chương trình Oracle client hoặc tối thiểu là bộ thư viện Oracle instantclient và câu lệnh sqlplus. Ngoài ra, cũng cần tạo thêm trong Oracle một tài khoản dành riêng với các quyền bị giới hạn chặt chẽ chỉ đủ để kiểm tra đăng nhập vào database.
+&nbsp;
+		</blockquote>
+Không cần. Bạn có thể viết một plugin gọi sqlplus để check trên chính Oracle server rồi truyền kết quả qua NRPE cho Nagios.&nbsp;
+		</blockquote>
+
+Em sẽ coi lại và tuỳ chỉnh 2 chỗ này, cảm ơn anh <b>quanta</b> đã góp ý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267274</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42951.hva#267274</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 21:27:40]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+	</channel>
+</rss>

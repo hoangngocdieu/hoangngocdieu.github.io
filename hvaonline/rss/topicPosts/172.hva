@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thay thế BIND với djbdns - phần 3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thay thế BIND với djbdns - phần 3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thay thế BIND với djbdns - phần 3</title>
+				<description><![CDATA[ <b>Thay thế BIND với djbdns - phần 3</b>
+
+<b>4.4 Thiết lập tinydns</b>
+
+<b>4.4.1 Khởi tạo dịch vụ tinydns</b>
+Khởi tạo dịch vụ cho tinydns tương tự như cho dnscache trên mặt cú pháp. Giả sử chúng ta có domain name là 123.com và public IP dùng cho tinydns là 203.100.10.10 (đây chỉ là IP và domain name giả tưởng, bạn phải dùng IP được dịch vụ cung cấp):
+<b># tinydns-conf tinydns dnslog /var/dns/tinydns 203.100.10.10</b>
+
+trong đó:
+- <b>tinydns-conf</b> là chương trình dùng để thiết lập dịch vụ tinydns
+- <b>tinydns</b> là tài khoản được tạo ở phần 4.1 dành riêng cho dịch vụ tinydns. Bạn có thể tạo tài khoản này với tên khác để tránh bối rối nếu cần.
+- <b>dnslog</b> là tài khoản được tạo dành riêng cho công tác "log".
+- <b>/var/dns/tinydns</b> là thư mục chứa các thông tin cần thiết cho dịch vụ tinydns cụ thể "lắng nghe" trên IP 203.100.10.10.
+- <b>203.100.10.10</b> là IP address được ấn định để lắng nghe dịch vụ dnscache trong trường hợp này.
+
+Nếu lệnh trên chạy thành công sẽ tạo ra cấu trúc thư mục /var/dns/tinydns như sau:
+- <b>env/</b> đây là thư mục chứa các thông tin môi trường cần thiết cho tinydns (bao gồm IP của các tinydns servers và thư mục ROOT mà tinydns được lưu trữ)
+- <b>log/</b> đây là thư mục được tạo ra để lưu trữ logs. Các hồ sơ log này được tài khoản "dnslog" ở trên làm chủ và nó được điều tác qua dịch vụ "multilog" hoàn toàn tự động xoay đổi log. Hồ sơ log hiện dụng luôn luôn có tên là current; nó nằm trong thư mục main bên trong thư mục log này.
+- <b>root</b> đây là thư mục sau khi tinydns khởi động sẽ được "chroot" (jailed) và thật sự dịch vụ tinydns không cần phải thoát ra ngoài giới hạn này trong khi hoạt động. Trong thư mục root này có chứa hồ sơ Makefile và một số tiện ích dùng để tạo các giá trị trong hồ sơ "data" và chính hồ sơ "data" cũng sẽ được lưu trữ trong thư mục root này.
+- <b>run</b> đây là một shell script để tiện ích "supervise" khởi động tinydns.
+- <b>supervise/</b> thư mục này chứa các hồ sơ dạng đặc biệt dùng để điều tác tình trạng và hoạt động của tinydns.
+
+Tương tự như phần 4.3.1, phương thức tạo dịch vụ tinydns trên một IP address "thật" cần đi xuyên qua bước tạo symbolic link từ /var/dns/tinydns đến /service để cho phép nó khởi động:
+<b># ln -s /var/dns/tinydns /service/</b>
+
+Ra lệnh svc khởi động tinydns:
+<b># svc /service/tinydns</b>
+
+Thử liệt kê dịch vụ bạn sẽ thấy máy đang lắng nghe trên port 53 của IP 203.100.10.10:
+<b># netstat -nau | grep 53</b>
+
+Cần nhắc lại là dnscache và tinydns không thể dùng chung một IP address. Cho nên, nếu cần phải thiết lập cả hai dịch vụ này trên cùng một máy chủ thì phải sắp xếp hai IP addresses riêng biệt. Các IP addresses này có thể là virtual IP trên cùng một NIC (card mạng) hoặc IP address trên hai NIC riêng biệt.
+
+Cũng cần nhắc lại là tinydns là authoritative DNS, nó dùng để trả lời các thỉnh cầu resolve từ Internet đến các host / domain name mà bạn làm chủ hoặc quản lý. Cho nên, máy chủ chạy tinydns để phục công cộng phải được các máy trên Internet "thấy" -13-.
+
+Để tinydns hoạt động theo đúng quy chế và khu vực bạn muốn, bạn cần phải tạo ra hồ sơ "data" và biên dịch nó sau khi hoàn tất hồ sơ này. Quy trình biên dịch sẽ chuyển hồ sơ "data" (dạng ASCII) thành data.cdb (dạng binary). Có hai cách thiết lập hồ sơ dữ liệu cho tinydns, mỗi cách có tiện dụng khác nhau. Bản thân tôi dùng cách "bằng tay" vì dễ dàng sắp xếp các chi tiết trong hồ sơ này, đặc biệt trường hợp phải quản lý nhiều domain và phải thường xuyên thay đổi các chi tiết trong hồ sơ dữ liệu của tinydns, hãy đi xuyên qua hai cách sau:
+
+<b>4.4.2 Cách tạo tinydns data bằng công cụ của bộ nhóm tinydns</b>
+Bộ djbdns cung cấp một số công cụ để trợ giúp việc tạo các giá trị cho một DNS server ví dụ như NS, A, MX...
+
+- chuyển vào thư mục "root" của tindns:
+<b># cd /service/tinydns/root</b>
+
+- tạo name server thứ nhất có IP là 203.100.10.10 và giá trị reversed lookup:
+<b># ./add-ns blue.123.com 203.100.10.10
+# ./add-ns 10.100.203.in-addr.arpa 203.100.10.10</b>
+sẽ tạo ra các giá trị sau trong hồ sơ "data" của tinydns
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.blue.123.com:203.100.10.10:a:259200
+.10.100.203.in-addr.arpa:203.100.10.10:a:259200</pre>
+		</div>
+
+- tạo name server thứ nhì, có IP là 204.200.20.20 (primary DNS và secondary DNS nên thuộc 2 network khác biệt vì nếu network bị sự cố, ít nhất vẫn còn một name server phục vụ). Tất nhiên name server thứ nhì này phải tồn tại, chúng ta sẽ bàn đến vấn đề sao lưu (duplicate) data.cdb giữa hai tinydns server sau này:
+<b># ./add-ns red.123.com 204.200.20.20
+# ./add-ns 20.200.204.in-addr.arpa 204.200.20.20</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.red.123.com:204.200.20.20:a:259200
+.20.200.204.in-addr.arpa:204.200.20.20:a:259200</pre>
+		</div>
+
+- tạo ra các con trỏ đến các name server ở trên, rất cần thiết vì chính các name server này cần được nhận diện bởi một A record hoặc một PTR record:
+<b># ./add-host blue.123.com 203.100.10.10
+# ./add-host red.123.com 204.200.20.20</b>
+sẽ tạo ra giá trị sau trong hồ sơ "data" của tinydns
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>=blue.123.com:203.100.10.10:86400
+=red.123.com:204.200.20.20:86400&#91;code&#93;
+
+- tạo mx record &#40;nếu có mail server&#41; tương tự như trên, dùng tiện ích add-mx:
+&#91;b&#93;# ./add-mx mail.123.com 203.100.10.11&#91;/b&#93;
+sẽ tạo ra giá trị sau trong hồ sơ "data" của tinydns
+&#91;code&#93;@mail.123.com:203.100.10.11:a::86400</pre>
+		</div>
+
+- tạo giá trị một host trong hồ sơ dữ liệu của tinydns, giá trị này chính là PTR record (Pointer Record):
+<b># ./add-host web.123.com 203.100.10.12</b>
+sẽ tạo ra giá trị sau trong hồ sơ "data" của tinydns
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>=web.123.com:203.100.10.12:86400</pre>
+		</div>
+
+- tạo một alias cho web host ở trên để trỏ đến 203.100.10.12, giá trị này chính là A record:
+<b># ./add-alias www.123.com 203.100.10.12</b>
+sẽ tạo ra giá trị sau trong hồ sơ "data" của tinydns
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+www.123.com:203.100.10.12:86400</pre>
+		</div>
+
+Tổng hợp các lệnh trên sẽ tạo ra những giá trị sau trong hồ sơ /service/tinydns/root/data:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.blue.123.com:203.100.10.10:a:259200
+.red.123.com:204.200.20.20:a:259200
+.10.100.203.in-addr.arpa:203.100.10.10:a:259200
+.20.200.204.in-addr.arpa:204.200.20.20:a:259200
+=blue.123.com:203.100.10.10:86400
+=red.123.com:204.200.20.20:86400
+@mail.123.com:203.100.10.11:a::86400
+=web.123.com:203.100.10.12:86400
++www.123.com:203.100.10.12:86400</pre>
+		</div>
+
+
+Dẫu các công cụ trên giúp bạn tạo ra các dữ liệu cần thiết cho một tinydns. Tuy nhiên, nó sẽ tạo không ít bối rối nếu bạn phải quản lý rất nhiều domains và hosts trên tinydns server này. Lý do thứ nhất, các công cụ trên thêm vào các giá trị trong hồ sơ "data", lẫn lộn giữa domain này và domain kia nếu bạn thêm bớt các giá trị này thường xuyên. Để tiện với nhu cầu quản lý, việc tạo ra từng nhóm dữ liệu cho từng domain không thể được nếu dùng các công cụ trên. Lý do thứ nhì, bạn không thể dùng các giá trị ấn định cho các mô hình cao cấp vì năm công cụ add-ns, add-mx, add-host, add-alias, add-childns không đủ để quán xuyến tất cả các trường hợp. Bởi vậy, chúng ta nên đi tiếp phần sau đây.
+
+<b>4.4.3 Cách tạo tinydns data "bằng tay"</b>
+Trước khi bắt tay vào việc hình thành một hồ sơ "data" cho tinydns, bạn nên biết qua các ký hiệu được dùng để mang giá trị cụ thể cho từng thông tin ứng dụng cho tinydns, các ký hiệu này được tóm gọn như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Dấu hiệu    Tương tự với
+.         SOA, NS, A
+&         NS, A
+@         MX, A
+=         PTR, A
++         A
+'         TXT
+^         PTR
+C         CNAME
+Z         SOA
+%         &#40;dùng để xác định khu vực của clients, hữu dụng nếu phục vụ cho nhiều khu vực, không tạo record nào cả&#41;
+#         &#40;bị chú, không tạo record nào cả&#41;
+-         &#40;dùng để tạm tắt bỏ một A record, không tạo record nào cả&#41;
+:         Tùy người dùng ấn định</pre>
+		</div>
+
+Vẫn dùng ví dụ với domain name là 123.com và các IP cần thiết thuộc mạng 203.100.10.0/24, dùng công cụ text processor nào đó (vi chẳng hạn) và thử hình thành một hồ sơ "data" như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># first ns - SOA entry
+.123.com::blue.123.com:259200
+
+# second ns - SOA entry
+.123.com::red.123.com:259200
+
+# reversed lookup of first ns
+.10.100.203.in-addr.arpa::blue.123.com
+
+# reversed lookup for second ns
+.20.200.204.in-addr.arpa::red.123.com
+
+# host entry to point to first ns server
+=blue.123.com:203.100.10.10
+
+# host entry to point to second ns server
+=red.123.com:204.200.20.20
+
+# mail entry
+@123.com::mail.123.com
+
+# host entry of mail server to point to mail server
+=mail.123.com:203.100.10.11
+
+# host entry to point to web server
+=web.123.com:203.100.10.12
+
+# alias entry to point to web server
++www.123.com:203.100.10.12</pre>
+		</div>
+
+
+Trên mặt nguyên tắc, hồ sơ "data" vừa được tạo ở trên có kết quả tương tự như kết quả được tạo ra từ các công cụ add-ns, add-mx, add-host, add-alias thuộc phần 4.4.2. Điểm khác biệt căn bản của đoạn data ở trên là mỗi giá trị được tạo ra đều có một giá trị PTR (pointer) đi kèm theo để làm "con trỏ". Ví dụ, SOA của ns thứ nhất là: .123.com::blue.123.com:259200 có PTR đi kèm là: =blue.123.com:203.100.10.10. Giá trị PTR đi kèm này còn có thuật ngữ là "a glue" dùng để resolve cho host name blue thuộc domain 123.com. Thử phân tích hai giá trị trên:
+Giá trị SOA: .123.com::blue.123.com:259200
+Cú pháp của giá trị SOA theo mặc định như sau: .fqdn:ip:x:ttl:timestamp:lo
+- mở đầu bằng dấu chấm (.) chỉ định cho giá trị SOA (xem bảng tổng kết ở trên, có thể dùng Z để tạo giá trị tương tự).
+- 123.com là tên domain (fqdn - fully qualified domain name)
+- kế tiếp là IP address của SOA này và sau đó là giá trị x. Giá trị x dùng cho mỗi server khác nhau với mục đích chỉ trả lại 1 kết SOA duy nhất cho mỗi domain. Nếu name server thứ nhất chạy trên server 1 thì sẽ x sẽ có giá trị là a, name server thứ nhì chạy trên server 2 thì x sẽ có giá trị là b, cả hai đều trả về cùng một SOA. Đây là cách Dan Berstein đề nghị. Chúng ta không dùng chúng trong trường hợp này. Chúng ta cũng không dùng phần còn lại chỉ định cho timestamp và giá trị lo như trong cú pháp mặc định. Thay vì đưa vào IP của SOA entry, chúng ta đưa vào hostname (blue.123.com); đây là lý do chúng ta cần tạo "glue" cho SOA này với giá trị: =blue.123.com:203.100.10.10
+- phần đuôi đi kèm có giá trị :lo chỉ định cho "location" có thể được trả lời, chúng ta sẽ đi vào chi tiết sau này.
+
+Nếu bạn thấy các chi tiết kỹ thuật này quá rối rắm thì chỉ cần biết khi tạo một SOA (bằng tay) trong hồ sơ data của tinydns, bạn cần hai giá trị được hình thành:
+- SOA: .domain::hostname:TTL
+- PTR: =hostname:IP
+Hoặc cứ theo cú pháp mặc định mà xử dụng.
+
+Tương tự cho các thông tin khác trong hồ hơ "data" ở trên cho mail, web... dựa trên các dấu hiệu đi đầu (=, &, +...) và nếu cần, mỗi giá trị này nên đi kèm với giá trị reverse lookup để kiện toàn cả hai trường hợp: name-to-IP và IP-to-name -14-
+
+<b>4.4.4 axfr-get và tcpclient trong việc chuyển zones của BIND </b>(nếu đang dùng BIND)
+Nếu bạn đang dùng BIND và muốn dùng djbdns để thay thế thì chắc hẳn bạn đã có sẵn zones của BIND. Phần 4.2.1 đã giới thiệu cách "rút ruột" các giá trị này. Nếu thành công, bạn hẳn đã có một (hoặc nhiều .zone files nếu có nhiều domains trong zones). Bạn có thể không cần phải thực hiện các bước thiết lập dữ liệu cho "data" file như trên mà chỉ cần chuyển nội dung của .zone file vào data file của tinydns.
+
+Sau đây là phương thức chuyển các giá trị từ .zone files vào data file của tinynds:
+
+- chuyển vào root thư mục của tinydns, với ví dụ này là ở /service/tinydns/root:
+<b># cd /service/tinydns/root</b>
+
+- chuyển nội dung của .zone file sang data file, với ví dụ trong phần 4.2.1 là ở /tmp/bind:
+<b># cat /tmp/bind/*.zone > data -15-</b>
+
+Sau khi thực hiện bước trên, bạn nên mở hồ sơ "data" ra và kiểm tra chi tiết, điều chỉnh chi tiết nếu cần; chú ý các dấu hiệu đi đầu và chỉnh sửa nếu chúng không thích hợp vì có thể có những entry dùng trong zone của BIND khi được chuyển đổi, chúng bị diễn dịch không đúng.
+
+<b>4.4.5 Khởi động dịch vụ tinydns</b>
+Sau khi đã hình thành "data" file của tinydns, bạn chỉ cần thực hiện vài bước đơn giản:
+
+- "biên dịch" hồ sơ "data" của tinydns thành dạng .cdb (xem lại phần 4.4.1):
+<b># make</b>
+lệnh trên sẽ tạo ra hồ sơ data.cdb trong /service/tinydns/root (với cấu trúc dùng trong ví dụ trên). Nên lưu ý, bạn cần phải "make" sau mỗi lần thay đổi một giá trị nào đó trong hồ sơ "data" để cập nhật "data.cdb", nếu không tinydns vẫn tiếp tục dùng data.cdb có chứa thông tin cũ.
+
+- và tái khởi động dịch vụ tinydns:
+<b># svc -t /service/tinydns</b>
+
+<b>4.4.6 Thử nghiệm và điều chỉnh tinydns</b>
+Thử nghiệm tinydns tương tự như thử nghiệm dnscache server như ở phần 4.3.2 trên mặt cú pháp và các công cụ để thử nghiệm. Tuy nhiên, điểm khác biệt căn bản ở chỗ, lần này bạn cần dùng một client nào khác bên ngoài nội mạng của mình (một người bạn dùng một dịch vụ Internet nào khác chẳng hạn). Mục đích thử nghiệm này dùng để đo lường hai điểm quan trọng:
+a. tinydns của bạn có thể truy cập được từ Internet hay không? Cho nên trên bình diện thiết kế mạng, server nào chạy tinydns phải được thiết lập để các máy từ Internet có thể truy cập dịch vụ.
+
+b. tinydns của bạn có thể truy cập được từ Internet và trả về đúng giá trị đã thiết lập hay không? Cho nên, trên bình diện thông tin được đưa vào hồ sơ "data", các giá trị MX, A, PTR, SOA.... phải tương ứng đúng với các IP được gán. Nếu các host IP này thuộc một DMZ, chúng phải được định tuyến (route) hoặc NAT hoàn chỉnh. Vấn đề này nằm bên ngoài giới hạn của tài liệu này. Bạn nên làm việc với nhân viên quản lý mạng để hoàn tất vấn đề này nếu bạn không rõ những chi tiết cần thiết về vấn đề routing / natting.
+
+Giả sử hồ sơ "data" của tinydns ở trên có thông tin về domain 123.com và domain này tồn tại, được đăng ký và đưa vào database của name registra nào đó. Từ một máy (của người bạn) đã truy cập vào Internet, bạn có thể đi xuyên qua các bước thử nghiệm ở bước 4.3.2. Nếu kết quả tốt, bạn đã thành công trong việc thiết kế tinydns, nếu bạn có sự cố, kiểm tra lại kỹ lưỡng các phần tố thuộc về (và liên hệ đến) hai điểm a) và b) ở trên. Các thông tin trong /service/tinydns/log/main/current là chìa khoá chính yếu để xác định và khắc phục lỗi. Nên dùng lệnh sau trên một console để theo dõi log của tinydns trong quá trình thử nghiệm:
+<b># tail -f /service/tinydns/log/main/current | tai64nlocal. </b>Phần được "pipe" với lệnh tai64nlocal là để chuyển đổi giá trị thời gian trong "current" log thành UNIX time để dễ theo dõi.
+
+Nếu tinydns của bạn mang thông tin các domain khác mà bạn đã thiết lập (làm chủ hoặc quản lý), các domain và hosts thuộc các domain này cũng cần được thử nghiệm tương tự.
+
+<còn tiếp>
+<hnd - vninformatics.com / diendantinhoc.net 11/2004)
+
+Chú thích:
+-13- "thấy" trong trường hợp này có nghĩa là máy chủ chạy tinydns có thể tiếp diện với Internet và dùng public IP address. Cũng có thể máy chủ nằm bên trong một DMZ, mang private IP thuộc DMZ đó và router / firewall bên ngoài phải route hoặc NAT đến máy chủ này để cho phép các gói tin từ bên ngoài đi vào cũng như các gói tin đi ra từ máy chủ này. Đây là vấn đề thuộc trách nhiệm thiết kế mạng; quyết định và sắp đặt vị trí của máy chủ chạy tinydns phải được hoàn chỉnh trước khi thiết lập tinydns.
+
+-14- Điều nên chú ý khi bạn "mua" một dedicated server từ một dịch vụ nào đó, giá trị "reverse lookup" thường đã được thiết lập sẵn theo dạng tổng quát để phù hợp với chuỗi IP dịch vụ đó làm chủ. Trong trường hợp này, bạn nên yêu cầu họ thiết lập lại giá trị "reversed lookup" để thích hợp với domain name của bạn. Đây là cách đơn giản nhất. Nếu bạn làm chủ trọn bộ một subnet thì bạn hẳn phải tự lo liệu thông tin reverse lookup cho các IP mình làm chủ.
+
+-15- Nếu data file này hiện có nội dung nào đó thì sẽ bị viết chồng lên, cho nên bạn phải cẩn thận khi dùng ">". Bạn có thể dùng ">>" thay vì ">" để chuyển nội dung với lệnh trên để tránh mất dữ liệu vì nó chỉ viết thêm vào hồ sơ data. Tuy nhiên, dùng >> lại có điểm cần quan ngại là: bạn đã có thông nào đó trong data file và công tác "viết thêm" có thể đưa vào các dữ liệu trùng hợp. Vấn đề này sẽ tạo những trở ngại rắc rối sau này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/172.hva#578</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/172.hva#578</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 04:22:07]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

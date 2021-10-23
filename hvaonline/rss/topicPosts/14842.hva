@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi về Stateful Firewall ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi về Stateful Firewall ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ Trong 1 slide bài giảng về khoá học Firewall hồi xưa mình học thì nó có đề cập : "<b>Stateful FW sẽ bỏ qua các Traffic nếu các dịch vụ thay đổi port mặc định (vd : HTTP port 8001)</b>"
+
+Mình ko hiểu câu này cho lắm, về việc đổi port các ứng dụng deamon thì mình hoàn toàn nắm rõ nhưng mình ko hiểu tại sao nó lại ảnh hưởng đến Stateful FW ? Bởi vì theo mình biết, Stateful FW chỉ hoạt động ở tầng Network và Transport giống Packet Filtering, nó chỉ "thông minh" hơn Packet Filtering ở điểm có thêm 1 State table để kiểm soát thêm các thành phần của 1 connection như Time out, SYN, FIN ... Như vậy Stateful FW hoàn toàn ko lọc payload của traffic ở tầng application, vậy thì chuyện mình đổi port hay ko thì nó liên quan gì nhỉ ?
+
+Ai biết rõ xin giải thích giùm 
+Thân :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88449</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88449</link>
+				<pubDate><![CDATA[Wed, 3 Oct 2007 01:31:13]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Trong 1 slide bài giảng về khoá học Firewall hồi xưa mình học thì nó có đề cập : "<b>Stateful FW sẽ bỏ qua các Traffic nếu các dịch vụ thay đổi port mặc định (vd : HTTP port 8001)</b>"
+&nbsp;
+		</blockquote>
+Câu in đậm ở trên hơi tối nghĩa. Có lẽ câu đó thế này:
+<b>Đối với stateful FW, traffic đi đến các dịch vụ trong một xuất truy cập có destination port thay đổi bất chợt sẽ bị loại bỏ</b> thì đúng với tinh thần "stateful" hơn.
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+Mình ko hiểu câu này cho lắm, về việc đổi port các ứng dụng deamon thì mình hoàn toàn nắm rõ nhưng mình ko hiểu tại sao nó lại ảnh hưởng đến Stateful FW ? Bởi vì theo mình biết, Stateful FW chỉ hoạt động ở tầng Network và Transport giống Packet Filtering, nó chỉ "thông minh" hơn Packet Filtering ở điểm có thêm 1 State table để kiểm soát thêm các thành phần của 1 connection như Time out, SYN, FIN ... Như vậy Stateful FW hoàn toàn ko lọc payload của traffic ở tầng application, vậy thì chuyện mình đổi port hay ko thì nó liên quan gì nhỉ ?
+
+Ai biết rõ xin giải thích giùm 
+Thân :)) &nbsp;
+		</blockquote>
+
+Stateful firewall có nhiều dạng và nhiều ứng dụng. Nếu nó ứng dụng để kiểm soát cả tầng 7 (của model OSI) thì nó không chỉ dừng lại ở tầng network và transport.
+
+Việc đổi port có liên quan trực tiếp và quan trọng đến tính năng "stateful" của một stateful firewall. Lý do:
+
+- 1 request từ bên ngoài vào có IP là xxx.xxx.xxx.xxx đi đến IP yyy.yyy.yyy.yyy ở cổng 80 (xuyên qua stateful firewall trên kiểm soát) . Nếu firewall này cho phép, nó sẽ cho phép IP xxx.xxx.xxx.xxx thực hiện 3 bước bắt tay một cách bình thường. Sau giai đoạn này, firewall ấy sẽ thiết lập một "state table" để theo dõi "state" của xuất truy cập này.
+
+- nếu IP xxx.xxx.xxx.xxx này bất thình lình liên hệ IP yyy.yyy.yyy.yyy ở cổng 80 nhưng lại không hề có quy trình 3 bước bắt tay --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+- nếu IP xxx.xxx.xxx.xxx này đã thiết lập 3 bước bắt tay bình thường và đã được hình thành "state table" nhưng bất chợt lại có destination port là 81 --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+- khi packet đi đến tầng application, nó vẫn có thông tin source port, source ip, destination port, destination ip và nhiều thông tin khác. Cái "state machine" của một stateful firewall dựa trên những thông tin có thể thu thập được để xác định "state" của một packet và một xuất truy cập. 
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88470</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88470</link>
+				<pubDate><![CDATA[Wed, 3 Oct 2007 10:33:32]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ Chào anh conmale,
+
+Vấn đề anh đề cập trên là ứng dụng chạy trên các port ko xác định, như vậy thì đúng là Stateful FW ko xử lý được (hoặc xử lý rất kém), vd như các protocol FTP (Passive/Active), IRC, p2p ... Cái này thì em biết rồi nhưng theo em hiểu câu trên có nghĩa là nó muốn nói đến việc đổi port default mà ứng dụng đó bind, vd như default apache bind port 80 như ta hoàn toàn có thể đổi trong file config để nó bind thành port bất kỳ nào mình muốn, trong câu phát biểu em đưa ra trên nó có vd là HTTP port 8001 nên em nghĩ nó đang ám chỉ đến vấn đề này. Như với vấn đề này thì em ko nghĩ nó liên quan đển stateful FW ? Nếu có thì mong anh giải thích thêm ạ
+
+Cám ơn anh nhiều
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88591</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88591</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2007 00:17:12]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Chào anh conmale,
+
+Vấn đề anh đề cập trên là ứng dụng chạy trên các port ko xác định, như vậy thì đúng là Stateful FW ko xử lý được (hoặc xử lý rất kém), vd như các protocol FTP (Passive/Active), IRC, p2p ... Cái này thì em biết rồi nhưng theo em hiểu câu trên có nghĩa là nó muốn nói đến việc đổi port default mà ứng dụng đó bind, vd như default apache bind port 80 như ta hoàn toàn có thể đổi trong file config để nó bind thành port bất kỳ nào mình muốn, trong câu phát biểu em đưa ra trên nó có vd là HTTP port 8001 nên em nghĩ nó đang ám chỉ đến vấn đề này. Như với vấn đề này thì em ko nghĩ nó liên quan đển stateful FW ? Nếu có thì mong anh giải thích thêm ạ
+
+Cám ơn anh nhiều
+Thân&nbsp;
+		</blockquote>
+
+Thế nào là <i>"ứng dụng chạy trên các port ko xác định"</i>?
+
+Hầu hết các firewall ngày nay (ngoại trừ một số firewall chuối thì không kể), bất kể stateful hay chỉ packet filter, thì mặc định thường là <font color='red'><b>deny all, allow selected</b></font>. Bởi thế, nếu packet đi đến một port đã không nằm trong chuỗi "allow selected" nó bị drop ngay từ đầu thì chẳng có gì cần đến stateful nữa cả. Bồ nên hiểu rằng, "stateful" chỉ có nghĩa với các packets được cho phép và thỏa mãn quy định nào đó. Nếu chúng bị drop ngay từ đầu thì đâu có state gì đâu mà xử lý được hay không xử lý được?
+
+Stateful firewall vẫn xử lý các protocol như FTP, IRC, P2P ngon lành. Cái này còn tùy stateful FW mà bồ liên tưởng đến đó là firewall cụ thể do ai sản xuất. Nên xét trên mặt <b>nguyên tắc</b> và <b>tính chất thật sự</b> của một stateful firewall thay vì dựa vào 1 ứng dụng firewall nào đó để đánh giá chung stateful firewall.
+
+Tôi nghĩ bồ chưa hiểu rõ thế nào là stateful firewall. Bồ nên đọc lại thật kỹ bài trả lời trước của tôi vì nếu bồ còn diễn giải và thắc mắc như trên thì có lẽ nhận định của tôi không sai (về mức độ hiểu thế nào là stateful firewall của bồ).
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88614</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88614</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2007 06:38:07]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thế nào là <i>"ứng dụng chạy trên các port ko xác định"</i>?
+
+Hầu hết các firewall ngày nay (ngoại trừ một số firewall chuối thì không kể), bất kể stateful hay chỉ packet filter, thì mặc định thường là <font color='red'><b>deny all, allow selected</b></font>. Bởi thế, nếu packet đi đến một port đã không nằm trong chuỗi "allow selected" nó bị drop ngay từ đầu thì chẳng có gì cần đến stateful nữa cả. Bồ nên hiểu rằng, "stateful" chỉ có nghĩa với các packets được cho phép và thỏa mãn quy định nào đó. Nếu chúng bị drop ngay từ đầu thì đâu có state gì đâu mà xử lý được hay không xử lý được?
+
+Stateful firewall vẫn xử lý các protocol như FTP, IRC, P2P ngon lành. Cái này còn tùy stateful FW mà bồ liên tưởng đến đó là firewall cụ thể do ai sản xuất. Nên xét trên mặt <b>nguyên tắc</b> và <b>tính chất thật sự</b> của một stateful firewall thay vì dựa vào 1 ứng dụng firewall nào đó để đánh giá chung stateful firewall.
+
+Tôi nghĩ bồ chưa hiểu rõ thế nào là stateful firewall. Bồ nên đọc lại thật kỹ bài trả lời trước của tôi vì nếu bồ còn diễn giải và thắc mắc như trên thì có lẽ nhận định của tôi không sai (về mức độ hiểu thế nào là stateful firewall của bồ).
+
+Thân mến.&nbsp;
+		</blockquote>
+
+Ok, em sẽ xem lại kỹ
+
+À, em cũng có 1 sồ ebook về FW nhưng ko rành cái nào nên đọc nhất, anh có thể giới thiệu cho em 1 số tài liệu hay về FW được ko ? Cái em cần học là các loại FW phân theo cơ chế hoạt động như Packet filtering, Stateful, Inspection, Proxy ... chứ ko phải là các loại FW cụ thể như iptables, PIX, ASA, Juniper ...
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88682</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88682</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2007 13:49:42]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thế nào là <i>"ứng dụng chạy trên các port ko xác định"</i>?
+
+Hầu hết các firewall ngày nay (ngoại trừ một số firewall chuối thì không kể), bất kể stateful hay chỉ packet filter, thì mặc định thường là <font color='red'><b>deny all, allow selected</b></font>. Bởi thế, nếu packet đi đến một port đã không nằm trong chuỗi "allow selected" nó bị drop ngay từ đầu thì chẳng có gì cần đến stateful nữa cả. Bồ nên hiểu rằng, "stateful" chỉ có nghĩa với các packets được cho phép và thỏa mãn quy định nào đó. Nếu chúng bị drop ngay từ đầu thì đâu có state gì đâu mà xử lý được hay không xử lý được?
+
+Stateful firewall vẫn xử lý các protocol như FTP, IRC, P2P ngon lành. Cái này còn tùy stateful FW mà bồ liên tưởng đến đó là firewall cụ thể do ai sản xuất. Nên xét trên mặt <b>nguyên tắc</b> và <b>tính chất thật sự</b> của một stateful firewall thay vì dựa vào 1 ứng dụng firewall nào đó để đánh giá chung stateful firewall.
+
+Tôi nghĩ bồ chưa hiểu rõ thế nào là stateful firewall. Bồ nên đọc lại thật kỹ bài trả lời trước của tôi vì nếu bồ còn diễn giải và thắc mắc như trên thì có lẽ nhận định của tôi không sai (về mức độ hiểu thế nào là stateful firewall của bồ).
+
+Thân mến.&nbsp;
+		</blockquote>
+
+Ok, em sẽ xem lại kỹ
+
+À, em cũng có 1 sồ ebook về FW nhưng ko rành cái nào nên đọc nhất, anh có thể giới thiệu cho em 1 số tài liệu hay về FW được ko ? Cái em cần học là các loại FW phân theo cơ chế hoạt động như Packet filtering, Stateful, Inspection, Proxy ... chứ ko phải là các loại FW cụ thể như iptables, PIX, ASA, Juniper ...
+
+Thân&nbsp;
+		</blockquote>
+
+Trên "thư viện" của HVA trong phần firewall có vài cuốn đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88683</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2007 13:55:21]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ Hiện nay theo tớ được biết thì thành phần stateful firewal trong sản phẩm HIPS (Host Intrusion Prevention) của McAfee đã được tích hợp bao gồm 2 thành phần : stateful packet filtering và stateful packet inspection.
+
+Stateful packet filtering là thành phần kiểm tra trạng thái thông tin các giao thức như TCP/UDP/ICMP tại layer 4( Transport) và các tầng thấp hơn của OSI. Các gói tin được kiểm tra, nếu gói tin được kiểm tra đúng theo luật trong firewal, gói tin sẽ được cho phép đi qua và thông tin đó sẽ được đưa vào một state table. 
+
+Stateful packet Inspection : là quá trình lọc các gói tin và kiểm tra các dòng lệnh tại tầng 7(Application). 
+
+State table: la tính năng của stateful firewal, nó tự động lưu trũ thông tin về các kết nối đang hoạt động được cho phép, tạo bởi các luật.
+
+
+Thangvt.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88764</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88764</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2007 20:55:10]]> GMT</pubDate>
+				<author><![CDATA[ KiemKhach]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">KiemKhach wrote:</cite><br>
+		<blockquote>Hiện nay theo tớ được biết thì thành phần stateful firewal trong sản phẩm HIPS (Host Intrusion Prevention) của McAfee đã được tích hợp bao gồm 2 thành phần : stateful packet filtering và stateful packet inspection.
+
+Stateful packet filtering là thành phần kiểm tra trạng thái thông tin các giao thức như TCP/UDP/ICMP tại layer 4( Transport) và các tầng thấp hơn của OSI. Các gói tin được kiểm tra, nếu gói tin được kiểm tra đúng theo luật trong firewal, gói tin sẽ được cho phép đi qua và thông tin đó sẽ được đưa vào một state table. 
+
+Stateful packet Inspection : là quá trình lọc các gói tin và kiểm tra các dòng lệnh tại tầng 7(Application). 
+
+State table: la tính năng của stateful firewal, nó tự động lưu trũ thông tin về các kết nối đang hoạt động được cho phép, tạo bởi các luật.
+
+
+Thangvt.
+&nbsp;
+		</blockquote>
+
+Stateful packet filtering và Stateful packet inspection chỉ là một
+
+
+
+ps: bồ viết có vài dòng mà nhiều từ không chính xác quá
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88925</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#88925</link>
+				<pubDate><![CDATA[Fri, 5 Oct 2007 18:07:53]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nghienruou01 wrote:</cite><br>
+		<blockquote>
+
+Stateful packet filtering và Stateful packet inspection chỉ là một
+
+
+
+ps: bồ viết có vài dòng mà nhiều từ không chính xác quá
+
+
+&nbsp;
+		</blockquote>
+
+Thế thì xem lại đi nhé! Đây là thảo luận nếu phản bác ý kiến của ai thì phải nêu dẫn chứng. potay]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#89245</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#89245</link>
+				<pubDate><![CDATA[Sun, 7 Oct 2007 15:34:50]]> GMT</pubDate>
+				<author><![CDATA[ KiemKhach]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Stateful firewall có nhiều dạng và nhiều ứng dụng. Nếu nó ứng dụng để kiểm soát cả tầng 7 (của model OSI) thì nó không chỉ dừng lại ở tầng network và transport.
+
+Việc đổi port có liên quan trực tiếp và quan trọng đến tính năng "stateful" của một stateful firewall. Lý do:
+
+- 1 request từ bên ngoài vào có IP là xxx.xxx.xxx.xxx đi đến IP yyy.yyy.yyy.yyy ở cổng 80 (xuyên qua stateful firewall trên kiểm soát) . Nếu firewall này cho phép, nó sẽ cho phép IP xxx.xxx.xxx.xxx thực hiện 3 bước bắt tay một cách bình thường. Sau giai đoạn này, firewall ấy sẽ thiết lập một "state table" để theo dõi "state" của xuất truy cập này.
+
+- nếu IP xxx.xxx.xxx.xxx này bất thình lình liên hệ IP yyy.yyy.yyy.yyy ở cổng 80 nhưng lại không hề có quy trình 3 bước bắt tay --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+- nếu IP xxx.xxx.xxx.xxx này đã thiết lập 3 bước bắt tay bình thường và đã được hình thành "state table" nhưng bất chợt lại có destination port là 81 --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+- khi packet đi đến tầng application, nó vẫn có thông tin source port, source ip, destination port, destination ip và nhiều thông tin khác. Cái "state machine" của một stateful firewall dựa trên những thông tin có thể thu thập được để xác định "state" của một packet và một xuất truy cập. 
+
+Thân mến.&nbsp;
+		</blockquote>
+
+Hi anh conmale,
+
+Cho em hỏi xíu, nếu 1 web server chạy 2 service apache trên 2 port khác nhau, 1 cái là 80, 1 cái là 81. Firewall mở quyền access cho xxx đi tới yyy. Sau khi xxx bắt tay và tạo ra 1 stale table rồi trên port 80. Từ xxx tạo một connection mới tới yyy trên port 81 thì nó có khả năng bị chặn không?
+
+Thanks.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#89836</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#89836</link>
+				<pubDate><![CDATA[Wed, 10 Oct 2007 00:19:20]]> GMT</pubDate>
+				<author><![CDATA[ whisper]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">whisper wrote:</cite><br>
+		<blockquote>
+
+Hi anh conmale,
+
+Cho em hỏi xíu, nếu 1 web server chạy 2 service apache trên 2 port khác nhau, 1 cái là 80, 1 cái là 81. Firewall mở quyền access cho xxx đi tới yyy. Sau khi xxx bắt tay và tạo ra 1 stale table rồi trên port 80. Từ xxx tạo một connection mới tới yyy trên port 81 thì nó có khả năng bị chặn không?
+
+Thanks.
+&nbsp;
+		</blockquote>
+
+Bị chặn. Bởi vì xxx đến yyy ở cổng 80 là giá trị đã ấn định trong state table. Nếu bất chợt xxx đến yyy ở cổng 81 thì nó phải thỏa mãn các bước bắt tay hợp lệ và hình thành 1 giá trị khác trong state table, nếu không, nó bị drop.
+
+PS: state table chớ không phải stale table.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90033</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90033</link>
+				<pubDate><![CDATA[Thu, 11 Oct 2007 08:25:05]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+
+Bị chặn. Bởi vì xxx đến yyy ở cổng 80 là giá trị đã ấn định trong state table. Nếu bất chợt xxx đến yyy ở cổng 81 thì nó phải thỏa mãn các bước bắt tay hợp lệ và hình thành 1 giá trị khác trong state table, nếu không, nó bị drop.
+
+PS: state table chớ không phải stale table.&nbsp;
+		</blockquote>
+
+( viết sai chính tả, xấu hổ quá !!! )
+
+Anh cho em hỏi tiếp, vậy stateful firewall phân biệt http và https ra sao khi một thằng yyy chạy apache có http trên port 80 và https trên port 443 thì xxx vẫn có thể connect đến yyy trên cả 2 port 80 và 443 ?
+
+Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90112</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90112</link>
+				<pubDate><![CDATA[Thu, 11 Oct 2007 17:02:21]]> GMT</pubDate>
+				<author><![CDATA[ whisper]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">whisper wrote:</cite><br>
+		<blockquote>
+Anh cho em hỏi tiếp, vậy stateful firewall phân biệt http và https ra sao khi một thằng yyy chạy apache có http trên port 80 và https trên port 443 thì xxx vẫn có thể connect đến yyy trên cả 2 port 80 và 443 ?
+Thanks.&nbsp;
+		</blockquote>
+xxx:1056 -----&gt; yyy:80
+xxx:1096 -----&gt; yyy:443
+Có gì mà không phân biệt được nhỉ ? Bạn muốn phân biệt theo kiểu nào nữa ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90412</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90412</link>
+				<pubDate><![CDATA[Sat, 13 Oct 2007 01:19:33]]> GMT</pubDate>
+				<author><![CDATA[ No.13]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">No.13 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">whisper wrote:</cite><br>
+		<blockquote>
+
+xxx:1056 -----&gt; yyy:80
+xxx:1096 -----&gt; yyy:443
+Có gì mà không phân biệt được nhỉ ? Bạn muốn phân biệt theo kiểu nào nữa ?&nbsp;
+		</blockquote>
+E có câu hỏi nay kô liên quan đến StatefulFW lắm mong các a chỉ giúp.
+E kết nối vào 1 trang dùng http và 1 trang dùng https
+Sau đó dùng lệnh netstat -a để kiểm tra thì đúng là port 1056 đang mở nhưng port 1096 thì kô
+Tại sao vậy a?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90459</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90459</link>
+				<pubDate><![CDATA[Sat, 13 Oct 2007 13:15:29]]> GMT</pubDate>
+				<author><![CDATA[ langthangcusi]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ Nếu có thắc mắc về một vấn đề khác thì bạn vui lòng mở topic mới nhé.
+PS: Mấy cái 1056 hay 1096 gì đó chỉ là ví dụ thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90471</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90471</link>
+				<pubDate><![CDATA[Sat, 13 Oct 2007 16:28:11]]> GMT</pubDate>
+				<author><![CDATA[ No.13]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">No.13 wrote:</cite><br>
+		<blockquote>
+xxx:1056 -----&gt; yyy:80
+xxx:1096 -----&gt; yyy:443
+Có gì mà không phân biệt được nhỉ ? Bạn muốn phân biệt theo kiểu nào nữa ?&nbsp;
+		</blockquote>
+
+No.13 không hiểu câu hỏi của mình rồi. 
++ Trường hợp đầu tiên là cùng là http nhưng trên hai port 80 và 81, thì đương nhiên xxx connect tới yyy từ 2 port khác nhau và bị stateful Firewall block 1 port 81.
++ Trường hợp sau là apache chạy web service nhưng là http và https trên 2 port 80 và 443. Firewall không block là dựa vào cơ chế nào để làm vậy khi cả 2 port này cùng là webservice?? 
+
+Thanks
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90757</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90757</link>
+				<pubDate><![CDATA[Mon, 15 Oct 2007 13:12:36]]> GMT</pubDate>
+				<author><![CDATA[ whisper]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">whisper wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">No.13 wrote:</cite><br>
+		<blockquote>
+xxx:1056 -----&gt; yyy:80
+xxx:1096 -----&gt; yyy:443
+Có gì mà không phân biệt được nhỉ ? Bạn muốn phân biệt theo kiểu nào nữa ?&nbsp;
+		</blockquote>
+
+No.13 không hiểu câu hỏi của mình rồi. 
++ Trường hợp đầu tiên là cùng là http nhưng trên hai port 80 và 81, thì đương nhiên xxx connect tới yyy từ 2 port khác nhau và bị stateful Firewall block 1 port 81.
++ Trường hợp sau là apache chạy web service nhưng là http và https trên 2 port 80 và 443. Firewall không block là dựa vào cơ chế nào để làm vậy khi cả 2 port này cùng là webservice?? 
+
+Thanks
+&nbsp;
+		</blockquote>
+
+Trường hợp 2 firewall không block bởi vì:
+
+- xxx:1234 --&gt; yyy:80: được thiết lập qua các bước bắt tay hẳn hòi và state table được hình thành hợp lệ.
+
+- xxx:5678 --&gt; yyy:443: cũng được thiết lập qua các bước bắt tay và state table được hình thành hợp lệ.
+
+Không bao giờ có chuyện xxx:1234 nhảy thẳng đến yyy:443 cả bởi vì socket port 1234 trên máy con đang được dùng. Có lẽ bồ bị bối rối chỗ này.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90767</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90767</link>
+				<pubDate><![CDATA[Mon, 15 Oct 2007 14:03:52]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ Em suy nghĩ rất nhiều và cũng đang cố gắng đọc sách nhưng thực sự em vẫn chưa hiễu rõ câu "Stateful firewall có nhiều dạng và nhiều ứng dụng. Nếu nó ứng dụng để kiểm soát cả tầng 7 (của model OSI) thì nó không chỉ dừng lại ở tầng network và transport." của bác conmale, ko bít bác có thể giải thích rõ thêm cho mình ko ? Vì theo em stateful chỉ có thể manage ở tần transport và network thôi vì nếu nó có thể manage lên tới tầng Application thì lúc đó nó là Proxy FW hay Inspection Stateful FW rồi chứ đâu phải Stateful FW đâu anh
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90868</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90868</link>
+				<pubDate><![CDATA[Tue, 16 Oct 2007 05:44:42]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Em suy nghĩ rất nhiều và cũng đang cố gắng đọc sách nhưng thực sự em vẫn chưa hiễu rõ câu "Stateful firewall có nhiều dạng và nhiều ứng dụng. Nếu nó ứng dụng để kiểm soát cả tầng 7 (của model OSI) thì nó không chỉ dừng lại ở tầng network và transport." của bác conmale, ko bít bác có thể giải thích rõ thêm cho mình ko ? Vì theo em stateful chỉ có thể manage ở tần transport và network thôi vì nếu nó có thể manage lên tới tầng Application thì lúc đó nó là Proxy FW hay Inspection Stateful FW rồi chứ đâu phải Stateful FW đâu anh
+
+Thân&nbsp;
+		</blockquote>
+
+"Theo em" là dựa trên căn bản nào?
+
+Inspection Stateful FW hay Stateful FW chỉ là cách gọi. Đám thương mại hay chơi cái trò màu mè để câu khách. Cái chính là xem sản phẩm đó làm được cái gì. Cái nào cũng cần có "inspection" thì mới biết packet đó thế nào cả. Có chăng là giới hạn ở layer nào mà thôi.
+
+Tổng quát mà nói, khi nói đến "stateful" có nghĩa là nói đến một cơ chế điều tác và quản lý <b><font color='orange'>tình trạng</font></b> của packets và tình trạng này không chỉ dừng lại ở transport và network layer mà nó có thể trải dài lên tận L7. Tất nhiên là tùy sản phẩm và tùy ứng dụng. Tuy nhiên, đã nói đến "state" có nghĩa là nói đến tình trạng ở một hoặc nhiều tầng trong mô hình OSI. Đừng bị mấy cái thuật ngữ làm cho mình bối rối mà chỉ nên xét đến tính chất sự thể.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90871</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#90871</link>
+				<pubDate><![CDATA[Tue, 16 Oct 2007 07:51:40]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">KiemKhach wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">nghienruou01 wrote:</cite><br>
+		<blockquote>
+
+Stateful packet filtering và Stateful packet inspection chỉ là một
+
+
+
+ps: bồ viết có vài dòng mà nhiều từ không chính xác quá
+
+
+&nbsp;
+		</blockquote>
+
+Thế thì xem lại đi nhé! Đây là thảo luận nếu phản bác ý kiến của ai thì phải nêu dẫn chứng. potay&nbsp;
+		</blockquote>
+
+àh, khái niệm Stateful packet inspection chỉ là tương đối, tùy ngữ cảnh dùng mà nó ở layer nào, nó có thể là Stateful packet filtering ở layer 3,4, cũng có thể là application proxy ở layer 7.
+
+Kiếm Khách có ý gì khác không?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#92003</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#92003</link>
+				<pubDate><![CDATA[Sun, 21 Oct 2007 11:15:49]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Stateful Firewall ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+
+- nếu IP xxx.xxx.xxx.xxx này bất thình lình liên hệ IP yyy.yyy.yyy.yyy ở cổng 80 nhưng lại không hề có quy trình 3 bước bắt tay --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+- nếu IP xxx.xxx.xxx.xxx này đã thiết lập 3 bước bắt tay bình thường và đã được hình thành "state table" nhưng bất chợt lại có destination port là 81 --&gt; hoàn toàn không nằm trong một "state" nào cả --&gt; bị hủy.
+
+&nbsp;
+		</blockquote>
+
+Anh cho em hỏi là làm thế nào để thiết lập kịch bản để IP xxx.xxx.xxx.xxx có thể liên hệ với IP yyy.yyy.yyy.yyy tại một cổng nào đó mà không cần thông qua bắt tay ba bước ạ ?
+
+Và nếu hai bên xxx.xxx.xxx.xxx và yyy.yyy.yyy.yyy đã bắt tay ba bước rồi làm cách nào để dựng kịch bản xxx.xxx.xxx.xxx liên hệ bất chợt với yyy.yyy.yyy.yyy trên một port khác ạ ?
+
+Cám ơn anh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/14842.hva#275405</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/14842.hva#275405</link>
+				<pubDate><![CDATA[Fri, 3 May 2013 03:40:31]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

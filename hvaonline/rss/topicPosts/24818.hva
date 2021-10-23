@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi về FreeBSD ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi về FreeBSD ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ Hi all, mình mới tìm hiểu FreeBSD 1 thời gian ngắn nên có 3 câu hỏi mong được giúp đỡ :
+
+1/ Cách show all disk/partition availability trong FreeBSD ? :
+
+Trong Linux có lệnh fdisk -l nhưng trong freebsd tuy cũng có fdisk như ko có option có chức năng tương tự như tham số -l trong linux, hiện giờ trong freebsd mình muốn show all disk/partition availability thì phải dùng lệnh sysintall nhưng như vậy thì phiền wá (phải wa mấy bước). Không biết có cách nào đề show giống fdisk -l trong Linux ko ? (trong FreeBSD có df nhưng nó chỉ show được các partition đã được mount)
+
+2/ Chia partion luôn bị mất 1 khoảng dung lượng ? :
+
+Trong Linux, mình có 1 disk 10 GB thì có thể chia partition đúng 10GB 9ó. Còn trong FreeBSD, khi chọn option Use entire disk (hoặc thậm chí chia manually) thì partition chỉ chiếm khoảng 9/10 disk, luôn có 1 khoảng partition dư ra (nó vẫn hiển thị khoảng dung lượng dư ra này chứ ko phải bị mất luôn) nhưng ko hiểu để làm gì ?
+
+3/ Khi mình dùng lệnh top trong FreeBSD, trong phần memory có thêm 1 khái niệm mới là "Wired", ko bít Wired memory nghĩa là sao nhỉ ?
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149944</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149944</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 18:52:16]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ Hi rickb,
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Hi all, mình mới tìm hiểu FreeBSD 1 thời gian ngắn nên có 3 câu hỏi mong được giúp đỡ :
+
+1/ Cách show all disk/partition availability trong FreeBSD ? :
+
+Trong Linux có lệnh fdisk -l nhưng trong freebsd tuy cũng có fdisk như ko có option có chức năng tương tự như tham số -l trong linux, hiện giờ trong freebsd mình muốn show all disk/partition availability thì phải dùng lệnh sysintall nhưng như vậy thì phiền wá (phải wa mấy bước). Không biết có cách nào đề show giống fdisk -l trong Linux ko ? (trong FreeBSD có df nhưng nó chỉ show được các partition đã được mount)&nbsp;
+		</blockquote>
+
+rickb thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>fal# fdisk -s
+/dev/ad6: 232581 cyl 16 hd 63 sec
+Part        Start        Size Type Flags
+   1:          63     3919797 0x82 0x00
+   2:     3919860    68372640 0x83 0x00
+   3:    72292500    81915435 0xa5 0x80</pre>
+		</div>
+
+Trên đĩa này chỉ dùng 1 slice cho FreeBSD là slice thứ 3, 2 slice còn lại cho Linux.
+
+FreeBSD chỉ cần sử dụng 1 primary partition (được gọi là slice), sau đó gán label cho các logical partition được chưa bên trong (được gọi là partition).
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+2/ Chia partion luôn bị mất 1 khoảng dung lượng ? :
+
+Trong Linux, mình có 1 disk 10 GB thì có thể chia partition đúng 10GB 9ó. Còn trong FreeBSD, khi chọn option Use entire disk (hoặc thậm chí chia manually) thì partition chỉ chiếm khoảng 9/10 disk, luôn có 1 khoảng partition dư ra (nó vẫn hiển thị khoảng dung lượng dư ra này chứ ko phải bị mất luôn) nhưng ko hiểu để làm gì ?
+&nbsp;
+		</blockquote>
+
+Khi tạo partition cho FreeBSD, một phần nhỏ sẽ được gắn flag unused. Trong handbook có đề cập đến: <b><font color='orange'>artifact of PC disk layout</font></b>. FaL cũng chưa rõ là gì.
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+3/ Khi mình dùng lệnh top trong FreeBSD, trong phần memory có thêm 1 khái niệm mới là "Wired", ko bít Wired memory nghĩa là sao nhỉ ?
+&nbsp;
+		</blockquote>
+Cái này FaL lượm được từ manpage:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>DESCRIPTION OF MEMORY
+       Mem:  9220K  Active, 1032K Inact, 3284K Wired, 1MB Cache, 2M Buf, 1320K
+       Free Swap:   91M Total, 79M Free, 13% Inuse, 80K In, 104 K Out
+
+       K: Kilobyte
+
+       M:     Megabyte
+
+       %:     1/100
+
+       Active:
+              number of pages active
+
+       Inact: number of pages inactive
+
+       Wired: number of pages wired down, including cached file data pages
+
+       Cache: number of clean pages caching data that are available for  imme-
+              diate reallocation
+
+       Buf:   number of pages used for BIO-level disk caching
+
+       Free:  number of pages free
+
+       Total: total available swap usage
+
+       Free:  total free swap usage
+
+       Inuse: swap usage
+
+       In:    pages paged in from swap devices &#40;last interval&#41;
+
+       Out:   pages paged out to swap devices &#40;last interval&#41;</pre>
+		</div>
+
+Thân mến]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149951</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 20:04:43]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ Hi FaL, đầu tiên xin chân thành cảm ơn bạn đã quan tâm giúp đỡ
+
+1/ Cái này tớ có đọc man page rồi ấy chứ nhưng option -s chỉ show all disk chứ ko show all partition. Ngoài ra còn 1 option print info là -p nhưng tớ thử và có vẻ như nó ko phải là cái tớ cần tìm
+
+2/ ok, tớ sẽ tìm hiểu kỹ hơn về phần này. Anyway, ai biết thì xin cho thêm ý kiến  :D 
+
+3/ Cái này tớ cũng đọc man page rồi nhưng thực sự ko clear được đoạn "Wired: number of pages wired down, including cached file data pages" nên mới đành đem lên đây hỏi  ;) 
+
+Again, thanx
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149955</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149955</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 20:31:06]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ 1. Trong output của fdisk -s ở trên có có lần lượt liệt kê đầy đủ 3 partition của disk /dev/ad6. FaL chưa hiểu rõ ý "partition" của rickb ở đây thì phải.
+
+3. Theo FaL hiểu nôm na là "sắp được giải phóng", khi cần phần bộ nhớ này sẽ được sử dụng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149968</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149968</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 22:29:56]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">FaL wrote:</cite><br>
+		<blockquote>1. Trong output của fdisk -s ở trên có có lần lượt liệt kê đầy đủ 3 partition của disk /dev/ad6. FaL chưa hiểu rõ ý "partition" của rickb ở đây thì phải.
+
+3. Theo FaL hiểu nôm na là "sắp được giải phóng", khi cần phần bộ nhớ này sẽ được sử dụng.&nbsp;
+		</blockquote>
+
+Hi Fal,
+
+Đây là output của tớ : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@vietwow-bsd ~&#93;# fdisk -s
+/dev/ad0: 17753 cyl 15 hd 63 sec
+Part        Start        Size Type Flags
+   1:          63    16776522 0xa5 0x80
+&#91;root@vietwow-bsd ~&#93;#
+&#91;root@vietwow-bsd ~&#93;#
+&#91;root@vietwow-bsd ~&#93;# df -h
+Filesystem     Size    Used   Avail Capacity  Mounted on
+/dev/ad0s1a    396M    129M    236M    35%    /
+devfs          1.0K    1.0K      0B   100%    /dev
+/dev/ad0s1e    347M     12K    319M     0%    /tmp
+/dev/ad0s1f    5.5G    1.7G    3.4G    34%    /usr
+/dev/ad0s1d    644M    120M    472M    20%    /var</pre>
+		</div>
+
+Như vậy fdisk chỉ cho ra ad0 hay ad1 hay da0 hay da1....  output này chỉ chỉ ra được đây là disk thứ mấy, vd ad0 nghĩa là IDE Disk thứ 0, còn da1 là SCSI Disk thứ 2. Còn nó ko show được các partition như : /dev/ad0s1a, /dev/ad0s1e .... như output của lệnh df (vì lệnh df chính là lệnh show những partition đã được mount và mount point đi kèm với nó)
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149988</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149988</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 00:32:52]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ Trên kia FaL có sợ rickb nhầm các khái niệm của FreeBSD nên có nhắc đến slice và partition. Khi cài đặt FreeBSD bạn chỉ cần cho nó 1 Primary partition để tạo <b>slice</b> (FreeBSD gọi primary partition là slice). Sau đó bsdlabel sẽ tiến hành phân chia và gán nhãn cho các <b>logical partitions </b> (các phân vùng được chia gọi là )trong slice (primary partition) đó.
+
+Trong output lệnh <b>fdisk -s </b>của rickb ổ đĩa vật lý ad0 có 1 slice (primary partition) FreeBSD (type 0xa5). 
+Tiếp theo output của <b>df -h</b> chỉ ra tất cả các partitions (theo cách gọi của FreeBSD là logical partition) đã được mount. 
+Nếu rickb để ý sẽ thấy quá trình cài đặt có khác một chút so với Linux.
+
+Đây là link handbook của FreeBSD:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://freebsd.tomsk.ru/doc/en_US.ISO8859-1/books/handbook/install-steps.html</pre>
+		</div>
+Có thêm link này so sánh 1 chút về cách phân chia đĩa, rickb tham khảo thử xem nhé, FaL diễn đạt ko biết có đúng ko:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://tldp.org/HOWTO/Linux+FreeBSD-2.html</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149997</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#149997</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 01:13:30]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ Hi FaL, hình như FaL có chút nhầm lẫn, theo link FaL đưa <span class="link"> http://tldp.org/HOWTO/Linux+FreeBSD-2.html</span>) thì có 2 so sánh tương đương rõ ràng giữa Linux và FreeBSD :
+
+<blockquote>The <b><font color='red'>hard drives</font></b> are labelled in the following way in Linux and FreeBSD:
+
+                        Linux           FreeBSD
+First IDE drive         /dev/hda        /dev/wd0
+Second IDE drive        /dev/hdb        /dev/wd1
+First SCSI drive        /dev/sda        /dev/sd0
+Second SCSI drive       /dev/sdb        /dev/sd1
+
+The <b><font color='red'>partitions</font></b> (FreeBSD <b><font color='red'>slices</font></b>) on an IDE drive are labelled in the following way (/dev/hda is used as an example):
+
+                                Linux           FreeBSD
+First primary partition         /dev/hda1       /dev/wd0s1
+Second primary partition        /dev/hda2       /dev/wd0s2
+Third primary partition         /dev/hda3       /dev/wd0s3
+Fourth primary partition        /dev/hda4       /dev/wd0s4
+&nbsp;
+		</blockquote>
+
+Theo so sánh đó thì các /dev/wd0 (cũng như /dev/ad0, /dev/da0 ... như mình đã đề cập) là các Hard Disk. Còn các /dev/wd0s1 (cũng như /dev/ad0s1a, /dev/ad0s1e ... như mình đã đề cập) là Slice/Partition
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#150003</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#150003</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 01:43:11]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về FreeBSD ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+Theo so sánh đó thì các /dev/wd0 (cũng như /dev/ad0, /dev/da0 ... như mình đã đề cập) là các Hard Disk. Còn các /dev/wd0s1 (cũng như /dev/ad0s1a, /dev/ad0s1e ... như mình đã đề cập) là Slice/Partition
+
+Thân,&nbsp;
+		</blockquote>
+
+Không nhầm đâu rickb.
+
+FreeBSD không đánh đồng ad0s1 và ad0s1a.
+ad0s1 được FreeBSD gọi là slice
+còn ad0s1a là partition.
+
+Còn theo cách gọi thông thường của ta thì cả 2 thằng đó đều là partition cả, chỉ khác nhau ở primary và logical.
+
+ad0 - HDD
+ad0s1, ad0s2,... - slices
+ad0s1a, ad0s1b,... - partition
+
+Tùy rickb muốn xem partition kiểu gì thì dùng fidisk và df để xem.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24818.hva#150023</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24818.hva#150023</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 10:04:41]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+	</channel>
+</rss>

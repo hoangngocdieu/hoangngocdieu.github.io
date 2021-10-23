@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Qmail as a Mail Gateway - Phần 3 <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/121.hva#453" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: Hoàng Ngọc Diêu (conmale) - Translator:  - Entry Date: 24/02/2009 15:20:04" title="Author: Hoàng Ngọc Diêu (conmale) - Translator:  - Entry Date: 24/02/2009 15:20:04"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>Qmail as a Mail Gateway - Phần 3</b><br/> <br/> Các điều chỉnh quan trọng cho qmail.<br/> <br/> 3.4.2 Thư mục “qmail-smtpd” trong supervise<br/> - Tương tự như trên, bạn tạo ra hồ sơ có tên là run trong thư mục /var/qmail/supervise/qmail-smtpd. Hồ sơ run này có trách nhiệm gọi một số phân bộ quan trọng của qmail để thi hành các chức năng trực thuộc smtp. Hồ sơ “run” này có chi tiết như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#!/bin/sh<br/> # concurincoming is not standard qmail control file<br/> # it is created manually to specify the allowed concurrent incoming messages<br/> #<br/> QMAILDUID=`id -u qmaild`<br/> NOFILESGID=`id -g qmaild`<br/> MAXSMTPD=`cat /var/qmail/control/concurincoming`<br/> if &#91; -z "$QMAILDUID" -o -z "$NOFILESGID" -o -z "$MAXSMTPD" &#93;; then<br/>         echo QMAILDUID, NOFILESGID, or MAXSMTPD is not set in<br/>         echo /var/qmail/supervise/qmail-smtpd/run<br/>     echo “Have you set qmaild UID & qmaild GID yet?”<br/>         exit 1<br/>      fi<br/> exec /usr/local/bin/softlimit -m 6291456 \<br/>     /usr/local/bin/tcpserver -v -p -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \<br/>         -u "$QMAILDUID" -g "$NOFILESGID" 0 smtp /var/qmail/bin/qmail-smtpd 2&gt;&1</pre><br/> 		</div><br/> <br/> Hồ sơ này sẽ có thêm một vài thông số quan trọng cho vấn đề chống “SPAM” sẽ được đi sâu hơn trong phần 5.4 sau này. Ở đây, bạn chỉ cần nắm bắt một vài chi tiết quan trọng đó là:<br/> - softlimit -m $MEMSIZE trong đó, $MEMSIZE là số lượng memory thích hợp cho các phân bộ của qmail để xử lý khối lượng mail cao nhất trong khoảng thời gian bận rộn nhất.<br/> <br/> - tcpserver và các thông số -p -x trong đó, -p chỉ định cho tình trạng “hoảng” (paranoid) dùng để kiểm tra IP của host gởi mail đến xem domain, MX record và IP của nó có giá trị hay không (tránh tình trạng SPAM theo phương thức đơn giản). -x chỉ định cho tcpserver dùng database (trong phần 3.4 sau đây) để kiểm tra chế độ nhận hoặc từ chối mail từ người gởi dựa trên database này.<br/> <br/> - concurincoming variable trong hồ sơ “run” dùng để chỉ định số lượng mail được “đi vào” mail gateway mỗi lần. Bạn có thể cho nó một con số thích đáng tùy theo nhu cầu. Tuy nhiên, không nên cho concurincoming có giá trị quá cao để phòng ngừa khả năng bị DOS. Tôi chọn giá trị là 20 cho concurincoming, giá trị này đủ sức xử lý vài trăm đến vài ngàn mail mỗi giờ (tùy theo dung tích của mail đi xuyên qua mail gateway).<br/> <b># echo 20 &gt; /var/qmail/control/concurincoming<br/> # chmod 644 /var/qmail/control/concurincoming</b><br/> <br/> - Ðừng quên đổi hồ sơ “run” này thành “executable”:<br/> <b># chmod 755 /var/qmail/supervise/qmail-smtpd/run</b><br/> <br/> - Bước kế tiếp là tạo ra hồ sơ “run” trong thư mục /var/qmail/supervise/qmail-smtpd/log. Hồ sơ này gọi multilog thi hành nhiệm vụ logging cho các lưu thông thuộc phần hành smtp, multilog chuyển các log thuộc smtp vào thư mục /var/log/qmail/smtpd; nó có chi tiết như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#!/bin/sh<br/> # set user id and group id for qmail smtp daemon<br/> exec /usr/local/bin/setuidgid qmaill /usr/local/bin/multilog t s5000000000 /var/log/qmail/smtpd</pre><br/> 		</div><br/> <br/> - Ðừng quên đổi hồ sơ “run” này thành “executable”:<br/> <b># chmod 755 /var/qmail/supervise/qmail-smtpd/log/run</b><br/> <br/> - Cuối cùng là tạo thư mục log cho qmail-smtpd:<br/> <b># mkdir -p /var/log/qmail/smtpd</b><br/> <br/> - Và đổi chủ quyền của thư mục này cho qmaill (bạn còn nhớ phần tạo tài khoản nhân dụng và nhóm nhân dụng ở phần 2.4.3?):<br/> <b># chown qmaill /var/log/qmail /var/log/qmail/smtpd</b><br/> <br/> 3.5 Bộ quản trị “SMTP Access Control”<br/> Trong qmailctl có một function chuyên chịu trách nhiệm cho phần SMTP access control. Bạn xem lại qmailctl sẽ thấy có dòng như sau thuộc function cdb:<br/> <b>cat /etc/smtprules/qmail-rules.txt | tcprules /etc/tcp.smtp.cdb</b><br/> <br/> Lệnh trên có hai phần: copy qmail-rules.txt và pipe nó sang tcprules để biến nó thành hash database. Database này chứa các thông tin để kiểm tra chế độ nhận hoặc từ chối mail từ người gởi như đã đề cập trong phần 3.4.2 ở trên.<br/> <br/> Bạn có thể tạo một hồ sơ có tên là qmail-rules.txt trong thư mục /etc/smtprules và có chi tiết như sau:<br/> - Tạo thư mục /etc/smtprules trước:<br/> <b># mkdir – p /etc/smtprules</b><br/> <br/> - Ðưa chi tiết vào hồ sơ qmail-rules.txt:<br/> <b># echo '127.:allow,RELAYCLIENT=””' &gt;&gt; /etc/smtprules/qmail-rules.txt</b><br/> Lệnh trên đưa vào policy cho phép các host thuộc loopback được phép relay, nếu không Qmail không làm việc được.<br/> <br/> <b># echo '192.168.1.:allow,RELAYCLIENT=””' &gt;&gt; /etc/smtprules/qmail-rules.txt</b><br/> Lệnh trên đưa vào policy cho phép trọn bộ các client thuộc subnet 192.168.1.0/24 được quyền gởi mail đến Qmail gateway<br/> <br/> <b># echo '10.10.10.50:allow,RELAYCLIENT=””' &gt;&gt; /etc/smtprules/qmail-rules.txt</b><br/> Lệnh trên đưa vào policy cho phép một IP address (có thể là MS Exchange Server bên trong một subnet của LAN) được quyền relay.<br/> <br/> <b># echo 'spamboy@spamhouse.com:deny' &gt;&gt; /etc/smtprules/qmail-rules.txt</b><br/> Lệnh trên đưa vào policy từ chối mail từ người gởi có tên spamboy từ domain spamhouse.com. Cách này là cách đơn giản đề phóng chống bomb mail. Trên thực tế ứng dụng có nhiều phương pháp hữu hiệu hơn (sẽ bàn sâu hơn trong phần 5.4 sau này).<br/> <br/> <b># echo 'badhost.net:deny' &gt;&gt; /etc/smtprules/qmail-rules.txt</b><br/> Lệnh trên đưa vào policy từ chối mail của trọn bộ domain badhost.com. Bạn có thể dùng phương cách :allow hoặc :deny một cách linh động cho thích hợp với nhu cầu riêng. Và cuối cùng của hồ sơ qmail-rules.txt này, bạn luôn luôn cần một dòng như sau:<br/> .:deny (# echo '.:deny' &gt;&gt; /etc/smtprules/qmail-rules.txt) với tác dụng từ chối tất cả các trường hợp còn lại.<br/> <br/> Hồ sơ qmail-rules.txt đến đây tương tự như sau:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>127.:allow,RELAYCLIENT=””<br/> 192.168.1.:allow,RELAYCLIENT=””<br/> 10.10.10.50:allow,RELAYCLIENT=””<br/> &lt;a href="mailto:spamboy@spamhouse.com"&gt;spamboy@spamhouse.com&lt;/a&gt;:deny<br/> badhost.net:deny<br/> .:deny</pre><br/> 		</div><br/> <br/> Sau khi đã hoàn tất hồ sơ qmail-rules.txt như ý (đúng syntax như trên cho :allow, :deny) bạn có thể dùng function cdb của qmailctl:<br/> <b># qmailctl cdb</b><br/> <br/> Hoặc kiểu “dài dòng”:<br/> <b># cat /etc/smtprules/qmail-rules.txt | tcprules /etc/tcp.smtp.cdb</b><br/> <br/> Cũng nên đi vào chi tiết của tcprules syntax để giúp bạn tạo thêm các rules theo ý muốn và tránh những sai sót có thể xảy ra. Syntax của tcprules rất đơn giản như sau:<br/> address:action,variable<br/> <br/> Trong đó,<br/> address có thể là một internet address (192.168.1.1), một chuỗi subnet (192.168.1.), một e-mail address (spamboy@spamhouse.com), một domain host (badhost.net) hoặc nếu không chỉ định một address nào thì bất cứ address cũng ứng dụng. Các variables của address có thể tóm gọn như sau:<br/> $TCPREMOTEINFO@$TCPREMOTEIP (spamboy@192.168.1.1)<br/> $TCPREMOTEINFO@$TCPREMOTEHOST (spamboy@spamhouse.com)<br/> $TCPREMOTEIP (192.168.1.1)<br/> $TCPREMOTEHOST (box.spamhouse.com)<br/> Một phần của $TCPREMOTEIP (192.168.1)<br/> Một phần của $TCPREMOTEHOST (spamhouse.com)<br/> Không để address (bất cứ address nào cũng ứng dụng)<br/> <br/> action là một trong hai trường hợp allow dành để cho phép address đã định hoặc deny dành để từ chối address đã định.<br/> <br/> variable đi sau action được tách ra bởi dấu phẩy (,) (comma separated) thông thường là variable RELAYCLIENT với giá trị là một empty string (RELAYCLIENT=””)<br/> <br/> <br/> 3.6 Tạo ảo dụng “alias” cho Qmail<br/> “alias” đóng vai trò quan trọng trong vấn đề quản lý mail server, điều này có nghĩa mỗi “alias” là một “ảo nhân” chịu trách nhiệm cho một số trường hợp điển hình của các hoạt động trên một mail server. Sau đây là 3 “alias” cần thiết nhất :<br/> - postmaster (theo đúng RFC 2821) chỉ cho Administrator của mail server<br/> - mailer-daemon một loại người dùng bán tiêu chuẩn để nhận các mail bị dội (bounce)<br/> - root dùng để chuyển các loại mail mang tính chủ quyền đến system administrator<br/> <br/> Giả sử bạn muốn mailbox của chính mình lo luôn cả 3 alias ở trên, bạn cần ra các lệnh sau:<br/> <b># echo myname &gt; /var/qmail/alias/.qmail-root<br/> # echo myname &gt; /var/qmail/alias/.qmai-postmaster<br/> # ln -s /var/qmail/alias/.postmaster /var/qmail/alias/.qmail-mailer-daemon<br/> # chmod 644 /var/qmail/alias/.qmail-root /var/qmail/alias/.qmail-postmaster</b><br/> <br/> Nên nhớ các alias trên đều là hồ sơ “dấu” (hidden files) nên chúng đều có dấu chấm (.) đằng trước tên của alias. Các alias này có thể dùng để chuyển mail đến các user trên Unix (hoặc Linux), tôi không đi sâu vào vấn đề này vì chủ đề của bài viết là dùng Qmail như một mail gateway để forward mail vào một MTA bên trong LAN (như MS Exchange chẳng hạn).<br/> Ðến đây Qmail có thể hoạt động được. Tuy nhiên, có một số vấn đề còn phải thử nghiệm và điều chỉnh để hoàn thiện các configuration của Qmail và daemontools. Ðây là các bước quan trọng và sẽ được đi sâu trong phần kế tiếp.<br/> <br/> (kết thúc phần 3)<br/> hnd, vninformatics.com / diendantinhoc.net 11/10/2002</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/453.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/454.hva">Qmail as a Mail Gateway - Phần 4</a></div>
+									<div class="gen"><b>Qmail as a Mail Gateway - Phần 3</b></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/452.hva">Qmail as a Mail Gateway - Phần 2</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/451.hva">Qmail as a Mail Gateway - Phần 1</a></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/121.hva#453" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

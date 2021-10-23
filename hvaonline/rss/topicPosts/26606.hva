@@ -1,0 +1,976 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Problem với event_handler của Nagios"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Problem với event_handler của Nagios"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Tui đã rà soát lại toàn bộ cấu hình, theo như hướng dẫn, nhưng không hiểu sao event_handler vẫn không được gọi (monitor vẫn tốt).
+Trong windows.cfg, gọi command restart-autoupdate:
+<blockquote>
+define service{
+        use                     generic-service
+        host_name               winserver
+        service_description     Automatic Updates
+        max_check_attempts      1
+        check_command           check_nt!SERVICESTATE! -d SHOWALL -l wuauserv
+        event_handler           <b><font color='yellow'>restart-autoupdate</b></font>
+        }
+&nbsp;
+		</blockquote>
+
+Trong commands.cfg, định nghĩa restart-autoupdate, với đường dẫn tới autoupdate:
+<blockquote>
+define command{
+        command_name    restart-autoupdate
+        command_line    <b><font color='yellow'>$USER2$/autoupdate $HOSTADDRESS$</font></b>
+        }
+&nbsp;
+		</blockquote>
+Cấu hình resource.cfg:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$USER2$=/usr/local/nagios/libexec/event_handlers</pre>
+		</div>
+folder event_handlers và file autoupdate đã được set permission cho read, execute, write.
+
+Trong script autoupdate, tui add 1 log:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LOGFILE=/usr/local/nagios/libexec/event_handlers/log.txt
+echo &quot;Restart Automatic Updates&quot; &gt;$LOGFILE
+echo $1 &gt;&gt;$LOGFILE
+echo $2 &gt;&gt;$LOGFILE</pre>
+		</div>
+
+Cấu hình của Nagios.cfg:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>log_event_handlers=1
+enable_event_handlers=1</pre>
+		</div>
+
+Khi service wuauserv (Automatic Updates) bị tắt, Nagios nhận biết trạng thái service bị tắt nhưng không thực thi script autoupdate lên (log.txt không được tạo). Và trong nagios.log cũng không thấy event_handler được tạo.
+
+Nếu sử dụng lệnh check_nrpe thì service wuauserv sẽ được restart:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/nagios/libexec/check_nrpe -H $HOSTNAME -c autoupdate</pre>
+		</div>
+Như vậy, từ server gọi đến host vẫn tốt, chỉ là tại sao cái event nó không được gọi thôi.
+
+Có bác nào có kinh nghiệm vụ này không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161745</link>
+				<pubDate><![CDATA[Mon, 8 Dec 2008 18:57:33]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Hic hic, 39 views, chưa ai bị như tui hả :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161817</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161817</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 12:04:10]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Khi service wuauserv (Automatic Updates) bị tắt, Nagios nhận biết trạng thái service bị tắt nhưng không thực thi script autoupdate lên (log.txt không được tạo). Và trong nagios.log cũng không thấy event_handler được tạo.&nbsp;
+		</blockquote>
+Có khả năng bác phải xem lại permission trên cái script đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161825</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161825</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 12:50:43]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Lão mở file NsClient ++ post lên đây xem thử (NSC.INI) 
+
+Thử dùng 
+#./check_nrpe -H 127.0.0.1 -c check_users
+
+#./check_nrpe -H RemoteIPAddress -c check_users
+
+Nếu nó báo lổi <b>connection refused</b> thì ....  -:|- 
+
+Lão đang thí nghiệm mô hình server là *nix và remote là Windows để thử nghiệm á . Ping đến host nào đó, nếu nó sống thì chẳng giải quyết được vấn đề dùng nmap , netstat cho nó lẹ :) 
+
+Tui chưa dùng Nagios để monitor bao giờ, chỉ bậy lão ráng chịu :D  
+P/S : Hôm qua có mặt ở SG muốn rũ lão uống cà phê và anh em HVA 1 chút nhưng tiếc quá  :) 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161827</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161827</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:06:50]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ <blockquote>
+Có khả năng bác phải xem lại permission trên cái script đó.
+&nbsp;
+		</blockquote>
+Login vào user nagios và execute cái script đó, file log.txt vẫn tạo ra được lão. Nên tui nghĩ vấn đề ở đây không phải là permission. Ngoài ra, trong Nagios.log cũng không có log nói là đã execute cái script autoupdate.
+
+<blockquote>
+#./check_nrpe -H RemoteIPAddress -c check_users
+
+Nếu nó báo lổi connection refused thì ....
+&nbsp;
+		</blockquote>
+Từ server gởi lệnh qua host thì ok lão, nhưng vấn đề không phải ờ chỗ từ server -&gt; client. Mà ở ngay server, cái script gởi lệnh không chịu thực thi (autoupdate). <b><font color='yellow'>Tức nếu chạy ./check_nrpe bằng tay thì ok. Nhưng quan trọng là cái script execute check_nrpe tại sao nó lại không chạy, event_handler không thực thi</b></font> :(. Chỉ cần làm sao thằng nagios execute cái script đó là được.
+
+<blockquote>
+Lão đang thí nghiệm mô hình server là *nix và remote là Windows để thử nghiệm á . Ping đến host nào đó, nếu nó sống thì chẳng giải quyết được vấn đề dùng nmap , netstat cho nó lẹ
+&nbsp;
+		</blockquote>
+Tui định monitor các service và tự động restart lại bị chết.
+
+Thêm cái hình cho nó hoàng tráng.
+<br>
+			<div align="center" class="limitview"><img src='http://img241.imageshack.us/img241/7374/serviceuo1.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Điệu này chắc phải mời bác conmale vào châm chít quá  :-O  :-S 
+<blockquote>
+P/S : Hôm qua có mặt ở SG muốn rũ lão uống cà phê và anh em HVA 1 chút nhưng tiếc quá
+&nbsp;
+		</blockquote>
+Anh em còn nhiều dịp mà, tui chưa.. chít liền đâu, lão đừng sợ :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161828</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161828</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:11:32]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ @LeVuHoang: còn cái này bác ơi:
+<p></p>
+		<cite class="blockquote">tranhuuphuoc wrote:</cite><br>
+		<blockquote>Lão mở file NsClient ++ post lên đây xem thử (NSC.INI) &nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161832</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161832</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:30:43]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Ngoài ra, tui set permission cho cái script autoupdate là 777 luôn rồi.
+<blockquote>
+    Lão mở file NsClient ++ post lên đây xem thử (NSC.INI)   
+&nbsp;
+		</blockquote>
+Cái này là host/client trên Windows mà quanta. Như tui đã nói, từ server gõ comment để restart cái service trên Windows là ok rồi (server --&gt; Windows - ok). Quan trọng là nagios execute cái script để chạy command đó lên thôi.
+
+Nội dung script autoupdate:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LOGFILE=/usr/local/nagios/libexec/event_handlers/log.txt
+echo "Restart Automatic Updates" &gt;$LOGFILE
+echo $1 &gt;&gt;$LOGFILE
+echo $2 &gt;&gt;$LOGFILE
+
+HOSTNAME=$2
+
+echo $1
+#if &#91; "$1" == "CRITICAL" &#93; ; then
+	echo -n "Restarting Automatic Updates..."
+	/usr/local/nagios/libexec/check_nrpe -H $HOSTNAME -c autoupdate
+#fi</pre>
+		</div>
+Gõ lệnh: ./autoupdate
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ./autoupdate CRITICAL 192.168.11.15
+CRITICAL
+Restarting Automatic Updates...
+D:\Program Files\NSClient++&gt;net start wuauserv 
+The Automatic Updates service is starting.
+The Automatic Updates service was started successfully.
+#</pre>
+		</div>
+---&gt; Nagios -&gt; Windows: Done.
+
+Nhưng thôi, chiều lòng bác nè :D
+
+IP server (Nagios): 192.168.11.14
+IP client (Windows): 192.168.11.15
+autoupdate=D:\Program Files\NSClient++\scripts\autoupdate.bat
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;modules&#93;
+
+;# NSCLIENT++ MODULES
+
+;# A list with DLLs to load at startup.
+
+;  You will need to enable some of these for NSClient++ to work.
+
+; ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+
+; *                                                               *
+
+; * N O T I C E ! ! ! - Y O U   H A V E   T O   E D I T   T H I S *
+
+; *                                                               *
+
+; ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+
+FileLogger.dll
+
+CheckSystem.dll
+
+CheckDisk.dll
+
+NSClientListener.dll
+
+NRPEListener.dll
+
+SysTray.dll
+
+CheckEventLog.dll
+
+CheckHelpers.dll
+
+CheckWMI.dll
+
+;
+
+; RemoteConfiguration IS AN EXTREM EARLY IDEA SO DONT USE FOR PRODUCTION ENVIROMNEMTS!
+
+;RemoteConfiguration.dll
+
+; NSCA Agent is a new beta module use with care!
+
+;NSCAAgent.dll
+
+; LUA script module used to write your own "check deamon" &#40;sort of&#41; early beta.
+
+LUAScript.dll
+
+; Script to check external scripts and/or internal aliases, early beta.
+
+CheckExternalScripts.dll
+
+; Check other hosts through NRPE extreme beta and probably a bit dangerous! :&#41;
+
+NRPEClient.dll
+
+; Extreamly early beta of a task-schedule checker
+
+;CheckTaskSched.dll
+
+
+
+
+
+
+
+&#91;Settings&#93;
+
+;# OBFUSCATED PASSWORD
+
+;  This is the same as the password option but here you can store the password in an obfuscated manner.
+
+;  *NOTICE* obfuscation is *NOT* the same as encryption, someone with access to this file can still figure out the 
+
+;  password. Its just a bit harder to do it at first glance.
+
+;obfuscated_password=Jw0KAUUdXlAAUwASDAAB
+
+;
+
+;# PASSWORD
+
+;  This is the password &#40;-s&#41; that is required to access NSClient remotely. If you leave this blank everyone will be able to access the daemon remotly.
+
+;password=secret-password
+
+;
+
+;# ALLOWED HOST ADDRESSES
+
+;  This is a comma-delimited list of IP address of hosts that are allowed to talk to the all daemons.
+
+;  If leave this blank anyone can access the deamon remotly &#40;NSClient still requires a valid password&#41;.
+
+;  The syntax is host or ip/mask so 192.168.0.0/24 will allow anyone on that subnet access
+
+allowed_hosts=192.168.0.0/24
+
+;
+
+;# USE THIS FILE
+
+;  Use the INI file as opposed to the registry if this is 0 and the use_reg in the registry is set to 1 
+
+;  the registry will be used instead.
+
+use_file=1
+
+;
+
+; # USE SHARED MEMORY CHANNELS
+
+;  This is the "new" way for using the system tray based on an IPC framework on top shared memmory channels and events.
+
+;  It is brand new and &#40;probably has bugs&#41; so dont enable this unless for testing!
+
+;  If set to 1 shared channels will be created and system tray icons created and such and such...
+
+;shared_session=0
+
+
+
+
+
+&#91;log&#93;
+
+;# LOG DEBUG
+
+;  Set to 1 if you want debug message printed in the log file &#40;debug messages are always printed to stdout when run with -test&#41;
+
+;debug=1
+
+;
+
+;# LOG FILE
+
+;  The file to print log statements to
+
+;file=nsclient.log
+
+;
+
+;# LOG DATE MASK
+
+;  The format to for the date/time part of the log entry written to file.
+
+;date_mask=%Y-%m-%d %H:%M:%S
+
+;
+
+;# LOG ROOT FOLDER
+
+;  The root folder to use for logging.
+
+;  exe = the folder where the executable is located
+
+;  local-app-data = local application data &#40;probably a better choice then the old default&#41;
+
+;root_folder=exe
+
+
+
+
+
+&#91;NSClient&#93;
+
+;# ALLOWED HOST ADDRESSES
+
+;  This is a comma-delimited list of IP address of hosts that are allowed to talk to NSClient deamon.
+
+;  If you leave this blank the global version will be used instead.
+
+allowed_hosts=192.168.11.14
+
+;
+
+;# NSCLIENT PORT NUMBER
+
+;  This is the port the NSClientListener.dll will listen to.
+
+port=12489
+
+;
+
+;# BIND TO ADDRESS
+
+;  Allows you to bind server to a specific local address. This has to be a dotted ip adress not a hostname.
+
+;  Leaving this blank will bind to all avalible IP adresses.
+
+;bind_to_address=
+
+;
+
+;# SOCKET TIMEOUT
+
+;  Timeout when reading packets on incoming sockets. If the data has not arrived withint this time we will bail out.
+
+;socket_timeout=30
+
+
+
+&#91;NRPE&#93;
+
+;# NRPE PORT NUMBER
+
+;  This is the port the NRPEListener.dll will listen to.
+
+port=5666
+
+;
+
+;# COMMAND TIMEOUT
+
+;  This specifies the maximum number of seconds that the NRPE daemon will allow plug-ins to finish executing before killing them off.
+
+command_timeout=60
+
+;
+
+;# COMMAND ARGUMENT PROCESSING
+
+;  This option determines whether or not the NRPE daemon will allow clients to specify arguments to commands that are executed.
+
+allow_arguments=1
+
+;
+
+;# COMMAND ALLOW NASTY META CHARS
+
+;  This option determines whether or not the NRPE daemon will allow clients to specify nasty &#40;as in |`&&gt;&lt;'"\&#91;&#93;{}&#41; characters in arguments.
+
+;allow_nasty_meta_chars=0
+
+;
+
+;# USE SSL SOCKET
+
+;  This option controls if SSL should be used on the socket.
+
+;use_ssl=1
+
+;
+
+;# BIND TO ADDRESS
+
+;  Allows you to bind server to a specific local address. This has to be a dotted ip adress not a hostname.
+
+;  Leaving this blank will bind to all avalible IP adresses.
+
+; bind_to_address=
+
+;
+
+;# ALLOWED HOST ADDRESSES
+
+;  This is a comma-delimited list of IP address of hosts that are allowed to talk to NRPE deamon.
+
+;  If you leave this blank the global version will be used instead.
+
+allowed_hosts=192.168.11.14
+
+;
+
+;# SCRIPT DIRECTORY
+
+;  All files in this directory will become check commands.
+
+;  *WARNING* This is undoubtedly dangerous so use with care!
+
+script_dir=D:\Program Files\NSClient++\scripts\*.*
+
+;
+
+;# SOCKET TIMEOUT
+
+;  Timeout when reading packets on incoming sockets. If the data has not arrived withint this time we will bail out.
+
+;socket_timeout=30
+
+
+
+&#91;Check System&#93;
+
+;# CPU BUFFER SIZE
+
+;  Can be anything ranging from 1s &#40;for 1 second&#41; to 10w for 10 weeks. Notice that a larger buffer will waste memory 
+
+;  so don't use a larger buffer then you need &#40;ie. the longest check you do +1&#41;.
+
+CPUBufferSize=1h
+
+;
+
+;# CHECK RESOLUTION
+
+;  The resolution to check values &#40;currently only CPU&#41;.
+
+;  The value is entered in 1/10:th of a second and the default is 10 &#40;which means ones every second&#41;
+
+;CheckResolution=10
+
+;
+
+;# CHECK ALL SERVICES
+
+;  Configure how to check services when a CheckAll is performed.
+
+;  ...=started means services in that class *has* to be running.
+
+;  ...=stopped means services in that class has to be stopped.
+
+;  ...=ignored means services in this class will be ignored.
+
+check_all_services&#91;SERVICE_BOOT_START&#93;=ignored
+
+check_all_services&#91;SERVICE_SYSTEM_START&#93;=ignored
+
+check_all_services&#91;SERVICE_AUTO_START&#93;=started
+
+check_all_services&#91;SERVICE_DEMAND_START&#93;=ignored
+
+check_all_services&#91;SERVICE_DISABLED&#93;=stopped
+
+
+
+&#91;External Script&#93;
+
+;# COMMAND TIMEOUT
+
+;  This specifies the maximum number of seconds that the NRPE daemon will allow plug-ins to finish executing before killing them off.
+
+;command_timeout=60
+
+;
+
+;# COMMAND ARGUMENT PROCESSING
+
+;  This option determines whether or not the NRPE daemon will allow clients to specify arguments to commands that are executed.
+
+;allow_arguments=0
+
+;
+
+;# COMMAND ALLOW NASTY META CHARS
+
+;  This option determines whether or not the NRPE daemon will allow clients to specify nasty &#40;as in |`&&gt;&lt;'"\&#91;&#93;{}&#41; characters in arguments.
+
+;allow_nasty_meta_chars=0
+
+;
+
+;# COMMAND ALLOW NASTY META CHARS
+
+;  This option determines whether or not the NRPE daemon will allow clients to specify nasty &#40;as in |`&&gt;&lt;'"\&#91;&#93;{}&#41; characters in arguments.
+
+;script_dir=c:\my\script\dir
+
+
+
+&#91;External Scripts&#93;
+
+;check_es_long=scripts\long.bat
+
+;check_es_ok=scripts\ok.bat
+
+;check_es_nok=scripts\nok.bat
+
+;check_vbs_sample=cscript.exe //T:30 //NoLogo scripts\check_vb.vbs
+
+;check_powershell_warn=cmd /c echo scripts\powershell.ps1 | powershell.exe -command -
+
+
+
+&#91;External Alias&#93;
+
+;alias_cpu=checkCPU warn=80 crit=90 time=5m time=1m time=30s
+
+;alias_disk=CheckDriveSize MinWarn=10% MinCrit=5% CheckAll FilterType=FIXED
+
+;alias_service=checkServiceState CheckAll
+
+;alias_mem=checkMem MaxWarn=80% MaxCrit=90% ShowAll type=physical
+
+;alias_event_log=CheckEventLog file=application file=system filter=new filter=out MaxWarn=1 MaxCrit=1 filter-generated=&gt;2d filter-severity==success filter-severity==informational truncate=1023 unique descriptions  "syntax=%severity%: %source%: %message% &#40;%count%&#41;"
+
+
+
+
+
+
+
+
+
+
+
+; &#91;includes&#93;
+
+;# The order when used is "reversed" thus the last included file will be "first"
+
+;# Included files can include other files &#40;be carefull only do basic recursive checking&#41;
+
+;
+
+; myotherfile.ini
+
+; real.ini
+
+
+
+
+
+&#91;NSCA Agent&#93;
+
+;# CHECK INTERVALL &#40;in seconds&#41;
+
+;   How often we should run the checks and submit the results.
+
+interval=5
+
+;
+
+;# ENCRYPTION METHOD
+
+;   This option determines the method by which the send_nsca client will encrypt the packets it sends 
+
+;   to the nsca daemon. The encryption method you choose will be a balance between security and 
+
+;   performance, as strong encryption methods consume more processor resources.
+
+;   You should evaluate your security needs when choosing an encryption method.
+
+;
+
+; Note: The encryption method you specify here must match the decryption method the nsca daemon uses 
+
+;       &#40;as specified in the nsca.cfg file&#41;!!
+
+; Values:
+
+;	0 = None	&#40;Do NOT use this option&#41;
+
+;	1 = Simple XOR  &#40;No security, just obfuscation, but very fast&#41;
+
+;   2 = DES
+
+;   3 = 3DES &#40;Triple DES&#41;
+
+;	4 = CAST-128
+
+;	6 = xTEA
+
+;	8 = BLOWFISH
+
+;	9 = TWOFISH
+
+;	11 = RC2
+
+;	14 = RIJNDAEL-128 &#40;AES&#41;
+
+;	20 = SERPENT
+
+;encryption_method=14
+
+;
+
+;# ENCRYPTION PASSWORD
+
+;  This is the password/passphrase that should be used to encrypt the sent packets. 
+
+;password=
+
+;
+
+;# BIND TO ADDRESS
+
+;  Allows you to bind server to a specific local address. This has to be a dotted ip adress not a hostname.
+
+;  Leaving this blank will bind to "one" local interface.
+
+; -- not supported as of now -- 
+
+;bind_to_address=
+
+;
+
+;# LOCAL HOST NAME
+
+;  The name of this host &#40;if empty "computername" will be used.
+
+;hostname=
+
+;
+
+;# NAGIOS SERVER ADDRESS
+
+;  The address to the nagios server to submit results to.
+
+;nsca_host=192.168.11.14
+
+;
+
+;# NAGIOS SERVER PORT
+
+;  The port to the nagios server to submit results to.
+
+;nsca_port=5667
+
+;
+
+
+
+;# CHECK COMMAND LIST
+
+;  The checks to run everytime we submit results back to nagios
+
+;  Any command&#40;alias/key&#41; starting with a host_ is sent as HOST_COMMAND others are sent as SERVICE_COMMANDS
+
+;  where the alias/key is used as service name.
+
+;
+
+&#91;NSCA Commands&#93;
+
+my_cpu_check=checkCPU warn=80 crit=90 time=20m time=10s time=4
+
+my_mem_check=checkMem MaxWarn=80% MaxCrit=90% ShowAll type=page
+
+my_svc_check=checkServiceState CheckAll exclude=wampmysqld exclude=MpfService
+
+host_check=check_ok
+
+
+
+&#91;NRPE Handlers&#93;
+
+;# COMMAND DEFINITIONS
+
+;# Command definitions that this daemon will run.
+
+;# Can be either NRPE syntax:
+
+;command&#91;check_users&#93;=/usr/local/nagios/libexec/check_users -w 5 -c 10
+
+;# Or simplified syntax:
+
+;test=c:\test.bat foo $ARG1$ bar
+
+;check_disk1=/usr/local/nagios/libexec/check_disk -w 5 -c 10
+
+;# Or even loopback &#40;inject&#41; syntax &#40;to run internal commands&#41;
+
+;# This is a way to run "NSClient" commands and other internal module commands such as check eventlog etc.
+
+;check_cpu=inject checkCPU warn=80 crit=90 5 10 15
+
+;check_eventlog=inject CheckEventLog Application warn.require.eventType=error warn.require.eventType=warning critical.require.eventType=error critical.exclude.eventType=info truncate=1024 descriptions
+
+;check_disk_c=inject CheckFileSize ShowAll MaxWarn=1024M MaxCrit=4096M File:WIN=c:\ATI\*.*
+
+;# But be careful:
+
+; dont_check=inject dont_check This will "loop forever" so be careful with the inject command...
+
+;# Check some escapings...
+
+; check_escape=inject CheckFileSize ShowAll MaxWarn=1024M MaxCrit=4096M "File: foo \" WIN=c:\\WINDOWS\\*.*"
+
+;# Some real world samples
+
+;nrpe_cpu=inject checkCPU warn=80 crit=90 5 10 15
+
+;nrpe_ok=scripts\ok.bat
+
+;check_multi_line=scripts\multi_line.bat
+
+;#
+
+;# The sample scripts
+
+;#
+
+;check_long=scripts\long.bat
+
+;check_ok=scripts\ok.bat
+
+;check_nok=scripts\xlong.bat
+
+;check_vbs=cscript.exe //T:30 //NoLogo scripts\check_vb.vbs
+
+autoupdate=D:\Program Files\NSClient++\scripts\autoupdate.bat
+
+
+
+;# REMOTE NRPE PROXY COMMANDS
+
+;  A list of commands that check other hosts.
+
+;  Used by the NRPECLient module
+
+&#91;NRPE Client Handlers&#93;
+
+check_other=-H 192.168.0.1 -p 5666 -c remote_command -a arguments
+
+
+
+;# LUA SCRIPT SECTION
+
+;  A list of all Lua scripts to load.
+
+;&#91;LUA Scripts&#93;
+
+;scripts\test.lua</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161833</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161833</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:39:43]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Lão thử dùng cách này xem  :) 
+Download cái script này về (lưu nó đường dẫn thích hợp) 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.nagiosexchange.org/cgi-bin/page.cgi?g=Detailed%2F2639.html;d=1</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.nagiosexchange.org/cgi-bin/jump.cgi?ID=1471&view=File1;d=1</pre>
+		</div>
+
+Thêm vào NSC.INI
+<blockquote>check_updates=c:\windows\system32\cscript.exe //NoLogo //T:40 C:\Scripts\checkupdates.wsf $arg1$&nbsp;
+		</blockquote>
+
+command.cfg
+<blockquote>define command {
+command_name check_nrpe
+command_line $USER1$/check_nrpe -H $HOSTADDRESS$ -p 5666 -c $ARG1$ -a $ARG2$
+}&nbsp;
+		</blockquote>
+
+Định nghĩa service mà lão cần giám sát (đây là phần templates)
+<blockquote>define service{
+use generic-service
+host_name Name Of Host - replace this with your Host Name
+service_description Updates
+check_command check_nrpe!check_updates!-l
+}&nbsp;
+		</blockquote>
+
+Apply cấu hình Nagios sau đó restart, reload lại Nagios
+
+Good luck
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161834</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161834</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:42:21]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Chắc tui nói chưa rõ lắm nên lão hiểu nhầm. Không phải script chạy sai, mà là Nagios <b>không thực thi cái script đó</b> (bằng event_handler). Điển hình cụ thể là nó không save ra thành log.txt (trên server).
+
+Lão xem thêm post ở trên của tui có nội dung script autoupdate và nó có thể restart Automatic Updates nha lão (Nagios -&gt; Windows là ok rồi). Nhưng đó là gõ bằng tay, tui muốn Nagios tự động gọi cái script autoupdate ở trên mỗi khi service thay đổi state.
+
+Document ở đây nè lão:<span class="link"> http://nagios.sourceforge.net/docs/1_0/eventhandlers.html</span>
+
+Khi service state thay đổi, event_handler sẽ cho phép execute 1 cái command. Từ command này, tui sẽ chạy check_nrpe để restart lại cái service. Nhưng không hiểu sao sự kiện event_handler không xuất hiện.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161835</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#161835</link>
+				<pubDate><![CDATA[Tue, 9 Dec 2008 13:45:08]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Problem với event_handler của Nagios</title>
+				<description><![CDATA[ Cái này chắc bác giải quyết từ... 2 năm về trước rồi nhưng tôi liều mình ghi lại, hy vọng nó có ích với ai đó.
+
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Trong commands.cfg, định nghĩa restart-autoupdate, với đường dẫn tới autoupdate:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define command{
+        command_name    restart-autoupdate
+        command_line    $USER2$/autoupdate $HOSTADDRESS$
+        }</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Chỗ này bác định nghĩa thiếu SERVICESTATE rồi, nên nó đâu biết khi nào service die đâu mà gọi event handler:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define command{
+        command_name    restart-autoupdate
+        command_line    $USER2$/autoupdate $SERVICESTATE$ $HOSTADDRESS$
+        }</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Trong script autoupdate, tui add 1 log:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LOGFILE=/usr/local/nagios/libexec/event_handlers/log.txt
+echo &quot;Restart Automatic Updates&quot; &gt;$LOGFILE
+echo $1 &gt;&gt;$LOGFILE
+echo $2 &gt;&gt;$LOGFILE</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Cái này là trên remote host chứ. Trên Nagios server bác cần một đoạn script check SERVICESTATE và restart thông qua check_nrpe:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+
+case "$1" in
+    OK&#41;
+        ;;
+    WARNING&#41;
+        ;;
+    UNKNOWN&#41;
+        ;;
+    CRITICAL&#41;
+        /usr/local/nagios/libexec/check_nrpe -H $2 -c autoupdate
+        ;;
+esac
+
+exit 0</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223750</link>
+				<pubDate><![CDATA[Tue, 26 Oct 2010 03:55:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Problem với event_handler của Nagios</title>
+				<description><![CDATA[ hi quanta,
+Trong trường hợp này là cái script ghi log đó nằm trên server là đúng rồi. Chưa tính đến trường hợp SERVICESTATUS như thế nào là nó cũng không được thực thi.
+Mình đã giải quyết vấn đề này với lý do là nó cần tty để chạy.
+Cụ thể là default tty trong /etc/sudoers.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223783</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223783</link>
+				<pubDate><![CDATA[Tue, 26 Oct 2010 23:05:33]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Problem với event_handler của Nagios</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>hi quanta,
+Trong trường hợp này là cái script ghi log đó nằm trên server là đúng rồi. 
+&nbsp;
+		</blockquote>
+Server nào bác? Nagios server hay remote server? 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223789</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26606.hva#223789</link>
+				<pubDate><![CDATA[Tue, 26 Oct 2010 23:53:13]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "HVA cân bằng tải!"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "HVA cân bằng tải!"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Như em biết là HVA có  2 server đặt cách xa nhau  :P, "nslookup hvaonline.net" thì được
+<blockquote>Name:	hvaonline.net
+Address: 124.146.189.165
+Name:	hvaonline.net
+Address: 72.232.199.28
+&nbsp;
+		</blockquote>
+Tìm hiểu, em biết được DNS server sẽ  trả về cả 2 IP trên (khi được truy vấn) với thứ tự ngẫu nhiên, và ứng dụng chọn 1 trong 2 IP ( thường là IP đầu) để dùng.
+
+<b>Cho em hỏi : 2 server trên là dùng chung database, hay là mỗi cái dùng 1 database riêng( khi lấy dữ liệu từ database thì dùng riêng, còn khi nhập dữ liệu vô database thì query tới cả 2 database) ?
+</b>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186772</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186772</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 00:14:18]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Câu này chắc các anh admin sẽ không trả lời cho bạn đâu :P
+Tuy nhiên, việc dùng riêng 2 database và thực hiện write lên cả 2 là cách thiết kế không tốt, bạn có thể coi qua cơ chế Replication của các hệ cơ sở dữ liệu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186814</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186814</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 12:45:29]]> GMT</pubDate>
+				<author><![CDATA[ pdah]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">pdah wrote:</cite><br>
+		<blockquote>Câu này chắc các anh admin sẽ không trả lời cho bạn đâu :P
+Tuy nhiên, việc dùng riêng 2 database và thực hiện write lên cả 2 là cách thiết kế không tốt, bạn có thể coi qua cơ chế Replication của các hệ cơ sở dữ liệu.&nbsp;
+		</blockquote>
+Hì, có gì là bí mật đâu :P, để em xem qua cái Replication này :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186837</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186837</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 15:38:22]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote>Như em biết là HVA có  2 server đặt cách xa nhau  :P, "nslookup hvaonline.net" thì được
+<blockquote>Name:	hvaonline.net
+Address: 124.146.189.165
+Name:	hvaonline.net
+Address: 72.232.199.28
+&nbsp;
+		</blockquote>
+Tìm hiểu, em biết được DNS server sẽ  trả về cả 2 IP trên (khi được truy vấn) với thứ tự ngẫu nhiên, và ứng dụng chọn 1 trong 2 IP ( thường là IP đầu) để dùng.
+
+<b>Cho em hỏi : 2 server trên là dùng chung database, hay là mỗi cái dùng 1 database riêng( khi lấy dữ liệu từ database thì dùng riêng, còn khi nhập dữ liệu vô database thì query tới cả 2 database) ?
+</b>
+
+&nbsp;
+		</blockquote>
+
+HVA có 2 public IP ở hai địa phương khác nhau và 2 IP này gán cho 2 web service khác nhau nhưng lại sử dụng cùng một web application chung và một CSDL chung. Đại khái mô hình của nó như thế này:
+
+
+124.146.189.165 -----|-- web instance --|
+-------------------------|------------------------| web-app (java based) ---&gt; CSDL
+72.232.199.28 --------|-- web instance --|
+
+Các web instances ở trên gần như là reverse proxy instance mà thôi. Session của người dùng được web-app quản lý. Tuy có một CSDL (active) nhưng cho mục đích backup, còn có một CSDL thứ nhì nằm ở vị trí khác. CSDL thứ nhì này chỉ là "slave" của cái thứ nhất. Đã có dự tính thiết kế để tự động switch từ slave thành master nếu master bị sự cố nhưng... bận rộn quá nên chưa làm  :P .
+
+Lý do HVA không dùng 2 CSDL song song và cùng active là vì nó không bảo đảm tính đồng bộ của dữ liệu và tính hiệu suất bởi vì 2 CSDL này cách xa nhau quá.
+
+@pdah: mấy cái này chỉ là cấu trúc "high level" nên chẳng có gì bí mật đâu  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186839</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186839</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 15:43:41]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ cho em hỏi có phải cả hai web instances cùng hướng về một web-app đặt trên 1 trong hai máy kia( và cơ sở dữ liệu cũng đặt trên máy này) hay là web-app ở chổ khác?
+
+Thật ra em cũng chưa hiểu rõ khái niệm "web instance"?, ai có thế giúp em không? :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186846</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 16:06:59]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Theo như diagram của anh conmale thì web-app nó nằm ở chỗ khác rồi, người dùng bình thường chỉ biết đến 2 con "reverse proxy" mà thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186862</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186862</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 19:34:38]]> GMT</pubDate>
+				<author><![CDATA[ shuichi_akai]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Thực ra cái diagram mà anh conmale vẽ ra chỉ là sự phân tách về mặt logic giữa các component mà thôi, chứ chưa hẳn là phân tách vật lý, cái web app có thể nằm trên một server thứ 3, mà cũng hoàn toàn có thể nằm cùng server với 1 trong 2 cái web instance, ai mà biết được :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186865</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#186865</link>
+				<pubDate><![CDATA[Sun, 19 Jul 2009 20:16:56]]> GMT</pubDate>
+				<author><![CDATA[ pdah]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Theo cái này bạn sẽ thấy:<span class="link"> http://network-tools.com/default.asp?prog=dnsrec&host=hvaonline.net</span><span class="link"> http://www.robtex.com/dns/hvaonline.net.html</span>
+
+Retrieving DNS records for hvaonline.net...
+
+DNS servers
+ns1.hvaonline.net [124.146.189.165]
+ns1.us.editdns.net [74.52.212.235]
+ns2.hvaonline.net [72.232.199.29]
+
+Answer records 
+hvaonline.net 1 SOA server: ns1.us.editdns.net 
+email: hostmaster@hvaonline.net 
+serial: 1232398524 
+refresh: 16384 
+retry: 2048 
+expire: 1048576 
+minimum ttl: 2560 
+ 2560s 
+hvaonline.net 1 NS ns1.us.editdns.net 3600s 
+hvaonline.net 1 NS ns1.hvaonline.net 3600s 
+hvaonline.net 1 NS ns2.hvaonline.net 3600s 
+hvaonline.net 1 MX preference: 0 
+exchange: mail.hvaonline.net 
+ 86400s 
+hvaonline.net 1 TXT v=spf1 a mx ptr -all 3600s 
+hvaonline.net 1 A 72.232.199.28 86400s 
+hvaonline.net 1 A 124.146.189.165 86400s 
+
+HVA không phải sử dụng cân bằng tải gì đâu. Mà có thể giải thích như sau:
+1./ HVA là một con server sử dụng IP động và thông qua một thằng trung gian là ns1.us.editdns.net
+2./ HVA Có 2 con server đặt ở 2 nơi khác nhau và dùng VPN để kết nối và chia sẻ dữ liệu ở 2 con máy này
+3./ HVA Cài hai con server trên cùng một domain và con NS2 là con server dự phòng backup dữ liệu
+
+Ko bít như vậy có đúng ko nhỉ admin]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187167</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187167</link>
+				<pubDate><![CDATA[Wed, 22 Jul 2009 12:25:22]]> GMT</pubDate>
+				<author><![CDATA[ vnsofts]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <blockquote>HVA không phải sử dụng cân bằng tải gì đâu. Mà có thể giải thích như sau: &nbsp;
+		</blockquote>
+nói như là để ý nhỉ ;)
+1./ HVA là một con server sử dụng <font color='red'>IP động và thông qua một thằng trung gian là ns1.us.editdns.net 
+</font> :(
+2./ HVA Có 2 con server đặt ở 2 nơi khác nhau và dùng VPN để kết nối và chia sẻ dữ liệu ở 2 con máy này 
+3./ HVA<font color='red'>Cài hai con server trên cùng một domain và con NS2 là con server dự phòng backup dữ liệu 
+</font> :-(
+ BQT HVA nghiêm khắc phê bình lão conmale đã âm thầm cung cấp thông tin mật một cách chính xác cho người lạ à! :-)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187179</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187179</link>
+				<pubDate><![CDATA[Wed, 22 Jul 2009 13:16:20]]> GMT</pubDate>
+				<author><![CDATA[ JAL]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ Nhân dịp anh comale bị "phê bình", cho em hỏi một câu hỏi nhỏ ;)
+<font color='red'>Cùng chung "web-app (java based) " có phải là  code giống nhau trên 2 server không? :P</font>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187350</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187350</link>
+				<pubDate><![CDATA[Thu, 23 Jul 2009 18:05:11]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote>Nhân dịp anh comale bị "phê bình", cho em hỏi một câu hỏi nhỏ ;)
+<font color='red'>Cùng chung "web-app (java based) " có phải là  code giống nhau trên 2 server không? :P</font>
+&nbsp;
+		</blockquote>
+
+Tất nhiên là giống nhau.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187366</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187366</link>
+				<pubDate><![CDATA[Thu, 23 Jul 2009 19:28:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote>Nhân dịp anh comale bị "phê bình", cho em hỏi một câu hỏi nhỏ ;)
+<font color='red'>Cùng chung "web-app (java based) " có phải là  code giống nhau trên 2 server không? :P</font>
+&nbsp;
+		</blockquote>
+
+Tất nhiên là giống nhau.&nbsp;
+		</blockquote>
+Em thử đặt database server ở một trong 2 server trên, nhưng đều thấy bất hợp lý :P
+anh có thế nói luôn về phần database server chung được không ? :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187385</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187385</link>
+				<pubDate><![CDATA[Fri, 24 Jul 2009 00:17:05]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote>Nhân dịp anh comale bị "phê bình", cho em hỏi một câu hỏi nhỏ ;)
+<font color='red'>Cùng chung "web-app (java based) " có phải là  code giống nhau trên 2 server không? :P</font>
+&nbsp;
+		</blockquote>
+
+Tất nhiên là giống nhau.&nbsp;
+		</blockquote>
+Em thử đặt database server ở một trong 2 server trên, nhưng đều thấy bất hợp lý :P
+anh có thế nói luôn về phần database server chung được không ? :P&nbsp;
+		</blockquote>
+
+Đặt database ở 1 trong 2 web server thì bất hợp lí ở chỗ nào? Có điều kiện và tài nguyên thì nên tách database server ra khỏi application server nhưng nếu không có thì đặt chung cũng không sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187398</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187398</link>
+				<pubDate><![CDATA[Fri, 24 Jul 2009 07:41:16]]> GMT</pubDate>
+				<author><![CDATA[ qtra004]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">hizit91 wrote:</cite><br>
+		<blockquote>Nhân dịp anh comale bị "phê bình", cho em hỏi một câu hỏi nhỏ ;)
+<font color='red'>Cùng chung "web-app (java based) " có phải là  code giống nhau trên 2 server không? :P</font>
+&nbsp;
+		</blockquote>
+
+Tất nhiên là giống nhau.&nbsp;
+		</blockquote>
+Em thử đặt database server ở một trong 2 server trên, nhưng đều thấy bất hợp lý :P
+anh có thế nói luôn về phần database server chung được không ? :P&nbsp;
+		</blockquote>
+
+Hì hì, khai thác dữ đa.  :*- 
+
+"một trong 2 server trên" là server nào?
+
+Nói tổng quát thì thế này. Các "web instance" ở trên có thể là 1, 2, 3.... n. Chúng mang cái IP address tương thích với A record của DNS (để tận dụng khả năng DNS round robin). Chúng có thể là những reverse proxy (chạy apache, squid, lighthttpd, nginx...) và chúng chỉ "trỏ" đến "web-app" kia. Mọi xử lý dữ liệu đều xảy ra ở tầng web-app.
+
+Do diễn đàn là một ứng dụng đòi hỏi việc quản lý và điều tác xuất truy cập (thành viên online và quyền sử dụng các chức năng) cho nên phải dùng một web-app duy nhất. Điều này có nghĩa, cho ứng dụng ở dạng forum mình có thể có nhiều "web instance" nhưng nên dùng một web-app là cách đơn giản nhất (nếu không thì phải đụng đến việc đồng bộ hóa sessions giữa hai hoặc nhiều web-app thì phức tạp và không cần thiết). Web-app này nằm ở đâu không quan trọng. Nó có thể nằm chung trên một server với bất kỳ server nào chứa "web instance" hoặc nằm riêng một server của nó cũng được.
+
+Bởi vì chỉ nên có 1 web-app thì chỉ cần 1 database server vì gắn nó vào 2 database server hoặc hơn chẳng mang lại ích lợi gì cả mà còn làm chậm công việc. Database server này có thể nằm chung với "web-app" server hoặc nằm riêng một mình nó. Cái này tùy nhu cầu mà thôi. Để phục vụ cho mục đích backup dự phòng thì có thể tạo thêm một database server nữa đóng vai trò "slave" của cái database server chính.
+
+Nếu "web-app" không phải là forum và việc điều tác session không quan trọng hoặc không đòi hỏi phải "hiển thị" người dùng online thì có thể có nhiều web-app cùng chạy và cùng kết nối vào 1 CSDL hoặc nhiều CSDL. Cái này thì tùy vào nhu cầu cụ thể thôi.
+
+Cụ thể chính xác 100% mô hình hoạt động bên trong của HVA thế nào thì... bí mật  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187406</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187406</link>
+				<pubDate><![CDATA[Fri, 24 Jul 2009 10:16:10]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ theo những gì bác conmale tiết lộ thì mình vẽ cái hình cho các bác dễ hình dung
+<br>
+			<div align="center" class="limitview"><img src='http://i219.photobucket.com/albums/cc263/royacuatui/hva.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187427</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187427</link>
+				<pubDate><![CDATA[Fri, 24 Jul 2009 13:45:43]]> GMT</pubDate>
+				<author><![CDATA[ protectHat]]></author>
+			</item>
+			<item>
+				<title>HVA cân bằng tải!</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+
+Cụ thể chính xác 100% mô hình hoạt động bên trong của HVA thế nào thì... bí mật  -:-) &nbsp;
+		</blockquote>
+
+Vậy anh có thể nói ra ... 90% được không, he he  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187428</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30300.hva#187428</link>
+				<pubDate><![CDATA[Fri, 24 Jul 2009 13:53:23]]> GMT</pubDate>
+				<author><![CDATA[ Monkey.D.Luffy]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "thuc960"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/224242.hva</link>
+		<description><![CDATA[Messages posted by "thuc960"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xem giúp em cái proxy squid này với</title>
+				<description><![CDATA[ Xin các anh xem giúp em cái file squid.conf em post phía dưới. 
+
+Cái squid trên linux thì em chỉ đọc các bài trên mạng chưa từng làm qua mấy cái này. Hôm qua ông sếp đưa cái máy có cài và cấu hình sẵn squid rồi, giờ kêu em tự nghiên cứu rồi thêm vào cho ổng 1 IP 172.22.74.108 đi qua proxy mà không bị chặn bởi alc allowsite. 
+
+Giờ em thêm : 
+acl jerry src 172.22.74.108/32 
+http_access allow jerry 
+
+cái này vẫn bị chặn bởi acl allowsite, em không biết sao mà cho nó loại cái allowsite ra nữa, em thêm trên đầu rồi đổi qua thêm dưới cùng luôn vẫn không xong 
+Cho em hỏi ý nghĩa của cái acl này là gì : http_access allow manager !allowsite . Tại sao có thêm dấu chấm than nữa, theo em nghĩ cái acl này là allow cho rule manager và các site không thuộc allowsite phải không, đó là suy nghĩ của em có gì xin các anh chỉ thêm smilie 
+
+Đây là nội dung cái squid.conf : 
+
+================================================= 
+# 
+# Recommended minimum configuration: 
+# 
+acl manager proto cache_object 
+acl localhost src 127.0.0.1/32 172.22.73.13/32 
+acl to_localhost dst 0.0.0.0/32 127.0.0.0/8 172.22.73.13/32 
+acl localnet src 172.22.3.172-172.22.3.174/255.255.255.0 172.22.30.198-172.22.30.200/255.255.255.0 172.22.72.1-172.22.72.254/255.255.255.0 172.22.73.1-172.22.73.254/255.255.255.0 172.22.74.1-172.22.74.254/255.255.255.0 172.22.49.1-172.22.49.254/255.255.255.0 
+
+# Example rule allowing access from your local networks. 
+# Adapt to list your (internal) IP networks from where browsing 
+# should be allowed 
+# acl localnet src 10.0.0.0/8	# RFC1918 possible internal network 
+# acl localnet src 172.16.0.0/12	# RFC1918 possible internal network 
+# acl localnet src 192.168.0.0/16	# RFC1918 possible internal network 
+acl localnet src fc00::/7 # RFC 4193 local private network range 
+acl localnet src fe80::/10 # RFC 4291 link-local (directly plugged) machines 
+
+acl SSL_ports port 443 
+acl Safe_ports port 80 # http 
+acl Safe_ports port 21 # ftp 
+acl Safe_ports port 443 # https 
+acl Safe_ports port 70 # gopher 
+acl Safe_ports port 210 # wais 
+acl Safe_ports port 1-65535 # unregistered ports 
+acl Safe_ports port 280 # http-mgmt 
+acl Safe_ports port 488 # gss-http 
+acl Safe_ports port 591 # filemaker 
+acl Safe_ports port 777 # multiling http 
+acl CONNECT method CONNECT 
+acl jerry src 172.22.74.108/32
+acl denyfiletypes url_regex .mp3$ .mpg$ .mpeg$ .mp2$ .avi$ .wmv$ .wma$ .exe$ .rm$ .3gp$ .mov$ .iso$ .wav$ .flv$ 
+acl allowsite dstdomain .espn.go.com .speedtest.net .teamworkspaces.adidas-group.com .whatismyip.com .workflow.adidas-group.com .yahoo.com 10.10.10.1 113.31.34.166 118.215.101.192 173.222.153.155 175.41.3.76 211.126.240.27 213.95.33.182 58.251.57.80 58.251.57.80 62.128.7.26 72.44.208.157 74.125.71.136 aagplm.adidas-group.com aagplmtraining.adidas-group.com booking.damco.com commerce.tradecard.com eroom.adidas-group.com gg.google.com gstatic.com hqhcm.com https://aagplm.adidas-group.com https://aagplmtraining.adidas-group.com/Windchill/rfa/ https://booking.damco.com/ShipperPortalWeb/index.jsp https://commerce.tradecard.com https://eroom.adidas-group.com/eRoom https://ila.adidas-group.com https://network.gtnexus.com https://rms2.adidas.com https://rms2b.adidas.com https://supplychain2.adidas.com https://svr1.stringtogether.com https://teamworkspaces.adidas-group.com https://teamworkspaces.adidas-group.com/ws/MATBOOK https://trade.fr-scm.com https://www.gtnexus.com/customer-login ila.adidas-group.com maps.google.com maps.gstatic.com mt0.google.com mt1.google.com my.xunlei.com network.gtnexus.com network.gtnexus.com rms2.adidas.com rms2b.adidas.com rt1-adidas.access.noris.net sportsillustrated.cnn.com sportsstop.tv supplychain2.adidas.com svr1.stringtogether.com trade.fr-scm.com veetle.com www.gtnexus.com www4.cbox.ws www.vcci.com.vn www.covcci.com.vn www.ecosys.gov.vn http://ecosys.gov.vn http://customs.gov.vn http://www.vibonline.com.vn https://odsourcing.vfc.com http://hqhcm.com 
+acl snmppublic snmp_community public 
+acl purge method GET POST HEAD CONNECT PUT DELETE 
+acl bsa urlpath_regex .customers.fptad.net 
+snmp_port 3401 
+snmp_access allow snmppublic all 
+
+http_access allow allowsite 
+
+# 
+# Recommended minimum Access Permission configuration: 
+# 
+# Only allow cachemgr access from localhost 
+# http_access deny denyfiletypes 
+http_access allow manager localhost 
+
+# Deny requests to certain unsafe ports 
+http_access deny !Safe_ports 
+
+# Deny CONNECT to other than secure SSL ports 
+http_access deny CONNECT !SSL_ports 
+
+# We strongly recommend the following be uncommented to protect innocent 
+# web applications running on the proxy server who think the only 
+# one who can access services on "localhost" is a local user 
+#http_access deny to_localhost 
+
+# 
+# INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS 
+# 
+
+# Example rule allowing access from your local networks. 
+# Adapt localnet in the ACL section to list your (internal) IP networks 
+# from where browsing should be allowed 
+http_access deny bsa 
+# 
+http_access allow manager !allowsite 
+# And finally deny all other access to this proxy 
+http_access allow localnet allowsite 
+http_access allow jerry
+http_access allow localhost 
+http_access allow manager localhost 
+#open up to access all websites arrow 
+#http_access allow all 
+# Squid normally listens to port 3128 
+http_port 3128 transparent 
+
+# We recommend you to use at least the following line. 
+hierarchy_stoplist cgi-bin ? 
+
+# Uncomment and adjust the following to add a disk cache directory. 
+#cache_dir ufs /var/spool/squid 100 16 256 
+cache_mem 2048 MB 
+# maximum_object_size_in_memory 32 KB 
+cache_dir aufs /var/spool/squid/d1 5000 16 256 
+cache_dir aufs /var/spool/squid/d2 5000 16 256 
+cache_dir aufs /var/spool/squid/d3 5000 16 256 
+cache_dir aufs /var/spool/squid/d4 5000 16 256 
+fqdncache_size 16384 
+cache_swap_high 95 
+cache_swap_low 85 
+ipcache_size 16384 
+ipcache_high 95 
+ipcache_low 90 
+cache_mgr mktrieu@dintsun.com 
+cache_effective_user squid 
+cache_effective_group squid 
+# memory_pools off 
+# memory_pools_limit 32 MB 
+# request_header_max_size 50 KB 
+# reply_body_max_size 6144 KB 
+# delay_pools 1 
+# delay_class 1 2 
+# delay_access 1 allow all 
+# delay_parameters 1 -1/-1 100000/100000 
+# cache_replacement_policy heap LFUDA 
+# memory_replacement_policy heap GDSF 
+# quick_abort_min 0 KB 
+# quick_abort_max 0 KB 
+# log_icp_queries off 
+# client_db off 
+# buffered_logs off 
+# emulate_httpd_log off 
+# wwwect_rewrites_host_header off 
+# half_closed_clients off 
+
+# Leave coredumps in the first cache dir 
+coredump_dir /var/spool/squid 
+
+# Add any of your own refresh_pattern entries above these. 
+refresh_pattern ^http:// 21600 100% 43200 
+# refresh_pattern ^https:// 21600 100% 43200 
+refresh_pattern ^ftp: 1440 20% 10080 
+refresh_pattern ^gopher: 1440 0% 1440 
+# refresh_pattern -i \.(gif|png|jpg|jpeg|ico)$ 10080 90% 43200 override-expire ignore-no-cache ignore-no-store ignore-private 
+# refresh_pattern -i \.index.(html|htm)$ 0 40% 10080 
+# refresh_pattern -i \.(html|htm|css|js)$ 1440 40% 40320 
+refresh_pattern -i /cgi-bin/ 0 0% 43200 
+# refresh_pattern . 0 40% 40320 
+https_port 3128 ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44913/277130.hva#277130</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44913/277130.hva#277130</link>
+				<pubDate><![CDATA[Wed, 3 Jul 2013 10:46:01]]> GMT</pubDate>
+				<author><![CDATA[ thuc960]]></author>
+			</item>
+			<item>
+				<title>Xin tài liệu và các kiến thức về lease line</title>
+				<description><![CDATA[ Ai có tài liệu gì cho mình xin với, thanks các bạn trước]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38084/233930.hva#233930</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38084/233930.hva#233930</link>
+				<pubDate><![CDATA[Fri, 25 Mar 2011 02:45:26]]> GMT</pubDate>
+				<author><![CDATA[ thuc960]]></author>
+			</item>
+			<item>
+				<title>Vài ngày học một lệnh (hoặc một tiện ích) trong Linux</title>
+				<description><![CDATA[ Cho mình hỏi lệnh trong windows là net view vậy trong linux lệnh tương tự như vậy là gì vậy]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/19738/215919.hva#215919</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/19738/215919.hva#215919</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 07:53:57]]> GMT</pubDate>
+				<author><![CDATA[ thuc960]]></author>
+			</item>
+	</channel>
+</rss>

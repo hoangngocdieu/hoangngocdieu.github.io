@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Client sử dụng DNS server để phân giải các tên miền trên Internet?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Client sử dụng DNS server để phân giải các tên miền trên Internet?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Client sử dụng DNS server để phân giải các tên miền trên Internet?</title>
+				<description><![CDATA[ Hiện tại em đang tìm hiểu về DNS. với cấu hình đã làm như sau:
+DHCP: 192.168.1.10 -&gt;20
+           option subnet-mask 255.255.255.0
+           option domain-name &quot;server.com&quot;;
+           option domain-name-server 192.168.1.5;
+           option routers 192.168.1.1;
+<b>*(em không muốn thêm dns 8.8.8.8)*</b>
+
+DNS: 2 file zone thuận và zone nghịch (type master) chỉ phân giải tên miền server.com và www.server.com về 192.168.1.5.
+
+Các bước ở trên thì hoàn toàn không gặp vấn đề gì (ping client -&gt;server hay nslookup server.com OK hết)
+
+Nhưng chẳng là em muốn các máy Clients trong domain chuyển các queries đến DNS server.com (192.168.1.5) và DNS này sẽ queries tới DNS ở trên mạng trả về các record cho Clients =&gt; Clients vào được mạng.
+
+Em đã tìm hiểu về type forward ở zone nhưng em e rằng nếu làm vậy khi nslookup server.com nó sẽ trả về địa chỉ IP public chứ không trả về 192.168.1.5.
+Và trong thực tế thì mọi người sẽ cấu hình DNS này như thế nào cho công ty để đáp ứng nhu cầu này ạ. Do em tự học nên thiếu sót thực tế nhiều về CentOS :(
+
+Ở dưới đây là cấu hình DNS của em. 
+
+<font color='orange'>
+options {
+        forwarders {8.8.8.8;8.8.4.4;};
+        listen-on port 53 { 192.168.1.5; };
+        listen-on-v6 port 53 { ::1; };
+        directory       &quot;/var/named&quot;;
+        dump-file       &quot;/var/named/data/cache_dump.db&quot;;
+        statistics-file &quot;/var/named/data/named_stats.txt&quot;;
+        memstatistics-file &quot;/var/named/data/named_mem_stats.txt&quot;;
+        allow-query     { 192.168.1.0/24; };
+        recursion yes;</font>
+
+
+<font color='olive'>zone &quot;server.com&quot; IN {
+        type master;
+        file &quot;internal.f&quot;;
+        allow-update { none; };
+};
+
+zone &quot;1.168.192.in-addr.arpa&quot; IN {
+        type master;
+        file &quot;internal.r&quot;;
+        allow-update { none; };
+};
+</font>
+
+
+<font color='cyan'>$TTL 1D
+@       IN SOA  root.server.com. server.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+        NS      server.com.
+        A       192.168.1.5
+www     CNAME   server.com.
+www.server.com  A       192.168.1.5
+mail    A       192.168.1.5
+@       MX 10   mail
+</font>
+
+*Đã tắt iptables*
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280597</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280597</link>
+				<pubDate><![CDATA[Sun, 11 May 2014 08:14:01]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Client sử dụng DNS server để phân giải các tên miền trên Internet?</title>
+				<description><![CDATA[ E rằng là sao nhỉ, sao bạn ko thử lookup domain đó và gửi kết quả lên đây:
+
+Cấu hình của bạn post thiếu file phân giải nghịch rồi. Thêm nữa trong cấu hình của bạn có đoạn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>forwarders {8.8.8.8;8.8.4.4;};</pre>
+		</div>
+
+Nghĩa là khi các máy client của bạn tìm tới 192.168.1.5 để phân giải, nếu ko tìm thấy nó sẽ nhờ một DNS server khác ở bên ngoài tìm kiếm dùm, ở đây là DNS của Google. Thế nên có thể nó trả về một ip public]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280598</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280598</link>
+				<pubDate><![CDATA[Sun, 11 May 2014 11:15:39]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Client sử dụng DNS server để phân giải các tên miền trên Internet?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote>E rằng là sao nhỉ, sao bạn ko thử lookup domain đó và gửi kết quả lên đây:
+
+Cấu hình của bạn post thiếu file phân giải nghịch rồi. Thêm nữa trong cấu hình của bạn có đoạn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>forwarders {8.8.8.8;8.8.4.4;};</pre>
+		</div>
+
+Nghĩa là khi các máy client của bạn tìm tới 192.168.1.5 để phân giải, nếu ko tìm thấy nó sẽ nhờ một DNS server khác ở bên ngoài tìm kiếm dùm, ở đây là DNS của Google. Thế nên có thể nó trả về một ip public&nbsp;
+		</blockquote>
+
+Dạ cám ơn bác đã giúp đỡ cho câu hỏi của em
+
+- Bình thường em cấu hình thì không có mấy dòng forwarders đó đâu ạ. Và khi đó thì mọi thứ OK. NHƯNG Client sẽ không kết nối được vào được web or ping ra internet (Client nhận DHCP như em đã nói ở post 1 và đã tắt IPTABLES)
+
+Nếu thêm mấy dòng forwarders đó thì nó không trả về địa chỉ 192.168.1.5 nữa ạ. Mà trả về 
+
+<font color='brown'>C:\Users\NyHaJ&gt;nslookup server.com
+DNS request timed out.
+    timeout was 2 seconds.
+Server:  UnKnown
+Address:  192.168.1.5
+
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+*** Request to UnKnown timed-out</font>
+
+
+- Dạ do file phân giải ngược em không khác gì nhiều ngoài thêm 2 dòng PTR nên em không post ở trên. Và nó đây ạ
+<font color='olive'>
+$TTL 1D
+@       IN SOA  root.server.com. server.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+        NS      server.com.
+        A       192.168.1.5
+www     CNAME   server.com.
+www.server.com  A       192.168.1.5
+mail    A       192.168.1.5
+@       MX 10   mail
+5       PTR     server.com.
+5       PTR     www.server.com.</font>
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280599</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280599</link>
+				<pubDate><![CDATA[Sun, 11 May 2014 12:27:34]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Client sử dụng DNS server để phân giải các tên miền trên Internet?</title>
+				<description><![CDATA[ Đã tìm ra vấn đề. Forwarders đến gateway hoặc DNS public. Cộng với tắt dnssec
+  :x 
+<font color='olive'>options {
+#       listen-on port 53 { 192.168.1.5; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { localhost;192.168.1.0/24; };
+        allow-query-cache {192.168.1.0/24;localhost;};
+        recursion yes;</font>
+<font color='brown'>       forwarders {192.168.1.1;8.8.8.8;};
+      dnssec-enable no;
+        dnssec-validation no;</font>
+ <font color='olive'>         dnssec-lookaside auto;</font>
+Cám ơn bác quangteospk đã quan tâm giúp đỡ ạ. Cám ơn mọi người :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280609</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45625.hva#280609</link>
+				<pubDate><![CDATA[Mon, 12 May 2014 05:43:12]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+	</channel>
+</rss>

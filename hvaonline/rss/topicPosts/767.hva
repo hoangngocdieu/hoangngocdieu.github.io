@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hidding process không cần hooking API   (by Thug4Lif3)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hidding process không cần hooking API   (by Thug4Lif3)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hidding process không cần hooking API   (by Thug4Lif3)</title>
+				<description><![CDATA[ 	    -=[ vnbiocoderz.com – Thug4Lif3 ]=-
+				brings you 
+
+|=--------------=[ Hidding process không cần hooking API ]=---------------=|
+|=--------------=[    trên nền Windows NT / XP / 2003    ]=---------------=|
+|=------------------------------------------------------------------------=|
+|=--------------------=[ Thug4Lif3/vnbiocoderz ]=-------------------------=|
+
+
+1. Giới thiệu
+2. Những phương pháp hooking & những hạn chế nói chung
+   2.1 Hooking user-mode API 
+       2.1.1 Hooking bằng cách thay đôi các thư viện (DLL hoặc EXE)
+       2.1.2 Hooking trong khi chạy - patching trên bộ nhớ ảo của process
+       2.1.3 DLL Injection
+       2.1.4 Hạn chế
+   2.2 Hooking kernel-mode Native API 
+       2.2.1 How to hook ?
+       2.2.2 Hạn chế
+   2.3 Khái quát 
+
+3. Hidding process mà không cần hooking API
+   3.1 Windows Objects 
+       3.1.1 Cấu trúc của Object
+   3.2 LIST_ENTRY và double-linked list
+   3.3 Process Object
+   3.4 Hidding process không cần hooking API
+       3.4.1 Exploring wit PsActiveProcessHead and PsinitialSystemProcess
+       3.4.2 Hidding process - không cần hooking bất kỳ API nào.
+4. Kết luận
+
+----| 1.  Giới thiệu
+
+Ngày nay, trong nhiều lĩnh vực như hacking, cracking, việc che dấu sự xuất hiện
+của các process, các registry key, các device driver .. là một yêu cầu không 
+thể thiếu được. Hacker cần giấu sự xuất hiện của các backdoor process, các backdoor
+port mà họ mở ra trên hệ thống bị hack, các tcp/udp packet ra vào ... Cracker 
+cần che giấu các debugger process, tránh các phương pháp anti-debug và cơ chế bảo 
+vệ của software... 
+
+Việc che dấu nói trên thường được thực hiện bằng cách hook các API mà hệ thống sử 
+dụng để liệt kê process (Nt/ZwQuerySystemInformation với SystemInformationClasss là 
+SystemProcessesAndThreadsInformation), liệt kê registry (Nt/ZwEnumerateKey với
+KeyInformationClass là KeyBasicInformation)... 
+
+Các phương pháp hooking API được áp dụng rộng rãi với nhiều phương pháp hooking 
+khác nhau, ở các cấp độ nông sâu khác nhau của hệ điều hành. Tuy nhiên, hooking 
+API có những hạn chế nhất định, nhất là việc phát hiện một API đã bị hook là việc
+không khó khăn gì lắm (độ khó và phức tạp còn tuỳ thuộc vào cấp độ hook, càng sâu
+vào kernel thì việc phát hiện càng khó). 
+
+Điều này đặt ra một đòi hỏi một phương pháp hidding mới không thông qua hooking API.
+Trong bài viết sau đây, Thug xin trình bày một phương pháp có thể áp dụng trên nền 
+Windows NT/XP/2003. Phương pháp này hoàn toàn thành công trong việc che dấu process,
+còn lại các phần khác như hidding registry, hidding tcp/udp ... đang còn trong giai 
+đoạn nghiên cứu. Hy vọng trong thời gian tới, Thug sẽ có một bài viết hoàn chỉnh đầy
+đủ về phương pháp che dấu HOÀN TOÀN process, device driver ... mà không cần hooking 
+API. 
+
+----| 2.  Những phương pháp hooking & những hạn chế nói chung 
+
+Hooking API được hiểu nôm na là thay đổi chức năng thực của API theo mục đích riêng
+của người hook. Như đã nói ở trên, có rất nhiều phương pháp hooking API. Trước hết, 
+Thug xin giới thiệu sơ qua về các phương pháp này và các hạn chế của chúng. 
+
+Trước hết, có 2 loại hooking API: trong user-mode (ring3) và kernel-mode (ring0).
+
+------| 2.1 Hooking user-mode API 
+
+Hooking trong user-mode là phương pháp thông dụng nhất, và được áp dụng rộng rãi 
+trong nhiều loại rootkit, các debugger-hider như OllyInvisible (teerayoot) ... 
+Hooking loại này chỉ nằm trong phạm vi user-mode, nghĩa là trong phạm vi vùng nhớ
+từ 00000000h -> 7FFFFFFFh.
+
+------| 2.1.1 Hooking bằng cách thay đổi các file thư viện (DLL hoặc EXE)
+
+Phương pháp này là phương pháp thường được ứng dụng trong virus coding. Cơ chế của 
+nó là thay đổi, patching các thư viện DLL,EXE trực tiếp trên ổ cứng các function
+cần hook như các function liệt kê process. Có thể đè code lên entry point để hướng
+code tới nơi ta muốn, hoặc có thể thay đổi toàn bộ DLL bằng DLL của chúng ta.
+
+------| 2.1.2 Hooking trong khi chạy - patching trên bộ nhớ ảo của process
+
+Phương pháp này thực hiện bằng cách dùng API WriteProcessMemory. Tuy nhiên, nó chỉ 
+áp dụng được khi ta có quyền write đối với process memory. Tương tự như phương pháp
+2.1, phương pháp này cũng là thay đổi entry point của các API hoặc ghi đè code của 
+các API, nhưng không phải trực tiếp lên file mà là trên virtual memory của process. 
+
+Trong cấu trúc của file PE, có một bảng gọi là IAT (Import Address Table) lưu giữ 
+các địa chỉ các API mà process cần gọi trong khi chạy (vd: ExitProcess, GetMođuleHanle..)
+Các process thực chất là các file PE/EXE được map vào virtual memory và tự động kích
+hoạt và chạy bởi Windows. Và IAT cũng được map vào memory :) Hooking chỉ còn là công 
+việc thay đổi các address trong IAT thành địa chỉ các function mà ta muốn.
+
+------| 2.1.3 DLL Injection 
+
+Chúng ta có thể chạy thread từ memory của process khác. Điều này nghĩa là 
+gì? Có nghĩa là chúng ta có thể load code vào memory của process và chạy 
+code của chúng ta từ đây. Phần code này có nhiệm vụ hook các API. 
+
+Để chạy thread trong memory của process khác, chúng ta dùng API: CreateRemoteThread
+
+HANDLE CreateRemoteThread(
+
+    HANDLE hProcess,	
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,	
+    DWORD dwStackSize,	
+    LPTHREAD_START_ROUTINE lpStartAddress,	
+    LPVOID lpParameter,	
+    DWORD dwCreationFlags,	
+    LPDWORD lpThreadId 	
+   );
+
+Tham số quan trọng nhất là lpStartAddress và lpParameter. lpStartAddress là 
+con trỏ trỏ tới một vùng nhớ trong process mà ta muốn tạo thread vào trong, 
+là nơi code của chúng ta bắt đầu được thi hành trong memory của process muốn
+hook. Tham số lpParameter là con trỏ trỏ tới các tham số của thread do ta 
+tạo ra. 
+
+Chúng ta có thể tạo thread vào process muốn hook. Vậy còn load code vào memory
+process thế nào mà không dùng WriteProcessMemory? Câu trả lời: Chúng ta sẽ dùng
+GetProcAddress để lấy địa chỉ của LoadLibrary rồi cho lpStartAddress là địa chỉ
+của LoadLibrary, lpParameter trỏ tới tham số là tên DLL của chúng ta, vd như:
+thug_hooks_y0u.dll. Hàm LoadLibrary chỉ có một tham số duy nhất là con trỏ trỏ 
+tới thư viện cần load. 
+
+HINSTANCE LoadLibrary(
+    LPCTSTR lpLibFileName 
+   );	
+ 
+Ở đây lpLibFileName = lpParameter. Khi thread được chạy, nó sẽ bắt đầu ngay từ 
+địa chỉ của LoadLibrary với tham số là tên thư viện của chúng ta. Khi thread được
+bắt đầu chạy, thì phần khởi tạo với tham số như trên được thi hành, và DLL của chúng
+ta được load vào memory - lưu ý: memory này là memory của process ta muốn hook, do 
+thread này nằm trong memory của process này :) - và thread này chấm dứt. Tuy 
+thread đã chấm dứt nhưng DLL của chúng ta thì vẫn nằm trong memory. And then?
+Heh, hook the APIz plzzz :P Chúng ta đã load code vào memory. 
+
+Phương pháp nói trên được gọi là DLL Injection.
+
+------| 2.1.4 Hạn chế
+
+Qua các phương pháp hooking API trong user-mode tuy có nhiều phương pháp khác nhau, song
+thực chất đều một mục đích là chỉnh sửa để sao cho code của chúng ta được thực thi trước 
+các API thực sự. Việc này không tránh khỏi phải thay đổi entry point hoặc các phần để dẫn
+tới API như IAT và chúng ta phải viết vào "một nơi nào đó" phần code thay đổi chức năng 
+của API. Điểm hạn chế nằm ở đây. Chúng ta có thể đơn giản kiểm tra các byte đầu của các 
+API; theo IAT tới hàm mà IA trỏ tới, so sánh các byte tại đây với các byte đầu của API 
+mà ta đã biết; kiểm tra runtime-CRC... API nào bị hook sẽ lộ rõ. 
+
+Lấy ví dụ: plugin OllyInvisible (tác giả:teerayoot) hook function NtQuerySystemInformation 
+bằng cách overwrite các bytes đầu của function này trong ntdll.dll để hide process OllyDbg.exe, 
+một chương trình debug thông dụng, thường được cracker sử dụng. Bạn có thể download plugin
+này tại REA forum: www.reaonline.net (Reverse Engineering Association) - một forum của 
+nhóm cracker có trình độ ở Việt Nam.
+
+Hàm ZwQuerySystemInformation:
+
+Bình thường, khi chưa bị hook:
+-------------------------
+77F76152 > B8 AD000000      MOV EAX,0AD
+77F76157   BA 0003FE7F      MOV EDX,7FFE0300
+77F7615C   FFD2             CALL EDX
+77F7615E   C2 1000          RETN 10
+-------------------------
+
+Sau khi bị hook:
+-------------------------
+77F76152 >-FF25 1E00115F    JMP DWORD PTR DS:[5F11001E]
+77F76158   0003             ADD BYTE PTR DS:[EBX],AL
+77F7615A   FE               ???                                      ; Unknown command
+77F7615B   7F FF            JG SHORT ntdll.77F7615C
+77F7615D   D2C2             ROL DL,CL
+77F7615F   1000             ADC BYTE PTR DS:[EAX],AL
+77F76161 > B8 AE000000      MOV EAX,0AE
+77F76166   BA 0003FE7F      MOV EDX,7FFE0300
+77F7616B   FFD2             CALL EDX
+77F7616D   C2 0400          RETN 4
+-------------------------
+
+Ta thấy rằng địa chỉ API NtQuerySystemInformation vẫn là 77F76152, xong đoạn code 
+ở entry point đã được thay bằng 1 đoạn code khác, còn đoạn code thật thì đã được 
+đẩy xuống 77F76161.
+
+Để phát hiện ra API này có bị hook hay không, chỉ cần một đoạn code nho nhỏ sau:
+
+-------------------------
+	call	_next1
+	db	'ntdll',0
+_next1:
+	call	LoadLibrary
+
+	call	_next2
+	db	'NtQuerySystemInformation',0
+_next2:
+	push	eax
+	call	GetProcAddress
+	mov	esi,eax
+
+	lodsb
+	cmp	al,0B8h
+	jnz	__we_are_hooked__	; ta có thể kiểm tra thêm, với số byte dài hơn
+-------------------------
+
+Như vậy, có thể thấy rõ ràng hạn chế của hooking API trong user-mode. Ta có thể khắc phục
+bằng nhiều biện pháp, nhưng sẽ không bao giờ hoàn toàn che giấu kín kẽ được. Do đó, đòi
+hỏi ta cần phải đào sâu hơn nữa vào bên trong hệ điều hành. 
+
+------| 2.2 Hooking kernel-mode Native API 
+
+Hầu hết các API được sử dụng trong user-mode thực ra đều chỉ là đầu cuối của các API 
+nằm trong lõi của Windows, được gọi là Native API. Vd: trong user-mode, hàm VirtualAlloc
+sẽ gọi hàm VirtualAllocEx; hàm VirtualAllocEx sẽ gọi hàm NtAllocateVirtualMemory trong 
+ntdll.dll; từ ntdll, Windows sẽ thực thi 2 opcode đặc biệt là sysenter và syscall để chuyển
+từ ring3 (user-mode) sang ring0 (kernel-mode), và thực thi phần chính của công việc trong
+ntoskrnl.exe - lõi thực sự của Windows NT. 
+
+------| 2.2.1 How to hook ?
+
+Các service (hay các kernel-mode API hoặc Native API) hầu hết nằm trong ntoskrnl.exe. Nếu
+chúng ta hooking tại đây, các user-mode application sẽ khó nhận biết được sự hooking này, 
+do code trong user-mode không được phép access tới address dành cho kernel.
+
+Hooking trong kernel-mode cũng tương tự như trong user-mode, cũng là thay đổi địa chỉ của API
+thật bằng hàm của chúng ta. Hãy tìm hiểu một chút về cách hooking trong kernel-mode. 
+
+Các địa chỉ của các Native API được giữ trong một bảng được gọi là SERVICE_DESCRIPTOR_TABLE
+
+typedef struct _SERVICE_DESCRIPTOR_TABLE
+
+{	SYSTEM_SERVICE_TABLE	ntoskrnl;
+	SYSTEM_SERVICE_TABLE	win32k;
+	SYSTEM_SERVICE_TABLE	Reserved1;
+	SYSTEM_SERVICE_TABLE	Reserved2;
+}
+	SERVICE_DESCRIPTOR_TABLE,
+	*PSERVICE_DESCRIPTOR_TABLE,
+	**PPSERVICE_DESCRIPTOR_TABLE;
+
+với SYSTEM_SERVICE_TABLE được định nghĩa như sau: 
+
+typedef struct _SYSTEM_SERVICE_TABLE{
+	DWORD	pServiceTable;
+	DWORD	pCounterTable; 
+	DWORD	ServiceLimit;
+	DWORD	pArgumentTable;
+}
+	SYSTEM_SERVICE_TABLE,
+	*PSYSTEM_SERVICE_TABLE,
+	**PPSYSTEM_SERVICE_TABLE;
+
+ntoskrnl.exe có export 1 biến gọi là KeServiceDescriptorTable, là con trỏ kiểu 
+PSERVICE_DESCRIPTOR_TABLE. Và (SYSTEM_SERVICE_TABLE)ntoskrnl.pServiceTable trỏ tới một table
+chứa địa chỉ các Native API. Chúng ta chỉ việc thay địa chỉ nói trên bằng địa chỉ function
+của chúng ta là xong. 
+
+Let's see:
+-------------------------
+lkd> dd KeServiceDescriptorTable L 4
+8054aec0  80502588 00000000 0000011c 80502ba4
+-------------------------
+-> ntoskrnl.pServiceTable = 80502588
+
+
+-------------------------
+lkd> dd 80502588
+80502588  805953aa 8057dcb7 8057bb65 805c0cdb
+80502598  80573c7a 8061737e 806194ee 8061952b
+805025a8  8056ae3b 80625e4e 80616e7a 8057aedb
+805025b8  80610e61 8057bec6 80575ecf 8060a667
+805025c8  8057bc7e 8058e58d 805600fc 8055204e
+805025d8  8050fa11 8060e649 80565a55 804e906f
+805025e8  80579402 80581355 8057bb30 8062a9ed
+805025f8  8061a04f 8059589c 8062ac19 8057418c
+-------------------------
+
+Ta đã biết NtQuerySystemInformation có ID là 0xAD (xem vd về OllyInvisible). 
+Hãy thử tìm địa chỉ của API này xem sao. 
+Có thể đoán được bằng cách: Địa chỉ API = ID * 4 + ntoskrnl.pServiceTable
+
+-------------------------
+lkd> dd 80502588+0xAD*4 L 4
+8050283c  8058b1f4 8057469f 8057842e 8056af87
+lkd> ln 8058b1f4
+(8058b1f4)   nt!NtQuerySystemInformation   |  (8058b2ea)   nt!MiCheckForConflictingNode
+Exact matches:
+    nt!NtQuerySystemInformation = <no type information>
+-------------------------
+
+Tất cả những gì cần làm là viết 1 driver (file *.sys - thực chất cũng là file PE được chạy 
+trong kernel mode) để thay thế giá trị tại offset 0x8050283c bằng địa chỉ API của chúng ta. 
+Quá đơn giản, phải không?
+
+------| 2.2.2 Hạn chế
+
+Tương tự như hooking trong user-mode, hooking trong kernel-mode cũng có hạn chế của nó. Thứ 
+nhất là phải là Administrator, bạn mới có thể load được driver để hook các Native API. Thứ 
+hai, để phát hiện ra Native API có bị hook hay không, vẫn có thể viết 1 driver riêng, kiểm 
+tra ntoskrnl.pServiceTable, tìm địa chỉ API rồi so sánh checksum hoặc những byte đầu tiên
+với API đã biết, việc hooking này cũng không hề giảm bớt hạn chế của user-mode, có chăng chỉ 
+là phải có quyền thực thi code trong ring0 mà thôi. 
+
+------| 2.3 Khái quát
+
+Còn một số phương pháp hooking khác ngoài những phương pháp trên, song do thời gian 
+và mục đich của bài viết này không nhằm giới thiệu các phương pháp hooking, nên Thug 
+sẽ không đề cập tới. 
+
+Qua các phương pháp trên, một điểm dễ nhận thấy là việc phát hiện hooking rất dễ dàng và nói
+chung là không được thầm lặng cho lắm :P Vậy, chúng ta phải hook một số thứ khác, chứ không chỉ
+là các API. Điều này lại đòi hỏi ta phải đi sâu hơn vào trong lõi và cơ chế của Windows.
+
+----| 3.  Hidding process mà không cần hooking API 
+
+Đây là phần chính của bài viết này. Trước khi trình bày phương pháp của mình, Thug sẽ giới thiệu
+khái niệm, cũng như một số kiến thức để hiểu rõ và nắm bắt đúng những gì Thug sẽ trình bày phía 
+sau. 
+
+Lưu ý: phương pháp của Thug sẽ trình bày sẽ chỉ áp dụng được trong kernel-mode. Gonna make shit 
+tight, mothafuckaz!
+
+------| 3.1 Windows Objects 
+
+Theo quyển "Microsoft Windows Internals(Fourth Edition)", các thành phần của Windows ở
+kernel-mode đều được thiết kế hướng đối tượng - object-oriented. Mọi thành phần trong kernel
+đều là các object, chúng không tác động hoặc access lên cấu trúc dữ liệu khác mà chỉ truyền tham
+số cho nhau qua các giao thức thông thường. Việc thiết kế này nhằm đảm bảo tính cố định, và 
+an toàn cho rất nhiều các service nằm phía trong kernel của Windows.
+
+Trong Windows XP và 2003, có 29 loại object khác nhau (Win2000 có 27 loại):
+
+   [+] Adapter       
+   [+] Callback      
+   [+] Controler     
+   [+] Desktop       
+   [+] Device        
+   [+] Directory     
+   [+] Driver        
+   [+] Event         
+   [+] EventPair     
+
+   [+] File             [+] Semaphore
+   [+] IoCompletion     [+] SymbolicLink
+   [+] Job              [+] Thread
+   [+] Key              [+] Timer
+   [+] Mutant           [+] Token
+   [+] Port             [+] Type
+   [+] Process          [+] WaitablePort
+   [+] Profile          [+] WindowStation
+   [+] Section          [+] WmiGuid
+
+
+Các Object nói trên được xếp thành các thư mục khác nhau như cách tổ chức thư mục thường thấy 
+trong Windows. 
+
+------| 3.1.1 Cấu trúc của Object 
+
+Một Object bao gồm 2 phần: object header và object body. 
+Object header được định nghĩa như sau: 
+
+-------------------------
+lkd> dt _OBJECT_HEADER
+   +0x000 PointerCount     : Int4B
+   +0x004 HandleCount      : Int4B
+   +0x004 NextToFree       : Ptr32 Void
+   +0x008 Type             : Ptr32 _OBJECT_TYPE
+   +0x00c NameInfoOffset   : UChar
+   +0x00d HandleInfoOffset : UChar
+   +0x00e QuotaInfoOffset  : UChar
+   +0x00f Flags            : UChar
+   +0x010 ObjectCreateInfo : Ptr32 _OBJECT_CREATE_INFORMATION
+   +0x010 QuotaBlockCharged : Ptr32 Void
+   +0x014 SecurityDescriptor : Ptr32 Void
+   +0x018 Body             : _QUAD
+-------------------------
+
+Để hiểu các thành phần, xin đọc [1]. 
+
+Mỗi object có 1 object body có cấu trúc và nội dung tuỳ thuộc vào kiểu object; tất cả những
+object cùng một kiểu có chung một cấu trúc. Bằng cách tạo ra các kiểu object khác nhau và 
+các service cho chúng, kernel có thể điều khiển việc truy cập/thay đổi dữ liệu trong tất
+cả những object body của cùng 1 loại object đó. 
+
+------| 3.2 LIST_ENTRY và double-linked list
+
+Một cấu trúc được sử dụng hầu hết trong tất cả các object của Windows, đó là cấu trúc LIST_ENTRY.
+Windows sử dụng cấu trúc này để tạo danh sách liên kết khép kín - double linked list. Trong 
+Windows, một object không chỉ là thành phần của 1 danh sách liên kết, mà là 1 phần của rất rất
+nhiều các danh sách liên kết khác nhau được tạo bởi nhiều cấu trúc LIST_ENTRY nhúng trong cấu 
+trúc của 1 object (chúng ta sẽ thấy rõ điều này ở phần sau khi xem xét process object). 
+LIST_ENTRY được định nghĩa như sau: (theo Windows DDK - Windows Driver Development Kit):
+
+
+typedef struct _LIST_ENTRY {
+  struct _LIST_ENTRY *Flink;
+  struct _LIST_ENTRY *Blink;
+} LIST_ENTRY, *PLIST_ENTRY;
+
+
+Trong đó, Flink là viết tắt của "Forward link", là con trỏ trỏ tới cấu trúc tiếp theo, còn Blink
+là "Backward link" trỏ tới cấu trúc phía trước. 2 thành phần này luôn trỏ tới 1 cấu trúc 
+LIST_ENTRY khác chứ không phải trỏ tới object. Thông thường, danh sách kết nối này là danh sách
+khép kín, nghĩa là Flink trỏ tới cấu trúc LIST_ENTRY đầu tiên trong danh sách, còn Blink lại chỉ
+tới cấu trúc LIST_ENTRY cuối cùng của danh sách. Hiển nhiên, nếu 1 danh sách chỉ có 1 cấu trúc
+LIST_ENTRY, thì cả Flink và Blink phải chỉ tới chính cấu trúc LIST_ENTRY đó. 
+
+Hình 1. Danh sách liên kết khép kín dựa vào cấu trúc LIST_ENTRY của các object
+
+Image link: www.vnbiocoderz.com/thug/pix/ill/fig1.JPG
+
+------| 3.3 Process Object
+
+Như đã nói ở trên, Windows coi tất cả đều là Object và phân loại chúng vào các thư mục khác nhau.
+Process cũng vậy, nó là một object, bao gồm một object header và object body. Chúng ta không quan
+tâm tới phần header mà chỉ quan tâm tới phần body của object này. Cấu trúc phần body của process 
+object như sau: (trên nền Windows XP SP1). Cấu trúc này gọi là EPROCESS.
+
+   +0x000 Pcb              : _KPROCESS
+   +0x06c ProcessLock      : _EX_PUSH_LOCK
+   +0x070 CreateTime       : _LARGE_INTEGER
+   +0x078 ExitTime         : _LARGE_INTEGER
+   +0x080 RundownProtect   : _EX_RUNDOWN_REF
+   +0x084 UniqueProcessId  : Ptr32 Void
+   +0x088 ActiveProcessLinks : _LIST_ENTRY
+   +0x090 QuotaUsage       : [3] Uint4B
+   +0x09c QuotaPeak        : [3] Uint4B
+   +0x0a8 CommitCharge     : Uint4B
+   +0x0ac PeakVirtualSize  : Uint4B
+   +0x0b0 VirtualSize      : Uint4B
+   +0x0b4 SessionProcessLinks : _LIST_ENTRY
+   +0x0bc DebugPort        : Ptr32 Void
+   +0x0c0 ExceptionPort    : Ptr32 Void
+   +0x0c4 ObjectTable      : Ptr32 _HANDLE_TABLE
+   +0x0c8 Token            : _EX_FAST_REF
+   +0x0cc WorkingSetLock   : _FAST_MUTEX
+   +0x0ec WorkingSetPage   : Uint4B
+   +0x0f0 AddressCreationLock : _FAST_MUTEX
+   +0x110 HyperSpaceLock   : Uint4B
+   +0x114 ForkInProgress   : Ptr32 _ETHREAD
+   +0x118 HardwareTrigger  : Uint4B
+   +0x11c VadRoot          : Ptr32 Void
+   +0x120 VadHint          : Ptr32 Void
+   +0x124 CloneRoot        : Ptr32 Void
+   +0x128 NumberOfPrivatePages : Uint4B
+   +0x12c NumberOfLockedPages : Uint4B
+   +0x130 Win32Process     : Ptr32 Void
+   +0x134 Job              : Ptr32 _EJOB
+   +0x138 SectionObject    : Ptr32 Void
+   +0x13c SectionBaseAddress : Ptr32 Void
+   +0x140 QuotaBlock       : Ptr32 _EPROCESS_QUOTA_BLOCK
+   +0x144 WorkingSetWatch  : Ptr32 _PAGEFAULT_HISTORY
+   +0x148 Win32WindowStation : Ptr32 Void
+   +0x14c InheritedFromUniqueProcessId : Ptr32 Void
+   +0x150 LdtInformation   : Ptr32 Void
+   +0x154 VadFreeHint      : Ptr32 Void
+   +0x158 VdmObjects       : Ptr32 Void
+   +0x15c DeviceMap        : Ptr32 Void
+   +0x160 PhysicalVadList  : _LIST_ENTRY
+   +0x168 PageDirectoryPte : _HARDWARE_PTE
+   +0x168 Filler           : Uint8B
+   +0x170 Session          : Ptr32 Void
+   +0x174 ImageFileName    : [16] UChar
+   +0x184 JobLinks         : _LIST_ENTRY
+   +0x18c LockedPagesList  : Ptr32 Void
+   +0x190 ThreadListHead   : _LIST_ENTRY
+   +0x198 SecurityPort     : Ptr32 Void
+   +0x19c PaeTop           : Ptr32 Void
+   +0x1a0 ActiveThreads    : Uint4B
+   +0x1a4 GrantedAccess    : Uint4B
+   +0x1a8 DefaultHardErrorProcessing : Uint4B
+   +0x1ac LastThreadExitStatus : Int4B
+   +0x1b0 Peb              : Ptr32 _PEB
+   +0x1b4 PrefetchTrace    : _EX_FAST_REF
+   +0x1b8 ReadOperationCount : _LARGE_INTEGER
+   +0x1c0 WriteOperationCount : _LARGE_INTEGER
+   +0x1c8 OtherOperationCount : _LARGE_INTEGER
+   +0x1d0 ReadTransferCount : _LARGE_INTEGER
+   +0x1d8 WriteTransferCount : _LARGE_INTEGER
+   +0x1e0 OtherTransferCount : _LARGE_INTEGER
+   +0x1e8 CommitChargeLimit : Uint4B
+   +0x1ec CommitChargePeak : Uint4B
+   +0x1f0 AweInfo          : Ptr32 Void
+   +0x1f4 SeAuditProcessCreationInfo : _SE_AUDIT_PROCESS_CREATION_INFO
+   +0x1f8 Vm               : _MMSUPPORT
+   +0x238 LastFaultCount   : Uint4B
+   +0x23c ModifiedPageCount : Uint4B
+   +0x240 NumberOfVads     : Uint4B
+   +0x244 JobStatus        : Uint4B
+   +0x248 Flags            : Uint4B
+   +0x248 CreateReported   : Pos 0, 1 Bit
+   +0x248 NoDebugInherit   : Pos 1, 1 Bit
+   +0x248 ProcessExiting   : Pos 2, 1 Bit
+   +0x248 ProcessDelete    : Pos 3, 1 Bit
+   +0x248 Wow64SplitPages  : Pos 4, 1 Bit
+   +0x248 VmDeleted        : Pos 5, 1 Bit
+   +0x248 OutswapEnabled   : Pos 6, 1 Bit
+   +0x248 Outswapped       : Pos 7, 1 Bit
+   +0x248 ForkFailed       : Pos 8, 1 Bit
+   +0x248 HasPhysicalVad   : Pos 9, 1 Bit
+   +0x248 AddressSpaceInitialized : Pos 10, 2 Bits
+   +0x248 SetTimerResolution : Pos 12, 1 Bit
+   +0x248 BreakOnTermination : Pos 13, 1 Bit
+   +0x248 SessionCreationUnderway : Pos 14, 1 Bit
+   +0x248 WriteWatch       : Pos 15, 1 Bit
+   +0x248 ProcessInSession : Pos 16, 1 Bit
+   +0x248 OverrideAddressSpace : Pos 17, 1 Bit
+   +0x248 HasAddressSpace  : Pos 18, 1 Bit
+   +0x248 LaunchPrefetched : Pos 19, 1 Bit
+   +0x248 InjectInpageErrors : Pos 20, 1 Bit
+   +0x248 Unused           : Pos 21, 11 Bits
+   +0x24c ExitStatus       : Int4B
+   +0x250 NextPageColor    : Uint2B
+   +0x252 SubSystemMinorVersion : UChar
+   +0x253 SubSystemMajorVersion : UChar
+   +0x252 SubSystemVersion : Uint2B
+   +0x254 PriorityClass    : UChar
+   +0x255 WorkingSetAcquiredUnsafe : UChar
+
+Trong process object body, có các thành phần sau là kiểu LIST_ENTRY:
+
+   +0x088 ActiveProcessLinks : _LIST_ENTRY
+   +0x0b4 SessionProcessLinks : _LIST_ENTRY
+   +0x160 PhysicalVadList  : _LIST_ENTRY
+   +0x184 JobLinks         : _LIST_ENTRY
+   +0x190 ThreadListHead   : _LIST_ENTRY
+
+Chúng ta quan tâm tới các thành phần sau: 
+
+   +0x084 UniqueProcessId  : Ptr32 Void
+   +0x088 ActiveProcessLinks : _LIST_ENTRY
+   +0x174 ImageFileName    : [16] UChar
+
+
+
+Tại sao lại quan tâm tới các thành phần này ? Đơn giản, UniqeProcessId là id của process, 
+là 1 số duy nhất được Windows cấp cho mỗi process. Nó có thể 1 phần nào đó đại diện cho sự 
+xuất hiện của 1 process thay cho tên của process đó. ImageFileName là tên của process, vd 
+như System hoặc svchost.exe. 
+
+Quan trọng ở đây là thành phần ActiveProcessLinks :) Đây là 1 cấu trúc LIST_ENTRY (Flink & Blink)
+tạo thành 1 danh sách liên kết khép kín của các process object. Nghĩa là gì? Nghĩa là từ process
+của chúng ta, chúng ta có thể biết địa chỉ của các process object khác. Điều này có ý nghĩa đặc 
+biệt quan trọng, và là điều cốt yếu trong phương pháp "Hidding process không cần hooking API".
+
+------| 3.4 Hidding process không cần hooking API
+
+------| 3.4.1 Exploring wit PsActiveProcessHead and PsinitialSystemProcess
+
+Trước khi trình bày phương pháp này, Thug sẽ thực hiện vài động tác khởi động để người đọc có thể
+hiểu rõ hơn :P
+
+Chúng ta biết ActiveProcessLinks là một cấu trúc LIST_ENTRY, nằm trong danh sách liên kết khép
+kín gồm các cấu trúc này. Vậy đâu là cấu trúc LIST_ENTRY đầu tiên trong danh sách? Good question.
+Kernel của Windows NT là ntoskrnl.exe có một biến gọi là PsActiveProcessHead chứa địa chỉ của 
+cấu trúc LIST_ENTRY đầu tiên. Tuy nhiên, biến này không được export. Nhưng biến PsinitialSystemProcess
+lại được export :) Đây là biến trỏ tới cấu trúc EPROCESS hay phần body của process object của 
+process System. Từ Blink của nó, ta tới được PsActiveProcessHead. 
+
+Đó là lý thuyết, thực hành một chút xem sao: 
+----------------------------------------------------------------------------------
+lkd> dd PsinitialSystemProcess L 4
+8054df74  81bce838 81bcee70 81bceca0 e10018b0
+----------------------------------------------------------------------------------
+-> Process object này có địa chỉ 81bce838. Thử xem có đúng là process System hay không..
+
+----------------------------------------------------------------------------------
+lkd> db 81bce838 + 0x174 L 8
+81bce9ac  53 79 73 74 65 6d 00 00                          System..
+----------------------------------------------------------------------------------
+-> Yeah, đây đúng là process System. 0x174 là relative offset của ImageFileName, remember eh ?
+Xem thử xem cấu trúc LIST_ENTRY của nó nào...
+
+----------------------------------------------------------------------------------
+lkd> dd 81bce838 + 0x88 L 4
+81bce8c0  81a853d0 8054de78 00000000 00000000
+----------------------------------------------------------------------------------
+-> Flink = 81a853d0 là địa chỉ thành phần Flink của process object tiếp theo, còn Blink = 8054de78
+chính là địa chỉ của PsActiveProcessHead. Kiểm tra xem có đúng không nào ?
+
+----------------------------------------------------------------------------------
+lkd> ln 8054de78
+(8054de78)   nt!PsActiveProcessHead   |  (8054de80)   nt!PspActiveProcessMutex
+Exact matches:
+    nt!PsActiveProcessHead = <no type information>
+----------------------------------------------------------------------------------
+-> Chính xác :)
+
+Hãy thử nghiệm một chút về lý thuyết: 
+
+----------------------------------------------------------------------------------
+lkd> dd 8054de78 L 2
+8054de78  81bce8c0 81732bb8
+
+lkd> dd 81bce8c0 L 2
+81bce8c0  81a410a8 8054de78
+
+lkd> dd 81a410a8 L 2
+81a410a8  81acf0a8 81bce8c0
+
+lkd> db 81a410a8 - 0x88 + 0x174 L 20
+81a41194  53 4d 53 53 2e 45 58 45-00 00 00 00 00 00 00 00  SMSS.EXE........
+81a411a4  00 00 00 00 00 00 00 00-00 00 00 00 74 15 a4 81  ............t...
+
+lkd> dd 81a410a8 - 0x88 + 0x84 L 1
+81a410a4  00000160
+----------------------------------------------------------------------------------
+
+Ta theo Flink đi qua 2 process object để tới process object thứ 3. Process object này
+có Flink tại địa chỉ 81a410a8, cách offset đầu tiên của cấu trúc EPROCESS là 0x88, 
+và offset của ImageFileName cách offset đầu tiên của cấu trúc EPROCESS là 0x174. 
+Cho nên offset của ImageFileName là : 81a410a8 - 0x88 + 0x174, từ đó ta có process
+name là SMSS.EXE. 
+Tương tự, ProcessID của process SMSS.EXE này là 0x00000160. Simple, isnt it ?
+
+Ta cũng có thể lấy địa chỉ của process object body (EPROCESS) của process hiện tại
+bằng hàm PsGetCurrentProcess, rồi từ đó lấy địa chỉ của LIST_ENTRY của process hiện
+tại trong danh sách ActiveProcessLists.
+
+	PEPROCESS 
+  		PsGetCurrentProcess(
+	);
+
+Hàm này trả về giá trị là con trỏ tới process object body của process hiện tại.
+
+
+------| 3.4.2 Hidding process - không cần hooking bất kỳ API nào.
+
+Đến đây, chắc các bạn cũng đoán ra phương pháp hidding process của Thug. Ý tưởng rất
+đơn giản, chúng ta thay đổi, hoặc, có thể coi là xoá đi 1 cấu trúc LIST_ENTRY đại diện
+cho process mà chúng ta cần giấu đi trong danh sách ActiveProcessLists. 
+Chỉ còn một điều, liệu phương pháp này có hiệu quả hay không? Câu trả lời là có. Vì 
+tất cả các hàm trong kernel liên quan tới process object đều tin tưởng vào danh sách 
+này để liệt kê hoặc làm những việc khác liên quan tới process object. 
+
+Lấy vd như hàm thông dụng nhất trong việc liệt kê danh sách các active process là hàm
+NtQuerySystemInformation với SystemInformationClass là SystemProcessesAnđThreadsInformation.
+
+Let's disassembly this function. Dùng IDA, ta có thể thấy rằng, NtQuerySystemInformation
+gọi hàm SeLocateProcessImageName để xác định ImageName của một process. IDA says: 
+
+
+PAGE:00493779 _SeLocateProcessImageName@8 proc near   ; CODE XREF: ExpGetProcessInformation(x,x,x,x,x)+D9p
+PAGE:00493779                                         ; NtQueryInformationProcess(x,x,x,x,x)+3FA12p ...
+PAGE:00493779
+PAGE:00493779 var_C           = dword ptr -0Ch
+PAGE:00493779 var_8           = dword ptr -8
+PAGE:00493779 var_4           = dword ptr -4
+PAGE:00493779 EPROCESS        = dword ptr  8
+PAGE:00493779 pOutputName     = dword ptr  0Ch
+PAGE:00493779
+PAGE:00493779 ; FUNCTION CHUNK AT PAGE:00493E60 SIZE 0000006B BYTES
+PAGE:00493779 ; FUNCTION CHUNK AT PAGE:00517CEF SIZE 0000000C BYTES
+PAGE:00493779
+PAGE:00493779                 push    ebp
+PAGE:0049377A                 mov     ebp, esp
+PAGE:0049377C                 sub     esp, 0Ch
+PAGE:0049377F                 mov     eax, [ebp+pOutputName]
+PAGE:00493782                 push    ebx
+PAGE:00493783                 xor     ebx, ebx        ; ebx = 0
+PAGE:00493785                 mov     [eax], ebx      ; *(ULONG)pOutputName = 0
+PAGE:00493787                 mov     eax, [ebp+EPROCESS] ; eax = EPROCESS
+PAGE:0049378A                 push    esi             ; esi = EPROCESS, store it on stack
+PAGE:0049378B                 lea     esi, [eax+1F4h] ; esi -> SeAuditProcessCreationInfo
+PAGE:00493791                 cmp     [esi], ebx      ; This ptr == 0 ??
+PAGE:00493793                 push    edi
+PAGE:00493794                 mov     [ebp+var_8], ebx
+PAGE:00493797                 mov     [ebp+var_4], ebx
+PAGE:0049379A                 mov     [ebp+var_C], ebx
+PAGE:0049379D                 jz      loc_493E60
+PAGE:004937A3
+PAGE:004937A3 loc_4937A3:                             ; CODE XREF: SeLocateProcessImageName(x,x)+741j
+PAGE:004937A3                 mov     eax, [esi]      ; eax -> Ptr32 _OBJECT_NAME_INFORMATION, which
+PAGE:004937A3                                         ; is a UNICODE_STRING
+PAGE:004937A5                 movzx   edi, word ptr [eax+2] ; edi = MaxLength of this wide char array
+PAGE:004937A9                 push    61506553h       ; Tag
+PAGE:004937AE                 add     edi, 8
+PAGE:004937B1                 push    edi             ; NumberOfBytes
+PAGE:004937B2                 push    ebx             ; PoolType
+PAGE:004937B3                 call    _ExAllocatePoolWithTag@12 ; ExAllocatePoolWithTag(x,x,x)
+PAGE:004937B8                 cmp     eax, ebx        ; if successful, eax -> new alloc8ed pool
+PAGE:004937BA                 jz      loc_493EBF
+PAGE:004937C0                 mov     esi, [esi]      ; esi = ptr to (UNICODE_STRING)ImageName
+PAGE:004937C2                 mov     ecx, edi        ; ecx = MaxLength + 8
+PAGE:004937C4                 mov     edx, ecx
+PAGE:004937C6                 shr     ecx, 2          ; ecx = ecx / 4
+PAGE:004937C9                 mov     edi, eax        ; edi = dest
+PAGE:004937CB                 rep movsd
+PAGE:004937CD                 mov     ecx, edx
+PAGE:004937CF                 and     ecx, 3
+PAGE:004937D2                 rep movsb
+PAGE:004937D4                 lea     ecx, [eax+8]
+PAGE:004937D7                 mov     [eax+4], ecx
+PAGE:004937DA                 mov     ecx, [ebp+pOutputName]
+PAGE:004937DD                 mov     [ecx], eax      ; return the pointer to (UNICODE_STRING)ImageName
+PAGE:004937DF
+PAGE:004937DF loc_4937DF:                             ; CODE XREF: SeLocateProcessImageName(x,x)+6F6j
+PAGE:004937DF                                         ; SeLocateProcessImageName(x,x)+73Bj ...
+PAGE:004937DF                 mov     eax, [ebp+var_8]
+PAGE:004937E2                 pop     edi
+PAGE:004937E3                 pop     esi
+PAGE:004937E4                 pop     ebx
+PAGE:004937E5                 leave
+PAGE:004937E6                 retn    8
+PAGE:004937E6 _SeLocateProcessImageName@8 endp
+
+(Còn một fần code nữa phía dưới nhưng cũng không quan trọng, Thug chỉ post những công việc
+chính mà funtion này làm).
+Thug đã cho comment vào phần code nói trên, nên sẽ không giải thích dài dòng gì nữa. Những gì 
+function này thực hiện cũng có thể bắt chước như sau: 
+
+1. Đầu tiên, theo Flink từ PsActiveProcessHead, ta có 1 giá trị Flink như sau: 81ad3c78
+----------------------------------------------------------------------------------
+lkd> dd 81abee30
+81abee30  81ad3c78 81a49e30 00001bb0 00006030
+81abee40  0000013b 00001dd0 00006988 0000014c
+.........
+----------------------------------------------------------------------------------
+
+2. Kiểm tra ImageFileName 
+
+----------------------------------------------------------------------------------
+lkd> db 81ad3c78-0x88+0x174
+81ad3d64  6c 73 61 73 73 2e 65 78-65 00 00 00 00 00 00 00  lsass.exe.......
+........
+----------------------------------------------------------------------------------
+
+3. Kiểm tra SeAuditProcessCreationInfo ở offset 0x1f4 relative với EPROCESS.
+SeAuditProcessCreationInfo là một biến kiểu _SE_AUDIT_PROCESS_CREATION_INFO. 
+Kiểu _SE_AUDIT_PROCESS_CREATION_INFO được định nghĩa:
+
+----------------------------------------------------------------------------------
+lkd> dt _SE_AUDIT_PROCESS_CREATION_INFO
+   +0x000 ImageFileName    : Ptr32 _OBJECT_NAME_INFORMATION
+----------------------------------------------------------------------------------
+-> thực chất là con trỏ trỏ tới kiểu _OBJECT_NAME_INFORMATION, được định nghĩa
+như sau: 
+
+----------------------------------------------------------------------------------
+lkd> dt _OBJECT_NAME_INFORMATION
+   +0x000 Name             : _UNICODE_STRING
+----------------------------------------------------------------------------------
+
+Ah hah, vậy SeAuditProcessCreationInfo thực chất là con trỏ trỏ tới UNICODE_STRING.
+
+Vậy SeAuditProcessCreationInfo có giá trị là bao nhiêu??
+----------------------------------------------------------------------------------
+lkd> dd 81ad3c78-0x88+0x1f4 L 1
+81ad3de4  81b15e20
+
+lkd> dd 81b15e20
+81b15e20  00660064 81b15e28 0044005c 00760065
+........
+----------------------------------------------------------------------------------
+-> UNICODE_STRING: 
+	+ Length (in bytes) = 0x0066
+	+ MaxLength 	    = 0x0064
+	+ PWSTR		    = 81b15e28
+
+----------------------------------------------------------------------------------
+lkd> db 81b15e28
+81b15e28  5c 00 44 00 65 00 76 00-69 00 63 00 65 00 5c 00  \.D.e.v.i.c.e.\.
+81b15e38  48 00 61 00 72 00 64 00-64 00 69 00 73 00 6b 00  H.a.r.d.d.i.s.k.
+81b15e48  56 00 6f 00 6c 00 75 00-6d 00 65 00 32 00 5c 00  V.o.l.u.m.e.2.\.
+81b15e58  57 00 49 00 4e 00 44 00-4f 00 57 00 53 00 5c 00  W.I.N.D.O.W.S.\.
+81b15e68  53 00 79 00 73 00 74 00-65 00 6d 00 33 00 32 00  S.y.s.t.e.m.3.2.
+81b15e78  5c 00 6c 00 73 00 61 00-73 00 73 00 2e 00 65 00  \.l.s.a.s.s...e.
+.....
+----------------------------------------------------------------------------------
+
+See? We got it!
+Như vậy, NtQuerySystemInformation với SystemInformationClass là 5 đã gọi hàm 
+SeLocateProcessImageName để lấy đường dẫn tuyệt đối của process. Và điều quan 
+trọng ở đây, nó tin tưởng vào EPROCESS và dùng LIST_ENTRY để xác định process. 
+
+Vây, việc xoá một LIST_ENTRY trong ActiveProcess list cũng gần như việc chúng ta xoá
+một điểm để từ đó lần ra process object body của process cần giấu. 
+
+Phương pháp này có thể tóm gọn như sau: hãy xem hình minh họa 1. Giả sử ta cần
+xoá LIST_ENTRY của process object thứ 2.
+
+Image link: www.vnbiocoderz.com/thug/pix/ill/fig1.JPG
+
+Xoá LIST_ENTRY: 
+
+	+ Flink của Object 1 = &(Flink của Object thứ 3)
+	+ Blink của Object 3 = &(Flink của Object thứ 1)
+
+Quá đơn giản phải không ? He3, không cần hooking bất kỳ API nào hết phải không?
+Make shit tighter :) Để che giấu tốt hơn nữa, Thug nghĩ nên xoá trong tất cả các 
+LIST_ENTRY có trong EPROCESS như:
+
+----------------------------------------------------------------------------------
+   +0x088 ActiveProcessLinks : _LIST_ENTRY
+   +0x0b4 SessionProcessLinks : _LIST_ENTRY
+   +0x160 PhysicalVadList  : _LIST_ENTRY
+   +0x184 JobLinks         : _LIST_ENTRY
+   +0x190 ThreadListHead   : _LIST_ENTRY.
+----------------------------------------------------------------------------------
+
+và 
+
+----------------------------------------------------------------------------------
+   +0x0c4 ObjectTable      : Ptr32 _HANDLE_TABLE
+----------------------------------------------------------------------------------
+
+vì thực ra _HANDLE_TABLE cũng là một cấu trúc chứa LIST_ENTRY trỏ tới bảng các 
+handle của process sử dụng. 
+
+----------------------------------------------------------------------------------
+lkd> dt _HANDLE_TABLE
+   +0x000 TableCode        : Uint4B
+   +0x004 QuotaProcess     : Ptr32 _EPROCESS
+   +0x008 UniqueProcessId  : Ptr32 Void
+   +0x00c HandleTableLock  : [4] _EX_PUSH_LOCK
+   +0x01c HandleTableList  : _LIST_ENTRY	<------------
+   +0x024 HandleContentionEvent : _EX_PUSH_LOCK
+   +0x028 DebugInfo        : Ptr32 _HANDLE_TRACE_DEBUG_INFO
+   +0x02c ExtraInfoPages   : Int4B
+   +0x030 FirstFree        : Uint4B
+   +0x034 LastFree         : Uint4B
+   +0x038 NextHandleNeedingPool : Uint4B
+   +0x03c HandleCount      : Int4B
+   +0x040 Flags            : Uint4B
+   +0x040 StrictFIFO       : Pos 0, 1 Bit
+----------------------------------------------------------------------------------
+
+----| 4.  Kết luận
+
+Bài viết này đã trình bày những khuyết điểm hạn chế của các phương pháp hooking 
+thông thường, từ đó đi đến một phương pháp hidding process không cần tới hooking 
+bất kỳ API nào. Tất nhiên, phương pháp này chỉ sử dụng được trong trường hợp có 
+thể thi hành code ở cấp độ kernel, hay ở ring0. Hiệu quả của phương pháp này là 
+khá cao, vì như đã nói ở trên, hầu hết các Native API liên quan đến nhận dạng
+process, liệt kê .. như NtQuerySystemInformation, CsrProcessId .. đều TIN TƯỞNG 
+và DỰA VÀO danh sách LIST_ENTRY các process object nói trên. 
+Hy vọng thời gian tới, Thug sẽ tìm hiểu rõ hơn và kỹ hơn, để có thể trình bày một 
+phương pháp hidding registry, key, device driver ... tương tự mà không cần phải 
+hooking API. 
+
+Have fun.
+
+"Thug is on da ride, fuckaz gonna die tonight,
+Let's get high tonight ..."
+
+----| 5.  About video
+
+Đi kèm bài viết này là 1 video capture từ desktop để chứng minh cho tính hiệu quả
+của phương pháp nói trên. 
+
+Trong video có sử dụng một phần code trích ra từ bộ Thug4RK (Thug4RootKit) gồm có 2 chương
+trình: 
+
+1. thug4rk.c: chính là source code của driver thug4rk.sys, sẽ được chạy trong kernel
+mode, thực hiện các công việc chính như hook API, hoặc thay đổi các cấu trúc LIST_ENTRY
+của ActiveProcessList..
+
+2. t4rk-feeder.asm: source code của t4rk-feeder.exe, cung cấp tham số cho driver 
+như tên các process cần hide ... Trong video nói trên, t4rk-feeder cung cấp cho thug4rk.sys
+tên 3 process cần hide: 
+
++ ollydbg.exe
++ editplus.exe
++ hh.exe
+
+Đầu tiên, trong video, Thug sẽ sử dụng phương pháp hook NtQuerYSystemInformation với 
+SYstemInformationClass là SystemProcessesAndThreadsInformation (tất nhiên là ở kernel
+mode). Ta có thể thấy rõ ràng địa chỉ API nói trên đã bị thay thế bằng địa chỉ hàm của
+chúng ta. Đó chính là địa chỉ của hàm Thug4RKNtQuerySystemInformation. Đây là hàm thay
+thế cho NtQuerySystemInformation, bản thân nó gọi NtQuerySystemInformation rồi chỉnh sửa
+output thực sự rồi mới trả lại kết quả cho caller.
+
+Sau đó, là phương pháp mới mà Thug đã trình bày phía trên. Hàm thực hiện công việc này
+là hàm TestingNewMethod().Không cần nói gì nhiều hơn, hãy xem kỹ video clip :) 
+
+Bạn chú ý theo dõi cửa sổ taskmgr.exe các process này và số process trước và sau khi
+sử dụng từng phương pháp. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/767.hva#2711</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/767.hva#2711</link>
+				<pubDate><![CDATA[Fri, 30 Jun 2006 20:39:07]]> GMT</pubDate>
+				<author><![CDATA[ lawlesscoder]]></author>
+			</item>
+			<item>
+				<title>Hidding process không cần hooking API   (by Thug4Lif3)</title>
+				<description><![CDATA[ chào bác, cái này thì hay thiệt nhưng mà em còn kém quá. Hoan nghênh bác đã viết bài chia sẻ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/767.hva#3233</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/767.hva#3233</link>
+				<pubDate><![CDATA[Sun, 2 Jul 2006 16:26:15]]> GMT</pubDate>
+				<author><![CDATA[ thuanld]]></author>
+			</item>
+			<item>
+				<title>Hidding process không cần hooking API   (by Thug4Lif3)</title>
+				<description><![CDATA[ Hic vấn đề là mấy cái code minh hoạ thì không thấy đâu ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/767.hva#3330</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/767.hva#3330</link>
+				<pubDate><![CDATA[Sun, 2 Jul 2006 21:23:40]]> GMT</pubDate>
+				<author><![CDATA[ THE LAST LEAF]]></author>
+			</item>
+			<item>
+				<title>Hidding process không cần hooking API   (by Thug4Lif3)</title>
+				<description><![CDATA[ chà THE LAST LEAF bên cau lạc bộ VB cũng qua đây sao, hahaha
+à bài viết nảy lấy từ www.conmaz.com , anh trên kia ko lấy cho ví dụ là vì kỹ thuật này rất khó hỉu và cao siêu (Tui nghĩ là vậy). Các huynh có biết tên chủ dề bài viết là gì ko " Háck hệ điều hành đó" thay vì nó dùng các hàm API nó lại đi vào thẳng cấu trúc truyền dữ liệu (Quá khó phải ko?)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/767.hva#3775</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/767.hva#3775</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 09:49:39]]> GMT</pubDate>
+				<author><![CDATA[ dungcoi_vb]]></author>
+			</item>
+	</channel>
+</rss>

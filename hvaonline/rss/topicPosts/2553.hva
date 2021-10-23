@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm mail server với Postfix - Phần 5"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm mail server với Postfix - Phần 5"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm mail server với Postfix - Phần 5</title>
+				<description><![CDATA[ <b>Cấu hình POP3 server với solid-pop3d</b>
+
+<b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cài đặt, cấu hình
+   3. Tham khảo, tài liệu liên quan
+
+<b>Giới thiệu</b>
+solid-pop3d là một trong số rất ít pop3 server (tại thời điểm viết bài này 5/2003) cho phép người dùng nhận mail lưu giữ dạng Maildir bằng giao thức APOP. Bài viết này giới thiệu cách sử dụng solid-pop3d để dựng một pop3 server trong những điều kiện sau đây:
+
+    * máy chủ chạy hệ điều hành Linux
+    * mail đang được lưu giữ ở dạng Maildir
+    * lấy mail bằng một trong hai giao thức: POP3 hoặc APOP
+
+Bắt đầu viết: tháng 5 năm 2003.
+Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.
+
+Cài đặt, cấu hình
+Thứ tự cài đặt
+
+	// tải solid-pop3d
+	$ wget<span class="link"> http://solidpop3d.pld.org.pl/solid-pop3d-0.15.tar.gz</span>
+
+	// tạo một account riêng để chạy solid-pop3d
+	<b>$ su -
+	# /usr/sbin/useradd -d /dev/null -s /dev/null -M spop3d</b>
+
+	// cài đặt
+	<b>$ tar zxvf solid-pop3d-0.15.tar.gz
+	$ cd solid-pop3d-0.15
+	$ ./configure --enable-apop
+	$ make
+	$ su -
+	# make install
+	# cd /usr/local/sbin
+	# strip spop3d</b>
+
+<b>Cấu hình</b>
+
+	// tham khảo cấu hình mặc định
+	<b># cp solid-pop3d-0.15/doc/config.example /usr/local/etc/spop3d.conf</b>
+
+	// sửa đổi file /usr/local/etc/spop3d.conf như sau
+	<blockquote><Global>
+        	MailDropName    Maildir
+        	MailDropType    maildir
+        	AllowAPOP       yes
+	</Global>&nbsp;
+		</blockquote>
+
+<b>Khởi động</b>
+
+Bài viết này giới thiệu cách khởi động solid-pop3d bằng xinetd. Sao lưu file /etc/xinetd.d/pop3 (nếu đã có), và tạo file /etc/xinetd.d/pop3 mới với nội dung như sau
+
+	<blockquote>### --- start of /etc/xinetd.d/pop3
+	# default: off
+	# pop3 for solid-pop3d (spop3d)
+	service pop3
+	{
+		socket_type             = stream
+		protocol                = tcp
+		wait                    = no
+		user                    = root
+		server                  = /usr/local/sbin/spop3d
+	}
+	### --- end of /etc/xinetd.d/pop3&nbsp;
+		</blockquote>
+
+<b>Sau đó khởi động lại xinetd</b>
+	# killall -HUP xinetd
+
+Đến đây, pop3 server đã được khởi động. Kiểm tra pop3 server bằng một trong những cách sau đây
+<blockquote>
+	// kiểm tra bằng nmap
+	$ nmap localhost
+	...
+	110/tcp    open        pop-3
+	...
+
+	// kiểm tra bằng ps
+	$ ps aux | grep spop3d
+	...
+	spop3d   24816  0.0  0.0  1664    4 ?        S    Jan11   0:00 spop3d&nbsp;
+		</blockquote>
+	...
+
+Cuối cùng, mỗi user tự tạo APOP password cho mình bằng lệnh
+
+	<b>$ /usr/local/bin/pop_auth</b>
+
+<b>Tham khảo</b>
+
+   1. Hai cách lưu giữ mail: Mailbox và Maildir
+   2. Tìm hiểu thêm về giao thức APOP
+   3. Những mail client có thể dùng giao thức APOP
+   4. bổ sung tháng 5/2005: ngày 3/5/2005, mpop <span class="link"> http://mpop.sf.net</span>) ver 0.6.2 support APOP/Maildir
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2553.hva#13867</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2553.hva#13867</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 15:29:25]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm Reverse Proxy với apache 2"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm Reverse Proxy với apache 2"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ Anh mrro cũng đã có lần định viết về vấn đề này nhưng mới thấy <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/100.hva</span>, giới thiệu qua về reverse proxy chứ chưa thấy nói về cấu hình. Nay tớ xin mạo muội viết tiếp phần 2, có gì sai sót xin các bạn chỉ giáo.
+
+<font size='+1'>Cấu hình cơ bản</font>
+
+Đầu tiên, các bạn cần đưa chỉ dẫn "ProxyRequests Off" vào để tránh kẻ khác lợi dụng thành forward proxy. Chúng ta sẽ cấu hình dựa trên một mô hình đơn giản: Server sẽ luân chuyển các request đến các back-and server dựa theo đường dẫn có trong Header của request:
+
+<br>
+			<div align="center" class="limitview"><img src='http://nhuhoang.net/images/revproxy03.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Ví dụ khi một user truy cập đến www.mcslp.com/marketing thì reverse proxy sẽ lấy nội dung của marketing.mcslp.com để cung cấp cho client. Trong phần cấu hình cho reverse proxy ta có chỉ dẫn sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ProxyPass &#91;path&#93; !|url</pre>
+		</div>
+Cấu hình cho cả 3 back-end server như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ProxyPass /marketing<span class="link"> http://marketing.mcslp.com</span>
+ProxyPass /accounts<span class="link"> http://finance.mcslp.com</span>
+ProxyPass /sales<span class="link"> http://sales.mcslp.com</span></pre>
+		</div>
+Và như vậy, www.mcslp.com/marketing/admin/index.html sẽ được lấy từ marketing.mcslp.com/admin/index.html . Nếu bạn không muốn reverse proxy luân chuyển các request đến một thư mục con trên back-end server thì bạn có thể dùng dấu chấm than (!) thay cho url. Ví dụ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ProxyPass /marketing/account !
+ProxyPass /marketing<span class="link"> http://marketing.mcslp.com</span></pre>
+		</div>
+Sẽ reverse proxy /marketing nhưng request đến /marketing/account không được luân chuyển đến<span class="link"> http://marketing.mcslp.com/account</span> 
+
+
+<font size='+1'>ProxyPassReverse </font>
+
+Chỉ dẫn ProxyPass có một nhược điểm, đó là nó không can thiệp vào header của reponse data nên nếu trong header có các trường như Location, URI hay Content-Location thì client sẽ dễ dàng biết được nguồn gốc thực sự của trang web đó. Ví dụ như bạn có một trang<span class="link"> http://marketing.mcslp.com/wwwect.php</span> có nội dung như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?
+header&#40;“Location:<span class="link"> http://marketing.mcslp.com/admin/</span>"&#41;;
+?&gt;</pre>
+		</div>
+Thì trong header của client ta sẽ thấy trường
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Location:<span class="link"> http://marketing.mcslp.com/admin/</span></pre>
+		</div>
+Chứ không phải
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Location:<span class="link"> http://www.mcslp.com/marketing/admin/</span></pre>
+		</div>
+như mong muốn.
+Để khắc phục ta thêm vào chỉ dẫn ProxyPassReverse, các tham số giống hệt ProxyPass:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ProxyPass /marketing<span class="link"> http://marketing.mcslp.com</span>
+ProxyPassReverse /marketing<span class="link"> http://marketing.mcslp.com</span></pre>
+		</div>
+Tác dụng của ProxyPassReverse là rewrite lại header của reponse data và với ví dụ trên, giá trị của trường location sẽ thực sự là<span class="link"> http://www.mcslp.com/marketing/admin/</span>
+
+<font size='+1'>Cấu hình hoàn chỉnh:</font>
+
+Đây chỉ là cấu hình mẫu của reverse proxy, các bạn còn phải thiết lập cho back-end server mà tôi không đề cập ở đây (xem thêm về VirtualHost trên trang chủ của apache)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;VirtualHost *:80&gt;
+    ServerName mcslp.com
+    Alias www.mcslp.com
+    DocumentRoot /var/www/mcslp.com
+
+    ProxyRequests Off
+    ProxyPass /marketing<span class="link"> http://marketing.mcslp.com</span>
+    ProxyPass /accounts<span class="link"> http://finance.mcslp.com</span>
+    ProxyPass /sales<span class="link"> http://sales.mcslp.com</span>
+    ProxyPassReverse /marketing<span class="link"> http://marketing.mcslp.com</span>
+    ProxyPassReverse /accounts<span class="link"> http://finance.mcslp.com</span>
+    ProxyPassReverse /sales<span class="link"> http://sales.mcslp.com</span>
+&lt;/VirtualHost&gt;</pre>
+		</div>
+
+Mod Proxy còn rất nhiều tính năng hay, các bạn có thể tham khảo <span class="link"> http://httpd.apache.org/docs/2.0/mod/mod_proxy.html</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#120712</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#120712</link>
+				<pubDate><![CDATA[Sat, 22 Mar 2008 20:36:49]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ Chú ý đối với Debian, mặc định apache sẽ deny các request đến đường dẫn sử dụng cho proxy. Bạn phải sửa file /etc/apache2/mods-enabled/proxy.conf và comment 3 dòng sau
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;Proxy *&gt;
+                AddDefaultCharset off
+                #Order deny,allow
+                #Deny from all
+                #Allow from .example.com
+         &lt;/Proxy&gt;</pre>
+		</div>
+sau đó khởi động lại apache]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#120718</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#120718</link>
+				<pubDate><![CDATA[Sat, 22 Mar 2008 20:46:23]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ Hello bro,
+
+Trước hết cám ơn bro đóng góp bài viết có giá trị cho HVA
+Nếu đã "chơi" Reverse Proxy thì sao không dùng Squid mà lại dùng Apache nhĩ , dù sao Squid cũng là phần mềm internet proxy caching cực tốt mà :) 
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/upload/2008/3/26/bc0bf5dbc9e9b258c955ab06d3929207_83486.png' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/upload/2008/3/26/8561bd989d4a4e73d52c110c7793f1d0_83486.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121281</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121281</link>
+				<pubDate><![CDATA[Wed, 26 Mar 2008 09:49:59]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>
+Nếu đã "chơi" Reverse Proxy thì sao không dùng Squid mà lại dùng Apache nhĩ , dù sao Squid cũng là phần mềm internet proxy caching cực tốt mà :) 
+&nbsp;
+		</blockquote>
+
+Một ứng dụng "chơi" Reverse Proxy với Apache là làm Load-Balancer (mod_proxy_balancer, Apache version 2.2.x trở lên).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121357</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121357</link>
+				<pubDate><![CDATA[Wed, 26 Mar 2008 16:14:14]]> GMT</pubDate>
+				<author><![CDATA[ safari]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Hello bro,
+Trước hết cám ơn bro đóng góp bài viết có giá trị cho HVA
+Nếu đã "chơi" Reverse Proxy thì sao không dùng Squid mà lại dùng Apache nhĩ , dù sao Squid cũng là phần mềm internet proxy caching cực tốt mà :) 
+&nbsp;
+		</blockquote>
+
+Em mới dùng squid làm forward proxy chứ chưa thử làm reverse. Để mai mốt tìm hiểu sau :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121425</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121425</link>
+				<pubDate><![CDATA[Wed, 26 Mar 2008 21:00:24]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ Bro ra Google gõ 
+Setting up Squid Reverse Proxy 
+Reverse Proxy using squid
+
+Chắc ngoài đó có đó :)
+Good luck]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121453</link>
+				<pubDate><![CDATA[Wed, 26 Mar 2008 23:13:57]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Làm Reverse Proxy với apache 2</title>
+				<description><![CDATA[ Squid làm forward proxy thì okie, nhưng làm reverse proxy thì không có tốt bằng thằng <span class="link"> http://varnish.projects.linpro.no/</span> đâu  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121756</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20326.hva#121756</link>
+				<pubDate><![CDATA[Fri, 28 Mar 2008 13:21:20]]> GMT</pubDate>
+				<author><![CDATA[ tinh.truong]]></author>
+			</item>
+	</channel>
+</rss>

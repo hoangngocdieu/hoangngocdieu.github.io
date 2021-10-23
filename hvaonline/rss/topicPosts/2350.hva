@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thiết lập webserver trên Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thiết lập webserver trên Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thiết lập webserver trên Linux</title>
+				<description><![CDATA[ Bài viết này tôi viết dành cho anh em mới bắt đầu làm quen với Linux, để bắt đầu cài đặt webserver thì bạn cần download Mysql-4.1.21, Apache_1.3.37 , Php-5.1.4
+
+Bài viết này cũng là nguồn tham khảo khi anh em đang sử dụng Apache 2.X, Mysql 4.1 mà muốn quay lại sử dụng Apache 1.X, MySQL 4.0 . Ở điểm nào sai hay không hiểu thì vui lòng đừng "chọt" hãy mở một topic mới chúng ta cùng bàn luận . 
+
+Anh em có thể ra Google để tìm link download những thứ mà mình cần 
+<b>Cài đặt Mysql-4.1.21</b>
+Đầu tiên download Mysql-4.1.21 và sử dụng tar để giải nén . 
+<blockquote>[root@localhost ~]# rpm -qa | grep -i MYSQL
+perl-DBD-MySQL-2.9007-1
+mysqlclient10-3.23.58-6
+mysql-4.1.11-2
+libdbi-dbd-mysql-0.7.1-3
+MySQL-python-1.2.0-1
+mysql-server-4.1.11-2&nbsp;
+		</blockquote>
+
+Nếu những dòng trên xuất hiện thì bạn làm bước sau để xoá bỏ tất cả các gói cài đặt (package) 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost ~&#93;# rpm -e mysql-4.1.11-2 
+&#91;root@localhost ~&#93;# rpm -e mysql-server-4.1.11-2</pre>
+		</div>
+
+Sau khi bạn xoá các gói cài đặt Mysql xong, bạn sử dụng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost ~&#93;# ps aux | grep mysqld 
+root      5567  0.0  0.1   3824   768 pts/1    S+   22:53   0:00 grep mysqld</pre>
+		</div>
+
+Làm sạch các process (tiến trình)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost ~&#93;#killall mysqld</pre>
+		</div>
+
+Tạo nhóm (nhóm này có tên là mysql)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost ~&#93;# groupadd mysql</pre>
+		</div>
+
+Tạo tài khoản người dùng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost ~&#93;# useradd -g mysql mysql</pre>
+		</div>
+
+Tiếp theo sử dụng trình <b>vi</b> để soạn thảo một script và đặt tên là <b>config_mysql</b>
+<blockquote>CFLAGS="-O3"
+CXX=gcc
+CXXFLAGS="-O3 \
+-mpentiumpro \
+-mstack-align-double \
+-felide-constructors \
+-fno-exceptions -fno-rtti"
+./configure \
+--prefix=/usr/local/mysql \
+--with-extra-charsets=complex \
+--enable-thread-safe-client \
+--enable-local-infile \
+--enable-assembler \
+--disable-shared \
+--with-client-ldflags=-all-static \
+--with-mysqld-ldflags=-all-static
+&nbsp;
+		</blockquote>
+
+Ở đoạn script này, khi cài đặt mysql xong thì đường dẫn chứa mysql sẽ là usr/local/mysql
+Sau khi tạo xong script bạn chép nó vào thư mục chứa  mã nguồn mysql ví dụ như /opt/mysql
+
+Chạy script này bằng lệnh (chú ý CHMOD cho script này sang 755)
+<blockquote>[root@localhost mysql-4.1.21]chmod 755 config_mysql
+[root@localhost mysql-4.1.21]#./config_mysql
+[root@localhost mysql-4.1.21]#make&nbsp;
+		</blockquote>
+
+Sau khi đợi cho nó kiểm tra lỗi xong, nếu không có lỗi xuất hiện . Bạn chạy tiếp lệnh sau
+<blockquote>[root@localhost mysql-4.1.21]#make install
+[root@localhost mysql-4.1.21]scripts/mysql_install_db
+[root@localhost mysql-4.1.21]chown -R root /usr/local/mysql
+[root@localhost mysql-4.1.21]chown -R mysql /usr/local/mysql/var
+[root@localhost mysql-4.1.21]chgrp -R mysql /usr/local/mysql&nbsp;
+		</blockquote>
+
+Đến đây việc cài Mysql đã hoàn tất . Chạy tiếp để test MySQL
+<blockquote>[root@localhost mysql-4.1.21]# /usr/local/mysql/bin/mysqladmin version
+/usr/local/mysql/bin/mysqladmin  Ver 8.41 Distrib 4.1.21, for pc-linux-gnu on i686
+Copyright (C) 2000 MySQL AB & MySQL Finland AB & TCX DataKonsult AB
+This software comes with ABSOLUTELY NO WARRANTY. This is free software,
+and you are welcome to modify and redistribute it under the GPL license
+Server version          4.1.21
+Protocol version        10
+Connection              Localhost via UNIX socket
+UNIX socket             /tmp/mysql.sock
+Uptime:                 8 min 52 sec
+Threads: 1  Questions: 1  Slow queries: 0  Opens: 11  Flush tables: 1  Open tables: 5  Queries per second avg: 0.002&nbsp;
+		</blockquote>
+
+<b>Chú ý : </b>
+- Kiểm tra file mysql.sock có thể nó không tồn tại
+- Kiểm tra file /etc/my.cnf và thay đổi đường dẫn chứa file mysql.sock
+
+Để tạo password mới cho nó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost mysql-4.1.21&#93;# /usr/local/mysql/bin/mysqladmin -u root password root</pre>
+		</div>
+Ở đây tôi đặt password là root để tiện việc tra cứu trên localhost (đừng sử dụng password như thế kẻo có ngày toi mạng)
+
+Nếu bạn sử dụng trên domain thì có thể sử dụng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/mysql/bin/mysqladmin -u root -h vietdown.org root goldenautumn</pre>
+		</div>
+goldenautumn : là password mới nhất của tôi
+
+Ok đến đây đã xong, bây giờ bạn muốn truy cập vào mysql thử xem
+<blockquote>[root@localhost mysql-4.1.21]# mysql -u root -p
+Enter password: <Nhập password ở đây dzô>&nbsp;
+		</blockquote>
+
+<b>Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 4 to server version: 4.1.21
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+mysql></b>
+
+Nếu màn hình như trên xuất hiện thì OK rồi đó bạn ah, ở đây bạn có thể tạo database, gán quyền truy cập đến database hay làm bất cứ cái gì mà mysql có . Tất cả đều có trong đây . 
+
+<b>Cấu hình cho Apache 1.3.6</b>
+Tôi thử xem các dịch vụ đang chạy trên PC của mình có em nào mang tên là httpd hay không, tôi gõ lệnh : 
+<blockquote>root@localhost mysql-4.1.21]# chkconfig --list
+httpd           0:off   1:off   2:on    3:off   4:off   5:off   6:off&nbsp;
+		</blockquote>
+
+Nhìn ở trên 0:off 1:off 2:on rồi cứ thế đến 6:off này là gì vậy bà con ?
+Đây gọi là runlevel đó mà , bà con tạm hiểu tiếng Việt cũng như tiếng Anh là mức hoạt động của hệ thống . 
+Trong *nix bao gồm 7 mức tính từ 0 cho đến 6 . Nó nằm trong /etc/rc.d/rc0 -> 6.d đó, bà con tìm hiểu phần này luôn nhé ,  nếu bà con không hiểu thì mở topic mới lên, tui và anh em dân chơi không sợ mưa rơi giải thích với bà con hiểu . 
+
+Tôi cũng làm giống như Mysql cũng chạy
+<blockquote>[root@localhost mysql-4.1.21]# rpm -q httpd
+httpd-2.0.54-10&nbsp;
+		</blockquote>
+Nó đây rồi, đừng đi đâu nữa , đem vài chai bia với mồi nhắm nó nhanh lên . 
+Apache cũa tôi đang sử dụng là 2.054-10 . Tôi thử xoá nó xem, 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost mysql-4.1.21&#93;#rpm -e httpd-2.0.54-10</pre>
+		</div>
+
+Một thông báo như sau xuất hiện . 
+<blockquote>error: Failed dependencies:
+        httpd-mmn = 20020903 is needed by (installed) mod_perl-2.0.0-0.rc5.3.i386
+        httpd-mmn = 20020903 is needed by (installed) mod_python-3.1.4-2.i386
+        httpd-mmn = 20020903 is needed by (installed) mod_ssl-2.0.54-10.i386
+        httpd-mmn = 20020903 is needed by (installed) php-5.0.4-10.i386
+        webserver is needed by (installed) webalizer-2.01_10-28.i386
+        httpd = 2.0.54-10 is needed by (installed) httpd-manual-2.0.54-10.i386
+        httpd >= 2.0.40 is needed by (installed) mod_perl-2.0.0-0.rc5.3.i386
+        httpd >= 2.0.40 is needed by (installed) mod_python-3.1.4-2.i386
+        httpd = 2.0.54-10 is needed by (installed) mod_ssl-2.0.54-10.i386
+        httpd is needed by (installed) system-config-httpd-1.3.2-2.noarch&nbsp;
+		</blockquote>
+
+Nhìn ở dòng này, có gì sai chăng bà con thử dịch nó sang tiếng Việt xem . Ở đây nào là mod_python-3.1.4-2.i386 , mod_ssl-2.0.54-10.i386 rồi đến mod_perl-2.0.0-0.rc5.3.i386 . Ở đây nó nói lên điều gì, vì mặc định các module Apache 2.x sẽ có thêm các module như mod_ssl, mod_python và mod_perl mặc định Apache 1.3 thì chắc chắn không có module mod_ssl . Vậy làm thế nào bây giờ nhĩ . “Xữ” nó vậy, tôi chạy tiếp (trừ cái Php ra nhé – nếu lỡ xoá nó thì chạy vào đây download nó về)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://dc.qut.edu.au/cgi-bin/rpm.cgi</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost mysql-4.1.21&#93;# rpm -e mod_ssl-2.0.54-10.i386</pre>
+		</div>
+Sau khi thực thi xong, xem các process dính dáng đến Apache nó còn chạy không
+<blockquote>[root@localhost mysql-4.1.21]# ps aux | grep httpd
+root     32621  0.0  0.1   3824   772 pts/2    S+   00:56   0:00 grep httpd&nbsp;
+		</blockquote>
+
+Nó còn thì chạy tiếp 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost mysql-4.1.21&#93;# killall httpd</pre>
+		</div>
+Sau khi làm sạch sẽ đám httpd xong, ta bắt đầu cài đặt Apache
+Download Apache ví dụ nó là apache_1.3.37 và giải nén nó ra , chép nó vào thư mục sau /usr/local/src
+Tạo một script sau và đặt tên cho nó là apache_install và nó nằm ở thư mục /root , cũng như Mysql tôi CHMOD nó sang 755
+<blockquote>cd /usr/local/src/apache_1.3.37
+make distclean
+./configure \
+--prefix=/www \
+--enable-module=so \
+--enable-module=rewrite \
+--enable-shared=rewrite \
+--enable-module=setenvif \
+--enable-shared=setenvif \
+--enable-module=mime \
+--enable-shared=mime \
+--enable-module=mime_magic \
+--enable-shared=mime_magic \
+--enable-module=dir \
+--enable-shared=dir \
+--enable-module=auth \
+--enable-shared=auth \
+--enable-module=access \
+--enable-shared=access \
+--enable-module=alias \
+--enable-shared=alias \
+--enable-module=status \
+--enable-shared=status \
+--enable-module=userdir \
+--enable-shared=userdir \
+--enable-module=vhost_alias \
+--enable-shared=vhost_alias \
+--enable-module=env \
+--enable-shared=env \
+--enable-module=log_referer \
+--enable-shared=log_referer \
+--enable-module=log_config \
+--enable-shared=log_config \
+--enable-module=log_agent \
+--enable-shared=log_agent \
+--enable-module=headers \
+--enable-shared=headers&nbsp;
+		</blockquote>
+
+<blockquote>[root@localhost ~]# ./apache_install
+[root@localhost ~]# cd /usr/local/src/apache_1.3.37
+[root@localhost apache_1.3.37]# make
+[root@localhost apache_1.3.37]# make install
+[root@localhost apache_1.3.37]# ln -s /www/bin/apachectl /usr/bin/apachectl
+[root@localhost apache_1.3.37]# ln -s /www/bin/apachectl /usr/sbin/apachectl&nbsp;
+		</blockquote>
+
+Bật Apache lên bà con nhé
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost apache_1.3.37&#93;# apachectl start</pre>
+		</div>
+
+<b>Cài đặt Php</b> 
+Đang ở thư mục /usr/local, tạo tiếp một script đặt tên là php_install
+
+<blockquote>cd php-5.1.4
+./configure \
+--with-apxs=/www/bin/apxs \
+--with-mysql=/usr/local/mysql \
+--enable-ftp \
+--enable-trans-sid&nbsp;
+		</blockquote>
+
+<blockquote>[root@localhost php-5.1.4]# make && make install
+[root@localhost php-5.1.4]# cp php.ini-dist /usr/local/lib/php.ini&nbsp;
+		</blockquote>
+
+Mở <b>/www/conf/httpd.conf</b> tìm dòng AddModule, thêm vào 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>AddModule mod_php5.c</pre>
+		</div>
+
+Tìm dòng LoadModule, thêm vào
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LoadModule php5_module        libexec/libphp5.so</pre>
+		</div>
+
+Tìm dòng <IfModule mod_dir.c> thay đổi nó thành 
+<blockquote><IfModule mod_dir.c>
+    DirectoryIndex index.php default.php index.html index.htm
+</IfModule>&nbsp;
+		</blockquote>
+
+Ok bây giờ thử tạo tập tin .php nào đó và chạy nó xem 
+Tập tin index.php của tôi
+<blockquote><?php
+echo 'Toi yeu vo tui';
+?>&nbsp;
+		</blockquote>
+
+Bây giờ mở trình duyệt lên và test thử xem <span class="link"> http://localhost/index.php</span>
+
+<font color='lime'><b>Một điểm cần lưu ý : </b></font>
+Ở đây tôi dùng PHP 5.1.4 kết hợp với Apache 1.3 vì vậy khi cài đặt có thể libphp5.so không được load vì vậy khi bật Apache lên thì thông báo như sau xuất hiện 
+<blockquote>[root@localhost php-5.1.4]# apachectl start
+Syntax error on line 221 of /www/conf/httpd.conf:
+Cannot load /www/libexec/libphp5.so into server: /www/libexec/libphp5.so: cannot restore segment prot after reloc: Permission denied
+/usr/sbin/apachectl start: httpd could not be started&nbsp;
+		</blockquote>
+Bạn nghĩ Permission Denied thì mình CHMOD cho nó ? Đừng có lộn
+
+Chạy dòng này để cho nó load  libphp5.so
+<blockquote>[root@localhost apache_1.3.37]# chcon  /www/libexec/libphp5.so  -t shlib_t
+[root@localhost apache_1.3.37]# apachectl start
+/usr/sbin/apachectl start: httpd started&nbsp;
+		</blockquote>
+
+OK xong rồi đó bà con, chúc bà con thành công .
+
+Tiếng vợ tôi ở bên tai  : Ngày mai ông mà đi công tác, không có nhìn con nhỏ nào à nghen, ông mà lén xén với con nhỏ nào thì về đây biết tay tui . 
+Ý mèn đét ơi yêu nhau mấy năm nay chuẩn bị lên xe bông mà còn như thế . 
+Thôi thì chiều nàng vậy, tôi xếp máy lại và post bài viết này ở 2 diễn đàn mà tôi yêu thích nhất . 
+Hẹn gặp bà con trong dịp khác, <b>cấu hình bảo mật Apache</b> . 
+<b>Golden Autumn</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2350.hva#12288</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2350.hva#12288</link>
+				<pubDate><![CDATA[Fri, 4 Aug 2006 03:06:54]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Thiết lập webserver trên Linux</title>
+				<description><![CDATA[ Hôm nay có chút việc cần phải build mysql , vừa nhấp chuột copy lệnh của anh xài ...  sau khi em build xong thấy có vài chổ thiếu , em bổ xung vào anh nhé :))
+
+-------------------
+
+Chạy script này bằng lệnh (chú ý CHMOD cho script này sang 755)
+
+<blockquote>    [root@localhost mysql-4.1.21]chmod 755 config_mysql
+    [root@localhost mysql-4.1.21]#./config_mysql
+    [root@localhost mysql-4.1.21]#make  
+&nbsp;
+		</blockquote>
+
+
+Sau khi đợi cho nó kiểm tra lỗi xong, nếu không có lỗi xuất hiện . Bạn chạy tiếp lệnh sau
+<blockquote>
+    [root@localhost mysql-4.1.21]#make install
+    [root@localhost mysql-4.1.21]make /usr/local/mysql/var
+    [root@localhost mysql-4.1.21]chown -R root /usr/local/mysql
+    [root@localhost mysql-4.1.21]chown -R mysql /usr/local/mysql/var
+    [root@localhost mysql-4.1.21]chgrp -R mysql /usr/local/mysql  
+
+&nbsp;
+		</blockquote>
+
+<b>Copy script tự khởi động mysql và file my.cnf
+
+<blockquote>
+shell&gt; ./scripts/mysql_install_db --user=mysql
+shell&gt; cp support-files/my-medium.cnf /etc/my.cnf
+shell&gt; cp support-files/mysql.server /etc/rc.d/init.d/mysqld
+&nbsp;
+		</blockquote></b>
+
+<b>Khởi động mysqld
+<blockquote>shell&gt;  service mysqld start&nbsp;
+		</blockquote>
+</b>
+
+Đến đây việc cài Mysql đã hoàn tất . Chạy tiếp để test MySQL
+
+<blockquote>    [root@localhost mysql-4.1.21]# /usr/local/mysql/bin/mysqladmin version
+    /usr/local/mysql/bin/mysqladmin Ver 8.41 Distrib 4.1.21, for pc-linux-gnu on i686
+    Copyright (C) 2000 MySQL AB & MySQL Finland AB & TCX DataKonsult AB
+    This software comes with ABSOLUTELY NO WARRANTY. This is free software,
+    and you are welcome to modify and redistribute it under the GPL license
+    Server version 4.1.21
+    Protocol version 10
+    Connection Localhost via UNIX socket
+    UNIX socket /tmp/mysql.sock
+    Uptime: 8 min 52 sec
+    Threads: 1 Questions: 1 Slow queries: 0 Opens: 11 Flush tables: 1 Open tables: 5 Queries per second avg: 0.002  &nbsp;
+		</blockquote> 
+
+
+ :wink: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2350.hva#36750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2350.hva#36750</link>
+				<pubDate><![CDATA[Tue, 16 Jan 2007 22:48:48]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Thiết lập webserver trên Linux</title>
+				<description><![CDATA[ thanks !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2350.hva#237472</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2350.hva#237472</link>
+				<pubDate><![CDATA[Thu, 19 May 2011 23:55:01]]> GMT</pubDate>
+				<author><![CDATA[ leocapiro]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Khai thác và phòng chống Path Traversal Attack"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Khai thác và phòng chống Path Traversal Attack"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ <font color='orange'><b>I. GIỚI THIỆU</b></font>
+
+Path Traversal hay còn được biết với một số tên khác như “dot-dot-slash”, “directory traversal”,”directory clumbing” và “backtracking” là hình thức tấn công truy cập đến những file và thư mục mà được lưu bên ngoài thư mục webroot. Hình thức tấn công này không cần sử dụng một công cụ nào mà chỉ đơn thuần thao tác các biến với ../ (dot-dot-slash) để truy cập đến file, thư mục, bao gồm cả source code, những file hệ thống, … 
+Để nhận biết khả năng khai thác lỗi này, các kẻ tấn công thường quan sát kết quả có được từ spider hoặc crawler mang lại. Quan sát khả năng khai thác Path Traversal ở đây là gì ?
+Ví dụ kết quả trả về từ Spider hay Crawler có dạng sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://seamoun.com/getUserProfile.jsp?page=main.html<span class="link"> http://seamoun.com/index.php?file=help</span><span class="link"> http://seamoun.com/main.cgi?home=index.htm</span></pre>
+		</div>
+Ngoài ra các bạn còn thấy nhiều dạng URL khác mà có “mùi” Path Traversal, các bạn tự hỏi làm sao biết được ? Trả lời: thông qua kinh nghiệm khi phân tích URL mà có được.
+
+<font color='orange'><b>II. KHAI THÁC</b></font>
+
+Khi có được kết quả từ việc spider Website với các URL có dạng như trên, kẻ tấn công có thể sử dụng “../” để thử liệu có truy cập file và thư mục khác được không ? Ví dụ
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://seamoun.com/getUserProfile.jsp?page=../../../etc/passwd</pre>
+		</div>
+Dựa vào thông báo lỗi từ Website kẻ tấn công biết được đường dẫn thực sự trên WebServer, từ đó có thể kết hợp với ../ (dot-dot-slash) để truy cập đến những file quan trong của Website như database, file cấu hình, …
+Lưu ý rằng Path Traversal không chỉ xảy ra đối với các biến trong phương thức GET mà còn có thể xuất hiện trong các phương thức POST hoặc biến COOKIE.
+<blockquote>
+Ví dụ: Một số website có thể sử dụng COOKIE để lưu template động cho Website như sau:
+Cookie: ID= 2ddd73ef3620afc62cd6942c31bb6003:TEMPLATE=xpstyle
+Cookie: USER=member1234: PSTYLE=Green
+Như vậy kẻ tấn công có thể thay đổi COOKIE để thực hiện Path Traversal Attack như sau
+Cookie: ID= 2ddd73ef3620afc62cd6942c31bb6003:TEMPLATE=xpstyle
+Cookie: USER=member1234: PSTYLE=../../etc/passwd
+&nbsp;
+		</blockquote>
+
+Trong quá trình khai thác kẻ tấn công có thể encode hoặc double encode, sử dụng %00(null) để bypass filter mà Website đó áp dụng.
+Ví dụ:
+<blockquote>
+%2e%2e%2f mô tả cho ../
+%2e%2e/ mô tả cho ../
+..%2f mô tả cho ../
+%2e%2e%5c mô tả cho ..\
+%2e%2e\ mô tả cho ..\
+..%5c mô tả cho ..\
+%252e%252e%255c mô tả cho ..\
+..%255c mô tả cho ..\
+…
+
+Đối với UTF-8
+..%c0%af mô tả cho ../
+..%c1%9c mô tả cho  ..\
+&nbsp;
+		</blockquote>
+
+Khi tiếp cận với một ứng dụng Web, việc kiểm tra nó có khả năng bị lỗi Path Traversal có thể được thực hiện bằng hai loại:
+	+ Nếu kẻ tấn công không thể có source thì chúng sẽ dùng spider, crawler để thực hiện kiểm tra Website và từ những kết quả mà spider mang lại chúng sẽ lần lượt kiểm tra các biến đối với các phương thức GET, POST hoặc COOKIE mà có khả năng bị lỗi.
+	+ Nếu kẻ tấn công có source code thì có thể tìm kiếm những hàm của những ngôn ngữ lập trình Web mà có khả năng gây ra lỗi Path Traversal như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>PHP: include&#40;&#41;, include_once&#40;&#41;, require&#40;&#41;, require_once&#40;&#41;, fopen&#40;&#41;, readfile&#40;&#41;, ... 
+	JSP/Servlet: java.io.File&#40;&#41;, java.io.FileReader&#40;&#41;, ...
+	ASP: include file, include virtual, ...</pre>
+		</div>
+
+Demo khai thác Path Traversal (X7 Chat). Trong đoạn demo sau đây giả sử kẻ tấn công không biết source code của ứng dụng Web X7 Chat và thực hiện spider để kiểm tra nội dung Website. 
+(Download file demo bên dưới, chỉ có login mới thấy file download)
+
+<font color='orange'><b>III. PHÒNG CHỐNG</b></font>
+
+Việc phòng chống Path Traversal Attack phải thực hiện kiểm tra biến cẩn thận (có thể áp dụng filter) khi sử dụng các hàm đã giới thiệu ở trên mà có khả năng gây ra lỗi cho phép kẻ tấn công thực hiện Path Traversal. Tuy nhiên một số filter như
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>str_replace&#40;"../","",$_GET&#91;'help_file'&#93;&#41;</pre>
+		</div>
+thì vẫn bị lỗi bởi lẽ kẻ tấn công có thể sử dụng “….//” như thế sau khi qua code lọc ở trên nó sẽ trở thành “../”. Rõ ràng việc lọc như vậy vẫn không triệt để. Thay vào đó các bạn nên sử dụng các biểu thức chính để lọc tốt hơn.
+Ví dụ
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>eregi&#40;"&#91;\\/&#93;","{$_GET&#91;'help_file'&#93;}"&#41;</pre>
+		</div>
+
+Công cụ sử dụng Website Crawler: Acunetix 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#153462</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#153462</link>
+				<pubDate><![CDATA[Tue, 30 Sep 2008 18:47:50]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ Nếu tôi đoán không lầm cậu từng có nick là l0ng gì đấy phải không? Lần sau mà còn post link kiểu đó là tạo nick mới nhá. Đây là thread để trình bày về kỹ thuật và cách phòng chống này. Không phải để cho các cậu vào đây show]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154658</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154658</link>
+				<pubDate><![CDATA[Thu, 9 Oct 2008 18:21:31]]> GMT</pubDate>
+				<author><![CDATA[ hacnho]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ Hoan nghênh bài viết của seamoun. 
+
+Trong phần thí dụ 
+<blockquote>http://seamoun.com/getUserProfile.jsp?page=main.html
+<span class="link"> http://seamoun.com/index.php?file=help</span>
+<span class="link"> http://seamoun.com/main.cgi?home=index.htm&nbsp;</span>
+		</blockquote>
+
+thì seamoun nên thay bằng một domain đang active, hoặc chỉ viết là: 
+<span class="link"> http://example.com</span> hay<span class="link"> http://yourname.com</span> ..... 
+
+Vì domaim<b><font color='orange'> "seamoun. com"</font></b> tuy đã đựoc đăng ký, nhưng hiên ở status : deleted and <b><font color='orange'>available again</font></b>. Do vây, tai thời điểm này, không tỉm thấy IP cùa domain-website "seamoun. com" và dĩ nhiên không có bất cứ một URL nào liên quan đến domain "seamoun. com". 
+
+Như vậy sẽ tránh những hiểu lầm và reaction đáng tiếc đã xảy ra]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154830</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154830</link>
+				<pubDate><![CDATA[Sat, 11 Oct 2008 08:20:02]]> GMT</pubDate>
+				<author><![CDATA[ PXMMRF]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">PXMMRF wrote:</cite><br>
+		<blockquote>Hoan nghênh bài viết của seamoun. 
+
+Trong phần thí dụ 
+<blockquote>http://seamoun.com/getUserProfile.jsp?page=main.html
+<span class="link"> http://seamoun.com/index.php?file=help</span>
+<span class="link"> http://seamoun.com/main.cgi?home=index.htm&nbsp;</span>
+		</blockquote>
+
+thì seamoun nên thay bằng một domain đang active, hoặc chỉ viết là: 
+<span class="link"> http://example.com</span> hay<span class="link"> http://yourname.com</span> ..... 
+
+Vì domaim<b><font color='orange'> "seamoun. com"</font></b> tuy đã đựoc đăng ký, nhưng hiên ở status : deleted and <b><font color='orange'>available again</font></b>. Do vây, tai thời điểm này, không tỉm thấy IP cùa domain-website "seamoun. com" và dĩ nhiên không có bất cứ một URL nào liên quan đến domain "seamoun. com". 
+
+Như vậy sẽ tránh những hiểu lầm và reaction đáng tiếc đã xảy ra&nbsp;
+		</blockquote>
+Thưa anh ! Chả là trên máy em, em có cái HTTPD, FTP, ... và em thay đổi cái file host trên máy em 127.0.0.1&lt;--&gt;seamoun.com để thuận tiện trong việc em làm mấy cái demo  :^)  :D  ấy mà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154916</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#154916</link>
+				<pubDate><![CDATA[Sat, 11 Oct 2008 20:58:00]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ Mấy bạn cho mình hỏi:
+1/ Path Traversal có thuộc dạng LFI không vậy. Vì mình thấy bài viết trên cũng chỉ đề cập khai thác các file ở local nà thôi, không remote ra ngoài như RFI.
+2/ Sẵn tiện Path Traversal cho mình hỏi thêm câu nữa.  Với Apache 2.2.6 mình đã test với kỹ thuật Injecting PHP code into apache logs như thế này
+http://localhost/site.php?u= &lt;?php phpinfo(); ?&gt;
+Mình đã thử thay đổi nhiều cách nhưng trong file log lại encode sang %3C và %3E ký tự &lt; và &gt;
+Có phải Apache version này đã khắc phục lỗi trên rồi không vậy.
+Với phương thức POST hoặc GET của PHP tại sao mình submit form với nội dung &lt;?php phpinfo(); ?&gt;  thì $_GET và $_POST của PHP lại không nhận được.
+Thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#169349</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#169349</link>
+				<pubDate><![CDATA[Fri, 13 Feb 2009 18:25:23]]> GMT</pubDate>
+				<author><![CDATA[ phstiger]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống Path Traversal Attack</title>
+				<description><![CDATA[ uh nó là local file include đấy bạn ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25352.hva#174863</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25352.hva#174863</link>
+				<pubDate><![CDATA[Thu, 26 Mar 2009 14:18:50]]> GMT</pubDate>
+				<author><![CDATA[ micr0vnn]]></author>
+			</item>
+	</channel>
+</rss>

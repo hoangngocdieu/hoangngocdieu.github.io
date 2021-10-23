@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Ký sự các vụ DDoS đến HVA - Phần 19"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Ký sự các vụ DDoS đến HVA - Phần 19"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 19</title>
+				<description><![CDATA[ <b>22/04/2005</b>
+Hai ngày vừa qua, 21/04 và 22/04/2005, HVA hứng đỡ một dạng tấn công mới của "x-flash". Điểm đặc biệt của dạng này là hơn 95% các gói tin gởi vào HVA <b>hoàn toàn hợp lệ</b> từ giao thức cho đến header và payload. Tại sao tôi biết được chúng chính là "x-flash"? lý do rất đơn giản là khoảng 5% các gói tin lần này vẫn còn mang header "x-flash-version: 7,0,19,0". Vì lý do gì đó, 95% các gói tin còn lại không có header như thế (có lẽ như mọi lần, các cú x-flash này được một hoặc nhiều proxy "lột" mất header) nhưng nội dung y hệt nhau.
+
+Hãy thử xem một mảnh request như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET /forum/index.php HTTP/1.1
+Accept: */*
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1&#41;
+Connection: Keep-Alive
+Cache-Control: no-cache
+Host: hvaonline.net</pre>
+		</div>
+Không thể bắt bẻ ở đâu được, bạn nhỉ?
+
+Hãy xem thêm một mảnh khác:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>POST /forum/index.php HTTP/1.1
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 5
+Accept-Encoding: gzip, deflate
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1&#41;
+Host: www.hvaonline.net
+Connection: Keep-Alive
+Cache-Control: no-cache
+
+num=2</pre>
+		</div>
+Bạn thử tìm xem có bất cứ dấu hiệu gì đáng chú ý trên mảnh POST ở trên không? Trên header của cả 2 cú GET và POST ở trên, mọi parameters đều hợp lệ và hoàn toàn đúng quy định. Chỉ có trên phần payload của cú POST có vỏn vẹn thông tin: <b>num=2.</b> Nói về mặt giao thức, num=2 chẳng có gì trái quấy cả cho nên chúng vẫn tạo load trên máy chủ. May thay, để nhận diện và tạo một luật loại trừ nó, các mảnh "num=" này là chìa khoá. Các cú POST ở dạng này đã "bị" tiêu hủy nhanh chóng sau khi một rule mới được hình thành trên cơ chế phòng thủ của HVA. Ngoài ra, trong đợt tấn công này, "chủ nhân" của mớ x-flash còn kèm theo vài dạng URL request khá ngớ ngẩn và không đáng để đào sâu. Tuy nhiên, đa số các cú request dùng để tấn công lần này ở dạng GET (như trên) cho nên việc cản lọc các cú POST và các cú request mang header "x-flash" chỉ giảm thiểu một phần rất nhỏ lượng tấn công.
+
+Theo bạn, trong 2 ví dụ trên ví dụ nào khó xử lý? Tôi nghĩ cú GET cực kỳ khó xử lý. Chúng khó xử lý vì có 2 điểm chính:
+
+1. Chúng hoàn toàn hợp lệ (ít ra có đến 95% các gói tin ở dạng này không còn mang x-flash header)
+2. Chúng được gởi đến HVA từ trên 500 IP khác nhau trên thế giới và mỗi IP gởi request với biên độ bất thường, xấp xỉ 1 giây 3 request hoặc ít nhiều nằm trong biên độ này. Đây là lý do chúng dễ dàng đi qua khỏi cơ chế limit connection của HVA.
+
+Không may, mấy ngày qua tôi bị "dính" vào giai đoạn cao điểm của mấy project lớn ở công ty nên không có nhiều thời gian tẩn mẩn với các mảnh "tcp". Trong suốt 2 ngày 21 và 22 tháng 4, tôi cố gắng log vào HVA server (xuyên qua SSH) nhiều lần nhưng bị thất bại vì bị lỗi "connection timeout". Tôi đoán rằng đường dây HVA dùng đã lên đến mức báo động vì tắc nghẽn sau khi JAL cho biết (thông qua YIM) rằng server load không quá cao.
+
+Chiều nay, tôi quyết định dành ít thời giờ cho HVA để xem xét cái "vấn nạn" x-flash dai dẳng này. Tôi log vào YIM và nhờ JAL tắt hết mọi dịch vụ, chỉ để SSH chạy. Chúng tôi thử "liên thủ" thao tác như lần trước nhưng lần này tình hình có vẻ căng hơn vì SSH cực chậm. Tuy nhiên, rốt cuộc tôi cũng log vào được. 
+
+Điều đầu tiên tôi thực hiện là điều chỉnh firewall để nó cho phép traffic dành cho SSH được ưu tiên cao nhất (hay nói một cách khác, các rules dùng để điều tác traffic dành cho SSH được đưa lên đầu trong các rules). Tôi restart lại firewall và ngồi chờ. Chỉ mỗi việc load lại firewall rule trong điều kiện tắc nghẽn này cũng mất hơn 2 phút. Tôi chậc lưỡi, log vào SSH của HVA server lần nữa. Quả thật, sắp xếp lại thứ tự cho SSH rules tạo nên thay đổi rõ rệt. Tại sao tôi không điều chỉnh luật cho SSH như thế ngay từ đầu nhỉ? Xem như đây là một trong những cái nhìn hạn hẹp khi tôi thiết lập firewall rules cho HVA ngay từ đầu. Tôi đã không nghĩ đến khả năng các gói tin tấn công đường dây optic fibre của JAL có thể đi đến tình trạng không thể log vào SSH.
+
+Tôi bắt tay vào việc xem xét HVA server.
+
+Điều đầu tiên tôi nhận thấy là các request ở trên không còn "đánh" lan man vào các URL không tồn tại nữa mà "đánh" rất cụ thể vào <b>index.php.</b> Đây là một điểm rất yếu về cấu trúc của HVA forum (hay bất cứ php-based forum nào). Nói cho cùng, người thiết kế IPB forum này là một người hiền hoà, có lẽ anh ta chẳng bao giờ nghĩ rằng có ai đó sẽ request index.php một ngàn lần trong một giây :). Thực tế nặng nề mà HVA đang hứng chịu có lẽ nằm ngoài tưởng tượng của người thiết kế IPB. Như bạn biết, khi một request đụng phải index.php, php engine "ngoan ngoãn" biên dịch và thao tác những bước cần thiết (kể cả việc gởi ít nhất 5 queries đến database) để hình thành một "trang động" trước khi gởi ngược về trình duyệt. Trong trường hợp HVA có vài trăm người cùng vào, kẻ gởi bài, người xem bài thì máy chủ của HVA vẫn có thể đảm đang một cách khá dễ dàng. Tuy nhiên, có máy nào chịu nổi vài ngàn request một giây với 5 - 12 queries đến database cho mỗi request?
+
+<b>Tại sao không cản?</b> Bạn hỏi. <b>Cản gì đây?</b> Tôi trả lời bằng câu hỏi ngược lại. Với các request như đã dẫn ở trên, thực tế chẳng có bất cứ đặc điểm nào để cản cả. Chúng đâu phải "x-flash" (mặc dù chúng chính là "x-flash" nhưng không có thông tin biểu thị "x-flash" trong header). Một biện pháp cản lâu dài tôi có thể nghĩ ra trong khoảng thời gian hạn hẹp này là "cản" không cho bất cứ request nào đi thẳng đến *.php cả. Làm được điều này, sự cản trở đầu tiên sẽ là việc loại trừ khả năng các cú 'x-flash' "ép" HVA forum ngoan ngoãn gởi queries đến database và tạo load trên máy chủ. Cả request "hợp lệ" lẫn "bất hợp lệ" đều phải đi xuyên qua các đường dẫn trước khi các *.php thực thi công tác. Để thực hiện chuyện này, tôi có thể vận dụng một trong hai cách: a) dùng mod_rewite trong .htaccess hoặc b) dùng mod_security và thiết lập bộ "luật" tinh vi hơn. Cả hai cách tôi đều cần một ít thời gian để thực hiện.
+
+Đã gần giờ tan sở, tôi e rằng tôi không còn bao nhiêu thời gian để thực hiện ý định này. Trao đổi với nhau xuyên qua YIM, tôi thông báo tình hình cho JAL biết. Sau một hồi, JAL đề nghị: <i>"hay mình thử dùng ssl đi lão".</i> Tôi đồng ý ngay vì tôi biết rõ ssl trong tình trạng hiện tại là cách xử lý nhanh nhất, hy vọng tạm thời có thể đỡ được trận DoS cho đến khi dự định "dài hạn" ở trên được thực hiện.
+
+Tôi thử log vào HVA forum xuyên qua https. Không nhanh, nhưng cũng không chậm. Tôi gởi JAL một thông điệp: <i>"mình phải đóng luôn cổng 80 và tìm cách ép request đến cổng 80 được wwwect sang cổng 443 thì mới ổn"</i> và lý do tại sao tôi gởi JAL thông điệp này thì quá hiển nhiên, bạn nhỉ? :). Sau vài thử nghiệm tôi quyết định dùng cách ra lệnh iptables "ép" các gói tin đi đến cổng 80 phải chuyển sang cổng 443 ở tầng IP. Nếu không thực hiện quy trình này, sau khi đóng cổng 80, mọi request đến đây rồi dừng hẳn vì chẳng hề có dịch vụ nào đang chạy trên cổng 80 để thực thi "rewrite" hay bất cứ phương cách tương tự nào. 
+
+Trên hồ sơ cấu hình apache, tôi "comment" dòng "lắng nghe" trên cổng 80 như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Listen *:80</pre>
+		</div>
+Làm như thế, máy chủ HVA hoàn toàn không còn dịch vụ nào lắng nghe trên cổng 80.
+
+Trên IP layer, tôi dùng iptables để "wwwect" như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -i eth0 -p tcp --syn -s any/0 -d $IP --dport 80 -j REDIRECT --toport 443</pre>
+		</div>
+Làm như thế, khi một gói tin đi vào với đích là cổng 80 thì sẽ được iptables chuyển thẳng đến cổng 443. Khi gói tin này đi đến tầng application, nó không thể đi thẳng vào forum của HVA mà sẽ "khựng" lại ở hai chỗ: 
+
+a) chỗ thứ nhất khi request từ trình duyệt đòi hỏi dịch vụ ở cổng 80 nhưng lại được đưa đến cổng 443 (không qua cơ chế rewrite trên application layer nào cả), trình duyệt sẽ không tiếp tục đi vào. Người dùng "hợp lệ" sẽ nhận được thông báo đại loại là <i>"bạn cần dịch vụ ở cổng 80 nhưng lại kết thúc ở cổng 443, dùng thế này không hợp lý. Đề nghị dùng<span class="link"> https://hvaonline.net</span>".</i>
+
+b) khi người dùng nhận được thông báo trên, đa số (99.9%) người dùng sẽ bấm theo đường dẫn<span class="link"> https://hvaonline.net</span> ở trên mà đi vào diễn đàn. Tuy nhiên, ở bước này trình duyệt lại "khựng" thêm một lần thứ nhì vì vấn đề ssl certification mà HVA dùng. Nếu HVA dùng CA certificate (do Verisign, Thawe....) cung cấp thì sẽ không có tình trạng này vì chìa khoá của HVA đã được xác thực bởi một CA và chìa khóa công cộng của CA nào HVA dùng đã có sẵn trong trình duyệt theo mặc định. Thực tế, HVA dùng "self cert", có nghĩa là HVA tự tạo cho mình "chìa khoá" và tự ký xác nhận cho mình luôn. Bởi thế, trong trình duyệt của người dùng không có gì để xác thực là chìa khoá của HVA đáng tin cậy nên nó lại "cảnh báo" người dùng trước khi họ tiếp nhận hay không tiếp nhận certificate này.
+
+Với tình trạng DoS hiện thời, chỉ mỗi bước a) ở trên đã đủ ngăn cản đám "x-flash hợp lệ" kia. Nếu "chủ nhân" của đám x-flash sớm nhận ra điều này, anh chàng có thể đổi mục tiêu tấn công từ<span class="link"> http://www.hvaonline.net</span> thành<span class="link"> https://www.hvaonline.net.</span> Tuy nhiên, bước b) trên sẽ tiếp tục cản đám x-flash vì các của request xuyên qua x-flash hoàn toàn chạy ngầm và người dùng không hề biết có x-flash đang thực thi (để tấn công HVA) nên việc xác nhận + chấp nhận ssl của HVA hoàn toàn không xảy ra ---&gt; các cú x-flash ngưng lại ở đây. 
+
+Tôi restart lại firewall và apache sau khi thực hiện các thay đổi cần thiết. Nhìn đồng hồ, tôi chậc lưỡi <i>"chà, trễ tàu rồi".</i> Tuy nhiên, tôi yên tâm khi thấy server load của máy chủ HVA tụt xuống nhanh chóng và truy cập xuyên qua https với tốc độ tạm chấp nhận được. Tôi gởi JAL thông điệp <i>"tình hình có vẻ ổn rồi đó bồ, tớ phải dzọt!".</i>
+
+Chuyện tiếp tục xảy ra những ngày sau đó? Mời bạn đón xem phần kế tiếp.
+
+<i>Các bạn có thể theo dõi tiếp phần 20 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/511.hva</span> 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/510.hva#1505</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/510.hva#1505</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 15:33:09]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+	</channel>
+</rss>

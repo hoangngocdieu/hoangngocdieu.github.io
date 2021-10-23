@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "vd_"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/216148.hva</link>
+		<description><![CDATA[Messages posted by "vd_"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>sử dụng OSSEC để theo dõi process</title>
+				<description><![CDATA[ OSSEC (ossec.net) là một hệ thống khá hiệu quả để phát hiện và phòng chống thâm nhập. Tui tóm tắt 1 cách sử dụng hơi khác với cách cài đặt truyền thống như sau:
+
+Case: 
+- Máy windows có chạy 1 ứng dụng. Mục tiêu là cần phải theo dõi service đó coi có đang chạy hay không.
+- Phân tích: ứng dụng chạy thì sẽ phải ghi dữ liệu. Do vậy có thể viết script để theo dõi coi ứng dụng có mở file ra để ghi dữ liệu vào hay không -&gt; cần có:
+  + handle.exe trong bộ Sysinternals để in ra các file mà 1 process mở (tương ứng trong Linux là lsof)
+  + .cmd (.bat) để chạy handle và lọc in ra thông tin
+  + ossec agent chạy tại máy để gửi về ossec server phân tích thông tin và xử lý (gửi mail hoặc active response)
+
+- Cấu hình:
+  + File path_to_cmd_file:
+  c:\sysinternals\handle.exe -p processname filename | find /c &quot;type: File&quot;
+
+  Ý nghĩa: đếm số filename do processname mở. Các bạn có thể thêm prefix/suffix để matching trong rule 100002 bên dưới dễ dàng.
+
+  + Ossec agent ossec.conf, phần &lt;ossec_config&gt;, thêm vào bên trong:
+  &lt;localfile&gt;
+    &lt;log_format&gt;full_command&lt;/log_format&gt;
+    &lt;command&gt;path_to_cmd_file&lt;/command&gt;
+    &lt;alias&gt;files_check&lt;/alias&gt;
+    &lt;frequency&gt;900&lt;/frequency&gt;
+  &lt;/localfile&gt;
+
+  Ý nghĩa: ossec agent sẽ chạy path_to_cmd_file, output của path_to_cmd_file sẽ được gửi về OSSEC server phân tích và xử lý. 900 giây sẽ chạy 1 lần. Mỗi lần report kết quả về sẽ có prefix là "ossec: output: 'files_check'"
+
+  + Ossec server rules/local_rules.xml
+  &lt;rule id="100001" level="1"&gt;
+    &lt;if_sid&gt;530&lt;/if_sid&gt;
+    &lt;match&gt;ossec: output: 'files_check&lt;/match&gt;
+    &lt;description&gt;File event&lt;/description&gt;
+  &lt;/rule&gt;
+  &lt;rule id="100002" level="12" ignore="900"&gt;
+     &lt;if_sid&gt;100001&lt;/if_sid&gt;
+     &lt;regex&gt;output_of_cmd_file&lt;/regex&gt;
+     &lt;description&gt;Description&lt;/description&gt;
+     &lt;options&gt;alert_by_email&lt;/options&gt;
+  &lt;/rule&gt;
+
+  Ý nghĩa: sau khi agent chạy full_command 'files_check' (rule 100001 sẽ match sau rule 530), nếu kết quả có string 'output_of_cmd_file' thì phát sinh event 100002 và gửi mail
+
+  + Ossec server ossec.conf, bên trong &lt;ossec_config&gt;, thêm:
+  &lt;email_alerts&gt;
+      &lt;email_to&gt;emails&lt;/email_to&gt;
+      &lt;rule_id&gt;100002&lt;/rule_id&gt;
+      &lt;do_not_delay/&gt;
+      &lt;do_not_group/&gt;
+  &lt;/email_alerts&gt;
+
+  Ý nghĩa: nếu rule 100002 thì gửi mail ngay lập tức đến emails
+
+  Bắt được event 100002 trên Ossec server thì tùy nghi bạn xử lý.
+
+  Lưu ý: 
+  + Phải dùng psexec để chạy handle.exe với quyền system trước khi gắn vào ossec, tại vì sysinternals có màn hình accept end user agreement.
+  + Localfile dùng full_command PHẢI ĐƯỢC để trong ossec.conf của agent, không phải ở ossec.conf của server
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45670/280809.hva#280809</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45670/280809.hva#280809</link>
+				<pubDate><![CDATA[Tue, 10 Jun 2014 02:30:40]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title> thông báo bằng sound khi ossec HIDS phát hiện bị tấn cộng</title>
+				<description><![CDATA[ Dùng OSSEC thì có nhiều cách để xử lý:
+- Active response script của OSSEC để chạy 1 command khi rule match. Bạn xem ví dụ về active response trên trang OSSEC
+- Xử lý mail report của OSSEC: trên mail server khi nhận ossec mail thì sẽ chạy script tương ứng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45516/280806.hva#280806</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45516/280806.hva#280806</link>
+				<pubDate><![CDATA[Mon, 9 Jun 2014 23:59:48]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ @ngtrongtri:
+
+Bạn không sử dụng sticky session (worker.loadbalancer.sticky_session=False) vì thế nên request đến mod_jk sẽ được phân tải về các tomcat worker &quot;ngẫu nhiên&quot;
+
+Bạn sử dụng sticky session thì request/response từ worker nào sẽ được gửi về lại worker đó -&gt; không bị tình trạng mất session hoặc không đồng bộ.
+
+Chỉ khi nào mở session mới thì mod_jk mới phân tài về worker &quot;ngẫu nhiên&quot;.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45293/279026.hva#279026</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45293/279026.hva#279026</link>
+				<pubDate><![CDATA[Sun, 17 Nov 2013 21:58:35]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ 1. Bạn dùng cookies view trên browser để xem cái JSESSIONID của bạn có đính kèm worker1 hoặc worker2 không?
+2. Bạn có load module mod_proxy_ajp không?
+3. Balancer-manager chỉ chạy được nếu apache bạn load module mod_status và mod_proxy, mod_proxy_balancer?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45293/279008.hva#279008</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45293/279008.hva#279008</link>
+				<pubDate><![CDATA[Thu, 14 Nov 2013 21:17:41]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Đầu tư server Iptables</title>
+				<description><![CDATA[ 1. Có
+2. Có
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45211/278847.hva#278847</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45211/278847.hva#278847</link>
+				<pubDate><![CDATA[Thu, 24 Oct 2013 02:49:18]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn xây dựng hệ thống HA sử dụng LVS</title>
+				<description><![CDATA[ bạn đọc thêm:
+
+https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Cluster_Administration/
+
+
+sticky session bạn xử lý ở backend hay ở đâu? tức là chỗ nào đánh dấu là các request & respond này là của tui chứ không phải của hàng xóm?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45191/278846.hva#278846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45191/278846.hva#278846</link>
+				<pubDate><![CDATA[Thu, 24 Oct 2013 02:48:04]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Làm sao để thiết lập các WebServer trong Lan qua máy chủ  Squid,Iptabl</title>
+				<description><![CDATA[ bạn nên chia sẻ thêm là bạn giải quyết như thế nào, các bạn khác cũng như tôi sẽ học hỏi được thêm các case để xử lý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44941/278845.hva#278845</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44941/278845.hva#278845</link>
+				<pubDate><![CDATA[Thu, 24 Oct 2013 02:45:34]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Làm sao để thiết lập các WebServer trong Lan qua máy chủ  Squid,Iptabl</title>
+				<description><![CDATA[ - khi vào 2 site bằng browser thì hiện ra cái gì?
+- dns đã trỏ abc.com.vn và def.com.vn vào 192.168.1.2 chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44941/278589.hva#278589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44941/278589.hva#278589</link>
+				<pubDate><![CDATA[Sun, 29 Sep 2013 23:07:22]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Nginx và cách chống chọi với DDoS</title>
+				<description><![CDATA[ kill -HUP `pidof nginx` sẽ reload nginx config mà không cần restart]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45175/278551.hva#278551</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45175/278551.hva#278551</link>
+				<pubDate><![CDATA[Tue, 24 Sep 2013 22:05:30]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Làm sao để thiết lập các WebServer trong Lan qua máy chủ  Squid,Iptabl</title>
+				<description><![CDATA[ 1. Thông báo lỗi của nginx là gì?
+2. Bạn dùng upstream server1 {... } & upstream server2 {... } rồi reference đến server1 và server2  trong proxy_pass thay vì dùng full domain như hiện tại. Theo tui đoán thì khi bạn dùng proxy_pass http://def.com.vn; thì nginx không biết bạn muốn  pass đến server def.com.vn thực tế hay phần upstream def.com.vn trước đó.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44941/278542.hva#278542</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44941/278542.hva#278542</link>
+				<pubDate><![CDATA[Tue, 24 Sep 2013 04:37:24]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Kiểm soát truy cập mạng trái phép với người dùng nội bộ có ý đồ xấu</title>
+				<description><![CDATA[ một khía cạnh khác là cty phải làm cho anh A và mọi người biết anh ta sẽ bị trừng phạt thế nào khi lộ ( Snowden :) ). Toàn bộ quá trình của anh A lấy tài liệu như bạn mô tả đều lưu vết lại.
+
+Mọi giải pháp kỹ thuật chỉ có tác dụng tương đối .
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45083/278189.hva#278189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45083/278189.hva#278189</link>
+				<pubDate><![CDATA[Mon, 19 Aug 2013 23:30:34]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hỏi về thiết bị sms router kết hợp Mail Zimbra</title>
+				<description><![CDATA[ làm account sms chẳng hạn -&gt; cc hoặc bcc đến account đó sẽ phát sinh log -&gt; parse log để gửi sms]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45092/278187.hva#278187</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45092/278187.hva#278187</link>
+				<pubDate><![CDATA[Mon, 19 Aug 2013 23:23:40]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Monitor a unix folder</title>
+				<description><![CDATA[ SElinux & auditd ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45069/278186.hva#278186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45069/278186.hva#278186</link>
+				<pubDate><![CDATA[Mon, 19 Aug 2013 23:21:32]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Tự cấp chứng chỉ Certificate Authority (CA )cho https có được không?</title>
+				<description><![CDATA[ Việc mua chứng chỉ là để có bên thứ 3 xác nhận bạn là ai trong thực tế.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45011/277846.hva#277846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45011/277846.hva#277846</link>
+				<pubDate><![CDATA[Sun, 28 Jul 2013 22:06:30]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Làm sao để thiết lập các WebServer trong Lan qua máy chủ  Squid,Iptabl</title>
+				<description><![CDATA[ Tuỳ theo tên miền mà route traffic, như vậy việc quyết định route traffic là ở lớp application -&gt; iptable không thể dùng được, phải dùng reverse proxy. 
+
+Squid có thể đươc, tuy không chuyên.
+
+Thường người ta sẽ dùng nginx, mod_proxy, haproxy, varnish v.v... để làm việc này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44941/277774.hva#277774</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44941/277774.hva#277774</link>
+				<pubDate><![CDATA[Thu, 25 Jul 2013 21:21:52]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Ứng dụng thực tế của hệ thống IDS/IPS</title>
+				<description><![CDATA[ - Chỗ nào thấy traffic đến 5 server thì chỗ đó phát hiện được.
+- Chỗ nào traffic phải đi qua trước khi đến server thì chỗ đó chặn được.
+- snort có mode inline
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44972/277686.hva#277686</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44972/277686.hva#277686</link>
+				<pubDate><![CDATA[Tue, 23 Jul 2013 21:21:31]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>ví dụ về drool rule trong graylog2</title>
+				<description><![CDATA[ Graylog2 dùng làm log analysis rất khá. Tuy nhiên cài đặt mặc định không parse được các mẫu log thông dụng như access_log của apache httpd, modsecurity core rule set, Cisco ASA.
+
+Gửi kèm đây là một số drool rule (xem graylog2-server.conf, phần rewrite log message) để tách field cho các mẫu log thông dụng.
+
+Lưu ý các bạn sử dụng rule nhớ chỉnh lại facility cho đúng với cấu hình syslog thực tế.
+
+Trang web<span class="link"> http://www.regexplanet.com/advanced/java/index.html</span> sẽ cực kỳ hữu ích cho các bạn viết regular expression tách field giống tui.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>import org.graylog2.plugin.logmessage.LogMessage
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+rule &quot;ModSecurity Logging to GELF&quot;
+
+        // sample log line httpd: &#91;error&#93; &#91;client a.b.c.d&#93; ModSecurity: Warning. Operator LT matched 5 at TX:inbound_anomaly_score. &#91;file &quot;modsecurity_crs_60_correlation.conf&quot;&#93; &#91;line &quot;33&quot;&#93; &#91;id &quot;981203&quot;&#93; &#91;msg &quot;Inbound Anomaly Score &#40;Total Inbound Score: 2, SQLi=, XSS=&#41;: Request Missing an Accept Header&quot;&#93; &#91;hostname &quot;www&quot;&#93; &#91;uri &quot;/index.php&quot;&#93; &#91;unique_id &quot;UUl6i38AAA&quot;&#93;        
+
+        when
+            m : LogMessage&#40; facility == &quot;local6&quot;, shortMessage matches &quot;&#40;?s&#41;.*ModSecurity:.*&quot; &#41;
+        then
+        Matcher matcher = Pattern.compile&#40;&quot;\\&#91;client &#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#93; .*?\\&#91;id \&quot;&#40;.*?&#41;\&quot;\\&#93; .*?\\&#91;msg \&quot;&#40;.*?&#41;\&quot;\\&#93;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_modsec_id&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_modsec_msg&quot;,matcher.group&#40;3&#41;&#41;;
+        }
+end
+
+
+rule &quot;Parsing Snort to GELF&quot;
+
+    //sample log line snort: &#91;1:2402000:2907&#93; ET DROP Dshield Block Listed Source &#91;Classification: Misc Attack&#93; &#91;Priority: 2&#93;: {TCP} a.b.c.d:24495 -&gt; a.b.c.d:8081
+
+    when
+        m : LogMessage&#40; facility == &quot;local5&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;snort: +\\&#91;&#40;\\d+:\\d+:\\d+&#41;\\&#93; &#40;.*?&#41; \\&#91;Classification:.*?\\&#93; \\&#91;Priority:.*?\\&#93;: \\{&#40;.*?&#41;\\} &#40;\\d+.\\d+.\\d+.\\d+&#41;:?&#40;\\d*&#41; -&gt; &#40;\\d+.\\d+.\\d+.\\d+&#41;:?&#40;\\d*&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_snort_id&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_snort_msg&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;7&#41;&#41;;
+        }
+
+end
+
+rule &quot;Parsing access_log to GELF&quot;
+        // sample log line httpd: a.b.c.d - - &#91;21/Mar/2013:15:36:15 +0700&#93; &quot;GET /a/b.css.jsf?ln=primefaces-aristo HTTP/1.0&quot; 304 - &quot;http://www/index.jsf&quot; &quot;Mozilla/5.0 &#40;Windows NT 5.1&#41;&quot; 1203 287
+
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;httpd: +&#40;\\d+.\\d+.\\d+.\\d+&#41; .*?\&quot;&#40;&#91;A-Z&#93;+&#41; &#40;&#91;^\&quot;&#93;+&#41; HTTP..?.?.?\&quot; &#40;\\d+&#41; &#40;&#91;0-9-&#93;+&#41; \\\&quot;&#40;&#91;^\&quot;&#93;+&#41;\\\&quot; \\\&quot;&#40;&#91;^\&quot;&#93;+&#41;\\\&quot;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_verb&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_request&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_status&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_referer&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_ua&quot;,matcher.group&#40;7&#41;&#41;;
+        }
+end 
+
+rule &quot;Parsing core switch&quot;
+    // sample log line 321533: Jun 26 08:11:17.164: %SEC-6-IPACCESSLOGP: list ACL1 denied udp a.b.c.d&#40;6387&#41; &#40;TenGigabitEthernet1/1 x.y.z&#41; -&gt; a.b.c.d&#40;137&#41;, 1 packet
+
+    when
+        m : LogMessage&#40; shortMessage matches &quot;&#40;?s&#41;.*%SEC-6-IPACCESSLOGP.*&quot; && facility == &quot;local7&quot; &#41;
+    then
+
+        Matcher matcher = Pattern.compile&#40;&quot;%SEC-6-IPACCESSLOGP: +list +&#40;&#91;A-Za-z0-9\\-&#93;+&#41; +&#40;&#91;a-zA-Z0-9&#93;+&#41; +&#40;&#91;a-z&#93;+&#41; +&#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#40;&#40;\\d+&#41;\\&#41; +\\&#40;&#40;&#91;A-Za-z0-9/&#93;+&#41; +&#40;&#91;0-9a-z\\.&#93;*&#41;\\&#41; +-&gt; +&#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#40;&#40;\\d+&#41;\\&#41;, +&#40;\\d+&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_ACL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PERM&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_INT&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MAC&quot;,matcher.group&#40;7&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;8&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;9&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_COUNT&quot;,matcher.group&#40;10&#41;&#41;;
+
+        }
+
+end
+
+rule &quot;Parsing ASA log 106023 to GELF&quot;
+// sample SA-4-106023: Deny tcp src XXX:a.b.c.d/41258 dst YYY:a.b.c.d/1051 by access-group &quot;XXXX&quot;
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; && shortMessage matches &quot;&#40;?s&#41;.*%ASA-&#91;0-9&#93;-106023:.*&quot; &#41;
+    then
+        #System.out.println&#40;&quot;&#91;m&#93;&quot;+m.getShortMessage&#40;&#41;+&quot;&#91;/m&#93;&quot;&#41;;
+        Matcher matcher = Pattern.compile&#40;&quot;%ASA-&#40;&#91;0-9&#93;&#41;-&#40;&#91;0-9&#93;+&#41;: +Deny +&#40;&#91;A-Za-z &#93;+&#41; +src +&#40;&#91;A-Za-z_0-9-&#93;+&#41;:&#40;\\d+\\.\\d+\\.\\d+\\.\\d+&#41;/&#40;\\d+&#41; &#91;A-Za-z &#93;+ &#40;&#91;A-Za-z_0-9-&#93;+&#41;:&#40;\\d+\\.\\d+\\.\\d+\\.\\d+&#41;/&#40;\\d+&#41; by access-group \&quot;&#40;&#91;A-Za-z_0-9-&#93;+&#41;\&quot;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_LVL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSGID&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SNAME&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DNAME&quot;,matcher.group&#40;7&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;8&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;9&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_ACL&quot;,matcher.group&#40;10&#41;&#41;;
+        }
+end 
+
+
+rule &quot;Parsing other ASA log to GELF&quot;
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; && shortMessage not matches &quot;&#40;?s&#41;%ASA-&#91;0-9&#93;-&#40;106023&#41;:.*&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;%ASA-&#40;&#91;0-9&#93;&#41;-&#40;&#91;0-9&#93;+&#41;: &#40;.*&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_LVL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSGID&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSG&quot;,matcher.group&#40;3&#41;&#41;;
+        }
+end</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44977/277590.hva#277590</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44977/277590.hva#277590</link>
+				<pubDate><![CDATA[Fri, 19 Jul 2013 01:31:19]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>tìm kiếm ra 1 list file, edit bằng sed nội dung của các file tìm thấy?</title>
+				<description><![CDATA[ thay vì ^M thì có thể dùng \r]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44968/277589.hva#277589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44968/277589.hva#277589</link>
+				<pubDate><![CDATA[Fri, 19 Jul 2013 01:14:01]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Ứng dụng thực tế của hệ thống IDS/IPS</title>
+				<description><![CDATA[ - IPS chạy ở chỗ nào bắt được traffic. Bạn phải sử dụng các kỹ thuật port mirror, network tap v.v.. hoặc đặt ips ở chỗ nào nhòm được dữ liệu vào/ra mạng.
+
+- IDS đặt ở chỗ nào chặn được luồng dữ liệu.
+
+- snort có thể làm IPS nếu sử dụng mode inline, tức là snort sẽ dùng 1 đôi port mạng, 1 cho luồng dữ liệu vào, 1 để đưa dữ liệu ra.
+
+- snort kết hợp với các tool khác để làm IPS theo mô hình snort phát hiện -&gt; ghi log -&gt; 1 process khác đọc log rồi chạy script/program để cập nhật firewall rule.
+
+Các câu hỏi của bạn còn rộng và chung chung quá nên cũng khó cho anh em.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44972/277587.hva#277587</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44972/277587.hva#277587</link>
+				<pubDate><![CDATA[Fri, 19 Jul 2013 01:10:36]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hỏi về SSL</title>
+				<description><![CDATA[ SSL gắn liền với domain. Bao nhiêu IP gắn với cái domain đó thì sẽ tương ứng bao nhiêu server có priv key tương ứng với cert của domain đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44176/273015.hva#273015</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44176/273015.hva#273015</link>
+				<pubDate><![CDATA[Thu, 24 Jan 2013 21:30:55]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cao thủ nào dò ra IP sever của apple giúp em</title>
+				<description><![CDATA[ @hackerkey
+Bạn thử suy nghĩ ngược lại, tại sao bạn không GIẢ làm apple server để lừa cái iphone :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44165/272938.hva#272938</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44165/272938.hva#272938</link>
+				<pubDate><![CDATA[Tue, 22 Jan 2013 21:04:16]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào để Apache lưu lại client IP thay vì IP của Nginx?</title>
+				<description><![CDATA[ còn thiếu cái này trong conf của apache nữa
+
+LogFormat &quot;%{X-Real-IP}i %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
+
+hoặc
+
+LogFormat &quot;%{X-Real-IP}i %l %u %t \&quot;%r\&quot; %&gt;s %b&quot; common
+
+
+rpaf & x_forward_for chỉ mới add vào http header, còn bạn gì đó hỏi là log
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44103/272589.hva#272589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44103/272589.hva#272589</link>
+				<pubDate><![CDATA[Wed, 9 Jan 2013 20:24:30]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Đặt SnortSam ở chế độ inline hay passive</title>
+				<description><![CDATA[ wtf? bạn tìm hiểu kỹ thêm về NAT, về tcp/ip stack, về cách iptable xử lý các packet trước đã]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43993/272070.hva#272070</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43993/272070.hva#272070</link>
+				<pubDate><![CDATA[Mon, 24 Dec 2012 00:51:51]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Đặt SnortSam ở chế độ inline hay passive</title>
+				<description><![CDATA[ drop source chứ đâu có drop 1.1.1.1 đâu mà bạn lo
+
+bạn đã dựng vm và test thử lý thuyết của bạn chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43993/272017.hva#272017</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43993/272017.hva#272017</link>
+				<pubDate><![CDATA[Fri, 21 Dec 2012 03:26:29]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Regex trong rules ModSecurity</title>
+				<description><![CDATA[ Làm ơn làm theo quanta trước rồi hãy hỏi
+(keyword tiếng việt: Biểu thức chính quy)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43935/271769.hva#271769</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43935/271769.hva#271769</link>
+				<pubDate><![CDATA[Tue, 11 Dec 2012 20:17:42]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ - chạy barnyard2 với thông số -v, đồng thời bật output fast trong barnyard2 để coi nó có output fast không.
+
+- Đọc thêm /var/log/message (hoặc /var/log/syslog) coi coi barnyard2 có phun log ra không?
+
+- Version của barnyard2 là gì?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43893/271717.hva#271717</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43893/271717.hva#271717</link>
+				<pubDate><![CDATA[Mon, 10 Dec 2012 20:20:31]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ 1. thư mục /var/log/snort có file unified2 nào không? =&gt; đảm bảo snort đã capture được
+2. file waldo là barnyard2.waldo hay là barnyard2waldo?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43893/271683.hva#271683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43893/271683.hva#271683</link>
+				<pubDate><![CDATA[Sun, 9 Dec 2012 21:44:32]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ gửi config của barnyard2 lên cho mọi người xem và góp ý đi bạn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43893/271538.hva#271538</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43893/271538.hva#271538</link>
+				<pubDate><![CDATA[Mon, 3 Dec 2012 21:15:47]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ barnyard2 đã đưa được vào mysql chưa?
+snort -&gt; unified2 -&gt; barnyard2 -&gt; mysql
+BASE chỉ đọc từ mysql nên bạn phải chắc barnyard2 đã out ra được mysql]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43893/271513.hva#271513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43893/271513.hva#271513</link>
+				<pubDate><![CDATA[Sun, 2 Dec 2012 21:45:49]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cài nhiều server e mỏi tay qá </title>
+				<description><![CDATA[ vagrant]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43884/271457.hva#271457</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43884/271457.hva#271457</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2012 20:19:36]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

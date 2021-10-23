@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "xác định định dạng dữ liệu"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "xác định định dạng dữ liệu"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ chào mọi người,
+
+mình thích chơi wargame, hay gặp một dạng bài toán có dữ liệu đầu vào được một binary file (công cụ file trên Linux không cho kết quả gì hết, chỉ báo là data), theo kinh nghiệm (cũng như làm mấy cái stats test) thì file đó thường là một chứa dữ liệu đã được mã hóa, và mục tiêu của bài toán là phải giải mã được file này.
+
+vấn đề ở đây: làm sao biết được cách giải mã, nếu như mình không biết được file đó đã được mã hóa bằng thuật toán nào, cách tạo key từ password (nếu là password-based encryption), thông tin của người nhận (nếu là publickey-based encryption)...thử tìm hiểu vấn đề này, thì mình thấy có lẽ có thể giải quyết được. mình thích đố vui ;-), nên mình post lên đây thử vài cái ví dụ để mọi người nghiên cứu xem sao nha. 
+
+hahah sở dĩ mình làm thế này là tự vì hồi đầu mình nghĩ không có cách giải quyết đâu, nhưng mà tự dưng tìm hiểu một hồi thì thấy là có, nên mình thấy thú vị quá, muốn chia sẻ với các bạn cái sự *gà* của mình.
+
+để tiện post lên forum, mình base64 mấy cái data lại nha:
+
+<p></p>
+		<cite class="blockquote">file1 wrote:</cite><br>
+		<blockquote>
+MIIBUAYJKoZIhvcNAQcDoIIBQTCCAT0CAQAxaaNnAgEAoBsGCSqGSIb3DQEFDDAO
+BAg3U/tsYTN8hgICB9AwIwYLKoZIhvcNAQkQAwkwFAYIKoZIhvcNAwcECEKoZ/fX
+JXGoBCBOfMQbAPcm9cXV5ZQm/vnOJaulhwnVy5F5jidCaBevQzCBzAYJKoZIhvcN
+AQcBMBQGCCqGSIb3DQMHBAj153uAnFY2cYCBqKUxT1mJPZ3ufRuwgrDedAmLzlfG
+9SVfWzWL/S2k8qBQudnmkkrGSdY1o4b1V03/yhvUVFvxY3fl+j0iCC5M77nYLjlk
+XzmcjwyAbNrJ57yFVFheQqeVKayM3eTVU85Bnfr0OFVXKUK3Xx/k+YUuTJL2y2s4
+wQbruV6LrEPuQokipzEWVJp4It3xQdqvJuS5A5kJnR6aNgUmbl3iQ3RzjSBFKzpF
+eNLPwQ==
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">file2 wrote:</cite><br>
+		<blockquote>
+MIIBUAYJKoZIhvcNAQcDoIIBQTCCAT0CAQAxaaNnAgEAoBsGCSqGSIb3DQEFDDAO
+BAiB8jQrxkrOsQICB9AwIwYLKoZIhvcNAQkQAwkwFAYIKoZIhvcNAwcECCkxTm2o
+rCTxBCA8MsiSQgyDN1qVC+pWkhHYGiu0YnSih5wkYobWb0fUdzCBzAYJKoZIhvcN
+AQcBMBQGCCqGSIb3DQMHBAgJp/Ng3k8kFICBqMjucdvXm1Hd7sDm/iaiQPWYc6rQ
+KxqR8m67he2IgAorcg1GOlI46hG/+i045PYZVbv4puWnDy3hQMXlp3JXXWRLJPO3
+dsGADK01jboFHu1/3ejnH5QPC83XhK6JpqdGLl5ULfOhn4m96Kq/ry3yy6ef92f7
+7hkdwFxTco3A9W0BMy2WwbpwMv50s2Zxba6S05q4MQYzEABaTFhK85WaIErciGUJ
+vTs/Yw==
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">file3 wrote:</cite><br>
+		<blockquote>
+ww0EAgMCabRWYgouqbhgybirch80WrLmTx4T7RMIBfj6QURbK7b5DbhnCIWHz7Y9
++MzJnYquv9y5+I73ghLXgM2SFvYNqdBAgN+U+PQAqnniRRrZ+/2Cr9Yp2OhQfYp1
+NNVXLC0McDQIaThjZ4LBmLiWh1TRkdM2mq2dbjIQ5fWgbiAYuyH4qAB5MDKf5/5M
+BYapiszP0g01AkW1DpuOMZVh8XLohM3kirfVmPcoPhXa3w0zbNFg4DvMZWIFzGdD
+wjRsbXtGFoim
+&nbsp;
+		</blockquote>
+
+câu trả lời đúng cần phải nêu ra được những ý sau đây:
+
+1. chuẩn của dữ liệu (ví dụ như tuân theo RFC nào)
+
+2. thuật toán mã hóa được sử dụng (mình chỉ dùng block-cipher) và mode
+
+3. cách thức tạo key từ password (tất cả các file đều chỉ được mã hóa bằng một mật khẩu yếu :-D)
+
+4. bonus: decrypt được dữ liệu. các file đều có nội dung giống nhau, chỉ khác nhau ở cách mã hóa thôi.
+
+chúc các bạn vui vẻ,
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#183760</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#183760</link>
+				<pubDate><![CDATA[Wed, 17 Jun 2009 03:33:41]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ có vẻ như nhiều bạn chưa quen với dạng đề tài này. cũng phải, tự vì trong thực tế, nếu không phải là wargame, thì những vấn đề như thế này chắc chỉ xuất hiện khi làm computer forensic. ví dụ như bạn xem ổ cứng của một người nào đó, và phát hiện ra một đống dữ liệu trông có vẻ ngẫu nhiên, nhiệm vụ là phải xác định định dạng của mớ dữ liệu đó và tìm cách phá mã chúng nếu chúng đã được mã hóa. bạn sẽ không thể giải mã nó, mặc dù đã biết được mật khẩu hay có được private key, nếu như không biết là nó đã được mã hóa thế nào.
+
+ví dụ như với mấy cái file ở trên, mình tiết lộ luôn là mình đã mã hóa chúng bằng một mật khẩu yếu là <b>thaidn</b>. đương nhiên các thuật toán mã hóa và tạo key không phải là do mình tự chế ra, mà đều là tuân theo chuẩn cả, kể cả định dạng của các file này. giờ có mật khẩu rồi, các bạn thử tìm cách giải mã nó xem. mình tin là khó, tự vì thông tin quan trọng hơn lúc này không phải là mật khẩu, mà là, như đã nói ở trên, cách các file này đã được mã hóa.
+
+mình có gợi ý thế này: theo mình biết thì hiện tại có 3 chuẩn dữ liệu mã hóa là PKCS#7 1.5/SMIME 2 (RFC 2315), CMS/SMIME 3 (RFC 3852), và PGP (RFC 4880). Cái CMS thực ra có thể xem là một phiên bản mới của PKCS#7, nên nhìn kỹ thì còn lại 2 chuẩn. mấy cái file của mình cũng xoay quanh hai chuẩn này thôi, nên các bạn tìm hiểu hai cái chuẩn này thì sẽ trả lời được các câu hỏi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#184023</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#184023</link>
+				<pubDate><![CDATA[Fri, 19 Jun 2009 01:32:17]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+mình có gợi ý thế này: theo mình biết thì hiện tại có 3 chuẩn dữ liệu mã hóa là PKCS#7 1.5/SMIME 2 (RFC 2315), CMS/SMIME 3 (RFC 3852), và PGP (RFC 4880). Cái CMS thực ra có thể xem là một phiên bản mới của PKCS#7, nên nhìn kỹ thì còn lại 2 chuẩn. mấy cái file của mình cũng xoay quanh hai chuẩn này thôi, nên các bạn tìm hiểu hai cái chuẩn này thì sẽ trả lời được các câu hỏi.&nbsp;
+		</blockquote>
+Vấn đề cũng hấp dẫn đấy. Nhưng mà "hiện tại có 3 chuẩn dữ liệu mã hóa..." thì phải hiểu thế nào đây? Cái đó thì liên quan gì đến "chuẩn mã hóa dữ liệu"?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#185078</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#185078</link>
+				<pubDate><![CDATA[Tue, 30 Jun 2009 19:00:18]]> GMT</pubDate>
+				<author><![CDATA[ summerlant]]></author>
+			</item>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ @summerlant chuẩn mã hóa dữ liệu (data encryption standard) khác với chuẩn dữ liệu mã hóa (cryptographic message syntax standard). cái đầu thì bao gồm những tiêu chuẩn như DES, TripleDES, AES. cái thứ hai thì bao gồm những thứ mà mình đã liệt kê ra ở post thứ 2. 
+
+mục tiêu của chuẩn mã hóa dữ liệu thì khá rõ ràng rồi: đề ra tiêu chuẩn về IV, mode, key length...để có thể sử dụng an toàn các thuật toán mã hóa như DES hay Rijndael.
+
+còn mục tiêu của chuẫn dữ liệu mã hóa là để giải quyết vấn đề: sau khi đã mã hóa một dữ liệu rồi, làm sao để đóng gói dữ liệu đó lại, và đính kèm vào đó những thông tin cần thiết để một người khác sở hữu key có thể giải mã hoặc kiểm tra MAC/chữ ký trên dữ liệu đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#185086</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#185086</link>
+				<pubDate><![CDATA[Tue, 30 Jun 2009 21:10:10]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>kết quả tìm hiểu</title>
+				<description><![CDATA[ Xin chào,
+
+Mấy hôm trước, có cậu bạn cùng làm kể với tôi về câu đố này, thấy hay hay, nên thử &quot;nghiên cứu&quot; một chút. Càng tìm hiểu, tôi càng thấy thực sự thú vị! Lý do là vì trước đây chưa bao giờ tôi tìm hiểu đến những qui chuẩn này, mặc dù công việc tôi làm lâu nay tương đối gắn bó với cryptology. Qua việc tìm hiểu câu đố này, tôi có được khá nhiều kiến thức hữu ích.
+
+Tôi xin trình bày các bước &quot;nghiên cứu&quot; đã thực hiện, nghĩ rằng có thể có ích cho ai đó (những bạn giống tôi chẳng hạn) và mong được cùng trao đổi thêm.
+
+Đọc post 1, tôi thấy thông tin ban đầu khá nhiều, các câu hỏi thực ra cũng là những thông tin định hướng khá rõ (cậu bạn cho biết còn có một số gợi ý và cả mật khẩu). Tôi quyết định tạm thời chưa đọc những gợi ý đó vì muốn thử trước đã. 
+
+Đầu tiên tôi tạo 3 file file1, file2, file3 với tương ứng với dữ liệu đã cho.
+
+Tiến hành xem xét thử 3 file, tôi thấy rằng hai file 1 và 2 có kích thước bằng nhau và có phần đầu (khoảng 0x32 byte đầu) giống nhau. Riêng file thứ 3 có kích thước nhỏ hơn hẳn và có vẻ rất khác với 2 file kia.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Offset    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+
+00000000  30 82 01 50 06 09 2A 86 48 86 F7 0D 01 07 03 A0  0‚.P..*†H†÷.... 
+00000010  82 01 41 30 82 01 3D 02 01 00 31 69 A3 67 02 01  ‚.A0‚.=...1i£g..
+00000020  00 A0 1B 06 09 2A 86 48 86 F7 0D 01 05 0C 30 0E  . ...*†H†÷....0.
+00000030  04 08                                            ..</pre>
+		</div>
+OK, 2 file đầu có thể là dạng file có định dạng, tôi thử lấy một chuỗi vài byte trong phần đầu của file 1 và google. Sau vài lần tìm kiếm và tham khảo Wiki, tôi gần như chắc chắn 2 file đầu có chứa dạng dữ liệu liên quan tới PKCS #7.  
+
+Nhớ tới openSSL có hỗ trợ làm việc với pkcs7, tôi thử kiểm tra file với chương trình này.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>~ ./openssl.exe pkcs7 -inform DER -in a.bin
+unable to load PKCS7 object
+264:error:0D0680A8:asn1 encoding routines:ASN1_CHECK_TLEN:wrong tag:tasn_dec.c:1294:
+264:error:0D07803A:asn1 encoding routines:ASN1_ITEM_EX_D2I:nested asn1 error:tasn_dec.c:380:Type=PKCS7_RECIP_INFO
+264:error:0D08303A:asn1 encoding routines:ASN1_TEMPLATE_NOEXP_D2I:nested asn1 error:tasn_dec.c:710:Field=recipientinfo, Type=PKCS7_ENVELOPE
+264:error:0D08303A:asn1 encoding routines:ASN1_TEMPLATE_NOEXP_D2I:nested asn1 error:tasn_dec.c:749:
+264:error:0D08403A:asn1 encoding routines:ASN1_TEMPLATE_EX_D2I:nested asn1 error:tasn_dec.c:578:Field=d.enveloped, Type=PKCS7</pre>
+		</div>
+Có gì không đúng rồi. 
+
+Tìm lại và dò theo các kết quả có chứa chuỗi byte gần giống mẫu, tôi thấy chuỗi &quot;06 09 2A 86 48 86 F7 0D 01 07 03&quot; phù hợp với Identifier Name envelopedData với chuỗi DER Encoding &quot;06 09 2A864886 F70D0107 03&quot;.
+
+Đọc thêm chút nữa, tôi thấy rằng cần dùng asn1parse để kiểm tra file này trước, kết quả là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./openssl.exe asn1parse -inform DER -in a.bin -i
+    0:d=0  hl=4 l= 336 cons: SEQUENCE
+    4:d=1  hl=2 l=   9 prim:  OBJECT            :pkcs7-envelopedData
+   15:d=1  hl=4 l= 321 cons:  cont &#91; 0 &#93;
+   19:d=2  hl=4 l= 317 cons:   SEQUENCE
+   23:d=3  hl=2 l=   1 prim:    INTEGER           :00
+   26:d=3  hl=2 l= 105 cons:    SET
+   28:d=4  hl=2 l= 103 cons:     cont &#91; 3 &#93;
+   30:d=5  hl=2 l=   1 prim:      INTEGER           :00
+   33:d=5  hl=2 l=  27 cons:      cont &#91; 0 &#93;
+   35:d=6  hl=2 l=   9 prim:       OBJECT            :PBKDF2
+   46:d=6  hl=2 l=  14 cons:       SEQUENCE
+   48:d=7  hl=2 l=   8 prim:        OCTET STRING      &#91;HEX DUMP&#93;:3753FB6C61337C86
+   58:d=7  hl=2 l=   2 prim:        INTEGER           :07D0
+   62:d=5  hl=2 l=  35 cons:      SEQUENCE
+   64:d=6  hl=2 l=  11 prim:       OBJECT            :1.2.840.113549.1.9.16.3.9
+   77:d=6  hl=2 l=  20 cons:       SEQUENCE
+   79:d=7  hl=2 l=   8 prim:        OBJECT            :des-ede3-cbc
+   89:d=7  hl=2 l=   8 prim:        OCTET STRING      &#91;HEX DUMP&#93;:42A867F7D72571A8
+   99:d=5  hl=2 l=  32 prim:      OCTET STRING      &#91;HEX DUMP&#93;:4E7CC41B00F726F5C5D5E59426FEF9CE25ABA58709D5CB91798E27426817AF43
+  133:d=3  hl=3 l= 204 cons:    SEQUENCE
+  136:d=4  hl=2 l=   9 prim:     OBJECT            :pkcs7-data
+  147:d=4  hl=2 l=  20 cons:     SEQUENCE
+  149:d=5  hl=2 l=   8 prim:      OBJECT            :des-ede3-cbc
+  159:d=5  hl=2 l=   8 prim:      OCTET STRING      &#91;HEX DUMP&#93;:F5E77B809C563671
+  169:d=4  hl=3 l= 168 prim:     cont &#91; 0 &#93;</pre>
+		</div>
+Tuyệt! Có vẻ như đã có khá nhiều thông tin. des-ede3-cbd rõ ràng là một thuật toán mã hóa và mode rồi. Tôi tìm kiếm với &quot;1.2.840.113549.1.9.16.3.9&quot; và &quot;PBKDF2&quot; và được dẫn tới <span class="link"> http://tools.ietf.org/html/rfc3852</span> và <span class="link"> http://tools.ietf.org/html/rfc3211</span>.
+
+RFC 3852 mô tả Cryptographic Message Syntax (CMS), được &quot;phát triển&quot; từ PKCS #7 version 1.5, nó cũng tương thích ngược với CMS1 RFC 2360, CMS 2 RFC 3369).
+
+Tài liệu này cùng với các tài liệu tham khảo trong mục <span class="link"> http://tools.ietf.org/html/rfc3852#section-13</span> cung cấp cho ta đầy đủ thông tin để ta tiến hành dẫn xuất khóa từ password, salt, count (PBKDF2), giải mã khóa và giải mã dữ liệu với các thuật toán dẫn xuất, giải mã khóa với điều kiện... có mật khẩu.
+
+Không có mật khẩu, việc tìm bản rõ sẽ cần nhiều thời gian (tôi nghĩ rằng sẽ cần đọc kỹ hơn các tài liệu trên + các tài liệu thám mã TripleDES, chú trọng những phần liên quan quá trình giải mã để có một phương án hiệu quả). Dĩ nhiên, vì ta có thông tin &quot;các file được tạo với mật khẩu yếu&quot; nên có thể thử tiến hành brute force trước.
+
+Đến đây tôi tạm dừng, và tiếp tục với file thứ 3. Tuy nhiên do gặp khó khăn với file 3, tôi quyết định đọc tiếp các gợi ý của mrro, thấy mật khẩu được dùng cho cả 3 tệp là &quot;thaidn&quot;. Tôi thử với file 1 và 2:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>~ openssl cms -decrypt -inform DER -in file1.bin -pwri_password thaidn
+~ openssl cms -decrypt -inform DER -in file2.bin -pwri_password thaidn</pre>
+		</div>
+Kết quả thu được bản rõ giống nhau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+cccccccccccccccccccccccccccccccccccccccc
+dddddddddddddddddddddddddddddddddddddddd</pre>
+		</div>
+
+Với file thứ 3, đầu tiên tôi nhận thấy file này hình như chẳng có họ hàng gì với 2 file trước. Nội dung nó đây:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Offset    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+
+00000000  C3 0D 04 02 03 02 69 B4 56 62 0A 2E A9 B8 60 C9  Ã.....i´Vb..©¸`É
+00000010  B8 AB 72 1F 34 5A B2 E6 4F 1E 13 ED 13 08 05 F8  ¸«r.4Z²æO..í...ø
+00000020  FA 41 44 5B 2B B6 F9 0D B8 67 08 85 87 CF B6 3D  úAD&#91;+¶ù.¸g.…‡Ï¶=
+00000030  F8 CC C9 9D 8A AE BF DC B9 F8 8E F7 82 12 D7 80  øÌÉ.Š®¿Ü¹øŽ÷‚.×€
+00000040  CD 92 16 F6 0D A9 D0 40 80 DF 94 F8 F4 00 AA 79  Í’.ö.©Ð@€ß”øô.ªy
+00000050  E2 45 1A D9 FB FD 82 AF D6 29 D8 E8 50 7D 8A 75  âE.Ùûý‚¯Ö&#41;ØèP}Šu
+00000060  34 D5 57 2C 2D 0C 70 34 08 69 38 63 67 82 C1 98  4ÕW,-.p4.i8cg‚Á˜
+00000070  B8 96 87 54 D1 91 D3 36 9A AD 9D 6E 32 10 E5 F5  ¸–‡TÑ‘Ó6š­.n2.åõ
+00000080  A0 6E 20 18 BB 21 F8 A8 00 79 30 32 9F E7 FE 4C   n .»!ø¨.y02ŸçþL
+00000090  05 86 A9 8A CC CF D2 0D 35 02 45 B5 0E 9B 8E 31  .†©ŠÌÏÒ.5.Eµ.›Ž1
+000000A0  95 61 F1 72 E8 84 CD E4 8A B7 D5 98 F7 28 3E 15  •añrè„ÍäŠ·Õ˜÷&#40;&gt;.
+000000B0  DA DF 0D 33 6C D1 60 E0 3B CC 65 62 05 CC 67 43  Úß.3lÑ`à;Ìeb.ÌgC
+000000C0  C2 34 6C 6D 7B 46 16 88 A6                       Â4lm{F.ˆ¦</pre>
+		</div>
+
+mrro đã cho biết các file có nội dung giống nhau và đều được mã, tức là kích thước dữ liệu rõ khoảng 168 byte, để ý kích thước của file 3 nhỏ so với hai file 1 và 2, chỉ có 201 byte, lớn hơn kích thước dữ liệu rõ 33 byte, có thể đó là phần dữ liệu định dạng. Lẻ nhỉ? 
+
+Nhìn phần đầu, thấy phần đầu file lạ hoắc, không có vẻ là một dạng file có định dạng. Thử tìm một vài byte có thể là giá trị [file-size] cũng không thấy thông tin gì có ích.
+
+Dù sao cũng chỉ là cảm giác. Tôi thử kiểm tra lại bằng cách dùng Google để tìm kiếm vài byte trong phần đầu, cũng thấy không có kết quả nào có vẻ thích hợp.
+
+Loay hoay một hồi, tôi kiểm tra lại file3 theo các dạng encode khác của ASN1 cũng không thấy phù hợp. 
+
+Lúc này, bắt đầu cảm thấy bế tắc, tôi đọc tiếp các gợi ý phía dưới của mrro. Nhưng rồi tôi cũng không tiến thêm được chút nào. Tôi đã tính gửi trước trả lời cho file 1 và 2, nhân tiện xin gợi ý thêm và hỏi dữ liệu của file 3 có &quot;đúng&quot; không (không làm được, nên nghĩ đề ra sai). Nhưng lại nghĩ, nếu đây là một tình huống computer forensic, thì sao làm vậy được?
+
+Nhìn lại thì thấy, tôi chưa xem xét kỹ chuẩn PGP, do trước đây tôi luôn có ấn tượng là PGP (chỉ) sử dụng hệ mã khóa công khai. 
+
+Tôi quay ra đọc lại RFC 4880. Lúc trước tôi có tìm kiếm định dạng file PGP (google &quot;PGP file format&quot;), cũng là đọc sơ sơ - đây là ảnh hưởng của lối làm việc theo cảm tính. Giống như khi đi tìm thứ gì đó, ta thường ít để ý tìm tòi ở một vài nơi mà ta cho rằng nó đó &quot;chắc chẳng đời nào ở đó&quot;. 
+
+Đầu tiên tôi duyệt lại mục lục để có cái nhìn bao quát, rồi xem mục Packet Headers trước. Tôi ngạc nhiên nhận ra rằng lúc trước mình không hề nghĩ đến file 3 chỉ là một loạt các packet, mà luôn cho nó là một file có định dạng tương tự file1 và file2 (lúc trước tôi đã đọc, và bỏ qua phần này ở một trang khác).
+
+Đọc lại cẩn thận bắt đầu từ phần <span class="link"> http://tools.ietf.org/html/rfc4880#section-4</span>, tôi thấy nội dung RFC này ngắn gọn nhưng rất cụ thể và rõ ràng.
+
+Một điểm quan trọng mà lúc trước tôi không để ý là có đến 2 định dạng packet, &quot;cũ&quot; và &quot;mới&quot;, lúc trước tôi chỉ đọc lướt và thử với định dạng &quot;cũ&quot; nên bị confused khi thấy 4 bit từ 5-2 của byte đầu tiên (0xC3 - 11000011) là 0000. 
+
+Đọc đến đây, tôi xem lại file 3, đối chiếu với RFC và nhận ra rằng, hóa ra 15 byte đầu của file 3 hoàn toàn phù hợp với một packet PGP.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C3 | 0D | 04 | 02 | 03 | 02 | 69 B4 56 62 0A 2E A9 B8 | 60</pre>
+		</div>
+
+- Packet là dạng new packet (xem phần <span class="link"> http://tools.ietf.org/html/rfc4880#section-4.2</span>).
+- Tag là Symmetric-Key Encrypted Session Key Packet (phần <span class="link"> http://tools.ietf.org/html/rfc4880#section-4.3</span>).
+- Body Length là 0xD.
+- Theo mục <span class="link"> http://tools.ietf.org/html/rfc4880#section-5.3</span>, ta có: phiên bản 04, symmetric algorithm là 02 - TripleDES (DES-EDE, 168 bit key derived from 192), thông tin về string-2-key (S2K) là (xem <span class="link"> http://tools.ietf.org/html/rfc4880#section-3.7.1.3</span>): 
+
++ Type: 03 - Iterated and Salted S2K (xem <span class="link"> http://tools.ietf.org/html/rfc4880#section-3.7.1</span>).
++ Hash algorithm: 02 - SHA1 (<span class="link"> http://tools.ietf.org/html/rfc4880#section-9.4</span>)
++ 8-octet salt : 69 B4 56 62 0A 2E A9 B8
++ Coded value of count: 0x60 = 96, tính ra count = 2000.
+
+Dữ liệu tiếp theo packet đầu tiên cũng có vẻ phù hợp với một packet PGP với tag là Symmetrically Encrypted Data Packet, Body Length là 0xB8 = phần còn lại của file.
+
+Như vậy kết hợp với các thông tin đã có, gần như có thể khẳng định rằng file 3 chứa các packet PGP (2 packet), trong đó gói đầu tiên chứa thông tin về chuẩn mã hóa dữ liệu, gói thứ hai chứa dữ liệu đã mã hóa. Nếu không có mật khẩu, ta chỉ có thể sử dụng các thông tin đã có để thám mã: chuẩn mã TripleDES (DES-EDE), Salt, Count và Hash algorithm, bản mã. Vì mật khẩu đã dùng là yếu, có thể tiến hành brute-force.
+
+Tuy nhiên, với khóa đã biết &quot;thaidn&quot; ta có thể sử dụng luôn GnuPG<span class="link"> http://www.gnupg.org</span> để giải mã:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&gt; gpg --list-packets file3.bin
+:symkey enc packet: version 4, cipher 2, s2k 3, hash 2
+        salt 69b456620a2ea9b8, count 96
+
+gpg: 3DES encrypted data
+:encrypted data packet:
+        length: 184
+:literal data packet:
+        mode b, created 0, name=&quot;&quot;,
+        raw data: 166 bytes
+gpg: WARNING: message was not integrity protected
+
+&gt; gpg --decrypt file3.bin
+gpg: 3DES encrypted data
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+cccccccccccccccccccccccccccccccccccccccc
+dddddddddddddddddddddddddddddddddddddddd
+gpg: WARNING: message was not integrity protected</pre>
+		</div>
+Để ý rằng gói thứ 3 (literal data packet) &quot;nằm trong&quot; gói thứ 2. Thông tin về loại packet này có trong mục 5.9. Literal Data Packet.<span class="link"> http://tools.ietf.org/html/rfc4880#section-5.9</span>
+
+Như vậy, file 3 chứa các gói PGP, theo RFC 4880, thuật toán mã hóa là TripleDES - EDE, khóa được sinh theo mô tả ở mục <span class="link"> http://tools.ietf.org/html/rfc4880#section-3.7</span> với hàm hash là SHA1, mật khẩu, salt và count đã biết.
+
+Nhìn lại cả quá trình trên đây, tôi thấy rằng, mặc dù kinh nghiệm và trực giác đôi khi có thể giúp tiến đến kết quả nhanh hơn, nhưng với những bài toán dạng này, trước hết cần phân tích toàn bộ thông tin có được với cách nhìn khái quát, tìm hiểu một số kiến thức nền tảng rồi mới tiến hành thử nghiệm từng bước (có kế hoạch). Cách tiếp cận đó có thể giúp ta hạn chế phạm vi tìm kiếm và tránh được những sai sót cơ bản. Chẳng hạn, trước hết tôi nên tập trung nghiên cứu các chuẩn dữ liệu mã hóa (để ý rằng câu hỏi 1 đã tiết lộ những dữ liệu này đều tuân theo những chuẩn nhất định.
+
+Cảm ơn mrro đã cho một câu đố thú vị!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208745</link>
+				<pubDate><![CDATA[Fri, 9 Apr 2010 12:37:59]]> GMT</pubDate>
+				<author><![CDATA[ yourname]]></author>
+			</item>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ Mình dùng bản <span class="link"> ftp://ftp.openssl.org/snapshot/</span> của openssl, vì tính năng hỗ trợ CMS password based chưa được đưa vào các bản realse.
+
+Thêm nữa, để openssl làm việc được với CMS, cần thêm tuỳ chọn <i><b>enable-cms</b></i> khi tiến hành cấu hình biên dịch. Các gói binary sẵn có thường không hỗ trợ tính năng này.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208875</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208875</link>
+				<pubDate><![CDATA[Mon, 12 Apr 2010 10:31:00]]> GMT</pubDate>
+				<author><![CDATA[ yourname]]></author>
+			</item>
+			<item>
+				<title>xác định định dạng dữ liệu</title>
+				<description><![CDATA[ Bài viết rất hay, cám ơn nick yourname!
+
+Nếu bác có thời gian, bác thử phân tích đoạn này của em xem nào?
+Em muốn biết cách thức mã hoá đoạn này, trong đó sẽ bao gồm các thông tin gì? Loại mã hoá?
+
+<blockquote>
+g09w4ZCW6v27ONXx3ggGZvghgJWxsHeIuEglRGmyw2hd9nO13wfphL2D2DpXmv1DTGWE5gZti8puQ+SIoTmGlMJ3wFthSLt/jpc1mdHY/2a/4FNHHKL+T+54dKHYG4Zk+DYMV+Yh1dNtayaRO10Mb+AdJShFQa1aI6C57Fn0VAA=
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208888</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29806.hva#208888</link>
+				<pubDate><![CDATA[Mon, 12 Apr 2010 22:35:33]]> GMT</pubDate>
+				<author><![CDATA[ adamec]]></author>
+			</item>
+	</channel>
+</rss>

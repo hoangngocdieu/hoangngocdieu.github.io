@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "GDB – Cheatsheet : Những lệnh hay dùng của GDB"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "GDB – Cheatsheet : Những lệnh hay dùng của GDB"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>GDB – Cheatsheet : Những lệnh hay dùng của GDB</title>
+				<description><![CDATA[ <font color='orange'><font size='+1'>GDB – Cheatsheet : Những lệnh hay dùng của GDB</font>
+</font>
+
+<i>Mình là fan của gdb, mình đã sử dụng nó cho hầu hết các project trên linux của mình, tuy chỉ là command based nhưng rất hữu dụng nếu sử dụng hợp lý, ngoài là công cụ debug nếu sử dụng đúng gdb là công cụ reverse code rất hữu hiệu. Dò trên 4rum chưa  thấy có bài nào viết, mình xin chia xẻ chút kinh nghiệm.
+
+Do thời gian có hạn, nên mình sẽ chỉ viết những lệnh mình thấy hữu dụng nhất mà mình cảm nhận quá trình làm việc. <b>Bạn nào biết lệnh nào “lợi hại” xin post chung vào topic này, mình sẽ update</b>.</i>
+
+<b>Quy định trong bài viết :</b>
+<i>$ xyz :</i> lệnh xyz được ví dụ khi thực hiện trên shell (bash,sh,ksh...). Để thử nghiệm, type xyz và nhấn ENTER
+<i>(gdb) zyx :</i> lệnh zyx được ví dụ khi thực hiện bên trong GDB ( sau khi khởi động ). Để thử nghiệm, type zyx trong gdb và nhấn ENTER. ( Một số lệnh đòi hỏi gdb phải attach vào chương trình trước xin xem ở dưới ) 
+
+<b>1) Khởi động gdb</b>
+<i>a) Cách 1:</i>
+<font color='orange'>gdb [--args] path_đến_program :</font> khởi động gdb và set file cần debug ngay lập tức. Nêu cần khai báo tham số cho program thì sử dụng --args ở phía trước gdb
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gdb helloworld
+$ gdb ls
+$ gdb --arg /bin/ls –al</pre>
+		</div>
+
+<i>b) Cách 2:</i>
+gdb : khởi động gdb không dùng tham số gì cả, bạn sẽ vào trong phần làm việc của gdb.
+file [path đến program]: gõ lệnh này trong phần làm việc của gdb để chọn program cần debug.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$gdb
+&#40;gdb&#41; file ls</pre>
+		</div>
+Lưu ý cách 2 này bạn không thể khai báo tham số trước cho chương trình. ( Xem tiếp để biết làm cách nào add tham số. )
+
+*** Để thoát khỏi gdb :
+<font color='orange'>(gdb) quit</font>
+
+<b>2)	Kích hoạt chương trình:</b>
+<font color='orange'>run [args] :</font> kích hoạt chương trình đang được “để ý” bởi gdb. [args] là tham số cần để chương trình chạy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; File ls
+&#40;gdb&#41; Run –al</pre>
+		</div>
+
+<b>3)	Xem code của chương trình</b>
+Để xem được source code của chương trình ngay trong gdb, bạn phải compile chương trình bằng cách thêm tham số debug : -g để compiler sinh ra debugging information, tiện cho việc debug hiệu quả. Xem thêm ở đây :<span class="link"> http://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html</span>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gcc –g –gdb –o xxx xxx.c</pre>
+		</div>
+
+Sau đó trong gdb bạn có thể sử dụng lệnh &quot;list&quot; để xem source code của chương trình đang debug:
+<font color='orange'>list [File:]line_number</font> : xem code tại 1 dòng xác định, ( trong trường hợp có nhiều file thêm vào thông số [File:].
+<font color='orange'>list [File:]Function</font> : tương tự như trên nhưng xem tại điểm bắt đầu của hàm Funtion.
+list : nếu không có tham số nào thì list sẽ cho xem source vị trí hiện tại đang debug. Nếu gõ liên tiếp sẽ cho xem các dòng tiếp sau đó.
+
+Trong trường hợp bạn muốn debug 1 file binary mà không có source code. Sử dụng:
+<font color='orange'>disassemble FUNC</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; disassemble main</pre>
+		</div>
+<font color='orange'>disassemble MEM1 MEM2</font>: disassemble từ memory address MEM1 đến memory address MEM2
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; disassemble 0xbfffbbbb 0xbfffcccc</pre>
+		</div>
+
+*** Lưu ý assembly mà gdb tại ra là dạng AT&T, i.e destination đứng sau source:
+mov 0x0 %eax &lt;-- eax = 0
+
+<b>4)	Break Point và Watch Point:</b>
+<i>- BreakPoint:</i>
+Khi chạy chương trình, bạn muốn chương trình của bạn dừng lại ở một số đoạn nào để debug. Bạn sử dụng lệnh: break. Cú pháp tương tự như lệnh list
+<font color='orange'>break [File:]line_number</font> 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; break main.c:200</pre>
+		</div>
+<font color='orange'>break [File:]Function</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; break main.c:main</pre>
+		</div>
+<font color='orange'>break *MEM</font> : dừng lại khi execute đến memory address MEM ( hữu dụng khi làm việc với binary file)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; break * 0x08151c24</pre>
+		</div>
+
+<i>- Watch Point:</i>
+Sử dụng watch point khi muốn theo dõi 1 variable / expression, dừng chương trình khi nó thay đổi.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; watch i
+&#40;gdb&#41; watch src.data == des.data</pre>
+		</div>
+
+5)	Để xem các bạn đã có những breakpoints / watchpoints nào : 
+<font color='orange'>info breakpoints</font>
+
+Để xóa 1 breakpoint/watchpoint:
+<font color='orange'>delete breakp_id/watch_id</font> ( xem id bằng lệnh info )
+
+Disable/Enable 1 breakpoint/watchpoint:
+<font color='orange'>disable breakpoints [breakp_id]</font> ( nếu không đề cập breakp_id thì toàn bộ sẽ bị disable )
+<font color='orange'>enable breakpoints [breakp_id]</font> ( ngược lại với disable )
+
+<b>6)	Condition:</b> Bạn có thể thêm condition cho breakpoint/watchpoint. Khi đó chương trình sẽ chỉ dừng lại ở vị trí đã set nếu như condition của bạn có giá trị true. Cú pháp:
+
+<font color='orange'>Condition breakp_id / watch_id expression</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; condition 1 x==y && x==999</pre>
+		</div> ( x và y là variable của chương trình )
+
+<b>7)	Program flow :</b> sau khi break bạn có thể bắt gdb execute từng dòng code theo program của mình
+<font color='orange'>step over : next
+step in : step
+continue : continue
+</font>
+	<i>Nếu execute theo instruction:</i>
+<font color='orange'>
+step over:  nexti
+step in:  stepi
+</font>
+Để xem mình đang ở đâu trong program, được gọi bởi function nào :
+<font color='orange'>where 
+backtrace</font>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Program received signal SIGINT, Interrupt.
+0xb75ebc32 in _dl_sysinfo_int80 &#40;&#41; from /lib/ld-linux.so.2
+&#40;gdb&#41; where
+#0  0xb75ebc32 in _dl_sysinfo_int80 &#40;&#41; from /lib/ld-linux.so.2
+#1  0xb756c1f3 in __read_nocancel &#40;&#41; from /lib/tls/libc.so.6
+#2  0x080b2c0c in rl_getc &#40;&#41;
+#3  0x080b2bcb in rl_read_key &#40;&#41;
+#4  0x080a3a08 in readline_internal_char &#40;&#41;
+#5  0x080a3bc5 in readline_internal_char &#40;&#41;
+#6  0x080a3bf0 in readline_internal_char &#40;&#41;
+#7  0x080a378a in readline &#40;&#41;
+#8  0x0805db45 in yy_input_name &#40;&#41;
+#9  0x08082ad0 in termination_unwind_protect &#40;&#41;
+= &#41;&#41; có ai biết mình đang trace cái j không ?</pre>
+		</div>
+<b>8)	Xem và cập nhật giá trị các biến, thanh ghi và bộ nhớ :</b>
+Để xem giá trị các biến : sử dụng <font color='orange'>print variable</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; print i
+&#40;gdb&#41; print inst.data</pre>
+		</div>
+Để xem giá trị ô nhớ : <font color='orange'>x[/[cout][format][size]] memory</font>
+<blockquote>
+(gdb) x 0x12345678
+(gdb) x/20 0x12345678 : xem 20 ô liên tiếp bắt đầu từ 0x12345678
+(gdb) x/20xb 0x12345678 : xem 20 ô liên tiếp dưới dạng hex và in ra từng byte.&nbsp;
+		</blockquote>
+<font color='orange'>[format]: o(octal), x(hex), d(decimal), u(unsigned decimal), t(binary), f(float), a(address), i(instruction), c(char), s(string)
+[size]: b(byte,1 byte), h(halfword, 2 bytes), w(word, 4 bytes), g(giant, 8 bytes)</font>
+
+Để xem thanh ghi: Tương tự xem ô nhớ, thay memory bằng thanh ghi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; x $eax
+&#40;gdb&#41; x $eip</pre>
+		</div>
+
+<i>Hoặc sử dụng lệnh :</i> 
+<font color='orange'>info register [REG]</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; info register eax</pre>
+		</div>
+
+<i>Để cập nhật/ chỉnh sửa các giá trị :</i> 
+<font color='orange'>set destination = something</font>
+<blockquote>
+(gdb) set $eax = 1
+(gdb) set  *(0xbfffdddd) = “windak”&nbsp;
+		</blockquote>
+
+<b>9)	Một số tip khác khi sử dụng :</b>
+<i>-	Shortcut : </i>
+Khi sử dụng thành thạo và quen với các lệnh của gdb, bạn có thể bắt đầu sử dụng các lệnh tắt. Gdb cho phép shortcut command bằng cách viết phần prefix của command đó. 
+(gdb) r   &lt;=&gt; (gdb) ru  &lt;=&gt; (gdb) run
+(gdb) b &lt;=&gt; (gdb) break
+(gdb) disass &lt;=&gt; (gdb) disassemble ( lưu ý số prefix phải đủ dài để gdb xác định là lệnh nào)
+(gdb) i b &lt;=&gt; (gdb) info break
+<i>-	Debug program đang chạy ( process ):</i>
+ <font color='orange'>gdb [prog] [pid]</font> ( pid = process id, xem thêm lệnh “ps” của linux )
+<i>-	Xem hướng dẫn của một lệnh </i>
+<font color='orange'> help [command]</font>
+(gdb) help break
+(gdb) help next
+<i>- Sử dụng liên tiếp 1 lệnh </i>
+Nhấn Enter trong gdb nếu bạn muốn gdb tiếp tục thực hiện lệnh phía trước. Hữu dụng khi xài chung với &quot;next&quot;,&quot;nexti&quot;,&quot;step&quot;,&quot;stepi&quot;,&quot;list&quot;.
+<i>- Thực hiện một số command khi chương trình dừng ở break:</i>
+<font color='orange'>command breakp_id/watch_id</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; br main
+&#40;gdb&#41; command 1
+&gt; x $eax
+&gt; end
+&#40;gdb&#41;</pre>
+		</div>
+
+
+Trên là một số kiến thức cơ bản của gdb mà mình thu thập, khi viết bài không khỏi sai sót mong mọi người cùng đóng góp để hoàn thiện.
+Một tài liệu advance nếu bạn hứng thú: Using GNU's GDB Debugger:<span class="link"> http://dirac.org/linux/gdb/</span>
+
+<b>References:</b>
+$gdb --help
+(gdb) help
+
+Thanks,
+wd.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31905.hva#197011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31905.hva#197011</link>
+				<pubDate><![CDATA[Thu, 29 Oct 2009 12:54:37]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>GDB – Cheatsheet : Những lệnh hay dùng của GDB</title>
+				<description><![CDATA[ Thanks nhìu nha!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31905.hva#200162</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31905.hva#200162</link>
+				<pubDate><![CDATA[Wed, 9 Dec 2009 00:48:30]]> GMT</pubDate>
+				<author><![CDATA[ o0ofrozendreamo0o]]></author>
+			</item>
+	</channel>
+</rss>

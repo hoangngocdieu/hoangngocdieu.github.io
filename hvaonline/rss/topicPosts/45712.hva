@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Iptables cho mạng LAN"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Iptables cho mạng LAN"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Tôi mới tìm hiểu về iptables và đang làm lab nhưng không thành công, mong được mọi người chỉ bảo, xin cảm ơn rất nhiều.
+Hiện tại bài lab thực hiện trên 1 server có 2 NIC: eth0 là EXTINF (10.2.24.12) và eth1 là INTINF (172.16.1.1). Tôi có cắm 1 laptop vào eth1 và lấy ip là 172.16.1.2. Khi không cấu hình iptables, hoặc làm theo kiểu "cho phép tất cả trước, chặn cụ thể sau" thì laptop có thể sử dụng đựoc tất cả các dịch vụ nội bộ. Nhưng nếu muốn "chặn tất cả trước, cho phép cụ thể sau" thì không được (kiểu này sau khi đọc bài trong HVA thấy hay nên rất muốn thử :D). Đây là cấu hình tôi sử dụng:
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+iptables -A INPUT -i eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p tcp --dport 0:65535 -j ACCEPT
+iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p udp --dport 0:65535 -j ACCEPT
+iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+Sau khi sử dụng cấu hình này thì lap của tôi không thể sử dụng bất kì dịch vụ nội bộ nào cả. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281027</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281027</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2014 04:21:04]]> GMT</pubDate>
+				<author><![CDATA[ Voyage146]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Bạn hiểu chưa đúng rồi, firewall nó sẽ xem xét các rule theo thứ tự từ trên xuống dưới, khi gặp rule đầu tiên khớp thì nó sẽ hành động theo rule đó rồi ngưng xét các rule tiếp theo.
+<p></p>
+		<cite class="blockquote">Voyage146 wrote:</cite><br>
+		<blockquote>Đây là cấu hình tôi sử dụng:
+iptables -P INPUT DROP
+...
+Sau khi sử dụng cấu hình này thì lap của tôi không thể sử dụng bất kì dịch vụ nội bộ nào cả. 
+&nbsp;
+		</blockquote>
+Dòng rule đầu tiên sẽ khớp tất cả gói tin đi vào nên phía ngoài không thể kết nối.
+
+
+Giả sử trong mạng chỉ có 3 máy PC1, PC2, PC3. Bạn muốn cho PC1 và PC2 kết nối, nhưng chặn PC3, thì có 2 cách cấu hình như sau:
+
+1. Kiểu "cho phép tất cả trước, chặn cụ thể sau":
+    DROP PC3
+    ACCEPT ALL
+Đầu tiên viết dòng rule cho phép tất cả, sau đó cái nào cần chặn thì chỉ ra, và tất nhiên phải đặt nó lên trên dòng ACCEPT ALL.
+
+2. Kiểu "chặn tất cả trước, cho phép cụ thể sau":
+    ACCEPT PC1
+    ACCEPT PC2
+    DROP ALL
+Đầu tiên viết dòng rule chặn tất cả, sau đó cái nào cần cho phép thì chỉ ra, và tất nhiên phải đặt nó lên trên dòng DROP ALL.
+
+Kiểu thứ 2 là kiểu nên dùng !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281028</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281028</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2014 21:32:46]]> GMT</pubDate>
+				<author><![CDATA[ invalid-password]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ 1. iptables -P INPUT DROP
+2. ptables -P OUTPUT DROP
+3. iptables -P FORWARD DROP
+4. iptables -A INPUT -i eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+5  iptables -A OUTPUT -o eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+6  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p tcp --dport 0:65535 -j ACCEPT
+7  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p udp --dport 0:65535 -j ACCEPT
+8  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT 
+
+ Mục đích bạn dựng iptables để làm gì ? Nêu rõ mục đích mới cấu hình iptables được chứ .
+  Chữa cháy cho đoạn cấu hình trên ( sử dụng được dịch vụ trong mạng) thì như sau: 
+
+ Bạn quên không xử lý khi Forward từ eth0-&gt;eth1, (-i eth0 -o eth1 ): Khi một gói tin forward từ eth0 sang eth1 , nó không match với bất cứ rule nào trong FORWARD CHAIN , và sẽ bị rule 3 xử lý Drop theo chính sách mặc định. Có nghĩa là bạn có thể request đến các dịch vụ trong LAN nhưng các respond bị iptable drop và nó không bao giờ đến được laptop của bạn.
+     bổ sung thêm các rule sau:
+
+  9.   iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -p tcp --sport 0:65535 -j ACCEPT
+  10. iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -p udp --sport 0:65535 -j ACCEPT
+  11. iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT 
+
+      ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281030</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281030</link>
+				<pubDate><![CDATA[Wed, 16 Jul 2014 02:07:48]]> GMT</pubDate>
+				<author><![CDATA[ robinhood_10889]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Cảm ơn các bạn đã reply rất nhiều :D.
+@invalid_password: bạn nên đọc lại các case có trong diễn đàn. Policy này sẽ thực hiện tất cả các rule mình đã đưa vào trước, cuối cùng mới là drop all.
+@robinhood_10889: cảm ơn bạn rất nhiều nhé, trước mình có hiểu nhầm một chút nên cấu  hình không thành công chứ không phải quên đâu  :*- . Nhờ bạn mà mình đã hiểu ra nhiều thứ rồi.
+P/s: có bạn nào có quyển sách nào hay và đầy đủ về iptables thì giới thiệu cho mình vs nhé, tiếng anh cũng được , mình xin cảm ơn rất nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281035</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281035</link>
+				<pubDate><![CDATA[Thu, 17 Jul 2014 00:47:01]]> GMT</pubDate>
+				<author><![CDATA[ Voyage146]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Voyage146 wrote:</cite><br>
+		<blockquote>@invalid_password: bạn nên đọc lại các case có trong diễn đàn. Policy này sẽ thực hiện tất cả các rule mình đã đưa vào trước, cuối cùng mới là drop all.&nbsp;
+		</blockquote>
+Mình thì lại tưởng nhầm đây là thứ tự trong file cấu hình mà không coi kỹ nó là command gõ vào :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281037</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281037</link>
+				<pubDate><![CDATA[Thu, 17 Jul 2014 01:31:34]]> GMT</pubDate>
+				<author><![CDATA[ invalid-password]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ @invalid-password: file cấu hình hay command gõ vào thì cũng thế vì đó là -P: Policy mà. Tất cả những gì không match với rules trong chain thì sẽ theo policy của chain đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281061</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281061</link>
+				<pubDate><![CDATA[Mon, 21 Jul 2014 12:45:09]]> GMT</pubDate>
+				<author><![CDATA[ qwerty13]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Sau vài tuần tự tìm hiểu thì mình cũng rút ra  được một mẹo nhỏ là mỗi khi có một vấn đề gì về các policy gì thì mình toàn dò lỗi thiếu trong từng chain bằng cách
+ví dụ:
+-P INPUT DROP
+-P OUTPUT DROP
+-P FORWARD DROP 
+(và một đống luật INPUT, OUTPUT, FORWARD, POSTROUTING, PREROUTING... đằng sau đó)
+=&gt; kết quả không ping được internet chả hạn. Mình liền thử ACCEPT cho 1 trong 3 chain trên. nếu chain nào bật ACCEPT mà ping được kết nối mạng =&gt; mình thiếu luật chain đó =&gt; khắc phục
+
+:D mình hay dùng cách này cho firewall iptables mình làm lab ở nhà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281069</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281069</link>
+				<pubDate><![CDATA[Wed, 23 Jul 2014 04:09:36]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Hôm đó nhờ có bạn robinhood_10889, mà mình đã cấu hình thành công. Sau đó mình có cấu hình openvpn trên Server B và áp dụng điều học được từ bài lab trước khi cấu hình iptables cho server B:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>:INPUT DROP &#91;0:0&#93;
+:FORWARD DROP &#91;18:1604&#93;
+:OUTPUT ACCEPT &#91;629:608994&#93;
+-A INPUT -s 10.2.32.189/32 -i eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -s 10.2.32.189/32 -i eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i eth0 -p tcp -m tcp --sport 1024:65535 --dport 1194 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+
+-A FORWARD -s 192.168.1.0/24 -o eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -s 192.168.0.0/24 -o eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -s 172.16.1.0/24 -o eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -d 172.16.1.0/24 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -d 192.168.0.0/24 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -d 192.168.1.0/24 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+
+-A OUTPUT -o eth0 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --sport 1024:65535 --dport 1194 -j ACCEPT
+-A OUTPUT -d 10.2.32.189/32 -o eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -d 10.2.32.153/32 -o eth0 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+Theo mình nghĩ thì khi host đi từ bên A qua vpn để sử dụng các dịch vụ ở sau server B (do các server sau B cung cấp) thì chỉ luật trong FORWARD điều khiển các luồng traffic này thôi chứ nhỉ? Vậy tại sao khi mình chuyển OUTPUT từ ACCEPT sang DROP thì kết nối lại mất từ cả 2 bên??? Rất mong ae giúp mình lần nữa, mình xin cảm ơn nhiều  :^) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281080</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281080</link>
+				<pubDate><![CDATA[Fri, 25 Jul 2014 03:38:57]]> GMT</pubDate>
+				<author><![CDATA[ Voyage146]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Voyage146 wrote:</cite><br>
+		<blockquote>
+Theo mình nghĩ thì khi host đi từ bên A qua vpn để sử dụng các dịch vụ ở sau server B (do các server sau B cung cấp) thì chỉ luật trong FORWARD điều khiển các luồng traffic này thôi chứ nhỉ? Vậy tại sao khi mình chuyển OUTPUT từ ACCEPT sang DROP thì kết nối lại mất từ cả 2 bên??? Rất mong ae giúp mình lần nữa, mình xin cảm ơn nhiều  :^) 
+&nbsp;
+		</blockquote>
+
+Mình cũng vừa tự nghịch cái lab như bạn. Tạm hiểu B như là một con firewall và đóng vai trò như một router cho "dải mạng sau B". Khi bạn cài openvpn trên B, thì sẽ có một <b>NIC</b> tun0 được tạo trên B
+
+Bên A sử dụng VPN sẽ được VPN cấp dải mạng 10.8.0.x (mặc định và bạn có thể thay đổi trong cấu hình openvpn) để truyền gói tin vào tun0 của B. Vì thế bạn cần phải viết luật INPUT và OUTPUT các packet vào NIC này + FORWARD từ tun0 vào đến dải mạng "đằng sau B" nếu cần.
+
+Ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -A INPUT -i $EXTIF -s $EXTNET -p udp --dport 1723 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o $EXTIF -d $EXTNET -p udp --sport 1723 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -i tun0 -s $VPNNET -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o tun0 -d $VPNNET -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i tun0 -s $VPNNET -o $INTIF -d $INTNET -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i $INTIF -s $INTNET -o tun0 -d $VPNNET -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+trong đó:
+<b>$VPNNET</b> Dải mạng mà VPN server của B cung cấp cho bên A
+<b>$EXTIF</b> Interface ra internet của B
+<b>$EXTNET</b> Dải mạng bên ngoài local network
+<b>$INTIF</b> Interface của B đi vào mạng bên trong
+<b>tun0</b> Interface được tạo bởi openvpn
+
+Dòng lệnh 1,2 là mở port cho VPN
+Dòng lệnh 3,4 là cho phép mọi gọi tin đi từ VPNNET đi vào,ra Card mạng tun0 đều được chấp nhận
+Dòng lệnh 5,6 Forward gói tin từ VPNNET đi vào "dải mạng sau B" và ngược lại (trường hợp dải mạng B và dải mạng sau B khác nhau. Nếu cùng dải mạng thì không cần)
+
+<b><font color='brown'>Giải thích: Các gói tin tại A sẽ đi trong tunnel giữa được tạo ra bới VPN clients và tun0. Nếu bạn không thiết lập INPUT và OUTPUT chain cho tun0 thì mặc định nó sẽ chặn hết :)</font></b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281097</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281097</link>
+				<pubDate><![CDATA[Sun, 27 Jul 2014 05:36:23]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Xin lỗi vì trả lời muộn, mình hơi bận trong thời gian rồi.
+2 command đầu mình không nói, vì nó cần thiết để tạo kết nối VPN giữa 2 site. Còn lúc đầu khi mới cấu hình mình cũng dùng các command dưới này để cấu hình cho kết nối VPN:
+iptables -A INPUT -i tun+ -j ACCEPT
+iptables -A FORWARD -i tun+ -j ACCEPT
+iptables -A OUTPUT -o tun+ -j ACCEPT
+iptables -A FORWARD -o tun+ -j ACCEPT
+iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+Nhưng khi thay bằng các command như post trước của mình thì mọi thứ vẫn hoạt động bình thường mặc dù là INPUT DROP (k permit tun+) ?
+Mình cũng đang làm về OpenVPN, ae có vấn đề j thì post trong đây luôn nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281156</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281156</link>
+				<pubDate><![CDATA[Fri, 1 Aug 2014 03:20:08]]> GMT</pubDate>
+				<author><![CDATA[ Voyage146]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Voyage146 wrote:</cite><br>
+		<blockquote>Xin lỗi vì trả lời muộn, mình hơi bận trong thời gian rồi.
+2 command đầu mình không nói, vì nó cần thiết để tạo kết nối VPN giữa 2 site. Còn lúc đầu khi mới cấu hình mình cũng dùng các command dưới này để cấu hình cho kết nối VPN:
+iptables -A INPUT -i tun+ -j ACCEPT
+iptables -A FORWARD -i tun+ -j ACCEPT
+iptables -A OUTPUT -o tun+ -j ACCEPT
+iptables -A FORWARD -o tun+ -j ACCEPT
+iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+Nhưng khi thay bằng các command như post trước của mình thì mọi thứ vẫn hoạt động bình thường mặc dù là INPUT DROP (k permit tun+) ?
+Mình cũng đang làm về OpenVPN, ae có vấn đề j thì post trong đây luôn nhé.&nbsp;
+		</blockquote>
+
+- Đúng vậy, có lẽ mình hơi hiểu nhầm chút, mình đã thử lại là INPUT -i eth0 cũng như là INPUT -i tun0, không khác nhau. Vì openvpn kết nối với bên ngoài bằng eth0 mà =&gt; các gói tin đi vào eth0 :D
+=&gt; không có vấn đề gì ở INPUT
+
+- Quay lại vấn đề với OUTPUT của bạn, Hình như câu lệnh này có vấn đề:
+<b>-A OUTPUT -o eth0 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --sport 1024:65535 --dport 1194 -j ACCEPT</b>
+
+Mình nghĩ --sport phải là 1194 chứ nhỉ. Openvpn lắng nghe và trả lời trên port 1194.
+Bạn thử bỏ phần <b><font color='green'>--sport 1024:65535</font></b> đi, sau đó <b><font color='brown'>--dport 1194</font></b> xem sao]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281180</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281180</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 07:20:25]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ EDIT! 
+sr mod, mình lỡ double post]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281181</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281181</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 07:25:23]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Rules đó không có vấn đề gì b nhé. Vẫn rule đó nhưng VPN mình cũng hoạt động thành công rồi :D. Cảm ơn mọi người đã giúp mình hiểu được những điều cơ bản nhất về iptables, đặc biệt là bạn flygon :^). 
+Khi có thời gian mình sẽ cố tìm hiểu sâu hơn và lúc đó mong được thảo luận nhiều hơn với mọi người.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281269</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281269</link>
+				<pubDate><![CDATA[Mon, 11 Aug 2014 07:12:20]]> GMT</pubDate>
+				<author><![CDATA[ Voyage146]]></author>
+			</item>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ Cái rule đó vẫn đúng vì 1194 nằm trong dải port 1024:65535 nhưng nếu giả dụ có dịch vụ nào chạy port không nằm trong dải 1024:65535 thì sẽ không đúng -&gt; bị block :D
+
+Hix mình có giúp được gì đâu, toàn nhầm nhọt linh tinh :D. Bạn add fb mình để tiện liên lạc trao đổi sau này nhé 
+https://www.facebook.com/tuhoanganh11]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281290</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45712.hva#281290</link>
+				<pubDate><![CDATA[Wed, 13 Aug 2014 11:10:41]]> GMT</pubDate>
+				<author><![CDATA[ flygon]]></author>
+			</item>
+	</channel>
+</rss>

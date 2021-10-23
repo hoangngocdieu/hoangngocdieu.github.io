@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Linux Wireless - Phần 3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Linux Wireless - Phần 3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Linux Wireless - Phần 3</title>
+				<description><![CDATA[ <b>BẮT ĐẦU SỬ DỤNG Host AP</b>
+
+HostAP <span class="link"> http://hostap.epitest.fi/</span>) Driver sẽ cho phép một Prism-based radio card hoạt động giống như một BSS Master (access point) hay là Slave (wireless client) and nó cũng làm IBSS mode được luôn (ad-hoc). PCMCIA, PCI và mini-PCI radios đều được hỗ trợ hết. HostAP làm việc tốt nhất với kernel 2.4 trở lên.
+Khi tải HostAP driver về rồi, <font color='orange'>unpack</font> nó, xong rồi chỉ việc chạy <font color='orange'>make</font>. Bất cứ hardware-independent driver code nào đều được tự động built không cần biết bạn chọn driver nào, build xong để cài đặt thì chạy <font color='orange'>make install</font> .
+
+<b>
+PCMCIA</b>
+
+Nếu cài đặt PCMCIA driver thì khi chạy make, <b>hostap_cs.conf</b> sẽ được tự động copied vào <b>/etc/pcmcia</b> để system detects khi card được gắn vào. Nên restart pcmcia service sau khi cài đặt HostAP driver xong. Cài đặt xong, wireless device sẽ được gọi là <b>wlan0</b> (và cái thứ nhì sẽ được gọi là wlan1, etc.).
+
+Cấu hình radio parameters thì cũng rất dễ hiểu, nếu dùng PCMCIA driver thì mọi settings đều ở trong <b>/etc/pcmcia/wireless.opts</b>
+
+Đây là một ví dụ wireless.opts cho BSS Master (i.e. HostAP) mode:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+#wireless.opts
+#
+
+case "$ADDRESS" in
+
+home,*,*,00:02:6F:*&#41;
+INFO="Home AP"
+ESSID="alpha"
+MODE="Managed"
+CHANNEL="8"
+RATE="auto"
+;;
+
+esac</pre>
+		</div>
+
+Có thể là bạn nhgĩ: "Tại sao lại nhiều sao (*) vậy..." Nhưng nếu quen thuộc với <b>network.opts</b>, syntax giống y chang, còn không thì những (*) cho mình đuợc nhiều đường đi lắm (tremendous flexibility).
+
+Script này được passed một string trong $ADDRESS nói rõ về wireless card khi được gắn vô, nó giúp bạn có được nhiều entries khác nhau cho những card khác nhau. Address matching syntax giống như sau:
+
+<b>scheme, socket, instance, MAC address)</b>
+
+<b>Scheme</b> cho phép dựng lên nhiều profile, rất hữu dụng cho laptop, bạn có thể có nhiều settings khác nhau cho home office, office network, paid service....Chạy cardctl scheme (as root) để xem, và đổi settings bằng cardctl scheme home hay là cardctl scheme office. Cả hai wireless.opts và network.opts đều dùng scheme được, cho phép bạn đổi wireless và network settings trong một lệnh đơn giản.
+
+Cái parameter thứ nhì, <b>socket</b> là nơi mà wireless card được gắn vô. Thônng thường được bắt đầu từ 0 rồi tiếp tục lên tuỳ theo bạn có bao nhiêu cái. Muốn biết cho rõ thì gắn card vô rồi chạy lệnh cardctl status
+
+Parameter thứ ba dành cho những card mà có hơn một interface (tôi thì chưa gặp), nhưng nếu bạn có loại này thì dùng nó để set parameters cho từng cái, bắt đầu từ 0.
+
+Parameters cuối cùng thì rất tiện bởi vì bạn có thể match settings cho từng specific MAC address, dùng wildcard cũng được, giống như:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>*,*,*,00:02:6F:*&#41;</pre>
+		</div>
+
+Cách này match bất cứ Senao/Engenius card nào gắn vô bất cứ slot nào trong bất kỳ scheme nào. Đừng quên là wireless.opts chỉ dùng để set radio parameters. Network settings (IP address, default gateway, và dùng DHCP hay không) thì được set ở network.opts.
+
+<b>PCI</b>
+
+Cấu hình cho PCI hay mini-PCI card thì cũng giống như những network cards khác. Ở một nơi nào đó, bạn phải cấu hình bằng calls vô iwconfig. Tốt nhất là trong boot-up process, sau khi tất cả kernel-modules được loaded hết rồi nhưng trước khi device configures IP stack của nó. Tạo một initiliazation script có một dòng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iwconfig wlan0 essid "Tên_mà_mình_muốn" mode "Master" channel 6 rate "Auto"</pre>
+		</div>
+
+Copy script này vô<b> /etc/init.d</b> và symlink nó vô <b>/etc/rc2.d/ </b>hay cho đúng chỗ tuỳ theo run level của bạn. Vì mỗi distro có một cách khác nhau khi chạy rc script, coi man page lại cho chắc.
+
+Khi radio parameter đã được cấu hình xong, sử dụng wlan0 device cũng giống như bất cứ Ethernet interface nào. Gán IP, đặt routing, bind process vô IP của nó như bình thường. HostAP driver sẽ lo hết những chi tiết lẻ tẻ về managing wireless clients cho bạn. Nếu bạn có cần xem hay thay đổi bất cứ wireless parameter nào (PCI hay PCMCIA), <b>iwconfig </b>là dụng cụ để thay đổi:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#iwconfig wlan0
+
+wlan0 IEEE 802.11b ESSID:"alpha" Nickname:"anubis"
+Mode:Master Frequency:2.437 GHz Access Point: 00:02:6F:03:FD:D4
+Bit Rate:11 Mb/s Sensitivity=1/3
+Retry min limit:8 RTS thr:off Fragment thr:off
+Encryption key:off
+Power Management:off
+Link Quality:84/92 Signal level:-50 dBm Noise level:-100 dBm
+Rx invalid nwid:0 Rx invalid crypt:0 Rx invalid frag:0
+Tx excessive retries:0 Invalid misc:2830 Missed beacon:0</pre>
+		</div>
+
+<b>
+Làm HostAP trở thành một True Layer 2 Bridge a.k.a Access Point</b>
+
+Prism-based wireless cards cho phép bridging ở firmware nên việc tạo access point đã trở nên thật dễ dàng. Access point device chỉ là một bridge giữa wireless interface wlanX và ethernet interface ethX để traffic di chuyển từ một network này sang network khác.
+
+Bridging thì cũng rất đơn giản, trước hết bạn cần bridge-utility từ<span class="link"> http://bridge.sourceforge.net/</span> và một kernel với 802.1d Ethernet bridging-enabled. Cách thức tạo bridge là xoá đi hết tất cả cấu hình IP hiện có trên những devices mà bạn muốn "bridge", tạo một logical bridge giữa những devices đó, gán IP cho bridge, đặt routing để bạn có thể access network bằng chính cái bridge đó.
+
+Ví dụ như chúng ta muốn bridge một Prism-based wireless card chạy HostAP (<b>wlan0</b>) với Ethernet interface đầu tiên (<b>eth0</b>). Thử những lệnh sau, chạy từ console thì sẽ được rõ ràng hơn nhiều:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iwconfig wlan0 mode master essid omega
+ifconfig wlan0 0.0.0.0
+ifconfig eth0 0.0.0.0
+brctl addbr br0
+brctl addif br0 wlan0
+brctl addif br0 eth0
+ifconfig br0 192.168.2.2
+route add default gw 192.168.2.1</pre>
+		</div>
+
+Khi bạn tạo bridge lần đầu tiên, system sẽ mất vài giây để 'learn" network củan bạn. Đợi một chút bạn sẽ thấy traffic chạy qua bridge, đừng bị hoảng khi không thấy traffic ngay lập tức.
+
+Nếu network chỉ có một bridge, bạn có thể an tâm tắt Spanning Tree đi:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>brctl stp br0 off</pre>
+		</div>
+
+Nó sẽ ngăn bridging code gửi 802.1d negotiation traffic một cách không cần thiết tới những non-existent bridges. Bạn có thể xem cấu hình của bridge bất cứ lúc nào bằng lệnh brctl show:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#brctl show
+bridge name       bridge id                       STP enabled        interfaces
+br0                    8000.00026f03fdd4      no                      wlan0
+                                                                                       eth0</pre>
+		</div>
+
+Thông thường bridge là những "set and forget" device. Một khi đã được cấu hình xong xuôi rồi, bridge sẽ tự động làm hết tất cả, Linux Access Point đa số được built như vậy bởi vì nếu dùng với kernel 2.5 trở lên bạn có thể bridging với firewall qua iptables.
+
+HostAP còn thực hiện một vài chức năng đặc biệt nữa, không những là nó có thể cản traffic vô network của bạn mà còn không cho những kẻ không được phép hội nhập (associate). Cái này để phòng hờ là có tay nào đó vô gây phiền phức cho những nodes khác, ngay cả sau khi đã không còn network access.
+Khi dùng MAC filtering, đa số mọi người làm ra 1 danh sách của những wireless devices mà họ cho phép và sau đó từ chối tất cả những cái khác. Dùng<b> iwpriv</b> command để làm.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iwpriv wlan0 addmac 00:30:48:4b:9e:22
+# iwpriv wlan0 addmac 00:40:65:23:99:fd
+...
+# iwpriv wlan0 maccmd 1
+# iwpriv wlan0 maccmd 4</pre>
+		</div>
+
+Lệnh addmac thêm 1 MAC address vô internal table. Bạn có thể thêm bao nhiêu MAC address vô cũng được tùy thích sau đó phải cho HostAP biết là phải làm sao với cái bảng  bạn vừa built xong. Lện <b>maccmd</b> 1 nói cho HostAP biết là dùng  bảng đó là danh sách cho phép (allowed list) và từ chối tất cả những cái khác không cho nhập. Sau cùng, lệnh maccmd 4 đá hết tất cả (boots) những clients đã hội nhập  buộc họ phải tái nhập (reassociate). Tất cả những clients có tên trong danh sách sẽ được tự động cho phép còng tất cả những kẻ khác muốn nhập sẽ bị từ chối.
+
+Đôi khi bạn chỉ muốn cấm một hay hai tay nào đó phá phách, thay vì tạo danh sách cho phép, bạn có thể tạo danh sách cấm và cho phép tất cả, thử lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iwpriv wlan0 addmac 00:49:19:4f:7a:98
+# iwpriv wlan0 maccmd 2
+# iwpriv wlan0 kickmac 00:49:19:4f:7a:98</pre>
+		</div>
+
+Giông như lần trước, bạn dùng addmac tùy thích. Lệnh <b>maccmd 2</b> đổi policy thành từ chối/cấm (deny), và <b>kickmac</b> đá (boots) MAC address đó ngay lập tức. Cách này thì lịch sự hơn thay vì boot hết mọi người và ép hội nhập lại chỉ vì một con sâu phá phách. Còn nếu muốn tắt MAC filtering hẳn đi thì dùng lệnh <b>maccmd 0</b>.
+
+Nếu có gõ nhầm lỗi thì bạn có thể dùng lệnh <b>delmac</b> giống như <b>addmac</b> vậy, sẽ xóa đi MAC address trong bảng. Còn nếu mà bạn muốn flush hết tất cả MAC trong bãng và giữ lấy policy đang chạy thì dùng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iwpriv wlan0 maccmd 3</pre>
+		</div>
+Sau hết, bạn có thể xem MAC table đang chạy bằng cách dùng /proc:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cat /proc/net/hostap/wlan0/ap_control</pre>
+		</div>
+
+Nên nhớ là <b>iwpriv</b> chỉnh sửa parameters của HostAP driver nhưng nó không giữ lại settings sau khi reboot. Một khi mà đã có một MAC filtering ưng ý rồi thì nhớ để những lệnh tương ứng vô một rc script để chạy ở boot time.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2754.hva#15232</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2754.hva#15232</link>
+				<pubDate><![CDATA[Tue, 15 Aug 2006 16:21:59]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

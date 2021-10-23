@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "tìm process id đang mở udp port "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "tìm process id đang mở udp port "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ Các bạn cho mình hỏi làm sao để tìm được 1 process id nào đang mở 1 udp port.
+Mình sử dụng netstat nhưng tại column process_id/process_name hiển thị là <font color='orange'>-</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#  netstat -np --protocol=inet | grep 101.99.6.87
+udp        0      0 10.0.0.xxx:44431            101.99.6.87:53              ESTABLISHED -</pre>
+		</div> 
+mình sử dụng lsof, nhưng không ra kết quả gì
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#port=`netstat -np --protocol=inet | grep 101.99.6.87 |awk '{print $4}' | cut -d: -f2` && lsof -i :$port</pre>
+		</div>
+
+(hơi ngoài lề với câu hỏi nhưng cho mình tiện hỏi luôn)
+Sở dĩ mình cần tìm process và file đang sử dụng để xác định nguyên nhân của việc mạng bị bottle neck.
+Sơ đồ mạng đơn giản như sau: Wan&lt;---&gt; eth0-LVS(nat)-eth1 &lt;---&gt; Webserver, cổng eth0 100Mb, eth1 1000Mb
+Tại LVS, mình chạy
+# iftop -i eth0
+Kết quả show ra top là ip 101.99.6.87 &lt;-&gt; 123.162.233.1 (ip wan lvs) với TX &gt; 90Mb, RX: &lt; 1Mb
+# iftop -i eth1 
+Kết quả show ra top là ip 101.99.6.87 &lt;-&gt; 10.0.0.xxx (ip webserver) với TX &gt; 900Mb, RX: &lt; 1Mb
+Mình sử dụng tcpdump tại LVS :
+#tcpdump -n -vv host 101.99.6.87 -i eth1 -w 101.99.6.87.pcap
+Dùng wireshark xem gói tin thấy có 2 dạng gói tin, trong đó có 1 gói là malform packet dns(mình ko rõ cái dạng gói tin này là gì, tra google 1 tí thì mình đoán có lẽ server mình bị dính con bot gì rồi, <font color='orange'>DNS malformed packet flood</font>,<span class="link"> http://www.iss.net/security_center/reference/vuln/DNS_Malformed_Flood.htm</span> :( ) file chứa gói tin mình export 2 gói ra file txt:<span class="link"> https://www.mediafire.com/?le1d0m6w2zj3h2a</span>
+Mình đã dùng iptables Drop ip này:
+#iptables -t filter -I FORWARD 1 -d 101.99.6.87 -j DROP
+Lúc này traffic out từ ip 123.162.233.1 -&gt; 101.99.6.87 ở eth0 ko còn nữa, nhưng traffic out ở eth1 vẫn còn, nhưng RX = 0, TX &gt; 900Mb
+À còn ip 101.99.6.87 ko phải lúc nào cũng là ip đó, có lúc nó lại ra ip khác với trường hợp tương tự
+Rất mong mọi người có thể xem qua và giúp mình, chân thành cảm ơn :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279363</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279363</link>
+				<pubDate><![CDATA[Mon, 30 Dec 2013 10:40:51]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ Mình vẫn hay sử dụng lệnh netstat -nlup
+trong đó:
+l listen
+p process
+u: udp (nếu cần xem tcp thì thay bằng t)
+n: hiện số cho nhanh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279376</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279376</link>
+				<pubDate><![CDATA[Wed, 1 Jan 2014 10:02:20]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ Cảm ơn myquartz, mà với lệnh netstat bạn đưa ra thì chỉ xem được process nào đang LISTEN thôi, mình cần tìm ra process đã thiết lập kết nối ra bên ngoài.
+Thêm thông tin là tại webserver, net.ipv4.ip_forward = 0, nên mình chắc rằng không có kết nối nào đi qua nó được, chỉ có vào ra thôi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279382</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279382</link>
+				<pubDate><![CDATA[Thu, 2 Jan 2014 03:47:10]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ Bạn thử ngâm cứu `auditd` xem. 
+
+Đầu tiên, tạo một rule thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>auditctl -a exit,always -F arch=b64 -S socket -k SOCKET</pre>
+		</div>
+
+Trong khi chờ đợi, có thể chạy `tcpdump` để chắc chắn rằng đã có một ít UDP đã đi ra ngoài đến port 53.
+
+Sau đó, dùng `ausearch` để kiểm tra log. Một ví dụ khi mình dùng `nslookup`:
+<blockquote>type=SYSCALL msg=audit(01/02/2014 11:21:27.679:24) : arch=x86_64 syscall=socket success=yes exit=7 a0=2 a1=2 a2=11 a3=0 items=0 ppid=2180 pid=2182 auid=unset uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=pts1 ses=4294967295 comm=nslookup exe=/usr/bin/nslookup key=SOCKET &nbsp;
+		</blockquote>
+
+Good luck.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279383</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279383</link>
+				<pubDate><![CDATA[Thu, 2 Jan 2014 06:47:15]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ mình cảm ơn quanta, mặc dù chưa gặp lại cái hiện tượng trên để mình thực hiện tracking bằng audit, mình có thử nghiệm với rule quanta hướng dẫn, sau khi add rule khoảng 15s, dùng ausearch: # ausearch -sc socket
+kết quả quá lớn, và toàn bộ các process hầu như là suexec và php-cgi (vì webserver chạy rất nhiều website)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ausearch -sc socket | wc -l
+63468</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ausearch -sc socket
+time-&gt;Thu Jan  2 20:47:33 2014
+type=SYSCALL msg=audit&#40;1388670453.581:284435&#41;: arch=c000003e syscall=41 success=yes exit=3 a0=1 a1=80801 a2=0 a3=ffffffffff
+ffffff items=0 ppid=30299 pid=3651 auid=520 uid=48 gid=48 euid=0 suid=0 fsuid=0 egid=48 sgid=48 fsgid=48 tty=&#40;none&#41; ses=388
+55 comm=&quot;suexec&quot; exe=&quot;/usr/sbin/suexec&quot; key=&quot;SOCKET&quot;
+
+time-&gt;Thu Jan  2 20:47:33 2014
+type=SYSCALL msg=audit&#40;1388670453.584:284436&#41;: arch=c000003e syscall=41 success=yes exit=4 a0=2 a1=2 a2=0 a3=7fff17818960 i
+tems=0 ppid=3305 pid=3649 auid=520 uid=15382 gid=200000 euid=15382 suid=15382 fsuid=15382 egid=200000 sgid=200000 fsgid=200
+000 tty=&#40;none&#41; ses=38855 comm=&quot;php-cgi&quot; exe=&quot;/usr/bin/php-cgi&quot; key=&quot;SOCKET&quot;</pre>
+		</div>
+Nếu xảy ra hiện tượng như ở câu hỏi, khi mình track được dữ liệu với số lượng như trên, không biết phải soi thế nào mới ra đúng cái process hay uid,pid,... mình cần tìm không :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279415</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279415</link>
+				<pubDate><![CDATA[Mon, 6 Jan 2014 04:42:17]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+Nếu xảy ra hiện tượng như ở câu hỏi, khi mình track được dữ liệu với số lượng như trên, không biết phải soi thế nào mới ra đúng cái process hay uid,pid,... mình cần tìm không :(&nbsp;
+		</blockquote>
+Bạn có thể dùng thêm `-F a0=2 -F a1=2` nữa để chỉ audit UDP thôi. 
+Tham khảo:<span class="link"> http://serverfault.com/questions/192893/how-i-can-identify-which-process-is-making-udp-traffic-on-linux</span>
+
+Ở đây, a0 tương ứng với PF_INET còn a1 là SOCK_DGRAM:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep _INET /usr/src/linux-headers-3.2.0-30/include/linux/socket.h
+#define AF_INET         2       /* Internet IP Protocol         */
+#define AF_INET6        10      /* IP version 6                 */
+#define PF_INET         AF_INET
+#define PF_INET6        AF_INET6</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep _DGRAM /usr/src/linux-headers-3.2.0-30/include/linux/net.h 
+ * @SOCK_DGRAM: datagram &#40;conn.less&#41; socket
+        SOCK_DGRAM      = 2,</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279435</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279435</link>
+				<pubDate><![CDATA[Wed, 8 Jan 2014 11:03:09]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ mình cảm ơn quanta rất nhiều
+Sau một buổi nín thở nằm chờ, đã xác định được uid gây ra hiện tượng trên
+Khi xảy ra hiện tượng bottle neck tại firewall, xác định được des ip, mình vào webserver bật iptables lên
+tạo 1 rule mới:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iptables -t filter -I OUTPUT -d 112.78.1.194 -j LOG --log-prefix=&quot;tracking: &quot;</pre>
+		</div>
+nhằm để xác định thời gian
+tiếp tục  tạo rule audit:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#auditctl -d exit,always -F arch=b64 -S socket -k SOCKET -F a0=2 -F a1=2</pre>
+		</div>
+để im trong ~1 phút
+sau đó bỏ 2 rule trên, đổ log audit vào 1 file mới
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ausearch -sc socket | grep 'a0=2' | grep 'a1=2' &gt; audit.track.log</pre>
+		</div>
+hiện tượng xảy ra lúc ~10:54 (theo log kernel), mình lọc khoảng thời gian này 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#grep &quot;^10:5&#91;4-6&#93;&quot; audit.track.log &gt; audit.track1.log</pre>
+		</div>
+nhưng lượng log vẫn còn quá lớn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep &quot;^10:5&#91;4-6&#93;&quot; audit.track1.log | wc -l
+55921</pre>
+		</div>
+nên mình lọc ra xem uid nào mở socket nhiều nhất trong khoảng thời gian 10:54 -10:56
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#grep &quot;^10:5&#91;4-6&#93;&quot; audit.track1.log | awk '{print $15,$16,$24,$25,$26}' | sort -k1 | uniq -c | sort -rn | head
+55084 uid=1xxxx gid=x00000 ses=38855 comm=&quot;php-cgi&quot; exe=&quot;/usr/bin/php-cgi&quot;
+     85 uid=xxxxx gid=x00000 ses=38855 comm=&quot;php-cgi&quot; exe=&quot;/usr/bin/php-cgi&quot;
+     34 uid=xxxxx gid=x00000 ses=38855 comm=&quot;php-cgi&quot; exe=&quot;/usr/bin/php-cgi&quot;
+.....</pre>
+		</div>
+lúc này coi như khoanh vùng được là do tên nào 
+cd đến homedir của uid này: có source web chạy joomla
+vẫn chưa thể xác định được file nào
+mình thử xem log của những web này, thấy có nhiều request lạ như thế này
+80.242.139.195 - - [10/Jan/2014:10:53:53 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:10:55:15 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:10:56:36 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:10:57:58 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:10:59:19 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:11:00:41 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:11:02:02 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xx
+80.242.139.195 - - [10/Jan/2014:11:03:23 +0700] &quot;POST /tmp/b.php HTTP/1.1&quot; 200 0 &quot;-&quot; &quot;-&quot; 10.0.0.1xxx
+
+trong homedir/tmp, mình tìm ra đc 2 file (file đính kém) trong đó có 1 con webshell :(
+nhưng không biết có phải  file b.php gây ra hiện tượng bottle neck hay ko (còn chính xác file nằm trong homedir của uid trên, vì trong lúc xảy ra hiện tượng, mình đổi tên cái homedir đi thì ngắt ngay hiện tượng bottle neck )
+hiện mình định dùng audit track (chờ xảy ra hiện tượng ở lần tiếp theo) toàn bộ file trong homdir của user này,
+auditctl -w /homedir-uid/ -p rx
+mong sẽ xảy ra hiện tượng trên sớm.
+(cho mình hỏi có cách nào tối ưu hơn không :) )
+<span class="link"> http://www.mediafire.com/download/dls41n3bdk7uh76/file.zip</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279444</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279444</link>
+				<pubDate><![CDATA[Fri, 10 Jan 2014 05:32:52]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>tìm process id đang mở udp port </title>
+				<description><![CDATA[ Hiện tại mình đã tìm được file gây ra bottle neck.
+Khi xảy ra sự cố, mình tail access log của uid này, và tìm ra được file bot php
+Bên trong file đơn giản chỉ là 1 vòng lặp vô tận while(1)
+nội dung bên trong while dùng các func fsockopen() , fwrite() và fclose() để mở socket gửi data ra ngoài
+data là chuỗi ký tự XXXXX (khớp với payload khi mình capture đc bằng tcpdump)
+
+Cảm ơn quanta rất nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279458</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45380.hva#279458</link>
+				<pubDate><![CDATA[Mon, 13 Jan 2014 21:47:28]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+	</channel>
+</rss>

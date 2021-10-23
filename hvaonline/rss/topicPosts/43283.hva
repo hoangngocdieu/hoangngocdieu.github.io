@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Triển khai chứng chỉ SSL cho IIS 7.5 Webserver – Phần 2"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Triển khai chứng chỉ SSL cho IIS 7.5 Webserver – Phần 2"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Triển khai chứng chỉ SSL cho IIS 7.5 Webserver – Phần 2</title>
+				<description><![CDATA[ <b><font color='yellow'>4     Xác định vị trí đặt chứng chỉ của Web server</font></b>
+
+Việc lựa chọn vị trí triển khai chứng chỉ cho Web server phụ thuộc vào cấu hình mạng của bạn. Dưới đây là hai trường hợp thường gặp.
+
+<b><font color='orange'>Với một Web server</font></b>
+Nếu chỉ có một Web server hoạt động thì hiển nhiên chứng chỉ phải được đặt tại Web server đó như được thể hiện trong Hình dưới đây:
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/08/ssl_single_web_server.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b><font color='orange'>Với một nhóm các Web server</font></b>
+Ở cấu hình gom nhóm này, website có thể nằm trên ổ đĩa dùng chung bởi nhiều máy chủ hoặc mỗi máy chủ có ổ đĩa riêng để lưu trữ bản sao của website. Trong mỗi trường hợp thì khi người dùng kết nối tới một URL nào đó thì họ được chuyển hướng tới bất kỳ máy chủ nào trong cụm các máy chủ (cluster). Đây là cơ chế căn bằng tải cho lưu lượng mạng (Network Load Balancing) như được thể hiện trong Hình dưới đây:
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/08/clustered_web_server.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Khi đó mỗi Web server trong cluster sẽ phải có một chứng chỉ SSL của riêng nó. Yêu cầu duy nhất là trường subject name của chứng chỉ cần trùng với tên miền mà Web client sử dụng để kết nối tới website.
+
+Một sự hiểu nhầm thường gặp là cho rằng các Web server trong cluster phải có một chứng chỉ SSL cùng với khóa bí mật giống nhau. Thực ra nếu mua các chứng chỉ cho từ các tổ chức thương mại như VeriSign hay RSA thì rất có thể họ yêu cầu khách hàng cần các chứng chỉ khác nhau cho mỗi Web server.
+
+<font color='orange'><b>Web Server được bảo vệ bởi ISA Server với cấu hình Server Publishing</b></font>
+Khi áp dụng cấu hình Server Publishing trong ISA Server thì tất cả các lưu lượng kết nối tới cổng TCP 443 mà ISA Server đang lắng nghe trên đó sẽ được chuyển hướng tới Web server nằm đằng sau firewall này (xem Hình dưới đây):
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/08/web_server_isa_server_publishing.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Trong cấu hình này, chứng chỉ SSL phải được cài đặt tại Web server. Tên miền trong trường Subject của chứng chỉ phải khớp với tên miền mà Web client dùng để kết nối tới giao tiếp mạng ngoài (external interface) của ISA Server. Nói cách khác, tên miền này phải được phân giải thành địa chỉ IP được gán cho card giao tiếp mạng ngoài của ISA Server. Dạng cấu hình này được cũng được hỗ trợ bởi nhiều firewall phổ biến khác của Cisco hay Checkpoint. Như vậy, yêu cầu được thỏa mãn là triển khai mã hóa dữ liệu được truyền giữa giữa hai điểm đầu cuối là Web server và Web client.
+
+<b><font color='orange'>Web Server được bảo vệ bởi ISA Server với cấu hình Web Publishing</font></b>
+Khi áp dụng cấu hình Web Publishing, dữ liệu mà ISA Server tiếp nhận từ Web client sẽ được giải mã và kiểm duyệt bằng các bộ lọc ở tầng ứng dụng (ví dụ, URL Scanning) để phát hiện những lưu lượng Web có thể là mã độc hoặc các dạng tấn công Web khác. Có hai lựa chọn để sử dụng SSL với cấu hình Web Publishing là:
+
+<b>a. Triển khai SSL cho kết nối giữa hai điểm đầu cuối (End-to-End SSL)</b>
+
+Ở đây, SSL được thực hiện giữa Web client và ISA Server cũng như là giữa ISA Server và Web server (xem Hình dưới đây).
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/08/all_connections_isa_web_publishing.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Hai chứng chỉ SSL khác nhau phải được cài đặt ở cả ISA Server và Web server và hai kết nối SSL tách biệt được thiết lập là:
+
+-  Kết nối SSL đầu tiên xảy ra giữa Web client và ISA Server. Trường Subject của chứng chỉ được cài tại ISA Server phải chứa tên miền mà Web client sử dụng để kết nối tới Web server, và tên miền này phải được phân giải thành địa chỉ IP mặt ngoài của ISA Server.
+
+-  Kết nối SSL thứ hai xảy ra giữa ISA Server và Web server. Trường Subject của chứng chỉ được cài tại Web server phải chứa tên miền hoặc địa chỉ IP giống với thiết lập Web Publishing tại ISA Server.
+
+<b>b. Triển khai SSL giữa Web client và ISA Server</b>
+
+Kết nối SSL chỉ được thực hiện giữa Web client và ISA Server (xem Hình dưới đây).
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/08/only_ssl_webclient_isa_web_publishing.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Chỉ cần một chứng chỉ SSL được cài đặt tại ISA Server. Lưu lượng HTTPS từ Web client sau khi được giải mã và kiểm duyệt bởi bộ lọc tầng ứng dụng của ISA Server sẽ được chuyển tới Web server dưới dạng HTTP (không được mã hóa) thông thường.
+
+Ở đây, trường Subject của chứng chỉ của Web server phải chứa tên miền mà Web client dùng để kết nối tới Web server và tên miền này phải được phân giải thành địa chỉ IP mặt ngoài của ISA Server.
+
+<b><font color='yellow'>5     Demo cài đặt chứng chỉ SSL trên IIS 7.5 Webserver</font></b>
+
+Nếu trong mạng nội có triển khai private CA trên nền Windows Server thì các lựa chọn để cấp chứng chỉ từ CA đó là:
+
+-- Cấp chứng chỉ cho các máy chủ web chạy IIS nằm trong domain.
+-- Cấp chứng chỉ cho các máy chủ web chạy IIS không nằm trong domain.
+-- Cấp chứng chỉ cho các máy chủ web không phải IIS như Apache, Lighthttpd, v.v..
+
+Phần này sẽ trình bày 5 bước để cài đặt chứng chỉ SSL cho IIS Webserver không nằm trong Active Directory domain, bao gồm:
+
+1.  Thêm mẫu chứng chỉ Web Server tại máy Issuing CA.
+2.  Tạo yêu cấu cấp chứng chỉ cho website<span class="link"> https://secure.uit.vn</span> tại máy chủ web.
+3.  Gửi yêu cầu cấp chứng chỉ trên tới Issuing CA.
+4.  Cài đặt chứng chỉ được cấp tại máy chủ web.
+5.  Cấu hình máy chủ web để bật mã hóa SSL cho website.
+
+Tải về video sau để xem hướng dẫn chi tiết các bước thực hiện:<span class="link"> http://www.mediafire.com/?6da17akiz1q1ez6</span>
+
+Nếu muốn thực hiện cài đặt chứng chỉ SSL được cấp từ các commercial CA như Verisign thì chỉ cần tham khảo các bước 4 và 5.
+
+<b>--manthang</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43283.hva#268894</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43283.hva#268894</link>
+				<pubDate><![CDATA[Wed, 29 Aug 2012 21:17:14]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+	</channel>
+</rss>

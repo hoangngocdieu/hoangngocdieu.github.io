@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Qmail as a Mail Gateway - Phần 1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Qmail as a Mail Gateway - Phần 1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <b>Qmail as a Mail Gateway - Phần 1</b>
+
+Giới thiệu tổng quát về Qmail và phương thức tải, biên dịch và chuẩn bị cài đặt Qmail server.
+<b>1. Giới thiệu về Qmail</b>
+
+1.1 Tài liệu dành cho ai?
+Tài liệu này dành cho những ai muốn dùng Qmail như một MTA cho hệ thống mail. Ðiều cần thiết là người đọc phải có kiến thức căn bản sử dụng một hệ thống *nix (cách sử dụng các lệnh và cách truy cập / tạo vào các thư mục). Người viết tài liệu không chịu trách nhiệm cho bất cứ hư hại đến máy của người dùng cũng như sự phiền não, bực dọc, mất ngủ .... đến người dùng tài liệu này :)
+
+Tài liệu này đào sâu ở mức độ có hạn. Mọi ứng dụng tùy thuộc vào nhu cầu và khả năng thiết lập của người dùng. Qmail không phải là một MTA phức tạp. Tuy nhiên nó mang một số khái niệm điều hành độc lập giữa các thành phần để tạo nên một MTA làm việc hoàn chỉnh, do đó, người đọc nên nghiên cứu kỹ trước khi bắt tay vào việc thiết kế một hệ MTA dùng Qmail.
+
+Tài liệu này ứng dụng mô hình qmail làm mail gateway để nhận mail từ Internet và chuyển mail đến một hoặc nhiều mail servers bên trong mạng riêng. Người viết không ứng dụng mô hình qmail như là một mail server phục vụ tất cả các mail protocol khác như IMAP, POP3... vì lý do bảo mật. Có hai điểm tối quan trọng của mô hình mail gateway là:
+
+- Ổn định và hiệu năng: qmail có khả năng chuyển nhận hàng triệu thông điệp một ngày (dựa vào tài liệu trên web site của qmail.org). Tuy nhiên, nếu biến nó thành một mail server phục vụ tất cả các mail protocol thì bị giới hạn trong vấn đề kiểm dịch (authentication). Nếu mail server thuộc một mạng dùng hoàn toàn Unix thì giới hạn này có thể khắc phục dễ dàng. Không may trên thực tế hiện nay, không còn nhiều mạng “thuần” Unix hoặc “thuần” một hệ điều hành nào khác. Bởi vậy, qmail hoạt động như một mail gateway chỉ có trách nhiệm chuyển mail đến các mail servers khác (trong giới hạn cho phép domain) mà không phải lo vấn đề authentication, do đó, ngoài tính bảo mật, tính hiệu năng được nâng cao đáng kể.
+
+-Tính bảo mật: Như đã nêu ra ở trên những khó khăn trong cơ chế quản lý kiểm dịch của một (hoặc nhiều) mạng có đa hệ điều hành không những giảm sút tính hiệu năng mà còn ảnh hưởng lớn đến tính bảo mật. Lý do, quản lý một trung tâm tài nguyên nhân dụng (central user database) dễ dàng và ổn định hơn nhiều user database. Hơn thế, cơ chế Internet <--> Mail Gateway <--> Firewall <--> Internal Mail Servers <--> Users chặc chẽ và an toàn hơn. Ðó là chưa kể ứng dụng kiểm soát / ngăn chặn viruses, trojans và cách loại scripts mang tính phá hoại trên một Unix Mail Gateway trước khi thông điệp được chuyển vào một Mail Server bên trong (Microsoft Exchange hoặc IBM Lotus chẳng hạn). Các ứng dụng cho POP3 hoặc IMAP được thiết lập một cách độc lập trên internal mail servers và người dùng có thể truy cập qua một cơ chế firewalling nào đó.
+
+1.2 Sơ lược về Qmail
+Qmail được viết bởi Tiến sĩ toán của trường đại học Illinois, Chicago, tiến sĩ Dan Bernstein. Qmail ra đời vào tháng Giêng năm 1996 với một phiên bản Beta 0.70 và sau đó phiên bản Gamma 0.90 được cập nhật vào tháng 8 năm 1996. Phiên bản ổn định 1.0 được ra mắt vào tháng 2 năm 1997. Phiên bản được lưu hành hiện nay là 1.03 được phát hành vào tháng 6 năm 1997.
+
+1.3 Tại sao dùng Qmail?
+Có rất nhiều MTA trên môi trường *nix hiện nay và mỗi khi nhắc đến MTA chúng ta phải nhắc đến Sendmail. Tuy nhiên, Dan Bernstein viết Qmail vì ông ta thấy rằng Sendmail thừa hưởng nhiều lỗi bảo mật từ các phiên bản trước đây và phần mềm này rất cồng kềnh, cho dù những năm gần đây, nhóm Sendmail không ngừng điều chỉnh và cải tiến phần mềm này để giảm thiểu những yếu điểm. Khi viết Qmail, ngoài ưu tiên cho vấn đề bảo mật, Dan Bernstein chú trọng rất nhiều đến khả năng hoạt động và tính dễ dùng của nó. Qmail mang tính truyền thống của các hoạt trình Unix: mỗi tiểu ứng trình có khả năng đảm đương trọn vẹn một chức năng chuyên biệt và các tiểu ứng trình này có thể chuyền (pipe) sang các tiểu ứng trình khác để đáp ứng các quy trình phức tạp. Bởi thể, Qmail bao gồm nhiều binaries tạo thành một dây chuyền hoạt động. Ðây là một điển hình nặng tính bảo mật và tính hiệu năng trong cơ chế điều hành của một MTA.
+
+<b>2. Cài đặt Qmail</b>
+2.1 Cài từ “gói” (RPM) hay từ tar ball?
+Qmail thuộc dạng mở-nguồn nên bạn có thể tải mã nguồn của Qmail về để compile và thiết kế nó cho thích hợp với hệ điều hành của mình. Có một số RPM cho RedHat trên Internet (dùng<span class="link"> http://rpmfind.net</span> để tìm). Tuy nhiên, có ít nhiều hạn chế khi dùng RPM và không phải các “gói” này luôn luôn có sẵn cho các hệ điều hành.
+
+RPM thường buộc người dùng cài đặt binaries vào một nơi trong những thư mục và đôi khi sự ép buộc này không tiện cho cách tổ chức thư mục đã có sẵn của bạn. RPM không giải quyết được các trường hợp bị thiếu hoặc sai “thư viện lệ thuộc” (dependencies). Bởi thế, phương cách compile và build từ mã nguồn xem ra là một phương cách khả thi nhất. Hơn nữa, nó sẽ tạo cơ hội cho bạn hiểu rõ hơn cơ chế làm việc của Qmail sau quá trình cài đặt. Tài liệu này sẽ chỉ chuyên chú vào quy trình compile và build từ mã nguồn.
+
+2.2 Yêu cầu để cài đặt Qmail
+Ðể có thể cài đặt Qmail thành công, sau đây là các yêu cầu tối yếu:
+
+- Một C compiler, các thư mục header và các thư viện cho hệ thống lập trình. Nếu bạn dùng trong một phiên bản Linux, compiler của bạn hẳn là gcc.
+
+- Có đủ nơi chứa cho quá trình build và các binaries và các tài liệu sau khi Qmail được build. Ổ chứa tuyệt đối cần thiết cho Qmail lưu trữ và xử lý mail trong các điểm “xếp hàng” (mail queues).
+
+- Domain name của bạn. Qmail chỉ làm việc (đúng) khi bạn có một domain hợp pháp (fully qualified domain name FQDN). Liên hệ với dịch vụ Internet của bạn cho vấn đề này nếu bạn không rõ.
+
+- Qmail được thiết kế như một MTA hạng nặng. Ðiều này có nghĩa máy chạy Qmail phải có băng thông ổn định và rộng đủ để tải và nhận mail. Nếu bạn có dự định thiết lập một MTA xuyên qua modem, có lẽ serialmail là một phần mềm thích hợp hơn <span class="link"> http://cr.yp.to/software/serialmail-0.75.tar.gz</span>).
+
+2.3 Những điều cần chuẩn bị
+Qmail không phải là một phần mềm MTA phức tạp. Tuy nhiên, cách an toàn nhất nên thử cài đặt trên một máy tách biệt từ hệ thống mail đang làm việc của bạn và thâu thập kinh nghiệm trước khi cài đặt trên máy chính thức.
+
+Thực ra quá trình compile và build qmail sẽ không ảnh hưởng gì đến hệ thống mail đang làm việc của bạn. Tuy nhiên, bước kiểm nghiệm Qmail sẽ làm gián đoạn hệ thống mail đang có. Ðề nghị trên đơn giản là một cách nhắc nhở mang tính an toàn.
+Nếu bạn có dụng ý chuyển đổi (migrate) từ một MTA khác sang Qmail, cũng như bao nhiêu quy trình chuyển đổi khác, giai đoạn hình thành một chiến thuật chuyển đổi (từng bước một) là một điều hết sức cần thiết và giai đoạn “thử” Qmail sẽ giúp bạn hình thành chiến thuật này chính xác hơn và hữu hiệu hơn.
+
+2.4 Tải mã nguồn từ đâu
+- Mã nguồn Qmail có thể được tải về từ:<span class="link"> ftp://cr.yp.to/software/qmail-1.03.tar.gz</span> hoặc theo đường dẫn của site<span class="link"> http://cr.yp.to/software.html</span> (site chính thức của mã nguồn Qmail).
+- Ngoài mã nguồn của Qmail ở trên, bạn cần thêm ít nhất hai phần mềm phụ nhưng tuyệt đối cần thiết cho Qmail (chi tiết hoạt động của các phần mềm phụ này sẽ được trình bày trong quy trình thiết lập Qmail). Hai phần mềm phụ nói trên là:<span class="link"> ftp://cr.yp.to/ucspi-tcp/ucspi-tcp-0.88.tar.gz</span> (cho uscpi-tcp) và<span class="link"> ftp://cr.yp.to/daemontools/daemontoo...76.tar.gz</span> (cho daemontols).
+
+2.4 Từng bước cài đặt
+2.4.1 Xả nén mã nguồn
+Các bước cài đặt cần chủ quyền root nên trước khi xả nén vào tạo các hồ sơ thư mục, bạn nên chuyển chủ quyền sang super user. Theo quy định chung của System V, các nguồn và binaries do người dùng thêm vào system nên cho vào /usr/local/src, cho nên chúng ta cứ theo vậy mà làm.
+- chuyển thành super user:
+<b>myshell$ su</b>
+(đánh mật mã của root)
+
+- đổi umask thành 022 cho bảo đảm
+<b># umask 022</b>
+
+- tạo thư mục /usr/local/src (nếu nó chưa có sẵn)
+<b># mkdir -p /usr/local/src</b>
+
+- dời các source của qmail vào trong /usr/local/src
+<b># mv qmail-1.03.tar.gz ucspi-tcp-0.88.tar.gz  daemontools-0.76.tar.gz /usr/local/src</b>
+
+- vào thư mục /usr/local/src để xả nén cái gói qmail, uscpi-tcp và daemontools
+<b># cd /usr/local/src
+# gunzip *
+# tar -xpvf qmail-1.03.tar
+# tar -xpvf ucspi-tcp-0.88.tar
+# tar -xpvf  daemontools-0.76.tar</b>
+
+2.4.2 Tạo hồ sơ thư mục
+Ðến đây bạn đã có một nhóm thư mục như sau:
+<b>/usr/local/src/qmail-1.03, /usr/loca/src/ucspi-tcp-0.88 và /usr/local/src/admin/daemontools-0.76.</b>
+
+- Bước kế tiếp tạo thư mục chủ cho Qmail, đây là nơi trọn bộ binary và configuration cho qmail được cất giữ và điều hành.
+<b># mkdir /var/qmail</b>
+
+- Tạo thư mục bin trong thư mục chủ của qmail, nơi chứa các binaries
+<b># mkdir /var/qmail/bin</b>
+
+- Tạo thư mục control trong thư mục chủ của qmail, nơi chứa các hồ sơ chỉnh liệu
+<b># mkdir /var/qmail/control</b>
+
+- Tạo thư mục alias trong thư mục chủ của qmail, nơi chứa các hồ sơ ảo
+<b># mkdir /var/qmail/alias</b>
+
+- Tạo thư mục man trong thư mục chủ của qmail, nơi chứa các tài liệu cho qmail
+<b># mkdir /var/qmail/man</b>
+
+2.4.3 Tạo tài khoản nhân dụng và nhóm nhân dụng
+Vấn đề tạo tài khoản nhân dụng và nhóm nhân dụng hết sức quan trọng cho qmail trong vấn đề hoạt động vào bảo mật. Tài khoản nhân dụng cho phép qmail hoạt động trong giới hạn trách nhiệm của nó. Ðiều này có nghĩa, trường hợp qmail bị “hack”, tài khoản nhân dụng của qmail không thể dùng (hoặc rất khó) để xâm nhập hệ thống sâu hơn.
+
+Có một số phương thức khác nhau để tạo tài khoản nhân dụng và nhóm nhân dụng. Nhiều người xử dụng qmail đã tạo ra một số scripts để thực hiện bước này một cách nhanh chóng và dễ dàng. Tuy nhiên ở đây chúng ta nên đi xuyên qua các bước này một cách cụ thể để có thể hiểu sâu hơn vấn đề tài khoản nhân dụng và bảo mật trong quá trình tạo tài khoản nhân dụng.
+
+- Tạo nhóm nhân dụng nofiles
+<b># groupadd nofiles</b>
+
+- Tạo tài khoản nhân dụng cho nhóm nofiles này
+<b># useradd alias -g nofiles -d /var/qmail/alias -s  /bin/true
+# useradd qmaild -g nofiles -d /var/qmail -s /bin/true
+# useradd qmaill -g nofiles -d /var/qmail -s /bin/true
+# useradd qmailp -g nofiles -d /var/qmail -s /bin/true</b>
+
+Như các bạn thấy, chuỗi lệnh ở trên là lệnh căn bản tạo tài khoản nhân dụng cho các user alias, qmaild, qmaill và qmailp có cùng một nhóm nhân dụng là nofiles. Ðặc biệt các lệnh trên không cho những user này một shell nào cả (-s /bin/true – lệnh true thực sự không làm gì cả) vì lý do các user này là các “nhân viên” hoạt động của qmail và chúng không hề cần shell. Một điểm cần nhớ trong quá trình tạo tài khoản nhân dụng: khi “người dùng” không cần một shell để thi hành trách nhiệm thì không nên cho họ một shell. Trường hợp một tài khoản nhân dụng bị hack, tin tặc khó có thể đi sâu hơn nếu tài khoản nhân dụng đó không được phép xử dụng bất cứ một shell nào.
+
+- Tương tự, tạo nhóm nhân dụng qmail như sau:
+<b># groupadd qmail</b>
+
+- Tạo tài khoản nhân dụng cho nhóm nhân dụng qmail này:
+<b># useradd qmailq -g qmail -d /var/qmail -s /bin/true
+# useradd qmailr -g qmail -d /var/qmail -s /bin/true
+# useradd qmails -g qmail -d /var/qmail -s /bin/true</b>
+
+Một lần nữa, các “người dùng” qmailq, qmailr và qmails thuộc nhóm qmail này không cần shell. Lý do phải tạo các người dùng như trên sẽ được giải thích trong những bước sau.
+
+Bước kế tiếp rất quan trọng. Bước này kiểm nghiệm chủ quyền và nhóm nhân dụng của các “người dùng” vừa tạo ra ở trên.
+
+- Dùng vihoặc bất cứ text editor nào vào /etc/group và viết xuống mã hiệu (GID hay group ID) của nhóm nhân dụng nofiles và qmail.
+
+- Ví dụ group nofiles có mã hiệu là 2004 và group qmail là 2005. Bạn dùng vi vào /etc/passwd và kiểm lại xem các entry cho alias, qmaild, qmaill, qmailp, qmailq, qmailr và qmails có đúng nhóm nhân dụng và shell của họ là /bin/true hay không. Những entry này tương tự như:
+<b>alias:*:1005:2004::/var/qmail/alias:/bin/true
+qmaild:*:1006:2004::/var/qmail:/bin/true
+qmaill:*:1007:2004::/var/qmail:/bin/true
+qmailp:*:1008:2004::/var/qmail:/bin/true
+qmailq:*:1009:2005::/var/qmail:/bin/true
+qmailr:*:1010:2005::/var/qmail:/bin/true
+qmails:*:1011:2005::/var/qmail:/bin/true</b>
+
+Trong các entry ở trên mỗi user có riêng một mã hiệu và thuộc vào nhóm nhân dụng khác nhau.
+
+2.4.4 Build binaries từ mã nguồn
+Ðến đây bạn đã sẵn sàng thực hiện bước compile và build qmail. Các bước build qmail như sau:
+- cd vào thư mục chứa mã nguồn của qmail
+<b># cd /usr/local/src/qmail-1.03
+</b>
+-  Ðánh lệnh make  buộc compiler biên dịch mã nguồn của qmail dựa trên chỉnh định của hồ sơ Makefile
+<b># make</b>
+
+- Ðánh các lệnh make setup check. Ðây là 2 lệnh gom lại thành một.. Lệnh thứ nhất make setup chuyển các binaries đã được build ở trên vào đúng nơi của nó. Lệnh thứ nhì make check là lệnh dùng để kiểm tra lại thực tính của các hồ sơ và binaries được build.
+<b># make setup check</b>
+
+- Bước kế tiếp là bước hiệu chỉnh DNS cho qmail. Nếu DNS server (fully qualified) của bạn đã sẵn sàng, bạn chỉ cần chạy lệnh:
+<b># ./config</b>
+
+Lệnh này kiểm tra DNS server của bạn, nếu không có gì trở ngại nó đặt domain name của bạn vào /var/qmail/control/defaultdomain và /var/qmail/control/plusdomain (plusdomain dành cho một binary của qmail “qmail-inject” để thêm vào entry của plusdomain khi cần. Xem thêm ở phần 4: Hồ sơ điều chỉnh của Qmail trong “qmail-control”). Lệnh này cũng thêm vào các entry cần thiết cho /var/qmail/control/locals và /var/qmail/control/rcphosts.
+
+Vì một lý do trục trặc nào đó thuộc DNS làm cho lệnh ./config ở trên không thể lấy được DNS entry để điều chỉnh các hồ sơ trên, bạn phải dùng lệnh ./config-fast để cài các entry cần thiết vào /var/qmail/control/
+
+- Ðánh lệnh ./config-fast với thông số là domain name của bạn
+<b># ./config-fast mydomain.com</b>
+
+mydomain.com phải là một domain name hoàn toàn hợp pháp và đã đăng ký với Internic (xem ở bước 2.2: Yêu cầu để cài đặt qmail ở trên). Lệnh ./config-fast của bước này sẽ cài các entry cần thiết với domain name bạn đã cho (như thông số ở trên); chắc chắn bạn sẽ không bị trở ngại gì trong bước này. Tuy nhiên, những bước sau này bạn sẽ gặp trở ngại nếu như bạn không cung cấp một domain name hợp pháp. Bước này chỉ buộc ./config-fast cài vào entry bạn cung cấp mà không bảo đảm (không kiểm nghiệm) là domain name đó giá trị hay không.
+
+
+2.4.5 Cài ucspi-tcp
+ucspi-tcp là phần mềm Dr. Dan Bernstein viết với mục đích thay thế cho inet daemon của Unix. Inet daemon được dùng rộng rãi trên các ứng trình Unix và gần đây, xinet ra đời để nâng cao tính năng của inet. Theo Dr Bernstein, phần mềm ucspi-tcp (dùng Unix Client-Server Program Interface cũng của ông) gọn nhẹ, hiệu quả và an toàn hơn inet rất nhiều. Bản thân người viết tài liệu này đã thử cả hai ứng dụng trên xinetd và uscpi-tcp và thấy rõ ưu điểm của ucspi-tcp trên bình diện hiệu năng. Ucspi-tcp được tạo ra với quan tâm bảo mật nên cách xử lý socket giữa client và server rất hiệu quả. Thực tế cho thấy ucspi-tcp ứng hoạt khít khao với qmail.
+
+- Ðể compile và build uscpi-tcp, bạn cd vào thư mục uscpi-tcp
+<b># cd /usr/local/src/ucspi-tcp-0.88</b>
+
+-  Ðánh lệnh make  buộc compiler biên dịch mã nguồn của ucspi-tcp dựa trên chỉnh định của hồ sơ Makefile
+<b># make</b>
+
+- Ðánh các lệnh make setup check. Ðây là 2 lệnh gom lại thành một.. Lệnh thứ nhất make setup chuyển các binaries đã được build ở trên vào đúng nơi của nó. Lệnh thứ nhì make check là lệnh dùng để kiểm tra lại thực tính của các hồ sơ và binaries được build.
+<b># make setup check</b>
+
+Nếu quy trình này không bị trở ngại gì, bạn đã compile và build xong ucspi-tcp.
+
+2.4.6 Cài daemontols
+Daemontools là một phần mềm giúp bạn rất nhiều trong quy trình quản lý và điều hành qmail server. Bạn có thể dùng qmail mà không cần đến daemontools. Tuy nhiên, khi đã dùng qmail nhiều hơn, bạn sẽ khám phá daemontools là một thứ đồ nghề không thể thiếu được.
+
+Ðể compile và build daemontools, chỉ đơn giản cd vào thư mục của daemontools-0.76
+<b># cd /usr/local/src/admin/daemontools-0.76</b>
+
+- Thư mục này có hai thư mục con, bạn không cần vào các thư mục con mà chỉ cần đánh lệnh
+<b># package/install</b>
+
+
+(kết thúc phần 1)
+hnd, vninformatics.com / diendantinhoc.net 09/09/2002]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#451</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#451</link>
+				<pubDate><![CDATA[Sun, 18 Jun 2006 05:16:37]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ em đã làm tới phần ./config rồi nhưng khi dùng lệnh này trên ubuntu thì xuất hiện lỗi này
+-báh: ./config-fast: No such file or directory  -&gt; hiện tại vẫn đứng ở root để làm
+dùng ls -l để xem vẫn có config-fast.sh và config.sh mà.
+Giúp em kiểm tra lỗi này với  :(  :(  :( 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#234348</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#234348</link>
+				<pubDate><![CDATA[Thu, 31 Mar 2011 12:38:21]]> GMT</pubDate>
+				<author><![CDATA[ thuanchilam]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ file là config-fast.sh bạn ./config-fast nó ko ra là phải, bạn ./config-fast.sh hoặc sh config-fast.sh nhé]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#234403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#234403</link>
+				<pubDate><![CDATA[Fri, 1 Apr 2011 04:23:07]]> GMT</pubDate>
+				<author><![CDATA[ Michael_Scotfield]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote><b>Qmail as a Mail Gateway - Phần 1</b>
+
+Giới thiệu tổng quát về Qmail và phương thức tải, biên dịch và chuẩn bị cài đặt Qmail server.
+<b>1. Giới thiệu về Qmail</b>
+
+1.1 Tài liệu dành cho ai?
+Tài liệu này dành cho những ai muốn dùng Qmail như một MTA cho hệ thống mail. Ðiều cần thiết là người đọc phải có kiến thức căn bản sử dụng một hệ thống *nix (cách sử dụng các lệnh và cách truy cập / tạo vào các thư mục). Người viết tài liệu không chịu trách nhiệm cho bất cứ hư hại đến máy của người dùng cũng như sự phiền não, bực dọc, mất ngủ .... đến người dùng tài liệu này :)
+
+Tài liệu này đào sâu ở mức độ có hạn. Mọi ứng dụng tùy thuộc vào nhu cầu và khả năng thiết lập của người dùng. Qmail không phải là một MTA phức tạp. Tuy nhiên nó mang một số khái niệm điều hành độc lập giữa các thành phần để tạo nên một MTA làm việc hoàn chỉnh, do đó, người đọc nên nghiên cứu kỹ trước khi bắt tay vào việc thiết kế một hệ MTA dùng Qmail.
+
+Tài liệu này ứng dụng mô hình qmail làm mail gateway để nhận mail từ Internet và chuyển mail đến một hoặc nhiều mail servers bên trong mạng riêng. Người viết không ứng dụng mô hình qmail như là một mail server phục vụ tất cả các mail protocol khác như IMAP, POP3... vì lý do bảo mật. Có hai điểm tối quan trọng của mô hình mail gateway là:
+
+- Ổn định và hiệu năng: qmail có khả năng chuyển nhận hàng triệu thông điệp một ngày (dựa vào tài liệu trên web site của qmail.org). Tuy nhiên, nếu biến nó thành một mail server phục vụ tất cả các mail protocol thì bị giới hạn trong vấn đề kiểm dịch (authentication). Nếu mail server thuộc một mạng dùng hoàn toàn Unix thì giới hạn này có thể khắc phục dễ dàng. Không may trên thực tế hiện nay, không còn nhiều mạng “thuần” Unix hoặc “thuần” một hệ điều hành nào khác. Bởi vậy, qmail hoạt động như một mail gateway chỉ có trách nhiệm chuyển mail đến các mail servers khác (trong giới hạn cho phép domain) mà không phải lo vấn đề authentication, do đó, ngoài tính bảo mật, tính hiệu năng được nâng cao đáng kể.
+
+-Tính bảo mật: Như đã nêu ra ở trên những khó khăn trong cơ chế quản lý kiểm dịch của một (hoặc nhiều) mạng có đa hệ điều hành không những giảm sút tính hiệu năng mà còn ảnh hưởng lớn đến tính bảo mật. Lý do, quản lý một trung tâm tài nguyên nhân dụng (central user database) dễ dàng và ổn định hơn nhiều user database. Hơn thế, cơ chế Internet &lt;--&gt; Mail Gateway &lt;--&gt; Firewall &lt;--&gt; Internal Mail Servers &lt;--&gt; Users chặc chẽ và an toàn hơn. Ðó là chưa kể ứng dụng kiểm soát / ngăn chặn viruses, trojans và cách loại scripts mang tính phá hoại trên một Unix Mail Gateway trước khi thông điệp được chuyển vào một Mail Server bên trong (Microsoft Exchange hoặc IBM Lotus chẳng hạn). Các ứng dụng cho POP3 hoặc IMAP được thiết lập một cách độc lập trên internal mail servers và người dùng có thể truy cập qua một cơ chế firewalling nào đó.
+
+1.2 Sơ lược về Qmail
+Qmail được viết bởi Tiến sĩ toán của trường đại học Illinois, Chicago, tiến sĩ Dan Bernstein. Qmail ra đời vào tháng Giêng năm 1996 với một phiên bản Beta 0.70 và sau đó phiên bản Gamma 0.90 được cập nhật vào tháng 8 năm 1996. Phiên bản ổn định 1.0 được ra mắt vào tháng 2 năm 1997. Phiên bản được lưu hành hiện nay là 1.03 được phát hành vào tháng 6 năm 1997.
+
+1.3 Tại sao dùng Qmail?
+Có rất nhiều MTA trên môi trường *nix hiện nay và mỗi khi nhắc đến MTA chúng ta phải nhắc đến Sendmail. Tuy nhiên, Dan Bernstein viết Qmail vì ông ta thấy rằng Sendmail thừa hưởng nhiều lỗi bảo mật từ các phiên bản trước đây và phần mềm này rất cồng kềnh, cho dù những năm gần đây, nhóm Sendmail không ngừng điều chỉnh và cải tiến phần mềm này để giảm thiểu những yếu điểm. Khi viết Qmail, ngoài ưu tiên cho vấn đề bảo mật, Dan Bernstein chú trọng rất nhiều đến khả năng hoạt động và tính dễ dùng của nó. Qmail mang tính truyền thống của các hoạt trình Unix: mỗi tiểu ứng trình có khả năng đảm đương trọn vẹn một chức năng chuyên biệt và các tiểu ứng trình này có thể chuyền (pipe) sang các tiểu ứng trình khác để đáp ứng các quy trình phức tạp. Bởi thể, Qmail bao gồm nhiều binaries tạo thành một dây chuyền hoạt động. Ðây là một điển hình nặng tính bảo mật và tính hiệu năng trong cơ chế điều hành của một MTA.
+
+<b>2. Cài đặt Qmail</b>
+2.1 Cài từ “gói” (RPM) hay từ tar ball?
+Qmail thuộc dạng mở-nguồn nên bạn có thể tải mã nguồn của Qmail về để compile và thiết kế nó cho thích hợp với hệ điều hành của mình. Có một số RPM cho RedHat trên Internet (dùng<span class="link"> http://rpmfind.net</span> để tìm). Tuy nhiên, có ít nhiều hạn chế khi dùng RPM và không phải các “gói” này luôn luôn có sẵn cho các hệ điều hành.
+
+RPM thường buộc người dùng cài đặt binaries vào một nơi trong những thư mục và đôi khi sự ép buộc này không tiện cho cách tổ chức thư mục đã có sẵn của bạn. RPM không giải quyết được các trường hợp bị thiếu hoặc sai “thư viện lệ thuộc” (dependencies). Bởi thế, phương cách compile và build từ mã nguồn xem ra là một phương cách khả thi nhất. Hơn nữa, nó sẽ tạo cơ hội cho bạn hiểu rõ hơn cơ chế làm việc của Qmail sau quá trình cài đặt. Tài liệu này sẽ chỉ chuyên chú vào quy trình compile và build từ mã nguồn.
+
+2.2 Yêu cầu để cài đặt Qmail
+Ðể có thể cài đặt Qmail thành công, sau đây là các yêu cầu tối yếu:
+
+- Một C compiler, các thư mục header và các thư viện cho hệ thống lập trình. Nếu bạn dùng trong một phiên bản Linux, compiler của bạn hẳn là gcc.
+
+- Có đủ nơi chứa cho quá trình build và các binaries và các tài liệu sau khi Qmail được build. Ổ chứa tuyệt đối cần thiết cho Qmail lưu trữ và xử lý mail trong các điểm “xếp hàng” (mail queues).
+
+- Domain name của bạn. Qmail chỉ làm việc (đúng) khi bạn có một domain hợp pháp (fully qualified domain name FQDN). Liên hệ với dịch vụ Internet của bạn cho vấn đề này nếu bạn không rõ.
+
+- Qmail được thiết kế như một MTA hạng nặng. Ðiều này có nghĩa máy chạy Qmail phải có băng thông ổn định và rộng đủ để tải và nhận mail. Nếu bạn có dự định thiết lập một MTA xuyên qua modem, có lẽ serialmail là một phần mềm thích hợp hơn <span class="link"> http://cr.yp.to/software/serialmail-0.75.tar.gz</span>).
+
+2.3 Những điều cần chuẩn bị
+Qmail không phải là một phần mềm MTA phức tạp. Tuy nhiên, cách an toàn nhất nên thử cài đặt trên một máy tách biệt từ hệ thống mail đang làm việc của bạn và thâu thập kinh nghiệm trước khi cài đặt trên máy chính thức.
+
+Thực ra quá trình compile và build qmail sẽ không ảnh hưởng gì đến hệ thống mail đang làm việc của bạn. Tuy nhiên, bước kiểm nghiệm Qmail sẽ làm gián đoạn hệ thống mail đang có. Ðề nghị trên đơn giản là một cách nhắc nhở mang tính an toàn.
+Nếu bạn có dụng ý chuyển đổi (migrate) từ một MTA khác sang Qmail, cũng như bao nhiêu quy trình chuyển đổi khác, giai đoạn hình thành một chiến thuật chuyển đổi (từng bước một) là một điều hết sức cần thiết và giai đoạn “thử” Qmail sẽ giúp bạn hình thành chiến thuật này chính xác hơn và hữu hiệu hơn.
+
+2.4 Tải mã nguồn từ đâu
+- Mã nguồn Qmail có thể được tải về từ:<span class="link"> ftp://cr.yp.to/software/qmail-1.03.tar.gz</span> hoặc theo đường dẫn của site<span class="link"> http://cr.yp.to/software.html</span> (site chính thức của mã nguồn Qmail).
+- Ngoài mã nguồn của Qmail ở trên, bạn cần thêm ít nhất hai phần mềm phụ nhưng tuyệt đối cần thiết cho Qmail (chi tiết hoạt động của các phần mềm phụ này sẽ được trình bày trong quy trình thiết lập Qmail). Hai phần mềm phụ nói trên là:<span class="link"> ftp://cr.yp.to/ucspi-tcp/ucspi-tcp-0.88.tar.gz</span> (cho uscpi-tcp) và<span class="link"> ftp://cr.yp.to/daemontools/daemontoo...76.tar.gz</span> (cho daemontols).
+
+2.4 Từng bước cài đặt
+2.4.1 Xả nén mã nguồn
+Các bước cài đặt cần chủ quyền root nên trước khi xả nén vào tạo các hồ sơ thư mục, bạn nên chuyển chủ quyền sang super user. Theo quy định chung của System V, các nguồn và binaries do người dùng thêm vào system nên cho vào /usr/local/src, cho nên chúng ta cứ theo vậy mà làm.
+- chuyển thành super user:
+<b>myshell$ su</b>
+(đánh mật mã của root)
+
+- đổi umask thành 022 cho bảo đảm
+<b># umask 022</b>
+
+- tạo thư mục /usr/local/src (nếu nó chưa có sẵn)
+<b># mkdir -p /usr/local/src</b>
+
+- dời các source của qmail vào trong /usr/local/src
+<b># mv qmail-1.03.tar.gz ucspi-tcp-0.88.tar.gz  daemontools-0.76.tar.gz /usr/local/src</b>
+
+- vào thư mục /usr/local/src để xả nén cái gói qmail, uscpi-tcp và daemontools
+<b># cd /usr/local/src
+# gunzip *
+# tar -xpvf qmail-1.03.tar
+# tar -xpvf ucspi-tcp-0.88.tar
+# tar -xpvf  daemontools-0.76.tar</b>
+
+2.4.2 Tạo hồ sơ thư mục
+Ðến đây bạn đã có một nhóm thư mục như sau:
+<b>/usr/local/src/qmail-1.03, /usr/loca/src/ucspi-tcp-0.88 và /usr/local/src/admin/daemontools-0.76.</b>
+
+- Bước kế tiếp tạo thư mục chủ cho Qmail, đây là nơi trọn bộ binary và configuration cho qmail được cất giữ và điều hành.
+<b># mkdir /var/qmail</b>
+
+- Tạo thư mục bin trong thư mục chủ của qmail, nơi chứa các binaries
+<b># mkdir /var/qmail/bin</b>
+
+- Tạo thư mục control trong thư mục chủ của qmail, nơi chứa các hồ sơ chỉnh liệu
+<b># mkdir /var/qmail/control</b>
+
+- Tạo thư mục alias trong thư mục chủ của qmail, nơi chứa các hồ sơ ảo
+<b># mkdir /var/qmail/alias</b>
+
+- Tạo thư mục man trong thư mục chủ của qmail, nơi chứa các tài liệu cho qmail
+<b># mkdir /var/qmail/man</b>
+
+2.4.3 Tạo tài khoản nhân dụng và nhóm nhân dụng
+Vấn đề tạo tài khoản nhân dụng và nhóm nhân dụng hết sức quan trọng cho qmail trong vấn đề hoạt động vào bảo mật. Tài khoản nhân dụng cho phép qmail hoạt động trong giới hạn trách nhiệm của nó. Ðiều này có nghĩa, trường hợp qmail bị “hack”, tài khoản nhân dụng của qmail không thể dùng (hoặc rất khó) để xâm nhập hệ thống sâu hơn.
+
+Có một số phương thức khác nhau để tạo tài khoản nhân dụng và nhóm nhân dụng. Nhiều người xử dụng qmail đã tạo ra một số scripts để thực hiện bước này một cách nhanh chóng và dễ dàng. Tuy nhiên ở đây chúng ta nên đi xuyên qua các bước này một cách cụ thể để có thể hiểu sâu hơn vấn đề tài khoản nhân dụng và bảo mật trong quá trình tạo tài khoản nhân dụng.
+
+- Tạo nhóm nhân dụng nofiles
+<b># groupadd nofiles</b>
+
+- Tạo tài khoản nhân dụng cho nhóm nofiles này
+<b># useradd alias -g nofiles -d /var/qmail/alias -s  /bin/true
+# useradd qmaild -g nofiles -d /var/qmail -s /bin/true
+# useradd qmaill -g nofiles -d /var/qmail -s /bin/true
+# useradd qmailp -g nofiles -d /var/qmail -s /bin/true</b>
+
+Như các bạn thấy, chuỗi lệnh ở trên là lệnh căn bản tạo tài khoản nhân dụng cho các user alias, qmaild, qmaill và qmailp có cùng một nhóm nhân dụng là nofiles. Ðặc biệt các lệnh trên không cho những user này một shell nào cả (-s /bin/true – lệnh true thực sự không làm gì cả) vì lý do các user này là các “nhân viên” hoạt động của qmail và chúng không hề cần shell. Một điểm cần nhớ trong quá trình tạo tài khoản nhân dụng: khi “người dùng” không cần một shell để thi hành trách nhiệm thì không nên cho họ một shell. Trường hợp một tài khoản nhân dụng bị hack, tin tặc khó có thể đi sâu hơn nếu tài khoản nhân dụng đó không được phép xử dụng bất cứ một shell nào.
+
+- Tương tự, tạo nhóm nhân dụng qmail như sau:
+<b># groupadd qmail</b>
+
+- Tạo tài khoản nhân dụng cho nhóm nhân dụng qmail này:
+<b># useradd qmailq -g qmail -d /var/qmail -s /bin/true
+# useradd qmailr -g qmail -d /var/qmail -s /bin/true
+# useradd qmails -g qmail -d /var/qmail -s /bin/true</b>
+
+Một lần nữa, các “người dùng” qmailq, qmailr và qmails thuộc nhóm qmail này không cần shell. Lý do phải tạo các người dùng như trên sẽ được giải thích trong những bước sau.
+
+Bước kế tiếp rất quan trọng. Bước này kiểm nghiệm chủ quyền và nhóm nhân dụng của các “người dùng” vừa tạo ra ở trên.
+
+- Dùng vihoặc bất cứ text editor nào vào /etc/group và viết xuống mã hiệu (GID hay group ID) của nhóm nhân dụng nofiles và qmail.
+
+- Ví dụ group nofiles có mã hiệu là 2004 và group qmail là 2005. Bạn dùng vi vào /etc/passwd và kiểm lại xem các entry cho alias, qmaild, qmaill, qmailp, qmailq, qmailr và qmails có đúng nhóm nhân dụng và shell của họ là /bin/true hay không. Những entry này tương tự như:
+<b>alias:*:1005:2004::/var/qmail/alias:/bin/true
+qmaild:*:1006:2004::/var/qmail:/bin/true
+qmaill:*:1007:2004::/var/qmail:/bin/true
+qmailp:*:1008:2004::/var/qmail:/bin/true
+qmailq:*:1009:2005::/var/qmail:/bin/true
+qmailr:*:1010:2005::/var/qmail:/bin/true
+qmails:*:1011:2005::/var/qmail:/bin/true</b>
+
+Trong các entry ở trên mỗi user có riêng một mã hiệu và thuộc vào nhóm nhân dụng khác nhau.
+
+2.4.4 Build binaries từ mã nguồn
+Ðến đây bạn đã sẵn sàng thực hiện bước compile và build qmail. Các bước build qmail như sau:
+- cd vào thư mục chứa mã nguồn của qmail
+<b># cd /usr/local/src/qmail-1.03
+</b>
+-  Ðánh lệnh make  buộc compiler biên dịch mã nguồn của qmail dựa trên chỉnh định của hồ sơ Makefile
+<b># make</b>
+
+- Ðánh các lệnh make setup check. Ðây là 2 lệnh gom lại thành một.. Lệnh thứ nhất make setup chuyển các binaries đã được build ở trên vào đúng nơi của nó. Lệnh thứ nhì make check là lệnh dùng để kiểm tra lại thực tính của các hồ sơ và binaries được build.
+<b># make setup check</b>
+
+- Bước kế tiếp là bước hiệu chỉnh DNS cho qmail. Nếu DNS server (fully qualified) của bạn đã sẵn sàng, bạn chỉ cần chạy lệnh:
+<b># ./config</b>
+
+Lệnh này kiểm tra DNS server của bạn, nếu không có gì trở ngại nó đặt domain name của bạn vào /var/qmail/control/defaultdomain và /var/qmail/control/plusdomain (plusdomain dành cho một binary của qmail “qmail-inject” để thêm vào entry của plusdomain khi cần. Xem thêm ở phần 4: Hồ sơ điều chỉnh của Qmail trong “qmail-control”). Lệnh này cũng thêm vào các entry cần thiết cho /var/qmail/control/locals và /var/qmail/control/rcphosts.
+
+Vì một lý do trục trặc nào đó thuộc DNS làm cho lệnh ./config ở trên không thể lấy được DNS entry để điều chỉnh các hồ sơ trên, bạn phải dùng lệnh ./config-fast để cài các entry cần thiết vào /var/qmail/control/
+
+- Ðánh lệnh ./config-fast với thông số là domain name của bạn
+<b># ./config-fast mydomain.com</b>
+
+mydomain.com phải là một domain name hoàn toàn hợp pháp và đã đăng ký với Internic (xem ở bước 2.2: Yêu cầu để cài đặt qmail ở trên). Lệnh ./config-fast của bước này sẽ cài các entry cần thiết với domain name bạn đã cho (như thông số ở trên); chắc chắn bạn sẽ không bị trở ngại gì trong bước này. Tuy nhiên, những bước sau này bạn sẽ gặp trở ngại nếu như bạn không cung cấp một domain name hợp pháp. Bước này chỉ buộc ./config-fast cài vào entry bạn cung cấp mà không bảo đảm (không kiểm nghiệm) là domain name đó giá trị hay không.
+
+
+2.4.5 Cài ucspi-tcp
+ucspi-tcp là phần mềm Dr. Dan Bernstein viết với mục đích thay thế cho inet daemon của Unix. Inet daemon được dùng rộng rãi trên các ứng trình Unix và gần đây, xinet ra đời để nâng cao tính năng của inet. Theo Dr Bernstein, phần mềm ucspi-tcp (dùng Unix Client-Server Program Interface cũng của ông) gọn nhẹ, hiệu quả và an toàn hơn inet rất nhiều. Bản thân người viết tài liệu này đã thử cả hai ứng dụng trên xinetd và uscpi-tcp và thấy rõ ưu điểm của ucspi-tcp trên bình diện hiệu năng. Ucspi-tcp được tạo ra với quan tâm bảo mật nên cách xử lý socket giữa client và server rất hiệu quả. Thực tế cho thấy ucspi-tcp ứng hoạt khít khao với qmail.
+
+- Ðể compile và build uscpi-tcp, bạn cd vào thư mục uscpi-tcp
+<b># cd /usr/local/src/ucspi-tcp-0.88</b>
+
+-  Ðánh lệnh make  buộc compiler biên dịch mã nguồn của ucspi-tcp dựa trên chỉnh định của hồ sơ Makefile
+<b># make</b>
+
+- Ðánh các lệnh make setup check. Ðây là 2 lệnh gom lại thành một.. Lệnh thứ nhất make setup chuyển các binaries đã được build ở trên vào đúng nơi của nó. Lệnh thứ nhì make check là lệnh dùng để kiểm tra lại thực tính của các hồ sơ và binaries được build.
+<b># make setup check</b>
+
+Nếu quy trình này không bị trở ngại gì, bạn đã compile và build xong ucspi-tcp.
+
+2.4.6 Cài daemontols
+Daemontools là một phần mềm giúp bạn rất nhiều trong quy trình quản lý và điều hành qmail server. Bạn có thể dùng qmail mà không cần đến daemontools. Tuy nhiên, khi đã dùng qmail nhiều hơn, bạn sẽ khám phá daemontools là một thứ đồ nghề không thể thiếu được.
+
+Ðể compile và build daemontools, chỉ đơn giản cd vào thư mục của daemontools-0.76
+<b># cd /usr/local/src/admin/daemontools-0.76</b>
+
+- Thư mục này có hai thư mục con, bạn không cần vào các thư mục con mà chỉ cần đánh lệnh
+<b># package/install</b>
+
+
+(kết thúc phần 1)
+hnd, vninformatics.com / diendantinhoc.net 09/09/2002&nbsp;
+		</blockquote>
+
+sao không thấy Anh Minh làm tiếp phần 2 vậy ta?????????]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#245252</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#245252</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 05:17:09]]> GMT</pubDate>
+				<author><![CDATA[ phuongnvt]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ Các bài viết về Mail server
+
+Qmail as a Mail Gateway - Phần 1 || http://www.hvaonline.net/hvaonline/posts/list/119.hva
+
+Qmail as a Mail Gateway - Phần 2 || http://www.hvaonline.net/hvaonline/posts/list/120.hva
+
+Qmail as a Mail Gateway - Phần 3 || http://www.hvaonline.net/hvaonline/posts/list/121.hva
+
+Qmail as a Mail Gateway - Phần 4 || http://hvaonline.net/hvaonline/posts/list/122.hva
+
+Làm mail server với Postfix - Phần 1 || http://hvaonline.net/hvaonline/posts/list/1294.hva
+
+Làm mail server với Postfix - Phần 2 || http://hvaonline.net/hvaonline/posts/list/2550.hva
+
+Làm mail server với Postfix - Phần 3 || http://hvaonline.net/hvaonline/posts/list/2551.hva
+
+Làm mail server với Postfix - Phần 4 || http://hvaonline.net/hvaonline/posts/list/2552.hva
+
+Làm mail server với Postfix - Phần 5 || http://hvaonline.net/hvaonline/posts/list/2553.hva
+
+Làm mail server với Postfix - Phần 6 || http://hvaonline.net/hvaonline/posts/list/2554.hva
+
+Cài đặt nhanh và cấu hình qmail + vpopmail+procmail + daemontools || http://hvaonline.net/hvaonline/posts/list/1965.hva
+
+Cài đặt nhanh và cấu hình Qmail+POP3+APOP || http://hvaonline.net/hvaonline/posts/list/2331.hva
+
+Loại bỏ spam khỏi qmail SMTP bằng RBL || http://hvaonline.net/hvaonline/posts/list/10639.hva ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#245257</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#245257</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 08:27:06]]> GMT</pubDate>
+				<author><![CDATA[ tanviet12]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <font color='yellow'>- Ðánh lệnh make buộc compiler biên dịch mã nguồn của ucspi-tcp dựa trên chỉnh định của hồ sơ Makefile
+# make</font>
+
+em làm đến dòng này thì xuất hiện báo lỗi 
+
+<font color='yellow'>root@ubuntu:/usr/local/src/qmail-1.03# make
+./load auto-str substdio.a error.a str.a 
+collect2: ld terminated with signal 11 [Segmentation fault]
+/usr/bin/ld: make: *** [auto-str] Error 1</font>
+
+giờ e phải fix thế nào ạ. mong ảnh chi chổ này giúp em, e đang thử mày mò cái Qmail trên máy ảo. tks.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247000</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247000</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 01:55:32]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">superbmt wrote:</cite><br>
+		<blockquote><font color='yellow'>- Ðánh lệnh make buộc compiler biên dịch mã nguồn của ucspi-tcp dựa trên chỉnh định của hồ sơ Makefile
+# make</font>
+
+em làm đến dòng này thì xuất hiện báo lỗi 
+
+<font color='yellow'>root@ubuntu:/usr/local/src/qmail-1.03# make
+./load auto-str substdio.a error.a str.a 
+collect2: ld terminated with signal 11 [Segmentation fault]
+/usr/bin/ld: make: *** [auto-str] Error 1</font>
+
+giờ e phải fix thế nào ạ. mong ảnh chi chổ này giúp em, e đang thử mày mò cái Qmail trên máy ảo. tks.
+&nbsp;
+		</blockquote>
+
+Chỉnh lại file "conf-cc" trong cùng folder của qmail-1.03 thành:
+<b>cc -O2 -include /usr/include/errno.h</b>
+
+rồi lưu lại và make lại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247006</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247006</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 02:24:27]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ tks anh Conmale. nhưng đến cái đoạn e làm với uscpi-tcp thì lại gặp lỗi như bên dưới
+
+<font color='yellow'>./load tcpserver rules.o remoteinfo.o timeoutconn.o cdb.a \
+	dns.a time.a unix.a byte.a  `cat socket.lib`
+collect2: ld terminated with signal 11 [Segmentation fault]
+/usr/bin/ld: make: *** [tcpserver] Error 1
+</font>
+
+em đã thử edit lại file còn-id bằng cách thêm 2 dòng: ( thay từng dòng 1 vào rồi save)
+<font color='yellow'>gcc -s -lsocket </font>
+
+và<font color='yellow'> -lnsl </font>  nhưng vẫn bị lỗi..mong anh chỉ cho em cái này với ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247010</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247010</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 02:53:03]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">superbmt wrote:</cite><br>
+		<blockquote>tks anh Conmale. nhưng đến cái đoạn e làm với uscpi-tcp thì lại gặp lỗi như bên dưới
+
+<font color='yellow'>./load tcpserver rules.o remoteinfo.o timeoutconn.o cdb.a \
+	dns.a time.a unix.a byte.a  `cat socket.lib`
+collect2: ld terminated with signal 11 [Segmentation fault]
+/usr/bin/ld: make: *** [tcpserver] Error 1
+</font>
+
+em đã thử edit lại file còn-id bằng cách thêm 2 dòng: ( thay từng dòng 1 vào rồi save)
+<font color='yellow'>gcc -s -lsocket </font>
+
+và<font color='yellow'> -lnsl </font>  nhưng vẫn bị lỗi..mong anh chỉ cho em cái này với ạ.&nbsp;
+		</blockquote>
+
+Em reverse lại cái em vừa chỉnh ở trên đi.
+
+Chỉ chỉnh lại nội dung của error.h (của cả daemontools và uscpi-tcp) và thay thế:
+<b>extern int errno;</b>
+
+với:
+<b>#include &lt;errno.h&gt;</b>
+
+PS: em đang compile mới đồ của Bernstein nhưng chưa patch error code nên bị tùm lum lỗi là phải.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247028</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247028</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 04:28:16]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Em reverse lại cái em vừa chỉnh ở trên đi.
+
+Chỉ chỉnh lại nội dung của error.h (của cả daemontools và uscpi-tcp) và thay thế:
+<b>extern int errno;</b>
+
+với:
+<b>#include &lt;errno.h&gt;</b>
+
+PS: em đang compile mới đồ của Bernstein nhưng chưa patch error code nên bị tùm lum lỗi là phải.&nbsp;
+		</blockquote>
+tks anh, e đã làm được, giờ tiếp tục đọc Phần 2 và vọc tiếp..
+
+à, e có thêm thắc mắc là khi e log ra máy, chổ log in có thêm 1 tài khoản Qmail, nhưng e ko thể đăng nhập vào tải khoản qmail đó..e biết nó tạo ra cái tài khoản đó để mình sử dụng khi đã cài đặt thành công Qmail, nhưng cũng muốn biết bên trong nó là cái gì thì e phải làm sao ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247058</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247058</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 21:25:15]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">superbmt wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Em reverse lại cái em vừa chỉnh ở trên đi.
+
+Chỉ chỉnh lại nội dung của error.h (của cả daemontools và uscpi-tcp) và thay thế:
+<b>extern int errno;</b>
+
+với:
+<b>#include &lt;errno.h&gt;</b>
+
+PS: em đang compile mới đồ của Bernstein nhưng chưa patch error code nên bị tùm lum lỗi là phải.&nbsp;
+		</blockquote>
+tks anh, e đã làm được, giờ tiếp tục đọc Phần 2 và vọc tiếp..
+
+à, e có thêm thắc mắc là khi e log ra máy, chổ log in có thêm 1 tài khoản Qmail, nhưng e ko thể đăng nhập vào tải khoản qmail đó..e biết nó tạo ra cái tài khoản đó để mình sử dụng khi đã cài đặt thành công Qmail, nhưng cũng muốn biết bên trong nó là cái gì thì e phải làm sao ạ?&nbsp;
+		</blockquote>
+
+Trong quá trình cài đặt, các account thuộc qmail được tạo ra đều không được ấn định shell (toàn là /bin/true) cho nên em không thể login bằng những account này được. Muốn biết qmail làm việc như thế nào thì đọc tài liệu, soi code và xem log chớ đăng nhập vô tài khoản đó cũng vô ích vì chẳng có cái gì để thấy hết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247060</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247060</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 21:40:23]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Trong quá trình cài đặt, các account thuộc qmail được tạo ra đều không được ấn định shell (toàn là /bin/true) cho nên em không thể login bằng những account này được. Muốn biết qmail làm việc như thế nào thì đọc tài liệu, soi code và xem log chớ đăng nhập vô tài khoản đó cũng vô ích vì chẳng có cái gì để thấy hết.&nbsp;
+		</blockquote>
+
+Dạ, okei anh, e sẽ chú ý điều này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/119.hva#247071</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/119.hva#247071</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 22:09:46]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+	</channel>
+</rss>

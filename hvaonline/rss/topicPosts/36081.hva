@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Padding Oracle Attack (lược dịch + phân tích)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Padding Oracle Attack (lược dịch + phân tích)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Padding Oracle Attack (lược dịch + phân tích)</title>
+				<description><![CDATA[ wind@k viết bài này với mong muốn chia sẻ thông tin cho các bạn có khó khăn trong việc tìm hiểu kỹ thuật này (do tiếng Anh hay lí do gì khác) đồng thời cũng là để học hỏi tự mình hiểu thêm vấn đề. <i>Nói chung đây không phải là một kỹ thuật khó như nhiều bạn nghĩ, quan trọng là động não và lúc nào cũng suy nghĩ !!!</i>
+
+<font color='orange'><b>Phần 1: Căn bản về kỹ thuật mã hoá (cryptography) </b></font>
+Mã hoá nôm na là một số phép biến đổi trên dữ liệu nhằm làm cho dữ liệu đó biến dạng và không đọc được bởi những người không được phép đọc (người không có key để giải mã). Mã hoá có thể phân 2 loại : 
+<u>- symmetric (đối xứng) :</u> D(E(P,k),k) = P.  
+Ví dụ: thuật toán mã hoá DES, AES, Caesar <span class="link"> http://en.wikipedia.org/wiki/Caesar_cipher</span>): 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>E&#40; P , k &#41; = C sao cho C&#91;i&#93; = &#40;P&#91;i&#93; + k&#41; % 26; 
+ D&#40;C, k&#41;  = P sao cho P&#91;i&#93; = &#40;C&#91;i&#93; - k&#41;%26;</pre>
+		</div>
+<u>- asymmetric/ public-key :</u> D( E(P,d), e) = P.  
+Ví dụ: RSA -<span class="link"> http://en.wikipedia.org/wiki/RSA</span>
+( E = hàm mã hoá, D = hàm giải mã
+  P = dữ liệu chưa mã hoá (plain text), C= dữ liệu đã mã hoá(cypher text)
+  k = key, d = public key, e = private key
+  d!=e )
+
+<b>Trong thực tế hàm mã hoá và giải mã thường lấy input là một block</b> &lt;=&gt; 1 khối dữ liệu có độ dài nhất định ( 4-bytes, 8-bytes, 16-bytes v.v..). Vì vậy với 1 đoạn dữ liệu có độ dài lớn, người ta thường chia nó thành các đoạn nhỏ (trùng với độ dài input của thuật toán mã hoá) và mã hoá lần lượt. 
+
+Kỹ thuật mã hoá lần lượt từng block riêng lẻ rồi nối lại gọi là <b>Electronic Codebook (ECB)</b>. Kỹ thuật này không an toàn vì nếu 2 đoạn input giống nhau sẽ cho ra 2 đoạn output giống nhau làm lộ pattern/hình dạng của dữ liệu. (Xem thêm ở<span class="link"> http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation#Electronic_codebook_.28ECB.29</span>)
+
+Một kỹ thuật khác tăng cường tính bảo mật đó là <b>Cypher Block Chaining (CBC)</b>. Sử dụng đoạn mã hoá của block trước, trong quá trình mã hoá. Cụ thể:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C&#91;i&#93; = E&#40; P xor C&#91;i-1&#93;, k &#41;
+C&#91;0&#93; = IV &#40; initial vector &lt;=&gt; 1 giá trị bất kì nào đó &#41;
+giải mã như sau:
+P&#91;i&#93; = D&#40; C&#91;i&#93;, k  &#41; xor C&#91;i-1&#93;</pre>
+		</div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://upload.wikimedia.org/wikipedia/commons/d/d3/Cbc_encryption.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Vì đoạn dữ liệu được tách ra trong quá trình mã hoá, sẽ sảy ra trường hợp block cuối cùng sẽ ngắn hơn kích thước (size) cần, trong trường hợp này người ta sẽ thêm vào sau một số kí tự, kỹ thuật này gọi là PADDING. Cách thức padding là thêm vào sau N kí tự N, với N là phần khác nhau giữa size hiện tại của block và size tiêu chuẩn. 
+
+Ví dụ block size cần là 8 bytes, block cuối chỉ có 3 bytes : &quot;AAA&quot; =&gt; thêm vào thành &quot;AAA\x05\x05\x05\x05\x05&quot;  
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.gdssecurity.com/l/po_fig1.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b><font color='orange'>Phần 2: Padding Oracle Attack:</font></b>
+Như ở phần trước mình đã trình bày kỹ thuật CBC và Padding, đây là 2 mấu chốt quan trọng trong padding oracle attack. 
+
+Tưởng tượng trường hợp A connect đến server B và gửi 1 encrypted message với key thoả thuận từ trước và sử dụng CBC, trên B sẽ có 1 ứng dụng (app) làm những nhiệm vụ sau
+1) nhận cypher text
+2) decrypt cypher text =&gt; plain text
+3) kiểm tra định dạng plain text, nếu padding không đúng =&gt;<b> return ER_PADDING</b>
+4) đọc dữ liệu trong plain text =&gt; <b>return SOMTHING_ELSE</b>
+
+Giả sử attacker bằng 1 cách nào đó có được đoạn <b> encrypted msg (C)</b> này, kỹ thuật Padding oracle có thể decrypt đoạn C mà không cần key cũng như thông tin về thuật toán mã hoá
+
+Mấu chốt của PO là ở bước (3). Attacker sẽ gửi 1 đoạn encrypt message đến B và chờ return message, nếu return là SOMETHING_ELSE thay vì ER_PADDING thì attacker sẽ giải mã được ít nhất 1 byte của đoạn C. Cụ thể, thuật toán giải mã những byte cuối cùng của C trình bày trong paper của Serge Vaudenay như sau :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// b = block size; ^: phép xor;  y = block cuối của cypher text ; 
+// O&#40; S  &#41; = 1 nếu nhận được SOMETHING_ELSE
+
+1&#41; chọn một vài random byte r&#91;1&#93; , . . . , r&#91;b&#93; and take i = 0
+2&#41; r = r&#91;1&#93;| . . . r&#91;b−1&#93;|&#40;r&#91;b&#93; ^ i&#41;
+3&#41; if O&#40;r|y&#41; = 0 then i++, trở lại bước 2
+4&#41; r&#91;b&#93; = r&#91;b&#93; ^ i
+5&#41; for n = b down to 2 do
+  &#40;a&#41; chọn r = r&#91;1&#93;| . . . |r&#91;b−n&#93;| &#40;r&#91;b−n+1&#93; ^ 1&#41;r&#91;b−n+2&#93; . . . r&#91;b&#93;
+  &#40;b&#41; if O&#40;r|y&#41; = 0 then stop and output &#40;r&#91;b−n+1&#93; ^ n&#41; . . . &#40;r&#91;b&#93; ^ n&#41;
+6.&#41; output rb ^ 1</pre>
+		</div>
+
+<b>Tư tưởng chủ đạo của thuật toán trên như sau:</b> 
+- Ở bước 1 và 2, tác giả chọn ngẫu nhiên một đoạn dữ liệu có kích cỡ = 1 block size, và gọi nó là R
+- Y là block cuối cùng của cypher text
+- Khi Attacker gửi message gồm ( R | Y ) tức 2 block đến server, app sẽ giải mã ra P[0..1] như sau:
+P[1] = D( Y, key ) xor R
+P[0] = D( R, key ) xor IV
+
+- Khi đó server sẽ kiểm tra định dạng của P[1], nếu những byte cuối cùng không có định dạng của 1 padding (xem phần 1) thì server sẽ trả ra ER_PADDING, nghĩa là O(R|Y) =0
+<br>
+			<div align="center" class="limitview"><img src='http://www.gdssecurity.com/l/po_fig5_sm.png' border="0" onload="maxImg(this, 500px);" /></div>
+còn ngược lại những byte cuối của P[1] sẽ có dạng ____1, ___22, __333, __444 v.v... 
+<br>
+			<div align="center" class="limitview"><img src='http://www.gdssecurity.com/l/po_fig4.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>Giả sử nó là ____1 thì :</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>____1 = D&#40;Y, key&#41; xor R 
+==&gt; D&#40;Y,key&#41; = _____1 xor R 
+==&gt; D&#40;Y, key&#41;&#91;b&#93;  = R&#91;b&#93; xor 1 
+==&gt; P&#91;last&#93;&#91;b&#93; = R&#91;b&#93; xor 1 xor C&#91;last-1&#93;
+==&gt; giải mã được byte cuối cùng không cần key.</pre>
+		</div>
+<i>(đối với 22,333,444 thì sao ??)</i>
+
+- Vấn đề còn lại là làm sao biết được nó ở dạng ___1,___22 hay __333 dù trong đa số trường hợp mà wind@k test thì toàn là ra ___1 vì mình chọn R ngẫu nhiên. Dù vậy thuật toán của tác giả có thể giúp ta biết được điều đó bằng việc detect ở bước (5). <i>( :D mọi người thử động não lí giải nhé  :P )</i>
+
+Sau khi có được một vài byte ở cuối, nhiệm vụ còn lại là lấy được toàn bộ phần còn lại của block, thuật toán sau của tác giả làm điều đấy:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Giải sử tìm được D&#40; y&#91;j..b&#93; , key &#41;, gọi nó là a&#91;j&#93;..a&#91;b&#93;, y là block cần giải mã
+
+1&#41; chọn r&#91;k&#93; = a&#91;k&#93; ^ &#40;b − j + 2&#41; for k = j, . . . , b
+2&#41; chọn r&#91;1&#93; , . . . , r&#91;j−1&#93; at random and take i = 0
+3&#41;  r = r&#91;1&#93; . . . r&#91;j−2&#93; &#40;r&#91;j−1&#93; ^ i&#41; r &#91;j&#93; . . . r&#91;b&#93;
+4&#41; if O&#40;r|y&#41; = 0 then i++ ; trở lại bước 3
+5&#41; output r&#91;j−1&#93; ^ i ^ &#40;b − j + 2&#41;</pre>
+		</div>
+
+Tư tưởng tương đối giống thuật toán 1, chỉ có bước (1) là quan trọng. Ngoài ra nó không chỉ có thể giải mã last block như trên mà còn có thể lấy tư tưởng để giải được tất cả, ngoại trừ block đầu tiên!!!!
+
+<i>(Tại sao lại thế mọi người cũng thử tự lý giải nhé  :P ?)</i>
+
+Khi nào có thời gian mình sẽ dịch và giải thích bài về CBC-R của anh mrro, giải thích nốt những phần còn lại ( dĩ nhiên là chỉ khi mọi người hưởng ứng  :P ) 
+
+Thân
+wd.
+
+
+<i>// Bài viết được tham khảo, lược dịch Wikipedia + &quot;Security Flaws Induced by CBC Padding – Applications to SSL, IPSEC, WTLS ...Serge Vaudenay&quot; và có thêm một số giải thích từ bản thân mình</i>
+(update picture from anh mrro 's link)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221763</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221763</link>
+				<pubDate><![CDATA[Wed, 29 Sep 2010 01:57:15]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Padding Oracle Attack (lược dịch + phân tích)</title>
+				<description><![CDATA[ Có một tài liệu giải thích có minh hoạ đầy đủ PO: http://www.gdssecurity.com/l/b/2010/09/14/automated-padding-oracle-attacks-with-padbuster/
+
+-m ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221764</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221764</link>
+				<pubDate><![CDATA[Wed, 29 Sep 2010 02:35:42]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Padding Oracle Attack (lược dịch + phân tích)</title>
+				<description><![CDATA[ @WinDak: Keep up the good work! Thank you.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221791</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36081.hva#221791</link>
+				<pubDate><![CDATA[Wed, 29 Sep 2010 09:35:31]]> GMT</pubDate>
+				<author><![CDATA[ demingcycle]]></author>
+			</item>
+			<item>
+				<title>Padding Oracle Attack (lược dịch + phân tích)</title>
+				<description><![CDATA[ Cám ơn anh WinDak,anh có thể có thể post lên bản full (tiếng việt) ko ạ,em đang ngâm cứu kỹ thuật này,kỹ thuật hay mà đọc khó hiểu quá :D
+
+Thank !
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36081.hva#252683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36081.hva#252683</link>
+				<pubDate><![CDATA[Thu, 19 Jan 2012 00:28:32]]> GMT</pubDate>
+				<author><![CDATA[ kenshin19xx]]></author>
+			</item>
+	</channel>
+</rss>

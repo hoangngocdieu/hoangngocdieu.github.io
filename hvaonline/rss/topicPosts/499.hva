@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cách chỉnh tốc độ quạt của mainboard"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cách chỉnh tốc độ quạt của mainboard"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cách chỉnh tốc độ quạt của mainboard</title>
+				<description><![CDATA[ <font color='red'>Chú thích</font>: chỉnh tốc độ quạt không đúng có thể dẫn tới cháy máy vì quá nóng. Mình sẽ hoàn toàn không chịu trách nhiệm nếu sự cố xảy ra.
+
+Bạn vừa sắm cái mainboard mới (hay laptop mới). Hôm giờ trời nóng quá nên tháo cái case ra cho máy mát mẻ. Chạy được vài bữa, thấy mỗi lần biên dịch chương trình gì hơi lâu tí thấy cái quạt nó kêu như muốn đánh thức hàng xóm dậy. Bạn thầm nghĩ làm sao tôi có thể control được cái quạt chỉ chạy một tốc độ êm đềm nào đó thôi? Bài viết dưới sẽ giải thích cách control tốc độ quạt trên mainboard sử dụng lm_sensors
+
+<b>1. Cài đặt phần mềm</b>
+
+Nếu bạn đang dùng Mandriva,
+
+      <b>urpmi lm_sensors</b>
+
+Nếu bạn đang dùng Gentoo,
+
+      <b>emerge lm_sensors</b>
+
+Nếu bạn đang dùng Debian,
+
+     <b> apt-get install lm_sensors</b>
+
+Nếu bạn đang dùng LinuxFromScratch,
+
+      khỏi phải chỉ
+
+:)
+
+Nếu bạn đang dùng Fedora:
+
+      <b>yum install lm_sensors</b>
+
+<b>2. Cấu hình:</b>
+
+Việc đầu tiên bạn sẽ cần chạy lệnh <b>sensors_detect </b>để chương trình dò tìm chipset mainboard bạn đang dùng là gì? Khi biết được chipset, chương trình sẽ tự nạp driver cần thiết cho chipset này. Dĩ nhiên, chipset này phải được hỗ trợ trên Linux. Xem ở đây có sẵn chipset sẽ/đã được hỗ trợ. Linux sử dụng protocol i2c cho việc theo dõi sức khỏe của hệ thống. Bạn có thể đọc thêm về i2c trong <b>/usr/src/linux/Documentations/i2c/summary</b>
+
+Giả sử mainboard sử dụng chipset được hỗ trợ, bạn sẽ thấy trên màn hình kết quả của lệnh <b>sensors_detect </b>na ná bên dưới:
+
+
+<blockquote>      We can start with probing for (PCI) I2C or SMBus adapters.
+      You do not need any special privileges for this.
+      Do you want to probe now? (YES/no): YES
+      Probing for PCI bus adapters...
+      Use driver `i2c-amd756' for device 00:07.3: AMD-756 Athlon ACPI
+      Probe succesfully concluded.&nbsp;
+		</blockquote>
+
+Kết quả của lệnh trên thông báo đã tìm được chipset AMD-756 và sẽ sử dụng driver i2c-amd756.
+<b>Lưu ý</b> nếu hệ thống bạn chưa có sẵn device i2c, bạn sẽ cần dùng gói lệnh mkdev.sh để tạo thiết bị này nếu không sensors_detect sẽ không dò tìm driver cần thiết được. mkdev.sh nằm trong thư mục progs sau khi bung gói từ nguồn. Hầu hết các bản Linux đã tạo sẵn device này cho bạn.
+
+Kế tiếp bạn sẽ thấy câu hỏi có muốn lm_sensors nạp driver này không, giá trị chuẩn là YES nếu bạn nhấn phím Enter.
+
+
+<blockquote>      We will now try to load each adapter module in turn.
+      Load `i2c-amd756' (say NO if built into your kernel)? (YES/no): YES
+      Module loaded succesfully.&nbsp;
+		</blockquote>
+
+Bạn sẽ cần nạp thêm 2 modules nữa. Cứ việc chấp nhận câu trả lời chuẩn (YES) trong các bước tới
+
+<blockquote>      To continue, we need module `i2c-dev' to be loaded.
+      If it is built-in into your kernel, you can safely skip this.
+      i2c-dev is not loaded. Do you want to load it now? (YES/no): YES
+      Module loaded succesfully.&nbsp;
+		</blockquote>
+
+<blockquote>
+      We are now going to do the adapter probings. Some adapters may hang halfway
+      through; we can't really help that. Also, some chips will be double detected;
+      we choose the one with the highest confidence value in that case.
+      If you found that the adapter hung after probing a certain address, you can
+      specify that address to remain unprobed. That often
+      includes address 0x69 (clock chip).
+
+      Next adapter: SMBus AMD756 adapter at 50e0
+      Do you want to scan it? (YES/no/selectively): YES
+      Probing for `Winbond W83782D'... Success!
+      (confidence 8, driver `w83781d'), other addresses: 0x48 0x49
+      Probing for `SPD EEPROM'... Success!
+      Client found at address 0x51
+      Probing for `SPD EEPROM'... Success!
+      (confidence 8, driver `eeprom')
+      Client found at address 0x52
+      Probing for `SPD EEPROM'... Success!
+      (confidence 8, driver `eeprom')
+      Client found at address 0x69 &nbsp;
+		</blockquote>
+
+<font color='red'>Lưu ý:</font> các dòng trên mình chỉ copy và paste các hàng sensors-detect tìm được. Bạn sẽ thấy nhiều hàng Fail khi chương trình dò tìm.
+
+
+     <blockquote> Some chips are also accessible through the ISA bus. ISA probes are
+      typically a bit more dangerous, as we have to write to I/O ports to do
+      this. This is usually safe though.
+
+      Do you want to scan the ISA bus? (YES/no): no
+      Some Super I/O chips may also contain sensors. Super I/O probes are
+      typically a bit more dangerous, as we have to write to I/O ports to do
+      this. This is usually safe though.
+      Do you want to scan for Super I/O sensors? (YES/no): no
+
+      Now follows a summary of the probes I have just done.
+      Just press ENTER to continue:
+
+      Driver `w83781d' (should be inserted):
+      Detects correctly:
+      * Bus `SMBus AMD756 adapter at 50e0'
+      Busdriver `i2c-amd756', I2C address 0x2d (and 0x48 0x49)
+      Chip `Winbond W83782D' (confidence: 8)
+      Driver `eeprom' (should be inserted):
+      Detects correctly:
+      * Bus `SMBus AMD756 adapter at 50e0'
+      Busdriver `i2c-amd756', I2C address 0x50
+      Chip `SPD EEPROM' (confidence: 8)
+      * Bus `SMBus AMD756 adapter at 50e0'
+      Busdriver `i2c-amd756', I2C address 0x51
+      Chip `SPD EEPROM' (confidence: 8)
+      * Bus `SMBus AMD756 adapter at 50e0'
+      Busdriver `i2c-amd756', I2C address 0x52
+      Chip `SPD EEPROM' (confidence: 8) &nbsp;
+		</blockquote>
+
+Bước cuối cùng, sensors-detect sẽ thông báo các dòng lệnh cần thiết để nạp module cần thiết. Tùy vào phiên bản Linux bạn dùng mà vị trí/tên các tập tin bên dưới sẽ khác nhau. Đây là thông tin sử dụng trên Gentoo
+
+
+    <blockquote>  I will now generate the commands needed to load the I2C modules.
+      If you want to load the modules at startup, generate a config file
+      below and make sure lm_sensors gets started at boot time; e.g
+      $ rc-update add lm_sensors default
+
+      To make the sensors modules behave correctly, add these lines to
+      /etc/modules.d/lm_sensors and run modules-update:
+
+      #----cut here----
+      # I2C module options
+      alias char-major-89 i2c-dev
+      #----end cut here----
+
+      WARNING! If you have some things built into your kernel, the list above
+      will contain too many modules. Skip the appropriate ones! You really should
+      try these commands right now to make sure everything is working properly.
+      Monitoring programs won't work until it's done.
+      To load everything that is needed, execute the commands below...
+
+      #----cut here----
+      # I2C adapter drivers
+      modprobe i2c-amd756
+      # I2C chip drivers
+      modprobe w83781d
+      modprobe eeprom
+      # sleep 2 # optional
+      /usr/bin/sensors -s # recommended
+      #----end cut here----
+
+      Do you want to generate /etc/conf.d/lm_sensors? Enter s to specify other file name?
+      (YES/no/s): YES
+&nbsp;
+		</blockquote>
+Xin chúc mừng, việc cấu hình lm_sensors đã hoàn thành. Kế tiếp bạn có thể chạy lệnh sensors để xem kết quả trạng thái hệ thống hiện thời.
+
+      <b>/etc/init.d/lm_sensors start</b>
+
+     <blockquote> * Loading lm_sensors modules...
+      * Loading i2c-amd756... [ ok ]
+      * Loading w83781d... [ ok ]
+      * Loading eeprom... [ ok ]
+      * Initializing sensors... [ ok ]&nbsp;
+		</blockquote>
+
+     <b> root@localhost rhs# sensors</b>
+
+      <blockquote>w83782d-i2c-0-2d
+      Adapter: SMBus AMD756 adapter at 50e0
+
+      VCore 1: +1.78 V (min = +1.66 V, max = +1.82 V)
+      VCore 2: +2.53 V (min = +1.66 V, max = +1.82 V) ALARM
+      +3.3V: +3.41 V (min = +3.14 V, max = +3.46 V)
+      +5V: +5.19 V (min = +4.73 V, max = +5.24 V)
+      +12V: +12.40 V (min = +10.82 V, max = +13.19 V)
+      -12V: -12.61 V (min = -13.18 V, max = -10.88 V)
+      -5V: -4.80 V (min = -5.25 V, max = -4.75 V) ALARM
+      V5SB: +5.38 V (min = +4.73 V, max = +5.24 V) ALARM
+      VBat: +3.12 V (min = +2.40 V, max = +3.60 V)
+      fan1: 0 RPM (min = 2657 RPM, div = 2)
+      fan2: 5037 RPM (min = 2657 RPM, div = 2)
+      fan3: 0 RPM (min = 664 RPM, div = 8)
+      temp1: +38 C (high = +0 C, hyst = -128 C) sensor = thermistor
+      temp2: +52.0 C (high = +90 C, hyst = +88 C) sensor = thermistor
+      temp3: -46.5 C (high = +80 C, hyst = +75 C) sensor = diode
+      vid: +1.750 V (VRM Version 9.0)
+      alarms:
+      beep_enable:
+      Sound alarm disabled
+&nbsp;
+		</blockquote>
+Hey, fan2 đang chạy tốc độ 5037. Vậy làm sao tôi có thể chỉnh tốc độ đây?
+
+lm_sensors sử dụng lệnh fancontrol cho việc quản lý tốc độ quạt. Trước khi muốn dùng fancontrol, bạn phải có tập tin<b> /etc/fancontrol</b>
+
+Để tạo tập tin<b> /etc/fancontrol</b>, bạn có thể dùng lệnh pwmconfig Khi thực hiện lệnh pwmconfig, nhớ theo dõi xem quạt có thực sự ngừng khoảng 5 giây không? Rồi trả lời câu hỏi <b>pwmconfig</b> hỏi trong từng bước cho mỗi quạt khác nhau. Sau đó chương trình sẽ hỏi bạn có muốn tạo tập tin /etc/fancontrol, trả lời Dạ có :)
+
+Sau khi tạo tập tin<b> /etc/fancontrol,</b> bạn có thể cho chạy lệnh fancontrol sau đó chạy lệnh sensors trở lại để xem tốc độ quạt bây giờ là gì?
+
+Nếu bạn đã hài lòng, bỏ hàng này vào <b>/etc/conf.d/local.start</b>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/sbin/fancontrol & &gt; /dev/null</pre>
+		</div>
+
+để mỗi khi khởi động máy, chương trình fancontrol sẽ tự động chạy cho đến lúc bạn tắt máy hay bạn tự chấm dứt chương trình với lệnh kill.
+
+Nếu bạn đang dùng KDE, muốn có một khung cửa sổ nho nhỏ để theo dõi trang thái của sensors, bạn có thể cài ksensors với
+
+    <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>emerge ksensors</pre>
+		</div>
+
+Hoặc đang dùng Gnome bạn có thể sử dụng sensors-applet hoặc gkrellm-sensors
+
+Bạn cũng có thể tự chỉnh tốc độ quạt bằng cách thay đổi giá trị của pwmx với x là 1, 2, 3, v..v... pwmx thường hay nằm trong <b>/proc/sys/dev/sensors/tên_chip_đang_dùng hoặc trong </b><b>/sys/devices/pci0000:00/0000:00:07.3/i2c-0/0-002d </b>(lưu ý: vị trí này thay đổi tùy theo chipset máy bạn dùng là gì).
+
+larry at vnlinux dot org Apr, 22nd 2006
+
+<b>References:</b>
+#<span class="link"> http://secure.netroedge.com/~lm78/</span>
+#<span class="link"> http://forums.gentoo.org/viewtopic-t-236468-highlight-control+fan+speed.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/499.hva#1464</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/499.hva#1464</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 12:46:05]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

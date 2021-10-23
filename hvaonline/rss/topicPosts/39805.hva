@@ -1,0 +1,1016 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình Loadblance với Ngix+php-fpm +mysql"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình Loadblance với Ngix+php-fpm +mysql"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Chào cả nhà,
+
+Nghe thiện hạ đồn nginx khá lắm nên hôm nay đang thử dùng nginx với php-fpm chạy thử dịch vụ. Sau khi cài xong benchmark khá ngon. Cũng chưa rành lắm nhưng đại khái có thể giảm được 1/2 cho đến 1/3 Ram khi thử với ab của apache.
+
+Chạy apache với stagic HTML 
+<blockquote>Total transferred:      7499000 bytes
+HTML transferred:       7227000 bytes
+Requests per second:    352.94 [#/sec] (mean)
+Time per request:       14.167 [ms] (mean)
+Time per request:       2.833 [ms] (mean, across all concurrent requests)
+Transfer rate:          2584.61 [Kbytes/sec] received
+&nbsp;
+		</blockquote>
+Chạy nginx với Stagic HTML 
+<blockquote>Total transferred:      7454000 bytes
+HTML transferred:       7227000 bytes
+Requests per second:    2679.47 [#/sec] (mean)
+Time per request:       1.866 [ms] (mean)
+Time per request:       0.373 [ms] (mean, across all concurrent requests)
+Transfer rate:          19503.87 [Kbytes/sec] received&nbsp;
+		</blockquote>
+
+đọc thêm 1 chút tài liệu thì thấy nginx có các ưu diểm về bảo mật cũng như cơ chế chạy nhiều process xịn? hơn hoặc tương đương với worker của apache,
+
+<u>vd:</u> 
++quản lý dịch vụ bằng worker rất xịn, bao gồm start/stop dịch vụ nhẹ nhàng(graceful),
++Chạy worker riêng biệt uid/gid/chroot/environment, và dùng php.ini kiểu khác,
++Khi cache opcode bị hư, sẽ tự động restart,
++Sử dụng tính năng upload xịn ,
++Xử dụng ptrace hoặc các tính năng để execute_date các php backtrace để xuất slowlog,
++Có SAPI giống như mod_status,
++Cái chổ mình thấy ghê nhất là khi cần upgrade binary của nginx, chỉ cần gửi USR2 signal nó sẽ tự động chuyển file nginx.pid thành nginx.pid.oldbin. Sau đó 2 binary sẽ chạy song song, rồi gửi winch signal thì các thread củ đang chạy sẽ tắt êm đềm. Không biết có còn nhớ  vụ này khi upgrade hay không nữa. 
+etc....
+
+mình thử, sửa vài phần trong php-fpm và nginx và bench thì được kết quả như sau:
+
+<blockquote><font color='yellow'>/ab -n 1000 -c 20 -t 10<span class="link"> http://localhost/index.html</span></font>
+
+# <font color='yellow'>free -m</font>
+             total       used       free     shared    buffers     cached
+Mem:           497        346        151          0         11        126
+-/+ buffers/cache:        208        289
+Swap:         1027          9       1017&nbsp;
+		</blockquote>
+
+avg cũng lên cao nhưng không như apache dùng prefork. 
+<blockquote>
+top - 17:16:48 up 7 days,  2:56,  3 users,  load average: 4.12, 1.24, 0.44
+Tasks: 107 total,  23 running,  75 sleeping,   8 stopped,   1 zombie
+Cpu(s): 89.5%us,  4.5%sy,  0.0%ni,  0.0%id,  0.0%wa,  2.5%hi,  3.5%si,  0.0%st
+Mem:    509792k total,   299092k used,   210700k free,    12056k buffers
+Swap:  1052248k total,    10232k used,  1042016k free,   102124k cached
+ 
+ PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+11823 nginx     16   0  124m  23m  15m R 63.8  4.7   0:02.69 php-fpm
+11810 nginx     16   0  124m  23m  15m R 31.9  4.6   0:02.31 php-fpm
+11805 nginx     16   0  124m  23m  15m R 25.9  4.6   0:03.59 php-fpm
+11824 nginx     16   0  125m  23m  15m R 21.9  4.8   0:01.19 php-fpm
+11806 nginx     16   0  124m  23m  15m R 19.9  4.6   0:03.96 php-fpm
+11807 nginx     16   0  125m  23m  15m R 15.0  4.8   0:02.25 php-fpm
+11825 nginx     16   0  125m  23m  15m R 15.0  4.8   0:01.55 php-fpm
+10715 nginx     15   0 21728 2180  756 S  5.0  0.4   0:01.02 nginx
+11123 mysql     15   0  452m  50m 5684 S  1.0 10.1   0:01.65 mysqld&nbsp;
+		</blockquote>
+
+Chỉ có CPU tăng cao nhưng RAM thì không bị giảm quá đáng.
+<blockquote># <font color='yellow'>vmstat 1</font>
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu------
+ r  b   swpd  <font color='yellow'> free</font>   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  0  10144  73552  54424 147776    0    0     1     3    2   16  0  0 99  0  0
+31  0  10144  59592  54424 147776    0    0     0     0 2099  858 57 10 33  0  0
+31  0  10144  60948  54424 147792    0    0     0     0 1744  762 94  6  0  0  0
+31  0  10144  58468  54424 147868    0    0     0     4 1897  681 94  6  0  0  0
+31  0  10144  59212  54424 147876    0    0     0     0 1904  842 94  6  0  0  0
+34  0  10144  59708  54428 147948    0    0     0   460 1777  828 94  6  0  0  0
+32  0  10144  59832  54428 147944    0    0     0     0 1785  835 94  6  0  0  0
+32  0  10144  59212  54428 148020    0    0     0     0 1971  763 93  7  0  0  0
+31  0  10144  59832  54428 148024    0    0     0     0 1891  896 94  6  0  0  0
+31  0  10144  59708  54428 148100    0    0     0     0 2010  769 94  6  0  0  0
+32  0  10144  59832  54436 148080    0    0     0   480 1943  855 93  7  0  0  0
+34  0  10144  70760  54436 148232    0    0     0     0 2099 1320 92  9  0  0  0
+35  0  10144  69560  54436 148444    0    0     0     0 1020 1727 95  5  0  0  0&nbsp;
+		</blockquote>
+
+Cảm thấy, php-fpm rút RAM cũng khá nhiều(chạy <font color='yellow'>pmap</font>) nhưng cũng mãn nguyện với kết quả trên,bởi vì khi chỉnh sữa các parm trong php-fpm.conf, thì kết quả ab có cải thiện rỏ rệch. Có điều, khi tăng quá nhiều các trong số của ab, thì phía nginx sẽ báo <b>Too many open files</b>, nên mình phải tăng thêm <b>worker_rlimit_nofile 10240;</b> vào <font color='yellow'>/etc/security/limits.conf</font> . 
+<blockquote>cat /etc/security/limits.conf
+nginx       soft    nofile  10240
+nginx       hard    nofile  10240&nbsp;
+		</blockquote>
+
+Nhìn tổng thể, cho thấy nginx cũng khá tuyệt, nên mình quyết dùng nginx chạy dịch vụ <b>joomla+sql+fpm+nginx</b>, và thữ cho nginx loadblance theo hướng dẫn trên trang của nginx <span class="link"> http://wiki.nginx.org/NginxLoadBalanceExample</span>). Có điều tới đây thì .... bí. Không hiểu cách ấn định backend của mình có vấn đề gì mà khi bắt đầu sử dụng <font color='yellow'>proxy_pass </font> bị báo lỗi như sau:
+<blockquote>2011/08/18 11:36:33 [error] 2723#0: *4 recv() failed (104: Connection reset by peer) while reading response header from upstream, client: 192.168.1.3, server: test1, <font color='yellow'>request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:9000/", host: "192.168.1.35</font>"&nbsp;
+		</blockquote>
+
+(<font color='yellow'>Đã tắt sạch iptables + selinux</font>)
+Tắt cái <font color='yellow'>proxypass</font> đi thì hoạt được bình thường, request của client chạy tới nginx và nginx đưa đến fpm ngon lành.
+<blockquote>192.168.1.3 - - [18/Aug/2011:11:30:43 +0900] "GET / HTTP/1.1" 502 575 "-" "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1" "-"
+192.168.1.3 - - [18/Aug/2011:11:30:43 +0900] "GET /favicon.ico HTTP/1.1" 404 201 "-" "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1" "-"&nbsp;
+		</blockquote>
+
+Cấu hình của php 5.3.6 khi compile 
+<blockquote>#! /bin/sh
+#
+# Created by configure
+
+'./configure' \
+'--program-prefix=' \
+'--prefix=/usr' \
+'--exec-prefix=/usr' \
+'--disable-debug' \
+'--with-pic' \
+'--disable-rpath' \
+'--with-pear' \
+'--with-bz2' \
+'--with-exec-dir=/usr/bin' \
+'--with-freetype-dir=/usr' \
+'--with-png-dir=/usr' \
+'--with-xpm-dir=/usr' \
+'--enable-gd-native-ttf' \
+'--without-gdbm' \
+'--with-gettext' \
+'--with-gmp' \
+'--with-iconv' \
+'--with-jpeg-dir=/usr' \
+'--with-openssl' \
+'--with-pcre-regex=/usr' \
+'--with-zlib' \
+'--with-layout=GNU' \
+'--enable-exif' \
+'--enable-ftp' \
+'--enable-magic-quotes' \
+'--enable-sockets' \
+'--enable-fpm' \
+'--with-kerberos' \
+'--enable-ucd-snmp-hack' \
+'--enable-shmop' \
+'--enable-calendar' \
+'--without-sqlite' \
+'--with-libxml-dir=/usr' \
+'--enable-xml' \
+'--with-libdir=lib64' \
+'--with-mysql' \
+'--with-gd' \
+'--enable-dom' \
+'--enable-dba' \
+'--without-unixODBC' \
+'--enable-pdo' \
+'--disable-xmlreader' \
+'--disable-xmlwriter' \
+'--with-sqlite3' \
+'--disable-phar' \
+'--disable-fileinfo' \
+'--without-pspell' \
+'--disable-wddx' \
+'--with-curl' \
+'--enable-mbstring' \
+"$@"&nbsp;
+		</blockquote>
+
+Cấu hình của <font color='yellow'>php-fpm.conf</font>
+<blockquote>[global]
+pid = /var/run/php-fpm.pid
+error_log = /var/log/php-fpm.log
+log_level = notice
+emergency_restart_threshold = 0
+emergency_restart_interval = 0
+process_control_timeout = 0
+daemonize = yes
+
+[www]
+<font color='yellow'>listen = 127.0.0.1:9000</font>
+listen.backlog = -1
+<font color='yellow'>listen.allowed_clients = 127.0.0.1
+</font>
+listen.owner = nginx
+listen.group = nginx
+listen.mode = 0666
+
+user = nginx
+group = nginx
+
+pm = dynamic
+# Mấy cái này phải dựa vào kết quả của benchmark trên của ab, nên mình đưa tạm các tham số này, chạy cũng ổn.
+<font color='yellow'>pm.max_children =  30
+pm.start_servers = 11
+pm.min_spare_servers = 10
+pm.max_spare_servers = 25
+pm.max_requests = 500</font>
+pm.status_path = /status
+
+request_slowlog_timeout = 2
+# Cái thằng này quan trọng cực, khi default nó được set là 5? hay sao đó, nhưng chạy dịch vụ gì cũng bị timeout hay bất ổn định, nên phải set thành 10. Bà con nào chạy dịch vụ nào cùng với SQL thì để ý. 
+<font color='yellow'>request_terminate_timeout= 10</font>
+slowlog = /var/log/$pool.log.slow
+
+# do phpinfo() cảnh báo nên phải set cho nó, không có gì đâu.
+<font color='yellow'>php_admin_value[date.timezone]=Asia/Tokyo</font>
+&nbsp;
+		</blockquote>
+
+Cấu hình của <font color='yellow'>nginx.conf</font> (nginx/0.8.54)
+Hiện backend mình chỉ để 1 server, nhưng do lỗi trên nên không hoạt động được. Không biết có cần phải làm gì thêm để nginx có thể proxy_pass có thể round robin khi có php-fpm đến 2 server không.
+<blockquote>#
+user              nginx;
+worker_processes  2;
+# Log file of nginx
+error_log  /var/log/nginx/error.log;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+#----------------------------------------------------------------------
+# HTTP Core Module
+#
+#  <span class="link"> http://wiki.nginx.org/NginxHttpCoreModule</span>
+#
+#----------------------------------------------------------------------
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    keepalive_timeout  0;
+
+#Gzip
+        gzip  on;
+        gzip_http_version 1.0;
+        gzip_disable      "MSIE [1-6]\.";
+        gzip_disable      "Mozilla/4";
+        gzip_comp_level   2;
+        gzip_vary         on;
+        gzip_proxied      any;
+        gzip_buffers      4 8k;
+        server_names_hash_bucket_size 128;    #    32/64/128
+
+# Proxy cache (FastCGI)
+        proxy_buffering       on;
+        proxy_buffer_size     8k;
+        proxy_buffers         100 8k;
+        proxy_cache_path /var/cache/nginx/nginx_cache levels=1:2 keys_zone=czone:4m max_size=50m inactive=120m;
+        proxy_temp_path  /var/cache/nginx/nginx_tmp;
+        proxy_connect_timeout 60;
+        proxy_read_timeout    90;
+        proxy_send_timeout    60;
+        proxy_cache_valid     200 2h;
+        proxy_cache_valid     302 2h;
+        proxy_cache_valid     301 4h;
+        proxy_cache_valid     any 1m;
+
+#
+# set header
+#
+        proxy_set_header Host            $http_host;
+        proxy_set_header X-Remote-Addr   $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+#
+# backend
+#
+upstream backend {
+        ip_hash;
+        <font color='yellow'>server 127.0.0.1:9000;</font>
+#       server 192.168.1.36:9000;
+}
+
+#
+# The default server
+#
+        server {
+        listen 80;
+        server_name test1;
+
+        root /opt/public_html;
+        index index.php;
+
+        # Support Clean (aka Search Engine Friendly) URLs
+       <font color='yellow'> location / </font>{
+            #    try_files $uri $uri/ /index.php?q=$request_uri;
+
+        # LoadBlance to backend
+        <font color='yellow'>proxy_pass<span class="link"> http://backend;</span></font>
+        #proxy_cache_key $scheme://$backend$request_uri$is_args$args;
+
+        }
+
+        index index.php index.html index.htm;
+
+        # deny running scripts inside writable directories
+        location ~* /(images|cache|media|logs|tmp)/.*\.(php|pl|py|jsp|asp|sh|cgi)$ {
+                return 403;
+                error_page 403 /403_error.html;
+        }
+
+        # The parameter fastcgi_pass is set to 127.0.0.1:9000, corresponding to the port that fpm is configured to listen to.
+        location ~ .*.php$ {
+            include /etc/nginx/fastcgi.conf;
+            fastcgi_pass  <font color='yellow'>127.0.0.1:9000;</font>
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+
+        # caching of files
+        location ~* \.(ico|pdf|flv)$ {
+                expires 30d;
+        }
+
+        location ~* \.(js|css|png|jpg|jpeg|gif|swf|xml|txt)$ {
+                expires 7d;
+        }
+
+}
+
+# Load config files from the /etc/nginx/conf.d directory
+    include /etc/nginx/conf.d/*.conf;
+}&nbsp;
+		</blockquote>
+
+ Cám ơn đã chú ý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245226</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245226</link>
+				<pubDate><![CDATA[Wed, 17 Aug 2011 22:17:22]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Em thử bỏ <b>listen.allowed_clients = 127.0.0.1</b> ra khỏi www pool coi thử?
+
+Nên tận dụng UNIX domain socket vì nó efficient hơn TCP socket.
+
+Thử đổi trong php-fpm config
+<b>listen = 127.0.0.1:9000</b> 
+
+thành:
+<b>listen = /path/to/a.sock</b>
+
+
+rồi trỏ nó trong nginx.conf từ:
+<b>fastcgi_pass 127.0.0.1:9000; </b>
+
+thành:
+<b>fastcgi_pass unix:/path/to/a.sock;</b>
+
+
+Em dùng <b>proxy_pass<span class="link"> http://backend;</span></b>  nhưng em declare "backend" ở đâu?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245230</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245230</link>
+				<pubDate><![CDATA[Wed, 17 Aug 2011 23:35:47]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Em thử bỏ <b>listen.allowed_clients = 127.0.0.1</b> ra khỏi www pool coi thử?
+
+Nên tận dụng UNIX domain socket vì nó efficient hơn TCP socket.
+
+Thử đổi trong php-fpm config
+<b>listen = 127.0.0.1:9000</b> 
+
+thành:
+<b>listen = /path/to/a.sock</b>
+
+
+rồi trỏ nó trong nginx.conf từ:
+<b>fastcgi_pass 127.0.0.1:9000; </b>
+
+thành:
+<b>fastcgi_pass unix:/path/to/a.sock;</b>
+&nbsp;
+		</blockquote>
+
+Em làm thành thế này,
+
+<blockquote>        location ~ .*.php$ {
+            include /etc/nginx/fastcgi.conf;
+            #fastcgi_pass  127.0.0.1:9000;
+           <font color='yellow'> fastcgi_pass unix:/tmp/fpm.sock;</font>
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+&nbsp;
+		</blockquote>
+
+Trong www của php-fpm.conf thành như thế này,
+<blockquote>[www]
+<font color='yellow'>listen = /tmp/fpm.sock</font>
+listen.backlog = -1
+&nbsp;
+		</blockquote>
+
+[root@localhost ~]# ls /tmp/
+<blockquote><font color='yellow'>fpm.sock</font>          mapping-root                                scim-bridge-0.3.0.socket-0@localhost:0.0  virtual-root.1rn7IL
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Em dùng <b>proxy_pass<span class="link"> http://backend;</span></b>  nhưng em declare "backend" ở đâu?&nbsp;
+		</blockquote>
+Cái đoạn upstream backend trong nginx.conf không phải nó hả anh.
+<blockquote>
+#
+# backend
+#
+upstream backend {
+        ip_hash;
+        server 127.0.0.1:9000;
+       #server 192.168.1.36:9000;
+}&nbsp;
+		</blockquote>
+
+Hiện em làm như anh nói nhưng vẫn bị error sau,
+
+<blockquote>[root@localhost ~]#<font color='yellow'> tail -f /var/log/nginx/access.log</font>
+192.168.1.3 - - [18/Aug/2011:15:12:55 +0900] "GET / HTTP/1.1" 502 575 "-" "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1" "-"
+
+[root@localhost ~]#<font color='yellow'> tail -f /var/log/nginx/error.log</font>
+2011/08/18 15:12:55 [error] 3445#0: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.3, server: test1, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:9000/", host: "192.168.1.35"
+&nbsp;
+		</blockquote>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245232</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245232</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 01:14:13]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Có hai chuyện:
+
+1. Nếu em đã sử dụng UNIX domain socket trong php-fpm rồi thì không thể dùng server 127.0.0.1:9000 cho "upstream backend" được vì TCP socket cho port 9000 hoàn toàn không hiện diện. Em chỉ có thể chọn UNIX domain socket hoặc TCP socket chớ không thể chọn cả hai.
+
+2. Hình như anh hiểu lầm ý em. Cấu hình ở đây em chỉ muốn chạy web service trên nginx chớ không phải dùng nginx làm proxy phải không? Nếu nginx làm web thì nó là web service chớ không phải là proxy service. Em không thể proxy vô backend vì chẳng có backend nào hết. Trong trường hợp của em, "backend" chính là php-fpm chớ không có gì khác.
+
+Nếu em có 2 con apache bên trong thì mới sử dụng nginx làm proxy. Nếu không, không thể chính nginx làm proxy web service của nó được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245234</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245234</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 01:31:24]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Có hai chuyện:
+
+1. Nếu em đã sử dụng UNIX domain socket trong php-fpm rồi thì không thể dùng server 127.0.0.1:9000 cho "upstream backend" được vì TCP socket cho port 9000 hoàn toàn không hiện diện. Em chỉ có thể chọn UNIX domain socket hoặc TCP socket chớ không thể chọn cả hai.
+&nbsp;
+		</blockquote>
+Đúng rồi, em cũng đã kiểm tra nhưng không thấy port được mỡ. 
+Ok, cái này em hiểu rồi, để cho dễ hiểu, em tạm dùng 127.0.0.1:9000 để mô tả cái em muốn làm.
+
+<blockquote>
+2. Hình như anh hiểu lầm ý em. Cấu hình ở đây em chỉ muốn chạy web service trên nginx chớ không phải dùng nginx làm proxy phải không? Nếu nginx làm web thì nó là web service chớ không phải là proxy service. Em không thể proxy vô backend vì chẳng có backend nào hết. Trong trường hợp của em, "backend" chính là php-fpm chớ không có gì khác.
+
+Nếu em có 2 con apache bên trong thì mới sử dụng nginx làm proxy. Nếu không, không thể chính nginx làm proxy web service của nó được.&nbsp;
+		</blockquote>
+Nếu em muốn cho nginx chạy web sever, có thể load blance cho 1 con backend bên trong thì có làm được không ạ ?Theo như anh nói, thì phải tắt chức năng proxy của nginx để nó chạy làm webserver thì mới được, nhưng để thực hiện load blance thì phải dùng đến proxypass, <font color='yellow'>chỗ này em không hiểu lắm</font>.
+
+Nói một cách khác, bây giờ em có 1 con nginx IP của nó là 192.168.1.35 và 1 backend là 192.168.1.36.
+Giờ em muốn con 192.168.1.35 có thể tự xử lý như một webserver và đồng thời nó cũng roundrobin đến 192.168.1.36 được.  
+
+Em setup nginx như thế này(em tạm dùng tcp để mô ta) , 
+<blockquote>upstream backend { 
+ip_hash; 
+server 192.168.1.35:9000; 
+server 192.168.1.36:9000; 
+} &nbsp;
+		</blockquote>
+Bên dưới đó có thể em setup là,
+<blockquote># LoadBlance to backend 
+proxy_pass<span class="link"> http://backend;&nbsp;</span>
+		</blockquote>
+Em nghĩ FPM của 192.168.1.35 là nó phải thế này,
+<blockquote>location ~ .*.php$ { 
+include /etc/nginx/fastcgi.conf; 
+fastcgi_pass 127.0.0.1:9000; 
+fastcgi_index index.php; 
+include fastcgi_params; 
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; 
+} 
+&nbsp;
+		</blockquote>
+Còn bên 192.168.1.36,thì làm sao để nó nhận request của phía nginx bên 192.168.1.35 ạ ? 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245235</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245235</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 01:50:48]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ to anh Minh: theo em hiểu thì anh đang muốn loadbalance 2 thằng php-fpm,nếu như vậy có lẽ anh nên bỏ proxy_pass trong location / đi,và loadbalance trên fastcgi_pass:
+
+location ~ .*.php$ { 
+include /etc/nginx/fastcgi.conf; 
+fastcgi_pass backend; 
+fastcgi_index index.php; 
+include fastcgi_params; 
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; 
+}]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245236</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245236</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 01:51:00]]> GMT</pubDate>
+				<author><![CDATA[ Dpm]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Dpm wrote:</cite><br>
+		<blockquote>to anh Minh: theo em hiểu thì anh đang muốn loadbalance 2 thằng php-fpm,nếu như vậy có lẽ anh nên bỏ proxy_pass trong location / đi,và loadbalance trên fastcgi_pass:
+
+location ~ .*.php$ { 
+include /etc/nginx/fastcgi.conf; 
+fastcgi_pass backend; 
+fastcgi_index index.php; 
+include fastcgi_params; 
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; 
+}&nbsp;
+		</blockquote>
+
+Chào Dpm,
+Cám ơn bạn đã trả lời cho mình, mình lo cái proxypass hoài mà không ngờ có thể viết thành <b>fastcgi_pass backend;</b>, cám ơn bạn giúp mình.
+
+Trước khi cài thêm VM bạn cho mình hỏi, nếu có nhiều backend bên trong, nhưng vì một lý do nào đó, 1 trong số đó không access vào được thì có ảnh hưỡng gì đến client không ? Có khi nào nginx báo không thể truy cập không nhỉ.
+
+Ngoài ra, mô hình mình đang làm hiện nay, từ kết quả benchmark cho thấy 1 nginx+fpm rất hiệu quả. Nhưng loadblance 2 thằng này thì liệu có hiệu quả hay có melit gì không nhỉ ? Hay từ ban đầu làm mô hình reverse proxy luôn ? 
+
+ps: Cám ơn anh conmale luôn, em đang làm thữ để mai mốt nhờ anh làm còn biết về nginx để ...... start/stop :-D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245239</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245239</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 02:06:37]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Dpm trả lời hoàn toàn chính xác.
+
+Em có thể delare backend bao nhiêu php-fpm instances cũng được và trong <b>location ~ .*.php$  {}</b> thì em chỉ cần pass backend là xong. Cái em bị kẹt là syntax chớ không phải là mô hình. Anh cũng coi lướt nên không nhận ra cái mớ http em nhét vô ;).
+
+Với câu hỏi của em, em có thể configure nhiều backend nhưng quan trọng là những backend này ở đâu và cần làm những gì? Nếu những backend này chỉ có một mớ php đơn giản để thao tác thì nhiều backend không khác gì mấy bởi vì chính nginx có nhiều workers và php-fpm cũng có nhiều workers. Cả hai có thể handle concurrent và async requests. Cái chính là bottleneck trong việc truy vấn tới CSDL. Em có thể thiết kế để tạo ra hai backends (php-fpm engines) và mỗi backend connect đến 1 CSDL riêng biệt (nằm ở server khác) thì có thể improve rõ. Nếu csdl chạy trên cùng một server thì nên configure db connections để sử dụng luôn UNIX domain socket vì nó nhanh gọn hơn rất nhiều (cái này anh đã test nhiều lần).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245240</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245240</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 02:20:50]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Dpm trả lời hoàn toàn chính xác.
+
+Em có thể delare backend bao nhiêu php-fpm instances cũng được và trong <b>location ~ .*.php$  {}</b> thì em chỉ cần pass backend là xong. Cái em bị kẹt là syntax chớ không phải là mô hình. Anh cũng coi lướt nên không nhận ra cái mớ http em nhét vô ;).
+
+Với câu hỏi của em, em có thể configure nhiều backend nhưng quan trọng là những backend này ở đâu và cần làm những gì? Nếu những backend này chỉ có một mớ php đơn giản để thao tác thì nhiều backend không khác gì mấy bởi vì chính nginx có nhiều workers và php-fpm cũng có nhiều workers. Cả hai có thể handle concurrent và async requests. <font color='yellow'>Cái chính là bottleneck trong việc truy vấn tới CSDL</font>. Em có thể thiết kế để tạo ra hai backends (php-fpm engines) và mỗi backend connect đến 1 CSDL riêng biệt (nằm ở server khác) thì có thể improve rõ. Nếu csdl chạy trên cùng một server thì nên configure db connections để sử dụng luôn UNIX domain socket vì nó nhanh gọn hơn rất nhiều (cái này anh đã test nhiều lần).&nbsp;
+		</blockquote>
+
+Chu choa, then chốt của vấn đề là đây, em cũng đã đang định làm thữ mà anh trả lời luôn rồi. Em cũng nghi là sẽ bị bottleneck, mà không làm thì lại chả biết làm cách nào khác, nên định nhắm mắt làm đại. 
+
+Vậy bây giờ muốn làm 2 webserver, 1DB server thì chắc tiêu bởi bottleneck rồi. 
+
+anh nói <b>"Nếu csdl chạy trên cùng một server thì nên configure db connections để sử dụng luôn UNIX domain "</b> socket" thì tất là chỉ chạy 1 con server, không load blance mà cũng không HA được. Cách này có thể tốt, nhưng lỡ con server này teo thi tính sao anh. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245241</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245241</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 02:39:27]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Dpm trả lời hoàn toàn chính xác.
+
+Em có thể delare backend bao nhiêu php-fpm instances cũng được và trong <b>location ~ .*.php$  {}</b> thì em chỉ cần pass backend là xong. Cái em bị kẹt là syntax chớ không phải là mô hình. Anh cũng coi lướt nên không nhận ra cái mớ http em nhét vô ;).
+
+Với câu hỏi của em, em có thể configure nhiều backend nhưng quan trọng là những backend này ở đâu và cần làm những gì? Nếu những backend này chỉ có một mớ php đơn giản để thao tác thì nhiều backend không khác gì mấy bởi vì chính nginx có nhiều workers và php-fpm cũng có nhiều workers. Cả hai có thể handle concurrent và async requests. <font color='yellow'>Cái chính là bottleneck trong việc truy vấn tới CSDL</font>. Em có thể thiết kế để tạo ra hai backends (php-fpm engines) và mỗi backend connect đến 1 CSDL riêng biệt (nằm ở server khác) thì có thể improve rõ. Nếu csdl chạy trên cùng một server thì nên configure db connections để sử dụng luôn UNIX domain socket vì nó nhanh gọn hơn rất nhiều (cái này anh đã test nhiều lần).&nbsp;
+		</blockquote>
+
+Chu choa, then chốt của vấn đề là đây, em cũng đã đang định làm thữ mà anh trả lời luôn rồi. Em cũng nghi là sẽ bị bottleneck, mà không làm thì lại chả biết làm cách nào khác, nên định nhắm mắt làm đại. 
+
+Vậy bây giờ muốn làm 2 webserver, 1DB server thì chắc tiêu bởi bottleneck rồi. 
+
+anh nói <b>"Nếu csdl chạy trên cùng một server thì nên configure db connections để sử dụng luôn UNIX domain "</b> socket" thì tất là chỉ chạy 1 con server, không load blance mà cũng không HA được. Cách này có thể tốt, nhưng lỡ con server này teo thi tính sao anh. 
+
+&nbsp;
+		</blockquote>
+
+Có hai dạng nhu cầu và hai giải pháp khác nhau.
+
+1. Nếu dịch vụ web chỉ có nhiều người dùng chớ không phải bị DDoS.
+Cái này cần backend mạnh.
+
+2. Nếu dịch vụ web không có nhiều người dùng nhưng có thể bị DDoS.
+Cái này cần frontend mạnh.
+
+Về khoảng LB và failover thì tất cả phải là x2 theo nguyên tắc. Đối với frontends, LB và failover thì dễ nhưng backend thì hơi căng và phải áp dụng chặt chẽ biện pháp đồng bộ hoá CSDL không thì kẹt. Trong trường hợp tách rời CSDL ra thì không thể dùng UNIX domain socket (ngoại trừ dùng NFS để mount FS).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245246</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245246</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 04:42:47]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Có hai dạng nhu cầu và hai giải pháp khác nhau. 
+1. Nếu dịch vụ web chỉ có nhiều người dùng chớ không phải bị DDoS. 
+Cái này cần backend mạnh. 
+2. Nếu dịch vụ web không có nhiều người dùng nhưng có thể bị DDoS. 
+Cái này cần frontend mạnh. 
+&nbsp;
+		</blockquote>
+DDOS hoặc phòng chống các loại tấn công chắc phải làm ở mức độ ...... nào đó thôi, chứ em chắc cũng không làm hoành tráng được như bộ phòng thủ HVA được (vì khả năng có hạn). Tăng cường QuadCore Xeon, RAM 8G rồi RAID chắc hoà bình thế giới rồi. Nhét thêm dàng iptables (anh hướng dẫn trên HVA) với bộ csr của mod_security là yên giấc luôn. 
+ 
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Về khoảng LB và failover thì tất cả phải là x2 theo nguyên tắc. Đối với frontends, LB và failover thì dễ nhưng backend thì hơi căng và <font color='yellow'>phải áp dụng chặt chẽ biện pháp đồng bộ hoá CSDL </font>không thì kẹt. Trong trường hợp tách rời CSDL ra thì không thể dùng UNIX domain socket (ngoại trừ dùng NFS để mount FS).&nbsp;
+		</blockquote>
+Ngay thời điểm này em chỉ nghĩ ra vài dạng,
+<b>1.</b> Pound + Keepalived+ SQL Cluster để LB + failover. Có điều thằng này em chỉ đọc qua chứ chưa chạy thữ, nên cũng nghi ngờ khả năng xử lý của nó thua xa nginx.
+<b>2.</b> Dùng Nginx+fpm rồi chạy SQL Cluster (mysql cluster chẳng hạn). Thêm vào DNS Round robin, cùng lắm là kết hợp monit và giảm TTL khoản 60giây chắc cũng được.
+<b>3. </b>Không có tiền nên như thằng F5 thì không tính vào được.
+<b>4.</b> Dùng NFS mount lên rồi làm sao sync dữ liệu vậy anh ? Nếu dùng chung 1 DB, không có Master/Slave thì em thấy cũng kẹt.
+<b>5. </b>Dùng dịch vụ heartbeat tạo ra mô hình Cold standby em thấy cũng hay, có điều, chạy cái này có vẻ hơi uổng resource, lỡ có bị DDOS, thằng slave đợi thằng master toi mới ngốc đầu dậy được, rồi sau đó đi đời theo thằng master luôn.
+
+Ngồi nghĩ một hồi, trong trường hợp em chỉ có 3 server với cấu hình như trên, em thấy cái <b><font color='yellow'>2.</font></b> hơi hợp lý, cả 3 sever đều đóng 2 la` vài trò frontend+backend, hổ trợ lẫn nhau, đề phòng khi nào toi 1 con, giảm TTL thấp xuống 1 tí để bớt thời gian bị down.
+
+Không biết anh nghĩ sao ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245263</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245263</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 09:22:47]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Đọc một loạt từ trên xuống dưới, thấy tranvanminh thiết kế hệ thống kiểu chịu được request đập vào DB càng nhiều càng tốt thì phải.
+Nhu cầu nhiều quá, nên chia ra từng cái mỗi topic sẽ hay hơn.
+
+<blockquote>1. Pound + Keepalived+ SQL Cluster để LB + failover. Có điều thằng này em chỉ đọc qua chứ chưa chạy thữ, nên cũng nghi ngờ khả năng xử lý của nó thua xa nginx. &nbsp;
+		</blockquote>
+Nginx chỉ là Web Server có thêm chúc năng Load Balancer và reverse proxy, sao lại đi so sánh với cả cụm thế được.
+
+<blockquote>2. Dùng Nginx+fpm rồi chạy SQL Cluster (mysql cluster chẳng hạn). Thêm vào DNS Round robin, cùng lắm là kết hợp monit và giảm TTL khoản 60giây chắc cũng được. &nbsp;
+		</blockquote>
+Nginx tốt hơn apache ở chỗ nó tạo ra một pool (hàng đợi) và từ từ forward request vào bên trong thay vì đẩy vào một lượt. Nhưng với một hình Web server + phpfpm -- DB  thì cũng chừng đó request đập vào DB, cái pool có xây dựng tốt chừng nào đi nữa thì vấn đề chỉ là chết nhanh chậm một tí. Mình không nghĩ Monit là giải pháp cho bài toán HA. 
+
+<blockquote>5. Dùng dịch vụ heartbeat tạo ra mô hình Cold standby em thấy cũng hay, có điều, chạy cái này có vẻ hơi uổng resource, lỡ có bị DDOS, thằng slave đợi thằng master toi mới ngốc đầu dậy được, rồi sau đó đi đời theo thằng master luôn.
+&nbsp;
+		</blockquote>
+Muốn đảm bảo High availability thì đành phải vậy rồi. 
+Mình suggest bạn dùng: 
+1. LVS + caching (nginx) + apache + DB thay cho mô hình số một. Muốn đảm bảo LVS ko chết có thể áp dụng thêm BSD UCARP hoặc Wakeamole + OpenAMQ.
+2. Tách nginx và php-cgi ở mô hình thứ 2, thay nginx bằng apache và dns round robin đến 2 box nginx.
+
+Các cách còn lại củ chuối. Có tiền mua F5, muốn đảm bảo HA: 2 con F5?
+NFS: Performance ko đảm bảo, hoặc bạn có cách nào đó làm cho NFS có khả năng đáp ứng critical system kiểu code đập DB thì không nói. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245276</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245276</link>
+				<pubDate><![CDATA[Thu, 18 Aug 2011 11:48:59]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>Đọc một loạt từ trên xuống dưới, thấy tranvanminh thiết kế hệ thống kiểu chịu được request đập vào DB càng nhiều càng tốt thì phải.
+&nbsp;
+		</blockquote>
+Không phải thế, chính xác là mình đang suy nghĩ xem cái nào<b> low cost HA</b> mà phải chịu được nhiều truy cập cùng một lúc, còn DB thì như ở trên đó, bởi có vấn đề bottleneck đã mô tả nên mình mới liệt kê một số ý tưỡng.
+
+<blockquote>Nginx chỉ là Web Server có thêm chúc năng Load Balancer và reverse proxy, sao lại đi so sánh với cả cụm thế được.&nbsp;
+		</blockquote>
+Chắc là bạn nói mình so sánh khập khễn, mình thì không biết cụ thể nó thế nào nên phan đại. Chỉ là ý tưởng và cảm tính, không có cái gì mình quả quyết ở đây. 
+
+<blockquote><font color='yellow'>Nginx tốt hơn apache ở chỗ nó tạo ra một pool (hàng đợi) và từ từ forward request vào bên trong thay vì đẩy vào một lượt.</font> Nhưng với một hình Web server + phpfpm -- DB  thì cũng chừng đó request đập vào DB, cái pool có xây dựng tốt chừng nào đi nữa thì vấn đề chỉ là chết nhanh chậm một tí. Mình không nghĩ Monit là giải pháp cho bài toán HA. 
+ &nbsp;
+		</blockquote>
+Cái chỗ màu vàng mình thấy hơi khác với cái Worker của nginx mình hiểu, để mình đọc lại doc của nginx rồi bàn tiếp ha. à mà bạn đang nói chức năng reverse proxy  hay chức năng web của nginx ? Cái monit mình đề cập là 1 ý nho nhỏ để thực hiện khi 1 bên nào đó bị down, để dành công việc gửi mail và restart, không phải giải pháp gì ghê gớm. 
+
+<blockquote>Muốn đảm bảo High availability thì đành phải vậy rồi. 
+Mình suggest bạn dùng: 
+1. LVS + caching (nginx) + apache + DB thay cho mô hình số một. Muốn đảm bảo LVS ko chết có thể áp dụng thêm BSD UCARP hoặc Wakeamole + OpenAMQ.
+2. Tách nginx và php-cgi ở mô hình thứ 2, thay nginx bằng apache và dns round robin đến 2 box nginx.&nbsp;
+		</blockquote>
+Cách bạn suggest mình thấy cũng hợp lý, có điều, mình thấy vấn đề là một trong số đó bị teo, thì hệ thống này ngưng cung cấp dịch vụ hoàn loạt. Bởi vì trường hợp áp dụng HA cho riêng LVS không chết, nhưng nginx chết, apache chết, DB chết tính sao ? Nếu mấy cái này, đều phải làm kiểu master/slave thì lý tưỡng nhưng không thực tế với ..... túi tiền  :( 
+
+Dùng SQL Clusting để giải đáp vấn đề anh conmale nói: <font color='yellow'>"Cái chính là bottleneck trong việc truy vấn tới CSDL." </font> có bạn nào có cao kiến gì không ạ ? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245314</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245314</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 00:56:35]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ @tranvanminh
+
+Bro thử thay đổi như bên dưới xem sao
+
+thay 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>location ~ .*.php$ { 
+include /etc/nginx/fastcgi.conf; 
+fastcgi_pass backend; 
+fastcgi_index index.php; 
+include fastcgi_params; 
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; 
+}</pre>
+		</div>
+
+bằng
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>location ~ \.php$ {
+include /etc/nginx/fastcgi.conf; 
+fastcgi_pass backend; 
+fastcgi_index index.php; 
+include fastcgi_params; 
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; 
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245321</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245321</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 02:13:25]]> GMT</pubDate>
+				<author><![CDATA[ mv1098]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>
+Dùng SQL Clusting để giải đáp vấn đề anh conmale nói: <font color='yellow'>"Cái chính là bottleneck trong việc truy vấn tới CSDL." </font> có bạn nào có cao kiến gì không ạ ? &nbsp;
+		</blockquote>
+
+Anh đọc câu hỏi của em từ sáng nhưng hôm nay bận quá nên để đó chưa trả lời liền :).
+
+Theo kinh nghiêm của anh, giải quyết bottleneck của bất cứ CSDL nào cũng có 2 phần quan trọng:
+
+1. Infrastructure.
+2. Code.
+
+Đối với infrastructure, dựa trên nhu cầu cụ thể và kinh phí cụ thể mà hình thành. Tất nhiên kinh phí ít thì chất lượng thấp. Dù có cố gắng tối đa thì cũng bị hạn chế. Chuyện này chắc em biết. Với nhu cầu của em, em cần performance lẫn failover cho nên làm gì thì làm vẫn cần x2 chớ không thể là x1 CSDL được.
+
+Đối với code, cho dù infrastructure có mạnh, có tốt tới đâu mà code "crap" thì vẫn không thể bảo đảm performance được. Bởi vậy, bottleneck vẫn tồn tại. Điều em cần làm là phân tích xem nhu cầu "đọc" nhiều hơn hay "viết" nhiều hơn? Nếu "đọc" nhiều hơn thì lại dễ hơn "viết" nhiều hơn bởi vì em không cần real time replication hoặc synchronisation. Ngược lại, cần "viết" nhiều hơn thì cần chú trọng đến việc caching, relaying những thứ cần "viết" càng nhiều càng tốt. Đây là khía cạnh engineering code làm sao để bảo đảm performance.
+
+Anh giả sử em cần tạo một website mà chủ yếu là độc giả cần lấy thông tin (thư viện online chẳng hạn) thì chắc chắn việc query (đọc) CSDL sẽ nhiều và việc commit (viết) vào CSDL sẽ ít. Bởi vậy, em có thể thiết kể 2 CSDL tách rời và chỉ cần synchronise chúng theo định kỳ. Những ai quản lý thông tin trên CSDL có thể "viết" lên cả 2 CSDL cùng lúc (cái này tuỳ thuộc vào cách thiết kế software quản lý) hoặc em có thể thiết kế để chúng synchronise theo định kỳ thế nào đó cho hợp lý.
+
+Nói chung, khó có thể hình thành giải pháp nếu như chưa rõ requirements của em là gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245328</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245328</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 03:05:43]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>
+Dùng SQL Clusting để giải đáp vấn đề anh conmale nói: <font color='yellow'>"Cái chính là bottleneck trong việc truy vấn tới CSDL." </font> có bạn nào có cao kiến gì không ạ ? &nbsp;
+		</blockquote>
+
+Anh đọc câu hỏi của em từ sáng nhưng hôm nay bận quá nên để đó chưa trả lời liền :).
+
+Theo kinh nghiêm của anh, giải quyết bottleneck của bất cứ CSDL nào cũng có 2 phần quan trọng:
+
+1. Infrastructure.
+2. Code.
+
+Đối với infrastructure, dựa trên nhu cầu cụ thể và kinh phí cụ thể mà hình thành. Tất nhiên kinh phí ít thì chất lượng thấp. Dù có cố gắng tối đa thì cũng bị hạn chế. Chuyện này chắc em biết. Với nhu cầu của em, em cần performance lẫn failover cho nên làm gì thì làm vẫn cần x2 chớ không thể là x1 CSDL được.
+
+Đối với code, cho dù infrastructure có mạnh, có tốt tới đâu mà code "crap" thì vẫn không thể bảo đảm performance được. Bởi vậy, bottleneck vẫn tồn tại. Điều em cần làm là phân tích xem nhu cầu "đọc" nhiều hơn hay "viết" nhiều hơn? Nếu "đọc" nhiều hơn thì lại dễ hơn "viết" nhiều hơn bởi vì em không cần real time replication hoặc synchronisation. Ngược lại, cần "viết" nhiều hơn thì cần chú trọng đến việc caching, relaying những thứ cần "viết" càng nhiều càng tốt. Đây là khía cạnh engineering code làm sao để bảo đảm performance.
+
+Anh giả sử em cần tạo một website mà chủ yếu là độc giả cần lấy thông tin (thư viện online chẳng hạn) thì chắc chắn việc query (đọc) CSDL sẽ nhiều và việc commit (viết) vào CSDL sẽ ít. Bởi vậy, em có thể thiết kể 2 CSDL tách rời và chỉ cần synchronise chúng theo định kỳ. Những ai quản lý thông tin trên CSDL có thể "viết" lên cả 2 CSDL cùng lúc (cái này tuỳ thuộc vào cách thiết kế software quản lý) hoặc em có thể thiết kế để chúng synchronise theo định kỳ thế nào đó cho hợp lý.
+
+Nói chung, khó có thể hình thành giải pháp nếu như chưa rõ requirements của em là gì.&nbsp;
+		</blockquote>
+
+Hi anh,
+Vậy thì theo như hướng dẫn của anh để em thữ vài cái. Thật ra thì em chỉ test là chính, chứ không chạy dịch vụ trên kết quả thử nghiệm của em bởi không thể care hết được các tình huống, còn lại giao hết cho những người biết để họ làm vậy :P 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245338</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245338</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 04:25:32]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Hi mv1098,
+
+Không biết mắt mình có bị hoa không, mình đọc không thấy khác gì trong 2 cái quote của bạn  O-) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245339</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245339</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 04:26:37]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Có khác tí tẹo về đường dẫn thôi bạn à
+
+"location ~ .*.php$" và "location ~ \.php$"]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245342</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245342</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 04:48:40]]> GMT</pubDate>
+				<author><![CDATA[ mv1098]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ À, ra là chỗ đó, thanks ;) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245343</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245343</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 05:10:08]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Em thik mô hình nginx làm reverse proxy nhất,kết hợp với cache_purge module,ddos thoải mái :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245344</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245344</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 05:11:25]]> GMT</pubDate>
+				<author><![CDATA[ Dpm]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Dpm wrote:</cite><br>
+		<blockquote>Em thik mô hình nginx làm reverse proxy nhất,kết hợp với cache_purge module,ddos thoải mái :D&nbsp;
+		</blockquote>
+
+Hình như cũng có nhiều công ty họ cũng dùng nginx làm reverse proxy nhỉ. Hồi xưa mình thấy có slowris mà apache không chống được, vậy mà nginx chống được, có thể chỉ là cách thiết kế 2 cái khác nhau, cảm giác thấy nginx vẫn nhẹ nhàng và ... smart hơn. 
+
+Mình đọc thàng này <span class="link"> http://www.cherokee-project.com/benchmarks.html</span>) thì càng thấy nginx có vẽ là nên dùng với vai trò reverse proxy hơn là web server, nếu nginx làm webserver thì thà dùng Cherokee cho lẹ. 
+
+Vừa thữ cái mod cache_purge, đúng là nginx không có chức năng xoá cache cho từng link, muốn xoá cache tự động thì chỉ có cách xoá 1 loạt hoặc đợi đến expire, mod này tiện thiệt ;)
+
+<blockquote>        location ~ /purge(/.*) {
+            allow              127.0.0.1;
+            allow              192.168.1.35;
+            deny               all;
+            proxy_cache_purge  cache_test1 "$scheme://$host$1";
+        }
+    }&nbsp;
+		</blockquote>
+
+Vấn đề còn lại là giải quyết cái CSDL, mình đang thử replication với lại cluster của mysql.  O-) 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245351</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245351</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 05:59:04]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Theo em slowris là một phần,như cái đám botnet của stl kia cơ,a thử cái roboo module xem,viết thêm một script chuyển nhưng IP mà không đc log vào verified cho iptables xử lý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245369</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245369</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 09:30:44]]> GMT</pubDate>
+				<author><![CDATA[ Dpm]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Dpm wrote:</cite><br>
+		<blockquote>Theo em slowris là một phần,như cái đám botnet của stl kia cơ,a thử cái roboo module xem,viết thêm một script chuyển nhưng IP mà không đc log vào verified cho iptables xử lý.&nbsp;
+		</blockquote>
+Không biết dạng ddos của stl biến thái thế nào, nhưng mà thường cho web app xử lý trước iptables thì  hơi tốn resource đó, nếu ip hoặc payload match với dạng con_limit hay mstring hay gì gì đó của iptables thì mình nghĩ cho iptables hoặc IDS lọc luôn từ trước chứ không đưa qua nginx. Cách này mình thấy anh conmale áp dụng trong các bài ký sự ddos hồi trước rất hiệu quả.
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#245402</link>
+				<pubDate><![CDATA[Fri, 19 Aug 2011 22:07:10]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ thanks ae, nhưng k0 thấy ai trên forum bàn về chống ddos bằng squid tích hợp với iptables nhỉ 
+? Thanks ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247365</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247365</link>
+				<pubDate><![CDATA[Mon, 19 Sep 2011 02:31:21]]> GMT</pubDate>
+				<author><![CDATA[ m3onh0x84]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Dpm wrote:</cite><br>
+		<blockquote>Theo em slowris là một phần,như cái đám botnet của stl kia cơ,a thử cái roboo module xem,viết thêm một script chuyển nhưng IP mà không đc log vào verified cho iptables xử lý.&nbsp;
+		</blockquote>
+Không biết dạng ddos của stl biến thái thế nào, nhưng mà thường cho web app xử lý trước iptables thì  hơi tốn resource đó, nếu ip hoặc payload match với dạng con_limit hay mstring hay gì gì đó của iptables thì mình nghĩ cho iptables hoặc IDS lọc luôn từ trước chứ không đưa qua nginx. Cách này mình thấy anh conmale áp dụng trong các bài ký sự ddos hồi trước rất hiệu quả.
+ &nbsp;
+		</blockquote>
+
+Bot stl có khá nhiều biến thái, đặc biệt nó sử dụng một nhóm &quot;User-Agent&quot; hợp lệ và xoay vòng với các &quot;User-Agent&quot; này để gởi requests. Ngoài ra, nó còn thay đổi thêm một số giá trị trên HTTP headers như giá trị của Accept, giá trị của Accept-Language....  nhưng cái độc của nó là nó có thể &quot;crawl&quot; như search bots (và tất nhiên không tuân thủ ấn định trong robots.txt). Trong trường hợp này, dùng -m string hoặc IDS vẫn lọc được nhưng sẽ bị false positive và lọc luôn người dùng hợp lệ. Bởi vậy, cách hợp lý nhất vẫn là dựa trên biên độ tấn công của từng IP mà cản. Ví dụ, một người dùng không thể &quot;đọc với tốc độ ánh sáng&quot;  :-) và logic này đã được áp dụng trên tầng application. Sử dụng cùng một logic và algorithm cho iptables hoặc bất cứ FW nào có khả năng tracking số lần một IP gởi requests trong khoảng thời gian nào đó, mình có thể loại ra các IP của các bots. Tất nhiên, khởi đầu của trận tấn công, mình vẫn phải è lưng ra để chịu đấm rồi mới có thể loại bỏ các IP của bots sau một khoảng thời gian nhất định.
+
+Trên tầng cao hơn (apache proxy hay nginx proxy) thì có một số biện pháp khác dùng để tiếp tục cản lọc trong trường hợp FW ở tầng IP bị sót. Với apache, có lẽ mod_security là best choice bởi vì nó cung cấp phương tiện để track số connect đi từ IP (thậm chí cụ thể từng User-Agent) để ghi nhận số lần requests trong một khoảng thời gian để sau đó có biện pháp cụ thể (deny với một HTTP error nào đó hoặc drop hẳn ngay khi gói tin vừa đụng tới &quot;phase 1&quot; của apache hoặc thậm chí call một script nào đó để FW block hẳn). Với nginx proxy thì có thể sử dụng limit_conn và limit_zone để giới hạn số connections mà bots (hoặc browsers) tạo. Đây là cách theo anh thấy không uyển chuyển và chính xác bằng việc sử dụng &quot;state&quot; như mod_security làm bởi vì nginx chỉ đơn thuần dựa vào IP để xét đến limit_conn (đặc biệt trong trường hợp nhiều người cùng dùng một foward proxy hoặc cùng share 1 public IP thì sẽ bị khổ sở với cái limit_conn và limit_zone này).
+
+Nếu botnets (kể cả stl bot) mà giảm biên độ requests xuống để thoả mãn giới hạn truy cập bình thường của người dùng bình thường để có thể đi xuyên qua được mấy tầng cản lọc thì tác hại ddos không còn nữa. Cách còn lại mà bots có thể tạo dung hại là giảm biên độ request xuống nhưng gia tăng số zombie lên ở mức độ đủ để bù vào số lượng requests dồn dập bị giảm. Ví dụ, 
+
+- Với 10000 zombies và mỗi zombie gởi 10 requests / giây: 100000 requests / giây --&gt; sẽ bị cản vì không có người dùng bình thường nào mà gởi 10 requests / giây hết.
+
+- Với 10000 zombies và mỗi zombies gởi 1 request / 5 giây: chỉ còn lại 2000 requests / giây --&gt; mất tác dụng đến 50 lần và tác hại ddos không còn đáng kể nữa.
+
+Bởi vậy, để duy trì 100000 requests / giây và mỗi zombie chỉ gởi 1 request / 5 giây (chẳng hạn, thựac thế cũng chẳng có người dùng nào gởi 1 request / 5 giây hết), thì botnet cần đến 50 số lượng zombies: 50 x 10000 = 500000 zombies. Chuyện còn lại là infect các người dùng vô tội càng nhiều càng tốt để thực hiện ý đồ đen tối  :-) .
+
+
+@ m3onh0x84: squid thì rất tốt với caching. Nó cũng xử lý HTTP requests / responses rất tốt nhưng để quản lý nó một cách hữu hiệu (với việc kiểm soát HTTP headers và áp đặt các ACL) thì rất mệt mỏi, đặc biệt trong hoàn cảnh bị ddos và đặc biệt dùng nó cho những trang web động (dynamic contents). Squid cũng có giới hạn connnection nhưng nó cũng chỉ dừng lại ở từng IP và nó không có khả năng kiểm soát &quot;state&quot;. Bởi vậy, cá nhân tớ không chọn squid là 1 phần của giải pháp. Squid dùng cho các trang ít thay đổi nội dung (như wiki chẳng hạn) thì rất tốt nhưng để chống ddos, dặc biệt với botnet có những con zombies có khả năng &quot;crawl&quot; thì sẽ đi đến chỗ từ chết đến bị thương. Nếu người quản lý squid không có giải pháp làm sao đó để squid đừng block các IP sau một thời gian nào đó (nếu các IP đó không tiếp tục vi phạm) thì đến một lúc nào đó, chính squid sẽ tạo &quot;từ chối dịch vụ&quot; bởi vì nó sẽ cản hầu hết các IP mà không nhả ra.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247399</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247399</link>
+				<pubDate><![CDATA[Mon, 19 Sep 2011 17:28:09]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote> Với nginx proxy thì có thể sử dụng limit_conn và limit_zone để giới hạn số connections mà bots (hoặc browsers) tạo. Đây là cách theo anh thấy không uyển chuyển và chính xác bằng việc sử dụng "state" như mod_security làm bởi vì nginx chỉ đơn thuần dựa vào IP để xét đến limit_conn (đặc biệt trong trường hợp nhiều người cùng dùng một foward proxy hoặc cùng share 1 public IP thì sẽ bị khổ sở với cái limit_conn và limit_zone này). &nbsp;
+		</blockquote>
+
+Có thể đây là điểm yếu của nginx bởi vì nó chỉ có tính năng ngang hàng với mod_limitipconn của apache mà không có mod_security. 
+
+Em vừa đọc lại Doc của mod_security thì thấy có 2 phần giống "state" mà anh nói tại 6.35 SecReadStateLimit, 6.36 SecWriteStateLimit, chắc anh dùng cái này rồi.  *-: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247404</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247404</link>
+				<pubDate><![CDATA[Mon, 19 Sep 2011 21:34:31]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote> Với nginx proxy thì có thể sử dụng limit_conn và limit_zone để giới hạn số connections mà bots (hoặc browsers) tạo. Đây là cách theo anh thấy không uyển chuyển và chính xác bằng việc sử dụng "state" như mod_security làm bởi vì nginx chỉ đơn thuần dựa vào IP để xét đến limit_conn (đặc biệt trong trường hợp nhiều người cùng dùng một foward proxy hoặc cùng share 1 public IP thì sẽ bị khổ sở với cái limit_conn và limit_zone này). &nbsp;
+		</blockquote>
+
+Có thể đây là điểm yếu của nginx bởi vì nó chỉ có tính năng ngang hàng với mod_limitipconn của apache mà không có mod_security. 
+
+Em vừa đọc lại Doc của mod_security thì thấy có 2 phần giống "state" mà anh nói tại 6.35 SecReadStateLimit, 6.36 SecWriteStateLimit, chắc anh dùng cái này rồi.  *-: &nbsp;
+		</blockquote>
+
+Không em. Hai cái 6.35 và 6.36 là options chuyên trị những thứ tương tự như slowloris (DDoS bằng malformed headers khiến cho apache cứ chờ mãi mà hết "Clients" để phục vụ). Cái anh muốn nói ở đây là phần "Persistent storage" của mod_security. "Persistent storage" của mod_security có 5 loại storage quan trọng:
+- GLOBAL
+- IP
+- RESOURCE
+- SESSION
+- USER
+
+Mỗi "storage" trên có những biến (variables) cần thiết để track.
+
+mod_limitipconn này bị kẹt ở một điểm rất căn bản: nó chỉ cản IP nếu IP đó chạm tới giới hạn đã được ấn định và nó không tiếp tục track xem IP đó còn vi phạm hay không mà vẫn tiếp tục cản. Cái này chỉ giúp bảo tồn tài nguyên cho server nhưng chính việc bảo tồn tài nguyên mà không kiểm soát thì sẽ tự tạo "từ chối dịch vụ".
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247410</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247410</link>
+				<pubDate><![CDATA[Mon, 19 Sep 2011 21:56:54]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ @conmale: cám ơn chú, cháu lại nghĩ mình bị tẩy chay rồi, nên k ai quan tâm đến ý kiến của cháu nữa. THanks so much :) :x]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247487</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#247487</link>
+				<pubDate><![CDATA[Tue, 20 Sep 2011 22:48:43]]> GMT</pubDate>
+				<author><![CDATA[ m3onh0x84]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Loadblance với Ngix+php-fpm +mysql</title>
+				<description><![CDATA[ Đáng nhẽ nên tạo 1 chủ đề riêng để hỏi, nhưng em xin gọp vô luôn, em có vấn đề thế này:
+Nếu dùng purge module để xoá cache thì chỉ có thể xoá ở những URL như
+http://web.com/index.html hay http://web.com/anh.gif
+Tuy nhiên URL bây giờ hầu hết là Clean URL(SEO) ở dạng http://web.com/page/index
+Vậy giờ em muốn xoá những dạng Clean URL như trên thì phải làm thế nào. Em cảm ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39805.hva#251319</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39805.hva#251319</link>
+				<pubDate><![CDATA[Mon, 19 Dec 2011 20:09:45]]> GMT</pubDate>
+				<author><![CDATA[ vitcon01]]></author>
+			</item>
+	</channel>
+</rss>

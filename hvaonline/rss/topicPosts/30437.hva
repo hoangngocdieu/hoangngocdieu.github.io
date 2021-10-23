@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thiết lập intercepting web cache proxy với squid trên nền FreeBSD"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thiết lập intercepting web cache proxy với squid trên nền FreeBSD"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thiết lập intercepting web cache proxy với squid trên nền FreeBSD</title>
+				<description><![CDATA[ THIẾT LẬP INTERCEPTING WEB CACHE PROXY
+với Squid trên nền FreeBSD
+
+
+<b>1. Intercepting web cache proxy là gì</b>
+
+Một <u>proxy</u> là một chương trình mạng hoạt động ở tầng ứng dụng chen ngang vào một loại lưu thông giữa client với server. Proxy chen ngang vào loại lưu thông nào thì sẽ được đặt tên theo loại lưu thông đó, chẳng hạn, DNS proxy, POP3 proxy, FTP proxy, Web proxy, v.v. Vì hoạt động ở tầng ứng dụng, proxy luôn hiểu thấu nội dung của lưu thông và có nhiều tác dụng hỗ trợ lưu thông: kiểm soát truy nhập, giám sát (theo dõi) lưu thông, caching (để tăng hiệu quả khai thác đường truyền). <u>Cache proxy</u> là loại proxy có tác dụng caching. <u>Proxy chặn bắt</u> (intercepting) là proxy có khả năng chặn bắt các gói tin trên đường lưu thông giữa client với server mà không cần sự hợp tác của client – nói cách khác, client không cần biết và không biết đến sự tồn tại của proxy. 
+
+Nếu hơn nữa proxy có khả năng chặn bắt không cần sự hợp tác của server thì nó được gọi là <u>proxy trong suốt</u> (transparent). Sở dĩ có tên gọi này vì proxy là trong suốt đối với client và server: cả hai đều không nhìn thấy proxy, client chỉ nhìn thấy server và server chỉ nhìn thấy client. Theo nghĩa này, một proxy chặn bắt có thể được xem như trong suốt <u>một chiều</u>: client nhìn xuyên qua proxy thấy server, nhưng server không nhìn thấy client mà chỉ nhìn thấy proxy.
+
+
+<b>2. Vì sao, khi nào dùng intercepting web cache proxy</b>
+
+Vì hoạt động không cần sự hợp tác của client, một web cache proxy chặn bắt có thể dùng để thực hiện caching mọi lưu thông Web, không phụ thuộc vào chương trình ứng dụng cụ thể tại client: Internet Explorer, Mozilla Firefox, Opera, Safari, Windows Update, Linux Update, F-Secure Antivirus Update,... bất kể ứng dụng nào hễ đã dùng giao thức HTTP là đều đi qua cache cả. Vì vậy, web cache proxy chặn bắt được dùng để áp đặt chính sách web caching.
+
+Có những trường hợp mà proxy chặn bắt không thể dùng được. Ví dụ, khi ta muốn áp đặt chính sách <u>định hình lưu thông</u> (traffic shaping) trên đường truyền Internet lên từng user trong mạng cục bộ của mình. Khi đó, bộ định hình lưu thông, vốn dĩ đặt ở phía ngoài proxy, phải nhận biết chính xác từng client. Với một proxy chặn bắt thì ta không thể nào nhìn xuyên thấu qua nó từ bên ngoài. Khi đó, ta phải dùng đến proxy trong suốt.
+
+Tuy vậy, bản thân Squid, phần mềm web cache proxy mà ta sẽ sử dụng, cũng đã có sẵn một bộ định hình lưu thông web khá ổn. Nhờ vậy ta không cần phải lo ngại về vấn đề định hình lưu thông kể cả khi chạy Squid ở chế độ chặn bắt.
+
+
+<b>3. Phần mềm và phần cứng</b>
+
+Phần mềm được dùng gồm Squid v.3.0 chạy trên nền hệ điều hành FreeBSD v.7.2 – GENERIC kernel. FreeBSD được dùng vì đây là hệ điều hành có network stack và thread scheduler nhanh nhất. Squid được dùng vì đây là phần mềm web cache proxy thông dụng nhất.
+
+Phần cứng,  để phục vụ cho 100 – 400 người dùng, cần một máy vi tính PC với 1 NIC, 500 – 2000 MHz CPU, 256 – 1024 MB RAM và 20 – 80 GB HDD.
+
+
+<b>4. Cấu hình tổng thể</b>
+
+Web cache proxy chặn bắt không đặt chen giữa đường truyền Internet mà được đặt ở một nơi bất kỳ trong mạng cục bộ. Một router/firewall chắn ngang đường truyền Internet sẽ được cấu hình để nhận biết mọi lưu thông web và chuyển hướng các lưu thông này sang proxy. Mọi gói tin đổi hướng được truyền nguyên vẹn (không thay đổi) đến proxy bằng WCCP v.2 xuyên qua một GRE tunnel. 
+
+Giao thức WCCP v.2 là một kỹ thuật mới của Cisco hỗ trợ hoàn hảo việc đổi hướng IP, tránh được mọi trục trặc và sự cố tắc mạng gây ra bởi các kỹ thuật đổi hướng trước đây. Cấu hình với WCCP này có hai lợi điểm. Thứ nhất, chỉ lưu thông Web phải đi qua proxy còn các lưu thông khác có thể đi thẳng ra Internet, như thế nhanh hơn và ít trở ngại hơn. Thứ hai, nếu vì lý do nào đó mà proxy ngừng hoạt động thì router/firewall sẽ phát hiện được ngay và sẽ cho lưu thông web đi thẳng ra Internet (thay vì đổi hướng sang proxy), nhờ thế mà lưu thông web cũng không bị gián đoạn vì những sự cố proxy nếu có.
+
+Mọi gói tin (web) ra khỏi GRE tunnel ở phía máy proxy sẽ đổ bộ vào interface gre0 của máy này. Firewall pf của máy này sẽ được cấu hình chuyển hướng các gói đó đến cổng 3128 TCP trên loopback interface lo0, nơi Squid sẽ lắng nghe, đón nhận và xử lý.
+
+Như vậy, quy trình cài đặt cấu hình gồm có: cấu hình router/firewall đổi hướng lưu thông web đến máy proxy, cấu hình gre0 interface và GRE tunnel trên máy proxy, cấu hình pf firewall trên máy proxy đổi hướng lưu thông web đến Squid, cài đặt và cấu hình Squid cơ bản để cache bắt đầu hoạt động và cuối cùng, theo dõi hoạt động và tinh chỉnh cấu hình Squid để giảm tiêu thụ tài nguyên, tăng năng lực xử lý.
+
+
+<b>5. Cấu hình chi tiết</b>
+
+Giả sử máy proxy, nơi sẽ cài đặt Squid, có 1 interface duy nhất tên là fxp0 và có địa chỉ IP là 172.16.0.2/24. Trên máy này, FreeBSD phải được cập nhật bản mới nhất và ports collection cũng phải được cập nhật bản mới nhất. (Tuy vậy, ta sẽ sẽ dùng bản mới nhất của Squid v.3.0 chứ không dùng Squid v.3.1.) Máy này phải truy vấn được một DNS server và phải truy cập được Internet.
+
+Giả sử router/firewall chen giữa đường truyền Internet là 1 thiết bị Fortigate firewall với FortiOS firmware v.4, vốn dĩ hỗ trợ giao thức WCCP v.2. Thiết bị này đã có sẵn vài interface, trong đó 
+<ul><li>U1, U2,..., Un là các interface nối vào các mạng cục bộ của người sử dụng.
+V1, V2,..., Vm là các interface nối vào các đường truyền Internet.
+W là một interface liên thông với cache proxy. W không được trùng với bất cứ Ux, Vy nào. W có địa chỉ IP là 192.168.0.1/24. </li></ul>
+
+<u>Chú ý</u>
+<ul><li>Giao thức WCCP, thiết bị Fortigate và Squid hỗ trợ cả proxy cluster, nhưng trong ví dụ này ta chỉ làm 1 proxy cho đơn giản.
+Trong suốt tài liệu này, từ interface bao hàm cả trường hợp VLAN interface, nhưng không bao hàm trường hợp vlink interface, tức interface ảo kết nối giữa các thiết bị ảo (VDOM) trong một thiết bị Fortigate vật lý. Các vlink interface không cho phép truyền WCCP.
+Trong ví dụ này, hai interface W và fxp0 không cùng subnet, ngụ ý rằng firewall có thể liên thông gián tiếp chứ không nhất thiết phải liên thông trực tiếp với proxy.</li></ul>
+
+
+<b>5.1. Cấu hình Fortigate firewall</b>
+
+Ta sẽ cấu hình từ console hay cửa sổ telnet tới Fortigate firewall.
+
+Trước hết, cấu hình WCCP v.2.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config system wccp
+edit 0
+set server-list 172.16.0.2 255.255.255.255
+next
+end</pre>
+		</div>
+
+Tiếp đó, bật WCCP v.2 trên interface W.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config system interface
+edit W
+set wccp enable
+next
+end</pre>
+		</div>
+
+Cuối cùng, bật WCCP v.2 trên các firewall policy cần cache. Ví dụ, nếu muốn cache lưu thông web vào các interface U1, U2 ra interface V3 và biết rằng các firewall policy cho phép lưu thông web từ U1 sang V3, từ U2 sang V3 có số thứ tự (ID) lần lượt là 13 và 23, ta dùng lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config firewall policy
+edit 13
+set wccp enable
+next
+edit 23
+set wccp enable
+next
+end</pre>
+		</div>
+
+
+<b>5.2. Cấu hình máy Squid proxy</b>
+
+Trước hết, chỉnh tham số FreeBSD kernel để phù hợp với chức năng cache của máy. Chức năng này cũng đòi hỏi máy phải hoạt động như một router (nghĩa là forward IP giữa các interface). Viết thêm vào file /etc/sysctl.conf như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>net.inet.ip.forwarding=1   # Enable IP routing &#40;?&#41;
+net.inet.icmp.icmplim=0    # Don't rate limit incoming TCP connections
+net.inet.icmp.icmplim_output=0
+net.inet.tcp.msl=3000      # Tweak MSL to 30 seconds
+net.inet.tcp.recvspace=16384 # Receive TCP window = 16kB
+net.inet.tcp.sendspace=16384 # Send TCP window = 16kB
+kern.maxfilesperproc=65536 # How many files per process...
+kern.maxfiles=262144       # ...and per system?
+kern.ipc.maxsockets=131072 # How many sockets?
+kern.ipc.somaxconn=1024    # How deep is the incoming queue?
+kern.ipc.nmbclusters=32768 # How many mbuf clusters to allow?</pre>
+		</div>
+
+Và viết thêm vào file /etc/rc.conf như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gateway_enable=”YES”       # Enable IP routing &#40;?&#41;</pre>
+		</div>
+
+Thứ hai, chỉnh cấu hình boot để gre0 interface được tự động tạo ra ngay từ khi boot và nhận biết giao thức WCCP v.2. Viết thêm vào file /etc/rc.conf hai dòng như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ifconfig_gre0=“inet 10.0.0.2/32 10.0.0.1 link0 link2 \
+tunnel 172.16.0.2 192.168.0.1 up“
+cloned_interfaces=”gre0”</pre>
+		</div>
+
+Trong đó 10.0.0.2 và 10.0.0.1 là hai địa chỉ IP đặt ra tùy ý cho hai đầu GRE tunnel. Phía Squid được đặt địa chỉ là là .0.2 còn phía Fortigate được đặt là .0.1. Đặc tả inet 10.0.0.2/32 10.0.0.1 có thể viết là inet 10.0.0.2 10.0.0.1 netmask 255.255.255.255. Subnet /32 có thể thay bằng /30 hoặc thậm chí /24.
+
+Thứ ba, bật pf firewall và cấu hình cho nó chuyển hướng các gói tin (web) từ gre0 interface đến cổng 3128 TCP trên loopback interface. Trong file /etc/rc.conf, viết thêm
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pf_enable=”YES”
+pf_rules=”/etc/pf.conf”
+pf_flags=””
+pflog_enable=”YES”
+pflog_logfile=”/var/log/pflog”
+pflog_flags=””</pre>
+		</div>
+
+rồi tạo file bộ luật lưu thông /etc/pf.conf, ở dạng đơn giản nhất, như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>rdr on gre0 inet proto tcp from any to any port www-&gt;127.0.0.1 port 3128
+pass all 
+pass in on fxp0 inet proto tcp from any to 127.0.0.1 port 3128 keep state
+pass out on fxp0 inet proto tcp from any to any port www keep state</pre>
+		</div>
+
+<u>Chú ý</u>
+<ul><li>Luật pass all chỉ là luật tạm, sau này nên bỏ đi và thay thế bằng các luật kiểm soát truy nhập khác chặt chẽ hơn. Đổi hướng không có nghĩa là cho phép, nên luật thứ ba (cho phép đi vào cổng 3128 của loopback interface) là cần thiết. Tuy nhiên luật này chỉ thật sự có tác dụng khi ta loại bỏ luật pass all.
+Ta có thể nạp lại bộ luật lưu thông và khởi động lại firewall pf mà không cần phải reboot  bằng câu lệnh</li></ul>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/sbin/pfctl -nf /etc/pf.conf  &&  /etc/rc.d/pf reload</pre>
+		</div>
+
+Thứ tư, biên dịch, cài đặt và cấu hình Squid cơ bản. Từ root shell lần lượt gõ các lệnh như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/ports/www/squid30
+make config                    # cấu hình biên dịch
+make                           # biên dịch
+make install                   # cài đặt
+make clean                     # dọn dẹp thư mục tạm
+squid -z                       # khởi tạo cache</pre>
+		</div>
+
+File cấu hình hoạt động của Squid là /usr/local/etc/squid/squid.conf. Trong file này, tìm và sửa hai tham số http_port và wccp2_router như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http_port 127.0.0.1:3128 transparent
+wccp2_router 192.168.0.1</pre>
+		</div>
+
+Trong file /etc/rc.conf, viết thêm 1 dòng cho phép squid khởi động ngay từ khi boot.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>squid_enable=”YES”</pre>
+		</div>
+
+Sau khi reboot, nếu các bước trên đều làm chính xác, web cache proxy sẽ bắt đầu hoạt động.
+
+<u>Chú ý</u>
+<ul><li>Khi cấu hình biên dịch ta phải chọn WCCP v.2 (bỏ chọn WCCP v.1) và chọn enable pf transparent. Ngoài ra nên chọn  enable diskd/aufs, enable delay pools, enable removal policies, những hỗ trợ rất có ích cho việc tinh chỉnh cấu hình Squid sau này.
+Các lệnh để khởi động, dừng và khởi động lại squid mà không cần reboot là
+<span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>/usr/local/etc/rc.d/squid &#91;start|stop|restart&#93;</pre>
+		</div>
+Lệnh để kiểm tra file cấu hình Squid
+<span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>squid -f /usr/local/etc/squid/squid.conf -k parse</pre>
+		</div>
+Vài lệnh thường dùng để kiểm tra rằng cache proxy hoạt động.
+<span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>netstat -i             # có lưu thông trên các interface hay không?
+tcpdump -n -i gre0     # có lưu thông trên gre0 hay không?
+tcpdump port 80        # có lưu thông web hay không?
+ps -aux | grep squid   # squid có chạy hay không?
+dmesg                  # xem log hệ thống
+pftop                  # xem tình trạng firewall pf</pre>
+		</div>
+Vài lệnh thường dùng để kiểm tra rằng cache proxy hoạt động bình thường, không quá tải, không bị nghẽn cổ chai.
+<span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>squidclient mgr:info   # xem tình trạng cache
+uptime                 # xem tải
+top                    # xem tổng hợp tình trạng hệ thống</pre>
+		</div>
+Squid log vào các file /usr/local/squid/logs. Trong các log file, access.log chứa đặc biệt nhiều thông tin giúp cho việc gỡ rối.</li></ul>
+
+Cuối cùng, sau khi Squid đã bắt đầu hoạt động, ta cần phải hoàn thiện cấu hình để tăng hiệu quả và giảm tải. Dưới đây là vài tham số cấu hình đã được chỉnh theo các giá trị được xem là tối ưu cho máy có 1 GB RAM và 72 GB HDD.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cache_replacement_policy       heap LFUDA   # thuật toán cache đĩa
+memory_replacement_policy      heap GDSF    # thuật toán cache RAM
+cache_swap_low                 90
+cache_swap_high                95
+maximum_object_size_in_memory  32 KB   # file lớn nhất có thể RAM cache
+cache_dir                      aufs /usr/local/squid/cache 30000 16 256
+                                       # I/O không đồng bộ và
+                                       # cache tối đa 30000 MB
+cache_mem                      80 MB   # lượng bộ nhớ bổ sung
+memory_pools                   off
+maximum_object_size            1000 MB # file lớn nhất có thể cache
+quick_abort_min                0 KB     
+quick_abort_max                0 KB     
+log_icp_queries                off
+client_db                      off
+buffered_logs                  on
+half_closed_client             off</pre>
+		</div>
+
+<u>Chú ý</u>
+<ul><li>Các thuật toán <u>heap LFUDA</u> và <u>heap GDSF</u> làm tăng hiệu quả cache lên rất nhiều lần so với thuật toán LRU mặc định. 
+Chế độ <u>aufs</u>, HDD I/O không đồng bộ với xử lý đa luồng, cũng làm tăng tốc độ truy xuất HDD lên nhiều lần so với chế độ ufs mặc định; aufs nguyên thủy được lập trình trên Linux nhưng trên các phiên bản mới của FreeBSD chạy cũng rất tốt.
+Một chế độ non-blocking HDD I/O khác, hoàn toàn FreeBSD, là chế độ <u>diskd</u>. Khi dùng chế độ này, nên kết hợp với soft updates (mặc định bật sẵn khi cài đặt, xem tài liệu FreeBSD manual) để đạt được hiệu quả tối đa. Chế độ diskd + soft updates bảo toàn dữ liệu tốt hơn chế độ aufs trước các sự cố mất điện.
+Độ lớn cache_dir bao nhiêu là tối ưu còn tùy thuộc vào kích thước RAM của máy. Cứ 1 GB HDD cache thì cần 32 MB RAM để duy trì cache. (Con số 32 MB là không thống nhất, có người cho rằng 10 MB và có người khác cho rằng 100 MB.) Lượng RAM đòi hỏi bởi Squid không nên lớn hơn 50% (có người đưa ra con số 100%) lượng RAM của máy. Do đó cache_dir nên thỏa 
+<span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>độ lớn cache_dir * 32/1024 + cache_mem + 20 = 0.5 * lượng RAM của máy &#91;MB&#93;</pre>
+		</div>
+Trong đó, vế trái chính là lượng RAM yêu cầu cho Squid. Nếu cache_dir làm vế trái lớn hơn kích thước bộ nhớ RAM của máy thì bộ nhớ ảo sẽ bắt đầu swap, khiến cache chậm lại.
+Ngoài ra, độ lớn cache_dir còn tùy thuộc vào dung lượng HDD. Cache_dir không nên lớn hơn 50% dung lượng HDD. (Con số này cũng không thống nhất, một số người cho rằng 60%, số khác 70% và một số khác nữa kể cả tác giả của squid.conf cho rằng 80%.)
+Maximum_object_size (kích thước đối tượng lớn nhất cho phép cache) bao nhiêu là tối ưu tùy thuộc dung lượng cache. Nói chung, khi đã dùng cache_replacement_policy là một dạng heap nào đó, dùng maximum_object_size thật lớn thì sẽ hiệu quả hơn. 
+Giữa maximum_object_size_in_memory và dung lượng RAM cũng có mối liên quan tương tự như thế.
+Khi thay đổi giá trị các tham số của cache, phải chờ một thời gian để nội dung cache thay đổi được một cách đáng kể thì mới thấy tác dụng.
+Mặc định, Squid cache vào vào các thư mục con trong /usr/local/squid/cache. Nếu có nhiều HDD, nên dành riêng HDD cho cache để cải thiện năng lực xử lý. Và HDD nên format bằng một file system có khả năng xử lý tốt rất nhiều file nhỏ.</li></ul>
+
+
+<b>6. Các việc nên làm thêm</b>
+
+Sau khi đã cài đặt, cấu hình để Squid chạy chúng ta nên xem xét làm thêm một số việc như sau.
+<ul><li>Điều chỉnh lại bộ luật firwall pf.conf, chỉnh lại cấu hình squid.conf để thêm an ninh.
+Thiết đặt delay_pools để định hình lưu thông Web ngay trong Squid.
+Sử dụng module quản trị squid trong Webmin và vài phần mềm phân tích log khác (chẳng hạn Calamaris) để lấy số liệu thống kê, trên cơ sở đó tiếp tục chỉnh cấu hình.
+Cài đặt một số tiện ích khác để hỗ trợ cho việc quản trị Squid.</li></ul>
+
+
+<b>7. Tài liệu tham khảo</b>
+
+[1] Fortinet: FortiGate Administration Guide
+[2] squid team: Configuring Transparent Interception with FreeBSD and WCCPv2
+[3] Deckle: New Squid User Guide
+[4] ViSolve: Squid 3.0 Configuration Manual
+[5] Duane Wessels: Squid - The Deffinitive Guide
+[6] FreeBSD: Kernel Interface Manual - gre(4)
+[7] nofee: Setting up Squid in FreeBSD
+[8] tony: Squid Optimization Guide
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187720</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187720</link>
+				<pubDate><![CDATA[Mon, 27 Jul 2009 04:44:57]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thiết lập intercepting web cache proxy với squid trên nền FreeBSD</title>
+				<description><![CDATA[ Bài viết rất tốt và có giá trị tham khảo cao. Cám ơn <b>facialz</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187728</link>
+				<pubDate><![CDATA[Mon, 27 Jul 2009 10:14:31]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Thiết lập intercepting web cache proxy với squid trên nền FreeBSD</title>
+				<description><![CDATA[ Bác pnco quá khen rồi. 
+
+Thật ra, có vài điểm mà tôi vẫn chưa hiểu rõ, vẫn cứ thắc mắc hoài. (Tôi là newbie, mới dùng FreeBSD được khoảng 1/2 năm nay thôi.) Nên tôi gửi bài lên để chia xẻ chút kinh nghiệm nhưng cũng đồng thời để mọi người cho ý kiến chỉ giáo thêm:
+
+- Hai tham số <b>net.inet.ip.forwarding=1</b> trong /etc/sysctl.conf và <b>gateway_enable=”YES”</b> trong /etc/rc.conf có tác dụng như nhau hay là khác nhau? Nếu khác thì khác như thế nào?
+
+- Chế độ diskd (+soft updates) được xem là an toàn hơn aufs. Chúng thật ra hoạt động như thế nào? Khác nhau như thế nào?
+
+- Cứ 1 GB HDD cache thì cần 32 MB RAM để duy trì cache. Con số 32 MB là không thống nhất, có người cho rằng 10 MB và có người khác cho rằng 100 MB. Vậy rút cuộc, bao nhiêu MB mới là đúng?
+
+- Lượng RAM dùng cho squid không nên lớn hơn 50% (hay 100%) lượng RAM của máy.  Vì sao 50% (hay 100%) mà không phải là 60% hay 90%?
+
+- FreeBSD tôi chỉ cài đặt phần giao diện text, không cài đặt giao diện đồ họa nào cả. Trong điều kiện đó, nên cài đặt thêm những tiện ích nào để hỗ trợ cho việc quản trị squid?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187815</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187815</link>
+				<pubDate><![CDATA[Tue, 28 Jul 2009 01:14:00]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thiết lập intercepting web cache proxy với squid trên nền FreeBSD</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">facialz wrote:</cite><br>
+		<blockquote>Bác pnco quá khen rồi. 
+
+Thật ra, có vài điểm mà tôi vẫn chưa hiểu rõ, vẫn cứ thắc mắc hoài. (Tôi là newbie, mới dùng FreeBSD được khoảng 1/2 năm nay thôi.) Nên tôi gửi bài lên để chia xẻ chút kinh nghiệm nhưng cũng đồng thời để mọi người cho ý kiến chỉ giáo thêm:
+
+- Hai tham số <b>net.inet.ip.forwarding=1</b> trong /etc/sysctl.conf và <b>gateway_enable=”YES”</b> trong /etc/rc.conf có tác dụng như nhau hay là khác nhau? Nếu khác thì khác như thế nào?
+
+- Chế độ diskd (+soft updates) được xem là an toàn hơn aufs. Chúng thật ra hoạt động như thế nào? Khác nhau như thế nào?
+
+- Cứ 1 GB HDD cache thì cần 32 MB RAM để duy trì cache. Con số 32 MB là không thống nhất, có người cho rằng 10 MB và có người khác cho rằng 100 MB. Vậy rút cuộc, bao nhiêu MB mới là đúng?
+
+- Lượng RAM dùng cho squid không nên lớn hơn 50% (hay 100%) lượng RAM của máy.  Vì sao 50% (hay 100%) mà không phải là 60% hay 90%?
+
+- FreeBSD tôi chỉ cài đặt phần giao diện text, không cài đặt giao diện đồ họa nào cả. Trong điều kiện đó, nên cài đặt thêm những tiện ích nào để hỗ trợ cho việc quản trị squid?&nbsp;
+		</blockquote>
+
+Cả 2 tham số <b>net.inet.ip.forwarding=1</b> trong /etc/sysctl.conf và <b>gateway_enable=”YES”</b> trong /etc/rc.conf có tác dụng như nhau vì mục đích của cả hai có nhiệm vụ forward packets tuy nhiên các tham số /etc/sysctl.conf sẽ thực thi trước tiên vì khi hệ thống bắt đầu khởi động nó sẽ được nạp lên đầu tiên rồi mới đến các script khác . 
+
+Công thức tính như sau :<span class="link"> http://blog.last.fm/2007/08/30/squid-optimization-guide</span>
+
+Mình không dùng FreeBSD làm chủ đạo cho các distro mà mình nghiên cứu (Centos, Fedora là 1 phần không thể thiếu đối với mình  :-) ) . Hy vọng giải quyết 1 phần nào đó trong thắc mắc của bạn .  :) 
+
+Good luck]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187821</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30437.hva#187821</link>
+				<pubDate><![CDATA[Tue, 28 Jul 2009 01:58:17]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+	</channel>
+</rss>

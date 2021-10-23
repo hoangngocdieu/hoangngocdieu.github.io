@@ -1,0 +1,2375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="description" content="HVA discussion board">
+<meta name="keywords" content="Sử dụng nginx làm reverse proxy cho nhiều web server, jforum, jforum java, jforum forum, forum java, java jforum, java forum, forum, rafael steil, bulletin board, java bb, javabb, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title>Sử dụng nginx làm reverse proxy cho nhiều web server - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0">
+	<tr>
+		<td>
+			<table cellspacing="0" cellpadding="0" width="100%" border="0">
+				<tr>			
+        <td>&nbsp;
+			</td>
+		
+        <td width="100%" align="center" valign="middle">
+						<p><a href="http://www.hvaonline.net" title="[Logo]">
+								<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" />
+							<br>
+            				</a><span class="maintitle"></span>
+						</p>
+          <table cellspacing="0" cellpadding="2" border="0">
+							<tr>
+								
+              <td valign="top" nowrap="nowrap" align="center">
+			  						<a href="/hvaonline/forums/rule.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_rule.gif" alt="[Rule]" title="[Rule]"></a>
+									<a id="rule" class="topmenu" href="/hvaonline/forums/rule.hva">Rules</a>&nbsp;
+									
+									<a class="topmenu" href="/hvaonline/forums/list.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_groups.gif" alt="[Home]" title="[Home]"></a>
+										<a id="backtosite" class="topmenu" href="/hvaonline/forums/list.hva">Main Forum</a>&nbsp;
+
+										<a class="topmenu" href="/hvaonline/portal/list.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_portal.gif" alt="[Portal]" title="[Portal]"></a>
+										<a id="portalsite" class="topmenu" href="/hvaonline/portal/list.hva">Portal</a>&nbsp;&nbsp;
+									<br>
+									
+										<a href="/hvaonline/user/list.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_members.gif" alt="[Members]" title="[Members]"></a>
+										<a id="users" class="topmenu" href="/hvaonline/user/list.hva">Member Listing</a>&nbsp;
+										
+										<a href="/hvaonline/forums/stats.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_stats.gif" alt="[Statistics]" title="[Statistics]"></a>
+										<a id="stats" class="topmenu" href="/hvaonline/forums/stats.hva">Statistics</a>&nbsp;
+										
+										<a href="/hvaonline/search/filters.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_search.gif" alt="[Search]" title="[Search]"></a>
+										<span class="mainmenu"><a id="search" class="topmenu" href="/hvaonline/search/filters.hva"><b>Search</b></a>&nbsp;
+									
+										<a href="/book/"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_book.gif" alt="[Reading Room]" title="[Reading Room]"></a> 
+										<a class="topmenu" href="/hvaonline/readingRoom/list.hva">Reading Room</a>&nbsp;
+
+									
+									<span class="topmenu"> 
+										
+
+	
+										<br>
+											<a id="register" class="topmenu" href="/hvaonline/user/insert.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_register.gif" border="0" alt="[Register]" title="[Register]"> 
+												Register</a>&nbsp;&nbsp;</span>
+											<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/icon_mini_login.gif" border="0" alt="[Login]" title="[Login]"> 
+											<strong>Login</strong> [&nbsp;
+											<a id="login" class="topmenu" href="/hvaonline/user/login.hva">http</a>&nbsp;
+											|
+											<a id="logins" class="topmenu" href="https://www.hvaonline.net/hvaonline/user/logins.hva">https </a>&nbsp;]</span>
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+
+<!-- navigator -->
+<table cellspacing="2" cellpadding="2" width="100%" border="0" align="center">
+	<tr>
+		<td valign="baseline" align="left" colspan="0">
+			<span class="nav">
+			<a class="nav" href="/hvaonline/forums/list.hva">Forum Index </a> 
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/arrow.gif"> <a class="nav" href="/hvaonline/forums/show/24.hva">Thảo luận hệ điều hành *nix </a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/arrow.gif"> <a class="nav" href="/hvaonline/posts/list/40627.hva" name="top" id="top">Sử dụng nginx làm reverse proxy cho nhiều web server</a>
+				&nbsp;<a href="/hvaonline/rss/topicPosts/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/xml_button.gif" border="0" alt="XML"></a>
+			</span>
+		
+		</td>
+
+		<td valign="middle" align="right" class="nav"></td>
+	</tr>
+</table>
+
+<!-- poll show -->
+
+  <!-- POST LISTING -->
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250163" id="250163"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 08:44:14 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250163">#1</a> | 250163 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">Mình đang có vài website chạy các chức năng khác nhau trong nội bộ với các domain khác nhau (một số chỉ chạy web và một số chứa static files các loại). Mục đích chính của việc đưa nginx ra làm reverse thì các bạn cũng rõ là nginx đáp ứng số req lớn và nhanh, ngoài ra quan trọng hơn là cache control cho static contents (.js, .jpg, .gif, v.v ...)<br/> <br/> Mô hình của mình là<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+---------+
+                                        port 8001|         |
+                                        +--------+ nginx 1 | a.com
+                                        |        |         |
+                                        |	 +---------+
+                  +-----------------+   |p 8002  +---------+
+            port80|    nginx  0     |---|--------| nginx 2 | b.com
+INTERNET----------| &#40;reverse proxy&#41; |   |        +---------+
+                  +-----------------+   |
+                                        +--------+---------+
+					port n	 | nginx n | n.com
+						 +---------+</pre>
+		</div><br/> <br/> Cấu hình của mình như sau:<br/> - Ở reverse proxy, dùng chỉ thị proxy_pass trong nginx để chuyển hướng đối với từng server phía sau. <br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+    listen       80;
+    server_name  a.com;
+
+    access_log  on;
+    error_log on;
+    # proxy to Apache 2 and mod_python
+    location / {
+        proxy_pass        <span class="link"> http://10.0.0.1:8001;</span>
+        server_name_in_wwwect off;
+
+        proxy_set_header   Host             $host;
+        proxy_set_header   X-Real-IP        $remote_addr;
+        proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+        proxy_max_temp_file_size 0;
+}
+}</pre>
+		</div><br/> <br/> Cấu hình trên server a.com<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+        listen       8001;
+        server_name  a.com;
+        server_name_in_wwwect off;
+
+        charset utf8;
+
+        access_log  logs/host.access.log;
+
+        location / {
+            root   /www;
+            index  index.html index.htm index.php;
+        }</pre>
+		</div><br/> <br/> Sau đấy thì reverse proxy chuyển hướng chính xác tới từng web server phía sau nó, nhưng có vấn đề là nếu mở đường dẫn dạng<span class="link"> http://a.com/folder/</span> thì bình thường còn nếu mở<span class="link"> http://a.com/folder</span> (không có dấu gạch ở cuối) thì sẽ bị báo lỗi không tìm thấy máy chủ vì browser được kết nối tới<span class="link"> http://a.com:8001/folder</span> <br/> <br/> Như vậy vấn đề có thể là ở con reverse proxy, nhưng mình không hiểu tại sao nếu không có dấu gạch ở cuối thì người dùng lại bị chuyển sang a.com:8001 ??? Vì nếu browser tìm tới a.com:8001 thì sẽ không đi qua con reverse và bị từ chối.<br/> <br/> Xin nhờ các bạn cho ý kiến để tìm lý do và khắc phục việc này.<br/> <br/> Xin cảm ơn</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250166" id="250166"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 09:45:16 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250166">#2</a> | 250166 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+<td width="20">
+		<img src="http://www.hvaonline.net/hvaonline/images/avatar/1b2fbae0e92835996227cf3f91dd4231.png" border="0" alt="[Avatar]" title="[Avatar]"><br>
+	</td>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/195542.hva"><b>vitcon01</b></a><br>
+	<font color="#CCCCCC">Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 29/04/2009 11:28:21<br>
+		Messages: 306<br>
+	
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/195542.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/195542.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">2 năm trước anh cũng hỏi 1 vấn đề y như vậy, anh có thể xem lại bài viết này.<br/> http://www.hvaonline.net/hvaonline/posts/list/30410.hva</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+		  <tr>
+			<td height="20" colspan="2" valign="bottom" class="rowButton"><span class="gensmall">JK - JH<br>()()()<br>LTKT - LTT</span></td>
+		  </tr>
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250167" id="250167"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 09:54:16 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250167">#3</a> | 250167 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">Không giống nhau đâu, nếu standalone nginx thì vấn đề 2 năm trước giải quyết xong rồi. Còn bây giờ thì khác.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250168" id="250168"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 09:57:30 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250168">#4</a> | 250168 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+<td width="20">
+		<img src="http://www.hvaonline.net/hvaonline/images/avatar/1b2fbae0e92835996227cf3f91dd4231.png" border="0" alt="[Avatar]" title="[Avatar]"><br>
+	</td>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/195542.hva"><b>vitcon01</b></a><br>
+	<font color="#CCCCCC">Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 29/04/2009 11:28:21<br>
+		Messages: 306<br>
+	
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/195542.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/195542.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody"><p></p>
+		<cite class="blockquote">shuichi_akai wrote:</cite><br>
+		<blockquote>Không giống nhau đâu, nếu standalone nginx thì vấn đề 2 năm trước giải quyết xong rồi. Còn bây giờ thì khác.&nbsp;
+		</blockquote><br/> ---&gt;em tìm theo link của anh quân thì thấy có bài này không biết có thể giúp được gì anh không.<br/><span class="link"> http://forum.slicehost.com/comments.php?DiscussionID=3394</span></span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+		  <tr>
+			<td height="20" colspan="2" valign="bottom" class="rowButton"><span class="gensmall">JK - JH<br>()()()<br>LTKT - LTT</span></td>
+		  </tr>
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250171" id="250171"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 10:27:52 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250171">#5</a> | 250171 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">Bình thường thì dùng server_name_in_wwwect off; là được, như trên file conf của mình có rồi đó, nhưng vẫn không tác dụng.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250173" id="250173"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 12:07:36 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250173">#6</a> | 250173 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+<td width="20">
+		<img src="http://www.hvaonline.net/hvaonline/images/avatar/089f41810321eefc3f4eef5d4a388e42.png" border="0" alt="[Avatar]" title="[Avatar]"><br>
+	</td>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/67588.hva"><b>conmale</b></a><br>
+	<font color="#FF3333">Administrator</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 07/05/2004 23:43:15<br>
+		Messages: 9353<br>
+	
+		Location: down under<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/67588.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/67588.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">Đối với web service (bất kỳ apache hay nginx), <br/> - /folder --&gt; file tên &quot;folder&quot;<br/> - /folder/ --&gt; folder tên &quot;folder&quot;.<br/> <br/> Hai cái hoàn toàn khác nhau. Nếu request /folder thì nginx sẽ nghĩ là client muốn truy cập một file có tên là &quot;folder&quot; và nếu không có file nào như vậy (trong trường hợp này thì chắc chắn không có) thì sẽ bị error 404.<br/> <br/> Giải pháp cho trường hợp này là dùng rewrite, ví dụ:<br/> <b>rewrite ^([^.]*[^/])$ $1/ permanent;</b><br/> <br/> Đại khái nó sẽ thêm cái &quot;/&quot; vào bất cứ request nào không có dấu chấm &quot;.&quot; (ví dụ như /folder thì sẽ thành /folder/ nhưng index.php thì giữ nguyên). Đúng ra, nếu mình thiết kế trang web và thiết lập URL thì tuyệt đối không dùng /folder trong đường dẫn mà phải là /folder/ ngay từ đầu để không phải nhức đầu với những thứ như trên.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+		  <tr>
+			<td height="20" colspan="2" valign="bottom" class="rowButton"><span class="gensmall">What bringing us together is stronger than what pulling us apart.</span></td>
+		  </tr>
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250175" id="250175"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 12:39:31 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250175">#7</a> | 250175 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">Vâng, em cũng có thử rewrite để thêm dấu / vào như anh chỉ, đường link được thêm dấu / vào như mong muốn nhưng nó vẫn là dạng<span class="link"> http://a.com:8001/folder/</span> nên vẫn không truy cập được. Em chỉ thắc mắc ở cái vụ a.com:8001, không biết vì lý do gì mà browser lại bị chuyển sang đường dẫn đó.<br/> <br/> Để tìm hiểu kỹ hơn, em bật wirechark lên xem thì nhừng đường dẫn dạng<span class="link"> http://a.com/folder/</span> thì http SYN, ACK sau đó GET bình thường ví dụ <br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>219	8.851357	10.0.0.178	10.0.0.1	TCP	54	43678 &gt; http &#91;ACK&#93; Seq=9163 Ack=7165 Win=64732 Len=0
+222	9.265226	10.0.0.178	10.0.0.1	HTTP	603	GET /home/ HTTP/1.1</pre>
+		</div><br/> <br/> Còn khi mở đường dẫn dạng<span class="link"> http://a.com/folder</span> thì:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>324	12.780183	10.0.0.178	10.0.0.1	TCP	66	43681 &gt; vcom-tunnel &#91;SYN&#93; Seq=0 Win=65535 Len=0 MSS=1460 WS=2 SACK_PERM=1
+326	12.784051	10.0.0.1	10.0.0.178	TCP	60	vcom-tunnel &gt; 43681 &#91;RST, ACK&#93; Seq=1 Ack=1 Win=0 Len=0</pre>
+		</div><br/> <br/> Như vậy là truy cập tới a.com/folder bị nhầm sang giao thức VCOM tunnel, em quên check well-known port mà cứ nghĩ là trong dãy port 8000 có thể sử dụng tuỳ ý.<br/> <br/> Em đã đổi a.com listen sang port khác và có vẻ hoạt động bình thường rồi ạ. <br/> <br/> </span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250178" id="250178"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 16:20:48 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250178">#8</a> | 250178 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+<td width="20">
+		<img src="http://www.hvaonline.net/hvaonline/images/avatar/3f44f3018ff71ff4a7d22a98f3babb55.png" border="0" alt="[Avatar]" title="[Avatar]"><br>
+	</td>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/128502.hva"><b>quanta</b></a><br>
+	<font color="#FF9900">Moderator</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 28/07/2006 14:44:21<br>
+		Messages: 7265<br>
+	
+		Location: $ locate `whoami`<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/128502.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/128502.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">10.0.0.1 là IP của server nào bạn? Sao reverse proxy cũng có server_name là a.com à?</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+		  <tr>
+			<td height="20" colspan="2" valign="bottom" class="rowButton"><span class="gensmall"><font color='orange'>Let's build on a great foundation!</font></span></td>
+		  </tr>
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250180" id="250180"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 17:10:14 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250180">#9</a> | 250180 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">10.0.0.1 là ip của a.com còn reverse proxy có ip khác và server_name khác so với a.com <img src="/hvaonline/images/smilies/b5e9b4f86ce43ca65bd79c894c4a924c.gif" border="0" alt="smilie" align="absbottom"></span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250182" id="250182"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 17:13:38 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250182">#10</a> | 250182 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+<td width="20">
+		<img src="http://www.hvaonline.net/hvaonline/images/avatar/3f44f3018ff71ff4a7d22a98f3babb55.png" border="0" alt="[Avatar]" title="[Avatar]"><br>
+	</td>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/128502.hva"><b>quanta</b></a><br>
+	<font color="#FF9900">Moderator</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 28/07/2006 14:44:21<br>
+		Messages: 7265<br>
+	
+		Location: $ locate `whoami`<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/128502.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/128502.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">Mình thấy trong cấu hình của reverse proxy bạn để server_name là a.com?</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+		  <tr>
+			<td height="20" colspan="2" valign="bottom" class="rowButton"><span class="gensmall"><font color='orange'>Let's build on a great foundation!</font></span></td>
+		  </tr>
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250186" id="250186"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">21/11/2011 17:19:10 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250186">#11</a> | 250186 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">Trong reverse proxy mình cấu hình nhiều server với server_name khác nhau trong đó có proxy_pass tới từng máy tương ứng, mình copy một cấu hình thể hiện cho a.com mà thôi.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250214" id="250214"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">22/11/2011 17:00:46 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250214">#12</a> | 250214 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/193567.hva"><b>Dpm</b></a><br>
+	<font color="#CCCCCC">Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 06/04/2009 01:43:30<br>
+		Messages: 85<br>
+	
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/193567.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/193567.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">Bạn thử đẩy cái<br/>          proxy_set_header   Host             $host;<br/>          proxy_set_header   X-Real-IP        $remote_addr;<br/>          proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;<br/> lên phía server hoặc http xem.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250215" id="250215"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">22/11/2011 17:09:47 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250215">#13</a> | 250215 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody"><p></p>
+		<cite class="blockquote">Dpm wrote:</cite><br>
+		<blockquote>Bạn thử đẩy cái<br/>          proxy_set_header   Host             $host;<br/>          proxy_set_header   X-Real-IP        $remote_addr;<br/>          proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;<br/> lên phía server hoặc http xem.&nbsp;
+		</blockquote><br/> <br/> 3 dòng đó chỉ tác dụng để logging thôi bạn ạ.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250217" id="250217"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">22/11/2011 17:56:41 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250217">#14</a> | 250217 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/193567.hva"><b>Dpm</b></a><br>
+	<font color="#CCCCCC">Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 06/04/2009 01:43:30<br>
+		Messages: 85<br>
+	
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/193567.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/193567.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">Sao lại có tác dụng logging?bạn nói rõ xem nó có liên quan gì đến logging?cái proxy_set_header cũng chỉ để logging thôi sao?</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250231" id="250231"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">23/11/2011 10:17:19 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250231">#15</a> | 250231 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/216148.hva"><b>vd_</b></a><br>
+	<font color="#CCCCCC">Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 06/03/2010 03:05:09<br>
+		Messages: 124<br>
+	
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/216148.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/216148.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row1">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row1"><span class="postbody">@shuichi_akai<br/> X-Real-IP và X-Forwarded-For thì dùng log được, nhưng cái Host sẽ rất quan trọng để reverse proxy cho đúng. Bạn kiểm tra thêm các response từ server về client sẽ thấy tác dụng của Host. Bạn xem thêm http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html phần 14.23 có đề cập vai trò của field Host.</span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="1">
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+
+		
+
+		<th nowrap="nowrap" class="thright" height="20" valign="middle" align="left">&nbsp;&nbsp;<span class="posttype"><font color="#777777">[Question]</font></span>&nbsp;&nbsp; Sử dụng nginx làm reverse proxy cho nhiều web server<a name="250279" id="250279"></a></th>
+        <th class="thleft" nowrap="nowrap" width="300" height="20" valign="middle" align="right">24/11/2011 15:28:52 (+0700) | <a href="/hvaonline/posts/list/40627.hva#250279">#16</a> | 250279 </th>
+		
+      </tr>
+	</table>
+
+	<table cellspacing="0" cellpadding="3" width="100%" align="center" border="0">
+      <tr> 
+		<!-- Username & profile -->
+          	<td class="rowButton" valign="top">
+<table cellspacing="3" cellpadding="3" width="100%" align="left" border="0">
+<tr>
+
+<td align="left">
+<span class="uprofile"><a href="/hvaonline/user/profile/51117.hva"><b>shuichi_akai</b></a><br>
+	<font color="#33CC33">Elite Member</font></span>
+<br>
+
+<span class="uprofile">
+		
+</span>
+	<table cellspacing="0" cellpadding="0" border="0" width="20" height="8">
+		<tr>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/minus.gif" alt="[Minus]" title="[Minus]"></a>	</td>
+			<td height="4" width="16">
+				<span class="warn">&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;</span>	</td>
+			<td>
+				<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/plus.gif" alt="[Plus]" title="[Plus]"></a>
+			</td>
+		</tr>
+	</table>
+
+<!-- --></td>
+	<td align="left" class="gen" width="180">
+		Joined: 12/10/2003 10:40:06<br>
+		Messages: 161<br>
+	
+		Location: /home<br>
+	
+	
+			<span class="offline">Offline </span>
+	<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+	<td valign="middle" nowrap="nowrap"> 
+		<a href="/hvaonline/user/profile/51117.hva" class="icon_profile"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_profile.gif" alt="[Profile]" title="[Profile]"></a>
+		<a href="/hvaonline/pm/sendTo/51117.hva" class="icon_pm"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_pm.gif" alt="[PM]" title="[PM]"></a>
+
+		
+		
+		
+		
+	</td>
+</tr>
+  <tr>
+    <td valign="middle" nowrap="nowrap">
+	
+</td>
+  </tr>
+</table>
+	</td>
+</tr>
+</table>
+</td>
+      </tr>
+	</table>
+	
+	<table cellspacing="1" cellpadding="3" width="100%" align="center" border="0">
+      <tr>
+        <!-- Message -->
+        <td colspan="2" valign="top" class="row2">
+				<!-- should view editeBy or not -->
+			  <!-- which to view -->
+                <table cellspacing="3" cellpadding="3" width="100%" align="center" border="0">
+                  <tr>
+                    <td valign="top" class="row2"><span class="postbody">Nghĩa là nginx (ở đây là reverse proxy) sẽ chèn thêm vào header giá trị $host tương ứng với server_name đã khai báo. </span></td>
+                  </tr>
+                </table>
+          <!-- Attachments -->
+			  		</td>
+      </tr>
+
+
+			<tr>
+		        <td valign="bottom" class="row1" align="center"><div class="action" align="center">
+	<table width="100%" border="0">
+  		<tr>
+		<td align="left">
+					</td>
+		<td align="right">
+			<!--  -->
+			
+		
+
+
+		
+		
+		<a class="nav" href="#top"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_up.gif" alt="[Up]" title="[Up]"></a>
+			<img src="http://www.hvaonline.net/hvaonline/templates/viet/images/en_US/icon_print.gif" alt="[Print Copy]" title="[Print Copy]"></a>
+		</td>
+  	</tr>
+	</table>
+</div></td>
+		  </tr>
+	</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+	<tr>
+    	<td class="catbottomslim" height="1"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="5"></td>
+  	</tr>
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="20"></td>
+	</tr>
+</table>
+
+		
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td valign="middle" align="right" class="nav"></td>
+	</tr>
+</table>
+
+<!-- quick reply -->
+<table class="forumline" cellspacing="1" cellpadding="3" width="100%" border="0" align="center">
+</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="10"></td>
+	</tr>
+</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td align="left">
+			<!-- watch - unwatch -->
+			<!-- add bookmark -->
+
+		</td>
+		<td align="right" valign="bottom">			
+		</td>
+	</tr>
+</table>
+
+<!-- mod -->
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td colspan="3"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="10"></td>
+	</tr>
+</table>
+
+<!-- combo navigator -->
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/posts/list/40627.hva"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+		<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<span class="gensmall">Go to:&nbsp;</span>
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/forums/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Select a forum</option>				
+							<option value="0">-------------</option>
+									<option value="2" >Thông báo từ HVA</option>
+									<option value="41" >FAQ - Các câu hỏi thường gặp</option>
+									<option value="5" >Góp ý và Hỏi đáp thắc mắc chung</option>
+									<option value="6" >Kiểm tra bảo mật</option>
+							<option value="0">-------------</option>
+									<option value="8" >Thảo luận bảo mật</option>
+									<option value="12" >Thảo luận thâm nhập</option>
+									<option value="28" >Thảo luận virus, trojan, spyware, worm...</option>
+									<option value="36" >Thủ thuật reverse engineering</option>
+									<option value="13" >Thông tin new bugs và exploits</option>
+									<option value="51" >Case Studies</option>
+							<option value="0">-------------</option>
+									<option value="23" >Thảo luận hệ điều hành Windows</option>
+									<option value="24" selected="selected">Thảo luận hệ điều hành *nix</option>
+									<option value="26" >Thảo luận các loại thiết bị máy tính</option>
+									<option value="31" >Thảo luận mạng và thiết bị mạng</option>
+									<option value="27" >Thông tin về các địa chỉ và tài liệu hữu ích</option>
+							<option value="0">-------------</option>
+									<option value="44" >Người tìm việc - Việc tìm người</option>
+									<option value="21" >Thảo luận việc định hướng</option>
+									<option value="19" >Những thảo luận khác</option>
+									<option value="50" >Hình minh họa</option>
+									<option value="33" >Trash</option>
+							<option value="0">-------------</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+	</tr>
+</table>
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<td colspan="3"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/spacer.gif" alt="" width="1" height="10"></td>
+	</tr>
+</table>
+
+<!-- list users in -->
+<table class="forumline" cellspacing="3" cellpadding="0" width="100%" border="0" align="center">
+	<tr>
+		<th class="thright"  nowrap="nowrap" height="26" valign="middle">&nbsp;Users currently in here&nbsp;</th>
+	</tr>
+		<tr>
+			<td class="gensmall" valign="middle" align="left">
+				1 Anonymous 
+				
+			</td>	
+		</tr>
+</table>
+<a name="quick"></a>
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0"  align="center">
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>
+</table>
+
+<script type="text/javascript" src="http://www.hvaonline.net/hvaonline/templates/viet/js/post_show.js"></script>
+<script type="text/javascript" src="http://www.hvaonline.net/hvaonline/templates/viet/js/post.js"></script>
+<script type="text/javascript" src="http://www.hvaonline.net/hvaonline/templates/viet/js/avim.js"></script>
+<script type="text/javascript">
+<!--
+function showEmail(beforeAt, afterAt)
+{
+	return beforeAt + "@" + afterAt;
+}
+
+var starOn=new Image();
+starOn.src="http://www.hvaonline.net/hvaonline/templates/viet/images/star_on.gif";
+
+var starOff=new Image();
+starOff.src="http://www.hvaonline.net/hvaonline/templates/viet/images/star_off.gif";
+
+function writeStars(q, postId)
+{
+	for (var i = 0; i < 5; i++) {
+		var name = "star" + postId + "_" + i;
+		document.write("<img name='" + name + "' alt='*' />");
+		document.images[name].src = q > i ? starOn.src : starOff.src;
+	}
+}
+
+function addBookmark(relationType, relationId)
+{
+	var w = window.open('/hvaonline/bookmarks/insert/' + relationType + '/' + relationId + '.hva', 'bookmark_add', 'width="700", height="100", scrollbars="no"');
+	w.focus();
+}
+
+function supportAjax()
+{
+	if (typeof(AjaxUtils) != 'undefined') {
+		if (window.ActiveXObject) {
+			var r = new ActiveXObject("Microsoft.XMLHTTP");
+			return r != undefined;
+		}
+		else if (window.XMLHttpRequest) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+
+function maxImg(foto, maxSize){
+w = foto.width;
+if (w > maxSize){
+	foto.width = maxSize;
+	}
+} 
+
+-->
+</script>

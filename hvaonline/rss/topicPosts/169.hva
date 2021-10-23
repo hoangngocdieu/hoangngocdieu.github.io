@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thay thế BIND với djbdns - phần 1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thay thế BIND với djbdns - phần 1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thay thế BIND với djbdns - phần 1</title>
+				<description><![CDATA[ <b>Thay thế BIND với djbdns - phần 1</b>
+
+<b>1. Mở đầu</b>
+Tài liệu này dành cho những ai muốn dùng djbdns thay thế cho hệ thống BIND hiện dụng vì lý do nào đó. Dù đã rất cố gắng trình bày chi tiết, tài liệu này đòi hỏi người dùng cần có:
+- kiến thức UNIX căn bản (có thể dùng các lệnh trên UNIX một cách dễ dàng), và có thể hiểu cú pháp các shell scripts được trích dẫn.
+- kiến thức căn bản về DNS, nắm rõ nguyên tắc làm việc giữa các hệ thống phục vụ DNS và các clients.
+
+Hy vọng tài liệu này sẽ hữu dụng cho bạn đọc nhưng không hàm chứa bất cứ bảo đảm nào về khả năng hoạt động hoặc tính hư hại của một hệ thống mà bạn đã thiết lập dựa trên nó (và các tài liệu khác, nếu có). diendantinhoc.net giữ bản quyền của tài liệu này; bạn có thể trích dịch, đăng tải bất cứ nơi đâu miễn sao kèm theo chi tiết nguồn gốc của tài liệu.
+
+
+<b>2. djbdns và các thành phần của bộ nhu liệu</b>
+2.1 djbdns là gì
+djbdns là một tổng hợp một nhóm nhu liệu dùng để tạo dịch vụ DNS (tương đương với BIND, nổi tiếng và phổ biến nhất cho DNS). djbdns do Dan Bernstein, người viết qmail, nhu liệu nổi tiếng ổn định và bảo mật cho dịch vụ mail. djbdns được ra đời từ tính thiếu bảo mật và thiếu ổn định của BIND. BIND được ra đời trong lúc Internet còn khai thời và thiếu chú trọng đến vấn đề bảo mật, BIND đã được thay đổi và nâng cấp nhiều lần nhưng vẫn có nhiều hạn chế do nền tảng thiết kế. djbdns, trái lại ngay từ đầu được thiết kế với cách nhìn và định hướng rất khác, rất chú trọng đến bảo mật cũng như hiệu năng của một hệ thống dịch vụ DNS. Dan Bernstein công bố mã nguồn của bộ djbdns và đã treo giải $500 tiền thưởng <font color='orange'>-1-</font> cho những ai tìm ra được lỗi liên hệ đến bảo mật, cho đến nay vẫn chưa có người chiếm được giải này.
+
+djbdns bao gồm các nhu liệu đảm trách các chức năng đặc thù và riêng biệt với nhau. Đây chính là trọng điểm của gói nhu liệu trên phương diện bảo mật và hiệu năng. Những ai đã dùng qua bộ nhu liệu qmail của Dan Berstein chắc hẳn sẽ nắm ngay triết lý "tách rời" này <font color='orange'>-2-</font>
+
+
+
+<b>2.2 djbdns và các thành phần</b>
+Bộ nhu liệu djbdns không chỉ là một nhu liệu và các thư viện như các nhu liệu tương tự khác. Nó bao gồm ba phần chính và ba phần này hoàn toàn tách rời nhau trên bình diện hoạt động và tạo dịch vụ. Sở dĩ djbdns và các cấu thành được giới thiệu trước phần cài đặt và điều chỉnh là vì nó giúp cho bạn đọc dễ dàng hình dung chức năng của từng phần trong bộ djbdns. Qua đó, việc chỉnh định djbdns sẽ dễ dàng và hợp lý hơn.
+
+<b>2.2.1 dnscache</b>
+dnscache như cái tên ngầm chỉ định, nó là một "cache" server dùng để trả lời các thỉnh cầu cho dịch vụ name-to-IP và IP-to-name <font color='orange'>-3-</font> Điều khác biệt của dnscache so với các dạng "cached DNS" khác là dnscache:
+- không bao giờ trả lời các thỉnh cầu với tư cách là authoritative DNS (vì nó không phải là authoritative server. Trong bộ djbdns, chỉ có tinydns mới có thể trả lời requests như một authoritative server cho chính domain nó quản lý).
+- không bao giờ trả lời các thỉnh cầu với dữ liệu không phải lấy trực tiếp từ authoritative DNS.
+
+Nói một cách khác, dnscache được thiết kế để trả lời các thỉnh cầu (query) từ nội mạng hoặc từ các mạng bạn cho phép họ thỉnh cầu. dnscache tham cứu 13 "root" server rồi theo đó mà tìm ra chính authoritative server để tìm dữ kiện mà client nào đó thỉnh cầu. Ví dụ, máy tôi thuộc mạng 192.168.1.0/24 và tôi muốn tìm IP của host conmeo thuộc domain home.com chẳng hạn (conmeo.home.com), dnscache sẽ thao tác như sau:
+- nó xác định máy của tôi thuộc subnet nó chấp nhận trả lời các DNS query, nếu thoả mãn điều kiện này,
+- nó hỏi thăm một trong 13 "root" DNS server và lần theo nhánh .com (vì domain home.com thuộc nhánh .com) để đi xuống authoritative DNS server nào đang phục vụ cho domain home.com để thỉnh cầu dữ liệu,
+- nó dùng dữ liệu này để trả lời cho máy của tôi
+- nó lưu giữ dữ liệu này trong cache; thời gian lưu giữ tùy thuộc vào giá trị TTL được đưa về từ authoritative DNS của domain home.com
+- lần sau, nếu có một máy khác (thuộc các subnet nó chấp nhận trả lời) cũng thỉnh cầu conmeo.home.com, dnscache sẽ dùng dữ kiện đã lưu trữ trên cache (nếu dữ kiện này chưa bị quá hạn TTL) để trả lời cho máy này.
+
+Theo đúng tinh thần kỹ thuật thì dnscache là một DNS Resolver (truy giải tên miền / IP và hostname mình không quản lý)
+
+dnscache lắng nghe trên cổng 53 cả UDP và TCP
+
+
+<b>2.2.2 tinydns</b>
+tinydns chính là authoritative DNS của một (hoặc nhiều domain mà bạn làm chủ hoặc quản lý). Nói một cách khác, tinydns chỉ có thể trả lời các thông tin thuộc về các domain mà bạn làm chủ (hoặc quản lý) và nó cũng chỉ có thể trả lời những thông tin mà bạn cho phép nó trả lời. Ví dụ, bạn làm chủ domain abc.com và quản lý domain def.com, tinydns chỉ có thể dùng để trả lời cho các thông tin thuộc về hai domain abc.com và def.com; nó không thể trả lời các thông tin thuộc về domain xyz.com nào đó nếu như bạn không làm chủ domain này hoặc bạn không được quyền quản lý (không thể gán cho tinydns làm authoritative DNS cho domain này).
+
+Vậy, nói tóm lại:
+- người dùng trong LAN muốn query một domain name nào đó trên Internet, bạn điều chỉnh cho họ dùng dnscache. Bạn không cho công cộng dùng dnscache của bạn.
+- người dùng ngoài Internet muốn query một domain name nào đó do bạn làm chủ hoặc quản lý, bạn cho phép họ query tới tinydns. Bạn cho công cộng query tinydns của bạn.
+
+Theo đúng tinh thần kỹ thuật thì tinydns là một DNS Server (phục vụ tên miền / IP và hostname do mình quản lý)
+
+tinydns chỉ lắng nghe trên cổng 53 UDP.
+
+
+<b>2.2.3 axfrdns</b>
+axfrdns hiện hữu với mục đích hết sức cụ thể là để cho phép các "secondary" DNS servers chạy BIND có thể chuyển dụng "zones" của tinydns của bạn. Giữa các tinydns server, "zone transfer" hết sức đơn giản (qua phương pháp sao chép data file của tinydns bằng phương tiện scp, rsync xuyên qua ssh..). Tuy nhiên, để bảo đảm tính tương thích giữa một "primary" DNS chạy tinydns và một "secondary" DNS chạy BIND thì phải cần đến axfrdns (nếu vì lý do nào đó bạn phải quản lý và bảo trì "secondary" DNS chạy BIND).
+
+axfrdns lắng nghe trên cổng 53 TCP.
+
+
+<b>2.3 djbdns và các phần tố hỗ trợ</b>
+Bộ djbdns cần hai bộ tiện ích daemontools và ucspi-tcp hỗ trợ để hình thành và duy trì hoạt động như một "persistent" daemon <font color='orange'>-4-</font> vững vàng và bảo mật.
+
+<b>2.3.1 daemontools</b>
+Bộ daemontools gồm có bốn chương trình, mỗi chương trình đóng một vai trò khác nhau và hỗ tương cho nhau một cách chặt chẽ.
+svscan có trách nhiệm chính yếu là theo dõi các chương trình được chỉnh định dưới daemontools luôn luôn hoạt động. Thông thường svscan theo dõi thư mục /service và dưới mỗi thư mục con thuộc thư mục này là một dịch vụ đang chạy và được theo dõi.
+
+svc đây là công cụ cho phép người dùng tác động trực tiếp đến svscan. svc dùng một loạt lựa chọn (options) để điều khiển tình trạng một dịch vụ nào đó (ví dụ như tắt, mở, tái khởi động, tắt bỏ hoàn toàn...) tương tự như System V init script với các "case" như start), stop), restart).... Sau đây là đoạn giải thích trích dẫn từ trang svc của D. J. Bernstein:
+
+Cách dùng svc như sau:
+svc opts services
+Trong đó:
+- opts là các chọn lựa (xem bên dưới).
+- servicesbao gồm một hoặc nhiều tham số và mỗi tham số chỉ định cho một thư mục chứa dịch vụ được supervise theo dõi.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-u: Up. Nếu một dịch vụ chưa hoạt động, dùng chọn lựa này để khởi động nó. Nếu dịch vụ này bị ngưng, dùng nó để tái khởi động.
+-d: Down. Nếu một dịch vụ đang hoạt động, chọn lựa này dùng để gởi đến nó tín hiệu TERM, tiếp theo với tín hiệu CONT. Sau khi dịch vụ đã được ngưng, không tái khởi động nó nữa.
+-o: Once. Nếu dịch vụ chưa hoạt động, khởi động dịch vụ nhưng không tái khởi động nữa nếu nó ngưng hoạt động.
+-p: Pause. Dùng để gởi tín hiệu STOP đến dịch vụ.
+-c: Continue. Dùng để gởi tín hiệu CONT đến dịch vụ.
+-h: Hangup. Dùng để gởi tín hiệu HUP đến dịch vụ.
+-a: Alarm. Dùng để gởi tín hiệu ALRM đến dịch vụ.
+-i: Interrupt. Dùng để gởi tín hiệu INT đến dịch vụ.
+-t: Terminate. Dùng để gởi tín hiệu TERM đến dịch vụ.
+-k: Kill. Dùng để gởi tín hiệu KILL đến dịch vụ.
+-x: Exit. Chọn lựa này sẽ báo cho supervise thoát ra ngay khi dịch vụ được tắt bỏ. Nếu bạn dùng chọn lựa này trên một hệ thống ổn định thì có lẽ có gì không hoàn chỉnh vì supervise được thiết kế để hoạt động không ngừng.</pre>
+		</div>
+Nếu bạn cần dùng svc để điều tác các dịch vụ được bộ daemontools quản lý thì nên ghi nhớ hoặc in ra trên giấy các options ở trên để tiện xử dụng.
+
+<b>supervise</b>
+svscan dùng supervise để theo dõi tình trạng của các daemon. Nếu một trong các daemon bị tắt (die), nó sẽ tái khởi động daemon này. Đây là một đặc tính mà System V init script chính nó không thể làm được mà phải dựa vào một vài tiện ích khác để thực hiện công tác "tái khởi động".
+
+<b>multilog</b>
+multilog là một tiện ích tổng quát. Nó được "gắn" vào giai đoạn một daemon nào đó khởi tác. Nó có chức năng đọc dữ kiện xảy ra với daemon từ stdin, có khả năng lọc lựa dữ kiện dựa trên chỉnh định lọc tùy bạn chọn và viết kết quả xuống log files. Điểm đặc biệt của multilog là nó có khả năng tự động đổi log mới dựa trên một quy định nhất định. Quy trình đổi log này hoàn toàn trong suốt (transparent) và không hề gián đoạn hoạt động của một daemon.
+
+Xem thêm chi tiết về daemontools ở:<span class="link"> http://cr.yp.to/daemontools.html</span>
+
+
+<b>2.3.2 ucspi-tcp (dùng bộ tiện ích này nếu bạn cần xử dụng axfrdns)</b>
+Bộ ucspi-tcp được Dan Bernstein viết với mục đích thay thế trọn bộ cơ chế inetd (hoặc xinetd gần đây <font color='orange'>-5-</font>). Bảo mật cao, bền bỉ, cung cấp phương tiện quản lý truy cập và tài nguyên cho các dịch vụ chính là những điểm nổi bật của bộ ucspi-tcp. Bộ ucspi-tcp hoạt động trên giao thức TCP, bao gồm hai phần chính tcpserver và tcpclient và một số tiện ích đặc thù và hữu dụng cho nhiều hoàn cảnh.
+
+tcpserver là một tiện dụng, D. J. Berstein gọi nó là "interface" cho các dịch vụ TCP. Nó có chức năng lắng nghe các truy cập và đằng sau đó, nó kích hoạt một chương trình nào đó (mà bạn chọn) để tạo dịch vụ. tcpserver có hai đặc tính quan trọng:
+- có khả năng ấn định số lượng truy cập vào dịch vụ nó tạo thích hợp với tài nguyên của từng cấu hình và từng nhu cầu. Đây là điểm tối quan trọng để bảo đảm tính bền bỉ của dịch vụ và máy chủ tạo dịch vụ.
+- có khả năng tạo danh sách quản lý truy cập (ACL) đến dịch vụ tương tự như tcpwrapper nhưng hiệu xuất hơn và bền bỉ hơn.
+
+tcpclient là phần liên tác với tcpserver, như đã hàm chứa với cái tên: tcpserver thuộc server side, tcpclient thuộc client side. tcpclient dùng để tạo kết nối với server. Nếu kết nối thành công, nó chạy chương trình nào đó tùy chọn.
+
+tcprules là cơ chế dùng để ấn định quyền truy cập (rules) đến một dịch vụ. Nó có chức năng đọc rules từ stdin và viết các rules này thành dạng cdb để tcpserver dùng để quyết định quyền truy cập đến dịch vụ. Điểm đặc biệt cần phải nêu lên đó là, cdb là một dạng "hash", có thể được điều chỉnh ngay trong khi tcpserver đang hoạt động.
+
+Xem thêm chi tiết về uscpi-tcp ở<span class="link"> http://cr.yp.to/ucspi-tcp.html</span>
+
+
+<b>3. Tải và cài djbdns</b>
+3.1 Tải từ đâu?
+Mã nguồn của bộ djbdns có (và nên được tải) từ website của Dan Bernstein <span class="link"> http://cr.yp.to/djbdns/</span>) ngoại trừ trường hợp bạn dùng một Linux distribution nào hiện chạy glibc 2.3.1 thì phải tải thêm bản vá ở:<span class="link"> http://moni.csi.hu/pub/(vì</span> phiên bản glibc 2.3.1 không tương ứng với nhu liệu do Dan Bernstein viết trong phần khai báo errno).
+
+<b>3.2 Quy trình cài</b>
+Trước khi cài bộ djbdns, bạn phải cài và chỉnh lý daemontools và ucspi-tcp trước bởi vì djbdns sẽ không chạy nếu không có hai bộ tiện ích này, ngoại trừ trường hợp bạn muốn dùng System V init script để thay thế. Nếu bạn đã từng cài qmail trên máy trước đây, hẳn đã có sẵn daemontools và ucspi-tcp. Trong trường hợp này, bạn không cần phải cài lại hai bộ tiện ích trên. Nếu không, sau đây là quy trình (theo đúng thứ tự):
+
+<b>3.2.1 Cài daemontools</b>
+- tạo thư mục /package:
+<b>$ mkdir -p /package</b>
+
+- thay đổi tình trạng chủ quyền của thư mục này:
+<b>$ chmod 1755 /package</b>
+
+- chuyển vào trong thư mục vừa được tạo ra:
+<b>$ cd /package</b>
+
+- tải gói daemontools-0.76.tar.gz về trong thư mục /package đã tạo ở trên (ở đây tôi chọn wget làm công cụ tải mã nguồn về, bạn có thể chọn công cụ nào khác tùy thích):
+<b>$ wget</b><span class="link"> http://cr.yp.to/daemontools/daemontools-0.76.tar.gz</span>
+
+- xả nén gói mã nguồn:
+<b>$ gunzip -dc daemontools-0.76.tar.gz | tar xvf -</b>
+
+* Nếu bạn dùng Linux distribution nào hiện chạy glibc 2.3.1, bạn cần tải bản vá daemontools cho vấn đề tương thích của glibc:
+<b>$ wget</b><span class="link"> http://moni.csi.hu/pub/glibc-2.3.1/daemontools-0.76.errno.patch</span>
+
+- chuyển vào thư mục chứa mã nguồn của daemontools (sau khi được xả):
+<b>$ cd ./admin/daemontools-0.76</b>
+
+- vá daemontools nếu dùng Linux distribution nào hiện chạy glibc 2.3.1:
+<b>$ patch -p1 < ../../daemontools-0.76.errno.patch</b>
+
+- nếu gặp error, bạn nên điều tra kỹ xem error do đâu mà ra. Không nên tiếp tục bước kế tiếp không thì biên dịch sẽ không thành công. Hầu hết phần vá này không tạo error ngoại trừ bạn thư mục chứa bản vá và bản nguồn được vá không đúng cấu trúc như trên. Nếu bạn không gặp error nào thì daemontools đã được vá thành công, sau khi chuyển thành root bạn tiếp tục chạy lệnh:
+<b># package/install</b>
+
+Đến đây, daemontools đã được biên dịch và cài thành công. Để xác thực daemontools đã hoạt động, bạn có thể chạy lệnh sau:
+<b>$ ps -ef | grep svscan </b>để xem có kết quả trả về tường trình svscan đang hoạt động trên hệ thống hay không.
+
+Sau khi daemontools được cài thành công, chương trình svscanboot thuộc bộ công cụ daemontools được đưa vào /etc/inittab với mục đích 'respawn' (tái sinh) nếu vì lý do nào đó svscan bị chết (die). Bạn có thể kiểm tra sự hiện diện của giá trị này trong /etc/inittab bằng lệnh:
+<b># grep svscanboot /etc/inittab </b>nó sẽ trả về giá trị:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SV:123456:respawn:/command/svscanboot.</pre>
+		</div>
+Giá trị này có nghĩa svscanboot sẽ "tái sinh" trong các run level 1, 2, 3, 4, 5, 6; ấn định svscan hoạt động không ngừng ở bất cứ run level nào.
+
+
+<b>3.2.2 Cài ucspi-tcp</b>
+Bạn cần bộ tiện ích này nếu cần dùng axfrdns. Nếu bạn không có dự định tạo dịch vụ cho zones transfer giữa tinydns của bạn và một "secondary" DNS nào khác chạy BIND thì không phải quan tâm đến phần này. Ngoài ra,
+
+- chuyển vào thư mục nào đó thích nghi để chứa nguồn. Tôi dùng /usr/local/src/
+<b>$ cd /usr/local/src</b>
+
+- tải ucspi-tcp về máy:
+<b>$ wget</b><span class="link"> http://cr.yp.to/ucspi-tcp/ucspi-tcp-0.88.tar.gz</span>
+
+* Nếu bạn dùng Linux distribution nào hiện chạy glibc 2.3.1, bạn cần tải bản vá ucspi-tcp cho vấn đề tương thích của glibc:
+<b>$ wget </b>http://moni.csi.hu/pub/glibc-2.3.1/ucspi-tcp-0.88.errno.patch
+
+- xả nén gói mã nguồn:
+<b>$ gunzip -dc ucspi-tcp-0.88.tar.gz | tar xvf -</b>
+
+- chuyển vào thư mục chứa mã nguồn ucspi-tcp đã được xả:
+<b>$ cd ucspi-tcp-0.88</b>
+
+- vá nếu cần thiết:
+<b>$ patch -p1 < ../ucspi-tcp-0.88.errno.patch</b>
+
+- biên dịch chương trình ucspi-tcp:
+<b>$ make</b>
+
+- chuyển thành root và cài chương trình ucspi-tcp (theo mặc định ở /usr/local):
+<b># make setup check</b>
+
+
+<b>3.2.3 Cài djbdns</b>
+
+- chuyển vào thư mục nào đó thích nghi để chứa nguồn. Tôi dùng /usr/local/src/
+ <b>cd /usr/local/src</b>
+
+- tải gói djbdns về máy:
+<b>$ wget</b><span class="link"> http://cr.yp.to/djbdns/djbdns-1.05.tar.gz</span>
+
+* Nếu bạn dùng Linux distribution nào hiện chạy glibc 2.3.1, bạn cần tải bản vá djbdns cho vấn đề tương thích của glibc:
+<b>$ wget</b><span class="link"> http://moni.csi.hu/pub/glibc-2.3.1/djbdns-1.05.errno.patch</span>
+
+- xả nén gói mã nguồn:
+<b>$ gunzip -dc djbdns-1.05.tar.gz | tar xvf -</b>
+
+- chuyển vào thư mục chứa mã nguồn djbdns đã được xả:
+<b>$ cd djbdns-1.05</b>
+
+- vá nếu cần thiết:
+<b>$ patch -p1 < ../djbdns-1.05.errno.patch</b>
+
+- biên dịch chương trình djbdns:
+<b>$ make</b>
+
+- chuyển thành root và cài chương trình djbdns (theo mặc định ở /usr/local):
+<b># make setup check</b>
+
+
+<b>4. Thiết lập</b>
+4.1 Tạo tài khoản cần thiết cho bộ djbdns
+Việc tạo các tài khoản dành cho mỗi dịch vụ trong bộ djbdns là điều cần thiết để cho phép chúng hoạt động một cách an toàn. Thay vì dùng root để chạy các dịch vụ này, bạn cần gán cho mỗi dịch vụ một tài khoản hạn chế chủ quyền.
+
+- chuyển qua chế độ su và thêm nhóm (group) mới:
+<b># groupadd dnsgroup </b>(đặt tên cho group này là gì tùy bạn. "dnsgroup" ở đây chỉ là một ví dụ)
+
+- thêm các tài khoản cần thiết cho bộ djbdns:
+<b># useradd -g dnsgroup -d /dev/null -s /bin/true dnscache
+# useradd -g dnsgroup -d /dev/null -s /bin/true tinydns
+# useradd -g dnsgroup -d /dev/null -s /bin/true dnslog</b>
+
+Ba dòng trên thiết lập tài khoản cho ba tài khoản dnscache (sẽ dùng cho dnscache), tinydns (sẽ dùng cho dnscache) và dnslog (sẽ dùng cho dnslog). Bạn có thể đặt tên cho các tài khoản này thế nào tùy ý nhưng mỗi dịch vụ trong bộ djbdns sẽ dùng một tài khoản khác nhau. Điểm cần nêu lên ở đây là:
+- các tài khoản được gán $HOME (-d) là <b>/dev/null </b>thay vì một thư mục thật nào đó, điều này có nghĩa các tài khoản này không có $HOME như các người dùng bình thường.
+- các tài khoản được gán shell (-s) là <b>/bin/true </b>thì vì một shell thật nào đó, điều này có nghĩa các tài khoản này không có shell như các người dùng bình thường. /bin/true chỉ là một lệnh không làm gì hết, vô hại, vô tác dụng <font color='orange'>-6-</font>.
+
+Tại sao cần phải gán quyền cho các tài khoản trên khắt khe như vậy? Lý do: các dịch vụ này cần được hoạt động dưới các tài khoản nào đó nhưng không phải là root vì nếu (chỉ nếu) một trong những dịch vụ này bị nhân nhượng, tài khoản bị chiếm đoạt không thể làm gì để có thể tác hại đến hệ thống vì chúng không có $HOME và shell là phương tiện phổ biến để gia tăng chủ quyền. Các dịch vụ thuộc bộ djbdns được root khởi tạo trong quá trình hệ thống khởi động và chủ quyền được hạ từ root xuống tài khoản đã quy định (chúng ta đã tạo ở trên).
+
+
+Còn tiếp
+<hnd - vninformatics.com - diendantinhoc.net - 10/2004>
+
+Ghi chú:
+<font color='orange'>-1-</font> The djbdns security guarantee của Dan Bernstein ở:<span class="link"> http://cr.yp.to/djbdns/guarantee.html.</span> Giải thưởng $500 này đã gây nên khá nhiều bàn cãi giữa các nhóm bảo mật khi djbdns được công bố. Vấn đề Bernstein đưa ra giải thưởng này không nằm ở tính vật chất của giải thưởng mà ông ta chỉ dùng nó như một phương tiện chứng minh mức vững vàng của djbdns trên bình diện bảo mật.
+
+<font color='orange'>-2-</font> Tôi đã hoàn tất tài liệu "Qmail as a mail gateway" và đã đăng trên website<span class="link"> http://www.diendantinhoc.net.</span> Nếu thích, bạn có thể tham khảo để đối chiếu đến tính "tách rời" của qmail và djbdns.
+
+<font color='orange'>-3-</font> name-to-ip và ip-to-name: như đã nêu ra trong phần mở đầu, bạn đọc cần có kiến thức căn bản về cơ chế hoạt động của DNS. Authoritative DNS là name server có thẩm quyền trả lời các thỉnh cầu về tên của một domain và các host trong domain này ở cấp độ chủ quyền. Xem thêm trang<span class="link"> http://en.wikipedia.org/wiki/DNS</span> để tham khảo "authoritative DNS".
+
+Cần nói thêm,
+
+Với tư cách là client, "Domain Name request" hoặc "HostName request" có thể xảy ra trực tiếp hoặc gián tiếp:
+
+- trực tiếp: ví dụ như dùng nslookup để request IP của conmeo.myhome.org, trong đó domain name là myhome.org và hostname là conmeo. Hay nói một cách khác, request conmeo.myhome.org có nghĩa là cần giải danh (từ tên thành IP) hostname conmeo thuộc domain name myhome.org dựa trên cấu trúc dịch vụ DNS có sẵn cho client ấy.
+
+- gián tiếp: ví dụ như dùng trình duyệt và gõ vào địa chỉ URL để truy cập trang web<span class="link"> http://conmeo.myhome.org</span> thì trình duyệt sẽ lo phần giải danh từ tên thành IP để bạn có thể truy cập trang web mà bạn không cần phải biết đến IP của nó là gì.
+
+Với tư cách là server, thông thường server có thể trả lời các "DomainName request" hoặc "hostname request" của clients ở hai tư cách:
+- authoritative (có thẩm quyền): server này làm chủ hoặc quản lý domain name / hostname được request. Nó xác thực hostname conmeo thuộc domain name myhome.org và có IP là 123.123.123.123 chẳng hạn và không ở nơi nào khác.
+
+- non-authoritative (không thẩm quyền): server này không thể xác nhận hostname conmeo thuộc domain name myhome.org và có IP là 123.123.123.123 với request đầu tiên. Nó phải đi xuyên qua các root servers và được chỉ dẫn về server nào đó thuộc nhánh .org để tiếp tục đi tìm cho đến khi bắt được máy chủ có thẩm quyền trả lời các thông tin cần hỏi. Thông tin này có thể được lưu giữ (cache) để lần kế tiếp client request, server không cần phải đi một vòng lớn để tìm thông tin nữa mà có thể trả lời ngay cho client với thông tin có trong cache. Vấn đề các non-authoritative server bị nhiễm độc cache (cache poisioned) vị bị trỏ đến một authoritative server để lấy thông tin không đúng là vấn đề nằm ngoài giới hạn bài viết này.
+
+<font color='orange'>-4-</font> "persistent" daemon: tôi tránh không dịch sang thuật ngữ tương đồng của tiếng Việt vì có lẽ không có cụm từ tương đương đủ hàm chứa tinh thần "bền bỉ" này. "persistent daemon" ở đây chỉ cho tính bền bỉ của dịch vụ được daemontools quản lý. supervise của gói daemontools theo dõi daemon được nó quản lý và tái khởi động các daemon này nếu chúng bị "chết" vì lý do nào đó. Đây là tính bền bỉ cao độ của các daemon được supervise quản lý (nếu so sánh với inetd hoặc xinetd).
+
+<font color='orange'>-5-</font> xinetd đã được cải thiện rất nhiều so với inetd và nó có những chức năng gần như tương tự với tcpserver trong bộ ucspi-tcp.
+
+<font color='orange'>-6-</font> Nếu bạn "paranoid" hơn nữa, bạn có thể tạo "shell" cho các tài khoản trên bằng cách gán /dev/null (-s /dev/null) cho shell vì device /dev/null không phải là một binary và bởi thế, bạn có thể loại trừ trường hợp /bin/true hoặc /bin/false (hoặc bất cứ một binary nào) bạn đùng để tạo shell cho các tài khoản này bị "vướng" vào trường hợp binary có suid (có thể dùng để gia tăng chủ quyền). Nếu bạn không rõ lắm những điểm trên thì cứ nên gán -s /dev/null cho các tài khoản dùng với djbdns và dành thời gian (khi rảnh rỗi) để nghiên cứu thêm về suid. Tôi dùng /bin/true vì tôi biết chắc binary true trên máy tôi không có suid.
+
+cập nhật:
+20/10/2004 - chỉnh lỗi chính tả, chỉnh một số tag hiển thị sai và "beautified" các foot-notes
+25/10/2004 - thêm chi tiết svscanboot entry trong /etc/inittab ở phần 3.2.1
+04/11/2004 - chỉnh thêm một số tag hiển thị sai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/169.hva#573</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/169.hva#573</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 04:08:19]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

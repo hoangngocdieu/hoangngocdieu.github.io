@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Một Winsock Class vững chãi"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Một Winsock Class vững chãi"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Vb6 cho ta Winsock Control để dùng cho việc giúp một program VB6 nói chuyện với một program khác trên mạng TCP/IP.
+Ta có thể dùng Winsock Control trong một program để làm Winsock Server hay Winsock Client. Sự khác biệt nầy rất nhỏ, mặc dầu ta phải lưu ý để phân biệt sự khác nhau của hai trường hợp. Giả sử ta dùng Winsock Control làm Server trong một VB6 program để chạy trên một computer và dùng Winsock Control làm Client trong một VB6 program để chạy trên một computer khác trên mạng TCP/IP. Ðể cho hai programs nói chuyện (communicate) trước hết ta cần phải connect (nối) chúng lại với nhau.
+Ta cho Winsock Server Listen (lắng nghe) qua một LocalPort (một cổng có mang một con số, thí dụ như 101). Kế đó ta cho Winsock Client Connect (móc nối) qua LocalPort đó ở địa chỉ TCP của Computer nơi ta chạy Winsock Server program. Sở dỉ ta cần phải nói rõ LocalPort số mấy là vì Server Computer có thể Listen qua nhiều LocalPorts cùng một lúc để nhiều Clients có thể Connect đến cùng một Computer TCP address.
+
+Bên Winsock Server, giả dụ tên của Winsock control là myWinsock và myPortNo là một con số thí dụ như 101, ta viết:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>myWinsock.LocalPort = myPortNo
+      myWinsock.Listen</pre>
+		</div>
+Bên Winsock Client, giả dụ tên của Winsock control là myWinsock, myPortNo là một con số dùng cho Winsock Server và TCPAddress là địa chỉ TCP của Server computer (hay có thể là tên của Server Computer mà System đổi thành TCP address được) ta viết:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>myWinsock.Connect TCPAddress, myPortNo</pre>
+		</div>
+
+Nếu mọi việc êm xuôi bên Client sẽ nhận được một Event ConnectionRequest với một RequestID. Bên Client lập tức phải Accept RequestID đó như sau: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Private Sub myWinsock_ConnectionRequest&#40;ByVal RequestID As Long&#41; 
+   ' Pass the value of the requestID parameter to the Accept method.
+   myWinsock.Accept RequestID 
+End Sub</pre>
+		</div>
+Ðến đây thì Connection đã được thiết lập. Sau đó cả hai bên đều có thể tự do gởi những Text messages cho nhau. Mỗi khi một bên gởi một Text message, đầu kia sẽ nhận được một Event DataArrival và sẽ đọc message như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Private Sub myWinsock_DataArrival&#40;ByVal bytesTotal As Long&#41; 
+   Dim strData As String 
+   ' Read the incoming data
+   myWinsock.GetData strData, vbString 
+   ' Process message ....
+   ' ....
+End Sub</pre>
+		</div>
+Nếu chuyện đời chỉ đơn giản như vậy thôi thì không có gì phải nói thêm. Khổ nổi nếu một trong hai program terminates (stop), đầu kia không biết chuyện ấy cho đến khi nó vô tình gởi một message kế đó mới khám phá ra đối tượng đã cuốn gói sang ngang.
+Bây giờ làm sao nối lại duyên xưa? Giả sử Server stops trước, thì Client phải cố gắng Connect nhiều lần mới hy vọng có kết quả. Ngược lại, nếu Client stops trước, dầu Server có Listen thêm cũng không biết chừng nào nghe được vì nó phải Close cái Connection rồi Listen trở lại mới được.
+
+Do đó ta có Class clsWinsock nầy. 
+Ðặc điểm của clsWinsock là nó có thể nối lại Connection bất cứ lúc nào, tức là hể khi nào hai program cùng chạy là chúng nối nhau. Và hể khi một trong hai program stop là bên kia biết ngay. Ðể đạt được các ưu điểm ấy ta làm các việc sau:
+
+Khi có Connection, cứ mỗi chút xíu (1 hay 2 seconds) mỗi program hỏi bên kia còn thức không. Nếu gặp Error thì là bên kia đã stop. Nếu bên kia nghe được nó sẽ trả lời OK. Thật ra việc trả lời không quan trọng lắm. Ðể làm việc nầy ta cần một Timer gọi là WatchdogTimer hay DeadManTimer. 
+Khi biết đầu kia đã stop, thì bên nầy tìm cách nối lại. Nếu là Server thì Listen, nếu là Client thì Connect, và mỗi lần tìm cách nối lại (every 2 seconds) nhớ Close cái existing Connection. Ðể làm việc nầy ta cần một Timer gọi là ReconnectTimer. 
+Trong thí dụ nầy bạn có một program chánh tên là WinsockTest.vbp. Bạn có thể sửa một chút trong Sub Form_Load để dùng nó làm Server hay Client để test cho hai programs nói chuyện với nhau.
+Listing của Sub Form_Load như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Private Sub Form_Load&#40;&#41; 
+   Set Winsck = New clsWinsock 
+   ' There's no need to supply the TCP address
+   ' The port number is arbitrary, but must be the same in both Server and Client, eg: 102
+   '-------- Use the next three lines for a server.
+   Me.Caption = "Winsock Server" 
+   Text1.Text = "Greeting from Server" 
+   Call Winsck.MakeConnection&#40;Winsock1, "", 102, True, Timer1, Timer2&#41; 
+   '-------------------------------------------END for Server
+   ' You must supply the TCP address of the Server, eg: "192.168.0.1"
+   '-------- Use the next three lines for a client.
+   ' Me.Caption = "Winsock Client"
+   ' Text1.Text = "Hello Server, this is Client calling"
+   ' Call Winsck.MakeConnection&#40;Winsock1, "192.168.0.1", 102, False, Timer1, Timer2&#41;
+   '-------------------------------------------END for Client
+   lblStatus.Caption = "No Connection" 
+End Sub</pre>
+		</div>
+Hình của Form gồm có một Winsock Control và hai Timers như sau: 
+<br>
+			<div align="center" class="limitview"><img src='http://vovisoft.com/visualbasic/images/Winsock.gif' border="0" onload="maxImg(this, 500px);" /></div>
+Vì một VB6 Class không có Controls và không thể nhận parameters lúc initialise nên ta dùng một Public Sub MakeConnection để cung cấp cho clsWinsock các Controls cần thiết như Winsock và Timers.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Public Sub MakeConnection&#40;theWinsock, theTCPAddress, PortNo, beingAServer, Timer1, Timer2&#41; 
+   On Error Resume Next 
+   Set myWinsock = theWinsock 
+   Set DeadManTimer = Timer1  ' Use Timer1 as DeadManTimer
+   DeadManTimer.Enabled = False  ' Disable DeadManTimer initially
+   DeadManTimer.Interval = 2000  ' 2 seconds
+   Set ReConnectTimer = Timer2  ' Use Timer2 as ReConnectTimer
+   ReConnectTimer.Enabled = False  ' Disable ReConnectTimer initially
+   ReConnectTimer.Interval = 2000  ' 2 seconds
+   TCPAddress = theTCPAddress  ' the address may also be the server computer name, i.e: "server01"
+   myPortNo = PortNo  ' same Port No. must be used for both server and client
+   IamServer = beingAServer 
+   ' No Connection initially
+   ConnectionEstablished = False 
+   ' Server listens , Client connects, both refreing to the same Port No.
+   If IamServer Then 
+      myWinsock.LocalPort = myPortNo 
+      myWinsock.Listen 
+   Else 
+      myWinsock.Connect TCPAddress, myPortNo 
+   End If 
+   ' Schedule to reconnect
+   ReConnectTimer.Enabled = True 
+End Sub</pre>
+		</div>
+clsWinsock có thể raise ba Events là Connected, Disconnected và DataArrived (Mess). Trong frmTestWinsock ta dùng các Events Connected và Disconnected để update property Caption của Label nằm ở góc bên trái phía dưới để display "No connection" hay "Connection established". Trong thực tế ta có thể dùng các Event nầy để display một hình tròn nhỏ màu xanh lá cây hay màu đỏ, chẳng hạn. Parameter Mess của Event DataArrived là incoming message mà ta cần xử lý.
+Có điểm bạn cần lưu ý là nhiều khi hai ba messages khác nhau nối thành một message mà bạn nhận được. Do đó bạn cần phải có cách để tách chúng ra. Thí dụ bạn nhận được một message gồm ba messages nhỏ đến liên tiếp như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;V&gt;Cardkey 1234 Valid entry&lt;E&gt;Cardkey 4356 Exit&lt;I&gt;Cardkey 6423 Invalid Cardkey</pre>
+		</div>
+Bạn có thể dùng Class clsString để ngắt khúc chúng dựa vào delimiter character < rồi xử lý chúng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Dim i, AMessage 
+Dim DString as clsString 
+Set DString = New clsString 
+' prefix the dummy character "*"
+IncomingMessage = "*" & IncomingMessage 
+DString.Text = IncomingMessage 
+DString.Delmiter = "&lt;" 
+' Ignore the first token which is the dummy character "*"
+For i= 2 to DString.TokenCount 
+   AMessage = "&lt;" & DString.TokenAt&#40;i&#41; 
+   Select Case Left&#40;AMessage,3&#41; 
+   Case "&lt;E&gt;" 
+      ' Process Exit Cardkey
+   Case "&lt;I&gt;" 
+      ' Process Invalid Cardkey
+   Case "&lt;V&gt;" 
+      ' Process Valid Entry Cardkey
+   End Select 
+Next</pre>
+		</div>
+
+
+<i><span class="link"> http://www.vovisoft.com/visualbasic/clsWinsock.htm</span></i>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#6281</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#6281</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 21:55:29]]> GMT</pubDate>
+				<author><![CDATA[ hong_xanh001]]></author>
+			</item>
+			<item>
+				<title>Re: Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Bạn cho mình hỏi một chút về winsock nghe. Công ty mình có 1 server (xin lỗi mình ko thể nói rõ được). Máy của mình chỉ là một client kết nối đến đó. Trên máy client có cài nhiều trình ứng dụng kết nối đến server đó. Khi chạy 1 trình ứng dụng thì mình thấy client kết nối đến server qua 2 port: 5500 (cố định), và 18xx(thay đổi tăng dần khi kết nối đến), ví dụ ở đây là 1800. Khi chạy thêm 1 trình ứng dụng nữa thì mình thấy client kết nối đến server qua port 1801, ... như vậy chứng tỏ mỗi ứng dụng chỉ chạy trên 1 port thôi. vậy port 5500 dùng làm gì???
+Rất mong bạn hồi âm sớm.
+Cảm ơn!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7638</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7638</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 00:23:01]]> GMT</pubDate>
+				<author><![CDATA[ black_boy]]></author>
+			</item>
+			<item>
+				<title>Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Cổng 5500 là cổng cố định của máy chủ listening trên cổng đó. Còn các cổng khác là cổng ngẫu nhiên của máy khách kết nối đến. Mỗi một kết nối từ một host A tới host B phải qua một công port. Đối với các giao thức TCP thì cần biết cổng listening của máy chủ, còn UDP hoặc P2P thì cần biết cả 2 đầu. Thông thường là như vậy còn nếu máy chủ vẫn listening qua các cổng 18xx thì tôi không biết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7760</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7760</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 13:56:25]]> GMT</pubDate>
+				<author><![CDATA[ caothuvolam]]></author>
+			</item>
+			<item>
+				<title>Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Đây là class socket rất tốt cho C++ mà tôi đã ứng dụng vào nhiều ứng dụng.
+
+Các bạn search cụm từ sau trên Google nhé:
+
+"C++ Socket Class for Windows" trang đầu tiên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7761</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7761</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 13:57:50]]> GMT</pubDate>
+				<author><![CDATA[ caothuvolam]]></author>
+			</item>
+			<item>
+				<title>Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Ở đây <span class="link"> http://www.adp-gmbh.ch/win/misc/sockets.html</span>
+em search hộ anh caothuvolam thôi :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7768</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#7768</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 15:13:36]]> GMT</pubDate>
+				<author><![CDATA[ ngoalong]]></author>
+			</item>
+			<item>
+				<title>Re: Một Winsock Class vững chãi</title>
+				<description><![CDATA[ o hay chưa kìa lâu lâu hok online được hok nghĩ là có người quan tâm ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#131324</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#131324</link>
+				<pubDate><![CDATA[Mon, 19 May 2008 02:37:40]]> GMT</pubDate>
+				<author><![CDATA[ hong_xanh001]]></author>
+			</item>
+			<item>
+				<title>Re: Một Winsock Class vững chãi</title>
+				<description><![CDATA[ nếu bên client kết nối dzới cái winsock sever thì cần phải có địa chỉ TCP của máy chứa cái winsock với sever phải ko dzậy.Các bác cho em hỏi làm cách nào để biết đc cái địa chỉ đó dzậy.Theo em nghĩ thì hình như mình có thể biết đc thông qua việc theo dõi đường đi của một gói tin,nhưng ko biết làm bằng cách nào :D  :D .Các bác chỉ giúp với ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#141971</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#141971</link>
+				<pubDate><![CDATA[Thu, 17 Jul 2008 09:31:04]]> GMT</pubDate>
+				<author><![CDATA[ albel1205]]></author>
+			</item>
+			<item>
+				<title>Re: Một Winsock Class vững chãi</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">albel1205 wrote:</cite><br>
+		<blockquote>nếu bên client kết nối dzới cái winsock sever thì cần phải có địa chỉ TCP của máy chứa cái winsock với sever phải ko dzậy.Các bác cho em hỏi làm cách nào để biết đc cái địa chỉ đó dzậy.Theo em nghĩ thì hình như mình có thể biết đc thông qua việc theo dõi đường đi của một gói tin,nhưng ko biết làm bằng cách nào :D  :D .Các bác chỉ giúp với &nbsp;
+		</blockquote>
+
+Nếu viết một ứng dụng client-server thì đương nhiên bồ phải biết chứ, thông qua hostname hoặc IP. Trừ khi bồ muốn kết nối vào 1 server của người khác, tìm địa chỉ của nó là một chuyện khác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#141980</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#141980</link>
+				<pubDate><![CDATA[Thu, 17 Jul 2008 11:23:32]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+			<item>
+				<title>Re: Một Winsock Class vững chãi</title>
+				<description><![CDATA[ Tui cũng đang dự định làm thử mốt cái phần mềm để chát hay cái j` đó liên quan đến việc tìm kết nối đến 1 server của người khác.Nếu bác biết thì giúp tui với.Nếu đc bác cho tui nick YM để tiện hỏi:D:D.nick YM của tui là albel1205@yahoo.com.vn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1340.hva#142419</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1340.hva#142419</link>
+				<pubDate><![CDATA[Sun, 20 Jul 2008 00:29:24]]> GMT</pubDate>
+				<author><![CDATA[ albel1205]]></author>
+			</item>
+	</channel>
+</rss>

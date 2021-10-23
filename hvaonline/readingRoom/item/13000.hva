@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Tạo file spec cho các gói RPM <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/2452.hva#13000" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: tranvanminh - Translator:  - Entry Date: 20/02/2009 14:51:02" title="Author: tranvanminh - Translator:  - Entry Date: 20/02/2009 14:51:02"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>1. Cấu trúc Spec File</b><br/> <br/> Các file RPM (gói phần mềm) được sử dụng rất nhiều trong nhiều distro Linux: Redhat, Fedora, Turbo Linux... Cấu trúc RPM do Redhat phát triển. Để tạo ra các file RPM chúng ta dùng lệnh rpmbuild với tham số là file spec.<br/> <br/> File spec bao gồm sáu phần chính: header (đầu mục), <b>%prep, %build, %install, %clean, %files, %changelog</b>, các mục này chỉ có một và theo trình tư như đã liệt kê, trong mỗi mục đó có thể có một số macro (lưu ý là các macro cũng có dấu % ở trước). Trong các mục này có thể thực hiện các lệnh shell (sh), nhưng không cần có <b>#!/bin/sh</b>.<br/> <br/> <br/> Các macro có thể xuất hiện nhiều lần trong một mục.<br/> <br/> <br/> File Spec được sử dụng để tạo các gói rpm. Tên file chúng ta nên đặt theo quy ước chuẩn: <font color='orange'>têngói-gạchngang-sốhiệuphiênbản-sốhiệupháthành-chấm-spec</font>.<br/> <br/> <br/> Đây là một ví dụ (eject-2.0.2-1.spec):<br/> <br/> <blockquote><br/> Summary: A program that ejects removable media using software control.<br/> Name: eject<br/> Version: 2.0.2<br/> Release: 3<br/> Copyright: GPL<br/> Group: System Environment/Base<br/> Source:<span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"> http://metalab.unc.edu/pub/Linux/utils/disk-management/eject-2.0.2.tar.gz</span></span></span></span></span></span></span></span><br/> Patch: eject-2.0.2-buildroot.patch<br/> BuildRoot: /var/tmp/%{name}-buildroot<br/> <br/> %description<br/> The eject program allows the user to eject removable media<br/> (typically CD-ROMs, floppy disks or Iomega Jaz or Zip disks)<br/> using software control. Eject can also control some multi-<br/> disk CD changers and even some devices' auto-eject features.<br/> <br/> Install eject if you'd like to eject removable media using<br/> software control.<br/> <br/> %prep<br/> %setup -q<br/> %patch -p1 -b .buildroot<br/> <br/> %build<br/> make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"<br/> <br/> %install<br/> rm -rf $RPM_BUILD_ROOT<br/> mkdir -p $RPM_BUILD_ROOT/usr/bin<br/> mkdir -p $RPM_BUILD_ROOT/usr/man/man1<br/> <br/> install -s -m 755 eject $RPM_BUILD_ROOT/usr/bin/eject<br/> install -m 644 eject.1 $RPM_BUILD_ROOT/usr/man/man1/eject.1<br/> <br/> %clean<br/> rm -rf $RPM_BUILD_ROOT<br/> <br/> %files<br/> %defattr(-,root,root)<br/> %doc README TODO COPYING ChangeLog<br/> <br/> /usr/bin/eject<br/> /usr/man/man1/eject.1<br/> <br/> %changelog<br/> * Sun Mar 21 1999 Cristian Gafton<br/> - auto rebuild in the new build environment (release 3)<br/> <br/> * Wed Feb 24 1999 Preston Brown<br/> - Injected new description and group.<br/> <br/> [ Some changelog entries trimmed for brevity. -Editor. ]&nbsp;<br/> 		</blockquote><br/> <br/> <b>2. Tiêu đề (The Header)</b><br/> <br/> Tiêu đề bao gồm một số mục sau:<br/> <br/> <b>Summary</b>: Một dòng mô tả về sản phẩm.<br/> <br/> <b>Name</b>: tên gói mà bạn sẽ sử dụng.<br/> <br/> <b>Version</b>: chuỗi số phiên bản.<br/> <br/> <b>Release</b>: chuỗi phát hành.<br/> <br/> <b>Copyright</b>: Bản quyền.<br/> <br/> <b>Source</b>: Là thư mục chứa mã nguồn hoặc nơi chứa mã nguồn. Bạn cũng có thể mô tả nhiều nơi chứa mã nguồn như sau::<br/> <blockquote><br/> <b>Source0:</b> blah-0.tar.gz<br/> <b>Source1</b>: blah-1.tar.gz<br/> <b>Source2:</b> fooblah.tar.gz<br/> &nbsp;<br/> 		</blockquote><br/> <b>Patch</b>: nơi mô tả các gói patch, các goi snày phải có tên file chính xác sẽ được sử dụng sau này trong quá trình patch:<br/> <blockquote><br/> <b>Patch0</b>: blah-0.patch<br/> <b>Patch1</b>: blah-1.patch<br/> <b>Patch2</b>: fooblah.patch&nbsp;<br/> 		</blockquote><br/> Các file này phải nằm trong thư mục mã nguồn (SOURCES directory).<br/> <br/> <b>Group</b>: Là nhóm mà gói phần mềm thuộc trong đó, có thể là mức cao nhất trong bộ gói cài đặt của Red Hat (Red Hat's gnorpm). Bạn cũng có thể tìm thấy một số thông tin ở /usr/doc/rpm*/GROUPS. Ví dụ về cây của các nhóm gói phần mềm:<br/> <blockquote><br/> Amusements/Games<br/> Amusements/Graphics<br/> Applications/Archiving<br/> Applications/Communications<br/> Applications/Internet<br/> Applications/Multimedia<br/> Applications/Publishing<br/> Applications/System<br/> Development/System<br/> Development/Tools<br/> Documentation<br/> System Environment/Base<br/> System Environment/Shells<br/> User Interface/Desktops<br/> User Interface/X<br/> User Interface/X Hardware Support&nbsp;<br/> 		</blockquote><br/> <br/> <br/> <b>BuildRoot:</b> Dòng này quy định thư mục "gốc" cho mã nguồn để biên dịch và cài đặt.<br/> <br/> <br/> <b>%description </b>mô tả về phần mềm, có thể được viết ở dạng nhiều dòng.<br/> <br/> <br/> <b>3. Prep</b><br/> <br/> Đây là phần chuẩn bị để biên dịch, bao gồm giải nén, vá chuẩn bị để chạy chương trình <font color='orange'>make</font>.<br/> <br/> Bạn có thể tạo ra file shell để làm các công tác chuẩn bị, tuy nhiên rpm có sẵn một số macro để làm đơn giản quá trình đó.<br/> Macros đầu tiên là<b> %setup </b>. nếu không có tham số thì nó đơn giản là giải nén mã nguồn và chuyển (cd) đến thư mục chứa mã nguồn. <b>%setup</b> có một số tham số sau:<br/> <br/> <br/> <b>-n name</b> Quy định tên thư mục mã nguồn biên dịch khác với mặc định với tên là name. Mặc định là $NAME-$VERSION. Hoặc có thể là $NAME, ${NAME}${VERSION}, hoặc bất kỳ thế nào do tar file sử dụng. (Chú ý rằng dấu "<b>$</b>" ở đây không hẳn là biến thực trong file spec. Bạn phải dùng tên và version thật.<br/> <br/> <b>-c </b>tạo và chuyển thư mục đến thư mục trước khi giải nén (untar).<br/> <br/> <b>-b</b> sẽ giải nén mã nguồn thứ #n trước khi chuyển thư mục tới thư mục mã nguồn. Tham số này có ích nếu có nhiều file mã nguồn.<br/> <br/> <b>-a</b> sẽ giải nén mã nguồn thứ #n sau khi chuyển tới thư mục mã nguồn.<br/> <br/> <b>-T </b>Tham số này sẽ không giải nén và yêu cầu các tham số -b 0 hoặc -a 0 để có mã nguồn giải nén.<br/> <br/> <b>-D</b> không xoá thư mục trước khi giải nén. Thường được dùng khi có nhiều %setup, để tránh xoá phần giải nén ở %setup trước, tuy nhiên thường không dùng nếu chỉ có 1 %setup.<br/> <br/> Macro tiếp theo là %patch. Phần này sẽ tự động vá (patch mã nguồn), có một số tham s sẽ thực hiện patch#n như là các patch file.<br/> <br/> <b>-p</b> chỉ ra số thư mục sẽ thực hiện patch(n) command.<br/> <br/> <b>-P</b> Mặc định sẽ thực hiện Patch (hay Patch0). This flag inhibits the default action and will require a 0 to get the main source file untarred. This option is useful in a second (or later) %patch macro that required a different number than the first macro.<br/> <br/> Bạn có thể thực hiện %patch thay cho thực hiện lệnh thực tế: <blockquote>%patch #n -P&nbsp;<br/> 		</blockquote><br/> <br/> <b>-b</b> extension sẽ lưu lại các file gốc với phần mở rộng là filename.extension trước khi thực hiện vá (patching).<br/> <br/> Ngoài các macro này ra bạn cũng có thể thực hiện bất kỳ lệnh nào dạng shell (sh) cho đến mục <b>%build</b>.<br/> <br/> <br/> <b>4. Build</b><br/> <br/> Bạn có thể liệt kê các lệnh ở đây để biên dịch mã nguồn sau khi đã giải nén và chuyển thư mục hiện thời tơi sthư mục mã nguồn.<br/> <br/> <br/> Biến RPM_OPT_FLAGS được thiết lập với các giá trị trong /usr/lib/rpm/rpmrc. Hãy kiểm tra với các giá trị thích hợp. Hoặc có thể không cần sử dụng trong file spec.<br/> <br/> <br/> <b>5. Install</b><br/> <br/> Ở đây không có macro nhưng bạn có thể thực hiện bất kỳ lệnh nào dạng shell để cài đặt, thường bạn dùng lệnh make install để thực hiện phần cài đặt.Bạn lưu ý rằng thư mục hiện thời phải là thư mục mã nguồn.<br/> <br/> Biến RPM_BUILD_ROOT cũng được sử dụng để quy định về thưc mục trong phần tiêu đề Buildroot.<br/> <br/> <br/> <br/> <b>6. Dọn dẹp (clean)</b><br/> <br/> <br/> Thông thường trước khi buil, tạo gói bạn nên xoá bỏ các file xuất hiện trong quá trình biên dịch, và macro %clean sẽ giúp bạn thực hiện điều đó.<br/> <br/> <br/> <b>7. Một số scripts dành cho trước và sau khi cài đặt</b><br/> <br/> <br/> Bạn có thể thực hiện một số scripts trước và sau khi cài đặt hoặc gỡ bỏ (installation and uninstallation) của các gói nhị phân (binary). Mục đích chính là có thể chạy ldconfig sau khi cài đặt hoặc gỡ bỏ các gói dùng các thư viện chi sẻ (shared libraries). Bao gồm các macro sau::<br/> <br/> <br/> <b>%pre</b> là macro thực hiện trước khi cài đặt (pre-install scripts).<br/> <br/> <b>%post</b> là macro thực hiện sau khi cài đặt (post-install scripts).<br/> <br/> <b>%preun </b>là macro thực hiện trước khi gỡ bỏ (pre-uninstall scripts).<br/> <br/> <b>%postun</b> là macro thực hiện sau khi gỡ bỏ (post-uninstall scripts).<br/> <br/> Nội dung các macro này là các lệnh shell (sh) nhưng không cần dòng #!/bin/sh ở đầu.<br/> <br/> <br/> <b>8. Files</b><br/> <br/> <br/> Mục này liệt kê các danh sách file và thư mục cho gói nhị phân. Thường danh sách này bạn có thể xem ở trong phần <font color='orange'>make install</font>.<br/> <br/> Ở đây cũng có một số macro để phục vụ cho một số mục đích nào đó:<br/> <br/> <br/> <b>%doc</b> chỉ ra các file tài liệu (doc) sẽ được đóng gói trong file nhị phân. Tài liệu sẽ được cài trong thư mục /usr/doc/$NAME-$VERSION-$RELEASE. Bạn có thể liệt kê nhiều tài liệu sau phần macro này, hay có thể liệt kê từng tài liệu sau từng macro này.<br/> <br/> <b>%config</b> đánh dấu rằng đây là các file config. Bao gồm cả các file như sendmail.cf, passwd, etc. Sau này dù các file config có thay đổi thì nó cũng vẫn được remove.<br/> <br/> <b>%dir</b> chỉ ra rằng chỉ có riêng thư mục được liệt kê ở đây như là thành phần của gói. Bình thường nếi liệt kê thư mục không có macro <b>%dir</b>, thì tất cả những gì có trong thư mục đó sẽ được cho vào gói.<br/> <br/> <b>%defattr </b>cho phép bạn đặt thuộc tính mặc định cho các file được liệt kê ở dưới. Thuộc tính được mô tả theo dạng (mode, owner, group) , mode là số cơ số 8 mô tả bit pattern (giống như trong lệnh chmod), owner là username , group là tên group mà bạn có thể gán được. Bạn cũng có thể đặt ở một trường nào đấy dấu '-' nếu sử dụng mặc định.<br/> <br/> <b>%files</b> -f cho phép bạn liệt kê các file trong một file nào đó của bạn trong thư mục mã nguồn. Chức năng này thường được sử dụng khi gói có file liệt kê danh sách riêng, trong trường hợp đó bạn không phải liệt kê tất cả các file ở đây mà chỉ cần chèn file chứa danh scáh file là được.<br/> <br/> <b>Ghi chú:</b> nếu bạn chẳng may liệt kê /usr/bin thì gói nhị phân sẽ bao gồm tất cả các file có trong thư mục này.<br/> <br/> <br/> <b>9. Changelog</b><br/> <br/> log ghi lại những cập nhật và thay đổi của gói, mỗi khi thay đổi RPM bạn nên ghi lại những thay đổi ở đây.<br/> <br/> <br/> Định dạng khá là đơn giản, mỗi mục bắt đầu bằng một dòng có dấu '*' sau đó là ngày tháng, tên người cập nhật, địa chỉ email, theo định dạng sau:<br/> <br/> <br/> <blockquote><b>date +"%a %b %d %Y"</b>&nbsp;<br/> 		</blockquote><br/> Phần còn lại là text theo một trình tự nhất định nào đó, thường là các dòng có gạch đầu dòng ở đầu.<br/> <br/> <br/><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"> http://vkopensource.blogspot.com/</span></span></span></span></span></span></span></span> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/13000.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/2452.hva#13000" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "NetBIOS hacking và cách phòng chống - 1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "NetBIOS hacking và cách phòng chống - 1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>NetBIOS hacking và cách phòng chống - 1</title>
+				<description><![CDATA[ <font color='yellow'><b>Mở đầu</b></font>
+Thấy các bạn Newbie hỏi về các lệnh net ... và về IPC$, SAM nên mình viết bài này để share một số thông tin rất cơ bản cho các bạn còn chưa rõ cách sử dụng nó
+
+NetBIOS là viết tắt của chữ Network Basic Input Output System. Đầu tiên nó được IBM và Sytek xây dựng để truy nhập vào các tài nguyên được chia sẻ trong mạng LAN ( Local Area Network ). Tài nguyên trong mạng có thể là ổ đĩa, máy in , máy scan ....
+
+Nếu bạn đã từng làm việc trong các mạng LAN và sử dụng hệ điều hành Windows ( windows9.x , me, 2000, XP .... ) thì bạn đã từng bấm đúp chuột vào biểu tượng Network Neghborhood ( hay My Network Places ) để truy nhập tới các may tính khác trong mạng =&gt; đó chính là bạn đã sử dụng một số lệnh của NetBIOS trong môi trường Winđows.
+
+Mỗi mỗi service trong máy đều làm việc trên một cổng nào đó, NetBIOS cũng được gán cho một số cổng tùy theo bạn đang sử dụng HDH nào.
+
+<blockquote> - TCP 135 RPC/DCE Endpoint mapper
+ - UDP 137 NetBIOS Name Service
+ - UDP 138 NetBIOS Datagram Service
+ - TCP 139 NetBIOS Sesion Service ( SMB/CIFS over NetBIOS
+ - TCP/UDP 445 Direct Host&nbsp;
+		</blockquote>
+( SMB - Server Mesage Block)
+CIFS - Common Internet File System )
+
+Mặc định thì Windows 9.x ( 95,98,98se ), NT4 và Windows2000 sẽ lắng nghe trên cổng 139, nhưng Windows 9.x không lắng nghe trên cổng TCP/UDP 135 ( =&gt; chính vì điều này mà đợt vừa qua khi phát hiện ra lỗi RPC , Virus Blaster không gây ảnh hưởng gì cho các máy tính đang chạy Windows 9.x ) Windows 2000 và XP cũng lắng nghe trên các cổng TCP/UDP 445
+=&gt; Dựa vào các hiểu biết này và các lệnh của Windows ( các lệnh này thường nằm trong <font color='yellow'>C:\Windows\system32</font> - hoặc <font color='yellow'>WinNT\system32</font> ) người ta có thể truy nhập vào các máy tinh khác trong mạng
+
+<font color='yellow'><b>Tìm kiếm IP của victim</b></font>
+
+<b>Nhắc lại một tý về IP: </b>
+IP là một số xác định được gán cho mỗi máy tính trong một mạng nào đó.
+IP được biểu diễn là một số 32 bit, các bit đựơc chia thành 4 phần mỗi phần 8 bit ( 1 byte ). Có 3 cách để biểu diễn cho một địa chỉ IP:
+ - Dạng thập phân ( dạng hay dùng nhất ) Ví dụ : 130.57.30.56
+ - Dạng nhị phân : 10000010.00111001.00011110.00111000
+ - Dạng Hexadecimal 82 39 1E 38
+
+Trong mỗi địa chỉ IP bao giờ cũng có hai phần là địa chỉ mạng ( Networrk Address ) và địa chỉ máy ( Node Address ). Các máy tính trong một mạng bao giờ cũng có cùng một địa chỉ mạng
+( Các bạn có thể tìm thấy bài viết chi tiết về địa chỉ IP trên HVA portal )
+
+Để biết địa chỉ IP của mình bạn có thể dùng lệnh trong windows để xem :
+
+<b>1- Nếu bạn đang dùng Windows 9,x :</b>
+Bấm vào Start \ run sau đó đánh vào lệnh command rồi bấm OK ( Để chạy ra màn hình DOS - DOS shell )
+Tại dấu nhắc của lệnh DOS đánh vào lệnh <b>IPCONFIG </b>( hoặc <b>IPCONFIG / ALL</b> )
+Nếu bạn dùng Win98 có thể sử dụng Start \run rồi đánh vào lệnh <b>WINIPCFG </b>cũng cho kết quả tương tự
+
+<b>2- Nếu bạn dùng Win2000, XP ...</b>
+Bấm vào Start \ run sau đó đánh vào lệnh cmd rồi bấm OK ( Để chạy ra màn hình DOS - DOS shell )
+Tại dấu nhắc của lệnh DOS đánh vào lệnh IPCONFIG ( hoặc IPCONFIG / ALL )
+Bạn chú ý nhìn dòng IP Address rồi nhìn sang bên phải thấy một số có dạng xxxx.xxxx.xxx.xxx &lt;= đó chính là địa chỉ IP của bạn khi bạn vào mạng
+
+Công việc tìm kiếm IP và xem nó có mở cổng không của victim thường mất rất nhiều thời gian - Người ta có thể dùng một số Tool để thực hiện việc tìm kiếm cho nhanh ( và đỡ tốn tiền Net ) như NetScanPro2000, hay Esential NetTools ( ET3 ), IP Tool ...
+(Bài hướng dẫn về cách sử dụng và nơi Download cũng có trên 4rum - Các bạn có thể vào mục đồ nghề để tìm)
+
+Nếu bạn đang sử dụng ICQ để chát với victim bạn có thể sử dụng lệnh netstat -n ( lệnh này sẽ cho ta biết các kết nối đựơc thiết lập giữa máy của ta và bên ngoài và qua các cổng nào ) để biết IP của victim.
+<b>Ví dụ</b>: sau khi chạy lệnh <b>netstat -n</b> ta sẽ nhận đựơc bảng sau :
+
+<blockquote>Active Connections
+Proto Local Address Foreign Address State
+TCP 192.168.0.1:3537 203.195.136.156:2869 Established
+.......................................................................................&nbsp;
+		</blockquote>
+
+Bạn chú ý nhìn ở dưới dòng chữ Foreign Address số 203.195.136.156 &lt;= Đó là địa chỉ IP của victim, còn số 2869 chính là cổng kết nối.
+
+Chữ Established =&gt; báo cho bạn biết một kết nối đã được thiết lập giữa máy tính của bạn và victim.
+
+Còn nếu bạn sử dụng MSN hay YH, nếu sử dụng lệnh netstat - n có thể bạn không nhìn thấy IP của victim mà có thể là địa chỉ của Server của MSN hay YH.
+
+Để xác định chính xác bạn có thể sử dụng Send File của YH để gửi một file tới victim. Trước khi Send File, sử dụng lệnh netstat -n để xác định các kết nối đã có. 
+
+Trong khi đang Send file bạn lại sử dụng lệnh <b>netstat -n </b> sau đó tìm địa chỉ IP nào mà mới được thiết lập =&gt; đó chình là dịa chỉ IP của Victim ( vì khi Send file nó se thiết lập một kết nối trực tiếp giữa máy bạn và victim )
+
+Sau khi đã có địa chỉ IP của victim bạn sử dụng lênh <b>nbtstat -a ipAddress</b> ( lệnh này dùng để xác đinh một số thông tin trên máy victim ... )
+<b>Ví dụ</b> : <b>C:\&gt; nbtstat - a 203.210.136.23</b> 
+( &lt;= Đây là địa chỉ mô phỏng thôi đấy nhé - đừng thử greenbiggrin.gif )
+
+Bạn có thể nhận được các dòng như sau
+
+<blockquote>NetBIOS remote Machine Name Table
+Name Type Status
+may1 &lt;00&gt; Unique Registered
+netde&lt;00&gt; Group Registered
+may1 &lt;03&gt; Unique Registered
+may1 &lt;20&gt; Unique Registered
+...............................
+MAC address 00-32-04-14-23-E6&nbsp;
+		</blockquote>
+
+
+Ở đây bạn chú ý đến số <b>&lt;20&gt;</b> =&gt; Nếu thấy số này có nghĩa là máy victim đã bật chế độ chia sẻ File và máy in ( File And Printer Sharing )
+Tiếp theo ta sử dụng lệnh <b>net view \\ipaddress</b> ( lệnh này dùng để xem máy vic tim chia sẻ những cái gì để còn .... )
+
+Ví dụ : <b>C:&gt; net view \\203.210.136.23</b>
+Bạn có thể thấy các dòng tương tự như ở dưới đây :
+
+<blockquote>Shared resource at \\203.210.136.23
+Share name Type User As Comment
+C Disk
+D Disk
+IPC$ Disk
+.........................................................................
+The command complete succesfully&nbsp;
+		</blockquote>
+
+=D&gt; Đến đây bạn vào tìm file LMHost - nếu không có thì tạo ra ( Nếu bạn sử dụng window98 thì nó nằm ngay trong thư mục windows, nếu là XP thì trong thư mục <font color='yellow'>Windows\System32\Drivers \etc</font> còn Win2000 thì nằm trong <font color='yellow'>WinNT\System32\Drivers\etc</font> )
+
+<b>Lạm bàn về LMHost</b> : Ngày trước tên máy và địa chỉ IP được lưu vào trong đó - Nó được dùng để phân giải tên máy và địa chỉ IP ( Name - to - Address )
+
+File này được cập nhật và quản lý bởi SRI - NIC ( Standford Research Institute Network Information Center ), vài tuần một lần tổ chức này lại cập nhật lại nội dung File này.
+
+Ngày trước các Admin của mạng thường Download về Server của mình. Dần dần số lượng của các trang Web trên Net ngày càng nhiều =&gt; cách sử dụng này trở nên thiếu hiệu quả và mất thời gian =&gt; DNS ra đời ...
+( Cũng có bài viết chi tiết về DNS trên HVA portal ).
+
+Sau đó bạn thêm vào trong File này theo cú pháp sau :
+<b>ipAddressvictim tênmáy #PRE</b>
+
+Ví dụ ở đây tôi thêm vào dòng : <b>203.210.136.23 MAY1 #PRE</b> trong File LMHost, rồi chạy lệnh <b>nbtstat -R</b> để nạp lại table cache.
+
+Bây giờ bạn có thể tạo thêm một ổ trên máy tính của mình và kết nối tới ở hay thư mục được Share trên máy tính của victim bằng cách sử dụng lênh <b>Net use</b>
+
+<b>Net use Tên_ổ_đĩa : \\ipAddressVictim\shareName</b>
+
+Ví dụ : <b>Net use X: \\203.210.136.23\C</b>
+
+Nếu thấy dòng lệnh
+<blockquote>The command was complete succesfully&nbsp;
+		</blockquote>
+
+
+Done, bấm đúp vào My Computer và xem thử xem có gì mới trong máy tính của ta không.
+
+Để tránh nhầm lẫn khi ánh xạ ổ đĩa ta có thể sử dụng ký hiệu * thay cho tên ổ đĩa:
+
+<b>net use * \\203.210.136.23\C</b>
+
+Thế nhưng nhiều khi cuộc đời không đẹp như mơ vì khi thực hiện đường truyền của bạn chậm hay vì máy victim đặt pass truy nhập. ...
+
+Nếu máy victim sử dụng Windows95,98,98se hay Win me bạn có thể tạm dùng pass : PQWAK ( cái này giống như kiểu concat trên các Main đời cũ :D)
+
+Thế thì còn máy tính dùng 2000 hay XP ... mà đặt pass và user thì làm thế nào =&gt; ta có thể xây dựng một từ điển để dò và sử dụng lệnh For của DOS để thực hiện.
+
+Ví dụ tôi sẽ tạo ra một File có tên là DoPass.txt và có định dạng sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>password username
+password Administrator
+"" Administrator
+admin Administrator
+............................................................</pre>
+		</div>
+
+Và bấy giờ ta có thể sử dụng lệnh <b>For</b>
+
+<b>C:\FOR /F "token=1,2* " %i in (DoPass.txt ) Do net use \\IpAddressvictim\ShareName</b>
+
+( cú pháp sử dụng của lệnh FOR xin các bạn xem trong help của Windows )
+&lt;còn tiếp&gt;
+<font color='yellow'><b>Tác giả: phuongdong</b></font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/482.hva#1338</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/482.hva#1338</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 02:48:15]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>NetBIOS hacking và cách phòng chống  - 2</title>
+				<description><![CDATA[ Trước khi tiếp tục chúng ta cần tìm hiểu thêm một số thông tin về dòng Window2000 ( 2000 Pro, 2000 family và 2000 Advandce server ) và Windows XP. Mặc định sau khi cài đặt xong các hệ điều hành này thì tất cả các ổ đĩa của và một số thư mục của chúng sẽ được thiết lập ở chế độ Share ẩn.
+
+Thế Share ẩn là gì ? Bình thường nếu bạn đã làm việc trong môi trường mạng thì việc chia sẻ các ổ đĩa hay thư mục bằng cách bấm phím phải chuột trên ổ đĩa hay thư mục và chọn Sharing =&gt; Ổ đĩa hay thư mục đó sẽ xuất hiện trên mạng. Nhưng nếu bây giờ ta thêm vào sau tên của ổ đĩa hay thư mục chia sẻ ký hiệu $ thì việc chia sẻ vẫn xảy ra nhưng không hiện lên trên mạng và chỉ có người nào biết đường dẫn chính xác mới có thể sử dụng đựơc các tài nguyên này.
+
+Để xem được các thông tin về việc chia sẻ trên máy tính của mình bạn có thể vào <b>Start\Program\Administrator Tools\Computer management</b> sau đó chọn vào mục <b>Shared Folders</b> để kiểm tra lại máy của mình ( Nếu trong Program chưa có mục <b>Administrator Tools</b> bạn bấm phím phải chuột trên nút Start chọn properties sau đó chọn mục Display <b>Administrator Tools</b> ).
+
+Ví dụ bạn có thể nhìn thấy các thông tin sau :
+
+<blockquote>Sharename Resource Remark
+------------------------------------------------------
+ADMIN$ C:\WINNT Remote Admin
+C$ C:\ Default Share for Internal Use
+D$ D:\ Default Share for Internal Use
+E$ E:\ Default Share for Internal Use
+print$ C:\WINNT\SYSTEM\SPOOL
+IPC$ Remote IPC&nbsp;
+		</blockquote>
+
+Nếu bạn đang dùng XP thì <b>ADMIN$</b> sẽ là <b>C:\WINDOWS</b>( Thư mục mặc định khi bạn cài XP ). ....
+
+Bạn có thể cắt tất cả các chế độ Share của các ổ trên máy tính nhưng riêng IPC$ thì không thể bỏ nó đi đựơc ( Trên 4rum đã có một bài nói về cách tất chế độ Share của IPC$ bằng cách sử dụng một số lệnh viết trong File autoexec.bat - Bạn có thể tìm lại bài đó để xem).
+
+Thế còn thông tin về user và pass được lưu ở đâu, trên các hệ thống NT và windows2000 và XP chạy ở nhà ( Stand - alone ) các thông tin này được lưu ở trong File <font color='yellow'>%systemroot%\system32\config\sam</font>.
+
+Với <font color='yellow'>%systemroot %</font> - chính là thư mục mà bạn cài đặt windows ( có thể là windows, winNT ...etc ).
+
+Và File đó gọi là <b>File SAM - Security Accounts Manager</b>. Các thông tin lưu trong này được mã hoá theo cái gọi là one- way function ( OWF) hoặc giải thuật Hash và kết quả là giá trị mà nó lưu giữ không thể đựơc giải mã (decrypted).
+
+Trong Windows2000 Domain Controller các thông tin này đựơc lưu trong Active Directory ( nếu khi cài đặt để ở chế độ mặc đinh thì nó nằmg trong <font color='yellow'>%systemroot%\ntds\ntds.dit</font> - File này vào khoảng 10Mb =&gt; Việc Down về để giải mã cũng như việc giả mã là không thể =&gt; thường nếu định dò pass của DC thì tốt nhất là" chuyển " )
+
+<b><font color='yellow'>SID</font></b>
+
+Khi Windows2000 hay Windows2000 Domain được cài đặt nó sẽ sinh ra một số ngẫu nhiên cho mỗi User - Đây là một số 48 Bit được gọi là <b>Security Indentifier (SID)</b> 
+
+Một số SIDcó thể có dạng như sau :
+S-1-5-21-1507001333-1204550764-1011284298-500
+ 
+Một SID bao giờ cũng bắt đầu với chữ S và các thành phần của nó được ngăn cách nhau bởi dấu trừ ( Hyphens ). Số đầu tiên là số duyệt ( Revision number ) - ỏ ví dụ trên nó là 1
+
+Số thứ hai là là nói về HDH - ví dụ số 5 luôn luôn là của Windows2000. Tiếp theo là 4 nhóm chữ sô và cuối cùng là RID ( relative Identìier ). Chà ta quan tâm đến RID một tý nào.
+
+Nếu một SID mà có RID là 500c =&gt; Đó là Amin của máy cục bộ
+RID là 501 =&gt; guest.
+
+Nếu ở trong Domain thì RID luôn bắt đầu từ 1000 khi tạo ra User đầu tiên =&gt; khi ta nhìn thấy RID =1015 =&gt; hệ thống có 14 User đựoc tao ra trong hệ thống.
+
+OK =&gt; đến đây ta lại quay lại bài NetBIOS hacking và cách phòng chống.
+Hầu hết các User đều cho rằng khi Disable netBIOS over TCP/IP ( Bấm vào My Network Places chọn Local Area Connetion, chọn TCP/ IP sau đó bấm vào propperties chọn Advandce, chọn WINS và bấm vào Disable NetBIOS over TCP/IP) là đã chặn đựơc cách thâm nhập vào máy qua NetBIOS.
+
+Thực ra việc thiết lập này chỉ chặn trên cổng 139. Khác với NT4, Windows2000 còn chạy một SMB lắng nghe trên cổng 445. Cổng này vẫn còn Active cho dù NetBIOS over TCP / IP đã đựoc Disable..
+
+Phần Windows SMB cho Cllient từ sau version NT4 SP 6a sẽ tự động chuyển lên cổng 445 nếu như cố gắng kết nối trên cổng 139 =&gt;
+Ta có thể thiết lập một kết nối gọi là " null sesion" tới máy của victim
+<b>net use \\192,168.203.33\IPC$ "" /u:""</b> &lt;= thiết lập một kết nối với anonymous user (/u) và pass rỗng (""). Nếu thành công ta cũng có thể sử dụng <b>Net view</b> để xem các tài nguyên được chia sẻ trên máy victim ....
+
+=&gt; Để chống lại ta có thể can thiệp vào Registry :
+
+<font color='yellow'>HKLM\system\CurrentControlSet\Control\LSA\RestrictAnonymous</font>
+
+Bấm đúp vào key <b>RestrictAnonymous </b>ở panel bên phải và nhập vào trong khung Value 2
+
+RestrictAnonymous có 3 giá trị:
+<blockquote>0 Đây là gía trị mặc định của nó khi cài Winddows
+1 Không cho phép tìm hiểu các thông tin của SAM
+2 Không cho phép truy nhập&nbsp;
+		</blockquote>
+
+Ở đây bạn phải lưu ý rằng nêu bạn để RestrictAnonymous với giá trị là 1 thì vẫn có thể dung một số Tool như user2sid/sid2user hay UserInfor hoặc UserDump .... để lấy được thông tin về user và truy nhập vào máy bạn được.
+
+<b><font color='yellow'>Tác giả: PhuongDong</font></b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/482.hva#1343</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/482.hva#1343</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 02:57:34]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+	</channel>
+</rss>

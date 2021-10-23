@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Dịch ngược APK để so sánh WeChat và Zalo"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Dịch ngược APK để so sánh WeChat và Zalo"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Gần đây có một người bạn nhờ tôi kiểm tra xem WeChat – một ứng dụng Android (Android App) của tàu khựa có liên hệ gì với Zalo sản phẩm có tính năng tương tự của Việt Nam, do hãng VNG sản xuất hay không. Chưa từng reverse Android App nên tôi cũng mày mò và tranh thủ học hỏi thêm. Bài viết này nhằm 2 mục đích:
+
+<ol><li>Giới thiệu và thảo luận phương pháp và một số công cụ reverse một Android App
+Thảo luận và so sánh WeChat và Zalo, về các mặt: mã nguồn, vấn đề bảo mật người dùng, các tính năng có thể nguy hại đến người dùng</li></ol>
+
+<font size='+1'><font color='orange'>Phần 1: Dịch ngược:</font></font>
+
+Để bắt đầu thì trong bài viết này tôi sử dụng 2 file apk sau cho 2 ứng dụng:
+<ul><li>WeChat:<span class="link"> http://dl.dropbox.com/u/11027388/WeChat_4.5.apk</span>
+Zalo :<span class="link"> http://dl.dropbox.com/u/11027388/Zalo_1.0.8.apk</span></li></ul>
+
+File APK chính là file thực thi của một ứng dụng Android, nó thực ra là một file đóng gói của ngôn ngữ Java mà hệ điều hành Android có thể đọc được và thực thi trong môi trường HDH Android. 
+
+Khi cài đặt 1 ứng dụng từ google play, file apk sẽ nằm trong thư mục <b>/data/app</b> trong máy ( bài tập cho bạn: làm sao lấy được nó ra khỏi máy ? )
+
+Sau khi lấy được 2 file này, chúng ta cần một số công cụ để dịch ngược file apk thành file java ban đầu.  Để làm việc này tôi sử dụng 2 công cụ:
+
+<ol><li>dex2jar :<span class="link"> https://code.google.com/p/dex2jar/</span>
+jd-gui :<span class="link"> http://java.decompiler.free.fr/?q=jdgui</span></li></ol>
+
+Công cụ (1) giúp chuyển tập tin apk thành định dạng “jar” (Java Archive) một file đóng gói khác của java. 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dex2jar.sh Zalo_1.0.8.apk
+ls
+Zalo_1.0.8.jar</pre>
+		</div>
+
+Tuy nhiên trong file .jar chỉ toàn là java bytescode gồm các mã lệnh dưới dạng binary của java, rất khó để đọc vì vậy tôi đã sử dụng tiếp chương trình (2).
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./jd-gui</pre>
+		</div>
+
+Kết quả:
+<br>
+			<div align="center" class="limitview"><img src='http://i.imgur.com/gQSupw8.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Mã nguồn rất tuyệt và dễ đọc hơn java bytecode gấp 10000 lần :D
+
+Tuy nhiên ta còn một vấn đề nhỏ. Trong quá trình đóng gói ứng dụng, 1 số thông tin của các hàm, biến v.v... đã bị xóa khỏi ứng dụng, vì mục đích obfuscation (làm cho khó đọc). Chính vì thế ta thấy rất nhiều các file a,b,c,d … .java xuất hiện như trên hình.
+
+Để đỡ rối khi đọc, tạm thời tôi di chuyển các file chưa xác định tên tuổi này vào 1 package gọi là “unk”    (nghĩa là chưa biết). Một đoạn ruby script nhỏ sẽ giúp ta làm điều này.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>`mkdir unk 2&gt;/dev/null` 
+Dir.glob&#40;&quot;**/*&quot;&#41;.select { |f| not File.dirname&#40;f&#41; =~ /^unk/ and File.basename&#40;f&#41; =~ /^&#91;a-z&#93;{0,3}\.java$/}.each do |f| 
+    puts f 
+    content = open&#40;f&#41;.read&#40;&#41;.sub&#40;&quot;package &quot;, &quot;package unk.&quot;&#41; 
+    open&#40;f,&quot;w&quot;&#41;.write&#40;content&#41; 
+    `mkdir -p unk/#{File.dirname&#40;f&#41;} 2&gt;/dev/null` 
+    `mv #{f} unk/#{f}` 
+end</pre>
+		</div>
+
+Ngoài ra tôi cũng sử dụng thêm công cụ apktool tại<span class="link"> https://code.google.com/p/android-apktool/</span> để thực hiện việc lấy các thông tin về resources của ứng dụng android. (Apktool cũng sẽ convert các file byte code thành dạng smalli và ta cũng có thể sử dụng để hiểu thêm về ứng dụng)
+
+Toàn bộ quá trình trên sau khi hoàn tất tôi đã đưa kết quả lên github cho các bạn nếu thích thì tìm hiểu cùng:
+
+<ul><li>WeChat: <span class="link"> https://github.com/danghvu/WeChatRE</span>
+Zalo:<span class="link"> https://github.com/danghvu/ZaloRE</span></li></ul>
+
+<i>( Kết quả của apktool nằm trong src/resources/* )</i>
+
+<font color='orange'><font size='+1'>Phần 2: So sánh mã nguồn</font></font>
+
+Để so sánh mã nguồn 2 chương trình này, tôi sử dụng gói ứng dụng PMD:<span class="link"> http://pmd.sourceforge.net/</span>
+
+Gói ứng dụng PMD có kèm theo 1 chương trình cho phép kiểm tra các đoạn code copy & paste của các file source code trong cùng 1 thư mục. Tôi tiến hành copy file source của Zalo và WeChat vào cùng 1 thư mục và thực hiện:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./bin/run.sh cpd --minimum-tokens 50 --files ./src/ --language java</pre>
+		</div>
+
+( cpd là công cụ “copy-paste-detector”, minimum-token xác định độ dài tối thiểu của đoạn mã cần so sánh. )
+
+Output của chương trình ra giống như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Found a 257 line &#40;1735 tokens&#41; duplication in the following files: 
+Starting at line 278 of ./src/ZaloRE/src/unk/com/zing/zalo/utils/a.java 
+Starting at line 545 of ./src/ZaloRE/src/unk/com/zing/zalo/e/a.java 
+
+    qC = new int&#91;&#93; { 1, 2, 4, 8, 16, 32, 64, 128, 27, 54, 108, 216, 171, 77, 154, 47, 94, 188, 99, 198, 151, 53, 106, 212, 179, 125, 250, 239, 197, 145 }; 
+    int&#91;&#93; arrayOfInt1 = new int&#91;256&#93;; 
+    arrayOfInt1&#91;0&#93; = -1520213050; 
+    arrayOfInt1&#91;1&#93; = -2072216328; 
+….
+===================================================================== 
+Found a 177 line &#40;1211 tokens&#41; duplication in the following files: 
+Starting at line 663 of ./src/WeChat/com/tencent/qqpim/dao/SYSSmsDaoV2.java 
+Starting at line 585 of ./src/WeChat/com/tencent/qqpim/dao/SYSSmsDaoV1.java 
+...</pre>
+		</div>
+
+Kông tốt lắm :) vì cpd không so sánh 2 bộ mã nguồn mà chỉ có so sánh trong cùng một bộ tuy vậy ta có thể làm được điều mình muốn bằng một thủ thuật nhỏ đó là tìm những file giống nhau trong 2 folder khác nhau từ output của chương trình.
+
+Tiếp tục luyện kungfu ruby script:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>zalo = wechat = found = nil 
+File.open&#40;ARGV&#91;0&#93;&#41;.each_line do |line| 
+    if line =~ /^=+$/ 
+        puts &quot;#{found}#{zalo}#{wechat}\n&quot; if &#40;zalo and wechat&#41; 
+        found = zalo = wechat = nil 
+    end 
+    found = line if line =~ /Found/ 
+    zalo = line if line =~ /Zalo/ 
+    wechat = line if line =~ /WeChat/ 
+end
+puts &quot;#{found}#{zalo}#{wechat}\n&quot; if &#40;zalo and wechat&#41;</pre>
+		</div>
+
+<b>Sau khi chạy script trên với output phần trước thì ta thấy cpd đã tìm ra được tổng cộng 7 tập tin sau đây có sự trùng lặp giữa mã nguồn của Zalo và WeChat =]]]]</b>
+
+<i>(Các file dưới đây các bạn có thể xem tại github mình đã up lên ở phía trên, ví dụ file đầu tiên có thể xem ở<span class="link"> https://github.com/danghvu/ZaloRE/blob/master/src/com/facebook/android/Util.java</span>)
+</i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Found a 10 line &#40;86 tokens&#41; duplication in the following files: 
+Starting at line 131 of ./src/ZaloRE/src/com/facebook/android/Util.java 
+Starting at line 62 of ./src/WeChat/src/unk/com/tencent/mm/ui/facebook/a/m.java 
+
+Found a 5 line &#40;70 tokens&#41; duplication in the following files: 
+Starting at line 87 of ./src/ZaloRE/src/unk/com/a/b/e.java 
+Starting at line 155 of ./src/WeChat/src/unk/com/tencent/mm/sdk/platformtools/bg.java 
+
+Found a 5 line &#40;69 tokens&#41; duplication in the following files: 
+Starting at line 87 of ./src/ZaloRE/src/unk/com/a/b/e.java 
+Starting at line 562 of ./src/WeChat/src/unk/com/tencent/mm/platformtools/bf.java 
+
+Found a 16 line &#40;65 tokens&#41; duplication in the following files: 
+Starting at line 81 of ./src/ZaloRE/src/unk/com/zing/zalo/uicontrol/w.java 
+Starting at line 55 of ./src/WeChat/src/unk/com/tencent/mm/modelemoji/l.java 
+
+Found a 11 line &#40;59 tokens&#41; duplication in the following files: 
+Starting at line 21 of ./src/ZaloRE/src/me/zing/vn/gl/FilterGLSurfaceView$ConfigChooser.java 
+Starting at line 21 of ./src/WeChat/src/unk/com/badlogic/gdx/backends/android/w.java 
+
+Found a 13 line &#40;59 tokens&#41; duplication in the following files: 
+Starting at line 161 of ./src/ZaloRE/src/com/zing/zalo/uicontrol/HorizontalPager.java 
+Starting at line 148 of ./src/WeChat/src/com/tencent/mm/ui/base/MMFlipper.java 
+
+Found a 16 line &#40;55 tokens&#41; duplication in the following files: 
+Starting at line 12 of ./src/ZaloRE/src/unk/com/zing/zalo/plugin/a.java 
+Starting at line 36 of ./src/WeChat/src/com/android/internal/telephony/ISms$Stub.java</pre>
+		</div>
+
+Hm.. liệu Zalo có ăn cắp mã của WeChat / ngược lại ? Tôi cẩn thận xem xét từng file và nhận thấy những đoạn code giống nhau là từ những mã nguồn của các thư viện mở mà 2 ứng dụng này cùng sử dụng.
+
+Lấy ví dụ, ta thử so sánh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Starting at line 131 of ./src/ZaloRE/src/com/facebook/android/Util.java 
+Starting at line 62 of ./src/WeChat/src/unk/com/tencent/mm/ui/facebook/a/m.java 
+if &#40;!paramBundle.containsKey&#40;&quot;method&quot;&#41;&#41; &quot;
+        paramBundle.putString&#40;&quot;method&quot;, paramString2&#41;; 
+      if &#40;paramBundle.containsKey&#40;&quot;access_token&quot;&#41;&#41; 
+        paramBundle.putString&#40;&quot;access_token&quot;, URLDecoder.decode&#40;paramBundle.getString&#40;&quot;access_token&quot;&#41;&#41;&#41;; 
+      localHttpURLConnection.setRequestMethod&#40;&quot;POST&quot;&#41;; 
+      localHttpURLConnection.setRequestProperty&#40;&quot;Content-Type&quot;, &quot;multipart/form-data;boundary=&quot; + &quot;3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f&quot;&#41;; 
+      localHttpURLConnection.setDoOutput&#40;true&#41;; 
+      localHttpURLConnection.setDoInput&#40;true&#41;; 
+      localHttpURLConnection.setRequestProperty&#40;&quot;Connection&quot;, &quot;Keep-Alive&quot;&#41;; 
+      localHttpURLConnection.connect&#40;&#41;;</pre>
+		</div>
+
+Đây là một đoạn xử lý khi ứng dụng muốn gửi 1 request lên ứng dụng facebook ( vì Zalo và WeChat đều có facebook integration ) nằm trong bộ Facebook-Sdk (File version nằm ở src/com/facebook/FacebookSdkVersion.java )
+
+Một điều thú vị nữa khi đọc đoạn code này là dường như cả Zalo và WeChat đều không sử dụng giao thức HTTPS :D, bởi vì cả 2 cùng sử dụng “HttpURLConnection” thay vì &quot;HttpsURLConnection” , attacker có thể dễ dàng “sniff” các gói tin … Để khẳng định điều này chúng ta sẽ sniff packet của Zalo và WeChat để so sánh, nhưng xin hẹn lại dịp sau.
+
+Kết luận của tôi tạm thời hiện nay qua việc kiểm tra mã nguồn thì tuy có 1 số trùng lặp trong code nhưng điều đó chưa chứng tỏ được Zalo có sử dụng mã nguổn sao chép từ WeChat.
+
+Để khẳng định rõ hơn nữa thì cần phải tiếp tục rà soát các yếu tố trong các tính năng chính của cả 2 bên, phần bộ nhớ lúc thực thi (phần sau sẽ hướng dẫn sử dụng debugger cho android) và các phần mã bị làm rối mà jd-gui không dịch ngược lại được. ( Chẳng hạn : WeChat/src/unk/com/tencent/mm/sdk/platformtools/bg.java :1272 )
+
+<i>To be continue ..</i>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276065</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276065</link>
+				<pubDate><![CDATA[Tue, 28 May 2013 10:17:34]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Về vụ sniff dữ liệu của Zalo và Wechat thì đã test rồi nghen. Hai thằng hành động khá khác nhau
+
+Wechat thì submit contact list của user lên server ngay sau khi mở App
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>POST /cgi-bin/micromsg-bin/uploadmcontact HTTP/1.1
+
+Accept: */*
+
+User-Agent: Mozilla/4.0
+
+Content-Type: application/x-www-form-urlencoded
+
+Host: hkshort.weixin.qq.com
+
+Content-Length: 1032
+
+....</pre>
+		</div>
+
+
+Zalo thì down contact list đã submit trước đó theo JSON format về ngay sau khi mở App ( mền chưa chưa chụp được packet đoạn submit contact list lên server, sẽ gửi lên sau )
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>{"error_code":0,"error_message":"Successful.","data":&#91;{"userId":102282593,"username":"t_m7e07m90f0","displayName":"Lan XXX","avatar":"http://avatar.talk.zdn.vn/d/b/1/2/0/75/ea334590xxxx094f346084a16.jpg","gender":1,"dob":50xxx00,"phoneNumber":"+849xxxxxx" ...</pre>
+		</div>
+
+Hề hề nhờ Zalo, Wechat không dùng HTTPS connection nên có vẻ mền có thể lấy khá nhiều contact của user một cách dễ dàng :v]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276069</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276069</link>
+				<pubDate><![CDATA[Tue, 28 May 2013 15:37:32]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Có thể do HTTPS tốn thời gian handshake nên bị bỏ qua, nhất là trên môi người 3G.
+
+Các file trùng lặp mà a WinDak đưa ra em thấy phần lớn là render img, chỗ facebook thì gần như các app đều viết vậy.
+
+Rất hi vọng a WinDak làm rõ để cộng đồng có câu trả lời rõ ràng về việc zalo có phải do người việt chúng ta viết ? (1 điều rất đáng quý) hay chỉ là 1 sp được việt hoá lại.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276093</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276093</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 02:25:52]]> GMT</pubDate>
+				<author><![CDATA[ sieeuquay]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Theo mình nghĩ thì việc xác định 2 sản phẩm này có dùng mã nguồn của nhau không bằng cách reverse 2 file APK thì khó mà chính xác được. 2 sản phẩm này đều có 2 phần là front-end (app trên smartphone) và back-end. Mình nghĩ rằng đối với những sản phẩm như Zalo và WeChat, bằng back-end sẽ nặng và phức tạp hơn nhiều so với phần front-end. Còn phần back-end được phát triển như thế nào chỉ có những người phát triển nó mới biết, người ngoài thì khó mà biết được. 
+
+Do đó chỉ có reverse 2 app này để kết luận thì hơi... thiếu chính xác.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276096</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276096</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 03:30:56]]> GMT</pubDate>
+				<author><![CDATA[ namnx]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Em thì từ lúc đầu, dùng SourceInsight để xây dựng lưu đồ, block, workflow... gì đó tá lã của 2 thằng, rồi các block nào tương đương thì nhảy vào đọc code
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276101</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276101</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 05:09:57]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Em root máy android của em rồi thì có thể dùng ứng dụng explorer nào đó để lấy file đó ra phải không ạ? Còn chưa root thì chắc là dùng android adb nhưng em không rõ như thế nào ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276104</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276104</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 05:58:40]]> GMT</pubDate>
+				<author><![CDATA[ logichvaonline]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ @xnohat  -:|- thanks lão coi dùm phần đó.
+
+<p></p>
+		<cite class="blockquote">namnx wrote:</cite><br>
+		<blockquote>Theo mình nghĩ thì việc xác định 2 sản phẩm này có dùng mã nguồn của nhau không bằng cách reverse 2 file APK thì khó mà chính xác được. 2 sản phẩm này đều có 2 phần là front-end (app trên smartphone) và back-end. Mình nghĩ rằng đối với những sản phẩm như Zalo và WeChat, bằng back-end sẽ nặng và phức tạp hơn nhiều so với phần front-end. Còn phần back-end được phát triển như thế nào chỉ có những người phát triển nó mới biết, người ngoài thì khó mà biết được. 
+
+Do đó chỉ có reverse 2 app này để kết luận thì hơi... thiếu chính xác.
+&nbsp;
+		</blockquote>
+
+Cảm ơn đóng góp của anh namnx, mục đích của mình là so sánh ứng dụng Android xem có xài source của nhau không, còn phần back-end thì chưa có ý kiến và cũng chỉ có thể phán đoán qua các gói tin chứ không thể kết luận được.
+
+@TQN: source sau khi extract em có upload đó :D cảm ơn nhiều nếu anh giúp đỡ, cũng sẽ thử SourceInsight xem sao.
+
+@logichvaonline: thường thì bạn phải root máy mới chui vào dc /data/app, có thể xài các "root explorer" app hoặc adb ( xài lệnh adb pull ) 
+
+Mình rất hoan nghênh và cảm ơn các bạn có đóng góp tiếp tục phân tích 2 ứng dụng này.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276106</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276106</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 07:12:25]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Hi! @WinDak: lâu ngày mới thấy anh viết bài RCE nhỉ??
+@ các bác: mong các bác tiếp tục đóng góp cho đàn em học hỏi thêm! Cảm ơn các lão đã quan tâm!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276108</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276108</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 07:51:10]]> GMT</pubDate>
+				<author><![CDATA[ anhchangdaukho]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">namnx wrote:</cite><br>
+		<blockquote>Theo mình nghĩ thì việc xác định 2 sản phẩm này có dùng mã nguồn của nhau không bằng cách reverse 2 file APK thì khó mà chính xác được. 2 sản phẩm này đều có 2 phần là front-end (app trên smartphone) và back-end. Mình nghĩ rằng đối với những sản phẩm như Zalo và WeChat, bằng back-end sẽ nặng và phức tạp hơn nhiều so với phần front-end. Còn phần back-end được phát triển như thế nào chỉ có những người phát triển nó mới biết, người ngoài thì khó mà biết được. 
+
+Do đó chỉ có reverse 2 app này để kết luận thì hơi... thiếu chính xác.
+&nbsp;
+		</blockquote>
+
+Cái này vụ backend và frontend thì công nhận là đúng. Tuy nhiên phần lớn các đồng chí trên mạng đều nói từ Zing me tới Zalo đều là lấy mã nguồn của Tàu vì nhìn bề ngoài nó ... giống giống sản phẩm tương tự của Tencent.
+
+Mấy hôm trước có cái slide nhắc tới hạ tầng đằng sau zalo, nếu loại trừ bớt các yếu tố PR thì chắc cũng dựa trên một phần sự thật www.slideshare.net/Zalo_app/inside-zalo-developing-a-mobile-messenger-for-the-audience-of-millions-vn-mobile-day-2013]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276112</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276112</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 09:54:28]]> GMT</pubDate>
+				<author><![CDATA[ mudzot]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ <blockquote>Sau khi lấy được 2 file này, chúng ta cần một số công cụ để dịch ngược file apk thành file java ban đầu. Để làm việc này tôi sử dụng 2 công cụ: 
+
+dex2jar :<span class="link"> https://code.google.com/p/dex2jar/</span>
+jd-gui :<span class="link"> http://java.decompiler.free.fr/?q=jdgui</span>
+
+
+Công cụ (1) giúp chuyển tập tin apk thành định dạng “jar” (Java Archive) một file đóng gói khác của java. &nbsp;
+		</blockquote>
+
+File APK không cần phải chuyển qua JAR đâu bạn ơi
+
+Định dạng của APK vốn là của PKZIP
+
+Nên chỉ cần đổi extension từ APK sang ZIP là được]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276165</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44782.hva#276165</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 21:55:07]]> GMT</pubDate>
+				<author><![CDATA[ sasser01052004]]></author>
+			</item>
+	</channel>
+</rss>

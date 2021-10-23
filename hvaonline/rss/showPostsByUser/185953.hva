@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "thanhtamntp"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/185953.hva</link>
+		<description><![CDATA[Messages posted by "thanhtamntp"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cách xóa email queue trên sendmail</title>
+				<description><![CDATA[ Em đang tìm script để xóa email queue trên sendmail tương tự như script trên postfix sau
+
+<blockquote>
+#!/usr/bin/perl
+
+$REGEXP = shift || die "no email-adress given
+  (regexp-style, e.g. bl.*\@yahoo.com)!";
+
+@data = qx&lt;/usr/sbin/postqueue -p&gt;;
+for (@data) {
+  if (/^(\w+)(\*|\!)?\s/) {
+    $queue_id = $1;
+  }
+  if($queue_id) {
+    if (/$REGEXP/i) {
+      $Q{$queue_id} = 1;
+      $queue_id = "";
+    }
+  }
+}
+
+open(POSTSUPER,"|postsuper -d -") || die "couldn't open postsuper" ;
+
+foreach (keys %Q) {
+  print POSTSUPER "$_\n";
+};
+
+close(POSTSUPER);
+&nbsp;
+		</blockquote>
+
+Hay trên sendmail dùng command gì để xóa mail queue mà from nó từ abc.com hay to của nó là unknown.
+
+Em của em nó bị lợi dụng để gửi spam ra ngoài vậy
+
+<br>
+			<div align="center" class="limitview"><img src='http://imagizer.imageshack.us/v2/xq90/35/bydw.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45451/279754.hva#279754</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45451/279754.hva#279754</link>
+				<pubDate><![CDATA[Thu, 13 Feb 2014 22:34:41]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Proxmox - Backup trên SAN</title>
+				<description><![CDATA[ Hiện mình chạy hệ thống 2 server Promox, đã add vào Cluster. Tạm gọi là vm1 & vm2. Với con vm1 là master, con vm2 là slave.
+
+2 server này kết nối đến 1 con SAN qua cổng HBA. Trên SAN chia 1 volume 5TB cho cả 2 con để backup các VMs.
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img59/5983/jd0k.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Trên vm1 định dạng SAN 5TB thành LVM 
+
+<blockquote>
+root@vm1:/media# lvscan
+  ACTIVE            '/dev/pve/swap' [15.00 GiB] inherit
+  ACTIVE            '/dev/pve/root' [96.00 GiB] inherit
+  ACTIVE            '/dev/pve/data' [338.23 GiB] inherit
+  ACTIVE            '/dev/san_Backup/lv_Backup' [4.55 TiB] inherit
+&nbsp;
+		</blockquote>
+
+Trên vm2 nó cũng sẽ tự nhận LVM này, chỉ cần active lên là được
+<blockquote>
+root@vm2:/media# lvscan
+  ACTIVE            '/dev/pve/swap' [15.00 GiB] inherit
+  ACTIVE            '/dev/pve/root' [96.00 GiB] inherit
+  ACTIVE            '/dev/pve/data' [338.23 GiB] inherit
+  ACTIVE            '/dev/san_Backup/lv_Backup' [4.55 TiB] inherit
+&nbsp;
+		</blockquote>
+
+Sau đó trên vm1 & vm2 mình tạo thư mục /media/san_Backup và mout vào LVM trên.
+
+Trên vm1 mình tạo thêm thư mục /media/san_Backup/VM1, vm2 tạo /media/san_Backup/VM2
+
+Trên Proxmox sẽ add 2 Storage tương ứng với 2 thư mục trên
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img14/2329/8b52.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Đặt lịch backup cho các VMs trên vm1 & vm2 ứng với 2 storage trên
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img18/5608/3gfs.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Khi đến lịch chạy backup, trên con vm2 nó xong trước thì có kết quả
+
+<blockquote>
+root@vm2:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+└── VM2
+└── dump
+├── vzdump-qemu-200-2014_01_09-11_30_02.log
+└── vzdump-qemu-200-2014_01_09-11_30_02.vma.gz
+&nbsp;
+		</blockquote>
+
+Sau khi vm1 nó chạy backup xong sau thì nó lại ra kết quả
+<blockquote>
+root@vm2:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+│ ├── vzdump-qemu-103-2014_01_09-11_30_05.log
+│ └── vzdump-qemu-103-2014_01_09-11_30_05.vma.gz
+└── VM2
+└── dump
+&nbsp;
+		</blockquote>
+
+Còn trên vm1 kết quả là
+<blockquote>
+root@vm1:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+│ ├── vzdump-qemu-103-2014_01_09-11_30_05.log
+│ └── vzdump-qemu-103-2014_01_09-11_30_05.vma.gz
+└── VM2
+└── dump
+&nbsp;
+		</blockquote>
+
+Kết quả trên Proxmox, ban đầu nó có file backup của vm 200. Nhưng mình chưa kịp capture lại
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img856/9470/vl27.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+Vậy bác nào gặp trường hợp này cho mình giải pháp để có thể lưu backup vào cùng volume trên SAN. Mình không muốn tách mỗi server vm mỗi volume.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45396/279441.hva#279441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45396/279441.hva#279441</link>
+				<pubDate><![CDATA[Thu, 9 Jan 2014 04:10:06]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Zimbra nhiều domain, nhiều giao diện login</title>
+				<description><![CDATA[ Bác có tạo được acc quản trị riêng cho từng domain không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45266/278948.hva#278948</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45266/278948.hva#278948</link>
+				<pubDate><![CDATA[Sun, 3 Nov 2013 21:42:32]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Lỗi login email trên website</title>
+				<description><![CDATA[ Em có 1 bộ source code giống hệt nhau chạy trên 2 máy có cấu hình và các service config gần như giống hệt.
+Nhưng trên máy 1 test login acc email trên source code đó thì báo lỗi user/password
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img706/510/bxn0.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Còn đây là log dovecot khi có lỗi trên
+
+<blockquote>
+[root@mark conf.d]# tail -f /var/log/dovecot-deliver.log 
+Sep 23 16:37:17 pop3-login: Info: Disconnected (no auth attempts): rip=210.x.x.x, lip=210.x.x.x, secured
+Sep 23 16:37:36 pop3-login: Info: Aborted login (auth failed, 3 attempts): user=&lt;test&gt;, method=PLAIN, rip=210.x.x.x, lip=210.x.x.x, TLS
+&nbsp;
+		</blockquote>
+
+Log trên con máy 2 khi login thành công
+
+<blockquote>
+[root@m home]# tail -f /var/log/dovecot-deliver.log 
+Sep 23 16:39:15 pop3-login: Info: Login: user=&lt;test&gt;, method=PLAIN, rip=210.y.y.y, lip=210.y.y.y, mpid=22547, TLS
+Sep 23 16:39:15 pop3(test): Info: Disconnected: Logged out top=0/0, retr=0/0, del=0/0, size=0
+&nbsp;
+		</blockquote>
+
+Cả trên 2 máy đều telnet & dùng webmail login vào bình thường
+
+<blockquote>
+[root@mark conf.d]# telnet 210.x.x.x 110
+Trying 210.x.x.x...
+Connected to 210.x.x.x.
+Escape character is '^]'.
++OK Dovecot ready.
+user test
++OK
+pass 123456
++OK Logged in.
+
+[root@m home]# telnet 210.y.y.y 110
+Trying 210.y.y.y...
+Connected to 210.y.y.y.
+Escape character is '^]'.
++OK Dovecot ready.
+user test
++OK
+pass 123456
++OK Logged in.
+&nbsp;
+		</blockquote>
+
+Log khi login qua webmail
+<blockquote>
+Sep 23 16:43:26 imap-login: Info: Login: user=&lt;test&gt;, method=PLAIN, rip=::1, lip=::1, mpid=2230, secured
+Sep 23 16:43:26 imap(test): Info: Disconnected: Logged out bytes=294/2677
+&nbsp;
+		</blockquote>
+
+Cầu hình của Dovecot chỉ để 4 dòng sau 
+
+<blockquote>
+protocols = imap pop3 lmtp
+mail_location = maildir:~/Maildir
+disable_plaintext_auth = no
+
+log_path = /var/log/dovecot-deliver.log
+&nbsp;
+		</blockquote>
+
+Postfix thì tạm để default, chỉ sửa dòng home_mailbox = Maildir/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45178/278525.hva#278525</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45178/278525.hva#278525</link>
+				<pubDate><![CDATA[Mon, 23 Sep 2013 04:47:53]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Script add user</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Stanley_00 wrote:</cite><br>
+		<blockquote>Nếu là bash shell thì có thể dùng
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>for&#40;&#40;i=1;i&lt;=1000000;i++&#41;&#41;
+do
+    # add user here
+    user_name=&quot;u${i}&quot;
+    useradd -s /sbin/nologin $user_name ;
+done</pre>
+		</div>
+
+Hoặc nếu không được thì thay vòng for bằng &quot;for i in `seq 1 1000000`&quot;&nbsp;
+		</blockquote>
+
+Thanks bác, do em thiếu 1 () của for nên nó cứ báo lỗi ở dòng này  -:|- ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45169/278507.hva#278507</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45169/278507.hva#278507</link>
+				<pubDate><![CDATA[Fri, 20 Sep 2013 03:34:31]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Script add user</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">kakarottbatdong wrote:</cite><br>
+		<blockquote># while read line; do useradd -s /sbin/nologin $line; done &lt; userlist.txt&nbsp;
+		</blockquote>
+
+Cái này của bác cũng tương tự như script trên của em.
+
+Cái em cần là nó chạy 1 vòng lặp để echo từ 1 -&gt; 1 triệu, để em có thể add trực tiếp kiểu useradd -s /sbin/nologin u$i
+
+Vì đọc từ ds thì phải có 1 triệu dòng :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45169/278500.hva#278500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45169/278500.hva#278500</link>
+				<pubDate><![CDATA[Thu, 19 Sep 2013 23:18:25]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Script add user</title>
+				<description><![CDATA[ Hiện em cần add số lượng user lớn trên linux, 1 triệu user.
+Trước em có xài script sau
+
+<blockquote>
+#!/bin/sh
+for i in `more userlist.txt `
+do
+echo $i
+useradd	-s /sbin/nologin $i
+done
+&nbsp;
+		</blockquote>
+
+Với ds user ít khoảng mấy trăm thì dùng excel kéo được nhưng 1 triệu user lớn quá.
+
+Các user cần add chỉ cần có dạng u1-&gt;u1000000. Nên em cần modify cái sript trên để cho i nó chạy từ 1 -&gt; 1000000. Tìm và thử mãi nhưng chưa được. Nên lên xin ý kiến các bác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45169/278498.hva#278498</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45169/278498.hva#278498</link>
+				<pubDate><![CDATA[Thu, 19 Sep 2013 22:33:59]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Cấu hình postfix relay &amp; openrelay</title>
+				<description><![CDATA[ Hiện em có mô hình là 2 server postfix, tạm gọi là Post1 & Post2.
+Post1 gửi email ra ngoài, nhưng với domain abc.com sẽ relay qua Post2. Trên Post2 cấu hình Open Relay chỉ cho Post1 relay qua.
+
+Nhưng em chưa làm được. Từ Post1 gửi ra abc.com vẫn đi trực tiếp từ đó.
+
+Các bước cấu hình thì như sau
+
+1. Trên Post1
+
+- add dòng sau vào file /etc/postfix/transport
+abc.com smtp:post2
+
+- add dòng sau vào file /etc/postfix/main.cf
+transport_maps = hash:/etc/postfix/transport
+
+- reload lại postfix
+postmap hash:/etc/postfix/transport
+postfix reload
+
+2. Chưa biết enable open relay kiểu gì]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45003/277743.hva#277743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45003/277743.hva#277743</link>
+				<pubDate><![CDATA[Thu, 25 Jul 2013 01:38:04]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Script backup: chạy trực tiếp &amp; cron khác nhau</title>
+				<description><![CDATA[ Em đang test backup Zimbra offline. Cùng 1 script khi em chạy trực tiếp thì kết quả backup tốt, nhưng add vào cron để chạy thì có 2 vấn đề
+1. File không đúng - thiếu
+2. Không start được service zimbra
+
+Đây là kết quả sau khi chạy trực tiếp & cron
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@mail backup&#93;# ll -tsh
+total 8.2G
+2.7G -rw-r--r--  1 root root 2.7G Jun 12 07:13 2013-06-12.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 Jun  8 22:25 2013-06-08.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 Jun  1 22:23 2013-06-01.zimbra.tgz
+2.0G -rw-r--r--  1 root root 2.0G May 30 22:02 2013-05-30.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 May 25 23:05 2013-05-25.zimbra.tgz
+1.3G -rw-r--r--  1 root root 1.3G May 22 11:26 2013-05-22.zimbra.tgz
+1.3G -rw-r--r--  1 root root 1.3G May 21 11:25 2013-05-21.zimbra.tgz
+1.2G -rw-r--r--  1 root root 1.2G May 20 22:12 2013-05-20.zimbra.tgz
+8.0K drwxr-xr-x 51 root root 4.0K May 13 17:33 zimbra
+&#91;root@mail backup&#93;# crontab -l
+22 22 * * 6 /root/tools/backup.sh
+&#91;root@mail backup&#93;#</pre>
+		</div>
+
+Còn đây là nội dung của file backup
+
+<blockquote>
+[root@mail backup]# cat /root/tools/backup.sh
+# Stop Zimbra Services
+su - zimbra -c "zmcontrol stop"
+#sleep 20
+
+# Sync to backup directory
+rsync -avHK --delete /opt/zimbra/ /media/backup/zimbra
+
+# Restart Zimbra Services
+su - zimbra -c "zmcontrol start"
+
+# Create archive of backed-up directory for offsite transfer
+# cd /backup/zimbra
+tar -zcvf /media/backup/$(date +%Y-%m-%d).zimbra.tgz /media/backup/zimbra/*
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44837/276527.hva#276527</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44837/276527.hva#276527</link>
+				<pubDate><![CDATA[Wed, 12 Jun 2013 03:40:24]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Webmin không hiện queue của Postfix</title>
+				<description><![CDATA[ Cảm ơn anh đã gợi í.
+Em đã sửa trong file /etc/webmin/postfix/config và đã thấy email queue. Trước đây khi install thêm gì em thay Refresh Modules là webmin nó nhận luôn. Lần này phải manual :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44834/276501.hva#276501</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44834/276501.hva#276501</link>
+				<pubDate><![CDATA[Mon, 10 Jun 2013 23:53:49]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Webmin không hiện queue của Postfix</title>
+				<description><![CDATA[ Trước con mail của em đang dùng sendmail thì vào webmin hiển thị được số mail queue. Sau đó em stop sendmail và cài postfix. Mail vẫn gửi đi bình thường nhưng vào phần queue xem thì bị lôi
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img607/9143/screenshotfrom201306101.png' border="0" onload="maxImg(this, 500px);" /></div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44834/276495.hva#276495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44834/276495.hva#276495</link>
+				<pubDate><![CDATA[Mon, 10 Jun 2013 22:34:56]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>giúp đơn khăc phục lỗi Zimbra mailserver</title>
+				<description><![CDATA[ Red X thường là do cấu hình syslog thôi. Bạn check lại server đang chạy syslog gì, thử qua mấy cái như syslog, rsyslog.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44808/276477.hva#276477</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44808/276477.hva#276477</link>
+				<pubDate><![CDATA[Mon, 10 Jun 2013 04:33:06]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Hỏi về mail Zimbra</title>
+				<description><![CDATA[ - Ổn về việc sử dụng và hệ thống. Còn v/v Spam thì mail server nào cũng như nhau.
+- Nó cũng chỉ là mail server nên người dùng có thể dùng outlook, webmail bình thường. Giới hạn dung lượng thì do bác đặt sao lại gọi là vướng mắc nhỉ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44795/276143.hva#276143</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44795/276143.hva#276143</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 03:25:27]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ Đây là các process mysql khi exim chạy
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img593/2317/screenshot784068.th.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275879.hva#275879</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275879.hva#275879</link>
+				<pubDate><![CDATA[Tue, 21 May 2013 18:53:29]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>mysqldump - Lỗi Maximum execution time</title>
+				<description><![CDATA[ Lúc đầu em dump từ user db sau dump thử lại từ root thì thấy không lỗi. Nên không dám chia sẽ vì không hiểu lỗi do đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44723/275867.hva#275867</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44723/275867.hva#275867</link>
+				<pubDate><![CDATA[Tue, 21 May 2013 06:02:32]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>exim là MTA, server của bạn gửi nhận mail nhiều lắm mới bị chậm thế. 
+Bạn xem cụ thể làm sao exim lại phải làm việc nhiều thế? cỡ 4CPU cho một mail server sẽ đủ sức xử lý đến cả chục GB/giờ. Không rõ bạn nhiều cỡ nào?&nbsp;
+		</blockquote>
+
+Đúng là do exim nên dẫn đến mysql và làm cho con server của em nó bị overload.
+
+Email thì không bị spam vào nhưng việc gửi ra em chưa quản lý được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275866.hva#275866</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275866.hva#275866</link>
+				<pubDate><![CDATA[Tue, 21 May 2013 05:49:08]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Website bị lỗi font tiếng Việt</title>
+				<description><![CDATA[ Nay mình có chuyển 1 website sang vps mới, sau khi chuyển thì thấy bị lỗi font như sau
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img853/3874/screenshot784054.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nhưng trong phpmyadmin thì vẫn thấy hiển thị tiếng Việt bình thường.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44726/275692.hva#275692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44726/275692.hva#275692</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 21:50:24]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>mysqldump - Lỗi Maximum execution time</title>
+				<description><![CDATA[ Em đã fix được lỗi này.
+Closed.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44723/275675.hva#275675</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44723/275675.hva#275675</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 06:19:52]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>mysqldump - Lỗi Maximum execution time</title>
+				<description><![CDATA[ Nay em có restore 1 DB thì bị lỗi sau
+
+<blockquote>
+[root@em5 node1]# mysql -u root -p abc &lt; abccom_web.sql 
+Enter password: 
+ERROR 1064 (42000) at line 1438276: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '&lt;br /&gt;
+&lt;b&gt;Fatal error&lt;/b&gt;:  Maximum execution time of 300 seconds exceeded in &lt;b' at line 296
+[root@em5 node1]# cat /etc/php.ini | grep 'max_execution'
+max_execution_time = 3000
+[root@em5 node1]# 
+&nbsp;
+		</blockquote>
+
+File DB chỉ khoảng 300MB, trong khi đó cũng trên server này em restore 1 DB khác gần 11GB thì không vấn đề gì. Cả sáng nay em đã google mà không được nên phải lên hỏi ý kiến mọi người.&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44723/275672.hva#275672</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44723/275672.hva#275672</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 04:17:03]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Mysql tự nhiên ngốn CPU, Apache vượt max client allowed</title>
+				<description><![CDATA[ Em cũng giống bác, từ 2 tuần nay server nó thường xuyên bị overload. Optimize mãi mà vẫn không về 1 được. 2 ngày này nó chạy Load Averages 10-20 là tốt lắm rồi :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44704/275581.hva#275581</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44704/275581.hva#275581</link>
+				<pubDate><![CDATA[Wed, 8 May 2013 11:04:00]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>xin hỏi lỗi zimbra</title>
+				<description><![CDATA[ Theo em nghĩ họ suggest vậy để khi login vào Zimbra Admin thì cái tên máy chủ đập vào mắt là mail.domain.com cho dễ hiểu thôi.
+
+<br>
+			<div align="center" class="limitview"><img src='http://img23.imageshack.us/img23/4337/screenshot001ye.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39877/275374.hva#275374</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39877/275374.hva#275374</link>
+				<pubDate><![CDATA[Thu, 2 May 2013 01:43:25]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ 1. MyISAM là từ lúc cài để vậy nên em sợ chuyển sang Innodb sợ có vấn đề gì.
+2. OS 32bits cũng là do người khác cài từ đầu
+
+3. Sau khi thay đổi 1 số thông tin như anh bảo ở trên Load Averages có giảm nhưng vẫn cao
+
+<br>
+			<div align="center" class="limitview"><img src='http://img802.imageshack.us/img802/8184/screenshotfrom201305020.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275365.hva#275365</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275365.hva#275365</link>
+				<pubDate><![CDATA[Wed, 1 May 2013 21:39:41]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>xin hỏi lỗi zimbra</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>xin hỏi mọi ngươi gio con zimbra cua minh co ten la chieuvd@mail.vncert1.vn làm sao co the chuyen thanh chieuvd@vncert1.vn đuơc nhỉ.
+&nbsp;
+		</blockquote>
+Cái này là do hostname của Zimbra server bạn để là `mail.vncert1.vn` nên lúc cài Zimbra tự nhận domain này. 
+
+&nbsp;
+		</blockquote>
+
+Hostname thì thường phải để dạng mail.domain.com là đúng mà bác. Còn email có dạng user@mail.domain.com thì là do lúc cài nó hỏi domain nào nhưng bạn không change thành domain.com]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39877/275314.hva#275314</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39877/275314.hva#275314</link>
+				<pubDate><![CDATA[Sun, 28 Apr 2013 11:10:52]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ Đây là kết quả chạy tuner
+
+<blockquote>
+ &gt;&gt;  MySQLTuner 1.2.0 - Major Hayden &lt;major@mhtx.net&gt;
+ &gt;&gt;  Bug reports, feature requests, and downloads at<span class="link"> http://mysqltuner.com/</span>
+ &gt;&gt;  Run with '--help' for additional options and output filtering
+
+-------- General Statistics --------------------------------------------------
+[--] Skipped version check for MySQLTuner script
+[OK] Currently running supported MySQL version 5.5.28-cll
+[!!] Switch to 64-bit OS - MySQL cannot currently use all of your RAM
+
+-------- Storage Engine Statistics -------------------------------------------
+[--] Status: +Archive -BDB -Federated +InnoDB -ISAM -NDBCluster 
+[--] Data in MyISAM tables: 3G (Tables: 28432)
+[--] Data in InnoDB tables: 118M (Tables: 1447)
+[--] Data in PERFORMANCE_SCHEMA tables: 0B (Tables: 17)
+[--] Data in MEMORY tables: 102M (Tables: 200)
+[!!] Total fragmented tables: 1649
+
+-------- Security Recommendations  -------------------------------------------
+[OK] All database users have passwords assigned
+
+-------- Performance Metrics -------------------------------------------------
+[--] Up for: 1h 46m 49s (1M q [216.611 qps], 38K conn, TX: 6B, RX: 317M)
+[--] Reads / Writes: 82% / 18%
+[--] Total buffers: 576.0M global + 6.3M per thread (151 max threads)
+[OK] Maximum possible memory usage: 1.5G (18% of installed RAM)
+[OK] Slow queries: 0% (44/1M)
+[OK] Highest usage of available connections: 31% (48/151)
+[OK] Key buffer size / total MyISAM indexes: 384.0M/1.0G
+[OK] Key buffer hit rate: 99.6% (23M cached / 87K reads)
+[OK] Query cache efficiency: 65.8% (723K cached / 1M selects)
+[!!] Query cache prunes per day: 1737261
+[OK] Sorts requiring temporary tables: 0% (242 temp sorts / 146K sorts)
+[!!] Joins performed without indexes: 6027
+[!!] Temporary tables created on disk: 29% (63K on disk / 216K total)
+[OK] Thread cache hit rate: 95% (1K created / 38K connections)
+[!!] Table cache hit rate: 1% (1K open / 53K opened)
+[OK] Open file limit used: 40% (1K/4K)
+[OK] Table locks acquired immediately: 99% (933K immediate / 934K locks)
+[OK] InnoDB data size / buffer pool: 118.8M/128.0M
+
+-------- Recommendations -----------------------------------------------------
+General recommendations:
+    Run OPTIMIZE TABLE to defragment tables for better performance
+    MySQL started within last 24 hours - recommendations may be inaccurate
+    Adjust your join queries to always utilize indexes
+    When making adjustments, make tmp_table_size/max_heap_table_size equal
+    Reduce your SELECT DISTINCT queries without LIMIT clauses
+    Increase table_cache gradually to avoid file descriptor limits
+Variables to adjust:
+    query_cache_size (&gt; 32M)
+    join_buffer_size (&gt; 128.0K, or always use indexes with joins)
+    tmp_table_size (&gt; 16M)
+    max_heap_table_size (&gt; 256M)
+    table_cache (&gt; 1024)
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275205.hva#275205</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275205.hva#275205</link>
+				<pubDate><![CDATA[Wed, 24 Apr 2013 05:00:59]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ Hiện tại em đã bỏ cpu limit vì theo dõi thấy nó vẫn vượt quá quota mà mình set.
+
+Có lúc thấy Load Averages lên đến 100 luôn :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275204.hva#275204</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275204.hva#275204</link>
+				<pubDate><![CDATA[Wed, 24 Apr 2013 04:54:18]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Tạo một sever hosting đa năng</title>
+				<description><![CDATA[ Chia làm 2 VPS cho đơn giản.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44604/275203.hva#275203</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44604/275203.hva#275203</link>
+				<pubDate><![CDATA[Wed, 24 Apr 2013 04:52:12]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ Tạm thời em đang dùng giải pháp hạn chế cpu cho mysql và exim, thấy load cũng đã giảm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275180.hva#275180</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275180.hva#275180</link>
+				<pubDate><![CDATA[Tue, 23 Apr 2013 23:34:17]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ Hiện tại con server của em dạo này nó thường xuyên bị overload
+
+[URL=http://imageshack.us/photo/my-images/607/screenshot784043.png/]<br>
+			<div align="center" class="limitview"><img src='http://img607.imageshack.us/img607/4239/screenshot784043.png' border="0" onload="maxImg(this, 500px);" /></div>[/URL]
+
+Đây là lúc tạm stop mail service lại
+
+<blockquote>
+root@host [~]# uptime
+ 22:18:23 up 23:51,  2 users,  load average: 9.21, 15.28, 34.96
+root@host [~]# free -m
+             total       used       free     shared    buffers     cached
+Mem:          8116       5238       2877          0        438       3147
+-/+ buffers/cache:       1652       6463
+Swap:         8197          0       8197
+root@host [~]# hdparm -Tt /dev/sda
+
+/dev/sda:
+ Timing cached reads:   3204 MB in  2.00 seconds = 1603.09 MB/sec
+ Timing buffered disk reads:   50 MB in  3.18 seconds =  15.73 MB/sec
+root@host [~]#
+&nbsp;
+		</blockquote>
+
+Trước đây Load Average thường chỉ ở mức 1. Kiểm tra thì thấy mysql và exim thường s/d nhiều CPU nhất
+
+Còn đây là file config của mysql
+
+<blockquote>
+root@cpanel [~]# vi /etc/my.cnf
+[client]
+port=3306
+socket="/var/lib/mysql/mysql.sock"
+[mysqldump]
+quick
+max_allowed_packet=16M
+default-storage-engine=MyISAM
+#innodb_file_per_table=1
+[mysql]
+no-auto-rehash
+[myisamchk]
+read_buffer=2M
+write_buffer=2M
+sort_buffer_size=128M
+key_buffer=128M
+[mysqlhotcopy]
+interactive-timeout
+[mysqld]
+max_connect_errors=100
+connect_timeout=60
+server-id=1
+skip-networking
+character-set-server=utf8
+table_cache=1024
+read_rnd_buffer_size=4M
+skip-federated
+socket="/var/lib/mysql/mysql.sock"
+bind-address=127.0.0.1
+log-slow-queries="/var/log/mysql-slow.log"
+long_query_time=5
+default-storage-engine=MyISAM
+#innodb_file_per_table=1
+thread_concurrency=8
+query_cache_size=32M
+thread_cache_size=8
+myisam_sort_buffer_size=64M
+key_buffer=384M
+skip-external-locking
+skip-character-set-client-handshake
+read_buffer_size=1M
+port=3306
+sort_buffer_size=1M
+max_allowed_packet=256M
+[isamchk]
+read_buffer=2M
+write_buffer=2M
+sort_buffer_size=128M
+key_buffer=128M
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275171.hva#275171</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275171.hva#275171</link>
+				<pubDate><![CDATA[Tue, 23 Apr 2013 10:30:29]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Setup dns trên centos</title>
+				<description><![CDATA[ Vậy bạn vào trang howtoforge xem mấy cái dns control trong đó xem cái nào phù hợp thì cài test thử.
+
+Ngoài ra có thể tham khảo thêm Nictools.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44428/274231.hva#274231</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44428/274231.hva#274231</link>
+				<pubDate><![CDATA[Wed, 20 Mar 2013 03:58:56]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Xin Link hoặc tài liệu hướng dẫn Setup VPS trên Dedicated server </title>
+				<description><![CDATA[ KVM thì bạn tham khảo Promox, nó có file iso cài xong là xài qua web interface thôi.
+Còn cài CentOS -&gt; KVM thì có thể quản lý VPS qua Ubuntu desktop.
+
+Nhưng cái này bị hạn chế là khi bạn chạy backup các VPS sẽ bị suspend.
+
+Xen Citrix & VMWare vSphere cũng là giải pháp hay :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44424/274227.hva#274227</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44424/274227.hva#274227</link>
+				<pubDate><![CDATA[Wed, 20 Mar 2013 02:01:19]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+	</channel>
+</rss>

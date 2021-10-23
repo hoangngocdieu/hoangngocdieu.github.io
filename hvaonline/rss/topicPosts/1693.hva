@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cách thức kiểm tra đăng nhập an toàn"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cách thức kiểm tra đăng nhập an toàn"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ <b>Cách thức kiểm tra thông tin đăng nhập an toàn</b>
+
+Thông thường khi viết một portal hay forum hay là một sản phẩm nào đó có chức năng đăng nhập dành cho thành viên thì đôi khi việc kiểm tra thông tin đăng nhập lại hết sức cần thiết. Nếu nói về những người dùng hợp lệ (tức là đăng nhập bằng chính tài khoản của họ) thì không phải bàn tới, tuy nhiên trong số đó cũng có người ngoại lệ (tức là đăng nhập trái phép)... cách thức họ dùng để đăng nhập trái phép cũng không bàn tới vì sau khi áp dụng bài viết này thì dù họ có trái phép thì ta cũng có thể bắt buộc họ phải đăng nhập một cách hợp lệ.
+
+Trước hết khi kiểm tra thông tin đăng nhập thì yêu cầu có là một form đăng nhập bao gồm: username và password. Và trong đó có 2 trường hợp kiểm tra thông tin đăng nhập:
+
+<blockquote>1. [SELECT * FROM users WHERE name='$username' AND password='$password']
+2. [SELECT * FROM users WHERE name='$username']&nbsp;
+		</blockquote>
+
+Trong trường hợp thứ 1 có thể khẳng định là coder này rất ẩu :d, còn trong trường hợp 2 thì hoàn toàn đúng.
+
+Tại sao trường hợp thứ 1 lại gọi là rất ẩu !? Câu trả lời rất đơn giản, nếu đọc câu lệnh SQL này ra thì có thể đọc là: lấy từ table users nơi có $username và $password - rất có thể sẽ dính by pass ( ' OR '1'='1 ), nếu đăng nhập trái phép theo dạng này thì câu lệnh sẽ trở thành: SELECT * FROM users WHERE name='$username' AND password='' OR '1'='1' - Câu lệnh này cũng sẽ hợp lệ vì cuối cùng khai báo là OR '1'='1' (1 = 1 :D)
+
+Tuy nhiên đây chỉ là một trường hợp tham khảo vì nếu biến $password được lọc kỹ thì cũng sẽ vẫn dùng được nhưng để an toàn hơn ta nên hạn chế tối đa các biến cần kiểm tra, vì vậy sẽ dùng trường hợp thứ 2, như thế chỉ còn 1 biến duy nhất cần kiểm tra là $name.
+
+Trong số hàm có khả năng lọc thì L khuyên nên sử dụng hàm addslashes(), cú pháp của hàm này là:
+
+addslashes( string )
+
+
+Ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$string = " ' OR '1'='1' ";
+echo addslashes&#40; $string &#41;; // Kết quả trả về là: ' OR '1'='1'
+
+?&gt;</pre>
+		</div>
+
+
+Ở trên cũng chưa chắc an toàn vì biến $string này chỉ mới được addslashes() lọc nhưng điểm quan trọng là biến $string này vẫn là: ' OR '1'='1' vì chưa có dòng nào khai báo $string = addslashes( $string ) cả. Vì thế ở trước câu lệnh của trường hợp 2 phải khai báo là: $username = addslashes( $username ). Sau đó sẽ bao gồm 2 bước kiểm tra cuối cùng là: Kiểm tra username này có tồn tại hay không, Nếu tồn tại thì tiếp tục Kiểm tra password của username này có đúng hay không.
+
+PS: Khi bạn muốn lấy thông tin từ form thì bạn nên để method = post, vì sao thì bạn tự tìm hiểu.
+
+Để dễ hiểu L tổng hợp lại từ đầu đến cuối có code hoàn chỉnh như sau: (Ngoại trừ table users tee-hee)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$username = $_POST&#91;'username'&#93;;
+$username= addslashes&#40; $username&#41;;
+
+$query = mysql_query&#40;"SELECT * FROM users WHERE name='$name'"&#41;;
+$result = mysql_fetch_array&#40; $query &#41;;
+
+// Kiểm tra username này có tồn tại hay không
+if &#40; mysql_num_rows&#40; $query &#41; == 0 &#41;
+{
+print "Username không tồn tại!";
+}
+
+// Kiểm tra password của username này có đúng hay không
+if &#40; $password != $result&#91;'password'&#93; &#41;
+{
+print "Mật khẩu không đúng!";
+}
+
+print "Congratulations :d":
+
+?&gt;</pre>
+		</div>
+
+------------------------------------
+nguồn : sanchoituoitre.info]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8147</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8147</link>
+				<pubDate><![CDATA[Wed, 19 Jul 2006 19:24:39]]> GMT</pubDate>
+				<author><![CDATA[ Vickizw]]></author>
+			</item>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Vickizw wrote:</cite><br>
+		<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$username = $_POST&#91;'username'&#93;;
+$username= addslashes&#40; $username&#41;;
+
+?&gt;</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Tại sao lại tốn hai dòng cho một việc rất đơn giản ? Sao không viết như sau ?
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$username= addslashes&#40; $_POST&#91;'username'&#93; &#41;;
+
+?&gt;</pre>
+		</div>
+&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8153</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8153</link>
+				<pubDate><![CDATA[Wed, 19 Jul 2006 19:29:46]]> GMT</pubDate>
+				<author><![CDATA[ KINYO]]></author>
+			</item>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ Tôi dùng:
+
+if (get_magic_quotes_gpc()) {
+$user=stripslashes($_POST['user']);
+$pass=stripslashes($_POST['pass']);
+} else {
+$user=$_POST['user'];
+$pass=$_POST['pass'];
+}
+
+$user=mysql_real_escape_string($user);
+$pass=mysql_real_escape_string($pass);
+
+$query="S ELECT * FROM user WHERE name='$user' AND pass='$pass'";
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8166</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8166</link>
+				<pubDate><![CDATA[Wed, 19 Jul 2006 19:59:47]]> GMT</pubDate>
+				<author><![CDATA[ thang2rs]]></author>
+			</item>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ mình không hiểu sâu PHP cho lắm, nên đề nghị bạn thang2rs giải thích rõ những câu lệnh trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8237</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8237</link>
+				<pubDate><![CDATA[Wed, 19 Jul 2006 23:53:26]]> GMT</pubDate>
+				<author><![CDATA[ Mr An Luong]]></author>
+			</item>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ Copy right nghe đồn ở bài này chưa có à nha ! :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8241</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8241</link>
+				<pubDate><![CDATA[Thu, 20 Jul 2006 00:15:22]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ Bạn có thể xem bài viết gốc của mình tại đây:
+http://sanchoituoitre.info/topic/178/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8247</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8247</link>
+				<pubDate><![CDATA[Thu, 20 Jul 2006 00:35:20]]> GMT</pubDate>
+				<author><![CDATA[ lyhuuloi]]></author>
+			</item>
+			<item>
+				<title>Re: Cách thức kiểm tra đăng nhập an toàn</title>
+				<description><![CDATA[ To Mr An Luong:
+
+Đã giải thích rất rõ tại <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/819.hva</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8300</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1693.hva#8300</link>
+				<pubDate><![CDATA[Thu, 20 Jul 2006 10:48:56]]> GMT</pubDate>
+				<author><![CDATA[ thang2rs]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thắc mắc về monit package"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thắc mắc về monit package"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ Trong bài viết  Ký sự các vụ DDoS đến HVA - Phần 13    <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/280.hva</span>
+
+Em có thắc mắc ở đoạn này
+<blockquote>Tôi tạo ra hồ sơ cấu hình cho monit và đưa vào các ấn định quan trọng nhất + cần thiết nhất để bảo đảm nếu một dịch vụ nào đó tự động thoát ra thì monit sẽ khởi tạo nó lại. <font color='orange'><b>Tôi còn điều chỉnh cho monit tái khởi động một số dịch vụ trọng yếu nếu như các dịch vụ này dùng bao nhiêu phần trăm CPU liên tục trong một khoảng thời gian nào đó (dấu hiệu của dịch vụ này đang bị ở tình trạng quá tải vì bị tấn công dồn dập).</b></font>&nbsp;
+		</blockquote>
+
+Ví dụ em sử dụng monit package này, em set CPU khoãng <b>60</b> phần trăm thì tự động Mysql, Apache nó khởi động lại thì em cấu hình cho  <b>/root/.monitrc</b> này như thế nào ? Nếu CPU tăng quá cao thì nguy to vì vậy em thử nghiệm package mà anh hướng dẫn để "thiết kế" sao cho khi CPU tăng đến mức mà mình quy định thì tự động Mysql, Apache sẽ reset lại nhằm giải toả một số kết nối, tránh server ngũm củ tỏi.  
+
+Em đọc tài liệu của nó ở trang nay
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.sysbotz.com/articles/monitornetwork.htm</pre>
+		</div>
+
+Đây là file <b>.monitrc</b>
+<blockquote># Sysbotz Sample monit configuration.
+#
+
+set daemon 300
+set logfile /var/log/monit
+
+check apache with pidfile /var/log/httpd/httpd.pid
+start = "/root/apache-start"
+stop = "/root/apache-stop"
+checksum /usr/local/bin/httpd
+timeout(3, 3) and alert me@company.com
+host foo.com port 80 protocol http
+host bar.org port 80 protocol http
+
+check sshd with pidfile /var/run/sshd.pid
+start = "/root/sshd-start"
+stop = "/root/sshd-stop"
+timeout(3, 3) and alert me@company.com
+checksum /usr/local/sbin/sshd
+
+check named with pidfile /var/run/named.pid
+start = "/root/named-start"
+stop = "/root/named-stop"
+checksum /usr/local/sbin/named
+timeout(3, 3) and alert me@company.com
+port 53 use type udp. &nbsp;
+		</blockquote>
+
+Ở đoạn này, em chĩ cần thay tên của dịch vụ vào đây phải không anh? Ví dụ <b>/root/mysqld</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>start = "/root/named-start"
+stop = "/root/named-stop"</pre>
+		</div>
+
+Nhưng em không tìm ra cái dòng nào, mình quy định cứ đến <b>60</b> phần trăm thì tự động nó reset lại dịch vụ . 
+
+Cám ơn anh em đã đọc]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7200</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7200</link>
+				<pubDate><![CDATA[Sun, 16 Jul 2006 11:21:40]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ Hello GA,
+
+Dùng một chương trình nào, việc đầu tiên là tham khảo tài liệu gốc từ trang web của chương trình ấy.
+
+Nếu em đọc kỹ tài liệu hướng dẫn thì sẽ thấy có phần "đụng" đến resource. Em có thể xem ở <span class="link"> http://www.tildeslash.com/monit/doc/manual.php#resource_testing</span>.
+
+Dùng một ví dụ hay một config có sẵn có cái lợi mà cũng có cái hại. Lợi ở chỗ là em có thể làm cho dịch vụ chạy được nhanh chóng nhưng hại ở chỗ là có thể sẽ không dùng hết được tính năng và không hiểu hết về chương trình mình dùng.
+
+Đây là một đoạn monit config có dính với CPU:
+<b>check process apache
+with pidfile "/usr/local/apache2/run/httpd.pid"
+start program = "/etc/init.d/apache start"
+stop program = "/etc/init.d/apache stop"
+if children > 1024 for 5 cycles then restart
+if cpu usage > 85% for 5 cycles then stop
+if failed host 123.123.123.123 port 80 protocol http with timeout 10 seconds then stop
+alert webmaster@somewhere.com on { timeout }
+group apache</b>
+
+Quả thật, đoạn <b>start program</b> và <b>stop program</b> là nơi khai báo "lệnh" để stop và start chương trình mình muốn theo dõi.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7279</link>
+				<pubDate><![CDATA[Sun, 16 Jul 2006 17:03:05]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ nếu như em set CPU hoạt đông đến mức 70%,thì Mysql,apache tự khởi động lại,có nghĩa là tất cả user đang kết nối bị đá văng ra ngoài hết a.?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7286</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7286</link>
+				<pubDate><![CDATA[Sun, 16 Jul 2006 17:41:01]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>nếu như em set CPU hoạt đông đến mức 70%,thì Mysql,apache tự khởi động lại,có nghĩa là tất cả user đang kết nối bị đá văng ra ngoài hết a.?&nbsp;
+		</blockquote>
+
+Tất nhiên. Bởi thế, khi dùng tính năng này phải hết sức cẩn thận. Phải tính toán, đo lường thật kỹ trước khi dùng con số thích hợp. Không thể chỉ gõ một giá trị nào đó một cách bừa bãi không thì chính mình tạo "từ chối dịch vụ" cho mình :)
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7287</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7287</link>
+				<pubDate><![CDATA[Sun, 16 Jul 2006 17:45:01]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ như vậy, monit chỉ có thể kiểm tra mức độ chiếm CPU của 1 service? Liệu có thể kiểm tra PID nào đang chiếm CPU nhiều nhất và kill nó đi thôi?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7532</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7532</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 17:50:07]]> GMT</pubDate>
+				<author><![CDATA[ mainhu]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mainhu wrote:</cite><br>
+		<blockquote>như vậy, monit chỉ có thể kiểm tra mức độ chiếm CPU của 1 service? Liệu có thể kiểm tra PID nào đang chiếm CPU nhiều nhất và kill nó đi thôi?
+&nbsp;
+		</blockquote>
+
+Bồ nên đọc kỹ tài liệu monit.
+
+Muốn kiểm tra PID nào chiếm CPU thì không khó nhưng "kill" cho hợp lý thì không dễ. Lý do tại sao? Bồ thử nghĩ xem?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7540</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7540</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 18:04:05]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ Hi anh conmale 
+Em làm được rồi và đang "thử nghiệm" nó cho ssh anh ah . Em qua đọc bài của bác 777 cái đã . Cám ơn anh rất nhiều
+
+<blockquote>nếu như em set CPU hoạt đông đến mức 70%,thì Mysql,apache tự khởi động lại,có nghĩa là tất cả user đang kết nối bị đá văng ra ngoài hết a.?&nbsp;
+		</blockquote>
+
+Bạn set ở mức 10% là được rồi, đừng set nhiều quá, CPU load cao có khả năng là do RAM ít, bạn sử dụng crontab để backup dữ liệu khi đến thời gian bạn ấn định backup thì tự động CPU nó load cao thôi. Bạn xem và để ý nó, bạn sẽ thấy nó lên cao như thế nào trong thời gian crontab làm việc. 
+
+Bạn nên set trong cái monit này cho nó lưu lại 1.log để tiện theo dõi, 10% cũng đủ dùng rồi, đừng set cao quá có khi tự làm khổ mình, cũng như anh conmale nói : <b>Không thể chỉ gõ một giá trị nào đó một cách bừa bãi không thì chính mình tạo "từ chối dịch vụ" cho mình</b>  Nó nằm trong <b>monit.1</b> đó bạn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7559</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7559</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 18:58:02]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ hmm... nếu sợ kill nhầm sang PID khác thì có lẽ ko phải. Vì nếu 1 PID chiếm nhiều CPU, nó sẽ mất khá nhiều thời gian để xử lý, mà như vậy, câu lệnh đã ứng với PID đó rồi thì sẽ ko ngại kill nhầm sang PID khác. 
+
+Còn có nguyên nhân nào khác mà anh ngại kill 1 PID :-?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7560</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7560</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 18:58:20]]> GMT</pubDate>
+				<author><![CDATA[ mainhu]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ Chức năng này có nhiệm vụ quản lý, giám sát các tiến trình, tập tin, thư mục, thiết bị trên hệ thống Unix . Ví dụ ở đoạn này
+<blockquote>1. check process apache with pidfile "/usr/local/apache/logs/httpd.pid"
+2. start = “/etc/init.d/httpd start"
+3.  stop = "/etc/init.d/httpd stop"
+4. if cpu usage is greater than 60 percent for 2 cycles then alert
+5. if cpu usage > 98% for 5 cycles then restart
+6. if 2 restarts within 3 cycles then timeout&nbsp;
+		</blockquote>
+Ở câu 6, nếu cả 2 lần reset trong khoãng 3 chu kì thì timeout (vậy nó ngũm)
+
+Tài liệu monit , tôi đọc nhiều lần nhưng tôi không tìm ra nó <b>killall httpd</b> ở đoạn nào cả. Vậy monit này nó có cần thiết chấm dứt các tiến trình đang hoạt động hay chĩ là có chức năng là làm nhiệm vụ trọng tâm giám sát các tiến trình mà thôi tức là trạng thái nào đang có lỗi hoặc vượt mức cho phép mà mình quy định thì nó tự động bảo dưỡng, sửa chữa trạng thái lỗi này, chứ nó không có kill process.  
+
+<blockquote>monit is a utility for managing and monitoring, processes, files, directories and devices on a Unix system. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations. E.g. monit can start a process if it does not run, restart a process if it does not respond and stop a process if it uses to much resources. You may use monit to monitor files, directories and devices for changes, such as timestamp changes, checksum changes or size changes.&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7660</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#7660</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 04:03:59]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ Hi anh conmale em cấu hình monit để nó giám sát các dịch vụ trên máy em như thế này ko biết đã ổn chưa. Anh có thể tư vấn cho em chút được ko ạ
+Máy này chỉ có RAM 512 CPU 3Ghz bình thường thôi ạ. Dùng để giám sát những kết nối trong mạng
+
+ set daemon 120 # Poll at 2-minute intervals
+ set logfile syslog facility log_daemon
+ set alert xxxx@yyy.com.vn
+ set httpd port 2812 and use address localhost
+     allow localhost   # Allow localhost to connect
+     allow 10.252.10.0/255.255.255.0
+     allow admin:xxxx # Allow Basic Auth
+
+ check system localhost.localdomain
+    if loadavg (1min) &gt; 4 then alert
+    if loadavg (5min) &gt; 2 then alert
+    if memory usage &gt; 75% then alert
+    if cpu usage (user) &gt; 70% then alert
+    if cpu usage (system) &gt; 30% then alert
+    if cpu usage (wait) &gt; 20% then alert
+
+ check process apache
+    with pidfile /var/run/httpd.pid
+    start program = "/etc/rc.d/init.d/httpd start"
+    stop program = "/etc/rc.d/init.d/httpd stop"
+    if 5 restarts within 5 cycles then timeout
+    if totalmem &gt; 100 Mb then alert
+    if children &gt; 255 for 3 cycles then stop
+    if cpu usage &gt; 95% for 3 cycles then restart
+    if failed port 80 protocol http then start
+
+ check host tomcat with address 127.0.0.1
+       if failed port 8080 protocol http 
+       then exec "/etc/init.d/tomcat4 start"
+
+ check process postgresql
+     with pidfile /var/run/postmaster.5432.pid
+     start program = "/etc/rc.d/init.d/postgresql start"
+     stop program = "/etc/rc.d/init.d/postgresql stop"
+     if 5 restarts within 5 cycles then timeout
+     if failed port 5432 then start
+ check process opennms
+     with pidfile /var/run/opennms.pid
+     start program = "/etc/rc.d/init.d/opennms start"
+     stop program = "/etc/rc.d/init.d/opennms stop"
+     if 5 restarts within 5 cycles then timeout
+     if changed pid then start
+
+ check process ssh
+     with pidfile /var/run/sshd.pid
+     start program = "/etc/rc.d/init.d/sshd start"
+     stop program = "/etc/rc.d/init.d/sshd stop"
+     if failed port 22 protocol ssh  then start
+
+
+set logfile /var/log/monit.log
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86304</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86304</link>
+				<pubDate><![CDATA[Sat, 22 Sep 2007 12:20:21]]> GMT</pubDate>
+				<author><![CDATA[ MrMe]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ Server của bro phục vụ cho nhiều ứng dụng nhỉ  :)) 
+
+<blockquote> set httpd port 2812 and use address localhost &nbsp;
+		</blockquote>
+
+Mặc định monit chạy trên cổng 2812 sao không set cổng khác !?
+
+<blockquote>allow admin:xxxx # Allow Basic Auth &nbsp;
+		</blockquote>
+
+Sao lấy admin để làm user đăng nhập, sao bro không dùng cuti, tisunrang
+
+<blockquote> check process apache
+with pidfile /var/run/httpd.pid
+start program = "/etc/rc.d/init.d/httpd start"
+stop program = "/etc/rc.d/init.d/httpd stop"
+if 5 restarts within 5 cycles then timeout
+if totalmem &gt; 100 Mb then alert
+if children &gt; 255 for 3 cycles then stop
+if cpu usage &gt; 95% for 3 cycles then restart
+if failed port 80 protocol http then start &nbsp;
+		</blockquote>
+
+Sao bro không tạo thêm 1 group nào đó và thêm group này vào cho nó vậy bạn  :)) 
+
+Mình thêm vào như sau
+<blockquote>group hvaonline
+if failed host &lt;IP&gt; port 80
+protocol http then restart
+if 5 restarts within 5 cycles then timeout&nbsp;
+		</blockquote>
+
+Như vậy xem ra khá phù hợp  :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86353</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86353</link>
+				<pubDate><![CDATA[Sat, 22 Sep 2007 15:55:15]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Server của bro phục vụ cho nhiều ứng dụng nhỉ  :)) 
+
+<blockquote> set httpd port 2812 and use address localhost &nbsp;
+		</blockquote>
+
+Mặc định monit chạy trên cổng 2812 sao không set cổng khác !?
+
+<blockquote>allow admin:xxxx # Allow Basic Auth &nbsp;
+		</blockquote>
+
+Sao lấy admin để làm user đăng nhập, sao bro không dùng cuti, tisunrang
+
+<blockquote> check process apache
+with pidfile /var/run/httpd.pid
+start program = "/etc/rc.d/init.d/httpd start"
+stop program = "/etc/rc.d/init.d/httpd stop"
+if 5 restarts within 5 cycles then timeout
+if totalmem &gt; 100 Mb then alert
+if children &gt; 255 for 3 cycles then stop
+if cpu usage &gt; 95% for 3 cycles then restart
+if failed port 80 protocol http then start &nbsp;
+		</blockquote>
+
+Sao bro không tạo thêm 1 group nào đó và thêm group này vào cho nó vậy bạn  :)) 
+
+Mình thêm vào như sau
+<blockquote>group hvaonline
+if failed host &lt;IP&gt; port 80
+protocol http then restart
+if 5 restarts within 5 cycles then timeout&nbsp;
+		</blockquote>
+
+Như vậy xem ra khá phù hợp  :)) &nbsp;
+		</blockquote>
+
+Cảm ơn bác rất nhiều với những góp ý này. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86701</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#86701</link>
+				<pubDate><![CDATA[Mon, 24 Sep 2007 17:24:08]]> GMT</pubDate>
+				<author><![CDATA[ MrMe]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ lQ nhớ ko lầm thì chỉ có thể lựa chọn 1 trong 2 kiểu lưu logfile: syslog hoặc chỉ định tên file cụ thể.
+<blockquote>
+ set logfile /var/log/monit.log
+ set logfile syslog facility log_daemon 
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#89742</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#89742</link>
+				<pubDate><![CDATA[Tue, 9 Oct 2007 16:29:20]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về monit package</title>
+				<description><![CDATA[ 
+set logfile syslog facility log_daemon 
+set logfile /var/log/monit.log
+
+Em làm như vậy thì thấy nó log vào monit.log
+Thanks 4 suppor t :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#89777</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#89777</link>
+				<pubDate><![CDATA[Tue, 9 Oct 2007 18:45:47]]> GMT</pubDate>
+				<author><![CDATA[ MrMe]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ Mình mới cài đặt monit trên Debian và cấu hình tập tin /etc/monit/monitrc 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>set httpd port 2812
+allow admin:mypassword</pre>
+		</div>
+
+Chạy service monit thì log báo ra là : "monit daemon at 11111 awakened " 
+Nhưng từ trình duyệt mình truy cập cả bằng IP của server hoặc bằng domain qua port 2812 thì đều không được ? 
+
+Ngoài ra đã netstat -natp|grep 2812 thì không thấy dịch vụ nào listen port này. 
+Như vậy mình cấu hình có chỗ nào nhầm không, mong mọi người giúp mình với. 
+Xin chân thành cảm ơn. 
+Tuấn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#239836</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#239836</link>
+				<pubDate><![CDATA[Thu, 9 Jun 2011 02:44:04]]> GMT</pubDate>
+				<author><![CDATA[ tuan_ryan]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về monit package</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuan_ryan wrote:</cite><br>
+		<blockquote>Mình mới cài đặt monit trên Debian và cấu hình tập tin /etc/monit/monitrc 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>set httpd port 2812
+allow admin:mypassword</pre>
+		</div>
+
+Chạy service monit thì log báo ra là : "monit daemon at 11111 awakened " 
+Nhưng từ trình duyệt mình truy cập cả bằng IP của server hoặc bằng domain qua port 2812 thì đều không được ? 
+
+Ngoài ra đã netstat -natp|grep 2812 thì không thấy dịch vụ nào listen port này. 
+Như vậy mình cấu hình có chỗ nào nhầm không, mong mọi người giúp mình với. 
+Xin chân thành cảm ơn. 
+Tuấn.&nbsp;
+		</blockquote>
+
+Mình đã giải quyết được vấn đề, do chưa kill triệt để process monit sau khi config. 
+
+Thân, 
+Tuấn. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1515.hva#239839</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1515.hva#239839</link>
+				<pubDate><![CDATA[Thu, 9 Jun 2011 03:14:34]]> GMT</pubDate>
+				<author><![CDATA[ tuan_ryan]]></author>
+			</item>
+	</channel>
+</rss>

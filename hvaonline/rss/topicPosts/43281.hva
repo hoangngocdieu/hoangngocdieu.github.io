@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Triển khai chứng chỉ SSL cho IIS 7.5 Webserver - Phần 1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Triển khai chứng chỉ SSL cho IIS 7.5 Webserver - Phần 1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Triển khai chứng chỉ SSL cho IIS 7.5 Webserver - Phần 1</title>
+				<description><![CDATA[ Duyệt Web trên Internet và mạng nội bộ là một trong những tác vụ phổ biến nhất trong hoạt động của tổ chức và các cá nhân. Mặc định thì giao thức HTTP không thực hiện mã hóa dữ liệu truyền giữa Web server và Web client.
+
+Tuy nhiên khi cài đặt chứng chỉ dành cho Web server thì nó sẽ triển khai giao thức SSL để đạt được hai mục đích sau:
+
+-  Web browser trên client xác minh nhận dạng của Web server bằng cách kiểm tra tính chính xác, hiệu lực của chứng chỉ của Web server.
+
+-  Mã hóa dữ liệu được truyền qua lại giữa Web server và Web browser.
+
+Loạt bài viết gồm 2 phần này sẽ trình bày các chi tiết để triển khai chứng chỉ SSL cho Web server IIS 7.5 trên nền Windows Server 2008.
+
+<b><font color='yellow'>1     Giao thức SSL làm việc như thế nào</font></b>
+
+Khi một Web client kết nối tới một Web server được bảo vệ bởi SSL thì về cơ bản, quá trình xác minh nhận dạng của Web server và mã hóa dữ liệu diễn ra như sau:
+
+1.   Một kết nối SSL được khởi tạo khi người dùng gõ hoặc nhấn vào một URL mà bắt đầu bằng cụm HTTPS.
+
+2    Khi kết nối được thiết lập, Web server sẽ gửi chứng chỉ của nó cho Web browser.
+
+3.   Để xác thực Web server, Web  browser thực hiện xác minh chứng chỉ thông qua các bước kiểm tra sau:
+
+a.  Kiểm tra chuỗi chứng chỉ từ Web server lên tới Trusted Root CA.
+b.  Đảm bảo rằng tên trong trường Subject của chứng chỉ khớp với tên miền trong URL.
+c.  Đảm bảo rằng chứng chỉ của Web server vẫn còn thời gian hiệu lực.
+d.  Đảm bảo rằng chứng chỉ của Web server chưa bị thu hồi (không có trong CRL).
+
+4.    Nếu một trong 4 bước kiểm tra ở trên gặp thất bại thì thường Web browser sẽ hiện cảnh báo cho người dùng không nên tin tưởng Web server và có thể thêm một tùy chọn cho phép người dùng vẫn tiếp tục kết nối và trao đổi dữ liệu với Web server.
+
+5.    Nếu chứng chỉ của Web server vượt qua cả 4 bước kiểm tra trên thì Web browser sẽ trích ra khóa công khai được lưu trong chứng chỉ.
+
+6.    Web browser tạo một khóa bí mật gọi là pre-master có giá trị ngẫu nhiên với chiều dài do 2 bên thỏa thuận.
+
+7.    Web browser sử dụng khóa công khai của Web server để mã hóa khóa pre-master rồi gửi tới Web server.
+
+8.    Web server sử dụng khóa bí mật của nó để giãi mã ra khóa pre-master.
+
+9.    Phụ thuộc vào CSP được cài đặt trên Web server mà Web server và Web client sẽ sử dụng thuật toán Diffie-Hellman hoặc RSA cùng với khóa pre-master để tạo một khóa phiên đối xứng.
+
+10.   Khóa phiên đối xứng được Web server và Web client sử dụng để mã hóa dữ liệu được truyền giữa hai bên. Khóa phiên này tồn tại cho tới khi Web client hoặc Web server hủy phiên HTTPS.
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/07/ssl.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+<i>Các bước Web server và Web client liên lạc thông qua SSL (hình từ Internet)</i>
+
+<b><font color='yellow'>2     Các loại chứng chỉ dùng cho SSL</font></b>
+
+Khi triển khai SSL, có hai loại chứng chỉ có thể được dùng là:
+
+<b>Chứng chỉ cho Web server:</b> một Web server muốn áp dụng SSL thì bắt buộc phải có loại chứng chỉ này. Nó được dùng để mã hóa khóa pre-master được Web client gửi cho Web server và đồng thời giúp xác minh nhận dạng của Web server để Web client có thể tin tưởng rằng đó không phải là Web server giả mạo được kẻ tấn công dựng lên. Chứng chỉ của Web server phải bao gồm Server Authentication OID trong extension Enhanced Key Usage.
+
+<b>Chứng chỉ cho Web client:</b> Khi một Website yêu cầu người dùng kết nối tới nó phải được xác thực thì Web client có thể sử dụng loại chứng chỉ này. Tuy các kết nối SSL không ép buộc điều này nhưng nó giúp tăng độ an toàn cho Web server trong trường hợp chỉ cho phép những người dùng được xác thực (Web client của họ được cài loại chứng chỉ này) kết nối tới nó. Chứng chỉ của Web client phải bao gồm Client Authentication OID trong extension Enhanced Key Usage.
+
+<b><font color='yellow'>3     Chọn nhà cung cấp chứng chỉ SSL cho Web server</font></b>
+
+Việc lựa chọn sẽ nhận chứng chỉ cho Web server từ đâu (CA nào) thường dựa trên việc xem xét các Web client thuộc nội bộ hay bên ngoài tổ chức. Các client nội bộ là nhân viên hoặc đối tác mà có thể có hoặc không được cấp các tài khoản dùng trong mạng của tổ chức. Các client bên ngoài thường là các khách hàng mà không được cấp các tài khoản dùng trong mạng của tổ chức.
+
+Thường một CA riêng tư (private CA) được xây dựng để cấp chứng chỉ cho các Web server nội bộ khi:
+
+- Tổ chức phải tuân thủ các chính sách an ninh và chính sách chứng chỉ do họ đề ra. Trong khi đó, một chứng chỉ do một CA thương mại (như Verisign) cấp yêu cầu tổ chức phải tuân theo tập các chỉ dẫn trong CPS của CA đó.
+- Tổ chức muốn giảm chi phí mua chứng chỉ từ các CA thương mại vì các Web server chỉ cần chấp nhận các kết nối từ các nhân viên và những đối tác được tin cậy khác là đủ. Trong trường hợp này, các nhân viên và đối tác được yêu cầu phải tin cậy và cài đặt chứng chỉ của các CA của tổ chức.
+
+Thường một CA thương mại (commercial CA) được chọn để cấp chứng chỉ cho các Web server của tổ chức khi:
+
+- Tổ chức không muốn triển khai một hạ tầng PKI nội bộ để giảm chi phí cho việc thiết kế, triển khai và quản lý CA và các chứng chỉ.
+- Tổ chức sử dụng Website để bán hàng hóa và cung cấp các dịch vụ qua Internet cho nhiều đối tượng khách hàng khác nhau, và các CA thương mại mặc định đã được tin cậy bởi hầu hết các Web client. Điều này vì vậy mang lại sự thuận tiện và đảm bảo cho các giao dịch điện tử.
+- Tổ chức muốn triển khai chứng chỉ EV (Extended Validation) để thanh địa chỉ của Web browser sẽ chuyển sang màu xanh và có tên của tổ chức ở bên trái. Điều này nói lên rằng CA thương mại đã bỏ thêm tài nguyên và thời gian để xác minh người sở hữu chứng chỉ SSL của website thực sự là đại diện của tổ chức. Cũng vì vậy mà chứng chỉ EV luôn mắc hơn các chứng chỉ loại thông thường.
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/07/evcert.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<i>Thanh địa chỉ của các Web browser cho biết Website sử dụng một EV certificate (hình từ Internet)</i>
+
+<b>--manthang</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43281.hva#268892</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43281.hva#268892</link>
+				<pubDate><![CDATA[Wed, 29 Aug 2012 20:52:23]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+	</channel>
+</rss>

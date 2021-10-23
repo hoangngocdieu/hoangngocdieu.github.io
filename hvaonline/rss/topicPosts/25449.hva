@@ -1,0 +1,1446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[MySQL cluster] SQL node không thể kết nối đến Management node?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[MySQL cluster] SQL node không thể kết nối đến Management node?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Chào anh em,
+
+Tôi định dựng MySQL Cluster trên 3 con máy (dùng VirtualBox) với thông tin như sau:
+- Management node: 192.168.5.35
+- NDB + API node 1: 192.168.5.199 
+- NDB + API node 2: 192.168.5.200
+<i>(Tôi để data node và SQL node chung trên 2 con .199 và .200)</i>
+
+Đoạn script để cài MySQL cluster trên từng máy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+
+if &#91; `grep mysql /etc/shadow | wc -l` -eq 0 &#93;; then
+	sudo groupadd mysql
+	sudo useradd -g mysql mysql
+fi
+
+sudo tar -C /usr/local -zxf mysql-cluster-gpl-6.3.17-linux-i686-glibc23.tar.gz
+cd /usr/local
+sudo ln -s mysql-cluster-gpl-6.3.17-linux-i686-glibc23 mysql
+
+cd mysql
+sudo ./scripts/mysql_install_db
+
+sudo chown -R root:mysql .
+sudo chown -R mysql:mysql ./data
+
+#echo "PATH=$PATH:/usr/local/mysql/bin" &gt;&gt; ~/.bash_profile
+#echo "export PATH" &gt;&gt; ~/.bash_profile
+#source ~/.bash_profile
+
+sudo cp ./support-files/mysql.server /etc/init.d/mysql
+sudo chkconfig --add mysql
+sudo chkconfig --level 35 mysql on
+
+sudo /etc/init.d/mysql start
+
+cd /usr/local/mysql/bin
+./mysqladmin -u root password xx</pre>
+		</div>
+
+file cấu hình <b>config.ini</b> trên MGM node như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Options affecting NDBD processes on all Data Nodes
+&#91;NDBD DEFAULT&#93;
+NoOfReplicas=2                                  # Number of replicas
+DataDir=/usr/local/mysql/mysql-cluster          # Directory for the data files on all the data nodes
+DataMemory=15M                                  # How much memory to allocate for data storage
+IndexMemory=15M                                 # How much memory to allocate for index storage
+                                                # Since the "world" database takes up only about 500KB,
+                                                # the configured values for DataMemory and IndexMemory
+                                                # should be more than enough for this example Cluster setup
+
+# TCP/IP options:
+&#91;TCP DEFAULT&#93;     
+portnumber=2202                                 # This the default; however, you can use any
+                                                # port that is free for all the hosts in the cluster
+
+# MANAGEMENT &#40;MGM&#41; NODE
+&#91;NDB_MGMD&#93;
+HostName=192.168.5.35                              # Hostname or IP address of MGM node
+DataDir=/usr/local/mysql/mysql-cluster          # Directory for MGM node log files
+NodeId=1
+
+# DATA NODES
+&#91;NDBD&#93;
+HostName=192.168.5.199                             # Hostname or IP address of the Data Node
+DataDir=/usr/local/mysql/mysql-cluster
+NodeId=2
+
+&#91;NDBD&#93;
+HostName=192.168.5.200                              # Hostname or IP address of the Data Node
+DataDir=/usr/local/mysql/mysql-cluster
+NodeId=3
+
+# SQL NODE
+&#91;mysqld&#93;
+HostName=192.168.5.199
+NodeId=4
+
+&#91;mysqld&#93;
+HostName=192.168.5.200
+NodeId=5</pre>
+		</div>
+
+File cấu hình <b>my.cnf</b> trên mỗi data node như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;MYSQLD&#93;
+ndbcluster
+ndb-connectstring=192.168.5.35
+
+&#91;MYSQL_CLUSTER&#93;
+ndb-connectstring=192.168.5.35</pre>
+		</div>
+
+MGM node đã được chạy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps aux | grep mgmd
+root     16567  0.4  0.1  18028  2700 ?        Ssl  10:22   0:10 ndb_mgmd -f /etc/config.ini
+root     19149  0.0  0.0   4188   772 pts/3    S+   11:05   0:00 grep mgmd</pre>
+		</div>
+
+Các data node cũng thế:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps aux | grep ndbd
+root      2293  0.0  0.3  17980  2036 ?        Ss   18:03   0:00 ndbd --initial
+root      2294  6.2 14.3 236088 73744 ?        Sl   18:03   0:00 ndbd --initial
+root      2326  0.0  0.1   4120   684 pts/0    R+   18:03   0:00 grep ndb</pre>
+		</div>
+
+ndbcluster storage engine đã được enabled trên mỗi data node:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; SHOW ENGINES\G
+*************************** 1. row ***************************
+      Engine: ndbcluster
+     Support: YES
+     Comment: Clustered, fault-tolerant tables
+Transactions: YES
+          XA: NO
+  Savepoints: NO</pre>
+		</div>
+
+MySQL server đã chạy trên mỗi API node:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps aux | grep mysqld
+root      2134  0.0  0.2   4748  1152 tty1     S    17:40   0:00 /bin/sh ./bin/mysqld_safe --datadir=/usr/local/mysql/data --pid-file=/usr/local/mysql/data/guest.kitty.com.pid
+mysql     2195  0.4  3.0 119872 15756 tty1     Sl   17:40   0:10 /usr/local/mysql/bin/mysqld --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data --user=mysql --log-error=/usr/local/mysql/data/guest.kitty.com.err --pid-file=/usr/local/mysql/data/guest.kitty.com.pid
+root      2330  0.0  0.1   4124   700 pts/0    S+   18:15   0:00 grep mysqld</pre>
+		</div>
+
+Nhưng start management client để xem trạng thái của cluster thì các API không kết nối tới được:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ndb_mgm&gt; show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;	2 node&#40;s&#41;
+id=2	@192.168.5.199  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+id=3	@192.168.5.200  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93;	1 node&#40;s&#41;
+id=1   &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;	2 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from 192.168.5.199&#41;
+id=5 &#40;not connected, accepting connect from 192.168.5.200&#41;</pre>
+		</div>
+
+Log trên MGM node cho biết rằng node 2 và node 3 (Data node) đã được kết nối:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2008-10-07 14:49:59 &#91;MgmSrvr&#93; INFO     -- Node 1: Node 2 Connected
+2008-10-07 14:50:00 &#91;MgmSrvr&#93; INFO     -- Node 3: Initial start, waiting for 0000000000000004 to connect,  nodes &#91; all: 000000000000000c connected: 0000000000000008 no-wait: 0000000000000000 &#93;
+...
+2008-10-07 14:51:45 &#91;MgmSrvr&#93; INFO     -- Node 1: Node 3 Connected
+2008-10-07 14:51:46 &#91;MgmSrvr&#93; INFO     -- Mgmt server state: nodeid 3 freed, m_reserved_nodes 0000000000000000000000000000000000000000000000000000000000000032.</pre>
+		</div>
+Node 4 và node 5 (SQL node) đã chạy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2008-10-07 14:55:07 &#91;MgmSrvr&#93; INFO     -- Node 4: mysqld --server-id=1
+...
+2008-10-07 15:12:37 &#91;MgmSrvr&#93; INFO     -- Node 5: mysqld --server-id=1</pre>
+		</div>
+Log trên SQL node:
+<blockquote>
+# tail -f guest.kitty.com.err
+081007 21:43:42 mysqld_safe mysqld from pid file /usr/local/mysql/data/guest.kitty.com.pid ended
+081007 21:44:33 mysqld_safe Starting mysqld daemon with databases from /usr/local/mysql/data
+081007 21:44:33  InnoDB: Started; log sequence number 0 46419
+081007 21:44:33 [Note] NDB: NodeID is 4, management server '192.168.0.231:1186'
+<font color='orange'>081007 21:44:34 [Note] NDB[0]: no storage nodes connected (timed out)</font>
+081007 21:44:34 [Note] Starting Cluster Binlog Thread
+081007 21:44:34 [Note] Event Scheduler: Loaded 0 events
+081007 21:44:34 [Note] /usr/local/mysql/bin/mysqld: ready for connections.
+Version: '5.1.27-ndb-6.3.17-cluster-gpl'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Cluster Server (GPL)
+&nbsp;
+		</blockquote>
+
+Anh em giúp tôi khắc phục trở ngại này với. Cảm ơn.
+
+PS: Mọi người cần thông tin gì thêm, tôi sẽ cung cấp.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154149</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154149</link>
+				<pubDate><![CDATA[Mon, 6 Oct 2008 13:30:41]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ Trên Storage Node,quanta đã chạy lệnh ndbd chưa? (Không tính ndbd lần đầu hen!)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154285</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154285</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 12:37:16]]> GMT</pubDate>
+				<author><![CDATA[ 8668]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">8668 wrote:</cite><br>
+		<blockquote>Trên Storage Node,quanta đã chạy lệnh ndbd chưa? (Không tính ndbd lần đầu hen!)&nbsp;
+		</blockquote>
+- Lần đầu tiên thì mình sẽ chạy với <b>--initial</b>
+- Sau đó thì chỉ cần chạy <b>ndbd</b> thôi
+
+Tớ chạy rồi mà. Hơn nữa, vấn đề nằm ở thằng API node chứ, thằng Data node kết nối ngon rồi mà:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ndb_mgm -e show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;	2 node&#40;s&#41;
+id=2	@192.168.0.229  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+id=3	@192.168.0.230  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+...</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154317</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154317</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 15:37:38]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ Thử xem mysqld đã chạy chưa ? quanta cho xem cấu hình của 2 Storage Node.
+
+PS: Đã thấy 2 file mý.cnf . Dạo trước sau khi bị hiện tượng này,tôi đã xoá DB của mýqld làm lại từ đầu,và đánh lệng ndbd (hầu như lần nào tôi bị cũng vướng lỗi quên câu lệnh này).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154326</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154326</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 17:00:47]]> GMT</pubDate>
+				<author><![CDATA[ 8668]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">8668 wrote:</cite><br>
+		<blockquote>Thử xem mysqld đã chạy chưa ? quanta cho xem cấu hình của 2 Storage Node.
+
+PS: Đã thấy 2 file mý.cnf . Dạo trước sau khi bị hiện tượng này,tôi đã xoá DB của mýqld làm lại từ đầu,và đánh lệng ndbd (hầu như lần nào tôi bị cũng vướng lỗi quên câu lệnh này).&nbsp;
+		</blockquote>
+- mysqld đã chạy
+- ndbd cũng thế. Nếu chưa chạy ndbd thì làm sao có thông tin của node 2 và node 3 từ output của lệnh <b># ndb_mgm -e SHOW</b> như tớ đưa ở trên.
+
+Bạn đọc <b>kỹ</b> lại bài post đầu tiên của tớ đi. Tớ vừa sửa lại và thêm một vài thông tin log.
+
+Tớ đã xoá database của mysql, chạy lại lệnh <b># ./scripts/mysql_install_db --user=mysql</b>, restart mysqld rồi thử lại, nhưng không có gì thay đổi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154329</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154329</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 17:42:38]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ Google một hồi thì thấy khá nhiều người gặp tình trạng giống mình. Tớ đã thử sửa file cấu hình my.cnf như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;MYSQLD&#93;
+server-id=1
+ndbcluster
+ndb-connectstring="nodeid=4,192.168.0.231:1186"
+
+&#91;MYSQL_CLUSTER&#93;
+ndb-connectstring=192.168.0.231:1186</pre>
+		</div>
+<i>(tương tự với nodeid=5)</i>
+
+sau đó restart mysqld, nhưng mọi chuyện vẫn thế.
+
+PS: IP trong bài này đã khác với bài đầu tiên, các bạn không cần quan tâm đến nó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154330</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154330</link>
+				<pubDate><![CDATA[Tue, 7 Oct 2008 17:48:03]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ Tôi đã giải quyết xong vụ này. Lý do là tôi chưa đọc kỹ tài liệu:
+
+Trích từ: <span class="link"> http://dev.mysql.com/doc/refman/5.1/en/mysql-cluster-multi-config.html</span>
+<blockquote>
+Note
+
+The default port for Cluster management nodes is 1186; the default port for data nodes is 2202. However, the cluster can automatically allocate ports for data nodes from those that are already free.
+&nbsp;
+		</blockquote>
+
+Như vậy:
+- <font color='orange'>Trên con management node cần mở cả 2 port 1186 và 2202</font>
+- Trên 2 con data nodes cần phải mở port 2202:
+- Trên 2 con SQL nodes cần mở port 3306
+
+Và thế là:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ndb_mgm -e SHOW
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;	2 node&#40;s&#41;
+id=2	@192.168.0.229  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0, Master&#41;
+id=3	@192.168.0.230  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93;	1 node&#40;s&#41;
+id=1	@192.168.0.231  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;	2 node&#40;s&#41;
+id=4	@192.168.0.229  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+id=5	@192.168.0.230  &#40;mysql-5.1.27 ndb-6.3.17&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154418</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154418</link>
+				<pubDate><![CDATA[Wed, 8 Oct 2008 11:45:52]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ Hi anh quata,
+
+Anh có thể cho em xin tài liệu mà anh đã dựa theo đó để triển khai mô hình này ko ? Vì em cũng đang tính implement 1 cái tương tự như anh vậy  ;) 
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154422</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154422</link>
+				<pubDate><![CDATA[Wed, 8 Oct 2008 11:58:22]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] API node không thể kết nối đến MGM node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Hi anh quata,
+
+Anh có thể cho em xin tài liệu mà anh đã dựa theo đó để triển khai mô hình này ko ? Vì em cũng đang tính implement 1 cái tương tự như anh vậy  ;) 
+
+Thân,&nbsp;
+		</blockquote>
+Chào <b>rickb</b>,
+
+Tài liệu ở trên đây:
+<span class="link"> http://dev.mysql.com/doc/refman/5.1/en/mysql-cluster.html</span>
+
+Thêm vài cái links từ Google:
+<span class="link"> http://forums.mysql.com/read.php?25,219389,219389</span> 
+<span class="link"> http://blogs.sun.com/hasham/entry/setting_up_mysql_cluster_using</span> 
+<span class="link"> http://forums.theplanet.com/index.php?showtopic=63738&pid=596761&mode=threaded&start=</span> 
+<span class="link"> http://www.zawmin.com/blog/?p=70</span> 
+<span class="link"> http://technopark02.blogspot.com/2008_08_01_archive.html</span> 
+<span class="link"> http://www.orafaq.com/aggregator/sources/70</span> 
+<span class="link"> http://johanandersson.blogspot.com/2008/08/evaluation-and-development-packages.html</span> 
+<span class="link"> http://www.dbnewz.com/2008/07/18/installation-du-mysql-cluster/</span> 
+<span class="link"> http://dev.mysql.com/tech-resources/articles/mysql-cluster-for-two-servers.html</span> 
+<span class="link"> http://htmlhelp.sunsite.dk/page.php/mysql_manual/mysql-cluster-quick.html#SEC721</span> 
+<span class="link"> http://www.davz.net/static/howto/mysqlcluster</span> 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154427</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154427</link>
+				<pubDate><![CDATA[Wed, 8 Oct 2008 12:14:07]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Cám ơn bài viết của anh Quanta, em cũng đang dự tính tìm hiểu về nó sau vụ cái đống database của server em mới sập. Mong anh chỉ giúp thêm. Thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154909</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#154909</link>
+				<pubDate><![CDATA[Sat, 11 Oct 2008 19:25:31]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ anh quanta cho em hỏi sao anh lại sử dụng 2 cái server cài NDB + AIP node mà anh không tách ra 1 cái NDB và một cái AIP node, nếu mô hình Mysql cluser của anh thì nó có ưu và nhược điểm gì so với một MGM, API và một cá NDBD]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155453</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 12:40:32]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>anh quanta cho em hỏi sao anh lại sử dụng 2 cái server cài NDB + <font color='red'>AIP node</font> mà anh không tách ra 1 cái NDB và một cái <font color='red'>AIP node</font>, nếu mô hình Mysql cluser của anh thì nó có ưu và nhược điểm gì so với một MGM, API và một cá NDBD&nbsp;
+		</blockquote>
+- Nên đính chính lại là Data nodes và SQL nodes cho nó chuẩn bạn à
+- Nếu chỉ để 1 Data node và 1 SQL node thì khi một trong 2 cái node đó nó chết thì chuyện gì xảy ra, hệ thống của mình có được gọi là cluster nữa không?
+
+Tham khảo: <span class="link"> http://www.mysql.com/products/database/cluster/faq.html#10</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155464</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155464</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 13:15:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[  
+Anh cho em hỏi khi em đọc chương 16 của thằng Mysql 16.2.2 Multi-Computer Installation thì nó đề cập thêm một gói packet là mysql-ndb vậy giữa gói mysql-ndb và gói mysql-cluster nó khác nhau như thế nào. Mong anh giúp đỡ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155491</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155491</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 16:16:56]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote> 
+Anh cho em hỏi khi em đọc chương 16 của thằng Mysql 16.2.2 Multi-Computer Installation thì nó đề cập thêm một gói packet là mysql-ndb vậy giữa gói mysql-ndb và gói mysql-cluster nó khác nhau như thế nào. Mong anh giúp đỡ &nbsp;
+		</blockquote>
+Đọc kỹ, đi theo đường link mà nó chỉ, xem nó đưa bạn tới đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155493</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155493</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 16:33:49]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Change location to the /var/tmp directory, and extract the ndb_mgm and ndb_mgmd from the archive into a suitable directory such as /usr/local/bin:
+
+shell&gt; cd /var/tmp
+shell&gt; tar -zxvf mysql-5.1.24-ndb-6.2.16-linux-i686-glibc23.tar.gz
+shell&gt; cd mysql-5.1.24-ndb-6.2.16-linux-i686-glibc23
+shell&gt; cp /bin/ndb_mgm* /usr/local/bin
+
+(You can safely delete the directory created by unpacking the downloaded archive, and the files it contains, from /var/tmp once ndb_mgm and ndb_mgmd have been copied to the executables directory.)
+
+Nhưng em không tìm thấy file ndb_mgm, và em thấy trong thư mục source man/ co ndb_mgm.1 và ndb_mgmd.8 và em copy qua nhưng nó báo lỗi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155587</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155587</link>
+				<pubDate><![CDATA[Fri, 17 Oct 2008 11:50:50]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+<blockquote>
+Change location to the /var/tmp directory, and extract the ndb_mgm and ndb_mgmd from the archive into a suitable directory such as /usr/local/bin:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>shell&gt; cd /var/tmp
+shell&gt; tar -zxvf mysql-5.1.24-ndb-6.2.16-linux-i686-glibc23.tar.gz
+shell&gt; cd mysql-5.1.24-ndb-6.2.16-linux-i686-glibc23
+shell&gt; cp /bin/ndb_mgm* /usr/local/bin</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Nhưng em không tìm thấy file ndb_mgm, và em thấy trong thư mục source man/ co ndb_mgm.1 và ndb_mgmd.8 và em copy qua nhưng nó báo lỗi&nbsp;
+		</blockquote>
+- Tên chính xác của gói source code bạn đã tải về là gì? Có phải <span class="link"> http://dev.mysql.com/get/Downloads/MySQL-Cluster-6.3/mysql-cluster-gpl-6.3.17-linux-i686-glibc23.tar.gz/from/http://mirror-fpt-telecom.fpt.net/mysql/</span> không? Đây, trên máy của tớ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ls /usr/local/mysql/bin/ | grep ndb_mgm
+ndb_mgm
+ndb_mgmd</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+...
+và em thấy trong thư mục source man/ co ndb_mgm.1 và ndb_mgmd.8 và em copy qua nhưng nó báo lỗi&nbsp;
+		</blockquote>
+Có lẽ bạn cần đọc <b>kỹ</b> lại về cấu trúc thư mục trên Linux. Mấy cái file trong thư mục <b>man</b> đó để dùng như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ man 1 ndb_mgm
+$ man 8 ndb_mgmd</pre>
+		</div>
+Chứ làm sao mà copy qua <b>/usr/local/bin</b> rồi dùng như binary files được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#155589</link>
+				<pubDate><![CDATA[Fri, 17 Oct 2008 12:12:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Trên con sever MGMD khi chạy lệnh ndb_mgmd thì nó báo lỗi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 mysql&#93;# ndb_mgmd -f /usr/local/mysql/mysql-cluster/config.ini Error line 32: Invalid no of db nodes wrt no of replicas.
+No of nodes must be dividable with no or replicas
+Invalid configuration file: /usr/local/mysql/mysql-cluster/config.ini</pre>
+		</div>
+
+dòng 32 là
+
+<blockquote>
+[mysqld]
+hostname=192.168.5.14    //line 32
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156500</link>
+				<pubDate><![CDATA[Fri, 24 Oct 2008 22:06:38]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ - Bạn cho xem toàn bộ file cấu hình <b>config.ini</b> đi.
+- Số lượng và cách phân bổ các nodes của bạn thế nào?
+- Cái thông báo trên nó nói khá rõ mà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156517</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156517</link>
+				<pubDate><![CDATA[Sat, 25 Oct 2008 01:36:37]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ MySQL Cluster của em gồm
+- Management node: 192.168.5.12
+- Data node           : 192.168.5.13
+- SQL node            : 192.168.5.24
+ 
+Thông tin của file config.ini như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Options affecting ndbd processes on all data nodes:
+&#91;ndbd default&#93;
+DataDir=/usr/local/mysql/mysql-cluster
+NoOfReplicas=2    # Number of replicas
+DataMemory=80M    # How much memory to allocate for data storage
+IndexMemory=18M   # How much memory to allocate for index storage
+                  # For DataMemory and IndexMemory, we have used the
+                  # default values. Since the "world" database takes up
+                  # only about 500KB, this should be more than enough for
+                  # this example Cluster setup.
+
+# TCP/IP options:
+&#91;tcp default&#93;
+portnumber=2202   # This the defaulte any port
+
+# MANAGEMENT &#40;MGM&#41; NODE
+&#91;ndb_mgmd&#93;
+hostname=192.168.5.12           # Hostname or IP address of MGM node
+datadir=/usr/local/mysql/mysql-cluster  # Directory for MGM node log files
+NodeId=1
+
+# DATA NODE
+&#91;ndbd&#93;
+                                # &#40;one &#91;ndbd&#93; section per data node&#41;
+hostname=192.168.5.13           # Hostname or IP address
+datadir=/usr/local/mysql/data   # Directory for this data node's data files
+NodeId=2
+
+# SQL NODE
+&#91;mysqld&#93;
+HostName=192.168.5.14           # Hostniame or IP address
+NodeId=3</pre>
+		</div>
+
+Thông tin của my.cnf trên SQL Node
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Options for mysqld process:
+&#91;mysqld&#93;
+ndbcluster                      # run NDB storage engine
+ndb-connectstring=192.168.5.12  # location of management server
+port=3306
+
+# Options for ndbd process:
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.5.12  # location of management server</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156543</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156543</link>
+				<pubDate><![CDATA[Sat, 25 Oct 2008 11:29:17]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Bạn đọc kỹ lại phần <b>16.1. MySQL Cluster Overview</b>. Bạn chỉ có 1 Data node mà <font color='#6699CC'>NoOfReplicas=2</font>, nên nó mới báo cáo là:
+<blockquote><font color='orange'>No of nodes must be dividable with no of replicas</font>&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156761</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156761</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 01:11:13]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Cám ơn anh quanta nhiều em đã fix xong lỗi của nó]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156818</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156818</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 12:07:02]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Hi anh quanta
+
+hiện em đang cài theo mô hình
+MGM node: 192.168.5.12
+Data node: 192.168.5.13
+               : 192.168.5.14
+
+Mysql node: 192.168.5.13
+                : 192.168.5.14
+
+anh cho em hỏi làm cách nào để open được 2 port 3306 và 2202 trên mỗi server
+
+my.cnf của em như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Options for mysqld process:
+&#91;mysqld&#93;
+ndbcluster                      # run NDB storage engine
+ndb-connectstring=192.168.5.12  # location of management server
+port=2202
+
+# Options for ndbd process:
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.5.12  # location of management server</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ndb_mgm&gt; show
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2 &#40;not connected, accepting connect from 192.168.5.13&#41;
+id=3    @192.168.5.14  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.5.12  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   2 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from 192.168.5.14&#41;
+id=5 &#40;not connected, accepting connect from 192.168.5.13&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156905</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156905</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 22:46:23]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+...
+anh cho em hỏi làm cách nào để open được 2 port 3306 và 2202 trên mỗi server
+&nbsp;
+		</blockquote>
+netfilter/iptables.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156908</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156908</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 23:08:06]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ anh có thể giải thích cho em được rõ không anh. Vì iptables em đã stop và không sử dụng nó. nhưng mặc nhiên lúc em cấu hình data node và mysql node ở trên mỗi máy riêng lẽ thì khi em sử dụng lệnh show thì chúng tự connect được hết. nhưng khi em tích hợp mỗi máy kiêm nhiệm 2 vai trò data và mysql node thì chỉ có 1 data node là connect
+
+Nhưng khi em start ndbd trên máy 5.13 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-02 mysql&#93;#ndbd
+&#91;root@RESEARCH-02 mysql&#93;#</pre>
+		</div>
+Thì nó không chạy
+
+ndbd log của nó như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-02 mysql&#93;# cat ndb_pid24386_error.log 
+Current byte-offset of file-pointer is: 568                       
+
+
+Time: Tuesday 28 October 2008 - 06:53:21
+Status: Permanent error, external action needed
+Message: Invalid configuration received from Management Server &#40;Configuration error&#41;
+Error: 2350
+Error data: Unable to alloc node id
+Error object: Error : Could not alloc node id at 192.168.5.12 port 1186: No free node id found for ndbd&#40;NDB&#41;.
+Program: ndbd
+Pid: 24386
+Trace: &lt;no tracefile&gt;
+Version: mysql-5.1.27 ndb-6.3.17-RC
+***EOM***</pre>
+		</div>
+
+Port 1186 trên server 5.12 vẫn được mở
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 mysql&#93;# netstat -an | grep 1186
+tcp        0      0 0.0.0.0:1186                0.0.0.0:*                   LISTEN      
+tcp        0      0 192.168.5.12:1186           192.168.5.13:55109          ESTABLISHED 
+tcp        0      0 127.0.0.1:1186              127.0.0.1:54662             ESTABLISHED 
+tcp        0      0 127.0.0.1:54662             127.0.0.1:1186              ESTABLISHED 
+tcp        0      0 192.168.5.12:1186           192.168.5.14:35676          ESTABLISHED 
+tcp        0      0 192.168.5.12:1186           192.168.5.14:35677          ESTABLISHED</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156909</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156909</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 23:16:30]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>anh có thể giải thích cho em được rõ không anh. Vì iptables em đã stop và không sử dụng nó. nhưng mặc nhiên lúc em cấu hình data node và mysql node ở trên mỗi máy riêng lẽ thì khi em sử dụng lệnh show thì chúng tự connect được hết. nhưng khi em tích hợp mỗi máy kiêm nhiệm 2 vai trò data và mysql node thì chỉ có 1 data node là connect&nbsp;
+		</blockquote>
+- Thử nghĩ xem trong trường hợp này, bạn stop iptables lại thì có được không? Bây giờ start nó lên, và mở port 3306 và 2202 tương ứng trên mỗi node rồi thử lại xem sao.
+- Trên con 192.168.5.13, thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ps aux | grep ndbd</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156911</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156911</link>
+				<pubDate><![CDATA[Mon, 27 Oct 2008 23:28:32]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ ndbd trên server 5.14 như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-03 ~&#93;# ps aux | grep ndbd
+root     15504  0.0  0.8  17676  2040 ?        Ss   11:17   0:00 ndbd
+root     15505  2.1 29.1 305432 73780 ?        Sl   11:17   0:00 ndbd
+root     15537  0.0  0.2  60232   700 pts/0    R+   11:18   0:00 grep ndbd</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156923</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156923</link>
+				<pubDate><![CDATA[Tue, 28 Oct 2008 00:06:52]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+Nhưng khi em start ndbd trên máy 5.13 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-02 mysql&#93;#ndbd
+&#91;root@RESEARCH-02 mysql&#93;#</pre>
+		</div>
+Thì nó không chạy
+&nbsp;
+		</blockquote>
+Dựa vào đâu bạn kết luận là <i>"nó không chạy"</i>?
+<p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+ndbd log của nó như sau
+<blockquote>
+[root@RESEARCH-02 mysql]# cat ndb_pid24386_error.log 
+Current byte-offset of file-pointer is: 568                       
+
+
+Time: Tuesday 28 October 2008 - 06:53:21
+Status: Permanent error, external action needed
+<font color='red'>Message: Invalid configuration received from Management Server (Configuration error)</font>
+Error: 2350
+<font color='red'>Error data: Unable to alloc node id
+Error object: Error : Could not alloc node id at 192.168.5.12 port 1186: No free node id found for ndbd(NDB).</font>
+Program: ndbd
+Pid: 24386
+Trace: &lt;no tracefile&gt;
+Version: mysql-5.1.27 ndb-6.3.17-RC
+***EOM***
+
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+- Tìm hiểu những dòng <font color='red'>màu đỏ</font>.
+- Xem lại file <b>config.ini</b> đi, bạn đã chuyển sang dùng 2 data nodes và 2 SQL nodes mà vẫn dùng file cấu hình cho 1 data node và 1 SQL node à?
+
+PS:
+- Đoạn log này bị 'vênh' so với thông tin chạy ndb ở trên
+- Tớ hỏi <font color='#6699CC'>$ ps aux</font> trên con .13 ấy (con chưa kết nối được ấy) chứ con .14 thì hỏi làm gì?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#156927</link>
+				<pubDate><![CDATA[Tue, 28 Oct 2008 00:32:56]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Hi anh 
+
+Trên con server 5.13
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-02 ~&#93;# ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2  10304   660 ?        Ss   Oct29   0:00 init &#91;3&#93;      
+root         2  0.0  0.0      0     0 ?        S    Oct29   0:00 &#91;migration/0&#93;
+root         3  0.0  0.0      0     0 ?        SN   Oct29   0:00 &#91;ksoftirqd/0&#93;
+root         4  0.0  0.0      0     0 ?        S    Oct29   0:00 &#91;watchdog/0&#93;
+root         5  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;events/0&#93;
+root         6  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;khelper&#93;
+root         9  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kthread&#93;
+root        13  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kblockd/0&#93;
+root        14  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kacpid&#93;
+root       177  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;cqueue/0&#93;
+root       180  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;khubd&#93;
+root       182  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kseriod&#93;
+root       247  0.0  0.0      0     0 ?        S    Oct29   0:00 &#91;pdflush&#93;
+root       249  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kswapd0&#93;
+root       250  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;aio/0&#93;
+root       453  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kpsmoused&#93;
+root       488  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;scsi_eh_0&#93;
+root       489  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kjournald&#93;
+root       516  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kauditd&#93;
+root       550  0.0  0.2  12560   748 ?        S&lt;s  Oct29   0:00 /sbin/udevd -d
+root      1687  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;kmirrord&#93;
+root      2255  0.0  0.2  16228   648 ?        S&lt;sl Oct29   0:00 auditd
+root      2257  0.0  1.8 116120  4640 ?        S&lt;s  Oct29   0:00 python /sbin/au
+root      2275  0.0  0.2  10068   740 ?        Ss   Oct29   0:00 syslogd -m 0
+root      2279  0.0  0.1   3764   416 ?        Ss   Oct29   0:00 klogd -x
+rpc       2329  0.0  0.2   8008   596 ?        Ss   Oct29   0:00 portmap
+root      2354  0.0  0.3  12212   836 ?        Ss   Oct29   0:00 rpc.statd
+root      2395  0.0  0.2  42008   684 ?        Ss   Oct29   0:00 rpc.idmapd
+dbus      2422  0.0  0.3  21220   784 ?        Ss   Oct29   0:00 dbus-daemon --s
+root      2437  0.0  0.3  10376   772 ?        Ss   Oct29   0:00 /usr/sbin/hcid
+root      2441  0.0  0.2   5892   532 ?        Ss   Oct29   0:00 /usr/sbin/sdpd
+root      2461  0.0  0.0      0     0 ?        S&lt;   Oct29   0:00 &#91;krfcommd&#93;
+root      2508  0.0  0.5  20992  1288 ?        Ssl  Oct29   0:00 pcscd
+root      2527  0.0  0.1   8476   480 ?        Ss   Oct29   0:00 /usr/bin/hidd -
+root      2547  0.0  0.4  29892  1172 ?        Ssl  Oct29   0:00 automount
+root      2570  0.0  0.2   3760   548 ?        Ss   Oct29   0:00 /usr/sbin/acpid
+root      2585  0.0  0.9 127984  2348 ?        Ss   Oct29   0:00 cupsd
+root      2603  0.0  0.4  44284  1080 ?        Ss   Oct29   0:00 /usr/sbin/sshd
+root      2717  0.0  0.9  62284  2280 ?        Ss   Oct29   0:00 sendmail: accep
+smmsp     2724  0.0  0.6  53040  1764 ?        Ss   Oct29   0:00 sendmail: Queue
+root      2740  0.0  0.1   6412   360 ?        Ss   Oct29   0:00 gpm -m /dev/inp
+root      2764  0.0  0.4  73872  1124 ?        Ss   Oct29   0:00 crond
+xfs       2791  0.0  0.4  20140  1052 ?        Ss   Oct29   0:00 xfs -droppriv -
+root      2820  0.0  0.1  18672   448 ?        Ss   Oct29   0:00 /usr/sbin/atd
+root      2835  0.0 18.0 263272 45648 ?        S    Oct29   1:35 /usr/bin/python
+avahi     2851  0.0  0.5  24108  1348 ?        Ss   Oct29   0:00 avahi-daemon: r
+avahi     2852  0.0  0.1  23084   320 ?        Ss   Oct29   0:00 avahi-daemon: c
+68        2867  0.0  1.6  30876  4052 ?        Ss   Oct29   0:00 hald
+root      2868  0.0  0.3  21620   996 ?        S    Oct29   0:00 hald-runner
+68        2874  0.0  0.3  12264   804 ?        S    Oct29   0:00 hald-addon-acpi
+68        2879  0.0  0.3  12268   804 ?        S    Oct29   0:00 hald-addon-keyb
+root      2891  0.0  0.2  10168   636 ?        S    Oct29   0:33 hald-addon-stor
+root      2930  0.0  0.1   4036   356 ?        S    Oct29   0:00 /usr/sbin/smart
+root      2933  0.0  0.1   3748   452 tty1     Ss+  Oct29   0:00 /sbin/mingetty
+root      2934  0.0  0.1   3748   452 tty2     Ss+  Oct29   0:00 /sbin/mingetty
+root      2935  0.0  0.1   3748   452 tty3     Ss+  Oct29   0:00 /sbin/mingetty
+root      2936  0.0  0.1   3752   456 tty4     Ss+  Oct29   0:00 /sbin/mingetty
+root      2937  0.0  0.1   3748   452 tty5     Ss+  Oct29   0:00 /sbin/mingetty
+root      2938  0.0  0.1   3748   456 tty6     Ss+  Oct29   0:00 /sbin/mingetty
+root      3893  0.0  0.0      0     0 ?        S    Oct29   0:00 &#91;pdflush&#93;
+root      6651  0.0  0.4  62900  1192 ?        S    01:33   0:00 /bin/sh ./bin/m
+mysql     6708  0.0  6.2 107632 15752 ?        Sl   01:33   0:02 /usr/local/mysq
+root      9663  0.0  1.1  71680  2792 ?        Ss   23:26   0:00 sshd: root@pts/
+root      9665  0.0  0.5  65124  1468 pts/1    Ss   23:26   0:00 -bash
+root      9695  0.0  0.3  64668   964 pts/1    R+   23:27   0:00 ps aux</pre>
+		</div>
+
+Nếu trong hệ thống của em chỉ có một con Data node và một con SQL node thì mọi thứ kết nối vẫn ok, không có gì sảy ra hết. Nhưng nếu trong hệ thống em có 2 con data node thì nó có vấn đề:
+
+Nếu con server 5.13 em chay ndbd thì con này sẽ tự động kết nối vào server và con 5.14 tự động ngắt connect. Và con 5.14 chạy Ndbd thì con này sẽ kết nối vào sever. và con 5.13 ngắt kết nối khỏi server.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 ~&#93;# ndb_mgm
+-- NDB Cluster -- Management Client --
+ndb_mgm&gt; show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2 &#40;not connected, accepting connect from 192.168.5.13&#41;
+id=3    @192.168.5.14  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.5.12  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   1 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from 192.168.5.14&#41;
+
+ndb_mgm&gt;</pre>
+		</div>
+
+File config.ini cua em:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#==================================================
+## Options affecting ndbd processes on all data nodes:
+#==================================================
+
+&#91;ndbd default&#93;
+NoOfReplicas=1
+DataMemory=80M
+IndexMemory=18M
+
+#==================================================
+##                TCP/IP options:
+#==================================================
+
+&#91;tcp default&#93;
+portnumber=2202
+
+#==================================================
+##          Management process options:
+#==================================================
+
+&#91;ndb_mgmd&#93;
+hostname=192.168.5.12
+datadir=/usr/local/mysql/mysql-cluster
+
+#==================================================
+##         Options for data node
+#==================================================
+
+&#91;ndbd&#93;
+hostname=192.168.5.13
+datadir=/usr/local/mysql/data
+
+&#91;ndbd&#93;
+hostname=192.168.5.14
+datadir=/usr/local/mysql/data
+
+#==================================================
+##               SQL node options:
+#==================================================
+
+&#91;mysqld&#93;
+hostname=192.168.5.14</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157011</link>
+				<pubDate><![CDATA[Thu, 30 Oct 2008 11:40:30]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Bó tay.com
+
+- Tôi cần thông tin về <b># ps aux | grep ndbd</b>, chứ không phải là chỉ <b># ps aux</b> thôi.
+- Tôi cần thông báo lỗi khi chạy ndbd trên 1 trong 2 con data node
+- Thiếu 1 cái SQL node trong <b>config.ini</b>
+- Trên 2 con data nodes có file cấu hình <b>my.cnf</b> chưa?
+- Bạn biết thứ tự chạy các nodes chứ?
+- iptables thế nào?
+- Tôi cần thông tin chứng minh điều này:
+<blockquote>
+Nếu con server 5.13 em chay ndbd thì con này sẽ tự động kết nối vào server và con 5.14 tự động ngắt connect. Và con 5.14 chạy Ndbd thì con này sẽ kết nối vào sever. và con 5.13 ngắt kết nối khỏi server. 
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157017</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157017</link>
+				<pubDate><![CDATA[Thu, 30 Oct 2008 13:02:45]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ trên con server 5.13 như lúc đầu em nói cái tiến trình ndbd nó không chạy thì sao mà ps aux cho anh xem được
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-02 ~&#93;# ps aux | grep ndbd
+root     10513  0.0  0.2  60232   580 pts/1    D+   04:22   0:00 grep ndbd
+&#91;root@RESEARCH-02 ~&#93;#</pre>
+		</div>
+
+Còn thứ tự chạy hiện giờ em chạy là
+
+1. server MGM chạy trước với lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 mysql-cluster&#93;# ndb_mgmd ./config.ini</pre>
+		</div>
+
+2. Server data node
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-03 ~&#93;# ndbd</pre>
+		</div>
+
+3. SQL node tự động connect vào MGM.
+và hiện em đã bỏ bớt một SQL node để đánh bug]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157039</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157039</link>
+				<pubDate><![CDATA[Thu, 30 Oct 2008 16:33:31]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>trên con server 5.13 như lúc đầu em nói cái tiến trình ndbd nó không chạy thì sao mà ps aux cho anh xem được
+&nbsp;
+		</blockquote>
+Ban đầu file cấu hình config.ini của bạn chỉ có 1 data node nên bạn start cái node thứ 2 nó mới la lên rằng:
+<blockquote><font color='red'>No free node id found for ndbd(NDB).</font>&nbsp;
+		</blockquote>
+Sau khi bạn chỉnh lại config.ini, thì khi start ở node 2 lên, tôi chắc chắn rằng nó không la thế nữa, vậy nó báo cáo gì?
+
+<p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+3. SQL node tự động connect vào MGM.
+và hiện em đã bỏ bớt một SQL node để đánh bug&nbsp;
+		</blockquote>
+<i>"Tự động connect"</i> sao chưa thấy trong <font color='#6699CC'>ndb_mgm -e 'SHOW'</font> nhỉ?
+
+Còn vài câu hỏi bạn chưa trả lời:
+<blockquote>
+- Trên 2 con data nodes có file cấu hình <b>my.cnf</b> chưa?
+- iptables thế nào?
+- Tôi cần thông tin chứng minh điều này:
+<blockquote>
+Nếu con server 5.13 em chay ndbd thì con này sẽ tự động kết nối vào server và con 5.14 tự động ngắt connect. Và con 5.14 chạy Ndbd thì con này sẽ kết nối vào sever. và con 5.13 ngắt kết nối khỏi server. 
+&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157045</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157045</link>
+				<pubDate><![CDATA[Thu, 30 Oct 2008 17:05:34]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Cám ơn anh quanta nhiều lắm, em install lại MGM thì 2 thằng data node đã connect vào mgm, nhưng còn 2 thằng SQL thì chưa connect vào được.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2    @192.168.5.13  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0, Master&#41;
+id=3    @192.168.5.14  &#40;mysql-5.1.27 ndb-6.3.17, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1   &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   2 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from 192.168.5.14&#41;
+id=5 &#40;not connected, accepting connect from 192.168.5.13&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157139</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 12:37:01]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Xong rồi anh tất cả đều connect đến MGM, lỗi sảy ra là do MGM bị lỗi, và em build là bản mới thì tất cả mọi thứ ok hết. Cám ơn anh Quanta đã giúp đỡ nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157140</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157140</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 12:40:39]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Quay lại đúng tiêu đề của topic này đó.
+
+Hỏi lại lần cuối: iptables rules trên <b>tất cả các nodes</b> của bạn thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157141</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157141</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 12:44:18]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>Xong rồi anh tất cả đều connect đến MGM, <font color='orange'>lỗi sảy ra là do MGM bị lỗi</font>, và em build là bản mới thì tất cả mọi thứ ok hết. Cám ơn anh Quanta đã giúp đỡ nhiều&nbsp;
+		</blockquote>
+<font color='orange'>--&gt;</font> Cụ thể hơn được không bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157144</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157144</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 12:53:00]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Hiện em cũng không biết chính xác là nó bị gì. Em chỉ đang nhận định là lúc đầu trong một thời điểm nó chỉ có thể open port 1186 cho 1 IP. Nếu một IP khác sử dụng query đến port 1186 thì nó sẽ tự động disconnect một IP đã connect trước đó.
+
+PS: Hiện giờ em vẫn chưa biết chính xác được. Em sẽ bug thêm và reply lỗi cụ thể]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157172</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157172</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 16:39:24]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+...
+Em chỉ đang nhận định là lúc đầu trong một thời điểm nó chỉ có thể open port 1186 cho 1 IP. Nếu một IP khác sử dụng query đến port 1186 thì nó sẽ tự động disconnect một IP đã connect trước đó.
+&nbsp;
+		</blockquote>
+Chắc chắn là <b>không</b> có chuyện đó, trừ phi file cấu hình trên Management node bị sai (như đã nói ở trên).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157173</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157173</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 16:48:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ lúc em build lại MGM thì em đã lưu file cấu hình trước đó sang một chỗ khác, và copy vào source mới cho nó chạy nên em nghĩ không có vấn đề gì file cấu hình.
+
+Và lúc đầu em cũng có nghi ngờ về file config. nhưng kết quả là không phải vì nếu em chỉ để 1 Data node và 1 SQL node ở trên 2 máy khác nhau thì nó không connect tốt hết. file config của em đã post ở bài trên. Em sẽ cố gắng tìm ra cái lỗi chính xác và post lên cho mọi người tham khảo]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157175</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#157175</link>
+				<pubDate><![CDATA[Fri, 31 Oct 2008 17:02:14]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ hi anh, các node trong cluster của em như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 ~&#93;# ndb_mgm -e show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2    @192.168.5.14  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0, Master&#41;
+id=3    @192.168.5.15  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.5.12  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   1 node&#40;s&#41;
+id=4    @192.168.5.13  &#40;mysql-5.1.27 ndb-6.3.17&#41;</pre>
+		</div>.
+
+Khi em vào trong Mysql node để tạo database và tạo table với ENGINE=NDBDCLUSTER
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ERROR 1005 &#40;HY000&#41;: Can't create table 'dbcluster.aggregator_category_feed' &#40;errno: 157&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158176</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158176</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 16:58:54]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Bạn xem lại chỗ <font color='red'>màu đỏ</font>:
+<p></p>
+		<cite class="blockquote">centos wrote:</cite><br>
+		<blockquote>
+
+Khi em vào trong Mysql node để tạo database và tạo table với ENGINE=NDB<font color='red'>D</font>CLUSTER
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ERROR 1005 &#40;HY000&#41;: Can't create table 'dbcluster.aggregator_category_feed' &#40;errno: 157&#41;</pre>
+		</div>&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158183</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158183</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 18:05:13]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ em gõ lộn anh ui mà là NDBCLUSTER
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; CREATE TABLE IF NOT EXISTS `aggregator_category_feed` &#40;   `fid` int&#40;11&#41; NOT NULL default '0',   `cid` int&#40;11&#41; NOT NULL default '0',   PRIMARY KEY  &#40;`fid`,`cid`&#41; &#41; ENGINE=NDBCLUSTER</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158186</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 18:15:08]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Trước tiên bạn cho xem:
+<b>mysql&gt; SHOW ENGINES\G;</b>
+
+Ngay sau khi gặp lỗi trên, bạn gõ tiếp:
+<b>
+mysql&gt; SHOW WARNINGS;
+mysql&gt; SHOW ERRORS;
+</b>
+xem nó 'báo cáo' gì?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158187</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158187</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 18:27:03]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; SHOW ENGINES\G
+*************************** 1. row ***************************
+      Engine: ndbcluster
+     Support: YES
+     Comment: Clustered, fault-tolerant tables
+Transactions: YES
+          XA: NO
+  Savepoints: NO
+*************************** 2. row ***************************
+      Engine: MRG_MYISAM
+     Support: YES
+     Comment: Collection of identical MyISAM tables
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+*************************** 3. row ***************************
+      Engine: BLACKHOLE
+     Support: YES
+     Comment: /dev/null storage engine &#40;anything you write to it disappears&#41;
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+*************************** 4. row ***************************
+      Engine: CSV
+     Support: YES
+     Comment: CSV storage engine
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+*************************** 5. row ***************************
+      Engine: MEMORY
+     Support: YES
+     Comment: Hash based, stored in memory, useful for temporary tables
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+*************************** 6. row ***************************
+      Engine: InnoDB
+     Support: YES
+     Comment: Supports transactions, row-level locking, and foreign keys
+Transactions: YES
+          XA: YES
+  Savepoints: YES
+*************************** 7. row ***************************
+      Engine: ARCHIVE
+     Support: YES
+     Comment: Archive storage engine
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+*************************** 8. row ***************************
+      Engine: MyISAM
+     Support: DEFAULT
+     Comment: Default engine as of MySQL 3.23 with great performance
+Transactions: NO
+          XA: NO
+  Savepoints: NO
+8 rows in set &#40;0.01 sec&#41;</pre>
+		</div>
+Không hiểu tại sao không có engine: NDB
+
+Khi bi lỗi mình chạy lện show errors;
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show errors;
++-------+------+----------------------------------------------------------------------+
+| Level | Code | Message                                                                           |
++-------+------+----------------------------------------------------------------------+
+| Error | 1005 | Can't create table 'dbcluster.aggregator_category_feed' &#40;errno: 157&#41; | 
++-------+------+----------------------------------------------------------------------+
+1 row in set &#40;0.00 sec&#41;</pre>
+		</div>
+
+ProcessList trong cluster
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; SHOW PROCESSLIST\G
+*************************** 1. row ***************************
+     Id: 1
+   User: system user
+   Host: 
+     db: NULL
+Command: Daemon
+   Time: 1356
+  State: &#91;color=#FF0000&#93;Waiting for ndbcluster to start&#91;/color&#93;
+   Info: NULL
+*************************** 2. row ***************************
+     Id: 3
+   User: root
+   Host: localhost
+     db: dbcluster
+Command: Query
+   Time: 0
+  State: NULL
+   Info: SHOW PROCESSLIST
+2 rows in set &#40;0.00 sec&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158189</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 18:32:01]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Hì, bạn cứ đổi các nodes lung tung hết cả!
+
+- Làm gì có engine NDB nhỉ?
+- Log có gì không bạn?
+- Bạn start MySQL trên con SQL node thế nào?
+- Bạn thử restart ndb_mgmd trên con Management node xem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158403</link>
+				<pubDate><![CDATA[Mon, 10 Nov 2008 23:39:50]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ Hi Anh,
+
+Lúc đầu em cấu hình Mysql node và Data node chung một con server thì nó hoạt động tốt và tạo các table với NDBCLUSTER bình thường. Khi em tách chức năng của từng con để hiểu rõ và maintain tốt hơn.
+
+<blockquote>
+Bạn thử restart ndb_mgmd trên con Management node xem.
+&nbsp;
+		</blockquote>
+
+Em đã start lại nhiều lần rồi và các node đã kết nối tốt vào MGM
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 ~&#93;# ndb_mgm -e show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+---------------------
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2    @192.168.5.14  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0, Master&#41;
+id=3    @192.168.5.15  &#40;mysql-5.1.27 ndb-6.3.17, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.5.12  &#40;mysql-5.1.27 ndb-6.3.17&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   1 node&#40;s&#41;
+id=4    @192.168.5.13  &#40;mysql-5.1.27 ndb-6.3.17&#41;</pre>
+		</div>
+
+<blockquote>
+Log có gì không bạn?
+&nbsp;
+		</blockquote>
+
+Log trên con SQL node của em như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>081111 23:24:50 &#91;ERROR&#93; NDB: CREATE TABLE IF NOT EXISTS mysql.ndb_apply_status &#40; server_id INT UNSIGNED NOT NULL, epoch BIGINT UNSIGNED NOT NULL,  log_name VARCHAR&#40;255&#41; BINARY NOT NULL,  start_pos BIGINT UNSIGNED NOT NULL,  end_pos BIGINT UNSIGNED NOT NULL,  PRIMARY KEY USING HASH &#40;server_id&#41; &#41; ENGINE=NDB CHARACTER SET latin1: error Can't create table 'mysql.ndb_apply_status' &#40;errno: 157&#41; 1005&#40;ndb: 0&#41; 1 1
+081111 23:24:50 &#91;Note&#93; /usr/local/mysql/bin/mysqld: Normal shutdown
+
+081111 23:24:50 &#91;Note&#93; Event Scheduler: Purging the queue. 0 events
+081111 23:24:50 &#91;Note&#93; Stopping Cluster Utility thread
+081111 23:24:53 &#91;Note&#93; Stopping Cluster Binlog
+081111 23:24:56  InnoDB: Starting shutdown...
+081111 23:24:58  InnoDB: Shutdown completed; log sequence number 0 46419
+081111 23:24:58 &#91;Note&#93; /usr/local/mysql/bin/mysqld: Shutdown complete
+
+081111 23:24:58 mysqld_safe mysqld from pid file /usr/local/mysql/data/RESEARCH-02.pid ended
+081111 23:31:49 mysqld_safe Starting mysqld daemon with databases from /usr/local/mysql/data
+081111 23:31:50  InnoDB: Started; log sequence number 0 46419
+081111 23:31:50 &#91;Note&#93; NDB: NodeID is 4, management server '192.168.5.12:1186'
+081111 23:31:51 &#91;Note&#93; NDB&#91;0&#93;: some storage nodes connected
+081111 23:31:51 &#91;Warning&#93; NDB: server id set to zero will cause any other mysqld with bin log to log with wrong server id
+081111 23:31:51 &#91;Note&#93; Starting Cluster Binlog Thread
+081111 23:31:51 &#91;Note&#93; Event Scheduler: Loaded 0 events
+081111 23:31:51 &#91;Note&#93; /usr/local/mysql/bin/mysqld: ready for connections.
+Version: '5.1.27-ndb-6.3.17-cluster-gpl'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Cluster Server &#40;GPL&#41;
+
+081111 23:47:31 &#91;ERROR&#93; NDB Binlog: ndbevent-&gt;execute failed for REPL$mysql/ndb_schema; 1427 Api node died, when SUB_START_REQ reached node 
+081111 23:47:31 &#91;ERROR&#93; NDB Binlog:FAILED CREATE &#40;DISCOVER&#41; EVENT OPERATIONS Event: REPL$mysql/ndb_schema</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158450</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158450</link>
+				<pubDate><![CDATA[Tue, 11 Nov 2008 11:44:49]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ - Bạn xem lại permission trên datadir?
+- Cung cấp thêm log trên Management node?
+- Tham khảo:
+<span class="link"> http://forums.mysql.com/read.php?25,133034,133034#msg-133034</span>
+<span class="link"> http://lists.mysql.com/cluster/5744</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158570</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158570</link>
+				<pubDate><![CDATA[Wed, 12 Nov 2008 02:22:13]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [MySQL cluster] SQL node không thể kết nối đến Management node?</title>
+				<description><![CDATA[ <blockquote>
+Bạn xem lại permission trên datadir? 
+&nbsp;
+		</blockquote>
+
+Hiện giờ thì tất ca datadir trên data node của em đều là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>drwxr-x---  5 mysql mysql  4096 Nov 12 08:16 data</pre>
+		</div>
+
+<blockquote>
+Cung cấp thêm log trên Management node? 
+&nbsp;
+		</blockquote>
+
+Log tren MGM:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@RESEARCH-01 mysql-cluster&#93;# tail ndb_1_cluster.log 
+2008-11-13 01:04:50 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 8 started. Keep GCI = 9798 oldest restorable GCI = 3
+2008-11-13 02:02:36 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 9 started. Keep GCI = 11431 oldest restorable GCI = 3
+2008-11-13 03:00:19 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 10 started. Keep GCI = 13079 oldest restorable GCI = 3
+2008-11-13 03:58:05 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 11 started. Keep GCI = 14725 oldest restorable GCI = 3
+2008-11-13 04:55:54 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 12 started. Keep GCI = 16392 oldest restorable GCI = 3
+2008-11-13 05:53:39 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 13 started. Keep GCI = 18032 oldest restorable GCI = 3
+2008-11-13 06:51:24 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 14 started. Keep GCI = 19674 oldest restorable GCI = 3
+2008-11-13 07:49:10 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 15 started. Keep GCI = 21333 oldest restorable GCI = 3
+2008-11-13 08:45:13 &#91;MgmSrvr&#93; WARNING  -- Node 2: Node 4 missed heartbeat 2
+2008-11-13 08:46:54 &#91;MgmSrvr&#93; INFO     -- Node 2: Local checkpoint 16 started. Keep GCI = 22986 oldest restorable GCI = 3</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158599</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25449.hva#158599</link>
+				<pubDate><![CDATA[Wed, 12 Nov 2008 11:28:23]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+	</channel>
+</rss>

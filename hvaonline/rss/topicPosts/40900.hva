@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ Kernel Linux là nòng cốt của &quot;hệ điều hành&quot; Linux, để cho hệ thống hoạt động mạnh mẽ, hiệu quả , an toàn, bảo mật thì thường người quản trị hệ thống nên cập nhật phiên bản Kernel mới. Kernel mới nhất bạn có thể tìm, tải tại đây<span class="link"> http://www.kernel.org/</span> khuyến cáo nên dùng các phiên bản ổn định (Stable) thay vì dùng các phiên bản Mainline, Beta.
+
+Tuy nhiên đám phát triển các dòng Centos thường ít cập nhật phiên bản mới nhất, nếu có thì trong kernel nó &quot;gom&quot; một đống những thứ không cần thiết vào làm cho máy chủ bị đình trệ hoặc dư thừa những module không cần thiết, giống như tronòg 1 công ty &quot;tôi cần anh A nhưng không cần anh B&quot;.
+
+<b>Những lý do nên cập nhật kernel</b>
+- Đương nhiên 1 nhà lập trình nào đó , khi viết ra 1 sản phẩm phần mềm nếu thêm nhiều đoạn code vào thì đoạn code đó dung lượng , thời gian sẽ chậm hơn so với 1 đoạn code khá ngắn .
+- Thử hình dung kernel có nhiều tính năng &quot;hữu ích&quot; trong đó thì khi module này có lỗi thì bạn sẽ trở thành nạn nhân của hacker như các cuộc tấn công tràn bộ đệm là 1 ví dụ.
+- Lựa chọn cài đặt khá đơn giản chỉ Yes (Y) hay No (N)
+
+<b>Những lý do không nên cập nhật kernel </b>(cẩn thận với người dùng đăng nhập SSH từ xa)
+- Việc cập nhật kernel thường xuyên đối với 1 người lam việc thành thạo trên Linux và có kinh nghiệm nhiều năm trong kernel thì việc cập nhật kernel có thể đơn giản hơn bao giờ hết tuy nhiên với những người theo mạng...cộng đồng, ai nói cập nhật kernel là tốt sau đó thử nghiệm trên hệ thống của mình mà &quot;kéo&quot; theo nguyên đám không cần thiết thì có thể làm hệ thống trì trệ hơn nữa.
+- Hệ thống dễ chết bất cứ lúc nào khi cập nhật kernel phiên bản mới nhất bị lỗi như Kernel Panic thường xãy ra là 1 ví dụ điển hình, nếu điều chỉnh grub không đúng cũng có thể làm bạn tự &quot;khóa&quot; mình lại. 
+
+<br>
+			<div align="center" class="limitview"><img src='http://3.bp.blogspot.com/-Q7lQMBHmK2g/TwEGMsP5kHI/AAAAAAAABcQ/wZ8Z2ZQoIHs/s400/Selection_017.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Kernel cũ trên máy tính của tôi
+# uname -a
+Linux localhost.localdomain <font color='yellow'>2.6.18-274</font>.el5
+
+
+Chuẩn bị mọi thứ cần thiết
+<font color='yellow'># wget<span class="link"> http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.39.4.tar.bz2</span>
+# tar jxvf linux-2.6.39.4.tar.bz2 -C /usr/src
+# cd /usr/src
+# ln -sf linux-2.6.39.4 linux</font>
+
+Thêm 1 số gói cài đặt bổ sung cho việc nâng cấp kernel mới
+<font color='yellow'># yum install gcc make bison ncurses-devel rpm-build</font>
+
+
+Bắt đầu cài đặt
+<font color='yellow'># cd /usr/src/linux
+# make clean && make mrproper
+# cp /boot/config-`uname -r` .config
+# make menuconfig</font>
+
+Trong phần này bạn cần bật
+<font color='red'>General setup-&gt;
+[*] enable deprecated sysfs features to support old userspace tools
+[*] enabled deprecated sysfs features by default</font>
+
+Nếu bạn config trực tiếp thì mở .config , điều chỉnh 2 dòng sau thành
+<font color='red'>CONFIG_SYSFS_DEPRECATED=y
+CONFIG_SYSFS_DEPRECATED_V2=y</font>
+
+<br>
+			<div align="center" class="limitview"><img src='http://1.bp.blogspot.com/-sHSERIwWRDs/TwEFzmY7SAI/AAAAAAAABcE/5i_2jH3ZswY/s400/Selection_013.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Thường thì khi tôi cập nhật, nâng cấp kernel thì các tính năng mà nó hỗ trợ iptables tôi đều bật nó cả (nếu bạn không biết về các tính năng này thì chọn hết)
+
+Tôi ví dụ như conntract
+Tìm dòng Networking support chọn tiếp Networking option , kéo xuống phía dưới thấy dòng này Network packet filtering framework (Netfilter) chọn mục Core Netfilter Configuration và chọn mục Netfilter connection tracking support
+
+Bạn tìm mục General Setup chọn dòng Local version – append to kernel release sau đó nhập vào ví dụ như -hvaonline hay -default , -config tùy bạn 
+
+Sau đó xong mọi thứ thì bạn vào Exit để thoát ra
+
+<font color='red'># make rpm
+# ls -alh /usr/src/redhat/RPMS/i386/</font>
+total 217M
+drwxr-xr-x 2 root root 4.0K Jan 1 11:04 .
+drwxr-xr-x 9 root root 4.0K Oct 3 17:14 ..
+-rw-r--r-- 1 root root 217M Jan 1 11:04 kernel-2.6.39.4hvaonline-1.i386.rpm
+
+# rpm -ivh /usr/src/redhat/RPMS/i386/kernel-2.6.39.4hvaonline-1.i386.rpm
+Preparing... ########################################### [100%]
+1:kernel ########################################### [100%]
+
+<font color='red'># ls /boot</font>
+config-2.6.18-274.el5 symvers-2.6.18-274.el5.gz
+config-2.6.39.4-hvaonline System.map-2.6.18-274.el5
+grub System.map-2.6.39.4-hvaonline
+initrd-2.6.18-274.el5.img vmlinux-2.6.39.4-hvaonline.bz2
+lost+found vmlinuz-2.6.18-274.el5
+message vmlinuz-2.6.39.4-hvaonline
+
+<font color='red'># cd /boot
+# depmod 2.6.39.4-hvaonline
+
+# mkinitrd -v /boot/initrd-2.6.39.4-hvaonline.img 2.6.39.4-hvaonline</font>
+
+Ta xem qua cấu hình mặc định của tập tin grub
+# cat /boot/grub/grub.conf
+# grub.conf generated by anaconda
+#
+# Note that you do not have to rerun grub after making changes to this file
+# NOTICE: You have a /boot partition. This means that
+# all kernel and initrd paths are relative to /boot/, eg.
+# root (hd0,0)
+# kernel /vmlinuz-version ro root=/dev/VolGroup00/LogVol00
+# initrd /initrd-version.img
+#boot=/dev/sda
+default=0
+timeout=5
+splashimage=(hd0,0)/grub/splash.xpm.gz
+hiddenmenu
+title CentOS (2.6.18-274.el5)
+root (hd0,0)
+kernel /vmlinuz-2.6.18-274.el5 ro root=/dev/VolGroup00/LogVol00
+initrd /initrd-2.6.18-274.el5.img
+
+Bây giờ ta điều chỉnh thêm vào 1 đoạn như sau
+<font color='red'>title CentOS (2.6.39.4-hvaonline)
+root (hd0,0)
+kernel /vmlinuz-2.6.39.4-hvaonline ro root=/dev/VolGroup00/LogVol00
+initrd /initrd-2.6.39.4-hvaonline.img</font>
+
+Kết thúc
+<br>
+			<div align="center" class="limitview"><img src='http://3.bp.blogspot.com/-f9dlrp4vO30/TwEG3CR7I3I/AAAAAAAABcc/SOlhakxyHtM/s400/Selection_016.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#251779</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#251779</link>
+				<pubDate><![CDATA[Mon, 2 Jan 2012 18:47:53]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ Cảm ơn anh Phước rất nhiều vì đầu năm đã "mở hàng" một bài rất thực tế và hữu ích. 
+Tốt nhất trước khi thực hành với server thật của mình, nên test một phát trên máy ảo. ;;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#251792</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#251792</link>
+				<pubDate><![CDATA[Tue, 3 Jan 2012 01:01:29]]> GMT</pubDate>
+				<author><![CDATA[ tanviet12]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ Hồi trước có bài viết của bác Conmale khá chi tiết về việc biên dịch lại kernel. Giờ bác tranhuuphuoc nhắc lại tuyệt quá. Cảm ơn bác vì 1 bài viết ý nghĩa!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252698</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252698</link>
+				<pubDate><![CDATA[Thu, 19 Jan 2012 04:20:57]]> GMT</pubDate>
+				<author><![CDATA[ rootix]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ Tui đang suy nghĩ, tại sao tụi GRUB team không modify cho grub boot loader, nếu kernel panic thì khi reboot lại nó sẽ tự động chọn stable kernel trước đó mà boot nhỉ. Chứ mỗi lần server từ xa reboot lại sợ gần chết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252719</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252719</link>
+				<pubDate><![CDATA[Fri, 20 Jan 2012 04:26:49]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Tui đang suy nghĩ, tại sao tụi GRUB team không modify cho grub boot loader, nếu kernel panic thì khi reboot lại nó sẽ tự động chọn stable kernel trước đó mà boot nhỉ. Chứ mỗi lần server từ xa reboot lại sợ gần chết.&nbsp;
+		</blockquote>
+
+Em nghĩ là không thể vì nhiều lý do :
+
+1/ Sau khi Grub đã bắt đầu load kernel thì nó đã pass control cho OS, và theo định nghĩa kernel panic xảy ra khi OS ko thể control/recovery được fatal error xảy ra =&gt; Grub ko thể can thiệp vì lúc đó nó ko còn quyền control
+
+2/ Giả dụ là Grub có quyền làm chuyện đó thì nó cũng chỉ nên restart lại hệ thống, chứ ko nên tự chọn 1 stable kernel được vì khái niệm &quot;stable&quot; nó còn phụ thuộc còn phụ thuộc vào tuỳ trường hợp nữa, còn nếu chỉ cảe cái cái version stable trên kernel.org distribute thì sẽ ko ổn, vd như 1 server có hardware đặc biệt khiến sysadmin ko thể cài OS default mà phải rebuilt lại kernel thì OS đó mới chạy được trên nền tảng hardware đó, nhưng khi sự cố xảy ra khiến kernel panic =&gt; grub tự động chuyển sang cái stable kernel cũ
+
+P/S : đây chỉ là suy nghĩ cá nhân của em, mọi người có gì đóng góp thêm nha  :D 
+-rickb]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252725</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252725</link>
+				<pubDate><![CDATA[Fri, 20 Jan 2012 05:08:02]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ @rickb: Theo mình nghĩ định nghĩa stable kernel dựa trên cái kernel chạy gần nhất mà trên Windows định nghĩa là: Last good known configuration.
+Nói nôm na thì có thể mô tả như vầy:
+Đầu tiên, khi server boot, hoàn tất tới shell, kernel #1. ID = #1, recoveryState = 0.
+Reboot server, nếu người dùng không tự chọn kernel thì dùng lại kernel #1 (ID = #1). Nếu boot với kernel khác (#2), tới shell, ID = #2. recoveryState = 0.
+Recompile kernel, reboot với kernel #3, kernel panic, set recoveryState = 1. server tự reboot.
+Khi server đang reboot, check thấy giá trị recoveryState = 1 thì dùng last kernel version, ở đây là #2. Như vậy hầu như tự khắc vào được version gần nhất khởi động được. Trong trường hợp không giải quyết được triệt để thì cũng giảm thiểu 1 phần đáng kể của việc gọi điện lên DC kêu NOC fix.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252728</link>
+				<pubDate><![CDATA[Fri, 20 Jan 2012 05:20:01]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>@rickb: Theo mình nghĩ định nghĩa stable kernel dựa trên cái kernel chạy gần nhất mà trên Windows định nghĩa là: Last good known configuration.
+Nói nôm na thì có thể mô tả như vầy:
+Đầu tiên, khi server boot, hoàn tất tới shell, kernel #1. ID = #1, recoveryState = 0.
+Reboot server, nếu người dùng không tự chọn kernel thì dùng lại kernel #1 (ID = #1). Nếu boot với kernel khác (#2), tới shell, ID = #2. recoveryState = 0.
+Recompile kernel, reboot với kernel #3, kernel panic, set recoveryState = 1. server tự reboot.
+Khi server đang reboot, check thấy giá trị recoveryState = 1 thì dùng last kernel version, ở đây là #2. Như vậy hầu như tự khắc vào được version gần nhất khởi động được. Trong trường hợp không giải quyết được triệt để thì cũng giảm thiểu 1 phần đáng kể của việc gọi điện lên DC kêu NOC fix.&nbsp;
+		</blockquote>
+
+Ok, đồng ý với anh, nhưng như vậy thì nó cũng không do khả khi do phần quyền như em đã nói đúng khộng ? :D
+
+-rickb]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252730</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252730</link>
+				<pubDate><![CDATA[Fri, 20 Jan 2012 05:53:09]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cập nhật Kernel tránh lỗi Kernel Panic trên Centos 5.7</title>
+				<description><![CDATA[ Vấn đề này giải quyết cũng dễ lắm rickb. Quan trọng là phải có sự kết hợp giữa kernel và boot loader.
+Có 2 options:
+1. Sử dụng 512 bytes của MBR
+2. Sử dụng temp file trên filesystem (image, vzlinux)
+Khi kernel panic, có thể tạo ra 1 temp file tại /tmp/boot.tmp chứa ID # và recoveryState hoặc set 2 bytes vào MBR chứa 2 giá trị này.
+Sau đó mỗi lần GRUB khởi động thì check 2 giá trị này thôi. Nếu MBR thì càng không liên quan tới quyền nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252734</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40900.hva#252734</link>
+				<pubDate><![CDATA[Fri, 20 Jan 2012 07:01:38]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+	</channel>
+</rss>

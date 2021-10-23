@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Các pro chỉ giúp em cách tunning con webserver này với "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Các pro chỉ giúp em cách tunning con webserver này với "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ Tôi mơi được quản lý một máy chủ vơi gần 50 site bé thôi. Gân đây không hiểu máy chạy ì ạch quá.
+Co nhưng lúc chỉ co 100 etablish thôi mà may cứ đơ ra. Tôi kiểm tra thi thấy Mysql có vẻ CPU cao, Và time_waite nhiều qua
+
+Để các bạn có thể giúp được nhiều hơn tôi đưa ra một vài thông số . Rất mong sự giúp đỡ của các bạn
+
+Phần cứng
+4gh RAM
+core 2 due Intel(R) Xeon(R) CPU X3210 @ 2.13GHz
+
+Hien may chu dang chay cpannel cung php mysql
+
+Tôi đa tunning apache vơi thông sô :
+
+KeepAlive On
+MaxKeepAliveRequests 500
+KeepAliveTimeout 5
+#UseCanonicalName Off
+UseCanonicalName On
+
+
+&lt;IfModule prefork.c&gt;
+StartServers 5
+ServerLimit 500
+MinSpareServers 10
+MaxSpareServers 50
+MaxClients 400
+MaxRequestsPerChild 5000
+&lt;/IfModule&gt;
+
+Tunning mysql
+
+set-variable = max_connections=750
+set-variable = max_user_connections=720
+set-variable = table_cache=15394
+set-variable = thread_concurrency=2
+set-variable = interactive_timeout=10
+set-variable = open_files_limit=35000
+set-variable = query_cache_limit=2
+set-variable = query_cache_size=90M
+set-variable = thread_cache_size=128
+set-variable = connect_timeout=15
+set-variable = thread_cache_size=228
+set-variable = key_buffer_size=20M
+set-variable = join_buffer_size=4M
+set-variable = long_query_time=5
+safe-show-database
+
+
+Hiện tại sử dụng disable function trong php.ini và mod_secutiry2 để chặn shell và một số kiểu tấn công khác
+
+Firewall tôi đang sử dụng iptables :
+
+-I INPUT -d xxxxx -p tcp -m tcp --dport 80 -m state --state ESTABLISHED -m connlimit --connlimit-above 9 --connlimit-mask 32 -j REJECT
+-I INPUT -d xxxxxx -p tcp -m tcp -m state --state ESTABLISHED -m connlimit --connlimit-above 9 --connlimit-mask 32 -j REJECT
+-I INPUT -d xxxxx -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m connlimit --connlimit-above 14 --connlimit-mask 32 -j REJECT
+
+-I INPUT -d xxxxxxxx -p tcp -m tcp --dport 80 --tcp-flags PSH,ACK PSH,ACK -m string --string "post.swf" --algo bm --from 10 --to 700 -j REJECT --reject-with icmp-port-unreachable
+
+
+Trước đây khi sử dụng drop trên firewall làm số SYN quá nhiều &gt; 1000
+Khi tôi sử dụng REJECT cho firewall thì số TIME_WAITE lại quá nhiều &gt; 600 (Số establish chỉ co 120)
+
+Tôi đá tiến hành tunning OS :
+
+net.core.somaxconn = 2048
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20
+
+Nhưng lượng time_wait vấn nhiều làm chiếm bộ nhớ có thể gây ra cham hệ diều hành
+
+Tôi khôn ghiểu tại sao có nhưng lúc số establish ko nhiều mà số connection đến MYSQL lại tăng vụt gân 500 và CPU thực sự đơ
+Mong các ban giúp tôi ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#171862</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#171862</link>
+				<pubDate><![CDATA[Wed, 4 Mar 2009 02:11:16]]> GMT</pubDate>
+				<author><![CDATA[ duejigum]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ Bác conmale ơi để post được bài này em đã phải rewrite 3 lần . Bac làm ơn trả lời giúp em với ah 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172117</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172117</link>
+				<pubDate><![CDATA[Fri, 6 Mar 2009 10:22:25]]> GMT</pubDate>
+				<author><![CDATA[ duejigum]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ theo mô tả của bạn thì có lẽ bạn đang bị DOS. mình nghĩ bạn chưa đọc kỹ "Ký sự các vụ DDoS đến HVA " của anh comale rồi! việc thiết lập các thông số dựa vào nhiều yếu tố để tính toán các giá trị phù hợp. và khó khăn của bạn chính là máy chủ của bạn có tới gần 50 site  :( . 
+theo mình trước tiên bạn nên kiểm tra xem nguyên nhân gì khiến cho server của bạn trở nên ì ạch như vậy. bạn kiểm tra log, kiểm tra các gói tin ra vào server của bạn. Nếu được thì bạn đưa một vài thông tin về tcpdump và log lên đây để mọi người giúp đỡ.
+Thân!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172120</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172120</link>
+				<pubDate><![CDATA[Fri, 6 Mar 2009 11:20:08]]> GMT</pubDate>
+				<author><![CDATA[ kenshin8x]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ Thêm mấy cái này nữa:
+
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_established = 108000
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_recv = 5
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_fin_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_close_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20
+net.ipv4.tcp_max_syn_backlog = 1024
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_recv = 5
+
+Thêm 1 dòng:
+
+<b>-A INPUT -p tcp --syn -d xxxx --dport 80 -m limit --limit 3 --limit-burst 3 -j DROP</b> trước các dòng có -m connlimit.
+
+Nên dùng <font color='red'>-j DROP</font> thay vì -j REJECT cho các dòng lệnh luật. vì máy chủ của mình phải tốn thêm tài nguyên để "reject".
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172139</link>
+				<pubDate><![CDATA[Fri, 6 Mar 2009 13:04:17]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ Cảm ơn bác conmale đã trả lời giúp em . Em có mốt số thắc mắc nữa ạh
+Theo em hiểu với 
+-A INPUT -p tcp --syn -d xxxx --dport 80 -m limit --limit 3 --limit-burst 3 -j DROP
+thì tôc độ syn sẽ bị giới hạn 3 lần trên một giây. Mà server của em chạy một lúc 50 site thì trong một thời điểm chỉ cần co 4 site có người truy cập đồng thời thì sẽ bị DROP ah anh comale
+
+Ah em hỏi thêm limit-Burst là 3 có phải cứ sau 3 gói syn thì rule sẽ được giới hạn với tốc đôn 3syn/s. và khi tôc độ syn thực tế mà bé hơn 3syn/s thì dần dần nó lại quay về trạng thái ban đầu tức là 3 tổng số gói syn = 3 thì rule được áp dụng đúng không ah
+
+Nếu theo như anh dùng DROP nhiều thì lúc đó SYN_RE sẽ nhiều ah. Bộ nhớ vẫn tốn chứ anh
+Còn timewaite thì lam sao để giảm được anh theo em có 2 cai timewait là TCP và Firewall thì êm đã tunning 
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20 
+và timwaite của TCP = 20s
+Vậy thời gian giải phóng timewaite chỉ là 40s nhưng trên thực tế là 60s --&gt; Tại sao anh nhỉ
+
+Mong câu trả lời của bác ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172552</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172552</link>
+				<pubDate><![CDATA[Mon, 9 Mar 2009 16:51:29]]> GMT</pubDate>
+				<author><![CDATA[ duejigum]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>Cảm ơn bác conmale đã trả lời giúp em . Em có mốt số thắc mắc nữa ạh
+Theo em hiểu với 
+-A INPUT -p tcp --syn -d xxxx --dport 80 -m limit --limit 3 --limit-burst 3 -j DROP
+thì tôc độ syn sẽ bị giới hạn 3 lần trên một giây. Mà server của em chạy một lúc 50 site thì trong một thời điểm chỉ cần co 4 site có người truy cập đồng thời thì sẽ bị DROP ah anh comale
+&nbsp;
+		</blockquote>
+Thì em chỉnh cho phù hợp với hoàn cảnh của server mình. Anh chỉ cho 1 con số như thế, em cần chỉnh cho thích hợp.
+
+<p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>
+Ah em hỏi thêm limit-Burst là 3 có phải cứ sau 3 gói syn thì rule sẽ được giới hạn với tốc đôn 3syn/s. và khi tôc độ syn thực tế mà bé hơn 3syn/s thì dần dần nó lại quay về trạng thái ban đầu tức là 3 tổng số gói syn = 3 thì rule được áp dụng đúng không ah
+&nbsp;
+		</blockquote>
+Đại loại là thế.
+
+<p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>
+Nếu theo như anh dùng DROP nhiều thì lúc đó SYN_RE sẽ nhiều ah. Bộ nhớ vẫn tốn chứ anh
+&nbsp;
+		</blockquote>
+syn vào nhiều là do bên ngoài vào nhiều chớ chẳng phải do mình drop mà nó có nhiều hơn. Bị syn thì thế nào cũng tốn bộ nhớ mà bị syn xong rồi, thiết lập xong request đến tận http và vào đến 1 URL nào đó (có dính đến việc tạo query đến DB) thì càng tốn hơn nữa. Vậy, cứ xét cái nào ít tốn hơn thì làm và nên nghĩ rằng bị DDoS luôn luôn <b>tốn</b>. 
+
+<p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>
+Còn timewaite thì lam sao để giảm được anh theo em có 2 cai timewait là TCP và Firewall thì êm đã tunning 
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20 
+và timwaite của TCP = 20s
+Vậy thời gian giải phóng timewaite chỉ là 40s nhưng trên thực tế là 60s --&gt; Tại sao anh nhỉ
+&nbsp;
+		</blockquote>
+Không hiểu câu này. Thực tế nào? Em dựa vào đâu để có "thực tế" ấy?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172573</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172573</link>
+				<pubDate><![CDATA[Mon, 9 Mar 2009 18:06:16]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>Cảm ơn bác conmale đã trả lời giúp em . Em có mốt số thắc mắc nữa ạh
+Theo em hiểu với 
+-A INPUT -p tcp --syn -d xxxx --dport 80 -m limit --limit 3 --limit-burst 3 -j DROP
+thì tôc độ syn sẽ bị giới hạn 3 lần trên một giây. Mà server của em chạy một lúc 50 site thì trong một thời điểm chỉ cần co 4 site có người truy cập đồng thời thì sẽ bị DROP ah anh comale
+&nbsp;
+		</blockquote>
+Anh tư vấn giúp em với. Cái này phải nói là thật sự khó anh ạh ?
+
+
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+syn vào nhiều là do bên ngoài vào nhiều chớ chẳng phải do mình drop mà nó có nhiều hơn. Bị syn thì thế nào cũng tốn bộ nhớ mà bị syn xong rồi, thiết lập xong request đến tận http và vào đến 1 URL nào đó (có dính đến việc tạo query đến DB) thì càng tốn hơn nữa. Vậy, cứ xét cái nào ít tốn hơn thì làm và nên nghĩ rằng bị DDoS luôn luôn <b>tốn</b>. 
+&nbsp;
+		</blockquote>
+Em nghĩ vỉ Syn bi drop nên tiếp tuc syn qua đó se làm lượng syn nhiều mà anh. Nhưng ko sao đúng là phương án nào tốt nhất thì chọn hiiiiii
+<p></p>
+		<cite class="blockquote">duejigum wrote:</cite><br>
+		<blockquote>
+Còn timewaite thì lam sao để giảm được anh theo em có 2 cai timewait là TCP và Firewall thì êm đã tunning 
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20 
+và timwaite của TCP = 20s
+Vậy thời gian giải phóng timewaite chỉ là 40s nhưng trên thực tế là 60s --&gt; Tại sao anh nhỉ
+&nbsp;
+		</blockquote>
+Không hiểu câu này. Thực tế nào? Em dựa vào đâu để có "thực tế" ấy?&nbsp;
+		</blockquote>
+Cái này em test băng ngồi tính thời gian giải phong của một timeout qua script thôi ah]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172750</link>
+				<pubDate><![CDATA[Tue, 10 Mar 2009 16:41:50]]> GMT</pubDate>
+				<author><![CDATA[ duejigum]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Thêm mấy cái này nữa:
+
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_established = 108000
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_recv = 5
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_fin_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_close_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20
+net.ipv4.tcp_max_syn_backlog = 1024
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_recv = 5
+&nbsp;
+		</blockquote>
+
+Anh cho em chút ít tài liệu về những thông số trên được không anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172796</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172796</link>
+				<pubDate><![CDATA[Tue, 10 Mar 2009 23:42:45]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Các pro chỉ giúp em cách tunning con webserver này với </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Thêm mấy cái này nữa:
+
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_established = 108000
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_recv = 5
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_fin_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_close_wait = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 20
+net.ipv4.tcp_max_syn_backlog = 1024
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_recv = 5
+&nbsp;
+		</blockquote>
+
+Anh cho em chút ít tài liệu về những thông số trên được không anh?&nbsp;
+		</blockquote>
+
+Trong source code của kernel có thư mục "Documentation". Trong thư mục này có "networking" và bên trong "networking" có ip-sysctl.txt.
+
+Một bản online:<span class="link"> http://www.mjmwired.net/kernel/Documentation/networking/ip-sysctl.txt</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172821</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27986.hva#172821</link>
+				<pubDate><![CDATA[Wed, 11 Mar 2009 07:46:38]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

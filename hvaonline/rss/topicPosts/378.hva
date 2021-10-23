@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Đặt quyền cho files trong Unix*"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Đặt quyền cho files trong Unix*"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ Hixx. Hôm nay không biết post gì. Lục tung cái máy có đc baì này. Nếu có ai post rồi thì cho em xin.
+
+Bài viết này sẽ giúp bạn hiểu rõ về cách đặt quyền cho files trong môi trường Unix*(Linux*)! Chúng ta hãy bắt đầu!
+
+Unix* coi mọi thứ đều là file!
+
+ Mọi thứ từ file, directory, device, socket,... Unix đều coi chúng là files! Hãy nhớ lấy điều này!
+
+Những gì bạn phải nhớ!
+
+Trước khi đi vào phần chính, tôi muốn bạn PHẢI ghi nhớ lấy các quyền sau: 
+
+4 -> Read - đọc
+2 -> Write - viết
+1 -> Execute - thực thi 
+
+4000 -> SUID - Set User ID on execution
+2000 -> SGID - Set Group ID on execution
+1000 -> Sticky Bit 
+
+(Tôi sẽ giải thích chi tiết cho các bạn sau!)
+
+Các thuộc tính của 1 file
+
+Cũng giống như MS-DOS, bất kì file nào trên Unix đều có các thuộc tính-attributes. Cấu trúc của 1 attribute trong Unix bao gồm 10 cờ-flags:
+
+ft ur uw ux gr gw gx or ow ox 
+
+ ft - file type: cho biết file thuộc loại gì. File type có thể là -(file bình thường), d(directory), l(symbolic link), c(character device), b(block device), socket device).  
+các chữ viết tắc: 
+u=user, g=group, o=other 
+r=read, w=write, e=execute 
++=đặt, -=gỡ bỏ 
+user(người dùng), group(nhóm) và other(những người khác) sẽ có các quyền hạn khác nhau trên một file nào đó. Quyền này chỉ có thể do người sở hữu file(onwer) hoặc root(admin) đặt thôi!
+
+Hãy nhìn qua các ví dụ sau, bạn sẽ hiểu được thôi!
+
+-rw-r--r-- 1 huy 2520 Jan 9 09:46 .plan
+lrwxrwxrwx 1 root 9 Oct 1 19:42 .rhosts -> /dev/null
+drwx------ 4 anh 4096 Jan 9 10:29 bin/
+-rw------- 1 anh 1349 Jan 6 14:49 header.file.2 
+
+.plan là một file(-) thuộc quyền sở hữu của user huy. huy có quyền đọc và viết đối với file .plan(rw). Nhóm mà huy là một thành viên chỉ có quyền đọc file này(r--). Những người khác cũng chỉ có quyền đọc file .plan của huy thôi(r--)! 
+.rhosts là một liên kết đến /dev/null(l)(liên kết trong Unix cũng gần tương tự như shortcut trong Windows thôi! Chắc bạn có thể hình dung ra được chứ!). .rhosts thuộc quyền sở hữu của root. root(uid=0), root group(gid=0) và những người khác(other) đều có quyền đọc, viết, ghi, thực thi trên liên kết .rhosts(rwxrwxrwx)!  
+header.file.2 là một file(-) thuộc quyền sở hữu của user anh. anh có chỉ quyền đọc và ghi(rw-), những người khác(dĩ nhiên là ngoại trừ root và root-group) đều không có quyền gì cả trên file này(------)! 
+Đặt quyền cho file bằng lệnh chmod
+
+ chmod cho phép đặt quyền theo 2 cách: một là dùng các kí tự, hai là dùng số!
+
+Dùng kí tự: 
+dấu "+" nghĩa là đặt, dấu "-" nghĩa là gỡ bỏ quyền! Ví dụ tôi có một file 'readme' có permission là -rw-r--r--(nghĩa là tôi(user) có quyền đọc và ghi đối với file này wr-, nhóm của tôi và nhũng người khác chỉ có thể đọc nó r-- và r--). Bây giờ tôi muốn cho nhóm tôi và những người khác có thêm quyền thực thi file này:
+
+chmod go+x readme
+
+Permission của file readme sẽ là -rw-r-xr-x
+
+Giờ thì tôi lại đổi ý, tôi muốn nhóm của tôi có thêm quyền ghi đối với file 'readme' của tôi và những người khác chỉ có quyền thực thi:
+
+chmod g+w readme
+chmod o-r readme
+
+Permission của file readme sẽ là -rw-rwx--x
+
+ Dùng số: 
+4 -> Read - đọc
+2 -> Write - ghi
+1 -> Execute - thực thi
+
+Bạn cần đặt quyền gì thứ cứ cộng các giá trị này lại với nhau. Ví dụ 4+2=6 tức là đọc và ghi; 4+1=5 tức là đọc và thực thi; 4+2+1=7 nghĩa là đọc, ghi và thực thi; 0 nghĩa là không có quyền gì hết...!
+
+user group other 
+
+Số thứ nhất cho user
+Số thứ nhất cho group
+Số thứ nhất cho other
+
+Ví dụ:
+
+chmod 744 a -> user có quyền đọc, ghi, thực thi a rwx(4+2+1=7); group và other chỉ có quyền đọc và ghi a rw-(4)
+chmod 755 hello.pl -> user có quyền đọc, ghi, thực thi hello.pl rwx(4+2+1=7); group và other chỉ có quyền đọc và thực thi hello.pl r-x(4+1=5)
+
+Nói thêm: chmod cho phép bạn đặt quyền cho nhiều file cùng một lúc. Bạn có thể dùng các kí tự đại diện chảng hạn như *, .... Tham số -R (viết tắc của từ recursive - đệ qui) dùng để đặt quyền cho tất cả các file và thư mục cấp dưới!(à quyên, tôi phải nói là file mới phải chứ!)
+
+[root@localhost cgi-bin]$chmod -R 755 * -> đặt quyền "rwxr-x-r-x" cho tất cả các files trong thư mục cgi-bin và các thư mục con của cgi-bin. Tuy nhiên, lệnh này sẽ không đặt quyền "rwxr-x-r-x" cho các file bắt đầu bằng dấu chấm '.' Để đặt quyền "rwxr-x-r-x" cho các file này, bạn gõ thêm lệnh sau:   
+
+[root@localhost cgi-bin]$chmod -R 755 .* -> Okay!
+
+SUID, SGID, Sticky bit là gì?
+
+Tôi sẽ giải thích cho bạn bây giờ! Không khó hiểu lắm đâu..!
+
+  user group other 
+
+Số thứ 0 chính là để dùng cho SUID, SGID và Sticky bit!
+
+SUID -> 4000
+SGID -> 2000
+Sticky bit -> 1000
+
+(Xin bạn chú ý, 3 số sau tôi cho bằng 000 hết vì chúng ta không quan tâm đến user, group, other. Chúng ta chỉ để ý đến số thứ 0 thôi! Bạn đừng có nhầm lẫn giữa 4000 với 4 nghe chưa!)
+
+SUID - Set User ID on execution là gì? Tôi giải thích rõ cho bạn qua ví dụ sau: user huy có một file chương trình có tên là lamviec. Để có thể chạy được, lamviec phải truy cập đến vài thứ trong file dulieu. File dulieu thuộc quyền sở hữu của huy. Như vậy thì huy có thể chạy được lamviec mà không gặp phải vấn đề gì. Tuy nhiên, bây giờ nếu có một người bạn của huy là anh không ở cùng nhóm với huy cần chạy file lamviec! anh sẽ không thể nào chạy được file lamviec bởi vì nó cần truy cập đến file dulieu của huy, mà file này lại không thuộc quyền sở hữu của anh. huy sẽ chmod o+wr cho file dulieu! Làm như vậy thì người khác sẽ đọc và ghi được file này răng! Hihi, huy sẽ SUID cho file lamviec bằng lệnh chmod +s lamviec. Bây giờ thì lamviec sẽ chạy với userid là huy, anh có thể chạy được file lamviec mà không gặp phải vấn đề gì. Tuy nhiên anh chỉ có thể đọc hoặc viết vào file dulieu thông qua lamviec. anh không thể nào có thể đọc hoặc ghi lên file dulieu trực tiếp trừ phi anh có quyền root! 
+
+SGID - Set User ID on execution là gì? Nghĩa là đặt thuộc tính thừa kế groupid cho một thư mục nào đó. Ví dụ, khi tôi đã sgid cho thư mục abc bằng lệnh chmod 2766 abc thì sau đó, bất kì một người này dù cùng group-id hoặc khác group-id với tôi nếu tạo file nào đó trong thư mục abc của tôi thì file đó sẽ có group-id của tôi, không phải là group-id của người đó! 
+
+Sticky bit - cái này có ý nghĩa khác nhau đối với file và thư mục: 
+
+Đối với file, sticky bit thường chỉ được dùng với các thực thi thôi và thường thì chỉ có root hoặc các users có quyền hạn cao mới được bật hay tẳt sticky bit cho file! Khi một file thực thi có sticky bit được bật, file này sẽ được nạp vào swap-space(không gian swap) của Unix để có thể chạy nhanh. Bạn hãy để ý, các chương trình như vi, vim, pico, pine thường được bật sticky bit vì người dùng thường sử dụng các chương trình này thường xuyên mà! 
+
+Đối với thư mục, khi một thư mục được bật sticky bit thì các users có thể đọc hoặc viết vào các file trong thư mục đó. Tuy nhiên, họ không thể đổi tên hoặc xóa các file không thuộc quyền sở hữu của họ. Họ chỉ có thể xóa hoặc đổi tên các file do họ tạo ra mà thôi. Thường thì sticky bit được dùng trong thư mục /tmp nhằm tăng thêm tính private cho các users! 
+Hack permissions!
+
+Đôi khi admin hoặc một số users cẩu thả khi đặt quyền cho các files của họ. Họ đã tự mang họa vào thân mà chẳng hay gì hết!? Hãy xem các ví dụ sau: 
+
+Tìm tất cả các file thuộc quyền sở hữu của root đã được bật sticky bit: $> find / -user root -perm -4000 -ls 
+Tìm tất cả các file được quyền ghi: $> find -type f -perm -2 -ls 
+Tìm tất cả các thư mục được quyền ghi: $> find -type d -perm -2 -ls 
+Một số hackers sau khi đã lấy được quyền root rồi thường kéo file sh vào thư mục /tmp/somewhere, sau đó bật sticky bit cho file này để Unix* nạp nó lên swap-space. Như vậy nó sẽ chẳng bao gì bị xóa cho đến khi server bị restart lại mà điều này thì hiếm khi xảy ra! Khi muốn hackers có thể ghé thăm lại server này cho vui!
+
+#> cp /sbin/sh /tmp/somewhere/yeah
+#> chmod 4755 /tmp/somewhere/yeah
+
+Qua bài này tôi hi vọng rằng bạn sẽ có thêm một số kiến thức mới và dĩ nhiên là hiểu được sự phân quyền trên Unix*. Chúc bạn thành công! Oh! I can relax now...?!
+
+Back 
+
+--------------------------------------------------------------------------------
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#893</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#893</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:20:44]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ Chào BigballVN, mình có đọc ebook về Linux và sau khi đọc bài viết của bạn vẫn còn vài chỗ chưa hiểu mong bạn đáp dùm: 
+<blockquote> 
+ SUID - Set User ID on execution là gì? Tôi giải thích rõ cho bạn qua ví dụ sau: user huy có một file chương trình có tên là lamviec. Để có thể chạy được, lamviec phải truy cập đến vài thứ trong file dulieu. File dulieu thuộc quyền sở hữu của huy. Như vậy thì huy có thể chạy được lamviec mà không gặp phải vấn đề gì. Tuy nhiên, bây giờ nếu có một người bạn của huy là anh không ở cùng nhóm với huy cần chạy file lamviec! anh sẽ không thể nào chạy được file lamviec bởi vì nó cần truy cập đến file dulieu của huy, mà file này lại không thuộc quyền sở hữu của anh. huy sẽ chmod o+wr cho file dulieu! Làm như vậy thì người khác sẽ đọc và ghi được file này răng! Hihi, huy sẽ SUID cho file lamviec bằng lệnh chmod +s lamviec. Bây giờ thì lamviec sẽ chạy với userid là huy, anh có thể chạy được file lamviec mà không gặp phải vấn đề gì. Tuy nhiên anh chỉ có thể đọc hoặc viết vào file dulieu thông qua lamviec. anh không thể nào có thể đọc hoặc ghi lên file dulieu trực tiếp trừ phi anh có quyền root!
+ SGID - Set User ID on execution là gì? Nghĩa là đặt thuộc tính thừa kế groupid cho một thư mục nào đó. Ví dụ, khi tôi đã sgid cho thư mục abc bằng lệnh chmod 2766 abc thì sau đó, bất kì một người này dù cùng group-id hoặc khác group-id với tôi nếu tạo file nào đó trong thư mục abc của tôi thì file đó sẽ có group-id của tôi, không phải là group-id của người đó!&nbsp;
+		</blockquote>
+-Vậy thì làm được gì ? Ý mình là mình không thấy được lợi ích của SGID, vì mình thấy vd như user Huy thuộc group SINHVIEN tạo file dulieu, thì có nghĩa là dulieu thuộc sở hữu của Huy và group SINHVIEN, nếu Anh thuộc group SINHVIEN luôn thì dulieu có thuộc sở hữu của Anh không ? Theo mình đoán là không trừ khi root chgrp SINHVIEN abc, vậy trong vd của bạn nếu Huy set thuộc tính cho dulieu là rwx------ thì dù Anh có cùng group với Huy hay không cũng đâu có xi nhê gì phải không ? Vẫn phải chmod +s lamviec để cho Anh xài thôi ?
+-Nếu mình chmod 2766 abc thì có phải tất cả các file được tạo ra trong abc (mặc định) đều có thuộc tính là ?????s???(nếu là file thực thi được) hay ?????S??? (nếu không thực thi được) phải không ?
+-Theo như vd của bạn thì set SGID chỉ thấy tác dụng đối với thư mục thôi còn nếu ta chmod 2766 cho file dulieu thì có tác dụng gì ? Xin bạn cho 1 vd cụ thể để mình hiểu về SGID hơn vì trong ebook nói về phần này cũng rất sơ sài.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#104705</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#104705</link>
+				<pubDate><![CDATA[Tue, 18 Dec 2007 23:03:41]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+-Vậy thì làm được gì ? Ý mình là mình không thấy được lợi ích của SGID, ...
+&nbsp;
+		</blockquote>
+Bản chất của SGID cũng như SUID là: tập tin được set thuộc tính này sẽ chạy với quyền group hoặc user của người sở hữu nó chứ không phải của người đang chạy nó. 
+
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+vì mình thấy vd như user Huy thuộc group SINHVIEN tạo file dulieu, thì có nghĩa là dulieu thuộc sở hữu của Huy và group SINHVIEN, nếu Anh thuộc group SINHVIEN luôn thì dulieu có thuộc sở hữu của Anh không ?&nbsp;
+		</blockquote>
+Không. 
+
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+Theo mình đoán là không trừ khi root chgrp SINHVIEN abc, vậy trong vd của bạn nếu Huy set thuộc tính cho dulieu là rwx------ thì dù Anh có cùng group với Huy hay không cũng đâu có xi nhê gì phải không ? Vẫn phải chmod +s lamviec để cho Anh xài thôi ?&nbsp;
+		</blockquote>
+Đúng rồi. Đó chính là mục đích khi dùng SGID
+
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+-Nếu mình chmod 2766 abc thì có phải tất cả các file được tạo ra trong abc (mặc định) đều có thuộc tính là ?????s???(nếu là file thực thi được) hay ?????S??? (nếu không thực thi được) phải không ?&nbsp;
+		</blockquote>
+Không phải. Chỉ có thư mục <b>abc</b> được set thêm thuộc tính <b>s</b> thôi. Tất cả các file hoặc thư mục <font color='orange'>có sẵn</font> khác nằm trong thư mục abc đều giữ nguyên permission. Để dễ hiểu, tớ lấy một ví dụ như sau:
++ Trên máy tớ có 2 users: quanta thuộc group quanta, và kitty thuộc group kitty
++ Login bằng user <b>quanta</b>, SGID cho thư mục <b>To do write</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod g+s To\ do\ write</pre>
+		</div>
+Ta được: 
+<blockquote>drwxrw<font color='orange'>s</font>r-x  3 quanta quanta    4096 2007-12-19 16:02 To do write&nbsp;
+		</blockquote>
++ Trước và sau khi thực hiện việc này, tất cả các file hoặc thư mục <font color='orange'>có sẵn</font> trong thư mục <b>abc</b> này đều giữ nguyên permission
++ Bây giờ nếu user <b>kitty</b> vào thư mục <b>To do write</b> đó và tạo 1 file thì file đó sẽ có group là <b>quanta</b> và được thi hành với quyền của group <b>quanta</b> này:
+<blockquote>-rw-rw-r--  1 kitty  <font color='orange'><b>quanta</b></font> 2494 2007-12-19 15:09 new file&nbsp;
+		</blockquote>
+Nếu user <b>kitty</b> tạo 1 thư mục trong <b>To do write</b>, thư mục đó cũng có group là quanta và thuộc tính "s" được gán cho group permission:
+<blockquote>drwxrw<font color='orange'>s</font>r-x  2 kitty  <font color='orange'><b>quanta</b></font> 4096 2007-12-19 14:56 untitled folder&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+-Theo như vd của bạn thì set SGID chỉ thấy tác dụng đối với thư mục thôi còn nếu ta chmod 2766 cho file dulieu thì có tác dụng gì ? Xin bạn cho 1 vd cụ thể để mình hiểu về SGID hơn vì trong ebook nói về phần này cũng rất sơ sài.
+&nbsp;
+		</blockquote>
+SGID cho một file cũng tương tự như SUID cho một file. Ví dụ thế này:
++ Login với user <b>quanta</b>, bạn tạo một file <i>yourscript.sh</i> có nội dung:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "test" &gt;&gt; yourlog.log</pre>
+		</div>
+File <i>yourscript.sh</i> này có permission là: 
+<blockquote>-rwxrwxr-x  1 quanta quanta&nbsp;
+		</blockquote>
++ chmod <i>yourscript.sh</i> và chạy nó lần đầu tiên để tạo file <i>yourlog.log</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod +x yourscript.sh
+$ sh yourscript.sh</pre>
+		</div>Bây giờ bạn đã có file <i>yourlog.log</i>, permission của nó là:
+<blockquote>-rw-rw-r--  1 quanta quanta&nbsp;
+		</blockquote>
+Bạn để ý là những user khác không có quyền write trên file này (Bạn có thể login sang 1 user khác để thử)
++ Bây giờ thử SGID cho <i>yourscript.sh</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod g+s yourscript.sh</pre>
+		</div>
+Rồi login sang một user khác và chạy xem sao. Về lý thuyết thì bạn đã echo được "test" thêm vào <i>yourlog.log</i> nhưng tớ test thử thì bị <b><i>Permission denied</i></b>. Vấn đề này có thể do bash shell drop permission. Tớ đã lập một topic khác để hỏi, bạn có thể tiếp tục theo dõi <a href="http://www.hvaonline.net/hvaonline/posts/list/17488.hva" target="_blank"><font color='yellow'>tại đây</font></a>.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#104917</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#104917</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 02:45:58]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>Chào BigballVN, mình có đọc ebook về Linux và sau khi đọc bài viết của bạn vẫn còn vài chỗ chưa hiểu mong bạn đáp dùm: 
+<blockquote> 
+ SUID - Set User ID on execution là gì? Tôi giải thích rõ cho bạn qua ví dụ sau: user huy có một file chương trình có tên là lamviec. Để có thể chạy được, lamviec phải truy cập đến vài thứ trong file dulieu. File dulieu thuộc quyền sở hữu của huy. Như vậy thì huy có thể chạy được lamviec mà không gặp phải vấn đề gì. Tuy nhiên, bây giờ nếu có một người bạn của huy là anh không ở cùng nhóm với huy cần chạy file lamviec! anh sẽ không thể nào chạy được file lamviec bởi vì nó cần truy cập đến file dulieu của huy, mà file này lại không thuộc quyền sở hữu của anh. huy sẽ chmod o+wr cho file dulieu! Làm như vậy thì người khác sẽ đọc và ghi được file này răng! Hihi, huy sẽ SUID cho file lamviec bằng lệnh chmod +s lamviec. Bây giờ thì lamviec sẽ chạy với userid là huy, anh có thể chạy được file lamviec mà không gặp phải vấn đề gì. Tuy nhiên anh chỉ có thể đọc hoặc viết vào file dulieu thông qua lamviec. anh không thể nào có thể đọc hoặc ghi lên file dulieu trực tiếp trừ phi anh có quyền root!
+ SGID - Set User ID on execution là gì? Nghĩa là đặt thuộc tính thừa kế groupid cho một thư mục nào đó. Ví dụ, khi tôi đã sgid cho thư mục abc bằng lệnh chmod 2766 abc thì sau đó, bất kì một người này dù cùng group-id hoặc khác group-id với tôi nếu tạo file nào đó trong thư mục abc của tôi thì file đó sẽ có group-id của tôi, không phải là group-id của người đó!&nbsp;
+		</blockquote>
+-Vậy thì làm được gì ? Ý mình là mình không thấy được lợi ích của SGID, vì mình thấy vd như user Huy thuộc group SINHVIEN tạo file dulieu, thì có nghĩa là dulieu thuộc sở hữu của Huy và group SINHVIEN, nếu Anh thuộc group SINHVIEN luôn thì dulieu có thuộc sở hữu của Anh không ? Theo mình đoán là không trừ khi root chgrp SINHVIEN abc, vậy trong vd của bạn nếu Huy set thuộc tính cho dulieu là rwx------ thì dù Anh có cùng group với Huy hay không cũng đâu có xi nhê gì phải không ? Vẫn phải chmod +s lamviec để cho Anh xài thôi ?
+-Nếu mình chmod 2766 abc thì có phải tất cả các file được tạo ra trong abc (mặc định) đều có thuộc tính là ?????s???(nếu là file thực thi được) hay ?????S??? (nếu không thực thi được) phải không ?
+-Theo như vd của bạn thì set SGID chỉ thấy tác dụng đối với thư mục thôi còn nếu ta chmod 2766 cho file dulieu thì có tác dụng gì ? Xin bạn cho 1 vd cụ thể để mình hiểu về SGID hơn vì trong ebook nói về phần này cũng rất sơ sài.
+&nbsp;
+		</blockquote>
+Chào rocklee44,SUID và SGID là 2 cơ chế nâng quyền hạn của bạn lên 
+ví dụ 1:+ ông giám đốc của bạn bị ốm và hôm đó bạn được chỉ định    lên thay thế trong 1 vài hôm   và có toàn quyền quyết định như một giám đốc mặc dù bạn chỉ là một tên trưởng phòng.
+ví dụ 2:Bình thường chỉ có root mới có thể đổi được được password cho bạn nhưng khi bạn    gõ lệnh
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>passwd</pre>
+		</div> Nhờ SUID bạn đã trở thành root trong chốc lát ,sau khi bạn đổi passwd xong thì bạn sẽ trở về với quyền như  một user bình thường
+Còn về câu hỏi của anh quanta mình đã post tại đây <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104977</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#104986</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#104986</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 13:13:48]]> GMT</pubDate>
+				<author><![CDATA[ pearltran]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ Thanks quanta & pearltran, sau khi đọc xong giải thích thì lại văng ra 1 đống câu hỏi khác đây  :D :
+<blockquote> Không phải. Chỉ có thư mục abc được set thêm thuộc tính s thôi. Tất cả các file hoặc thư mục có sẵn khác nằm trong thư mục abc đều giữ nguyên permission. Để dễ hiểu, tớ lấy một ví dụ như sau:
++ Trên máy tớ có 2 users: quanta thuộc group quanta, và kitty thuộc group kitty
++ Login bằng user quanta, SGID cho thư mục To do write:
+Code:
+
+$ sudo chmod g+s To\ do\ write
+
+
+Ta được:
+
+    drwxrwsr-x 3 quanta quanta 4096 2007-12-19 16:02 To do write  
+
+
++ Trước và sau khi thực hiện việc này, tất cả các file hoặc thư mục có sẵn trong thư mục abc này đều giữ nguyên permission
++ Bây giờ nếu user kitty vào thư mục To do write đó và tạo 1 file thì file đó sẽ có group là quanta và được thi hành với quyền của group quanta này:
+
+    -<b>rw-</b><u>rw-</u>r-- 1 kitty quanta 2494 2007-12-19 15:09 new file  &nbsp;
+		</blockquote>
+-Phần in đậm là quyền của kitty, kitty là chủ của file này nhưng lại không có quyền x(thực thi) mình đoán là do đây là file văn bản giống dạng file log mà bạn tạo ra trong vd dưới phải không ?
+-Phần gạch dưới là quyền của group nào vậy ? quanta hay user ?
+<blockquote> Nếu user kitty tạo 1 thư mục trong To do write, thư mục đó cũng có group là quanta và thuộc tính "s" được gán cho group permission:
+
+    drwx<u>rws</u><i>r-x</i> 2 kitty quanta 4096 2007-12-19 14:56 untitled folder  &nbsp;
+		</blockquote>
+-Phần gạch dưới ở đây mình cũng hỏi giống như trên. Nếu là quyền của group quanta thì việc $ sudo chmod g+s To\ do\ write là dư nhỉ vì quyền dành cho other của To do write đã là r-x rồi hay là vì $ sudo chmod g+s To\ do\ write nên  quyền dành cho other mới là r-x ? Cái này thì phải xem quyền lúc đầu của To do write mới biết được   :-/ 
+Về vd ở dưới, theo mình hiểu vì:
+<blockquote> File yourscript.sh này có permission là:
+
+    -rwxrwxr-x 1 quanta quanta  &nbsp;
+		</blockquote>
+Nên đáng lẽ kitty có thể thực thi file này nhưng vì yourscript.sh có đụng tới yourlog.log nên quanta mới phải $ sudo chmod +x yourscript.sh để kitty xài được yourscript.sh (mà ở đây sao lại dùng sudo nhỉ, user quanta là chủ yourscript.sh rồi mà ?). Ở đây yourscript.sh viết thêm vào yourlog.log nên kitty ngoài quyền x (đã là file văn bản sao phải cân quyền x nhỉ ?) phải có quyền write vào yourlog.log, vậy $ sudo chmod g+s yourscript.sh giúp kitty có thể write phải không ? Nếu không thì cần gì $ sudo chmod g+s yourscript.sh mà chỉ cần $ sudo chmod +x yourscript.sh ở trên là đủ rồi.
+Mình cứ cảm thấy SUID bao hàm SGID :D, vì như vậy giống như quanta nói ở trên " SGID cho một file cũng tương tự như SUID cho một file".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#105324</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#105324</link>
+				<pubDate><![CDATA[Sat, 22 Dec 2007 02:58:07]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+...
++ Bây giờ nếu user kitty vào thư mục To do write đó và tạo 1 file thì file đó sẽ có group là quanta và được thi hành với quyền của group quanta này:
+
+    -<b>rw-</b><u>rw-</u>r-- 1 kitty quanta 2494 2007-12-19 15:09 new file  &nbsp;
+		</blockquote>
+-Phần in đậm là quyền của kitty, kitty là chủ của file này nhưng lại không có quyền x(thực thi) mình đoán là do đây là file văn bản giống dạng file log mà bạn tạo ra trong vd dưới phải không ?&nbsp;
+		</blockquote>
+Chính xác.
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+-Phần gạch dưới là quyền của group nào vậy ? quanta hay user ?
+&nbsp;
+		</blockquote>
+<b>quanta</b>.
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+<blockquote> Nếu user kitty tạo 1 thư mục trong To do write, thư mục đó cũng có group là quanta và thuộc tính "s" được gán cho group permission:
+
+    drwx<u>rws</u><i>r-x</i> 2 kitty quanta 4096 2007-12-19 14:56 untitled folder  &nbsp;
+		</blockquote>
+-Phần gạch dưới ở đây mình cũng hỏi giống như trên. Nếu là quyền của group quanta thì việc $ sudo chmod g+s To\ do\ write là dư nhỉ vì quyền dành cho other của To do write đã là r-x rồi hay là vì $ sudo chmod g+s To\ do\ write nên  quyền dành cho other mới là r-x ? Cái này thì phải xem quyền lúc đầu của To do write mới biết được   :-/ 
+&nbsp;
+		</blockquote>
+Phần <u>gạch dưới</u> là quyền của group <b>quanta</b>. Việc <font color='orange'><i>$ sudo chmod g+s To\ do\ write</i></font> đâu có ảnh hưởng gì đến permission dành cho Others ("g" ở đây là group mà, chỉ có group của thư mục đó được SGID thôi)
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+Về vd ở dưới, theo mình hiểu vì:
+<blockquote> File yourscript.sh này có permission là:
+
+    -rwxrwxr-x 1 quanta quanta  &nbsp;
+		</blockquote>
+Nên đáng lẽ kitty có thể thực thi file này nhưng vì yourscript.sh có đụng tới yourlog.log nên quanta mới phải $ sudo chmod +x yourscript.sh để kitty xài được yourscript.sh (mà ở đây sao lại dùng sudo nhỉ, user quanta là chủ yourscript.sh rồi mà ?). &nbsp;
+		</blockquote>
+Ok. Lệnh sudo ở đây là thừa. Cảm ơn bạn đã nhắc.
+<p></p>
+		<cite class="blockquote">rocklee44 wrote:</cite><br>
+		<blockquote>
+Ở đây yourscript.sh viết thêm vào yourlog.log nên kitty ngoài quyền x (đã là file văn bản sao phải cân quyền x nhỉ ?) phải có quyền write vào yourlog.log, 
+&nbsp;
+		</blockquote>
+Bạn xem lại, <b>kitty</b> làm gì có quyền <b>x</b> trên <i>yourlog.log</i>. Đây:
+<blockquote>Bây giờ bạn đã có file yourlog.log, permission của nó là:
+    -rw-rw-r-- 1 quanta quanta  &nbsp;
+		</blockquote>
+<blockquote>vậy $ sudo chmod g+s yourscript.sh giúp kitty có thể write phải không ? &nbsp;
+		</blockquote>
+Đúng. Chính xác là: lệnh này sẽ làm cho <b>kitty</b> (người thực hiện script) sẽ thi hành script với quyền của group đã tạo ra nó (<b>quanta</b> - group này có quyền <b>write</b> trên yourlog.log), chứ không phải là quyền của <b>kitty</b> (chỉ có thể <b>read</b> trên yourlog.log)
+
+Nhưng: ... vẫn đang tìm hiểu về EUID?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#105489</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#105489</link>
+				<pubDate><![CDATA[Sun, 23 Dec 2007 04:54:18]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Đặt quyền cho files trong Unix*</title>
+				<description><![CDATA[ Thanks, mình hiểu rồi, mình xin tóm gọn lại như sau:
+-Để kitty chạy đươc yourscript.sh thì quanta phải chmod g+s cho yourscript.sh nhưng ở đây cũng có thể chmod u+s cho yourscript.sh vì khi set cho file thì 2 lệnh này tác dụng như nhau.
+-Khi quanta tạo thư mục abc thì thay vì phải chmod u+s cho từng file để sau này kitty xài được trong abc quanta sẽ chmod g+s cho abc luôn cho tiện, và 1 điểm khác nữa là khi chmod g+s cho abc thì các file được tạo ra trong abc sẽ thuộc group quanta(dù do ai tạo ra). Vậy quyền của group user trên các file này chắc là = quyền other rồi. 
+<blockquote> Nhưng: ... vẫn đang tìm hiểu về EUID?&nbsp;
+		</blockquote>
+là bạn hỏi mình hay tự hỏi vậy ? :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/378.hva#105513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/378.hva#105513</link>
+				<pubDate><![CDATA[Sun, 23 Dec 2007 11:52:36]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+	</channel>
+</rss>

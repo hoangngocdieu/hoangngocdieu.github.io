@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "An introduction to services, runlevels, and rc.d scripts"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "An introduction to services, runlevels, and rc.d scripts"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ <font color='green'>Bản English:</font>
+<span class="link"> http://www.linux.com/article.pl?sid=06/01/03/1728227</span>
+<font color='green'>Bản tạm dịch:</font>
+Một dịch vụ Linux là một ứng dụng chạy trên nền đợi được sử dụng hoặc là carrying out các tác vụ thiết yếu. 
+Bạn có thể nói gì về các dịch vụ đang chạy, hoặc quan trọng hơn là các dịch vụ cài đặt của chính bạn?
+
+Hãy bắt đầu bằng cách xem cách thức hệ thống khởi động, và trong một thư mục đặc biệt <b><font color='orange'>/etc/rc.d</font></b>. Trong thư mục này, bạn sẽ tìm thấy các file: <b><font color='orange'>rc.0, rc.1, rc.2, rc.3, rc.4, rc.5, and rc.6</font></b>, và một tập hợp các thư mục <b><font color='orange'>rc0.d, rc1.d, rc2.d, rc3.d, rc4.d, rc5.d, and rc6.d</font></b>. Bạn cũng tìm thấy một file với tên là: <b><font color='orange'>/etc/inittab</font></b>. Hệ thống sử dụng những file này để kiểm soát những dịch vụ được khởi động.
+Một ví dụ về file /etc/inittab:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>id:4:initdefault:
+
+l0:0:wait:/etc/rc.d/rc.0
+l6:6:wait:/etc/rc.d/rc.6
+x1:4:wait:/etc/rc.d/rc.4</pre>
+		</div>
+Tiến trình khởi động sử dụng các tham số này để định danh các runlevel mặc định và các files sẽ được sử dụng bởi các runlevel đó. Trong ví dụ này runlevel 4 là mặc định, và các scripts định nghĩa runlevel 4 có thể được tìm thấy trong <b><font color='orange'>/etc/rc.d/rc.4</font></b>
+
+Vậy Runlevel là gì? Thường bạn sẽ cho rằng nó sẽ tham chiếu đến các levels khác nhau mà hệ thống sẽ sử dụng trong suốt quá trình khởi động. Nhưng thay vào đó hãy xem runlevel như những điểm mà từ đó hệ thống đi vào. Runlevel 1 là cấu hình cơ bản nhất (dành cho truy cập người dùng đơn, môi trường Text), trong khi runlevel 5 là cấu hình cao cấp nhất (đa người dùng, mạng, và GUI). Runlevel 0 và runlevel 6 được sử dụng khi hệ thống tạm nghỉ hoặc khởi động lại.
+Tuy nhiên có sự khác nhau giữa các distro của Linux. Ví dụ Fedora sử dụng runlevel 5 cho X-based logins, trong khi Slackware sử dụng runlevel 4 để làm điều này
+(Xem bảng liệt kê tóm tắt các cấu hình cho Linux từ url trên)
+
+Khi muốn thay đổi level mặc định, bạn phải sửa theo đường dẫn: <b><font color='orange'>/etc/inittab</font></b>
+Tại sao bạn lại muốn thay đổi các runlevel. Bình thường bạn sẽ chỉ sử dụng GUI hoặc text với chế độ đa người dùng- tức là runlevel 4 hoặc 5. bạn sẽ chỉ cần đến runlevel 1 hoặc 2 nếu bạn có một vài vấn đề hệ thống và bạn muốn các truy cập cơ bản. Runlevel 0 và 6 không bao giờ được sử dụng như một cấu hình mặc định. Dĩ nhiên, bạn có thể thay đổi chế độ mà hệ thống đang chạy. Ví dụ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>init 6</pre>
+		</div>
+Lệnh này sẽ khởi động lại hệ thống
+
+Quá trình boot sẽ quyết định các runlevel nào được lựa chọn và từ đó sẽ quyết định rc.d script nào được chạy. Hãy xem một vài ví dụ về rc.d script file:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Try to use GNOME's gdm session manager:
+if &#91; -x /usr/bin/gdm &#93;; then
+  exec /usr/bin/gdm -nodaemon
+fi
+
+# Not there?  OK, try to use KDE's KDM session manager:
+if &#91; -x /opt/kde/bin/kdm &#93;; then
+  exec /opt/kde/bin/kdm -nodaemon
+fi
+
+# If all you have is XDM, I guess it will have to do:
+if &#91; -x /usr/X11R6/bin/xdm &#93;; then
+  exec /usr/X11R6/bin/xdm -nodaemon
+fi</pre>
+		</div>
+Đây là file rc.4 mặc định của Slackware 10.2
+
+Trong các distro khác bạn sẽ tìm thấy các script để chạy các liên kết tượng trưng thật sự đến các file trong thư mục: <b><font color='orange'>/etc/init.d</font></b> – một kho chứa trung tâm cho tất cả các script. Do đó tất cả những gì bạn phải làm là viết các đoạn script khởi động, đặt nó vào <b><font color='orange'>/etc/init.d</font></b>, sau đó tạo liên kết tượng trưng cho nó từ thư mục runlevel (hoặc file runlevel nếu hệ thống của bạn sử dụng)
+Ví dụ, runlevel 2 là runlevel mặc định cho Debian trong môi trường non-GUI. Nếu bạn chạy Apache 2 trên Debian, bạn phải tìm một init script cho Apache 2 trong /etc/init.d được gọi là apache2, một liên kết tượng trưng trỏ đến /etc/init.d/apache2. Điều này sẽ khởi động Apache 2 ở runlevel 2, nhưng chỉ sau khi các dịch vụ với số S thấp hơn được khởi động.
+
+Khi hệ thống shutdown sẽ có một liên kết tượng trưng khác trong  thư mục <b><font color='orange'>/etc/rc0.d</font></b> và <b><font color='orange'>etc/rc6.d</font></b> được khởi động với K thay vì S, liên kết này sẽ shutdown the process.
+(Tớ sẽ tìm hiểu và viết một bài khác về S và K sau)
+Nếu cảm thấy tất cả những điều này quá rắc rối, bạn có thể đơn giản hơn bằng cách sử dụng file <b><font color='orange'>/etc/rc.d/rc.local</font></b>. File script này được chạy một lần, sau khi các script khác được chạy, nhưng trước khi màn hình logon xuất hiện. Theo mặc định, file này như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#
+# /etc/rc.local - run once at boot time
+# Put any local setup commands in here:</pre>
+		</div>
+Bạn có thể add thêm các đoạn code khác vào cuối, để định nghĩa các script được chạy, ví dụ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/root/bin/start_bb</pre>
+		</div>
+hoặc:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>modprobe -r uhci
+modprobe usb-uhci
+eciadsl-start
+iptable -F
+iptables -A INPUT -i ppp0 -p tcp --syb -j DROP
+netdate time.nist.gov</pre>
+		</div>
+hoặc
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apachectl start
+echo "/usr/bin/mysqld_safe &" | su mysql</pre>
+		</div>
+Chú ý rằng với một vài Distro như Debian, nó không sử dụng các rc.local cho các script khởi động
+
+Một điểm nữa, thêm vào các script khởi động, hãy nhớ viết các script close-down để add vào <b><font color='orange'>rc.0</font></b> và <b><font color='orange'>rc.6</font></b>. Điều này sẽ làm cho các dịch vụ của bạn shutdown một cách gọn gàng và không để lại bất kỳ một trạng thái lạ nào khi hệ thống tạm nghỉ.
+
+Khi bạn khởi động lại, bạn làm thế nào để dừng các dịch vụ đang chạy? Đơn giản chỉ là đảo ngược của những gì đã làm. Hoặc là chỉnh sửa các file runlevel thích hợp, hoặc là remove những liên kết từ thư mục runlevel. Chú ý rằng, có thể không cần thiết phải làm điều này bằng tay, nhiều distro bao gồm các tool để quản lý các dịch vụ. Ví dụ Red Hat, Fedora sử dụng chkconfig, trong khi Debian sử dụng update-rc.d.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60889</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60889</link>
+				<pubDate><![CDATA[Tue, 22 May 2007 10:13:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ Tốt lắm quanta :)).
+
+Đây là cách làm quen và tiếp cận tốt nhất (đọc, dịch và phổ biến). Keep up the good work.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60890</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60890</link>
+				<pubDate><![CDATA[Tue, 22 May 2007 10:16:19]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ Cảm ơn <b>quanta</b>. 
+Hăng hái hơn nữa, bạn làm một bài về <b>su, sudo, file permission</b> nữa thì hay:mrgreen:.  Toàn những kiến thức cơ bản mà ai động vào Linux cũng cần phải biết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60895</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#60895</link>
+				<pubDate><![CDATA[Tue, 22 May 2007 10:30:49]]> GMT</pubDate>
+				<author><![CDATA[ nil]]></author>
+			</item>
+			<item>
+				<title>Re: An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ Cảm ơn anh conmale và nil.
+Em xin dịch tiếp một bài về: <b>Understanding Red Hat Run Levels</b>
+<font color='green'>Bản English</font>: 
+<span class="link"> http://www.linuxjournal.com/article/1274</span>
+
+<font color='green'>Bản dịch</font>: 
+Với mỗi runlevel các đoạn scripts được chạy để khởi động từng dịch vụ riêng biệt, thay vì một số lượng lớn các file phải chỉnh sửa bằng tay. Những đoạn scripts này được đặt trong thư mục <b><font color='orange'>/etc/rc.d/init.d</font></b>, và phần lớn đều có một tuỳ chọn <b><font color='orange'>start</font></b> hoặc <b><font color='orange'>stop</font></b>. Thiết lập này sẽ bao gồm một chùm các thư mục trong <b><font color='orange'>/etc/rc.d</font></b>. Đó là:
+<b><font color='orange'>rc0.d</font></b>: chứa đựng những đoạn script được chạy khi hệ thống shutdown
+<b><font color='orange'>rc1.d</font></b> đến <b><font color='orange'>rc3.d</font></b>: chứa những đoạn scripts được chạy khi hệ thống thay đổi runlevel. Runlevel 1 thường được sử dụng cho chế độ người dùng đơn. Runlevel 2 cho thiết lập đa người dùng không có NFS. Runlevel 3 cho thiết lập đa người dùng đầy đủ và môi trường mạng. 
+<b><font color='orange'>Runlevel 4</font></b> thường không được dùng
+<b><font color='orange'>Runlevel 5</font></b> chứa những đoạn script để khởi tạo hệ thống trong chế độ X11, nó gần giống runlevel 3 ngoại trừ là chương trình xdm được khởi động với một màn hình login đồ hoạ
+<b><font color='orange'>Runlevel 6</font></b>: chứa những đoạn scripts được chạy khi hệ thống reboot. Những đoạn scripts này được gọi bởi lệnh reboot
+init.d: thường chứa tất cả các scripts. Những file này nằm trong thư mục <b><font color='orange'>rc?.d</font></b> là những đường link thật sự đến thư mục <b><font color='orange'>init.d</font></b>
+
+<b><font color='Cyan'>The boot sequence</font></b>
+
+Hãy xem những gì sẽ xảy ra trong một trình tự boot Red Hat thông thường.
+Khi hệ thống khởi động, file <b><font color='orange'>/etc/rc.d/rc.sysinit</font></b> được chạy đầu tiên. Runlevel khởi động nằm trong <b><font color='orange'>/etc/inittab</font></b> được tìm thấy và các <b><font color='orange'>/etc/rc.d/rc script</font></b> được chạy. Trong hầu hết các trường hợp đó là Runlevel 3.
+
+Chương trình rc tìm thấy trong thư mục <b><font color='orange'>/etc/rc.d/rc3.d</font></b> sẽ thi hành bất cứ <b><font color='orange'>K* script nào với tuỳ chọn stop</font></b>. Sau đó <b><font color='orange'>tất cả các S* scripts được khởi động với tuỳ chọn start</font></b>. Các script được khởi động theo thứ bậc giá trị, ví dụ <b><font color='orange'>S10network</font></b> script được khởi động trước <b><font color='orange'>S85httpd</font></b> script. Điều này cho phép bạn lưạ chọn chính xác khi nào những đoạn scripts của bạn được chạy, mà không cần phải chỉnh sửa file. Điều tương tự cũng đúng với K* script.
+
+Hãy xem những gì xảy ra khi chúng ta thực hiện chuyển runlevels chẳng hạn từ runlevel 3 (networking và chế độ đa người dùng) sang runlevel 1 (chế độ đơn người dùng).
+Đầu tiên tất cả các K* scripts thuộc level của hệ thống đang thay đổi, được thi hành. Red Hat 2.0 cài đặt 7 K* script và 1 S* script trong thư mục /etc/rc.d/rc.1. K* script sẽ shutdown nfs, send mail, lpd, inet, cron, và syslog. Sau đó S* script sẽ kills off bất cứ chương trình còn lại nào và thi hành lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>init -t1 S</pre>
+		</div>
+để đưa hệ thống về chế độ đơn người dùng. Trong chế độ này bạn có thể chuyển ngược trở lại chế độ đa người dùng bằng cách gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>init 3</pre>
+		</div>
+<b><font color='Cyan'>Side-stepping init</font></b>
+
+Có 2 điểm chính cần bổ sung:
+Đầu tiên, bạn có thể lựa chọn script start hoặc stop, thậm chí khi nó không thuộc runlevel của bạn. Các scripts thi hành nằm trong thư mục: <b><font color='orange'>/etc/rc.d/init.d</font></b> với tuỳ chọn start hoặc stop sẽ khởi động hoặc dừng bất cứ chương trình hoặc dịch vụ nào mà nó kiểm soát. Điều này cho phép bạn tắt NFS từ runlevel 3 trong khi giữ tất cả các hệ thống khác vẫn hoạt động
+
+Dừng NFS trong trường hợp này sẽ yêu cầu dừng 2 hệ thống: nfsfs, nfs. Nfsfs script sẽ mount hoặc unmount bất kỳ hệ thống file NFS-mounted nào trong <b><font color='orange'>/etc/fstab</font></b> của bạn. Còn sau đó nfs script sẽ tắt các tiến trình liên kết với NFS, trong trường hợp này là mountd và nfsd.
+Do đó thủ tục cho việc shutdown NFS sẽ là:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /etc/rc.d/init.d/nfs start
+Starting NFS services: rpc.mountd rpc.nfsd
+# /etc/rc.d/init.d/nfsfs start
+Mounting remote filesystems.
+#</pre>
+		</div>
+và khởi động NFS sẽ là:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /etc/rc.d/init.d/nfs start
+Starting NFS services: rpc.mountd rpc.nfsd
+# /etc/rc.d/init.d/nfsfs start
+Mounting remote filesystems.
+#</pre>
+		</div>
+<b><font color='Cyan'>Managing init Files</font></b>
+
+Chẳng hạn, nếu bạn không muốn khởi động HTTP daemon, ngoài cách xoá file trong thư mục rc3.d, đơn giản bạn hãy đổi tên <b><font color='orange'>/etc/rc.d/rc3.d/S85httpd</font></b> thành bất cứ tên gì không bắt đầu bằng các chữ cái viết hoa “S” hoặc “K”. Sự lựa chọn tốt nhất cho bạn là đổi tên chúng thành bắt đầu bằng chữ cái viết thường “s” hoặc “k”. Cách này không chỉ làm cho các đoạn script không được khởi động, nó còn làm  cho các file này xuất hiện sau khi bạn dùng lệnh “ls”. 
+
+<b><font color='red'>Một chú ý quan trọng ở đây</font></b>: Hãy chắc chắn rằng bạn biết những đoạn script nào được chạy khi bạn disable chúng. Nếu chẳng hạn bạn disable S10network thì sẽ không có 1 dịch vụ mạng nào của bạn hoạt động. Đó là bởi vì S10network là một low number, những scripts khác phụ thuộc vào mạng phải được thi hành sau khi dịch vụ mạng khởi động
+
+Nếu bạn muốn tạo những init process của riêng bạn để khởi động hoặc dừng. Đơn giản, hãy tạo một đoạn script với một tuỳ chọn start. Nếu đoạn script của bạn khởi động một tiến trình nền, thì bạn cũng nên có thêm tuỳ chọn stop cho nó. 
+
+Viết một lần và được đặt trong thư mục <b><font color='orange'>/etc/rc.d/init.d</font></b>. Hãy nói về những chương trình kiểm tra thời gian trên mạng 15 phút một lần, chúng được gọi là script “<b><font color='orange'>netdate</font></b>”. Bạn có thể tạo đường link trong thư mục này khi bạn muốn khởi động chúng. Nếu bạn muốn chương trình của bạn được chạy ở runlevel 3, hãy tạo link đến script của bạn từ <b><font color='orange'>/etc/rc.d/rc3.d/S??netdate</font></b>. Đưa vào vị trí 2 dấu hỏi chấm một con số không xung đột với phần còn lại của thư mục, chẳng hạn S55netdate. 
+
+Nếu bạn muốn dừng một tiến trình trong quá trình shutdown, hãy chắc chắn rằng đoạn script của bạn chấp nhận tuỳ chọn stop, sau đó hãy tạo đường link đến <b><font color='orange'>/etc/rc.d/init.d/netdate</font></b> từ <b><font color='orange'>/etc/rc.d/rc0.d/K55netdate</font></b>. Một lần nữa hãy chắc chắn rằng con số bạn sử dụng không được dùng bởi bất kỳ một hệ thống con nào khác để tránh sự hỗn loạn. 
+
+Bạn có thể test những thiết lập mới của bạn bằng cách dùng init 3. Từ những hệ thống con đang được chạy, chỉ có một cái sẽ khởi động chính là cái bạn đã thêm vào. Nếu lệnh init 3 bị treo, đoạn script của bạn không exit, bạn phải đặt một ký hiệu ở cuối dòng để đặt tiến trình  vấn đề trên background. Bạn cũng có thể chạy những đoạn scripts này bằng tay từ thư mục <b><font color='orange'>/etc/rc.d/init.d/</font></b> .
+Bây giờ bạn đã biết cách thức các hệ thống con làm việc, bạn có thể dễ dàng thêm hoặc chỉnh sửa những hệ thống con đang tồn tại cho thiết lập Linux đặc thù của bạn.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#61323</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#61323</link>
+				<pubDate><![CDATA[Thu, 24 May 2007 13:03:49]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ <blockquote>
+Với mỗi runlevel các đoạn scripts được chạy để khởi động từng dịch vụ riêng biệt, thay vì một số lượng lớn các file phải chỉnh sửa bằng tay. Những đoạn scripts này được đặt trong thư mục /etc/rc.d/init.d, và phần lớn đều có một tuỳ chọn start hoặc stop.
+&nbsp;
+		</blockquote>
+
+Bạn quanta cho mình hỏi là trong lúc hệ thống đang boot thì những scripts này được chạy. Vậy những scripts này được chạy bằng cách nào? Vì thông thường sau khi một user login thành công thì shell của user mới được chạy và từ đó user mới có thể chạy được các scripts thông qua shell của mình. 
+
+Liệu có phải trong lúc các init scripts được gọi thì có một shell nào đó phải được chạy? Vậy thì shell này là shell của root user phải không bạn? Và sau khi shell này chạy xong thì nó có bị kill đi không và cái gì đã kill nó hay là nó tự exit?
+
+Thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270635</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270635</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 05:23:14]]> GMT</pubDate>
+				<author><![CDATA[ ngocson2vn]]></author>
+			</item>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ngocson2vn wrote:</cite><br>
+		<blockquote>
+Bạn quanta cho mình hỏi là trong lúc hệ thống đang boot thì những scripts này được chạy. Vậy những scripts này được chạy bằng cách nào? Vì thông thường sau khi một user login thành công thì shell của user mới được chạy và từ đó user mới có thể chạy được các scripts thông qua shell của mình. 
+
+Liệu có phải trong lúc các init scripts được gọi thì có một shell nào đó phải được chạy? Vậy thì shell này là shell của root user phải không bạn? Và sau khi shell này chạy xong thì nó có bị kill đi không và cái gì đã kill nó hay là nó tự exit?
+
+Thanks&nbsp;
+		</blockquote>
+Trong quá trình boot, sau khi load kernel, process nào được chạy đầu tiên? Nói cách khác, process nào là "cha" (hoặc "ông nội") của mọi processes khác?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270637</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270637</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 06:33:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ngocson2vn wrote:</cite><br>
+		<blockquote><blockquote>
+Với mỗi runlevel các đoạn scripts được chạy để khởi động từng dịch vụ riêng biệt, thay vì một số lượng lớn các file phải chỉnh sửa bằng tay. Những đoạn scripts này được đặt trong thư mục /etc/rc.d/init.d, và phần lớn đều có một tuỳ chọn start hoặc stop.
+&nbsp;
+		</blockquote>
+
+Bạn quanta cho mình hỏi là trong lúc hệ thống đang boot thì những scripts này được chạy. Vậy những scripts này được chạy bằng cách nào? Vì thông thường sau khi một user login thành công thì shell của user mới được chạy và từ đó user mới có thể chạy được các scripts thông qua shell của mình. 
+Liệu có phải trong lúc các init scripts được gọi thì có một shell nào đó phải được chạy? Vậy thì shell này là shell của root user phải không bạn? Và sau khi shell này chạy xong thì nó có bị kill đi không và cái gì đã kill nó hay là nó tự exit?
+
+Thanks&nbsp;
+		</blockquote>
+
+Bạn này đang nhập nhằn với khái niệm shell :)
+
+Thực ra shell là vỏ cung cấp khả năng tương tác của người dùng với OS. Đối với các tác vụ hệ thống gọi lẫn nhau thì đâu nhất thiết phải có shell mới được.
+
+Trong Linux, về lí thuyết thì các process sinh ra được đánh thứ tự từ 0 và tăng dần cho đến khi "đụng trần" thì nó lặp lại từ 0 và ... Tuy nhiên, có process id không bao giờ được recycle trừ khi reboot hệ thống, đó là process có PID = 1, init process.
+
+Quá trình boot kết thúc bằng việc định danh process init với PID = 1, và việc còn lại để "lôi" các thứ còn lại là của process init này, và tất nhiên nó chính là process đọc /etc/inittab và làm các thứ còn lại như anh quanta đã trình bày ở trên :)
+
+P/S: riêng về việc gọi process này thì mình gọi nó là "process chúa" thay vì "ông nội" hay "cha" như anh quanta :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270638</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270638</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 07:53:28]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ Cảm ơn bạn quanta và bạn LNH đã giành thời gian cho thắc mắc của tôi!
+
+Để mô tả rõ hơn thắc mắc của mình thì tôi xin giả sử như sau:
+Tôi set cho hệ thống boot vào runlevel 3 bằng cách sửa file /etc/inittab như sau:
+
+id:3:initdefault:
+
+si::sysinit:/etc/rc.d/rc.sysinit
+
+l0:0:wait:/etc/rc.d/rc 0
+l1:1:wait:/etc/rc.d/rc 1
+l2:2:wait:/etc/rc.d/rc 2
+l3:3:wait:/etc/rc.d/rc 3
+l4:4:wait:/etc/rc.d/rc 4
+l5:5:wait:/etc/rc.d/rc 5
+l6:6:wait:/etc/rc.d/rc 6
+
+
+Theo hiểu biết của tôi thì sau khi kernel đã được nạp, kernel sẽ gọi init và init sẽ đọc file /etc/inittab để xác định xem cần phải làm gì tiếp theo. Script đầu tiên mà init sẽ gọi là /etc/rc.d/rc.sysinit và đây lại là một shell script. Tiếp theo init sẽ gọi tiếp script /etc/rc.d/rc với đối truyền vào là 3 và đây cũng lại là một shell script. 
+Vậy thì rõ ràng là các shell script này phải được interpret bằng một shell nào đó phải không các bạn? Theo tôi nghĩ thì để chạy được những scripts này thì init process sẽ phải gọi /bin/bash (có thể là một shell khác) để interpret những scripts này. Sau khi tất cả các init scripts (2 scripts trên sẽ gọi một loạt các scripts khác nữa) chạy xong thì init process sẽ kill /bin/bash đi và chương trình getty or mingetty bắt đầu được gọi.
+
+Không biết suy luận của tôi ở trên có đúng không?
+Mong nhận được giải đáp thấu đáo hơn từ các bạn.
+
+Cảm ơn nhiều!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270645</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270645</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 22:24:54]]> GMT</pubDate>
+				<author><![CDATA[ ngocson2vn]]></author>
+			</item>
+			<item>
+				<title>An introduction to services, runlevels, and rc.d scripts</title>
+				<description><![CDATA[ <blockquote>
+Vậy thì rõ ràng là các shell script này phải được interpret bằng một shell nào đó phải không các bạn?
+&nbsp;
+		</blockquote>
+Cái này đúng. Các script này luôn có chỉ định interpreter ở đầu, và được chmod +x. Interpreter đó sẽ được gọi khi init process gọi thực thi các script đó. Tuy nhiên init process không có "kill" (bash/sh/...) sau đó mà chính là script trong rc?.d với "exit" ở cuối script.
+
+Về suy luận, bạn đã đi đúng hướng, chỉ có một chút nhập nhằng ở chỗ shell thôi. Shell vừa là interface tương tác giữa user và OS, nhưng bản thân nó cũng là một interpreter. Trong TH trên, nó được sử dụng như một interpreter :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270653</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10589.hva#270653</link>
+				<pubDate><![CDATA[Thu, 1 Nov 2012 02:02:53]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+	</channel>
+</rss>

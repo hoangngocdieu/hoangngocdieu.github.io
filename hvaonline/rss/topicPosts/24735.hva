@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cho em hỏi về tìm kiếm file trong asm32"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cho em hỏi về tìm kiếm file trong asm32"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ Em đang bắt đầu học asm32, em có đoạn code sau để tìm kiếm file trong thư mục nhưng ko hiểu sao khi chạy lại có lỗi này:
+
+<br>
+			<div align="center" class="limitview"><img src='http://i162.photobucket.com/albums/t253/bboy0303/untitled-1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Đoạn code của em:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.386
+.model flat, stdcall
+option casemap:none
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+includelib kernel32.lib
+include \masm32\include\user32.inc
+includelib user32.lib
+
+.code
+search_handle	dd 0
+lpFileName	db	"*.*",0
+lpFindFileData	STRUCT
+  dwFileAttributes	DWORD      ?
+  ftCreationTime        	FILETIME &lt;&gt;
+  ftLastAccessTime	FILETIME &lt;&gt;
+  ftLastWriteTime       FILETIME &lt;&gt;
+  nFileSizeHigh         	DWORD      ?
+  nFileSizeLow          	DWORD      ?
+  dwReserved0        	DWORD      ?
+  dwReserved1         	DWORD      ?
+  cFileName             	BYTE MAX_PATH dup&#40;?&#41;
+  cAlternate            	BYTE 14 dup&#40;?&#41;
+lpFindFileData	ENDS
+start:          
+	mov	eax,lpFindFileData
+      	push	eax
+      	lea	eax,lpFileName
+      	push	eax
+      	call 	FindFirstFileA  
+      	cmp 	eax,-1  
+       	je 	error   
+      	mov 	search_handle,eax 
+findnext:
+       	mov	eax,lpFindFileData
+      	push	eax    
+      	lea	eax,search_handle
+      	push	eax 
+   	call 	FindNextFileA
+        cmp 	eax,0
+      	je 	error  
+     	loop 	findnext
+error:
+   	invoke ExitProcess, NULL
+end	start</pre>
+		</div>
+
+Các anh có thể xem hộ em là lý do vì sao lại ko chạy đc ko ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149442</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149442</link>
+				<pubDate><![CDATA[Tue, 2 Sep 2008 14:19:27]]> GMT</pubDate>
+				<author><![CDATA[ bboy0303]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ lpFindFileData là 1 cấu trúc. Bạn chỉ có thể dùng được biến thôi. Ở trên bạn mới khai báo cấu trúc.
+
+Hàm FindFirstFile có 2 đối là 2 con trỏ, vì vậy phải nạp địa chỉ của 2 đối lên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149468</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149468</link>
+				<pubDate><![CDATA[Tue, 2 Sep 2008 20:11:54]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ Hic, anh có thể viết lại cho em đoạn khai báo đc ko ạ, lần trước em hỏi thì anh mfeng nói khai báo như vậy, em ko tìm thấy ở đâu nói về khai báo cả.
+Còn đoạn nạp địa chỉ thì em thay 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mov	eax,lpFindFileData
+       	  push	eax</pre>
+		</div>
+bằng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>lea  	eax,lpFindFileData
+       	  push	eax</pre>
+		</div>
+thì lại ko compile đc, bị báo lỗi.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149495</link>
+				<pubDate><![CDATA[Wed, 3 Sep 2008 00:28:14]]> GMT</pubDate>
+				<author><![CDATA[ bboy0303]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ Em đã giải quyết xong đoạn code trên rồi, tuy nhiên vẫn còn 1 vấn đề, nếu em đưa khai báo
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>search_handle	dd 0
+lpFileName	db	"*.*",0
+lpFindFileData	WIN32_FIND_DATA &lt;&gt;</pre>
+		</div>
+vào code, ko sử dụng data section thì chương trình khi chạy sẽ gặp lỗi (khi debug sẽ thấy lỗi ở ngay hàm findfirstfile).
+Đoạn code để chạy đc là phải đưa các biến vào section data:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.386
+.model flat, stdcall
+option casemap:none
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+includelib kernel32.lib
+include \masm32\include\user32.inc
+includelib user32.lib
+.data
+search_handle	dd 0
+lpFileName	db	"*.*",0
+lpFindFileData	WIN32_FIND_DATA &lt;&gt;
+.code
+start:          
+	invoke FindFirstFile,addr lpFileName,addr lpFindFileData  
+      	cmp 	eax,-1  
+       	je 	error   
+      	mov 	search_handle,eax 
+findnext:
+       	invoke FindNextFile,search_handle,addr lpFindFileData
+        cmp 	eax,0
+      	je 	error  
+     	loop 	findnext
+error:
+   	invoke ExitProcess, NULL
+end	start</pre>
+		</div>
+Các anh có thể cho em biết lý do vì sao lại lỗi và em muốn đưa cả biến và code vào cùng 1 section thì phải làm thế nào ko ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149514</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149514</link>
+				<pubDate><![CDATA[Wed, 3 Sep 2008 03:10:58]]> GMT</pubDate>
+				<author><![CDATA[ bboy0303]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ Ừ, thì phải đưa vào .data section, vì .data section default là write able, còn code section thì readonly, execute able.
+Hàm FindFirstxxx gì đó cần và phải ghi ngược data trả về vào findFileData struct variable, và vì variable này nằm trong code section, read only, nên sẽ gây ra Access Violation Exception.
+Cách khắc phục là đưa variable trên vào .data section, hoặc dùng 1 PE Editor để modify attribute của code section thành writable, hay đưa thêm option /SECTION:.text,EWR cho command line của link.exe]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149597</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149597</link>
+				<pubDate><![CDATA[Wed, 3 Sep 2008 20:18:27]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: Cho em hỏi về tìm kiếm file trong asm32</title>
+				<description><![CDATA[ Em quên mất điều đấy đấy  :D , cám ơn anh nhé!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149611</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24735.hva#149611</link>
+				<pubDate><![CDATA[Wed, 3 Sep 2008 23:46:24]]> GMT</pubDate>
+				<author><![CDATA[ bboy0303]]></author>
+			</item>
+	</channel>
+</rss>

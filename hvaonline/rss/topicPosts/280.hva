@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Ký sự các vụ DDoS đến HVA - Phần 13"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Ký sự các vụ DDoS đến HVA - Phần 13"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 13</title>
+				<description><![CDATA[ <b>Sáng sớm 22/01/2005</b>
+
+Như thường lệ, tôi thức dậy rất sớm. Vừa pha café, tôi vừa mở laptop lên (chức năng hibernate của laptop cũng có lúc tiện dụng). Đã có sẵn trình duyệt cho diễn đàn HVA từ tối qua, tôi nhấn nút "refresh". Diễn đàn "refresh" thật nhanh. Tôi nhìn cái stat bên dưới của diễn đàn và thấy chỉ có vỏn vẹn mười mấy "mống" đang ở trên diễn đàn. "Refresh" nhanh cũng phải. Tôi an tâm xếp laptop lại và tiếp tục chuẩn bị đi làm. Hai mươi phút sau đó, tôi rời nhà.
+
+Trên tàu lửa tôi mở laptop ra và bắt đầu "ngâm" mớ packets được sniff từ tối hôm qua. Tôi bật cười vì không hiểu tại sao lại các cú GET banner của HVA lại xảy ra.
+
+Tháng 11 năm ngoái, một cú GET từ x-flash có nội dung như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET /style_images/1/banner.swf HTTP/1.1
+Accept: */*
+x-flash-version: 7,0,19,0
+Accept-Encoding: gzip, deflate
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 5.0; Windows 98; DigExt; FunWebProducts&#41;
+Host: quangvinh-vn.net
+X-Forwarded-For: 222.252.188.74
+Connection: Keep-Alive
+Cache-Control: bypass-client=222.252.188.74</pre>
+		</div>
+
+Và bây giờ, một cú GET từ x-flash có nội dung thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET /forum/style_images/fusion&#91;1&#93;/banner.swf HTTP/1.1
+Accept: */*
+x-flash-version: 7,0,19,0
+Accept-Encoding: gzip, deflate
+If-Modified-Since: Thu, 13 Jan 2005 10:09:08 GMT
+If-None-Match: "10e771-103fb-1bd0b900"
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322&#41;
+Host: www.hvaonline.net
+Connection: Keep-Alive
+Cookie: VTYPMOD=1; VSPELL=1; VONOFF=1; member_id=12648; pass_hash=12154ab8ae9a74cfd4ac79d83ea8c422; anonlogin=1; forum_read=a%3A16%3A%7Bi%3A113%3Bi%3A1106121280%3Bi%3A83%3B
+i%3A1104427108%3Bi%3A136%3Bi%3A1095706102%3Bi%3A109%3Bi%3A11
+04863490%3Bi%3A139%3Bi%3A1104967565%3Bi%3A99%3Bi%3A1101271117
+%3Bi%3A144%3Bi%3A1106104588%3Bi%3A90%3Bi%3A1104172553%3Bi%3A98
+%3Bi%3A1099075304%3Bi%3A121%3Bi%3A1098733149%3Bi%3A92%3Bi%3A1099414867
+%3Bi%3A137%3Bi%3A1099587235%3Bi%3A82%3Bi%3A1106104572%3Bi%3A91%3Bi%3A1101287346
+%3Bi%3A88%3Bi%3A1104437429%3Bi%3A1%3Bi%3A1106105574%3B%7D; session_id=7ad1713d4597b723157e7aab86bb27f9</pre>
+		</div>
+
+Có biến cải? hẳn nhiên rồi nhưng những biến cải này là gì? hãy cùng nhau phân tích xem (chỉ trên bình diện kỹ thuật, tôi không đi sâu vào nội dung dữ liệu trên có những gì trong đó).
+- cả hai cái GET đều dùng HTTP 1.1
+- cả hai đều có x-flash client cùng phiên bản 7,0,19,0
+- cả hai đều khai báo tiếp nhận encoding cho compresion dùng gzip
+- cả hai đều dùng Windows
+- cả hai đều "muốn" keep-alive connection
+nhưng, đặc biệt GET mới đã loại bỏ "Cache-Control: bypass-client" và có thêm 2 điều kiện (thuật ngữ của giao thức HTTP gọi là "conditional GET") :
+
+<font color='red'>If-Modified-Since: Thu, 13 Jan 2005 10:09:08 GMT
+If-None-Match: "10e771-103fb-1bd0b900"</font>
+
+Điều kiện "If-Modified-Since" theo tôi đoán (và rất thường xảy ra) là do proxy server nào đó trên đường đi của cú GET đến HVA server tự động đưa vào, ngay cả người tạo ra cú GET nào không đòi hỏi chuyện này. Điều này xảy ra là vì proxy server nào đó "tự động" cho rằng: nếu phiên bản "banner.swf" trên HVA server không thay đổi từ lúc 10 giờ, 9 phút, 8 giây sáng giờ Greenwich ngày 13, tháng Một năm 2005 thì mới lấy bản mới từ HVA server, còn không thì dùng bản có sẵn trong cache. Hẳn nhiên là "banner.swf" không hề thay đổi từ.... năm ngoái (và vẫn còn con số 2004 trên banner - hey, ai làm chủ cái banner đó chịu khó sửa lại thành 2005 nhe?  ). Điều này hoá ra proxy nào đó sẽ thong thả mà dùng bản có sẵn trong cache để cung cấp cho client nào gởi cái GET đến HVA server. Nếu vậy thì việc gì phải chọn cái banner làm chi cho mệt nhỉ? :) Tôi không thấy có một tác dụng gì rõ rệt để dùng GET trong trường hợp này cả.
+
+Điều kiện "If-None-Match" lại càng lý thú hơn. Mục đích của directive này là để tạo hiệu suất cho cache của proxy server bằng cách xác định xem "nó" có cần được cập nhật hay không. Mục đích tối hậu của conditional GET này là để giảm thiểu tối đa tài nguyên tiêu tốn cho vấn đề cập nhật thông tin. Với directive này, tôi càng tin chắc là nguồn gởi đi cú GET không hề biết là sẽ phải đi xuyên một cái proxy server... "cắc cớ" đến như vậy. Nó vô tình triệt tiêu mục đích "flood" HVA server. Điều đáng nói là đa số (theo thống kê tôi lấy được từ mớ packets đang phân tích ở đây có khoảng hơn 90%) các cú GET này đều "dính" 2 cái directives ở trên. 
+
+Giả sử những cú GET ở dạng này "thoát" qua được connection limit của firewall, lần lên tới web server và không hề có mod_security đứng cản thì chuyện gì xảy ra? Thì HVA web server sẽ trả lời bằng một thông điệp vỏn vẹn 225 bytes và kết thúc cuộc truy cập:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>HTTP/1.1 304 Not Modified
+Date: Mon, 22 Jan 2005 09:43:25 GMT
+Server: WindowsNTserver 4.0 - IIS 2.0 - Perl v5.001 build 110 - ANT 
+Connection: close
+ETag: "10e79d-390-1bd0b900"</pre>
+		</div>
+
+(Ngày hôm sau) tôi cố tình tắt bỏ các signatures của snort chuyên detect những cú "x-flash" GET để xem kết quả ra sao thì thu nhận được thông tin ở trên. Đối với client (trình duyệt đã khởi tạo cú GET trên) không hề thấy có gì khác thường vì thông điệp trên chỉ dành cho vấn đề thông tin cập nhật cho cache. Thông điệp này không hề đi đến trình dịch của client và hiển thị trên màn hình. Nói về mặt kỹ thuật, cú GET trên có tác dụng y hệt một cú HTTP HEAD dùng để kiểm tra xem một thông tin nào đó có được cập nhật hay không. Dùng nó để DoS thì sẽ có kết quả gì? Bạn cũng tự hình dung ra được.
+
+Vậy, những cú GET trên dẫu có đi vuột qua khỏi connection limit của firewall và mod_security cũng chẳng tạo bao nhiêu ảnh hưởng đến HVA server vì trọn bộ quy trình "hỏi" / "trả lời" này hết sức ngắn ngủi và im ắng. Tuy nhiên, tại sao phải bắt máy chủ HVA phí tài nguyên để đáp ứng cho những request dạng này (cho dù chúng nhỏ nhoi đi chăng nữa)? Bởi thế, snort và mod_security (nhất là snort) nằm ở vị trí của chúng với tác dụng triệt tiêu ngay các sockets phí phạm và vô ích này, để dành phục vụ cho các request hợp lệ.
+
+Trên tàu lửa, sau khi phân tích xuyên qua mớ packets lấy xuống laptop tối hôm qua và thấy rằng tôi không cần phải thêm bất cứ một signature nào cho "x-flash" GET. Có chăng, tôi nên tối ưu hoá các signatures này bằng cách thâu hẹp vùng dữ liệu cho snort tìm kiếm để giảm thiểu thời gian tìm kiếm mà thôi.
+
+Tôi đến văn phòng làm việc sớm hơn giờ làm bình thường đến ba mươi phút. Tôi lẩm nhẩm <i>"dành ba mươi phút này để tối ưu hoá mấy cái snort signatures cũng hay".</i> Thực hiện ngay ý đinh, tôi mở laptop lên và log vào HVA server. 
+
+Điều đầu tiên tôi phát hiện ra là connection đến database server mất tiêu và chính database server cũng "ngỏm" từ lúc nào. Cách đây một tiếng rưỡi tôi còn duyệt được diễn đàn HVA, điều này chứng tỏ database server "chết" lúc nào đó trong vòng một tiếng rưỡi qua. Tôi lục lọi trong mớ logs nhưng không tìm ra được lý do nào khác thường. Database service chỉ đơn giản "terminated" vì một lý do nào đó. Tình trạng này đã từng xảy ra vài lần trước đây. Tôi không muốn mất thêm thời gian với vấn đề này vì điều tôi quan tâm nhất lúc này là làm sao ngăn ngừa tình trạng một dịch vụ nào đó tự động "chết" như vậy. Nếu không thể "chia ca" cho một ai theo dõi tình hình máy chủ thì tại sao không dùng thêm một dịch vụ nào khác để lãnh trọng trách này?
+
+Tôi quyết định dùng thêm một "vũ khí phòng thủ" nữa có cái tên là "monit" (bạn có thể tìm hiểu về nó dễ dàng bằng google). Tôi tải ngay mã nguồn của monit về máy chủ HVA và biên dịch + điều chỉnh cấu hình cụ thể để đáp ứng với hoàn cảnh của HVA. Một cách tổng quát mà nói, monit là một tiện ích nhỏ gọn và độc đáo cho việc theo dõi tình trạng hoạt động của các dịch vụ đang chạy trên một máy chủ (on hoặc off). Nó còn có khả năng theo dõi tình trạng tải của máy chủ (server load, CPU usage và memory usage....). Tôi tạo ra hồ sơ cấu hình cho monit và đưa vào các ấn định quan trọng nhất + cần thiết nhất để bảo đảm nếu một dịch vụ nào đó tự động thoát ra thì monit sẽ khởi tạo nó lại. Tôi còn điều chỉnh cho monit tái khởi động một số dịch vụ trọng yếu nếu như các dịch vụ này dùng bao nhiêu phần trăm CPU liên tục trong một khoảng thời gian nào đó (dấu hiệu của dịch vụ này đang bị ở tình trạng quá tải vì bị tấn công dồn dập). 
+
+Bạn có thể thắc mắc việc dùng monit để restart lại một dịch vụ nào đó đang chạy e rằng hơi quá "nặng tay" vì nó có thể làm hỏng các xuất truy cập của người dùng? Thắc mắc này hoàn toàn giá trị và hợp lý bởi vì bất cứ xử lý nào làm trở ngại người dùng truy cập đều không thể chấp nhận được (nói trên bình diện bền bỉ và đáng tin cậy của dịch vụ cho người dùng). Bởi thế, việc restart ở đây được ấn định rất rõ là nó phải đợi cho trọn bộ các process này đang phục vụ hoàn tất rồi mới restart, nó nặng hơn "graceful restart" (xem lại chú thích <font color='orange'>-33-</font>) nhưng không "tàn nhẫn" như việc restart theo phương cách cắt ngang các dịch vụ. Việc tái khởi động này có tác dụng rất lớn đến tình trạng tài nguyên của máy chủ trong lúc đang tải nặng (vì bị DoS dồn dập chẳng hạn). Nó giúp hệ thống thu hồi và cân bằng tài nguyên của máy chủ một cách hữu hiệu. Nếu bạn đã theo dõi và tham khảo kỹ các chú thích <font color='orange'>-38-</font>, <font color='orange'>-39-</font> và <font color='orange'>-40-</font>, bạn sẽ thấy vấn đề cân bằng tài nguyên của máy chủ tương quan với tính hiệu xuất quan trọng như thế nào. Nếu mang tinh thần "DoS cho xụm" vào đây thì bạn hẳn sẽ thấy mức quan trọng của việc điều hoà tài nguyên ra sao. Giả sử web server bị DoS nặng nề, mức dùng CPU của nó lên đến 99% liên tục trong nhiều phút, chuyện gì có thể xảy ra? Có rất nhiều chuyện có thể xảy vì tình trạng ứ ngẽn này và sẽ có cơ hội dẫn đến máy chủ hoàn toàn kiệt quệ. 
+
+Giả sử monit đã hiện diện và hoạt động sáng sớm nay thì có lẽ đã không có tình trạng database server bị "chết" (tôi muốn xác thực ở đây database server không phải chết vì bị DoS bởi vì server load cực thấp, nhưng chết vì một lý do bí hiểm nào khác) và tôi phải khởi tạo nó lại bằng tay.
+
+Liệu những chỉnh định của tôi hoàn chỉnh không? tôi không chắc. Bởi thế, tôi lần lượt tắt bỏ từng dịch vụ và quan sát xem monit có thực thi đúng nhiệm vụ nó được giao hay không. Sau mười lăm phút thử nghiệm và một vài điều chỉnh, monit làm việc một cách hoàn hảo. Chỉ một thử nghiệm cuối tôi chưa thực hiện là tự DoS chính máy chủ HVA để tạo server load và quan sát xem monit làm gì. Tôi "whip" ngay một đoạn bash script đơn giản để thực hiện chuyện này ngay trên chính máy chủ HVA. Rất tiếc lần này tôi không thể trình bày đoạn script "DoS" ở đây nhưng bạn chỉ cần biết, sau vòng lặp thứ mười của đoạn script, CPU dành cho web server vượt quá giới hạn quy định và lập tức "bị" monit tái khởi động nó ngay.
+
+Hoá ra ba mươi phút dự định cho snort lại dành trọn cho monit. Tuy nhiên, tôi rất hài lòng với kết quả của ba mươi phút máy mó ngắn ngủi này. Đã đến lúc tôi phải bắt tay vào công việc ở sở (thật ra tôi đã "ăn gian" mất mười phút của sở vì đã nấn ná, táy máy thêm với monit). Vậy, chuyện gì đã tiếp tục xảy ra? mời bạn xem tiếp phần sau. 
+
+<i>Các bạn có thể theo dõi tiếp phần 14 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/286.hva</span> 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/280.hva#735</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/280.hva#735</link>
+				<pubDate><![CDATA[Fri, 23 Jun 2006 14:14:25]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+	</channel>
+</rss>

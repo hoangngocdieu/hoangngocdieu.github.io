@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Hỏi] - mysql 5.0.45 và backtick"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Hỏi] - mysql 5.0.45 và backtick"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Hỏi] - mysql 5.0.45 và backtick</title>
+				<description><![CDATA[ hm, khoai mò cả mấy tiếng đồng hồ vẫn chưa hiểu cách mysql xử backtick ra sao. Xin hỏi mọi người cách giải thích cho các trường hợp hoạt động sau của mysql. 
+
+Giả sử ta có một table như sau: <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+----+-------+-------+-------+----------+---------------+
+| id | uname | pass  | fname | lname    | secret        |
++----+-------+-------+-------+----------+---------------+
+|  1 | user1 | pass1 | user  | number 1 | user 1 secret | 
+|  2 | user2 | pass2 | user  | number 2 | user 2 secret | 
++----+-------+-------+-------+----------+---------------+</pre>
+		</div>
+Như vậy, khi ta query:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; select * from user where id='1' and pass='pass1';
++----+-------+-------+-------+----------+---------------+
+| id | uname | pass  | fname | lname    | secret        |
++----+-------+-------+-------+----------+---------------+
+|  1 | user1 | pass1 | user  | number 1 | user 1 secret | 
++----+-------+-------+-------+----------+---------------+</pre>
+		</div>
+Vậy khi ta query thế này thì sao:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; select * from user where id='1' and pass='` blahblah'='';
++----+-------+-------+-------+----------+---------------+
+| id | uname | pass  | fname | lname    | secret        |
++----+-------+-------+-------+----------+---------------+
+|  1 | user1 | pass1 | user  | number 1 | user 1 secret | 
++----+-------+-------+-------+----------+---------------+</pre>
+		</div>
+
+Và khi query kiểu này cũng ra kết quả:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; select * from user where id='1' and pass='` blahblah'=b'';
++----+-------+-------+-------+----------+---------------+
+| id | uname | pass  | fname | lname    | secret        |
++----+-------+-------+-------+----------+---------------+
+|  1 | user1 | pass1 | user  | number 1 | user 1 secret | 
++----+-------+-------+-------+----------+---------------+</pre>
+		</div>
+Bác nào có thể giải thích giúp 2 trường hợp sau hay không?
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118223</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118223</link>
+				<pubDate><![CDATA[Thu, 6 Mar 2008 15:53:57]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - mysql 5.0.45 và backtick</title>
+				<description><![CDATA[ Hè hè, sau mấy tiếng ngồi mò mẫm với MySQL thì khoai đã tìm ra nguyên do. Lý do ở đây không phải tại backtick (`) mà là ở đoạn phía sau. Câu query sau : <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>select * from user where id='1' and pass='` blahblah'='';</pre>
+		</div>có thể được phân tích ra như sau:
+
+select * from user where id='1' and ((pass='something')='')
+
+pass='something' sẽ trả về giá trị boolean false, còn cái '' sẽ được MySQL hiểu là FALSE. FALSE = FALSE trả về TRUE nên query trên thành công. Tương tự cho câu query <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>select * from user where id='1' and pass='` blahblah'=b'';</pre>
+		</div>Nhưng lần này ta có thêm chữ <b>b</b>. Chữ b này chỉ áp dụng trước các string '0' hoặc '1' để trả về giá trị TRUE, FALSE tùy theo bit value. Phân tích tương tự như trên sẽ giải thích được vì sao query thành công.
+
+Thay vì dùng b, MySQL còn có thêm <b>x</b> có lẽ là type cast sang hex values, và chỉ áp dụng cho các string &gt;= 10. x'11' sẽ trả về một giá trị khác 0, nghĩa là TRUE, trong khi x'' sẽ trả về 0, nghĩa là FALSE.
+
+khoai vẫn đang tìm hiểu thêm về cách hoạt động của các key word này. Bạn nào có thêm thông tin, hoặc có một list các keyword để typecast xin cho khoai biết.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118397</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118397</link>
+				<pubDate><![CDATA[Fri, 7 Mar 2008 12:45:38]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - mysql 5.0.45 và backtick</title>
+				<description><![CDATA[ sẵn đây cho hỏi luôn, với MySQL thì 2 câu query sau có gì khác nhau:
+
+<ul><li>SELECT COUNT(a.id) FROM a LEFT JOIN b ON b.id=a.id AND b.id IS NULL</li></ul>
+<ul><li>SELECT COUNT(a.id) FROM a LEFT JOIN b ON b.id=a.id WHERE b.id IS NULL</li></ul>
+
+tks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118502</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19871.hva#118502</link>
+				<pubDate><![CDATA[Sat, 8 Mar 2008 00:44:31]]> GMT</pubDate>
+				<author><![CDATA[ safari]]></author>
+			</item>
+	</channel>
+</rss>

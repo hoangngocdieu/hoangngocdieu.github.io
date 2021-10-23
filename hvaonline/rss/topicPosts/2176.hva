@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Fogring HTTP request header with flash actionscript"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Fogring HTTP request header with flash actionscript"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Fogring HTTP request header with flash actionscript</title>
+				<description><![CDATA[ <font size='3'><b>Fogring HTTP request header with flash actionscript</b></font>
+Nguồn:<span class="link"> http://www.derkeiler.com/Mailing-Lists/Securiteam/2006-07/msg00066.html</span>
+Tác giả: <b>Amit Klein</b>
+
+This write-up presents the mechanism that can be used to send arbitrary 
+HTTP requests via Flash ActionScript. The security consequences for this 
+ability are also discussed here.
+
+DETAILS
+
+Flash - Introduction
+-===================
+
+Flash player is a very popular browser add-on from Adobe (actually, Flash 
+was invented by Macromedia, which was acquired
+by Adobe). This write-up covers mostly Flash 7 and Flash 8, together 
+covering more than 94% of the Internet-enabled desktops (according to NPD 
+Online Survey conducted April 2006, quoted in Adobe's website [1], [2]). 
+Flash movies are delivered as SWF (ShockWave File) files. Adobe developed 
+a rich Javascript-like language called ActionScript to provide scripting 
+capabilities to Flash. One of the interesting features of ActionScript is 
+its ability to send HTTP requests to 3rd party sites through the browser 
+which invoked it. This is where Flash becomes interesting security-wise. 
+With Flash it is possible to shape an outgoing request to a 3rd party site 
+in ways not available from within "standard" Javascript. Specifically of 
+interest is Flash's ability to send arbitrary HTTP request headers with 
+outgoing HTTP requests.
+
+
+Sending arbitrary HTTP request headers with Flash
+-================================================
+
+The following is ActionScript 2.0 syntax for sending out a GET request (in 
+this example, to<span class="link"> http://www.vuln.site/some/page.cgi?p1=v1&p2=v2</span>) with an 
+arbitrary HTTP header (Foo: Bar). This code works with Flash 7 and Flash 8 
+(probably with Flash 6 as well):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+req.addRequestHeader&#40;"Foo","Bar"&#41;;
+req.send&#40;"http://www.vuln.site/some/page.cgi?p1=v1&p2=v2",
+         "_blank","GET"&#41;;</pre>
+		</div>
+
+A similar syntax will send POST request (with the same header, to the same 
+URL, and with body a=b&c=d):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+req.addRequestHeader&#40;"Foo","Bar"&#41;;
+req.decode&#40;"a=b&c=d"&#41;;
+req.send&#40;"http://www.vuln.site/some/page.cgi?p1=v1&p2=v2",
+         "_blank","POST"&#41;;</pre>
+		</div>
+
+(note: the LoadVars.decode() method was added in Flash 7, yet it's 
+probably possible to compose an arbitrary POST body without it, so Flash 6 
+may be covered as well by this variant).
+
+The request is sent from the browser invoking the Flash object. Any 
+cookies the browser normally sends, will be sent in those cases as well. 
+The browser's User-Agent is sent, as well as all browser standard headers. 
+HTTPS links are supported.
+
+This was successfully demonstrated with Microsoft IE 6.0, Microsoft IE 6.0 
+SP2 and FireFox 1.5.0.4, running Flash 8.0.22.0 and Flash 7.0.19.0.
+
+In IE, it is possible to overwrite some "normal" browser headers by simply 
+calling addRequestHeader with the new value. This is applicable to both 
+Referer and User-Agent. In FireFox 1.5.0.4, such headers, when used in 
+addRequestHeader() will be appended to the HTTP request header section.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// One UA in IE 6.0 SP2, two UAs in FF 1.5.0.4
+req.addRequestHeader&#40;"User-Agent","Hacker/1.0"&#41;;
+
+// One Referer in IE 6.0 SP2, two Referers in FF 1.5.0.4
+req.addRequestHeader&#40;"Referer","http://somewhere/"&#41;;</pre>
+		</div>
+
+In IE, it is also possible to overwrite some more sensitive headers (e.g. 
+Host and Content-Length) by appending colon to the header name (this 
+technique was described in [3] in the context of XmlHttpRequest):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>req.addRequestHeader&#40;"Host:","foobar.site"&#41;;</pre>
+		</div>
+
+This technique doesn't appear to work in FireFox 1.5.0.4.
+
+Note: when the target URL is in the same domain with the Flash movie, 
+LoadVars may be used to read the HTTP response data, thus making LoadVars 
+the basis for many Flash-based AJAX-like frameworks (in analogy to 
+Javascript's XmlHttpRequest object).
+
+
+The security implications
+-========================
+
+The ability of an attacker to force a victim's browser to send HTTP 
+requests to 3rd party sites with arbitrary HTTP request headers has impact 
+on our understanding of web application security - both on assessment of 
+security-related phenomena, and on the validity of some security 
+mechanisms.
+
+It is important to understand that the attacks described here are (in 
+themselves) not cross-site scripting attacks, neither are they (strictly 
+speaking) any breach of cross-domain trust in the Flash object or between 
+the Flash object and the embedding HTML page. They merely make use of the 
+fact that it's possible to send requests from a Flash object to any URL, 
+with almost any HTTP headers the attacker needs. This in itself is the 
+problem, as it enables an attacker to send a link (to an HTML page 
+embedding a Flash object, or directly to a Flash object residing at the 
+attacker's website) that will cause a Flash object to be executed in the 
+victim's browser. This Flash object will send the HTTP request (with HTTP 
+headers chosen by the attacker) to a target website, and this in turn will 
+compromise the security of the browser (victim).
+
+In other words, the implicit assumption made by many software developers 
+(and probably also by many security researchers) that most HTTP headers 
+cannot be forced to have arbitrary values by an attacker who serves data 
+to the victim browser is shown to be in error in this write-up.
+
+Example 1 - The "Expect" header
+-------------------------------
+
+In [4], an injection problem was described wherein Apache 1.3.34, 2.0.57 
+and 2.2.1 are vulnerable to injecting HTML data (including malicious 
+Javascript code) through the Expect header. In [5], yours truly commented, 
+with respect to this issue, that "Regarding XSS This phenomenon is not XSS 
+per-se. Unless someone can show me how it is possible to force a browser 
+to send the Expect header to the target site". But using a Flash object, 
+the attack is trivial (the author is therefore answering his own question 
+here...). Consider a victim (browser) that clicks the following link: <span class="link"> http://www.evil.site/attack.swf</span>
+
+This URL represents a Flash object that runs the following ActionScript 
+code:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+  req.addRequestHeader&#40;"Expect",
+                       "&lt;script&gt;alert&#40;'gotcha!'&#41;&lt;/script&gt;"&#41;;
+  req.send&#40;"http://www.target.site/","_blank","GET"&#41;;</pre>
+		</div>
+
+This ActionScript sends a request from the victim's browser, to the target 
+website<span class="link"> www.target.site</span>) with an Expect header containing malicious HTML 
+(Javascript) code. If the target website runs a vulnerable version of 
+Apache, the net result is cross site scripting. So to be clear - there's a 
+working XSS attack against Apache 1.3.34, 2.0.57 and 2.2.1 (as long as the 
+client browser is IE or Firefox, and it supports Flash 6/7+). As noted in 
+[5], for Apache 2.0/2.2 the XSS response is returned by the server only 
+after the request timeout elapses (typically few minutes). Please note 
+though that a fix for the Apache server is available at all 3 branches (as 
+Apache 1.3.35, 2.0.58 and 2.2.2 respectively).
+
+Example 2 - CSRF and Referer
+----------------------------
+
+CSRF (Cross Site Request Forgery) attack is in essence the ability of an 
+attacker to force a victim (browser) to effectively perform an action 
+(send HTTP request) in a target site. This concept emerged several times, 
+the first one probably on the Zope mailing list (as "Client Side Trojans", 
+[6], and another time on BugTraq, under its now de-facto standard name, 
+CSRF [7]. Both references suggest, among other measures, to rely on the 
+HTTP Referer header as evidence that the browser emits the HTTP request 
+from a link originating in the website. Indeed, considering the 
+capabilities of HTML+Javascript, effectively spoofing the Referer is 
+nearly impossible (one exception is [8], but it is effective only in a 
+limited subset of scenarios; e.g. it is not effective when HTTPS is used). 
+However, as can clearly be understood, with Flash this no longer holds, 
+and Referer can be spoofed for requests to HTTPS resources, all the while 
+having the browser send the site's cookies with the request. As 
+demonstrated above, both GET requests (with arbitrary host and query 
+parts) and POST requests (with arbitrary host and query parts, and body in 
+the standard Content-Type format of "application/x-www-form-urlencoded") 
+can be sent.
+
+Note: there are many other reasons not to rely on the Referer header, and 
+this text is by no means the first one to warn against this practice.
+It should be obvious that any reasonable header (and combinations thereof) 
+can be spoofed. In IE's case, the header provided by the attacker can 
+replace the browser-provided header (e.g. Referer).
+In Firefox's case, the Referer spoofing technique may fail because Firefox 
+adds the header at the bottom of the HTTP request headers. Still, some web 
+applications may use the last value of the header, and as such be 
+vulnerable to this technique.
+
+Plainly put, all this means that (reflective) cross site scripting attacks 
+that make use of HTTP request headers (e.g. Referer, User-Agent, Expect, 
+Host, Content-Type) to send the payload are now possible.
+
+
+Flash 9
+-======
+
+Flash 9 was announced June 28th, 2006 [9] (i.e. less than a month ago). In 
+Flash 9, the techniques described above (for the LoadVars class) do not 
+work for any browser-provided header (e.g. User-Agent, Host and Referer), 
+nor probably for many "protected" headers such as Content-Length. Still, 
+headers like Expect can be sent, so some attacks (e.g. Example 1 above) 
+are still effective with Flash 9.
+
+
+Limitations of the technique
+-===========================
+
+ * The URL and the body part will always be URL-encoded. That is, it is 
+impossible (so it seems) to force SP, HT, CR and   LF (and probably many 
+other characters) to appear in their raw form in the request URL and body.
+ * Only GET and POST methods can be used.
+ * In IE, only one instance of each header can be sent.
+
+ * At large, the header section cannot be completely controlled, e.g. an 
+attacker may have problems when attempting to send special characters 
+inside headers.
+
+Partial solution
+-===============
+
+Notice the first limitation of the technique - it states that no raw CR 
+and LF can be placed in the body section. This means that the technique 
+cannot be used to send (POST) requests whose body complies with the 
+"multipart/form-data" content-type format (this format uses raw CRs and 
+LFs to mark headers and boundaries). In other words, a (POST) request 
+whose body is a valid "multipart/form-data" stream is guaranteed (as far 
+as today's knowledge extends) not to be sent from a Flash player. Web 
+application authors can therefore use HTML forms whose ENCTYPE attribute 
+is set to "multipart/form-data", and enforce that the submission contains 
+a valid multipart/form-data body. Once these mechanisms are in place, and 
+a request passes through, it is known not to originate from a Flash 
+player, so the attack
+described here is irrelevant.
+
+This solution is of course intrusive - both the HTML pages and the 
+receiving scripts must be altered to use (and enforce) 
+multipart/form-data. With some web development platforms, this is trivial, 
+yet in others (e.g. raw Perl, and ASP) it is not. Furthermore, in cases 
+such as Example 1 above, the HTTP headers are interpreted and used by the 
+(Apache) web server, and the control never reaches the web application 
+layer, so in such cases, this solution is not applicable.
+
+Future directions
+-================
+
+HTTP Request Splitting ([8]) and HTTP Request Smuggling ([10]) - in IE + 
+Flash 7/8 it is possible to send a Content-Length header with any value. 
+This opens up an opportunity to perform HTTP Request Splitting attacks. 
+Also, injecting Transfer-Encoding header, or a second Content-Length 
+header may open up HTTP Request Smuggling. Further research is needed in 
+order to understand whether these directions lead to viable exploitation 
+techniques.
+
+Flash 9 - while experiments show that Flash 9 is more strict concerning 
+which headers can be specified through LoadVars.addRequestHeader(), it's 
+ActionScript 3.0 language is much richer than ActionScript 2.0. As such, 
+it may open up several interesting opportunities at the HTTP level, e.g. 
+the ability to send various HTTP methods, not just GET and POST (WebDAV 
+anyone?). Flash 9 and ActionScript 3.0 should be studied better in order 
+to understand what is their potential with respect to crafting HTTP 
+requests.
+
+
+Conclusions
+-==========
+
+Relying on the authenticity of HTTP request headers when they are sent 
+from a browser is not a good idea. Practically every header can be spoofed 
+if the client can be forced to run a malicious Flash movie, and this is 
+probably applicable to over 80% of the Internet desktops (i.e. Internet 
+desktops running IE + Flash 7/ 8 ). Consequently, the applicability of cross 
+site scripting attacks based on such headers, as well as cross site 
+request forgery attacks (against sites which protect themselves by 
+checking the Referer header) is higher than many people may perceive.
+
+A partial solution to the latter case was suggested in the write-up, 
+however it is strongly tied to the specific technology used - Flash, and 
+as such may not provide any protection against variants that make use of a 
+different technology, or against developments in Flash itself. For 
+cross-site request forgery, therefore, different solutions, not relying on 
+Referer, should be considered.
+
+References
+-=========
+
+[1] "Technology Breakdown" (Adobe website)  <span class="link"> http://www.adobe.com/products/player_census/flashplayer/tech_breakdown.html</span>
+
+[2] "Macromedia Flash Player Version Penetration" (Adobe website)  <span class="link"> http://www.adobe.com/products/player_census/flashplayer/version_penetration.html</span>
+
+[3] "Re: 'Exploiting the XmlHttpRequest object in IE' - paper by Amit 
+Klein" by Anonymous, BugTraq posting, September 27th, 2005 <span class="link"> http://www.securityfocus.com/archive/1/411823</span>
+
+[4] "Unfiltered Header Injection in Apache 1.3.34/2.0.57/2.2.1" by Thiago 
+Zaninotti, BugTraq posting, May 8th, 2006  <span class="link"> http://www.securityfocus.com/archive/1/433280</span>
+
+[5] "Re: Unfiltered Header Injection in Apache 1.3.34/2.0.57/2.2.1" by 
+Amit Klein, BugTraq posting, May 18th, 2006  <span class="link"> http://www.securityfocus.com/archive/1/434729</span>
+
+[6] "Client Side Trojans", Zope developers mailing list, May 2000  <span class="link"> http://www.zope.org/Members/jim/ZopeSecurity/ClientSideTrojan</span>
+
+[7] "Cross Site Request Forgeries" by Peter Watkins, BugTraq posting, June 15th, 2001  <span class="link"> http://www.tux.org/~peterw/csrf.txt</span>
+
+[8] "Exploiting the XmlHttpRequest object in IE - Referrer spoofing, and a 
+lot more..." by Amit Klein, BugTraq posting, September 24th, 2005  <span class="link"> http://www.securityfocus.com/archive/1/411585</span>
+
+[9] "Adobe Flash Player 9 Leads a New Generation of Dynamic Media and Rich Internet Applications" (Adobe website), June 28th, 2006  <span class="link"> http://www.adobe.com/aboutadobe/pressroom/pressreleases/200606/062806Flash9.html</span>
+
+[10] "HTTP Request Smuggling" by Chaim Linhart, Amit Klein, Ronen Heled 
+and Steve Orrin, June 6th, 2005  <span class="link"> http://www.cgisecurity.com/lib/HTTP-Request-Smuggling.pdf</span>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2176.hva#11127</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2176.hva#11127</link>
+				<pubDate><![CDATA[Sun, 30 Jul 2006 14:14:20]]> GMT</pubDate>
+				<author><![CDATA[ hakuso]]></author>
+			</item>
+			<item>
+				<title>Fogring HTTP request header with flash actionscript</title>
+				<description><![CDATA[ 
+
+<font size='3'><b>Gửi các header của HTTP request bằng ActionScript trong Flash</b></font>
+
+Bài viết này sẽ trình bày cơ chế dùng để gửi các HTTP request bất kì bằng ActionScript trong Flash. Hậu quả về khía cạnh bảo mật của kỹ thuật này cũng được bàn đến trong đây
+
+Thông tin về Flash
+==========================
+Flash Player là môt tiện ích phụ trợ (add-on) rất phổ biến ,dùng cho trình duyệt Web , do Adoble đưa ra (thật ra thì ban đầu hãng Macromedia phát minh ra Flash, sau này được Adobe mua lại). Bài viết sẽ nhắm đến Flash ở phiên bản 7 và 8, cùng với hầu như 94% các máy tính để bàn có kết nối Internet (theo NPD Online Survey cung cấp vào tháng 4/2006, trích ở website của Adobe [1],[2]). Các phim dạng flash (flash movies) được truyền tải theo định dạng SWF (ShockWave File). Adobe đã phát triển một ngôn ngữ rất mạnh và giống như Javascript gọi là ActionScript. Ngôn ngữ này (ActionScript) cho phép khả năng dùng nó để soạn thảo các chương trình nhỏ ( Script ) chạy bên trong Flash . Một trong những đặc điểm thú vị của ActionScript là khả năng gửi HTTP request đến những site thứ ba ,thông qua trình duyệt đang chạy ActionScript này. Chính đặc điểm này làm cho Flash trở thành góc độ bảo mật thú vị.  Với Flash có thể sửa đổi đươc (nội dung) các yêu cầu (request) gửi đến môt site thứ ba , trong khi các 'STANDARD' JavaScript không làm đươc như vậy . Khả năng gửi các HTTP header cùng với HTTP request chính là điểm quan trọng đặc biệt của Flash.
+
+
+Gửi các HTTP header bằng Flash
+================================================
+Mã ActionScript 2.0 dưới đây sẽ thực hiện việc gửi một request dạng GET (giả sử đến website<span class="link"> http://www.vuln.site/some/page.cgi?p1=v1&p2=v2</span>) cùng với một HTTP header bất kì (Foo:Bar). Mã này hoạt động trong Flash 7 và 8 (cũng như là Flash 6)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+req.addRequestHeader&#40; "Foo", "Bar" &#41;;
+req.send&#40; "http://www.vuln.site/some/page.cgi?p1=v1&p2=v2",
+        "_blank", "GET" &#41;;</pre>
+		</div>
+
+Đoạn mã dưới đây cũng tương tự như trên nhưng với request dạng POST (cùng URL và tham số là a=b&c=d)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+req.addRequestHeader&#40; "Foo", "Bar" &#41;;
+req.decode&#40; "a=b&c=d" &#41;;
+req.send&#40; "http://www.vuln.site/some/page.cgi?p1=v1&p2=v2",
+          "_blank", "POST" &#41;;</pre>
+		</div>
+ 
+(chú ý: phương thức LoadVars.decode() được bổ sung trong Flash 7, nếu không dùng phương thức này ta cũng có thể tự thực hiện, ở Flash 6 thì làm khác nhau một chút).
+
+Đối tượng Flash nằm trong trình duyệt thực hiện việc gửi request, đồng thời nó cũng gửi kèm theo cookie (giống như trình duyệt vẫn làm khi gửi request). Flash cũng gửi User-Agent của trình duyệt cùng với mọi header chuẩn khác. Nó cũng hỗ trợ liên kết HTTPS.
+
+Các công việc trên đã thực hiện thành công ở Microsoft IE 6.0, Microsoft IE 6.0 SP2 và Firefox 1.5.0.4, các trình duyệt đó đều chạy Flash 8.0.22.0 và Flash 7.0.19.0
+ 
+Trong IE, lời gọi hàm addRequestHeader sẽ thay thế giá trị các header thông thường của trình duyệt, bao gồm cả Referer và User-Agent. Trong Firefox 1.5.0.4, khi dùng các header đó trong hàm addRequestHeader thì chúng (header) sẽ được đưa vào cuối sector header của HTTP request
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// tạo một header UA trong IE 6.0 SP2 và 2 header UA trong FF 1.5.0.4
+req.addRequestHeader&#40;"User-Agent","Hacker/1.0"&#41;;
+ 
+// tạo một header Referer trong IE 6.0 SP2 và 2 header Referer trong FF 1.5.0.4
+req.addRequestHeader&#40;"Referer","http://somewhere/"&#41;;</pre>
+		</div>
+
+Cũng có thể thay giá trị của nhiều header quan trọng khác trong IE bằng cách thêm dấu hai chấm ( : ) sau tên header (kĩ thuật này sẽ mô tả ở [3] trong nội dung XmlHttpRequest)
+ 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>req.addRequestHeader&#40;"Host:","foobar.site"&#41;;</pre>
+		</div>
+ 
+Tuy nhiên cách này sẽ không làm được trên Firefox 1.5.0.4
+
+Chú ý: khi URL truy cập đến là nằm trong cùng domain với Flash, ta có thể dùng LoadVars để đọc dữ liệu HTTP response, thấy rõ rằng cách dùng LoadVars là điểm cơ bản trong nhiều framework dạng AJAX mà dựa trên Flash (tựa như đối tượng XmlHttpRequest trong Javascript)
+
+ 
+The security implications
+ ========================
+ 
+Khả năng một kẻ tấn công buộc trình duyệt của nạn nhân gởi HTTP request chứa các header bất kì đến các site khác đã tạo ấn tượng mạnh đến sự hiểu biết về bảo mật ứng dụng web của chúng tôi - kể cả việc đánh giá hiện tượng liên quan bảo mật lẫn tính minh xác của một số cơ chế bảo mật.
+
+Điều quan trọng là phải hiểu những cách tấn công được mô tả ở đây không phải là tấn công cross-site scripting, không phải dạng cross-site-scripting (nói một cách chính xác) mà cũng chẳng phải dạng xâm phạm tín thực liên vùng (cross-domain trust) trong object của Flash hoặc giữa các Flash object và các trang nhúng HTML
+
+Sự thật thì đối tượng Flash có thể gửi request đến bất kì URL nào và với bất kì HTTP header nào mà kẻ tấn công muốn. Vấn đề chính là điều này, nó cho phép kẻ tấn công gửi một liên kết (đến một trang HTML có nhúng đối tượng Flash, hay đến thẳng đối tượng Flash nằm trên website của kẻ tấn công), liên kết này cho phép đối tượng Flash sẽ chạy trên trình duyệt của nạn nhân. Chính đối tượng Flash này sẽ gửi HTTP request (cùng với các HTTP header mà kẻ tấn công đã chọn trước) đến website mong muốn và điều này sẽ làm hại đến trình duyệt (của nạn nhân)
+ 
+Nói cách khác, nhiều nhà phát triển phần mềm (và cũng có thể là các nhà nghiên cứu bảo mật) luôn cho rằng hầu hết các HTTP header không thể bị kẻ tấn công thay đổi bằng một giá trị bất kì. Bài viết sẽ chỉ ra sự sai lầm và cũng là lỗi trong cách hiểu này
+ 
+VD 1: header "Expect"
+------------------------------------
+
+Trong [4], một lỗi nằm trong trong Apache 1.3.34, 2.0.57 và 2.2.1 xem là nguy hiểm vì có thể chèn dữ liệu HTML vào trong header Expect. Tại [5], những lời góp ý chân thành, liên quan đến "Nói về XSS, hiện tượng này không phải là XSS như đã thấy. Trừ phi ai đó cho tôi thấy rằng làm thế nào để làm cho trình duyệt gửi header Expect đến website mong muốn". Nhưng khi dùng đối tượng Flash, việc tấn công trở nên dễ dàng. Hãy xem khi nạn nhân click vào link dưới đây:<span class="link"> http://www.evil.site/attack.swf</span>
+
+URL này là một đối tượng Flash, đối tượng này sẽ chạy các ActionScript sau
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>var req:LoadVars=new LoadVars&#40;&#41;;
+req.addRequestHeader&#40; "Expect",
+                        "&lt;script&gt;alert&#40;'gotcha!'&#41;&lt;/script&gt;" &#41;;
+req.send&#40; "http://www.target.site/", "_blank", "GET" &#41;;</pre>
+		</div>
+ 
+ActionScript này gửi một request từ trình duyệt nạn nhân đến website www.target.site, trong request có header Expect chứa mã HTML (Javascript) gây hại. Nếu website bị tấn công<span class="link"> www.target.site</span>) chạy phiên bản Apache bị lỗi, kết quả tiếp theo sẽ là cross-site scripting. Vì thế đã rõ ràng - Apache phiên bản 1.3.34, 2.0.57 và 2.2.1 sẽ bị tấn công XSS (cùng với trình duyệt là IE hay Firefox và hỗ trợ Flash 6, 7). Trong [5] cũng lưu ý với Aapche 2.0/2.2, server trả về XSS response chỉ sau khi hết thời gian timeout của request. Xin nói thêm là Apache đã sửa lỗi này trên cả 3 phiên bản trên
+
+ VD 2 - CSRF và Referer
+------------------------------------------
+ 
+Tấn công CSRF (Cross Site Request Forgery) là kĩ năng cần thiết để một kẻ tấn công buộc trình duyệt nạn nhân thực hiện một thao tác (gửi HTTP request) đến website mong muốn. Khái niệm này được nói đến một vài lần, đầu tiên là trên mailing list Zope (với tiêu đề "Client Side Trojans", [6], và một lần khác tại BugTraq, dưới tiêu đề này, bây giờ nó đã trở thành tên bán tiêu chuẩn, CSRF [7]. Cả 2 bài góp ý trên, đều dựa trên header Referer như là dấu hiệu để trình duyệt sinh ra HTTP request có liên kết bắt nguồn từ trong website. Thật ra, nếu chỉ dùng HTML và Javascript thì không thể giả mạo Referer (trừ ngoại lệ trong [8], nhưng điều này chỉ hiệu quả trong một số điều kiện giới hạn; như khi sử dụng HTTPS thì không hiệu quả). Tuy nhiên, rõ ràng rằng với Flash thì đièu này không thành vấn đề, và Referer có thể bị giả mạo để yêu cầu các tài nguyên HTTPS, mọi thứ trong khi trình duyệt gởi cookie của site với request. Như phía trên đã minh hoạ, cả request dạng GET (với host và query bất kì) và POST (với phần host, query và phần thân theo định dạng chuẩn Content-Type là "application/x-www-form-urlencoded") đều gửi đi được.
+
+Chú ý: đoạn phân tích trên không có nghĩa là chỉ có header Referer là bị giả mạo. Nên thấy rõ rằng bất kì header nào cũng có thể bị giả mạo. Trong trường hợp của IE, kẻ tấn công tạo các header giả để thay đổi header của trình duyệt (như là Referer). 
+Với Firefox, kỹ thuật giả mạo Referer không thể làm được vì Firefox thêm header vào bên dưới cùng của các header HTTP request. Tuy nhiên, một số ứng dụng web vẫn có thể vẫn dùng giá trị cuối của header, và như thế vẫn có thể bị nguy hiểm đối với kỹ thuật này
+
+Hiện nay, mọi khả năng tấn công cross-site scripting qua các header HTTP request (Referer, User-Agent, Expect, Host, Content-Type) đều làm được.
+ 
+Flash 9
+==============
+
+Flash 9 được thông báo vào ngày 28/06/2006 [9]. Ở Flash 9, những kĩ thuật đã nói trên (như dùng lớp LoadVars) không hỗ trợ các header mà trình duyệt dùng (như User-Agent, Host and Referer) và các header được bảo vệ như Content-Length. Tuy nhiên, các header như Expect vẫn được gữi đi và một vào kiểu tấn công (như VD 1 trên) vẫn hiệu quả trong Flash 9
+ 
+ 
+ 
+Những giới hạn
+===========================
+ 
+ * URL và phần body luôn ở dạng URL-encoded (URL được mã hoá). Tức là không thể cho các kí tự SP, HT, CR và LF (và nhiều kí tự khác) hiển thị ở dạng raw trong request URL và body.
+ * Chỉ có thể dùng GET và POST
+ * Trong IE, chỉ có header của mỗi lần truy cập được gởi một lần
+
+ * Tổng quát, không thể điều chỉnh hoàn toàn section header (kẻ tấn công sẽ gặp rắc rối khi muốn gửi những kí tự đặc biệt trong các header)
+
+Giải pháp đơn phần
+===============
+
+Hãy chú ý hạn chế đầu tiên của kĩ thuật này - kí tự CR và LF không thể đặt trong section body ở định dạng raw. Nghĩa là cơ chế này không thể dùng để gửi request POST mà phần body của request này được biên dịch thành content-type là  "multipart/form-data" (định dạng này dùng các kí tự CR,LF ở dạng raw để đánh dấu phần header với body). Nói cách khác, một Flash player không thể gửi đi POST request mà phần body của nó là một luồng "multipart/form-data" hợp lệ được. Vì thế, tác giả của những ứng dụng web có thể dùng các HTML form và đặt thuộc tính ENCTYPE là "multipart/form-data", điều này đảm bảo rằng thông tin đưa lên web với body multipart/form-data hoàn toàn hợp lệ. Một khi dùng cách này thì ta có thể biết được request đi đến có xuất phát từ Flash player hay không, và việc phá hoại sẽ trở nên vô tác dụng.
+
+
+Giải pháp này dĩ nhiên hơi áp đặt - cả trang HTML và script phải được sửa đồi để dùng multipart/form-data. Với vài nền tảng phát triển web, điều này là bình thường, còn với số khác (raw Perl, ASP) thì không. Hơn nữa, trong trường hợp như VD 1 trên, web server (Apache) thông dịch rồi sử dụng các HTTP header, và tiến trình này sẽ không đi đến lớp ứng dụng web, vì vậy trong những trường hợp như thế, giải pháp này không áp dụng được
+
+ Hướng dẫn thêm
+================
+
+HTTP Request Splitting ([8]) và HTTP Request Smuggling ([10]) trong IE với Flash 7/8 có thể gữi header Content-Length với bất kì giá trị nào. Điều này cho phép thực hiện tấn công HTTP Request Splitting. Cũng như thế, việc chèn header Transfer-Encoding, hay thêm một header Content-Length thứ hai sẽ mơ ra cơ hội cho HTTP Request Smuggling. Cần phải nghiên cứu xa hơn để nắm rõ những cách thực hiện như vậy có đưa đến khả năng khai thác lỗi hay không
+ 
+Các kinh nghiệm đã cho phép Flash 9 giới hạn nhiều hơn những header sẽ dùng trong LoadVars.addRequestHeader(), ngôn ngữ ActionScript 3.0 sẽ mạnh hơn là 2.0. Như thế, phiên bản mới này cung cấp những tính năng đáng giá tại mức HTTP, như là khả năng gửi nhiều loại HTTP, không chĩ GET và POST. Tốt hơn nên tìm hiểu Flash 9 và ActionScript 3.0 để nắm rõ những tiềm năng của chúng, lưu ý về các mẹo trong HTTP request
+ 
+
+ Kết luận
+ -==========
+ 
+Việc xác thực dựa trên các header của HTTP request mà trình duyệt gửi đi không phải là ý hay. Thực tế thì mọi header có thể bị giả nếu client đang phải chạy một Flash movie xấu, và điều này hoàn toàn đúng với trên 80% máy tính để bàn truy cập Internet. Do đó, khả năng tấn công cross-site scripting trên những header như trên, cũng như tấn công bằng các request giả để cross site (cho những site mà tự bảo vệ bằng cách kiểm tra header Referer) là cao hơn so với những gì người ta nhận thấy
+
+Bài viết khuyên nên dùng giải pháp đơn phần cho trường hợp về sau, tuy nhiên giải pháp này phụ thuộc rất nhiều vào Flash, và như thế có thể không cung cấp phần bảo vệ chống đỡ những biến thái được sử dụng với các công nghệ khác, hoặc những phát triển khác trong Flash. Vì thế, với giả mạo request cross site, nên xem xét những giải pháp khác mà không dựa vào Referer
+
+
+ Tham khảo
+ -=========
+ 
+ [1] "Technology Breakdown" (Adobe website)  <span class="link"> http://www.adobe.com/products/player_census/flashplayer/tech_breakdown.html</span>
+ 
+ [2] "Macromedia Flash Player Version Penetration" (Adobe website)  <span class="link"> http://www.adobe.com/products/player_census/flashplayer/version_penetration.html</span>
+ 
+ [3] "Re: 'Exploiting the XmlHttpRequest object in IE' - paper by Amit 
+ Klein" by Anonymous, BugTraq posting, September 27th, 2005 <span class="link"> http://www.securityfocus.com/archive/1/411823</span>
+ 
+ [4] "Unfiltered Header Injection in Apache 1.3.34/2.0.57/2.2.1" by Thiago 
+ Zaninotti, BugTraq posting, May 8th, 2006  <span class="link"> http://www.securityfocus.com/archive/1/433280</span>
+ 
+ [5] "Re: Unfiltered Header Injection in Apache 1.3.34/2.0.57/2.2.1" by 
+ Amit Klein, BugTraq posting, May 18th, 2006  <span class="link"> http://www.securityfocus.com/archive/1/434729</span>
+ 
+ [6] "Client Side Trojans", Zope developers mailing list, May 2000  <span class="link"> http://www.zope.org/Members/jim/ZopeSecurity/ClientSideTrojan</span>
+ 
+ [7] "Cross Site Request Forgeries" by Peter Watkins, BugTraq posting, June 
+ 15th, 2001  <span class="link"> http://www.tux.org/~peterw/csrf.txt</span>
+ 
+ [8] "Exploiting the XmlHttpRequest object in IE - Referrer spoofing, and a 
+ lot more..." by Amit Klein, BugTraq posting,
+ September 24th, 2005  <span class="link"> http://www.securityfocus.com/archive/1/411585</span>
+ 
+ [9] "Adobe Flash Player 9 Leads a New Generation of Dynamic Media and Rich 
+ Internet Applications" (Adobe website), June 28th, 2006  <span class="link"> http://www.adobe.com/aboutadobe/pressroom/pressreleases/200606/062806Flash9.html</span>
+ 
+ [10] "HTTP Request Smuggling" by Chaim Linhart, Amit Klein, Ronen Heled 
+ and Steve Orrin, June 6th, 2005  
+<span class="link"> http://www.cgisecurity.com/lib/HTTP-Request-Smuggling.pdf</span>
+
+
+Người dịch: hakuso - Nhóm dịch thuật HVA
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2176.hva#11128</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2176.hva#11128</link>
+				<pubDate><![CDATA[Sun, 30 Jul 2006 14:18:17]]> GMT</pubDate>
+				<author><![CDATA[ hakuso]]></author>
+			</item>
+	</channel>
+</rss>

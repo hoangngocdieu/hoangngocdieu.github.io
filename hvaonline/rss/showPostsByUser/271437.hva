@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "Framer"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/271437.hva</link>
+		<description><![CDATA[Messages posted by "Framer"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Kết hợp Nginx + Varnish + Apache</title>
+				<description><![CDATA[ Thanks các bác đã cho ý kiến. Em thực sự thấy Vanish cache ổn hơn nginx nhiều. Em sẽ giữ mô hình này :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45532/280491.hva#280491</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45532/280491.hva#280491</link>
+				<pubDate><![CDATA[Sun, 27 Apr 2014 22:41:32]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+			<item>
+				<title>Kết hợp Nginx + Varnish + Apache</title>
+				<description><![CDATA[ Hi all,
+Hiện tại mình đang triển khai kết hợp giữa Nginx + Varnish + Apache.
+Mô hình hiện tại thế này:  Cient  -&gt; Nginx (443) -&gt; Varnish (6081)-&gt; Apache (80)
+- Nginx: Chạy Testcookie, SSL
+- Varnish: Cache.
+Hiện tại khi chạy kết hợp thế này thì Cache rất tốt. Và mô hình này chạy ở công ty mình cũng thấy rất hiệu quả. Nhưng nó chỉ mới chạy được khoảng 1 tháng nên chưa đánh giá được mức độ của nó.
+
+Hôm nay, tôi có đọc được 1 bài viết trên Internet về: Không bao giờ sử dụng chung Varnish kết hợp với Nginx.
+
+Anh em ai đã làm và có kinh nghiệm có thể cho mình câu trả lời, phân tích về vấn đề này được ko?
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45532/280107.hva#280107</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45532/280107.hva#280107</link>
+				<pubDate><![CDATA[Tue, 25 Mar 2014 23:57:51]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+			<item>
+				<title> Lỗi 502 Bad Gateway nginx </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>Bạn kiểm tra lại xem apache có đang hoạt động bình thường không (truy cập trực tiếp ko qua proxy), kiểm tra iptables tại server apache đã accept port 8080 chưa.&nbsp;
+		</blockquote>
+Hi tuanksor:
+- Trước khi cấu hình Nginx thì mình đã test thử Apache chạy Port 8080 OK.
+- Info mình đưa ra mình cũng đã nói là Iptables đã Stop luôn rồi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45466/279816.hva#279816</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45466/279816.hva#279816</link>
+				<pubDate><![CDATA[Tue, 18 Feb 2014 21:54:06]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+			<item>
+				<title> Lỗi 502 Bad Gateway nginx </title>
+				<description><![CDATA[ Hi all,
+Hiện tại mình đang triển khai Nginx làm Reversed Proxy cho Apache.
+Mô hình của mình thế này: Client -&gt; Nginx (IP: 172.20.20.237) -&gt; Apache (IP: 172.20.20.238)
+-&gt; Đã kiểm tra cấu hình thì thấy báo OK nhưng khi mình chạy thì lại không được.
+1. Kiểm tra cấu hình Nginx
+<blockquote>[root@Nginx ~]# nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful&nbsp;
+		</blockquote>
+2. Selinux và Iptables:
+<blockquote>[root@Nginx ~]# cat /etc/sysconfig/selinux
+
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+# enforcing - SELinux security policy is enforced.
+# permissive - SELinux prints warnings instead of enforcing.
+# disabled - No SELinux policy is loaded.
+SELINUX=disabled
+# SELINUXTYPE= can take one of these two values:
+# targeted - Targeted processes are protected,
+# mls - Multi Level Security protection.
+SELINUXTYPE=targeted &nbsp;
+		</blockquote>
+<blockquote>[root@Nginx ~]# service iptables status
+iptables: Firewall is not running. &nbsp;
+		</blockquote>
+3. Cấu hình nginx.conf
+<blockquote>[root@Nginx ~]# cat /etc/nginx/nginx.conf
+user nobody;
+worker_processes 4;
+error_log logs/error.log crit;
+
+worker_rlimit_nofile 8192;
+
+events {
+worker_connections 1024; # you might need to increase this setting for busy servers
+use epoll; # Linux kernels 2.6.x change to epoll
+}
+
+http {
+server_names_hash_max_size 2048;
+server_names_hash_bucket_size 512;
+
+server_tokens off;
+
+include mime.types;
+default_type application/octet-stream;
+
+sendfile on;
+tcp_nopush on;
+tcp_nodelay on;
+keepalive_timeout 10;
+
+# Gzip on
+gzip on;
+gzip_min_length 1100;
+gzip_buffers 4 32k;
+gzip_types text/plain application/x-javascript text/xml text/css;
+
+# Other configurations
+ignore_invalid_headers on;
+client_max_body_size 8m;
+client_header_timeout 3m;
+client_body_timeout 3m;
+send_timeout 3m;
+connection_pool_size 256;
+client_header_buffer_size 4k;
+large_client_header_buffers 4 32k;
+request_pool_size 4k;
+output_buffers 4 32k;
+postpone_output 1460;
+
+# Cache most accessed static files
+open_file_cache max=10000 inactive=10m;
+open_file_cache_valid 2m;
+open_file_cache_min_uses 1;
+open_file_cache_errors on;
+
+# virtual hosts includes
+include &quot;/etc/nginx/conf.d/*.conf&quot;;
+
+} &nbsp;
+		</blockquote>
+4. File Proxy
+<blockquote>[root@Nginx ~]# cat /etc/nginx/conf.d/hienhai.com.conf
+server {
+listen 172.20.20.237:80;
+server_name hienhai.com hienhai.com;
+access_log /var/log/nginx/access.log;
+error_log /var/log/nginx/error.log;
+
+location ~* .(gif|jpg|jpeg|png|ico|wmv|3gp|avi|mpg|mpeg|mp4|fl v|mp3|mid|js|css|html|htm|wml)$ {
+root /var/www/html/hienhai.com;
+expires 365d;
+}
+
+location / {
+client_max_body_size 10m;
+client_body_buffer_size 128k;
+
+proxy_send_timeout 90;
+proxy_read_timeout 90;
+proxy_buffer_size 128k;
+proxy_buffers 4 256k;
+proxy_busy_buffers_size 256k;
+proxy_temp_file_write_size 256k;
+proxy_connect_timeout 30s;
+
+proxy_wwwect<span class="link"> http://www.hienhai.com:8080</span><span class="link"> http://www.hienhai.com;</span>
+proxy_wwwect<span class="link"> http://hienhai.com:8080</span><span class="link"> http://hienhai.com;</span>
+
+proxy_pass<span class="link"> http://172.20.20.238:8080/;</span>
+
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+} &nbsp;
+		</blockquote>
+5. Trên Apache:
+Đã thêm Virtualhost:
+<blockquote> NameVirtualHost 172.20.20.238:8080
+
+# Define Server document root
+DocumentRoot /var/www/html/
+
+# Define the virtual host
+&lt;VirtualHost 172.20.20.238:8080&gt;
+ServerName www.hienhai.com
+ServerAlias hienhai.com
+DocumentRoot /var/www/html/hienhai.com
+&lt;Directory "/var/www/html/hienhai.com"&gt;
+Options FollowSymLinks -Includes
+AllowOverride All
+Order allow,deny
+Allow from all
+&lt;/Directory&gt;
+RewriteEngine on
+&lt;/VirtualHost&gt; &nbsp;
+		</blockquote>
+- Đã chỉnh sửa :
+<blockquote>Listen 8080 &nbsp;
+		</blockquote>
+- Đã cài đặt module:mod_rpaf với cấu hình như sau:
+<blockquote>&lt;IfModule mod_rpaf.c&gt;
+RPAF_Enable On
+RPAF_ProxyIPs 127.0.0.1 172.20.20.237
+RPAF_Header X-Forwarded-For
+RPAF_SetHostName On
+RPAF_SetHTTPS On
+RPAF_SetPort On
+&lt;/IfModule&gt; &nbsp;
+		</blockquote>
+- Đã Disabled Selinux và Stop Iptables.
+6. Kết quả:
+Khi vào web thì hiển thị thông báo lỗi:
+<blockquote>502 Bad Gateway
+nginx &nbsp;
+		</blockquote>
+- Log Apache không có gì.
+- Log Nginx <blockquote>[root@Nginx conf.d]# tail -f /var/log/nginx/access.log
+172.20.20.138 - - [16/Feb/2014:09:37:58 +0700] "GET / HTTP/1.1" 502 166 "-" "Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0"
+172.20.20.138 - - [16/Feb/2014:09:37:59 +0700] "GET /favicon.ico HTTP/1.1" 404 162 "-" "Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0"
+172.20.20.138 - - [16/Feb/2014:09:37:59 +0700] "GET /favicon.ico HTTP/1.1" 404 162 "-" "Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0"
+172.20.20.138 - - [16/Feb/2014:09:43:27 +0700] "GET / HTTP/1.1" 502 166 "-" "Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0"
+172.20.20.138 - - [16/Feb/2014:09:43:32 +0700] "GET / HTTP/1.1" 502 166 "-" "Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0"&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45466/279805.hva#279805</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45466/279805.hva#279805</link>
+				<pubDate><![CDATA[Mon, 17 Feb 2014 22:00:14]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+			<item>
+				<title>Chuyển đổi từ Qmail sang Zimbra</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranhuuphuoc wrote:</cite><br>
+		<blockquote>
+
+Ra Google tìm từ khóa How to migrate Qmail mailboxes to Zimbra?
+Chuyển thì được nhưng làm rất cực và tiêu tốn thời gian rất nhiều<span class="link"> http://wiki.zimbra.com/index.php?title=User_Migration</span>
+
+Nếu cần thiết thì đề nghị thẳng với sếp chuyển sang sử dụng Zimbra ở fresh install luôn. &nbsp;
+		</blockquote>
+ Việc chuyển đổi trực tiếp từ 2 thằng này nó làm thay đổi cấu trúc trong LDAP. 
+Cầu trúc của thằng LDAP trong Qmail sẽ khác với cấu trúc LDAP trong Zimbra. Vì vậy, khi chuyển như thế sẽ mất đi cấu trúc nguyenvienj của các OU.
+
+quanta: Đây cũng là 1 bài toán hay mà anh. Cứ coi như đó là 1 bài toán em cần làm đi, em nghĩ không nhất thiết phải tập trung vào lý do.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45018/277882.hva#277882</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45018/277882.hva#277882</link>
+				<pubDate><![CDATA[Tue, 30 Jul 2013 05:36:10]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+			<item>
+				<title>Chuyển đổi từ Qmail sang Zimbra</title>
+				<description><![CDATA[ Dear all.
+  Hiện tại mình gặp 1 vấn đề thế này. Trước đây, mình đã setup cho công ty sử dụng Qmail. Hiện tại thì sếp bắt mình chuyển toàn bộ hệ thống email của cả công ty sang sử dụng Zimbra. 
+  Loay hoay 3 ngày nay mà chưa tìm ra được 1 giải pháp cho hợp lý. Không biết diễn đàn mình có ai có kinh nghiệm vấn đề này có thể chia sẻ giúp mình được ko.
+ Thân. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45018/277865.hva#277865</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45018/277865.hva#277865</link>
+				<pubDate><![CDATA[Mon, 29 Jul 2013 05:13:26]]> GMT</pubDate>
+				<author><![CDATA[ Framer]]></author>
+			</item>
+	</channel>
+</rss>

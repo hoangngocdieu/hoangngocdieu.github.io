@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi về chain PREROUTING trong iptables"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi về chain PREROUTING trong iptables"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi về chain PREROUTING trong iptables</title>
+				<description><![CDATA[ Lần đầu gửi câu hỏi trên diễn đàn có gì sai sót mong nhận được sự góp ý của mọi người !
+Ở thời điểm ban đầu, iptables không có bất cứ dòng luật nào. Sau đó mình thêm vào hai dòng luật sau:
+Trên chain PREROUTING
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -p tcp --tcp-flags ACK,PSH ACK,PSH --dport 80 -j LOG</pre>
+		</div>
+Trên chain INPUT
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -A INPUT -p tcp --tcp-flags ACK,PSH ACK,PSH --dport 80 -j LOG</pre>
+		</div>
+Sau đó truy cập vào webserver, rồi chạy các lệnh sau để kiểm tra
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -L -v
+iptables -t nat -L -v</pre>
+		</div>
+Kết quả cho thấy trên chain INPUT có thể log được cái gói tin tcp có cờ PSH ACK, còn trên chain PREROUTING không có ghi nhận gì. Mình phỏng đoán sau khi định tuyến cho một kết nối mới thì chain PREROUTING sẽ không còn theo dõi các gói tin đi vào trên kết nối này nữa. Tuy đã tìm kiếm và đọc qua các tài liệu nhưng chưa thấy có điểm nào có thể khẳng định. Rất mong nhận được ý kiến của anh/chị/em trên diễn đàn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252139</link>
+				<pubDate><![CDATA[Mon, 9 Jan 2012 03:34:11]]> GMT</pubDate>
+				<author><![CDATA[ somenuchi]]></author>
+			</item>
+			<item>
+				<title>Hỏi về chain PREROUTING trong iptables</title>
+				<description><![CDATA[ Chain PREROUTING và POSTROUTING của NAT table dùng cho việc xử lý các packet trước và sau khi định tuyến (ROUTING). Nói chung là có thao tác routing trong đó.
+Còn INPUT chain trong FILTER table là dùng cho việc xử lý incoming packet đến <font color='orange'>local </font>server mà không liên quan gì với việc routing cả.
+Khi anh test, anh đã connect vào webserver (iptables chạy trên đây luôn) nên kết quả là như thế.
+Đây là ý kiến của em, anh nghĩ sao  :) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252250</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252250</link>
+				<pubDate><![CDATA[Wed, 11 Jan 2012 00:59:27]]> GMT</pubDate>
+				<author><![CDATA[ Cuc.Sat]]></author>
+			</item>
+			<item>
+				<title>Hỏi về chain PREROUTING trong iptables</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">somenuchi wrote:</cite><br>
+		<blockquote>
+[code]iptables -t nat -A PREROUTING -p tcp --tcp-flags ACK,PSH ACK,PSH --dport 80 -j LOG
+&nbsp;
+		</blockquote>
+<font color='yellow'>-j LOG</font> invalid đối với <font color='yellow'>-t nat</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252281</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252281</link>
+				<pubDate><![CDATA[Wed, 11 Jan 2012 10:17:13]]> GMT</pubDate>
+				<author><![CDATA[ DarkOS]]></author>
+			</item>
+			<item>
+				<title>Hỏi về chain PREROUTING trong iptables</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">DarkOS wrote:</cite><br>
+		<blockquote>
+<font color='yellow'>-j LOG</font> invalid đối với <font color='yellow'>-t nat</font>&nbsp;
+		</blockquote>
+@ DarkOS: Trước khi post mình cũng đã thử qua hai luật ở dưới là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -p tcp --dport 80 -j LOG 
+iptables -t nat -A PREROUTING -p tcp --syn --dport 80 -j LOG</pre>
+		</div>
+rồi kiểm tra lại với lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -L -v
+tail -f /var/log/firewall</pre>
+		</div>
+Mình đều thấy log được ghi lại nên mình khẳng định là -j LOG không hề invalid.
+<p></p>
+		<cite class="blockquote">Cuc.Sat wrote:</cite><br>
+		<blockquote>Chain PREROUTING và POSTROUTING của NAT table dùng cho việc xử lý các packet trước và sau khi định tuyến (ROUTING). Nói chung là có thao tác routing trong đó. 
+Còn INPUT chain trong FILTER table là dùng cho việc xử lý incoming packet đến <font color='orange'>local</font> server mà không liên quan gì với việc routing cả. 
+Khi anh test, anh đã connect vào webserver (iptables chạy trên đây luôn) nên kết quả là như thế. 
+Đây là ý kiến của em, anh nghĩ sao :)&nbsp;
+		</blockquote>
+@ Cuc.Sat: Mình nghĩ ý của bạn giống với ý mình đã nêu ở post trên. Tuy nhiên khi đọc qua các tài liệu thì không thấy chỗ nào nói đến điểm này để có thể khẳng định.
+<p></p>
+		<cite class="blockquote">somenuchi wrote:</cite><br>
+		<blockquote>Mình phỏng đoán sau khi định tuyến cho một kết nối mới thì chain PREROUTING sẽ không còn theo dõi các gói tin đi vào trên kết nối này nữa.&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252318</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40949.hva#252318</link>
+				<pubDate><![CDATA[Wed, 11 Jan 2012 22:05:26]]> GMT</pubDate>
+				<author><![CDATA[ somenuchi]]></author>
+			</item>
+	</channel>
+</rss>

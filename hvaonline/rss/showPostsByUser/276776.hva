@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "yeubaomat"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/276776.hva</link>
+		<description><![CDATA[Messages posted by "yeubaomat"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> thông báo bằng sound khi ossec HIDS phát hiện bị tấn cộng</title>
+				<description><![CDATA[ Chào bạn
+Nếu là IDS thì Snort là tốt nhất, mình ko biết về Ossec.
+Với Snort  bạn có thể xem cảnh báo trên màn hình hoặc qua email hoặc qua SMS luôn
+
+Hoặc đơn giản bạn viết một chương trình c/c++/c#/java để đọc file log và show lên màn hình.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45516/280083.hva#280083</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45516/280083.hva#280083</link>
+				<pubDate><![CDATA[Thu, 20 Mar 2014 23:47:47]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Tự cấp chứng chỉ Certificate Authority (CA )cho https có được không?</title>
+				<description><![CDATA[ Vâng, các anh chị trả lời rất là ngắn gọn và rỏ ràng
+Thank mọi người nhá]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45011/277934.hva#277934</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45011/277934.hva#277934</link>
+				<pubDate><![CDATA[Fri, 2 Aug 2013 08:41:31]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Tự cấp chứng chỉ Certificate Authority (CA )cho https có được không?</title>
+				<description><![CDATA[ Các anh chị làm bên bảo mật website cho em hỏi
+Các chứng chỉ bảo mật ssl cho website trên linux mình hoàn toàn có thể tự tạo ra và dùng cho website mình
+Vậy tại sao các công ty cứ phải mua chứng chỉ CA cho website của họ?
+Thank mọi người]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45011/277815.hva#277815</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45011/277815.hva#277815</link>
+				<pubDate><![CDATA[Fri, 26 Jul 2013 12:41:30]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về Nagios, nhận SMS</title>
+				<description><![CDATA[ Mình thì ko dùng gammu mà dùng gnokii với thiết bị Dcom 3G để send sms  (việc khó nhất đối với mình đó là tìm thiết bị tích hợp)
+
+Việc phản hồi và điều khiển lại server thì bạn suy nghĩ đúng rồi đó
+Mình xin hướng dẫn lại như sau
+
+1. Bạn sẻ phải biết lệnh đọc SMS từ thiết bị  thay vì gởi sms là --sendsms thì đọc sms là lệnh khác
+ mình dùng gnokii thì là #gnokii --getsms SM 0 -F /root/inbox.txt -d . đọc sms đầu tiên (vị trí 0) trên sim (SM)và lưu vào file inbox.txt trên máy tính và xoa nó--&gt; bạn pải tìm hiểu lệnh getsms trên gammu như thế nào
+2. Trong file inbox.txt  nó khá dài dòng, nhưng ở dòng nào đó sẻ là nội dung chính của bạn gởi về
+ví dụ: gnokii sau khi lấy sms thì nội dung chính là ở dòng thứ 10
+bạn phải lưu nội dung này vào chuổi để xử lý các công việc mà bạn quy ước trước
+
+Để làm được việc đó bạn phải viết Shell script để thực hiện
+và lập lịch crontab -e để thực hiện script đó
+
+Trước đây mình làm đề tài về cảnh báo xâm nhập Snort thì mình điều khiển lại Snort bằng shell script như sau:
+
+#!/usr/bin/sh
+##---------Lay tin nhan SMS luu vao file---------
+/usr/local/bin/gnokii --getsms SM 0 -F /root/Desktop/inbox.txt -d
+file='/root/Desktop/inbox.txt'
+#Doc noi dung SMS tai dong 10 trong file va luu vao chuoi
+chuoi=`sed -n 10p $file`
+cat &gt; $file
+##-------Viet rules cho Snort qua SMS tu xa-----
+    substring='alert'
+    substring2='log'
+  #Neu SMS co chua tu 'alert' hoac 'log'.(Co the dinh nghia them).
+  #Thi luu SMS do vao file /rules/local.rule
+    if [ &quot;${chuoi#*$substring}&quot; != &quot;$chuoi&quot; ] || [ &quot;${chuoi#*$substring2}&quot; != &quot;$chuoi&quot; ]
+    then
+	echo $chuoi &gt;&gt; /etc/snort/rules/local.rules
+	/etc/init.d/snortd stop
+      	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+    fi
+##------Xoa rules moi tao qua SMS--------
+if [ &quot;$chuoi&quot; = &quot;xoa rule&quot; ]
+   then
+        cat &gt; /etc/snort/rules/local.rules
+	/etc/init.d/snortd stop
+        /usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1 	
+   fi
+##------Tat hoac mo canh bao qua SMS------
+if [ &quot;$chuoi&quot; = &quot;gnokii off&quot; ]
+   then
+	mv /etc/SnortNotify.conf /etc/SnortNotifybk.conf
+   fi
+if [ &quot;$chuoi&quot; = &quot;gnokii on&quot; ]
+   then
+	mv /etc/SnortNotifybk.conf /etc/SnortNotify.conf
+   fi
+##------Tat hoac mo canh bao Ping-of-death-----
+if [ &quot;$chuoi&quot; = &quot;ping off&quot; ]
+   then
+	cp /etc/snort/rules/ping-of-death.rules /etc/snort/rules/ping-of-deathbk.rules
+	cat &gt; /etc/snort/rules/ping-of-death.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+if [ &quot;$chuoi&quot; = &quot;ping on&quot; ]
+   then
+	cp /etc/snort/rules/ping-of-deathbk.rules /etc/snort/rules/ping-of-death.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+##-----Tat hoac mo canh bao SQL injection---
+if [ &quot;$chuoi&quot; = &quot;sql off&quot; ]
+   then
+	cp /etc/snort/rules/sqlin.rules /etc/snort/rules/sqlinbk.rules
+        cat &gt; /etc/snort/rules/sqlin.rules	
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+if [ &quot;$chuoi&quot; = &quot;sql on&quot; ]
+  then
+	cp /etc/snort/rules/sqlinbk.rules /etc/snort/rules/sqlin.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+  fi
+exit 0]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44989/277659.hva#277659</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44989/277659.hva#277659</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 12:26:59]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Hệ thống cảnh báo xâm nhập</title>
+				<description><![CDATA[ Dùng Snort đi bạn. bạn có thể cài Web Base để theo dõi tấn công qua trang web
+Nếu muốn cảnh hệ thống cảnh báo qua Email. nhắn tin SMS tới điện thoại thì bạn phải liên hệ với mình
+Mình sẵn lòng giúp đỡ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44878/276987.hva#276987</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44878/276987.hva#276987</link>
+				<pubDate><![CDATA[Sat, 29 Jun 2013 04:16:26]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>lam mailserver online tren DCOM Viettel</title>
+				<description><![CDATA[ Mình chịu thôi bạn à.
+Cái này mới thì pải]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44869/276753.hva#276753</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44869/276753.hva#276753</link>
+				<pubDate><![CDATA[Thu, 20 Jun 2013 10:23:32]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>nghề security cụ thể là gì ?</title>
+				<description><![CDATA[ Bảo mật rộng lắm
+Nên chọn một hướng đi cụ thể
+Nếu xảy ra sự cố thì hãy tìm tên đã phá hoại, bắn hắn phải bồi thường...
+Nhân tiện cho em hỏi, làm thế nào để tìm được kẻ đã tấn công hệ thống mình?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/11523/276749.hva#276749</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/11523/276749.hva#276749</link>
+				<pubDate><![CDATA[Thu, 20 Jun 2013 07:46:33]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>lam mailserver online tren DCOM Viettel</title>
+				<description><![CDATA[ Cái này mới nhỉ.
+Ý tưởng này từ bạn ngỉ ra à
+Theo mình biết có nhiều phần mềm tạo mail sever như sendmail, postfix... nhưng chúng đều cài lên HDH
+Chứ chưa nge đến việc chạy trên Dcom
+Bạn tim hiểu thêm xem sao]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44869/276748.hva#276748</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44869/276748.hva#276748</link>
+				<pubDate><![CDATA[Thu, 20 Jun 2013 07:31:44]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Web tự chuyển sang trang linh tinh khác</title>
+				<description><![CDATA[ Thank bạn
+Ngay sau đó, mình đả nhắn tin cho khoa biết, và khoa đã khắc phục lỗi đó
+Tuy nhiên khoa ko tiết lộ bị tấn công như thế nào
+Các pro có thể chỉ cho mình biết cách tấn công như thế ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44861/276746.hva#276746</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44861/276746.hva#276746</link>
+				<pubDate><![CDATA[Thu, 20 Jun 2013 07:20:54]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>nhờ các cao thủ giúp đỡ về việc mất pass modem</title>
+				<description><![CDATA[ Bạn nên cái hệ thống IDS (=Snort) để phát hiện xâm nhập
+Nếu bắt được kể sniffer kia thì xử lý nó ngay tại chổ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44867/276745.hva#276745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44867/276745.hva#276745</link>
+				<pubDate><![CDATA[Thu, 20 Jun 2013 07:16:14]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+			<item>
+				<title>Web tự chuyển sang trang linh tinh khác</title>
+				<description><![CDATA[ Sáng nay truy cập vào web của khoa mình. đợi một lát khoảng 20-30s nó tự chuyển sang trang web linh tinh khác.
+Mọi người có thể giải thích hiện tượng này ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44861/276706.hva#276706</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44861/276706.hva#276706</link>
+				<pubDate><![CDATA[Tue, 18 Jun 2013 01:09:15]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+	</channel>
+</rss>

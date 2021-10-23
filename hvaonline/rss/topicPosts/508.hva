@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Ký sự các vụ DDoS đến HVA - Phần 18"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Ký sự các vụ DDoS đến HVA - Phần 18"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 18</title>
+				<description><![CDATA[ <b>Trưa 17/04/2005</b>
+Mấy ngày vừa qua HVA bị "dội" liên tục. Liệu tôi có nên tiếp tục gọi những trận DoS này là "x-flash" DoS nữa hay không? Tôi đặt câu hỏi này vì thông tin thống kê được từ IDS và các log files từ HVA server cho thấy chỉ có 1/3 các gói tin mạng thông tin "x-flash" trên header. Số lượng 2/3 các gói tin còn lại không mang bất cứ dấu tích gì thuộc về "x-flash". Tuy nhiên, payload của chúng hoàn toàn như nhau. Điều này tôi đã đề cập vài lần trong những bài ký sự trước đây nhưng tôi nhắc lại điểm này vì thấy rằng số lượng các gói tin không mang "x-flash" trên header giảm xuống rõ rệt.
+
+Tôi đã thử trace ngược lại một số nguồn tấn công HVA ở dạng "x-flash" này và đã "đụng" phải khá nhiều proxy servers (được dùng để gởi x-flash đi đến HVA). Quả thật, một số proxy server này đã "lột" mất thông tin "x-flash" trên header của các cú POST và GET dùng để tấn công HVA trước khi gởi chúng ra ngoài. Điều này chứng tỏ người tạo ra các cú "x-flash" vẫn không hề chủ động với sự thay đổi của số lượng gói tin có "x-flash" (hoặc không có x-flash) trên header mà vẫn do các proxy servers đứng trên đường đi giữa các máy con và HVA server. Điều này cũng khiến cho việc ứng dụng các "matching pattern" để xử lý các cú "x-flash" (có và không không có trên header kia) cần được cụ thể hơn và có biên độ rộng hơn.
+
+Hai ngày sau khi bài "ký sự" mới nhất được đăng lên trên diễn đàn HVA, một đợt tấn công mới đã tiếp tục xảy ra. Lần này, 100% các gói tin "đen tối" đi vào chứa các cú POST có nội dung sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>POST / HTTP/1.1
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 719
+Accept-Encoding: gzip, deflate
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; SV1&#41;
+Host: www.hvaonline.net
+Connection: Keep-Alive
+Cache-Control: no-cache
+
+total=8&Submit=Submit&attack=1&url1=http%3A%2F%2Fwww%2Ehvaonline%2Enet&typ=&url2=http%3A%2F%2Fwww%2Ehvaonline%2Enet&url3
+=http%3A%2F%2Fwww%2Ehvaonline%2Enet&cena%5Fdo=&location=&wojewodztwo=0&catid=%40&custom%5Ffield%5F1=%40&submit%
+5Fsearch=Search&submit%5Ffcheck=1&email=cakhuc%5Ftinhyeu%40yahoo%2Ecom&s=&do=emailpassword&url=http%3A%2F%2Fwww%2Eqvfc%
+2Ecom%2Fforums%2Flogin%2Ephp&reg%5Fusername=hvaonline%40hvaonline%2Enet&reg%5Fpassword=trieutranduc%40hvaonline%
+2Enet&username=admin&oldpsd=Casanova&emaila=trieutranduc%40hvaonline%2Enet&act=Search&CODE=show&searchid=
+8842deef29382aa4339b084489437347&search%5Fin=posts&result%5Ftype=topics&highlite=&referer=http%3A%2F%2Fhvaonline%
+2Enet&idx=&PassWord=hacker&CookieDate=1</pre>
+		</div>
+Decode đoạn payload trở thành thế này:
+<b>
+total=8&Submit=Submit&attack=1&url1=http://www.hvaonline.net&typ=&url2=http://www.hvaonline.net&url3
+=http://www.hvaonline.net&cena_do=&location=&wojewodztwo=0&catid=@&custom_field_1=@&submit_search=Search&submit_fcheck=1
+&email=cakhuc_tinhyeu@yahoo.com&s=&do=emailpassword&url=http://www.qvfc.com/forums/login.php&reg_username=hvaonline@
+hvaonline.net&reg_password=trieutranduc@hvaonline.net&username=admin&oldpsd=Casanova&emaila=trieutranduc@hvaonline.net
+&act=Search&CODE=show&searchid=8842deef29382aa4339b084489437347
+&search_in=posts&result_type=topics&highlite=&referer=http://hvaonline.net&idx=&PassWord=hacker&CookieDate=1
+</b>
+
+Dường như "nhóm" tấn công HVA không hiểu nổi những điểm tôi đã đưa ra trong đoạn kết của bài ký sự lần trước, hoặc họ cố tình làm ngơ nó, hoặc muốn xác nhận điều tôi đưa ra có giá trị hay không. Từ các thông tin được lưu trên HVA, tôi có thể minh hoạ cho bạn một số chi tiết lý thú như sau:
+
+- ngày thứ nhất của đợt tấn công mới nhất này, số lượng các gói tin "đen tối" ở dạng x-flash bị huỷ, cản, cho phép, đi vào black hole.... có tổng số là <b>2.735Gb.</b>
+
+- ngày thứ hai, con số này tăng lên thành <b>3.557Gb</b>
+
+- ngày thứ ba, con số này giảm xuống còn <b>1.78Gb</b>
+
+Những thông tin sau không nhằm mục đích minh hoạ tác hại đến máy chủ HVA mà để nhấn mạnh độ phí phạm băng thông của trò chơi quái gở này. Con số <b>3.557Gb</b> cho một ngày tương đương (hoặc hơn) mức ấn định bình thường của một web site ở dạng dịch vụ host ("share hosting") cho một tháng. Nếu bạn tò mò thì tôi xin tiết lộ rằng trong lúc HVA bị DoS cao điểm nhất, server load chưa bao giờ lên quá giới hạn 1.0.
+
+Ngay trong lúc HVA "bị" DoS cao điểm nhất, tôi nhờ JAL thử liên hệ một số thành viên ở VN để hỏi thăm tình hình truy cập vào HVA nhanh, chậm thế nào. Tôi được biết hầu hết các thành viên dùng VDC và FPT ít nhiều bị ảnh hưởng vì gateway đi ra ngoài (để đến HVA tràn ngập những gói tin dành tấn công HVA). Để phần nào giải quyết tình trạng này, tôi quyết định mở rộng thêm giới hạn "connection limit" gấp đôi số lượng mặc định. Số lượng mặc định được hình thành qua nhiều phân tích mức độ truy cập hợp lệ ở mức bình thường đến HVA; kết quả tìm được nhân 3 lần (để trừ hao trường hợp các gói tin bị hủy và cần được gởi lại - nếu có). Sau thay đổi này, tôi nhận được hồi báo từ nhiều thành viên cho biết tình trạng truy cập hơi chậm hơn bình thường một tí và chấp nhận được.
+
+Liên tục trong ba ngày, tôi thâu thập được khá nhiều thông tin lý thú. Ví dụ, có một host (có lẽ đây là một proxy server) đi từ thư viện địa phương của một thị trấn thuộc tiểu bang California, host này liên tục gởi các gói tin tấn công HVA suốt 8 giờ đồng hồ. Đôi lúc, tôi chột dạ và cho rằng đây là một hệ thống "DoS" tự động. Tuy vậy, sau khi lọc và hình thành các thông tin cụ thể cho host này, tôi lại tin rằng các gói tin đi từ host này là do nhiều người dùng bởi vì độ gián đọan giữa các đợt packet gởi đi mang nặng "tính người".
+
+Tôi cũng thấy có rất nhiều thông tin lý thú khác. Ví dụ, độ gia giảm của các gói tin tấn công HVA tùy thuộc vào múi giờ. Có những gói tin đi từ Hoa Kỳ, Canada, rồi từ Bắc Âu, từ Đông Âu, xuất phát từ Nga, từ Trung Quốc và rồi từ các nước Đông Nam Á như Mã Lai, Nam Dương. Các gói tin xuất phát từ Úc, Tân Tây Lan.... Nếu tính theo múi giờ, thời gian cao điểm của mỗi vị trí này thường xảy vào ban đêm. Điều này cũng dễ hiểu nhỉ? :)
+
+Cuối ngày thứ 3, các cú POST ở trên giảm dần và tắt hẳn. "Chủ nhân" của các trận DoS này nghĩ gì? tôi không rõ nhưng tôi biết chắc một điều, "chủ nhân" này không mấy vui thích vì chẳng thấy được kết quả gì cho rõ ràng. Sáng nay, tôi "bắt" được một đợt POST mới, rất thưa thớt và không đáng kể. Chúng có payload như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>POST /forum/index.php HTTP/1.1
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 697
+Accept-Encoding: gzip, deflate
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; SV1; &#40;R1 1.5&#41;; .NET CLR 1.0.3705&#41;
+Host: hvaonline.net
+Connection: Keep-Alive
+Cache-Control: no-cache
+
+total=506&Submit=Submit&attack=1&url1=http%3A%2F%2Fhvaonline%2Enet%2Fforum%2Findex%2Ephp&url2=http%3A%2F%2Fhvaonline%2Enet%
+2Fforum%2Findex%2Ephp&url3=&cena%5Fdo=&location=&wojewodztwo=0&typ=&catid=%40&custom%5Ffield%5F1=%40&submit%
+5Fsearch=Search&submit%5Ffcheck=1&email=cailon%40concac%2Ecom&s=&do=emailpassword&url=http%3A%2F%2Fhvaonline%2Enet%2Fforum%
+2Flogin%2Ephp&reg%5Fusername=support%40hvaonline%2Enet&reg%5Fpassword=concac%40cailon%
+2Enet&username=admin&oldpsd=Casanova&emaila=trieutranduc%40hvaonline%2Enet&act=Search&CODE=show&searchid=
+8842deef29382aa4339b084489437347&search%5Fin=posts&result%5Ftype=topics&highlite=&referer=http%3A%2F%2Fhvaonline%
+2Enet&idx=&PassWord=hacker&CookieDate=1</pre>
+		</div>
+Bạn thấy payload ở trên và payload này có những gì khác nhau? Chúng khác nhau đấy và.... "cay" hơn đoạn trước. Bạn thử decode payload này xem có gì thú vị? . Bạn đừng hiểu lầm những trận "x-flash" kia là thú vị, ý tôi cái "thú vị" ở đây chỉ nằm trong những payload có phần nào phảng phất trạng thái tinh thần của "chủ nhân" của chúng. 
+
+Tôi e rằng những trận tấn công "x-flash" này vẫn sẽ còn tiếp diễn. Hết GET sẽ sang POST, hết POST trở lại GET. Nên chăng tôi than thở rằng <i>"chống đỡ" những trận DoS này vất vả quá</i> để tay "chủ nhân" "động lòng" từ bỏ trò chơi quái đản này? Nên chăng tôi "xúc thêm" để còn những bài "ký sự" khác tiếp tục? Tôi e rằng, chừng nào "chủ nhân" của các cú "x-flash" kia còn chưa hiểu nổi chuyện gì đã xảy ra với HVA trong mấy ngày qua (tôi chắc rằng "chủ nhân" này đã vào thử HVA để xem tình hình trong suốt thời gian này), chừng ấy những trận DoS sẽ vẫn còn tiếp diễn. Biết đâu chừng, HVA sẽ phải tiếp tục đón nhận những trận DoS này và nó sẽ trở thành một chuyện bình thường cho đến khi nào người "chủ nhân" ấy thực sự... grown up :). 
+
+<i>Các bạn có thể theo dõi tiếp phần 19 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/510.hva</span> 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/508.hva#1499</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/508.hva#1499</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 15:06:42]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+	</channel>
+</rss>

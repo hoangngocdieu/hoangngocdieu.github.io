@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi chạy web application từ Eclipse"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi chạy web application từ Eclipse"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi chạy web application từ Eclipse</title>
+				<description><![CDATA[ Em chào các anh.
+
+Sau khi làm cho con Tomcat chạy được trên ubuntu thì bây giờ em lại gặp lỗi khác khi thử chạy ứng dụng web từ eclipse.
+
+java.security.ProviderException: Could not initialize NSS
+	at sun.security.pkcs11.SunPKCS11.&lt;init&gt;(SunPKCS11.java:201)
+	at sun.security.pkcs11.SunPKCS11.&lt;init&gt;(SunPKCS11.java:103)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:532)
+	at sun.security.jca.ProviderConfig$3.run(ProviderConfig.java:262)
+	at sun.security.jca.ProviderConfig$3.run(ProviderConfig.java:244)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at sun.security.jca.ProviderConfig.doLoadProvider(ProviderConfig.java:244)
+	at sun.security.jca.ProviderConfig.getProvider(ProviderConfig.java:224)
+	at sun.security.jca.ProviderList.loadAll(ProviderList.java:281)
+	at sun.security.jca.ProviderList.removeInvalid(ProviderList.java:298)
+	at sun.security.jca.Providers.getFullProviderList(Providers.java:170)
+	at java.security.Security.getProviders(Security.java:457)
+	at org.apache.catalina.core.JreMemoryLeakPreventionListener.lifecycleEvent(JreMemoryLeakPreventionListener.java:294)
+	at org.apache.catalina.util.LifecycleSupport.fireLifecycleEvent(LifecycleSupport.java:119)
+	at org.apache.catalina.util.LifecycleBase.fireLifecycleEvent(LifecycleBase.java:89)
+	at org.apache.catalina.util.LifecycleBase.setStateInternal(LifecycleBase.java:379)
+	at org.apache.catalina.util.LifecycleBase.init(LifecycleBase.java:98)
+	at org.apache.catalina.startup.Catalina.load(Catalina.java:572)
+	at org.apache.catalina.startup.Catalina.load(Catalina.java:595)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:616)
+	at org.apache.catalina.startup.Bootstrap.load(Bootstrap.java:262)
+	at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:430)
+Caused by: java.io.IOException: NSS initialization failed
+	at sun.security.pkcs11.Secmod.initialize(Secmod.java:216)
+	at sun.security.pkcs11.SunPKCS11.&lt;init&gt;(SunPKCS11.java:197)
+	... 27 more
+Sep 2, 2012 10:06:30 PM org.apache.catalina.startup.Catalina start
+SEVERE: Catalina.start: 
+org.apache.catalina.LifecycleException: An invalid Lifecycle transition was attempted ([before_start]) for component [StandardServer[8005]] in state [INITIALIZING]
+	at org.apache.catalina.util.LifecycleBase.invalidTransition(LifecycleBase.java:386)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:139)
+	at org.apache.catalina.startup.Catalina.start(Catalina.java:620)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:616)
+	at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:303)
+	at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:431)
+Sep 2, 2012 10:06:30 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 1 ms
+
+
+Tomcat vẫn hoạt động đúng vì em vẫn start/stop Tomcat bình thường và khi export web application thì web application này chạy được trên Tomcat. Em nghĩ lỗi là do cái nss kia. Ban đầu em thử cài đặt libnss3 từ repositories nhưng không ăn thua. Em đã lại thử tải bản nss mới nhất download từ đây: <span class="link"> https://developer.mozilla.org/en-US/docs/NSS/NSS_3.12.4_release_notes?wwwectlocale=en-US&wwwectslug=NSS_3.12.4_release_notes</span> và sau đó cài đặt theo chỉ dẫn ở đây: <span class="link"> https://developer.mozilla.org/en-US/docs/NSS_reference/Building_and_installing_NSS/Build_instructions</span>. Việc cài đặt không có lỗi gì cả.
+
+Em cũng thử chỉnh nss.cfg theo hướng dẫn của trang này:<span class="link"> <span class="link"> http://www.unnaki.com/2011/07/libnss3-so-error-on-debian-wheezy/</span></span>
+Hiện giờ file nss.cfg của em như sau:
+name = NSS
+nssLibraryDirectory = /usr/lib/i386-linux-gnu
+nssDbMode = noDb
+attributes = compatibility
+
+Thấy nss.cfg nằm trong đường dẫn /etc/java-6-openjdk/security, em đoán hay là do cái java openjdk. Em bèn upgrade cái này lên, cũng lâu phết, mất gần 20 phút.
+ 
+Một số thông tin bổ sung khác như sau:
+Eclipse dùng bản juno
+Ubuntu 11.04 natty
+Linux 2.6.38-8-generic
+nss 3.12.4
+
+Tất cả những cố gắng trên đều không ăn thua. Em bó tay rồi. Các anh giúp em cái được không ạ. Sao mà sử dụng phần mềm trên ubuntu nó khó thế :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43305.hva#268989</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43305.hva#268989</link>
+				<pubDate><![CDATA[Sun, 2 Sep 2012 10:44:58]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Lỗi chạy web application từ Eclipse</title>
+				<description><![CDATA[ Ủa mà dùng tomcat để chạy gì mà testing trên eclipse vậy?
+
+Lỗi này là mình đoán do thằng tomcat ko tìm thấy được thư viện của nss để chạy nên khi catalina startup nó không load đưoc bạn thử kt lại đường dẫn chính xác của nss.
+
+Mình thấy bạn đưa thông tin kernel nhưng lại không thấy đưa stucture của os nhỉ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43305.hva#269040</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43305.hva#269040</link>
+				<pubDate><![CDATA[Tue, 4 Sep 2012 09:33:40]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Lỗi chạy web application từ Eclipse</title>
+				<description><![CDATA[ À tớ lập trình web. Tớ thường chạy web project ngay từ trong Eclipse cho tiện thôi nhưng bây giờ thì lại đang bị lỗi trên. Tớ có thể tránh lỗi này bằng cách export web project ra file war rồi copy vào thư mục webapps của Tomcat.  
+
+Tớ cũng thử chỉnh đường dẫn của nss qua /etc/java-6-openjdk/security/nss.cfg rồi. Đường dẫn sai thì nó bị lỗi khác cơ.
+
+Tớ không hiểu OS structure mà bạn nói là thông tin gì ? Xem thông tin đó như thế nào ? Tớ vừa mới nhập môn Ubuntu thôi. Chẳng biết thông tin gì cần nên đưa hết linux kernel, số phiên bản... lên.
+
+À lỗi tương tự cũng gặp phải khi khởi động apache directory server. Trong trường hợp này thì tớ không tìm được giải pháp thay thế. Bế tắc mấy ngày nên tớ đã cài lại Ubuntu rồi :(
+
+Cám ơn bạn đã góp ý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43305.hva#269103</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43305.hva#269103</link>
+				<pubDate><![CDATA[Thu, 6 Sep 2012 05:08:34]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Defense::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Bảo mật web server Apache với mod Security - Phần 3.2 <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/38694.hva#237063" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: tanviet12 - Translator:  - Entry Date: 21/05/2011 03:38:35" title="Author: tanviet12 - Translator:  - Entry Date: 21/05/2011 03:38:35"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><font color='orange'><b><font size='+1'>3.6.  TẤN CÔNG DIRECTORY TRAVERSAL</font></b></font><br/> <br/> Thông thường, web server sẽ từ chối client truy cập vào các tài nguyên không nằm trong thư mục gốc của web server. <br/> <br/> Ví dụ: Nếu thư mục gốc của web server là<font color='yellow'> /home/www</font>, client yêu cầu truy cập vào tài nguyên <font color='yellow'>/etc/passwd  </font>thì sẽ bị web server từ chối vì tài nguyên trên không nằm trong <font color='yellow'>/home/www</font>. Tuy nhiên, có một hình thức tấn công có thể truy cập vào tài nguyên này mà không cần sử dụng một công cụ nào, chỉ đơn thuần thao tác với các biến với <font color='yellow'>../ </font>(dot-dot-slash) để thực hiện liên kết mềm (symbolic) truy cập đến các file nằm trong thư mục cha của thư mục hiện hành. Đó là tấn công Directory Traversal.<br/> <br/> Dưới đây là một ví dụ cụ thể về loại hình tấn công này.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>http://example.com/getpage.php?page=../../../etc/passwd</pre><br/> 		</div><br/> <br/> Như ta thấy trên URI, thực hiện chèn biến<font color='yellow'> ../ </font>ba lần để liên kết mềm về thư mục gốc<font color='yellow'> /</font> . Sau đó thêm vào etc/passwd để tạo thành request đến thư mục /etc/passwd. Nếu không cấu hình cản lọc để request này, nội dung của file <font color='yellow'>/etc/passwd</font> sẽ được hiển thị trên trình duyệt của hacker. <br/> Hacker có thể không chèn trực tiếp biến <font color='yellow'>../</font> mà thực hiện chèn các biến đã được mã hoá như <font color='yellow'>%2e%2e%2f</font>, khi giải mã thì nội dung vẫn là <font color='yellow'>../</font><br/> <br/> Dưới dây là danh sách các chuỗi chúng ta cần chặn:<br/> <br/> -	../<br/> -	..%2f<br/> -	%2e%2e/<br/> -	%2e%2e%2f<br/> -	%2e./<br/> <br/> Với ModSecurity, chỉ cần sử dụng chức năng chuyển đổi <font color='yellow'>t:urlDecode </font>để chuyển tất cả chuỗi được mã hoá thành giá trị nguyên thuỷ của nó. Dưới đây là rule để chặn hình thức tấn công này:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SecRule REQUEST_URI "../" "t:urlDecode,deny"</pre><br/> 		</div><br/> <br/> <font color='orange'><b><font size='+1'>3.7.  TẤN CÔNG SQL INJECTION</font></b></font><br/> <b><font color='orange'>3.7.1. Giới thiệu</font></b><br/> <br/> Các cuộc tấn công SQL injection có thể xảy ra nếu hacker cung cấp dữ liệu cho ứng dụng web mà các dữ liệu này không được cản lọc, làm sai lệch các câu lệnh SQL khi thực thi. Điển hình là nhập vào các chuỗi đặc biệt để bỏ qua bước kiểm tra mật khẩu của người dùng và làm cho đăng nhập hợp lệ:<br/> <br/> Ví dụ, chúng ta xét câu lệnh truy vấn khi thực hiện đăng nhập dưới đây:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT * FROM user WHERE username = '%s' AND password = '%s';</pre><br/> 		</div><br/> <br/> Với truy vấn trên, nếu hacker muốn đăng nhập vào với tài khoản admin mà chưa biết mật khẩu, hacker sẽ thực hiện nhập tên đăng nhập là admin và mật khẩu là <font color='yellow'>‘ OR  ‘1’ = ‘1 --</font> Khi thực hiện truy vấn, thông tin đăng nhập được đưa vào sẽ trở thành:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT * FROM user WHERE username = 'admin' AND password = '’ OR ‘1’ = ‘1’;</pre><br/> 		</div><br/> <br/> Câu lệnh trên có nghĩa: Truy vấn lấy thông tin tất cả các trường từ bảng user với điều kiện trường username có giá trị là admin và mật khẩu là trống <font color='yellow'>‘’ </font>hoặc <font color='yellow'>1 = 1.</font> Mà <font color='yellow'>1 = 1 </font>là luôn đúng nên mặc dù mật khẩu không đúng, câu lệnh trên vẫn được thực thi và truy vấn lấy thông tin user admin thành công. Đăng nhập sẽ được chấp nhận.<br/> <br/> <font color='orange'><b>3.7.2. Các hình thức tấn công SQL injection thông thường</b></font><br/> <font color='orange'><b>3.7.2.1. Lấy dữ liệu từ nhiều bảng với UNION</b></font><br/> <br/> Câu lệnh SQL UNION có thể được sử dụng để lấy dữ liệu từ hai bảng khác nhau. Ví dụ: Nếu có một bảng có tên cooking_recipes và bảng khác có tên <font color='yellow'>ser_credentials</font>, lệnh SQL sau sẽ lấy dữ liệu từ cả hai bảng:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT dish_name FROM cooking_recipe UNION SELECT username, password FROM user_credentials;</pre><br/> 		</div><br/> <br/> Một câu lệnh SQL tương tự là <font color='yellow'>UNION ALL</font>, hoạt động gần giống như UNION. Sự khác biệt duy nhất là UNION ALL sẽ không loại bỏ các dòng bị trùng lặp trong kết quả trả về.<br/> <br/> <font color='orange'><b>3.7.2.2. Nhiều truy vấn trong một lời gọi</b></font><br/> <br/> Nếu SQL engine cho phép nhiều câu lệnh SQL trong một truy vấn SQL đơn, ta sẽ thấy nguy cơ bảo mật xuất hiện. Ví dụ sau có thể giải thích nguy cơ này.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT * FROM products WHERE id = %d;</pre><br/> 		</div><br/> <br/> Nếu hacker cung cấp ID bằng một đoạn lệnh <font color='yellow'>1;DROP TABLE products;</font>  câu lệnh SQL sẽ trở thành:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT * FROM products WHERE id = 1; DROP TABLE products;</pre><br/> 		</div><br/> <br/> Khi câu lệnh này được thực hiện, đầu tiên nó sẽ truy vấn tất cả các trường trong bảng products có id bằng 1, sau đó bảng products sẽ bị xoá.<br/> <br/> <b><font color='orange'>3.7.2.3. Đọc nội dung của một file</font></b><br/> <br/> MySQL có thể được sử dụng để đọc nội dung của một file trên hệ thống bằng cách sử dụng hàm LOAD_FILE(). Ví dụ:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT LOAD_FILE&#40;“/etc/passwd”&#41;;</pre><br/> 		</div><br/> <br/> Lệnh sẽ trả về nội dung của file /etc/passwd nếu tiến trình MySQL có quyền truy cập.<br/> <br/> <font color='orange'><b>3.7.2.4. Ghi dữ liệu vào tập tin</b></font><br/> <br/> MySQL cũng hỗ trợ lệnh ghi dữ liệu vào tập tin với <font color='yellow'>OUTFILE</font>. Rất nguy hiểm nếu hacker lợi dụng và khai thác được lệnh này, bởi thực thi OUTFILE không những ảnh hưởng đến cơ sở dữ liệu mà còn ảnh gây hưởng đến tập tin hệ thống.<br/> <br/> Dưới đây là một ví dụ đơn giản sử dụng MySQL để ghi dữ liệu vào file text.txt<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SELECT "vi du ghi du lieu" INTO OUTFILE "test.txt";</pre><br/> 		</div><br/> <br/> <font color='orange'><b>3.7.3. Ngăn chặn tấn công SQL injection</b></font><br/> <br/> Có ba bước quan trọng để ngăn chặn tấn công SQL injection:<br/> <br/> 1. Làm “trong sáng” câu lệnh SQL trong ứng dụng web.<br/> 2. Lọc dữ liệu người dùng đưa lên.<br/> 3. Sử dụng ModSecurity để chặn mã SQL injection khi hacker khai thác lỗi ứng dụng web.<br/> <br/> Trong ba bước trên, quan trọng nhất vẫn là bước đầu tiên. Sử dụng các câu lệnh SQL “trong sáng” nghĩa là sử dụng các câu lệnh chuẩn, không không gây ra lỗ hổng SQL injection cho ứng dụng web.<br/> Bước thứ hai là đảm bảo tất cả dữ liệu người dùng cung cấp cho truy vấn SQL đểu được cản lọc, tránh bị chèn vào các đoạn mã nguy hiểm như dấu ngoặc đơn, dấu nháy đơn… Nếu ứng dụng web viết bằng PHP, có thể sử dụng các <font color='yellow'>mysql_real_escape_string()</font> để cản lọc. <br/> <br/> Và cuối cùng, sử dụng ModSecurity để ngăn chặn triệt để tấn công SQL injection. <br/> <br/> Dưới đây là bảng liệt kê danh sách các lệnh thường được sử dụng trong tấn công SQL injection cùng với các biểu thức chính quy dùng để ngăn chặn. <br/> <br/> <br><br/> 			<div align="center" class="limitview"><img src='http://i483.photobucket.com/albums/rr193/buitanviet/shareforum/phan3/6.jpg' border="0"  /></div><br/> Bảng  3.3 Các lệnh thường được sử dụng trong tấn công SQL injection<br/> <br/> Ví dụ về rule để chặn tấn công SQL injection ghi dữ liệu vào tập tin.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SecRule ARGS "into\s+outfile" "t:lowercase,deny,msg:'SQL Injection'"</pre><br/> 		</div><br/> <br/> Cú pháp <font color='yellow'>\s+</font> cho phép phát hiện tất các hình thức nhập vào của ký tự trắng (space) ví dụ như  <font color='yellow'>INTO%20%20OUTFILE</font>.<br/> <br/> <font size='+1'><b><font color='orange'>3.8.  TẤN CÔNG BRUTE FORCE</font></b></font><br/> <br/> Với tấn công Brute Force, hacker thực hiện đoán các thông tin đăng nhập như tên người dùng, mật khẩu, email… và thực hiện đăng nhập liên tục đến khi nào thông tin đăng nhập là đúng. Hầu hết người dùng đều sử dụng thông tin đăng nhập giống nhau trên tất cả các website mà họ thường đăng nhập, dẫn đến tài khoản của họ bị xâm nhập trên hàng loạt các website khi thông tin đăng nhập bị lộ bởi một website khác.<br/> <br/> Cách tốt nhất để ngăn chặn hình thức tấn công này là giới hạn số lần đăng nhập không đúng. Ví dụ nếu người sử dụng đăng nhập không đúng quá 3 lần, thực hiện khoá đăng nhập của người này trong 5 phút.<br/> <br/> Dưới đây là các rule của ModSecurity cho phép chúng ta thực hiện điều này<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre># Khoa dang nhap sau 3 lan dang nhap khong thanh cong<br/> #<br/> &lt;LocationMatch ^/login&gt;<br/> # Khoi tao collection ip<br/> SecAction "initcol:ip=%{REMOTE_ADDR},pass,nolog"<br/> # Phat hien dang nhap khong thanh cong<br/> SecRule RESPONSE_BODY "Username does not exist" "phase:4,pass,setvar:<br/> ip.failed_logins=+1,expirevar:ip.failed_logins=300"<br/> # Khoa dang nhap khi so lan dang nhap khong thanh cong bang 3<br/> SecRule IP:FAILED_LOGINS "@gt 3" deny<br/> &lt;/Location&gt;</pre><br/> 		</div><br/> <br/> Các rule trên dựa vào đặt điểm trả về của website khi người truy cập đăng nhập không thành công: <font color='yellow'>Username does not exist</font><br/> <br/> Các rule trên sẽ khởi tạo collection IP và tăng giá trị biến <font color='yellow'>ip.failed_login</font> lên một đơn vị sau mỗi lần đăng nhập không thành công. Action <font color='yellow'>expirevar</font> sẽ thiết lập biến ip.failed_login về 0 sau 5 phút. Vì vậy, khi biến <font color='yellow'>ip.failed</font> lớn hơn hoặc bằng 3, rule cuối sẽ khoá đăng nhập của người dùng trong 5 phút.<br/> <br/> Hoặc chúng ta có thể thực hiện trì hoãn (hay dừng) request của người dùng khi số lần đăng nhập sai vượt quá quy định. Do đó, không cần phải từ chối truy cập như các rule được nêu ở trên. Sau đây là rule thực hiện điều trên:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre># tri hoan request 3 giay sau 3 lan dang nhap khong thanh cong<br/> &lt;LocationMatch ^/login&gt;<br/> SecAction "initcol:ip=%{REMOTE_ADDR},pass,nolog"<br/> SecRule RESPONSE_BODY "Username does not exist" "phase:4,pass,setvar:<br/> ip.failed_logins=+1,expirevar:ip.failed_logins=10"<br/> SecRule IP:FAILED_LOGINS "@gt 3" "phase:4,allow,pause:3000"<br/> &lt;/Location&gt;</pre><br/> 		</div><br/> <br/> Thời gian trì hoãn được tính bằng mili giây, các rule trên sẽ trì hoãn response trong 3 giây khi số lần truy cập không thành công lớn  hơn hoặc bằng 3.<br/> <br/> <font size='+1'><b><font color='orange'>3.9.  DIRECTORY INDEXING</font></b></font><br/> <br/> Khi người sử dụng request đến URL như<span class="link"> http://example.com,</span> URL này không request cụ thể đến một tập tin nào trên web server (ví dụ<span class="link"> http://example.com/page.html</span> request cụ thể đến <font color='yellow'>page.html</font>), vì vậy Apache sẽ tìm đọc tập tin theo cấu hình DirectoryIndex (thường là index.html, index.php …). Nếu không có tập tin nào có trong danh sách tập tin đã được cấu hình trong DirectoryIndex., Apache xem xét tuỳ chọn Indexes có được kích hoạt hay không. Tuỳ chọn này có thể được kích hoạt theo cách sau<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>&lt;Directory /home/www/rangdong1&gt;<br/> Options +Indexes<br/> &lt;/Directory&gt;</pre><br/> 		</div><br/> <br/> Nếu cấu hình tuỳ chọn Indexes cũng không được tìm thấy hoặc không kích hoạt. Apache sẽ liệt kê ra tất cả các thư mục và tập tin hiển thị cho người dùng. <br/>  <br/> <br><br/> 			<div align="center" class="limitview"><img src='http://i483.photobucket.com/albums/rr193/buitanviet/shareforum/phan3/7.jpg' border="0"  /></div><br/> Hình  3.4 Liệt kê thư mục và tập tin với Indexes<br/> <br/> Với việc liệt kê ra danh sách các thư mục, tập tin sẽ làm cho người dùng có thể xem được cấu trúc của mã nguồn website, có thể tải về các tập tin không được phép…Vì vậy, chúng ta có thể tắt indexes bằng cách khai báo trong httpd.conf:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>&lt;Directory /home/www&gt;<br/> Options -Indexes<br/> &lt;/Directory&gt;</pre><br/> 		</div><br/> <br/> Hoặc cũng có thể tắt indexes bằng cách cấu hình không cho chạy  module mod_autoindex.so <br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre># Disable directory indexing<br/> # LoadModule autoindex_module modules/mod_autoindex.so</pre><br/> 		</div><br/> <br/> Lưu ý: Một số module của Apache yêu cầu mod_autoindex.so hoạt động, vì vây nếu tắt module này có thể dẫn đến  Apache không khởi động được.<br/> <br/> Để đảm bảo chắc chắc rằng người  dùng không thể  liệt kê được các file và thư mục. Chúng ta có thể sử dụng ModSecurity với rule:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>SecRule REQUEST_URI "/$" "phase:4,deny,chain,log, msg:'Directory index returned'"<br/> SecRule RESPONSE_BODY "&lt;h1&gt;Index of /"</pre><br/> 		</div><br/> <br/> Khi người dùng thực hiện liệt kê file, thư mục. Apache sẽ trả về response body có chứa <font color='yellow'>&lt;h1&gt;Index of /</font>, vì vậy rule trên sẽ chặn lại và ghi log với nội dung Directory index returned<br/> <br/> <b>Kết thúc chủ đề <font color='orange'>Bào mật web server Apache với ModSecurity</font></b><br/> <br/> Cảm ơn đã quan tâm theo dõi.. <img src="/hvaonline/images/smilies/8f173d0eaffc4b90c0c0361b8f37cc17.gif" border="0" alt="smilie" align="absbottom"></div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/237063.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/237029.hva">Bảo mật web server Apache với mod Security - Phần 1</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/237042.hva">Bảo mật web server Apache với mod Security - Phần 2.1</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/237061.hva">Bảo mật web server Apache với mod Security - Phần 3.1</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/237044.hva">Bảo mật web server Apache với mod Security - Phần 2.2</a></div>
+									<div class="gen"><b>Bảo mật web server Apache với mod Security - Phần 3.2</b></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/38694.hva#237063" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

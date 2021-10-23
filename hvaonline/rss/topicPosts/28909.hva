@@ -1,0 +1,1191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Các cách xác thực người dùng bằng mật khẩu "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Các cách xác thực người dùng bằng mật khẩu "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Chào các bạn,
+
+Trong topic của MrNothing (thật ra topic này cũng giống topic kia thôi, nhưng mình viết lại cho nó dễ nắm bắt hơn), mình có nói bài toán mà MrNothing đặt ra là rất phổ biến, tự vì nó là một dạng tổng quát hơn của bài toán làm thế nào xác thực được người dùng bằng mật khẩu.
+
+Mình thấy bây giờ mọi người nhào nhào làm two-factor authentication, rồi multi-factor authentication, nhưng hình như cái cách xác thực đơn giản nhất là xác thực bằng mật khẩu vẫn chưa được làm đúng cách. 
+
+Ví dụ, site HVAOnline.net này nha (mình chỉ đưa ra ví dụ cho nó dễ thấy thôi, chứ một website như HVAOnline thì kô cần phải làm cái gì khác hơn). Có hai form xác thực, một là xuyên qua HTTP, hai là xuyên qua HTTPS. Mình không quan tâm đến tầng transportation ở đây, bởi mình đưa ra một yêu cầu là: luôn có người theo dõi trên đường truyền. Nói cách khác, protocol phải an toàn bất kể kênh truyền như thế nào. Nên tính ra thì HVAOnline chỉ có một protocol như sau:
+
+<p></p>
+		<cite class="blockquote">Protocol 1 wrote:</cite><br>
+		<blockquote>
+
+1. User gửi (ID, P) cho Host, trong đó P là plaintext password của User
+
+2. Căn cứ vào ID, Host lấy từ database ra A, là một biến thể của password của User và salt, là một chuỗi ngẫu nhiên gắn liền với ID của user. Host thực hiện một phép tính trên P (thông thường là B = H(P, salt), trong đó H là một hàm băm một chiều nào đó) để tính ra B, rồi so sánh A với B, nếu bằng nhau thì tiếp theo bước 3, không thì tiếp theo bước 4.
+
+3. User được Host xác thực và cấp cho một session_id.
+
+4. Host thông báo lỗi cho User, và yêu cầu làm lại từ bước 1.
+
+&nbsp;
+		</blockquote>
+
+Protocol này có những vấn đề gì? Mình thử làm xem nha: vấn đề lớn nhất là plaintext password của User bị truyền đi mà không có bất kỳ sự bảo vệ nào. Nhiều bạn sẽ tranh luận là nếu dùng HTTPS thì sẽ không sao, nhưng như mình đã nói ngay từ đầu, giả thuyết đường truyền luôn có người theo dõi là một giả thuyết cần thiết trong môi trường Internet nhiều nguy cơ và phức tạp như bây giờ. Ví dụ như vừa rồi, ở BlackHat có người làm một cái demo ssl-mitm.
+
+Câu hỏi là: sửa protocol của HVAOnline lại thế nào để giải quyết được vấn đề plaintext password này?
+
+Mình thử revise lại một chút, ra một protocol như sau:
+
+<p></p>
+		<cite class="blockquote">Protocol 2 wrote:</cite><br>
+		<blockquote>
+
+1. User gửi ID cho Host.
+
+2. Host lấy từ database ra salt của ID, và gửi lại cho User.
+
+3. User thực hiện A = H(P, salt), rồi gửi A cho Host.
+
+4. Host lấy từ database ra B (cũng là B được tính như ở protocol 1) so sánh A và B, nếu bằng nhau thì tiếp tục bước 5, không bằng thì tiếp tục bước 6.
+
+5. User được Host xác thực và cấp cho một session_id.
+
+6. Host thông báo lỗi cho User, và yêu cầu làm lại từ bước 1.
+
+&nbsp;
+		</blockquote>
+
+Protocol 2 này giải quyết được (một phần) vấn đề plaintext password được truyền trên đường truyền. Và trên Internet cũng có nhiều website thưc hiện cái protocol 2 này để xác thực người dùng. 
+
+Câu hỏi là: protocol 2 này có những vấn đề gì? 
+
+Mình cũng đưa ra đây lại protocol mà MrNothing đề xuất:
+
+<p></p>
+		<cite class="blockquote">Protocol 3 wrote:</cite><br>
+		<blockquote>
+
+1. User gửi ID, C1 = E(P, nonce1) cho Host, trong đó P là mật khẩu của User, nonce là unique message number, thường là random, E(K, M) là symmetric cipher nhận key là K và plaintext là M.
+
+2. Host lấy từ database ra P của ID, rồi thực hiện nonce1' = D(P, C1). Host tính C2 = E(P, nonce1'||nonce2||session_key), trong đó || nghĩa là nối vào, nonce2 và session_key được Host tạo ra ngẫu nhiên. Host gửi lại C2 cho User.
+
+3. User thực hiện X = D(P, C2). Căn cứ vào thoả thuận trước về chiều dài của nonce, mà User sẽ cắt ra nonce1' từ X, rồi so sánh nonce1' với nonce1, nếu không bằng nhau, thì nhảy đến bước 6. Nếu bằng nhau, User sẽ cắt nonce2' và session_key' từ X ra, rồi thực hiện C3 = E(session_key', nonce2'). User gửi C3 lại cho Host.
+
+4. Host thực hiện C4 = E(session_key, nonce2), so sánh C4 và C3, nếu không bằng nhau thì nhảy đến bước 6, nếu bằng nhau thì nhảy đến bước 5.
+
+5. User được Host xác thực và cấp cho một session_id.
+
+6. Host thông báo lỗi cho User, và yêu cầu làm lại từ bước 1.
+
+&nbsp;
+		</blockquote>
+
+Câu hỏi vẫn là: Protocol 3 này có những vấn đề gì?
+
+Mời các bạn phân tích các protocol này cho vui. Hoặc là mô tả protocol mà bạn đang sử dụng để mọi người tham khảo, nhất là các bạn lập trình viên đó.
+
+PS: mặc dù đã có nhiều protocol hay hơn, nhưng mình nghĩ cứ từng bước đã, tìm hiểu những vấn đề của các protocol đang được bạn sử dụng, thì từ đó mới có thể xây dựng các protocl khác an toàn hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178192</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 04:42:44]]> GMT</pubDate>
+				<author><![CDATA[ choc_]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ protocol 2 thực chất chỉ khác protocol 1 ở chỗ hash được tính toán ở đâu, vì vậy nên không khá hơn protocol 1.
+
+protocol 3: có fresh key, secret key, entity authentication (mỗi bên đều khẳng định bên kia đang thực sự tham gia vào protocol), key confirmation (mỗi bên đều khẳng định bên kia biết được shared key), tuy nhiên không có mutual authentication (tức là đảm bảo mỗi bên đều biết bên kia là ai).
+
+Và một điểm quan trọng, cả 2 protocols này không thể áp dụng vào môi trường web được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178207</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178207</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 07:58:16]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Thanks choc_ :)
+
+Protocol 3: có ID của người gửi từ đầu rồi mà bác StarGhost. ID+ pass để xác thực người gửi (client). Người nào có đúng pass (server) mới gửi trả lại được nonce1. Nonce 1 xác thực người nhận server, Nonce 2 xác thực client.
+
+Điểm yếu của protocol 3 đó là lộ password nếu password yếu. Có thể bị vét cạn tìm ra pass!
+
+Protocol 2 dùng salt như kiểu challenge theo kiểu one time password.
+
+
+Tại sao 2 protocols đó không dùng được trong môi trường web. Môi trường đó đòi hỏi gì?
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178221</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 10:58:07]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Xét protocol 2:
+
+Cơ chế send session ID như thế nào? Bước 5 không clear. Có được mã hóa không.
+
+thử man in the middle cái:
+
+A---&gt; IDA               M -----------&gt; IDM      Server
+A &lt;-----salt A           M        &lt;---- salt M     Server
+
+A-----&gt; hash (PA,salt A)  M--&gt; hash (PM, salt M)    server.
+
+A           &lt;---session ID A-M ---&gt;   M      M &lt;------sesion ID M-server-----&gt; server.
+
+M có thể giả dạng server nếu như không có cơ chế chống replay attack.
+Ví dụ M gửi lại cho A cái salt A cũ. Nên có thêm timestamp.
+
+- Cơ chế gửi hash(PA, salt) cũng gặp lỗi như Protocol 3. Nếu password chọn là weak password, chỉ vài kí tự thì sẽ bị brute force. Nếu quá nhiều kí tự user sẽ ko nhớ nổi.
+
+Challenge kiểu này có thể thực hiện bằng phần mềm chạy trên điện thoại di động sinh ra hash(P, salt) chẳng hạn! Key sẽ được lưu trong điện thoại.
+
+
+Môi trường web phải chăng bác Starghost muốn nói đến SSL với certificate?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178222</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178222</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 11:11:40]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Mục tiêu của quá trình authentication trên là để lấy session_id. Nên nếu 2 protocols trên mà gửi session_id dạng plain-text thì ai kiểm soát đường truyền có thể dùng tiếp session_id này trong khi client chưa logout.
+
+Protocol 2: vẫn bị replay attack.
+
+@starghost: tớ chưa hiểu ở protocol 3 mà không có mutual authentication thì sẽ bị nguy cơ gì? Bên client và server xác lập sự tin cậy dựa trên một share secret (là password). Giả sử rằng password này không để bên thứ ba biết, thì protocol 3 đã đảm bảo an toàn rồi.
+
+PS: Web cũng dùng được chứ nhỉ? Tớ thấy AJAX có thể hỗ trợ cái này đấy chứ ?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178224</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178224</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 11:28:04]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Protocol 3 có vấn đề là phải lưu password plain-text ở phía host. Cái này hơi bị nguy nếu host đổ vỡ.
+
+Protocol tớ dùng như thế này:
+
+Protocol 4.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Host lưu trong database H_usr = H&#40;P || salt&#41; & salt.</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1. User gửi ID.
+
+2. Host sinh nonce, gửi cho client. nonce || salt.
+
+3. Client gửi lại X = H&#40; H&#40;P || salt&#41; || nonce&#41;.
+
+4. Host tính X1 = H&#40;H_usr || nonce&#41; và so sánh với X. Nếu giống nhau tiếp tục bước 5. Nếu sai chuyển sang bước 7.
+
+5. Host gửi cho user một session_id. M = E&#40;H_usr || nonce ,session_id&#41;. 
+
+6. User nhận được M, giải mã lấy ra session_id = D&#40; H&#40;P||salt&#41; || nonce, M&#41;.
+
+7. Host thông báo lỗi cho usr, yêu cầu làm lại.</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178226</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178226</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 11:50:49]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Xét protocol 4:  lưu dãy H_user+ salt thì có đổ vỡ không? Như nhau thôi. ai có P thì cũng sinh ra được dãy H(P||salt). Ai có H(P||salt) thì cũng xác thực được client.
+
+Nếu password yếu thì nguy cơ bị mất pass là cao. bị Brute Force. password bao nhiêu kí tự thì tạm chấp nhận được?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178229</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178229</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 12:07:37]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>Protocol 2 dùng salt như kiểu challenge theo kiểu one time password.&nbsp;
+		</blockquote>
+Salt chứ không phải nonce bạn ạ.
+
+<p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>@starghost: tớ chưa hiểu ở protocol 3 mà không có mutual authentication thì sẽ bị nguy cơ gì? Bên client và server xác lập sự tin cậy dựa trên một share secret (là password). Giả sử rằng password này không để bên thứ ba biết, thì protocol 3 đã đảm bảo an toàn rồi.&nbsp;
+		</blockquote>
+Về mặt nguyên tắc, nắm được password của user không có nghĩa là chứng minh được đó là cái honest server, vì password là thứ dễ bị externalized nhất. Nói đến mutual authentication thì cách thức duy nhất được chấp nhận hiện nay là dùng public key cryptosystem.
+
+<p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>PS: Web cũng dùng được chứ nhỉ? Tớ thấy AJAX có thể hỗ trợ cái này đấy chứ ?&nbsp;
+		</blockquote> À cái này thì hiển nhiên, chỉ có điều khó mà standardize được, tức là mỗi website nếu muốn thực hiện thì phải tự implement lấy, chứ không phải như trường hợp của TLS. Còn trong môi trường e-commerce thì hiển nhiên là không chấp nhận được.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178235</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178235</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:11:29]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>
+Xét protocol 4: lưu dãy H_user+ salt thì có đổ vỡ không? Như nhau thôi. ai có P thì cũng sinh ra được dãy H(P||salt). Ai có H(P||salt) thì cũng xác thực được client.
+&nbsp;
+		</blockquote>
+
+Khác chứ, người dùng thường có xu hướng dùng chung password cho nhiều hệ thống, một hệ thống để lộ pass của người dùng thì không được ảnh hưởng tới hệ kia :D
+
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+Về mặt nguyên tắc, nắm được password của user không có nghĩa là chứng minh được đó là cái honest server, vì password là thứ dễ bị externalized nhất. Nói đến mutual authentication thì cách thức duy nhất được chấp nhận hiện nay là dùng public key cryptosystem.
+&nbsp;
+		</blockquote>
+Theo tớ thấy thì ngay cả cert dùng pub/privkey cũng có thể bị mất, có điều khó mất hơn password thôi: vì attacker sẽ phải nắm được "cái ta có" (là privkey) và "cái ta biết" (là passphrase). 
+
+Tóm lại chúng ta đang thảo luận về xác bằng mật khẩu sao cho an toàn, nghĩa là hệ thống hoạt động dựa trên một điểm tin cậy nào đó (ở đây là mật khẩu). Với pubkey cryptosystem, điểm tin cậy là pub/privkey là câu chuyện khác.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178237</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178237</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:37:12]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ 
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+Về mặt nguyên tắc, nắm được password của user không có nghĩa là chứng minh được đó là cái honest server, vì password là thứ dễ bị externalized nhất. Nói đến mutual authentication thì cách thức duy nhất được chấp nhận hiện nay là dùng public key cryptosystem.
+&nbsp;
+		</blockquote>
+Public Key thì an toàn hơn là đúng rồi. Ai muốn giả mạo cần có cả Private Key và password để open nó.
++ Làm thế nào để chôm được private key
++ làm thế nào để có password
+
+Chi phí cho public key là khá lớn. Không thể bảo ai cũng kè kè cái usb được! và phiền toái khi sử dụng ở các máy khác nhau. Nếu chỉ dùng trên máy mình thì có thể lưu ở máy.
+
+
+
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote> À cái này thì hiển nhiên, chỉ có điều khó mà standardize được, tức là mỗi website nếu muốn thực hiện thì phải tự implement lấy, chứ không phải như trường hợp của TLS. Còn trong môi trường e-commerce thì hiển nhiên là không chấp nhận được.
+&nbsp;
+		</blockquote>
+
+Với ecommerce thì giờ em thấy họ có ít nhất 3 thứ:
+1. Public key (lưu ở usb)
+2. Password
+3. One Time Password (Một số dùng một miếng giấy in 35 pass rồi mỗi lần giao dịch nó sẽ hỏi, một số dùng Token của RSA, Entrust, Gemato, một số thì chơi kiểu gửi TAN tới máy di động qua SMS. Có vụ đang thu mua Nokia 1100 của Đức cho để ăn cắp TAN thì phải :).
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178239</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178239</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:42:48]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @ mfeng: nếu password của bạn 10 kí tự là bị lộ rồi đấy. Không cần tấn công host chỉ cần vét cạn thôi!
+
+salt được gửi lại user ở bước 2 nên có pass hoàn toàn tính được H(P,salt).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178240</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178240</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:45:05]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Nếu ssl-mitm khả thi và dễ dàng xuyên qua wider network (cho cùng một network band giữa client, server và mitm) thì mọi protocol trình bày ở trên còn vững không?
+
+Bởi thế, khái niệm "out-of-band authentication" mới hình thành.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178241</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178241</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:46:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ out of band authentication: khi đó thêm 1 số bí mật nữa được truyền bằng con đường khác, email, sms,...
+
+Khi đó muốn giả mạo thì cần tấn công cả 2 kênh truyền.
+
+Em nghĩ là thêm giả thuyết là database của 2 bên không bị tấn công. Password không bị mất theo kiểu camera theo dõi nhập số, key logger,...
+
+
+Các giao thức nêu trên vẫn lộ pass, nó cho phép attacker có cơ chế để verify pass đúng hay sai bằng các message nó tóm được mà không cần tấn công để lấy password trên host hoặc client. Trừ khi password đủ dài!
+
+choc_ có link của ssl-mitm ko?
+hình như đây có:
+http://blog.renchap.com/2009/02/20/blackhat-presentation-about-ssl-mitm
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178244</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178244</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 14:01:50]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>
+Theo tớ thấy thì ngay cả cert dùng pub/privkey cũng có thể bị mất, có điều <font color='red'>khó mất hơn</font> password thôi: vì attacker sẽ phải nắm được "cái ta có" (là privkey) và "cái ta biết" (là passphrase). 
+
+Tóm lại chúng ta đang thảo luận về xác bằng mật khẩu sao cho an toàn, nghĩa là hệ thống hoạt động dựa trên một điểm tin cậy nào đó (ở đây là mật khẩu). Với pubkey cryptosystem, điểm tin cậy là pub/privkey là câu chuyện khác.
+
+&nbsp;
+		</blockquote>
+<font color='red'>--&gt;</font> Không phải là khó mất hơn, mà là khó mất hơn rất nhiều, vì private key là thứ hầu như không bao giờ bị externalized. Hơn nữa, security assumptions cũng mạnh hơn rất nhiều.
+
+<p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>Với ecommerce thì giờ em thấy họ có ít nhất 3 thứ:
+1. Public key (lưu ở usb)
+2. Password
+3. One Time Password (Một số dùng một miếng giấy in 35 pass rồi mỗi lần giao dịch nó sẽ hỏi, một số dùng Token của RSA, Entrust, Gemato, một số thì chơi kiểu gửi TAN tới máy di động qua SMS. Có vụ đang thu mua Nokia 1100 của Đức cho để ăn cắp TAN thì phải smilie. &nbsp;
+		</blockquote>
+Đấy là user authentication thôi, còn server authentication thì chỉ có PKI vậy.
+
+<p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>@ mfeng: nếu password của bạn 10 kí tự là bị lộ rồi đấy. Không cần tấn công host chỉ cần vét cạn thôi! &nbsp;
+		</blockquote> Chà, 10 kí tự mà bạn vét cạn được thì bạn cũng có kha khá resource đấy nhỉ.  :P 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178249</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178249</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 14:10:55]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>out of band authentication: khi đó thêm 1 số bí mật nữa được truyền bằng con đường khác, email, sms,...
+
+Khi đó muốn giả mạo thì cần tấn công cả 2 kênh truyền.
+
+Em nghĩ là thêm giả thuyết là database của 2 bên không bị tấn công. Password không bị mất theo kiểu camera theo dõi nhập số, key logger,...
+
+
+Các giao thức nêu trên vẫn lộ pass, nó cho phép attacker có cơ chế để verify pass đúng hay sai bằng các message nó tóm được mà không cần tấn công để lấy password trên host hoặc client. Trừ khi password đủ dài!
+
+choc_ có link của ssl-mitm ko?
+hình như đây có:<span class="link"> http://blog.renchap.com/2009/02/20/blackhat-presentation-about-ssl-mitm&nbsp;</span>
+		</blockquote>
+
+Giả sử có một super douper computer có thể brute một chuỗi hash trong vòng một thời gian cực ngắn (từ 1 năm xuống còn vài phút - quantum physics) thì mọi biện pháp chống chọi nào không ngăn được mitm thì cũng... hỏng.
+
+Nếu có "out-of-band" factor dính vào thì việc detect cái "out-of-band" ấy không đơn giản và để đạt được mục đích mitm trong cái "out-of-band" ấy sẽ trở nên khó hơn nữa. Nếu "out-of-band" có nhiều factors con nữa thì lại gia tăng mức bảo mật.
+
+Nói tóm lại, mọi sự quy về cái gọi là "cost of implementation"  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178251</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 14:17:28]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Một số ngân hàng trên thế giới áp dụng một ví dụ như tự động gọi điện thoại đến chủ tài khoản xác nhận qua việc đọc lại 1 số đặc biệt nào đấy để thực hiện việc chuyển tiền, chi phí thấp nhưng rất hiệu quả.
+
+Với key dài 10 kí tự thì tổ hợp khoảng trên 100 ngàn tỉ cho giả định key chỉ chứa 26 kí tự alphabet, với sức mạnh của 1 PC thông thường hiện nay attack mất khoảng gần 1 tháng]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178259</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178259</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 14:50:47]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Topic phát triển nhanh quá! Mới từ xác thực bằng mật khẩu đã chuyển sang public key & out-of-band authentication rồi :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178278</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178278</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 18:03:15]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ trở lại với password tiếp nhỉ? Có ai đề xuất giao thức nào nữa không ạ?
+
+Giả thiết là không ai tấn công host lấy pass, không key logger, camera ăn trộm pass user. Chỉ sniff đường truyền thôi.
+
+// ngoài lề
+Trước em có mail hỏi bọn bán token One Time Password (Như cái thẻ mà chơi chứng khoán FPT ấy-pin chạy 5 năm). 37 usd/ cái (Tạo bởi key 20 bytes+ counter). Nhưng mà mua authentication server cho 10 user giá là 1500 usd. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178279</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 18:12:45]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>Topic phát triển nhanh quá! Mới từ xác thực bằng mật khẩu đã chuyển sang public key & out-of-band authentication rồi :)&nbsp;
+		</blockquote>
+
+Hì hì, vậy tốt chớ sao em  :P . Có những chi tiết có thể tự "khai thác" sau (tài liệu có cả đống mà). Cái chính là đi đến những giải pháp tổng thể sau khi xác định được hạn chế nhất định nào đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178296</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178296</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 19:54:16]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ có giải thuật nào nữa không ạ?
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Protocol 5:
+
+1. Alice tạo cặp khóa Public Key  &#40;PR,PU&#41; . Alice gửi M1=E&#40;pw, PU&#41; tới Bob.
+2. Bob giải mã M1. Tạo M2= E&#40;PU,sk||nonce&#41; gửi lại Alice
+3. Alice gửi E&#40;sk,nonce&#41; cho Bob.</pre>
+		</div>
+
+Chi phí tính toán hơi lớn! Đổi lại là an toàn hơn :)
+
+Thà chia sẻ xừ Public Key từ đầu cho xong :D.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178318</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178318</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 23:59:40]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>có giải thuật nào nữa không ạ?
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Protocol 5:
+
+1. Alice tạo cặp khóa Public Key  &#40;PR,PU&#41; . Alice gửi M1=E&#40;pw, PU&#41; tới Bob.
+2. Bob giải mã M1. Tạo M2= E&#40;PU,sk||nonce&#41; gửi lại Alice
+3. Alice gửi E&#40;sk,nonce&#41; cho Bob.</pre>
+		</div>
+
+Chi phí tính toán hơi lớn! Đổi lại là an toàn hơn :)
+
+Thà chia sẻ xừ Public Key từ đầu cho xong :D.&nbsp;
+		</blockquote>
+
+Bạn ơi, public key mà bạn làm như private message thế này thì hỏng bét. Protocol này phải sửa lại thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178334</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178334</link>
+				<pubDate><![CDATA[Fri, 24 Apr 2009 02:29:47]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ protocol 6
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>bịa ra giải thuật &#40;custom protocol&#41;</pre>
+		</div>
+==&gt; chống dịch ngược để lấy giải thuật :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178352</link>
+				<pubDate><![CDATA[Fri, 24 Apr 2009 10:30:14]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ hơ hơ hay quá. mình bận việc nên không lên HVA mấy ngày không ngờ là có nhiều tranh luận sôi nổi vậy.
+
+nhìn lướt qua một lượt, thấy cái nào cũng có vấn đề hết trơn. mấy hôm nay lúc rảnh, mình ngồi suy nghĩ, thấy có vẻ như thiết kế được một cái protocol như vậy, với yêu cầu là đường truyền luôn có người rình mò theo dõi chỉnh sửa, dường như là bất khả thi hay sao áh.
+
+ví dụ như nếu mình dùng AJAX để thực hiện phía client side cho protocol, thế lỡ attacker nó sửa cái javascript của mình lại, thay vì H(P) rồi mới gửi đi, thì nó cứ gửi P đi luôn. nhưng cứ để xem sao.
+
+giờ đặt cục gạch trước, tí nữa có thời gian mình sẽ thử *đào xới* mấy cái protocol của các bạn xem sao. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178573</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178573</link>
+				<pubDate><![CDATA[Sun, 26 Apr 2009 12:42:33]]> GMT</pubDate>
+				<author><![CDATA[ choc_]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Chờ choc_ đào xới protocol 5.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#178589</link>
+				<pubDate><![CDATA[Sun, 26 Apr 2009 13:42:10]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Lâu rồi không quay lại topic, nay đọc lại thấy comment của mình về protocol 5 có vấn đề, âu cũng vì lúc đó chỉ đọc qua step 1 nên phán bừa.
+
+Sau khi đọc lại toàn bộ protocol, mình xin hỏi bạn <b>MrNothing</b>: ở step 1 không biết key pair được tạo ra như thế nào và có hiệu lực ra sao? Còn nữa, mình tò mò không biết protocol này có phải hoàn toàn do bạn tự nghĩ ra chăng?
+
+p/s: Nếu mình đoán không nhầm về ý tưởng của bạn <b>MrNothing</b> đưa ra thì protocol 5 có một đặc điểm rất hay mà các protocol khác không có được. Tuy nhiên, nếu bạn nào có ý định implement protocol này thì cũng nên tìm hiểu xem tại sao nó lại chưa bao giờ được sử dụng một cách phổ biến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181314</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181314</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 07:59:04]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Không phải tớ nghĩ ra đâu bạn StarGhost ạ!
+
+Protocol này ra đời đã 17 năm rồi :D.
+Tớ không muốn nêu tên protocol ra vì như vậy sẽ không hay. Cứ để ra ý tưởng thế rồi phân tích vui hơn!
+
+Ở Step 1 bạn StarGhost băn khoăn là làm sao Bob hiểu thông tin gì chứa trong PU. Alice và Bob dùng chung một cơ chế giải thuật đã thông báo từ trước chẳng hạn. Nếu thiết kế PU không tốt thì sẽ lộ pass. Ví dụ không nên gửi E(pw, X,PU) với X là một thông tin mà attacker có thể biết như timestamp, ID của Alice hoặc Bob vì khi đó Attacker có thể vét cạn pw để tìm ra pw.
+
+Mặc định là PU chỉ chứa đúng cái public key. ở đây gọi là public key nghĩa là nó tuân theo cơ chế public key chứ không phải là ai cũng biết để verify password giữa 2 người. Public Key PU chỉ 2 thằng Alice và Bob biết với nhau lúc trao đổi thôi.
+
+Còn câu p/s:
+1. ý tưởng hay đó là dùng Public Key để che dấu password. Giải thuật của mfeng với các giải thuật khác như salt là lộ pass.
+2. Một suy luận tự nhiên đó là độ bảo mật cao hơn thì chỉ có 2 trường hợp, một là đề xuất ra giải thuật tốt hơn (phát minh mới), hai là độ phức tạp tính toán tăng lên :D. Ở đây bạn StarGhost nghĩ nó rơi vào trường hợp nào :)
+
+Còn nếu như nghe lén đường truyền mà không dò ra pass thì vác cái camera, hay keylogger theo dõi xem user nó gõ gì là xong, đỡ phải nghe lén đường truyền. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181318</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181318</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 09:30:16]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>Ở Step 1 bạn StarGhost băn khoăn là làm sao Bob hiểu thông tin gì chứa trong PU. Alice và Bob dùng chung một cơ chế giải thuật đã thông báo từ trước chẳng hạn. Nếu thiết kế PU không tốt thì sẽ lộ pass. Ví dụ không nên gửi E(pw, X,PU) với X là một thông tin mà attacker có thể biết như timestamp, ID của Alice hoặc Bob vì khi đó Attacker có thể vét cạn pw để tìm ra pw.&nbsp;
+		</blockquote>
+
+Hì mình không có hỏi như vậy. Nhưng mà bạn nói protocol ra đời cách đây 17 năm thì mình rõ rồi. Thực ra trong authentication thì độ phức tạp tính toán không phải hoàn toàn là cái gì quá critical, nếu vì mất thêm một chút tính toán mà tăng thêm security thì tội gì không.
+
+Protocol này hay ở chỗ entropy của các messages không phụ thuộc vào password. Thế nên không quan trọng password dài ngắn ra sao, việc bruteforce password là không thể.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181321</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181321</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 10:25:28]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Ờ, lâu không coi lại, giờ xem protocol 5 thế nào nhé :)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Protocol 5:
+ 
+ 1. Alice tạo cặp khóa Public Key  &#40;PR,PU&#41; . Alice gửi M1=E&#40;pw, PU&#41; tới Bob.
+ 2. Bob giải mã M1. Tạo M2= E&#40;PU,sk||nonce&#41; gửi lại Alice
+ 3. Alice gửi E&#40;sk,nonce&#41; cho Bob.</pre>
+		</div>
+
+Mục tiêu của giao thức authentication này diễn ra giữa user và server. Ở đây Alice là user, Bob là server có phải không ?.
+
+Vì có trước giả thiết là:
+ - Hai đầu cuối (usr & server) là tin cậy, không có khả năng bị compromised.
+ - Đường truyền bị theo dõi & có khả năng bị replay.
+Nêu mọi thảo luận sẽ nằm ở an toàn của thông tin trao đổi trên đường truyền chứ không phải thông tin cần lưu trữ, mặc dù điều này khá quan trọng khi cài đặt một giao thức xác thực.
+
+<b>Câu hỏi:</b>
+
+ - Step2: Làm sao Bob giải mã được M1 khi không biết thông điệp M1 được gửi từ Alice1 hay Alice2 ?
+
+ - Giao thức trên sinh Pub/Priv key, rồi dùng pre-shared password để gửi Pubkey, sau đó dùng lại PubKey để trao đổi session key. Cách làm trên ưu điểm hơn gì so với dùng luôn password để trao đổi session key?. Và vấn đề gì sẽ xảy ra khi mỗi lần gửi đi các PubKey đều dùng lại một key để mã hóa ?
+
+Nhìn chung protocol 5 có vẻ giống một key exchange protocol hơn là một authentication protocol.
+
+<p></p>
+		<cite class="blockquote">Starghost wrote:</cite><br>
+		<blockquote>
+Protocol này hay ở chỗ entropy của các messages không phụ thuộc vào password. Thế nên không quan trọng password dài ngắn ra sao, việc bruteforce password là không thể.
+&nbsp;
+		</blockquote>
+Protocol này có sử dụng password làm key để mã hóa PubKey, thức là có phụ thuộc vào password chứ nhỉ :). Nếu xét về khả năng bruteforce M1 thì tại sao lại không có ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181340</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181340</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 13:16:02]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Cái protocol 5 bị vài vấn đề:
+
+1. cả hai bên phải lưu trữ plaintext-equivalent password. database của server side mà bị xâm nhập thì coi như toàn bộ password của user đi tong.
+
+2. không có tính "forward secrecy". ai mà có được password thì sẽ lấy được hết session key từ trước đến giờ trao đổi giữa client và server.
+
+3. nếu mà chôm được một session key thì cũng có thể dùng session key đó để làm offline dictionary attack để brute force password.
+
+StarGhost có đặt câu hỏi mà mình nghĩ là hay: tại sao các protocol như protocol 5 không được sử dụng trong mainstream software system? Bạn nào biết trả lời mình với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181342</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181342</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 13:19:21]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Àh mình vừa nhớ ra là có người hỏi và trả lời câu hỏi của StarGhost rồi. Xem ở đây: http://article.gmane.org/gmane.comp.encryption.general/12995
+
+Ý của Steven M. Bellovin (tác giả của cái protocol 5 nếu mình không lầm ;-)) là các protocol dạng này chẳng giải quyết được vấn đề của Internet hiện tại. Dù có dùng strong protocol cỡ nào mà user bị phising hay keylogger thì cũng chết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181346</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 13:27:54]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @mrro: Đúng bác Steven M.Bellovin đấy. Đỉnh ghê :)
+Dù có strong protocol cỡ nào cũng bị attack thì đúng (nghe lén, Key logger, offline guessing password, replay, man in the middle,...). Khi attacker có hết cả các thứ mình có thì tèo là chắc rồi. Hoặc chơi như choc_ là sửa code của client/server application hoặc cái thư viện đi kèm thì chắc chắn cũng tèo.
+
+Nhưng một giao thức bảo mật tốt thì bản thân nó phải đủ mạnh đã, ít nhất cũng phải chống được các tấn công cơ bản. 
+
+(Như bài mrro làm với codegate Diffie Hellman: mình cũng đồng ý là nếu có một giao thức đang có vulnerabilities thì việc sửa nó cho nó hoàn thiện hơn thì rất khó, chưa chắc đã hoàn thiện hơn mà độ phức tạp tính toán lại cao lên nữa, có khi còn mắc thêm những lỗi khác)
+
+Dù sao với password không cũng chỉ là giao thức 1 yếu tố. Giờ thì người ta chơi 2 yếu tố, hoặc hơn, xác thực qua nhiều tầng, và có thể có thêm các cơ chế kiểu one time password hoặc các kiểu xác thực qua nhiều con đường khác. Nhất là với các giao thức e-commerce như internet banking.
+
+về ý kiến của mrro:
+1. Lấy pass qua con đường khác thì thôi khỏi nói :D, chết chắc rồi
+2. Nếu mất pass thì chỉ lộ PU, chứ không lộ PR.
+3. Đồng ý. Biết session key sk và nonce thì chỉ việc vét cạn pw tìm xem PU nào tương ứng có E(PU_dự_đoán,sk||nonce)= E(PU_thật,sk||nonce), tuy nhiên kiểu gì chả có cơ chế vượt qua cái này, sửa protocol 5 một tí là xong.
+
+@mfeng: Không có cơ chế để verify PU đâu bạn ạ. Ra PU_dự_đoán nhưng cũng chả biết sk với nonce là bao nhiêu mà verify.
+Alice có thể gửi tin nhắn kèm theo ID: ví dụ M1= Alice, E(pw, PU).
+
+Giao thức này còn dễ dàng bị DoS nữa. Vì message dành cho integrity và authentication nằm ở bước cuối cùng.
+
+Bob cứ nhận được tin nhắn là giải mã và send lại cho Alice. Alice thì cứ giải mã xong trả lại cho Bob. Khi đó Bob mới giải mã kiểm tra nonce xem có đúng không! 
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181396</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 18:31:29]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>
+1. Lấy pass qua con đường khác thì thôi khỏi nói smilie, chết chắc rồi
+2. Nếu mất pass thì chỉ lộ PU, chứ không lộ PR.
+3. Đồng ý. Biết session key sk và nonce thì chỉ việc vét cạn pw tìm xem PU nào tương ứng có E(PU_dự_đoán,sk||nonce)= E(PU_thật,sk||nonce), tuy nhiên kiểu gì chả có cơ chế vượt qua cái này, sửa protocol 5 một tí là xong. 
+&nbsp;
+		</blockquote>
+
+1. Đâu có bạn, strong password protocol thì phải giải quyết được vấn đề verifier không phải lưu trữ plaintext-equivalent password. Vẫn có protocol làm được đó, bất chấp nhìn vào database của verifier cũng không thể tìm được password. Thậm chí mục tiêu họ đặt ra còn là thứ mà verifier lưu trữ là thông tin public luôn. Mình không nhớ là có protocol nào làm được hay không.
+
+2. mất password thì ở bước 1 và bước 2, attacker đã có thể lấy được session key của những session trước đó. mình không nói là mất PU hay PK. một protocol tốt là protocol phải đảm bảo được tính forward secrecy, nghĩa là có mất password hay một cái long-term shared-key nào đó thì attacker vẫn không learn được gì ở các session trong quá khứ.
+
+3. sửa thế nào?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181398</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181398</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 18:48:13]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ 2. Session key của các cái trước đó được mã hóa bằng PU mà. Không có PR thì sao giải mã ra session key.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181399</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181399</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 18:51:15]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @MrNothing: àh mình nhầm, do notation của bạn hơi bị lộn xộn. Mình nghĩ nên mô tả protocol theo chuẩn cho dễ đọc nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181402</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 19:16:06]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Tại mình quy ước viết E(PU, sk||nonce) là mã hóa dưới dạng Public Key PU nên dễ hiểu nhầm, sorry!
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+1. Đâu có bạn, strong password protocol thì phải giải quyết được vấn đề verifier không phải lưu trữ plaintext-equivalent password. Vẫn có protocol làm được đó, bất chấp nhìn vào database của verifier cũng không thể tìm được password. Thậm chí mục tiêu họ đặt ra còn là thứ mà verifier lưu trữ là thông tin public luôn. Mình không nhớ là có protocol nào làm được hay không. 
+&nbsp;
+		</blockquote>
+1. Theo tớ hiểu ý bạn bạn nói đến cái dùng để xác thực có thể được public, thì phải khó tạo ra cái cần được xác thực. Tớ thấy nó cơ chế có vẻ giống với public key! Như kiểu server lưu PU, client có PR ấy nhỉ?
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Vẫn có protocol làm được đó, bất chấp nhìn vào database của verifier cũng không thể tìm được password
+&nbsp;
+		</blockquote>
+Có ví dụ cho cái này không mrro?Cơ chế cho nó là gì nhỉ?
+3. Bob tạo ra PU_Bob nữa :D.
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1. Alice tạo &#40;PR_Alice,cPU_Alice&#41;, và gửi Bob:M1= Symmetric_encryption&#40;pw,PU_Alice&#41;
+2. Bob tạo &#40;PR_Bob, PU_Bob&#41;, và gửi Alice: M2= Asymmetric_encryption&#40;PU_Alice, PU_Bob&#41;
+3. Alice gửi Bob: M3=Asymmetric_encryption&#40;PU_Bob, sk||nonce&#41;
+4. Bob gửi Alice: M4=Symmetric_encryption&#40;sk,nonce&#41;</pre>
+		</div>
+
+@mrro: đã sửa]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181403</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 19:17:44]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>
+ 1. Verifier lưu trữ là thông tin public luôn giả sử nó là U. Giả sử attacker có giải thuật verify+ cái verify lưu trữ. Thế thì vấn đề sẽ là khó có thể tạo ra cái được nào được verify bới verifier và U. Nguyên lý này giống hàm một chiều nhỉ? Lại thành hệ Public Key rồi. 
+&nbsp;
+		</blockquote>
+
+@MrNothing: có vẻ bạn ít bao giờ tự đọc lại bài viết của mình nhỉ? Mình đọc cái đoạn bạn viết ở trên mà không hiểu bạn muốn nói gì hết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181405</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181405</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 19:24:36]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @mrro: tớ sửa rồi nhé :). Thanks!
+Thực ra cái trò PU, PR trên để giải quyết tình trạng weak password (lời này của bác Steven M.Bellovin). Nhưng tớ thấy nó cũng vui nên mới nêu ra.
+
+Chứ để dùng cho các cái quan trọng thì nên dùng strong password. Để mọi người khỏi băn khoăn là mình dùng password 6 kí tự mà vẫn bị crack là sao. Để 10 ký tự attack cả tháng thì 6 kí tự vét cạn nhanh hơn. Tớ thấy giờ đa phần họ yêu cầu password là 8 kí tự đổ lên gồm cả kí tự hoa và số!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181407</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181407</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 19:43:51]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Xôm ghê ta.
+
+@mfeng: mình có nói là entropy không phụ thuộc chứ không phải "messages không phụ thuộc". <b>MrNothing</b> đã giải thích rõ hơn rồi.
+
+@mrro: câu hỏi của mình là "tại sao các protocol này không được dùng <b>phổ biến</b>?", bạn ạ. Lí do là vì:
+1. Đây là protocol đời đầu của dòng encrypted key exchange (EKE), nên hiển nhiên nó còn có nhiều khuyết điểm, không thể áp dụng ngay được. Ví dụ như bị DoS như ở trên.
+2. Kể cả đến các protocol đời sau đã được chau chuốt nhiều, vẫn không được dùng phổ biến. Lí do khá đơn giản và lãng xẹt: chúng bị patented, hơn nữa là bị patented bởi nhiều researchers. Thế nên việc đưa vào một product đã rất phức tạp, chưa nói đến việc phổ biến.
+
+Ngoài ra, <b>mrro</b> còn thắc mắc về cái khoản plaintext password database ở trên server thì vulnerable. Thực ra, sửa lại protocol này một chút cũng không có gì khó, mặc dù không hoàn toàn là tuyệt đối secure. Mình sử dụng luôn notations của <b>MrNothing</b>, trong đó Bob chứa func(pw, salt), còn Alice chứa pw:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1. Bob ---&gt; Alice: salt
+    Alice tính h=func&#40;pw,salt&#41;
+2. Alice ---&gt; Bob: E&#40;h,PU&#41;
+3. Bob ---&gt; Alice: E&#40;PU, sk||nonce&#41;
+4. Alice ---&gt; Bob: E&#40;sk, nonce || pw&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181414</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181414</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 21:10:43]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @StarGhost: 
+
+1. ủa thì sao, mình nói là ít được sử dụng thì kô phải đồng nghĩa với "không phổ biến" àh. lý do patent thì mình có biết.
+
+2. cái mà bạn đưa ra thì nó cũng được xếp vào dạng plaintext-equivalent password thôi, có thêm salt rồi hash lại cũng vậy àh. thế người ta mới kêu là plaintext-equivalent password mà không phải là plaintext password. đơn giản vì có được cái hash đó thì attacker chỉ cần bắt đầu cái protocol ở bước 2 là có thể giả mạo được Alice rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181420</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181420</link>
+				<pubDate><![CDATA[Thu, 21 May 2009 22:26:10]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Các tiêu chí của một giao thức xác thực cần có sẽ là:
+ 1. Chống sniffer
+ 2. Chống replay
+ 3. Có trao đổi session key.
+ 4. Mutual auth
+ 5. Chống được dictionary-attack dựa trên sniff messages
+ 6. Đảm bảo forward secrecy.
+ 7. Chống được tình huống compromised verifier database (chứa các thông tin bên server để auth).
+
+Theo các tiêu chuẩn trên, tất cả các protocol đang bàn luận này đều không thỏa mãn, nhất là 3 điều kiện cuối cùng, được gọi là "Big-3" của auth. Điều kiện thứ 7 chính là vấn đề <b>mrro</b> nói làm sao để cài đặt giao thức không dùng plaintext-equivalent password.
+
+Ít ra hiện giờ có một giao thức thỏa mãn 7 điều kiện trên, được viết thành RFC 2945. Các bạn thử tìm hiểu và phân tích xem :).
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181431</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181431</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 00:32:16]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Cái 5,6 thì không có vấn đề hiện nay nhé.
+Cái 7: Thông tin lưu trên server để verify. Nếu có thể public được thì nó chính là dạng public key rồi. Server chứa một cái gì đó public dùng để verify một cái gì đó private từ client. Như là mô hình Digital Signature của Public Key.
+
+Mấy kiểu salt thì vẫn bị lỗi 7 thôi.
+
+Còn nếu dùng public key cho phía client. Server tất nhiên chỉ lưu client public key hoặc public key của thằng kí lên certificate của client. Sẽ chuyển sang dạng tấn công client/server lấy private key và password cho private key.
+
+
+<p></p>
+		<cite class="blockquote">RFC 2945 wrote:</cite><br>
+		<blockquote>
+  The server stores user credentials as 5-tuples of the form:
+{&lt;username&gt;, &lt;password verifier&gt;, &lt;salt&gt;, g, N}
+&lt;salt&gt; = random()
+x = SHA(&lt;salt&gt; | SHA( &lt;username&gt; | ":" | &lt;raw password&gt; ) )
+&lt;password verifier&gt; = v = g^x % N
+N = prime modulus; g = generator
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.clipperz.com/files/clipperz.com/srp.png' border="0" onload="maxImg(this, 500px);" /></div>
+&nbsp;
+		</blockquote>
+
+#Trong giao thức chuẩn thì họ dùng thừa số 1 thay cho thừa số 3 ở trên.
+
+Tấn công server lấy file chứa bộ {&lt;username&gt;, &lt;password verifier&gt;, &lt;salt&gt;, g, N} rồi giả mạo client thì sao nhỉ? hoặc đổi file này nữa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181432</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181432</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 01:06:25]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>
+Tấn công server lấy file chứa bộ {&lt;username&gt;, &lt;password verifier&gt;, &lt;salt&gt;, g, N} rồi giả mạo client thì sao nhỉ? hoặc đổi file này nữa?
+&nbsp;
+		</blockquote>
+
+Chẳng làm được gì cả. Có password verifier cũng không thể tìm ra password. Cái khó ở đây là bài toán discrete logarithm.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181440</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 03:30:38]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @mrro: có vẻ bạn vẫn chưa đọc kĩ protocol mình đưa ra. Mình nghĩ nó thỏa mãn 2 trong 3 điều kiện cuối của <b>mfeng</b>. Còn 4 điều kiện ban đầu thì thực sự không quá khó để đạt được. Còn về forward secrecy thì protocol này fail.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181441</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 04:01:01]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+trong đó Bob chứa func(pw, salt), còn Alice chứa pw: 
+
+ 1. Bob ---&gt; Alice: salt
+     Alice tính h=func(pw,salt)
+ 2. Alice ---&gt; Bob: E(h,PU)
+ 3. Bob ---&gt; Alice: E(PU, sk||nonce)
+ 4. Alice ---&gt; Bob: E(sk, nonce || pw)
+&nbsp;
+		</blockquote>
+
+Giả sử attacker lấy được func(pw, salt). Nghĩa là hắn lấy được h ở bước số 2 đúng không? Vậy thì hắn có thể giả mạo Alice rồi còn gì nữa nhỉ? Mình sai ở chỗ nào nhờ bạn StarGhost chỉ giùm.
+
+PS: àh thấy rồi. có bước số 4.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181443</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 04:56:51]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @mrro: còn bước cuối (4) nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181446</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181446</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 05:13:28]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @StarGhost: mình nghĩ bước số 4 này lại làm phát sinh một vấn đề
+
+<blockquote>
+ 4. Alice ---&gt; Bob: E(sk, nonce || pw) 
+&nbsp;
+		</blockquote>
+
+Attacker mà có func(pw, salt), thì hắn chỉ cần lắng nghe một cái session giữa Alice và Bob là hắn tìm được pw, khỏi phải brute-force chi nữa.
+
+Ngoài ra thêm cái số 4 này, có thể ngăn attacker giả mạo Alice, nhưng không thể ngăn attacker giả mạo Bob, một khi hắn đã có (salt, func(pw, salt)).
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181448</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181448</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 05:25:48]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Giao thức của bạn StarGhost vẫn chưa đủ rồi. Nếu salt chỉ loanh quanh luẩn quẩn ở các hàm cơ bản thì khó. Phải đưa lên dạng hàm một chiều one way function cơ, như x và g^x.
+Cái 4 còn vi phạm lỗi lớn là gửi đi password.
+
+
+Coi lại cái SRP nhé mrro:
+
+1. Nó tấn công server rồi đổi file đó với file chứa password của nó. Giả mạo client là hoàn toàn được.
+2. Client lưu trữ password để tính ra x, server lưu g^x. Đây chính là cơ chế của Elgamal Public Key. Cái này hay ở chỗ là với Elgamal public Key thì x phải lớn, còn ở đây mọi thứ được tính qua hàm hash function x= hash(username,s,o) nên password p có thể nhỏ. và còn điều này nữa:
+tớ nghe lén nhé: tớ có A, có B, có salt s, có I=username, nhưng tớ muốn verify password bằng vét cạn thì không có a. Bài toán phải giải là Diffie Hellman Problem (Discrete logarithm). Vì vậy không vét cạn được password khi password yếu.
+
+Tuy nhiên vẫn có vấn đề với password yếu: 
+Attacker tấn công server và có salt và v=g^x, trong khi x=hash(username,salt,p). Nếu password yếu, tớ hoàn toàn vét cạn được và dùng v, verifier để verify p mà tớ dự đoán. Vì ở đây tớ không giải bài toán ngược của bài toán một chiều. Tớ giải đúng theo chiều xuôi. Hoàn toàn offline.
+
+Password vẫn phải đủ mạnh thôi+ bảo mật cả phía client và server!
+Tuy nhiên cơ chế trên khá hay để bảo vệ password mạnh. Khi server bị tấn công thì vẫn không bị dò ra password.
+
+Nhưng với password mạnh pw có n bít. Attacker không vét cạn được thì tớ chơi ngay Elgamal.
+Elgamal:User giữ pw, Server giữ g^pw.  Muốn tìm pw cũng phải vét cạn.
+SRP: Ở trên từ pw===&gt;x===&gt;v=g^x. Quá trình vét cạn vẫn như trên.
+2 bài toán khó như nhau nhỉ? Tất nhiên thời gian tính g^x từ x là lâu hơn tính g^pw từ pw. nhưng nó cũng không đáng kể! Coi như bài toán SRP khó hơn tí nhưng về độ phức tạp cơ bản là như nhau!
+
+Đây chỉ là một dạng trá hình của Elgamal mà thôi!
+
+(Tạm thời phải vét cạn vì chưa có giải thuật cho Diffie Hellman Problem- hi vọng sẽ không có, nếu có thì thiên hạ lại phải nghĩ ra các giải thuật mới với độ phức tạp khó hơn)
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181451</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181451</link>
+				<pubDate><![CDATA[Fri, 22 May 2009 08:27:21]]> GMT</pubDate>
+				<author><![CDATA[ MrNothing]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ Trong điều kiện thông thường và dễ triển khai, đáp ứng được các yếu tố 1, 2, 3, và 1 ít 7, thì nên chơi Digest Authentication theo RFC 2617.
+Nếu chơi đơn giản, ko code gì hết, thì config HTTP Server hỗ trợ cái này.
+
+Còn nếu tự implementation để tránh browser bị man-in-the-middle lừa thì làm javascript (ko cần đến ajax làm gì cho nó mệt, chỉ là vài step xác thực mà thôi).
+
+Cái này xài hàm hash là MD5, dễ viết java script hơn các hàm mã hoá AES/DES hoặc RSA. Nếu tự handle thay cho HTTP thì xài SHA1 cho nó máu. (Nếu sợ rằng phải lưu HA1 hoặc plain-text password tại client sau khi xác thực, hãy sử dụng 1 session key làm 1 password tạm (hay HA1 tạm cho Digest Auth phiên làm việc) cho các bước tiếp theo cho đến hết phiên làm việc. Session key nên tạo và trao đổi qua 1 giải thuật IKE nào đó, ví dụ Diffie-Hellman cho nó đơn giản (http://en.wikipedia.org/wiki/Diffie-Hellman_key_exchange ). JS có khả năng hỗ trợ tất cả những cái này ở một mức độ nhất định (session key kiểu integer nếu là số to quá 53bit thì các hàm Math không tính chính xác hơn nữa, vì nó sẽ thành số float, có thể viết lại hàm nhân chia số integer thực lớn nhưng ... hơi mệt thôi). Theo ví dụ thì Alice sẽ làm server vì server có thể có gọi nhiều hàm tính ra số nguyên tố lớn tốt hơn client.
+
+Cân bằng giữa giá trị và lợi ích mang lại sẽ là giải pháp được thực tế chấp nhận. Nếu cần bảo mật hơn nữa, đừng tìm kiếm giải pháp xác thực nào khác với password mà cần nâng lên PKI, công nghệ sẵn có, giá thành sẽ rẻ hơn nhiều đưa ra 1 loạt các scheme mới, chưa chắc đã chứng minh được tốt hơn, mà giá thành lại cao. Tất nhiên tranh cãi lý thuyết thì vẽ con voi nó có mấy vòi cũng được, nhưng ... tốn thời gian.
+Forum hoặc các ứng dụng web chạy không SSL, nếu cần bảo mật thì có thể triển khai cái này, tuy hơn bị vất 1 tí về việc làm script, nhưng đa số các kiddies sẽ khó ăn cắp được mật khẩu hay xâm nhập cướp session dù có capture được dữ liệu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181715</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181715</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 02:15:18]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @myquartz: Hình như bạn còn chưa đọc kĩ và hiểu rõ về mục đích của topic, tức là thảo luận về authentication schemes, chứ không phải là về implementation. RFC 2617 chính là nói về protocol 1 và 2 ngay trong post đầu tiên, cùng với những vấn đề của chúng. Còn nếu nói về implementation, mình thật nghĩ không ra cái javascript của bạn chống được MitM attack kiểu gì. 
+
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Cân bằng giữa giá trị và lợi ích mang lại sẽ là giải pháp được thực tế chấp nhận. Nếu cần bảo mật hơn nữa, đừng tìm kiếm giải pháp xác thực nào khác với password mà cần nâng lên PKI, công nghệ sẵn có, giá thành sẽ rẻ hơn nhiều đưa ra 1 loạt các scheme mới, chưa chắc đã chứng minh được tốt hơn, mà giá thành lại cao. Tất nhiên tranh cãi lý thuyết thì vẽ con voi nó có mấy vòi cũng được, nhưng ... tốn thời gian.&nbsp;
+		</blockquote>
+Topic này lập ra đâu phải để làm một project gì đâu mà sợ tốn thời gian hả bạn. Nếu nói như bạn thì phải chăng các nghiên cứu về vấn đề này là dư thừa sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181743</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 08:39:26]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>@myquartz: Hình như bạn còn chưa đọc kĩ và hiểu rõ về mục đích của topic, tức là thảo luận về authentication schemes, chứ không phải là về implementation. RFC 2617 chính là nói về protocol 1 và 2 ngay trong post đầu tiên, cùng với những vấn đề của chúng. Còn nếu nói về implementation, mình thật nghĩ không ra cái javascript của bạn chống được MitM attack kiểu gì. 
+&nbsp;
+		</blockquote>
+
+Nếu chỉ thảo luận lý thuyết, không dùng (hoặc không thể) triển khai thì bên dưới mình đã nói là nó sẽ phí thời gian. Sẽ giống như phát minh lại cái bánh xe, vì người ta đã có cái scheme đủ tốt để thực hiện rồi, chính nó là PKI.
+
+RFC 2617 không phải là protocol 2, nó mạnh hơn nhiều, vì không phải chỉ là salt, nó còn thêm nonce, nonceCount, clientNonce... Nó có khả năng chống MitM nếu sử dụng full option, nghĩa là HA2 gồm cả digest của method, URI và nội dung cần gửi đi. Kiểu Digest này chỉ yếu khi nó bị trình duyệt/MitM fail-back về RFC2096 (giống protocol 2).
+Tất nhiên RFC 2617 client không xác thực server, không phải là 2-way (mutual) authentication, đó không phải là mục tiêu của nó.
+Mình chỉ thấy rằng nó có thể triển khai thực tế để bảo vệ các web site NON-SSL thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181765</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181765</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 12:36:33]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>
+ Nếu chỉ thảo luận lý thuyết, không dùng (hoặc không thể) triển khai thì bên dưới mình đã nói là nó sẽ phí thời gian. Sẽ giống như phát minh lại cái bánh xe, vì người ta đã có cái scheme đủ tốt để thực hiện rồi, chính nó là PKI. 
+&nbsp;
+		</blockquote>
+
+Bạn myquartz ơi, ở đây người ta đang nói đến việc làm sao có một cơ chế xác thực tốt mà chỉ dựa vào mật khẩu của người dùng thôi. Đây là một hướng nghiên cứu với nhiều công trình của cryptography, chứ không phải là vấn đề đã được giải quyết rốt ráo rồi đâu bạn ơi.
+
+Tự dưng bạn lôi PKI ra, thế bạn thử nói xem một công ty bình thường, muốn xác thực khách hàng qua Internet, thì triển khai PKI thế nào? Mình chẳng biết công ty nào mà lại đi làm cái việc đó cả.
+
+Hình như cái này mình đã có nói một lần ở trên đây, bữa nay nói lại, gọi là mrro's law nha: hễ mà nói về bảo mật hay xác thực, thì không sớm thì muộn sẽ có người kêu phải triển khai PKI thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181787</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181787</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 16:34:01]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Bạn myquartz ơi, ở đây người ta đang nói đến việc làm sao có một cơ chế xác thực tốt mà chỉ dựa vào mật khẩu của người dùng thôi. Đây là một hướng nghiên cứu với nhiều công trình của cryptography, chứ không phải là vấn đề đã được giải quyết rốt ráo rồi đâu bạn ơi.
+
+Tự dưng bạn lôi PKI ra, thế bạn thử nói xem một công ty bình thường, muốn xác thực khách hàng qua Internet, thì triển khai PKI thế nào? Mình chẳng biết công ty nào mà lại đi làm cái việc đó cả.
+
+Hình như cái này mình đã có nói một lần ở trên đây, bữa nay nói lại, gọi là mrro's law nha: hễ mà nói về bảo mật hay xác thực, thì không sớm thì muộn sẽ có người kêu phải triển khai PKI thôi.&nbsp;
+		</blockquote>
+
+OK, hiểu ý rồi, khỏi tranh cãi. Lý do: đó là 1 hướng nghiên cứu mới về xác thực bằng mật khẩu (một cách đơn giản mà lại bảo đảm an toàn). Dự định áp dụng: cho dịch vụ web NON-SSL.
+Nếu thế nên thảo luận thêm 1 số cái scheme nữa, ví dụ CHAP, MS-CHAP, MD5-Challenge, EAP, NTLM...
+
+Theo quan điểm của tớ, giới nghiên cứu không tiếp tục đổ công sức thêm vào authentication scheme vì hiện đã có quá nhiều rồi. Nếu không sử dụng các công nghệ mã hoá và bảo đảm tính toàn vẹn, thì nghĩ ra 1 auth scheme thoả mãn 1-7 gần như là rất khó đạt được, hoặc scheme đó phải làm lại các thứ mà công nghệ SSL chẳng hạn đã có sẵn. Ví dụ việc sử dụng hàm E()/D() rất nhiều, chính nó là mã hoá đấy :-D. Ai tiếp tục theo thì ... xin mời tiếp. Tớ tưởng giúp ích được cho các bạn web master shared host ko có SSL, chứ thế này thì xin ngưng sau cái bài này thôi.
+
+@mrro: À mà PKI ở đây ko chỉ dùng là xác thực 2-way, rất tốn kém và phức tạp. Nó có thể là phương pháp xác thực 1-way là SSL (đã có 1 loạt chức năng an ninh rồi) với server-certificate only, ko cần client-cert. Với way còn lại là bằng cách chọn 1 trong các công nghệ công nghệ xác thực password hiện có ví dụ digest hay đơn giản là basic/form, người ta đã có 1 giải pháp khá hoàn chỉnh để chống được từ 1-7 rồi (tất nhiên còn 1 số nguy cơ khác nhưng nó là ở tại host).
+Cách kết hợp này không phải là mới, ví dụ Wifi (rất kém bảo mật, y như tình huống thảo luận trên đây) với EAP-TLS, client xác thực bằng user/pass, server xác thực bằng server-certificate, mã hóa và bảo đảm toàn vẹn bằng TLS, là giải pháp kết hợp 2 thứ, nhưng nhìn từ client vẫn là ... password.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181830</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181830</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 18:53:55]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Theo quan điểm của tớ, giới nghiên cứu không tiếp tục đổ công sức thêm vào authentication scheme vì hiện đã có quá nhiều rồi. &nbsp;
+		</blockquote>
+Bạn <b>myquartz</b> dựa vào đâu mà nói hay vậy?
+
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>RFC 2617 không phải là protocol 2, nó mạnh hơn nhiều, vì không phải chỉ là salt, nó còn thêm nonce, nonceCount, clientNonce... Nó có khả năng chống MitM nếu sử dụng full option, nghĩa là HA2 gồm cả digest của method, URI và nội dung cần gửi đi. Kiểu Digest này chỉ yếu khi nó bị trình duyệt/MitM fail-back về RFC2096 (giống protocol 2).
+Tất nhiên RFC 2617 client không xác thực server, không phải là 2-way (mutual) authentication, đó không phải là mục tiêu của nó.
+Mình chỉ thấy rằng nó có thể triển khai thực tế để bảo vệ các web site NON-SSL thôi.&nbsp;
+		</blockquote>
+RFC 2617 đề cập đến 2 scheme, một cái là basic, cái kia là digest. Cái basic thì là protocol 1, cái digest ý tưởng chính là protocol 2, chỉ có điều nó thêm nonce để chống replay attacks. Còn lại mình không thấy có gì nổi trội ở đây mà có thể coi như là thay thế (thậm chí là miễn cưỡng) SSL cả. Còn bạn nói nó có khả năng chống MitM thì mình cho rằng không chính xác, vì message authentication chỉ là one-way. 
+
+Ngược lại, RFC 2617 làm việc được dựa trên giả định rằng xác suất malicious MitM xuất hiện là vô cùng thấp, chứ nếu mà có nhiều MitM thì thôi rồi. Giả định này trên thực tế đúng phần nào với WWW, nhưng nếu như vậy, thì ngay đến Basic authentication cũng đã đủ rồi, chứ còn dùng digest authentication làm gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181859</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181859</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 21:24:49]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>
+Theo quan điểm của tớ, giới nghiên cứu không tiếp tục đổ công sức thêm vào authentication scheme vì hiện đã có quá nhiều rồi.   
+&nbsp;
+		</blockquote>
+
+Để mình trích một đoạn từ một bài báo mới đây của Cambridge Computer Security Lab nha (có bác Ross Anderson tác giả của Security Engineering với nhiều bác khác, có thể coi là một trong những lab hùng mạnh nhất thế giới về computer security và cryptography):
+
+<p></p>
+		<cite class="blockquote">Feng Hao wrote:</cite><br>
+		<blockquote>
+
+Password Authenticated Key Exchange (PAKE) is one of the central topics in cryptography. It aims to address a practical security problem: how to establish secure communication between two parties solely based on their shared password without requiring a Public Key Infrastructure (PKI).
+
+The solution to the above problem is very useful in practice — in fact, so useful that it spawns a lot “fights” over patents. Many techniques were patented, including the well-known Encrypted Key Exchange (EKE) and Simple Password Exponential Key Exchange (SPEKE). A secondary problem is technical; both the EKE and SPEKE protocols have subtle but worrying technical limitations (see the paper for details).
+
+At the 16th Workshop on Security Protocols held in April 2008, Cambridge, UK, I presented a new solution (joint work with Peter Ryan) called Password Authenticated Key Exchange by Juggling (or J-PAKE). The essence of the protocol design inherits from the earlier work on solving the Dining Cryptographers problem; we adapted the same juggling technique to the two-party case to solve the PAKE problem. To our best knowledge, this design is significantly different from all past PAKE solutions.
+&nbsp;
+		</blockquote>
+
+Xem thêm:<span class="link"> http://www.lightbluetouchpaper.org/2008/05/29/j-pake/</span>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181863</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181863</link>
+				<pubDate><![CDATA[Mon, 25 May 2009 21:37:23]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrNothing wrote:</cite><br>
+		<blockquote>Giao thức của bạn StarGhost vẫn chưa đủ rồi. Nếu salt chỉ loanh quanh luẩn quẩn ở các hàm cơ bản thì khó. Phải đưa lên dạng hàm một chiều one way function cơ, như x và g^x.
+Cái 4 còn vi phạm lỗi lớn là gửi đi password.&nbsp;
+		</blockquote>
+Bạn nói chí phải. Nếu chỉ dùng hash thì quả là có limitation. Protocol của mình có thể modify lại và dùng non-interactive ZKP thay vì hash, như vậy chắc sẽ secure, vì dù attacker có giả dạng Bob cũng không thể lấy được password, ngoại trừ việc bruteforce password dựa vào database mà attacker ăn cắp được của Bob (if any).
+
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@StarGhost: mình nghĩ bước số 4 này lại làm phát sinh một vấn đề
+
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+    4. Alice ---&gt; Bob: E(sk, nonce || pw)&nbsp;
+		</blockquote>
+<font color='orange'>Attacker mà có func(pw, salt), thì hắn chỉ cần lắng nghe một cái session giữa Alice và Bob là hắn tìm được pw, khỏi phải brute-force chi nữa.
+</font>
+<font color='red'>Ngoài ra thêm cái số 4 này, có thể ngăn attacker giả mạo Alice, nhưng không thể ngăn attacker giả mạo Bob, một khi hắn đã có (salt, func(pw, salt)).</font> &nbsp;
+		</blockquote>
+<font color='orange'>---&gt;</font>Nếu attacker có func(pw,salt) thì vẫn không thể dò ra được pw bằng việc sniff.
+
+<font color='red'>---&gt;</font> Mình không nghĩ rằng tồn tại một protocol nào có thể ngăn chặn attacker giả mạo Bob một khi hắn đã nắm trong tay tất cả các secrets của Bob, trong trường hợp này là func(pw,salt).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181885</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181885</link>
+				<pubDate><![CDATA[Tue, 26 May 2009 00:37:46]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+
+1. Nếu attacker có func(pw,salt) thì vẫn không thể dò ra được pw bằng việc sniff.
+
+2. Mình không nghĩ rằng tồn tại một protocol nào có thể ngăn chặn attacker giả mạo Bob một khi hắn đã nắm trong tay tất cả các secrets của Bob, trong trường hợp này là func(pw,salt).
+
+&nbsp;
+		</blockquote>
+
+1. lol cái notation nó lừa mình như lần trước.
+
+2. bạn StarGhost lại đúng. nhưng ý của mình ở đây là việc giả mạo Bob này đem lại một hậu quả ghê ghớm hơn là ở bước cuối cùng attacker sẽ có password ;-).
+
+lol câu cuối là mình xạo đó. mình không có nghĩ đến cái tình huống đó cho đến khi đọc cái last reply của bạn StarGhost. cần phải "mind your thought" như bạn StarGhost đề nghị :-p.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181901</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#181901</link>
+				<pubDate><![CDATA[Tue, 26 May 2009 02:37:43]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Các cách xác thực người dùng bằng mật khẩu </title>
+				<description><![CDATA[ @Protocol 2:
+- Không bị repaly attack nếu thay đổi salt mỗi lần thực hiện bắt tay.
+- Yếu điểm của nó là sever phải lưu trạng thái của quá trình bắt tay và chờ cho client gửi dữ liệu lần thứ 2. Cách khắc phục yếu điểm này mời bạn xem protocol Kerberos.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28909.hva#185089</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28909.hva#185089</link>
+				<pubDate><![CDATA[Tue, 30 Jun 2009 22:09:42]]> GMT</pubDate>
+				<author><![CDATA[ summerlant]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Defense::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Bảo mật hệ thống *nix với PAM (linet) <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/118.hva#448" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: linet - Translator:  - Entry Date: 13/02/2009 23:55:27" title="Author: linet - Translator:  - Entry Date: 13/02/2009 23:55:27"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>1. Đặt vấn đề</b><br/> <br/> Chắc hẳn bạn đã từng tự hỏi tại sao các chương trình ftp, su, login, passwd, sshd, rlogin … lại có thể hiểu và làm việc với shadow password; hay tại sao các chương trình su, rlogin lại đòi hòi password; tại sao một số hệ thống chỉ cho một nhóm nào đó có quyền su, hay sudo, hay hệ thống chỉ cho phép một số người dùng, nhóm người dùng đến từ các host xác định và các thiết lập giới hạn cho những người dùng đó, …Tất cả đều có thể lý giải với PAM. Ứng dụng của PAM còn nhiều hơn những gì tôi vừa nêu nhiều, và nó bao gồm các module để tiện cho người quản trị lựa chọn.<br/> <br/> <b>2. Cấu trúc PAM</b><br/> <br/> - Các ứng dụng PAM được thiết lập trong thư mục /etc/pam.d hay trong file /etc/pam.conf ( login, passwd, sshd, vsftp, …)<br/> - Thư viện các module được lưu trong /lib/security ( pam_chroot.so, pam_access.so, pam_rootok.so, pam_deny.so, … )<br/> - Các file cấu hình được lưu trong /etc/security ( access.conf, chroot.conf, group.conf ,… )<br/> + access.conf – Điều khiển quyền truy cập, được sử dụng cho thư viện pam_access.so.<br/> + group.conf – Điểu khiển nhóm người dùng, sử dụng bởi pam_group.so<br/> + limits.conf – thiết lập các giới hạn tài nguyên hệ thống, được sử dụng bởi pam_limits.so.<br/> + pam_env – Điểu khiển khả năng thay đổi các biến môi trường, sử dụng cho thư viện pam_env.so .<br/> + time – Thiết lập hạn chế thời gian cho dịch vụ và quyền người dùng, sử dụng cho thư viện pam_time.so.<br/> <br/> <b>3. Cách hoạt động của PAM</b><br/> <br/> Thuật ngữ<br/> - Các chương trình login, pass, su, sudo, … trên được gọi là privilege-granting application ( chương trình trao đặc quyền ).<br/> <br/> - PAM-aware application: là chương trình giúp các privile-granting application làm việc với thư viện PAM.<br/> <br/> <i>Các bước hoạt động:</i><br/> <br/> 1. Người dùng chạy một ứng dụng để truy cập vào dịch vụ mong muốn, vd login.<br/> 2. PAM-aware application gọi thư viện PAM để thực hiện nhiệm vụ xác thực.<br/> 3. PAM library sẽ dựa vào file cấu hình của chương trình đó trong /etc/pam.d ( vd ở đây là login -&gt; file cấu hình /etc/pam.d/login ) xác định loại xác thực nào được yêu cầu cho chương trình trên. Trong trường hợp không có file cấu hình, thì file /etc/pam.d/other sẽ được sử dụng.<br/> 4. PAM library sẽ load các module yêu cầu cho xác thực trên.<br/> 5. Các modules này sẽ tạo một liên kết tới các hàm chuyển đổi ( conversation functions ) trên chương trình.<br/> 6. Các hàm này dựa vào các modules mà đưa ra các yêu cầu với người dùng, vd chúng yêu cầu người dùng nhập password.<br/> 7. Người dùng nhập thông tin vào theo yêu cầu.<br/> 8. Sau khi quá trình xác thực kết thúc, chương trình này sẽ dựa vào kết quả mà đáp ứng yêu cầu người dùng ( vd cho phép login vào hệ thống ) hay thông báo thất bại với người dùng.<br/> <br/> <b>4. Bây giờ chúng ta sẽ nghiên cứu file config</b><br/> <br/> The /etc/pam.d/rlogin file<br/> <blockquote><br/> #%PAM-1.0<br/> auth required /lib/security/pam_securetty.so<br/> auth sufficient /lib/security/pam_rhosts_auth.so<br/> auth required /lib/security/pam_stack.so service=system-auth<br/> auth required /lib/security/pam_nologin.so<br/> account required /lib/security/pam_stack.so service=system-auth<br/> password required /lib/security/pam_stack.so service=system-auth<br/> session required /lib/security/pam_stack.so service=system-auth<br/> &nbsp;<br/> 		</blockquote><br/> <br/> <br/> Các dòng trong file config có dạng sau:<br/> <br/> module-type control-flag module-path module-args<br/> <br/> ----MODULE TYPE<br/> <br/> auth: thực hiện xác thực. Thông thường, một auth module sẽ yêu cầu password để kiểm tra, hay thiết lập các định danh như nhóm người dùng, hay thẻ kerberos.<br/> <br/> Account điều khiển sự kiểm tra “bề mặt” với yêu cầu xác thực. Ví dụ, nó có thể kiểm tra người dùng truy cập dịch vụ từ một host và trong thời gian cho phép hay không. <br/> <br/> Password: thiết lập password. Thông thường, nó luôn có sự tương ứng giữa một module auth và một module password..<br/> <br/> Session: điều khiển các nhiệm vụ quản lý session. Được sử dụng để đảm bảo rằng người dùng sử dụng tài khoản của họ khi đã được xác thực..<br/> <br/> ----PAM MODULE CONTROL FLAGS<br/> <br/> Require: cờ điều khiển này nói với PAM library yêu cầu sự thành công của modules tương ứng, vd “auth required /lib/security/pam_securetty.so” à module pam_securetty.so phải thành công. Nếu module đó không được thực hiện thành công thì quá trình xác thực thất bại. Nhưng lúc đó, PAM vẫn tiếp tục với các module khác, tuy nhiên nó chỉ có tác dụng nhằm tránh khỏi việc người dùng có thể đoán được quá trình này đã bị thất bại ở giai đoạn nào.<br/> <br/> Sufficient: cờ này khác với cờ trên ở chỗ, khi có một module thực hiện thành công nó sẽ thông báo hoàn thành ngay quá trình xác thực, mà không duyệt các module khác nữa.<br/> <br/> Requisite: cờ này có ý nói PAM library loại bỏ ngay quá trình xác thực khi gặp bất kỳ thông báo thất bại của module nào.<br/> <br/> Optional: cờ này ít khi được sử dụng, nó có ý nghĩa là module này được thực hiện thành công hay thất bại cũng không quan trọng, không ảnh hưởng quá trình xác thực.<br/> <br/> ----MODULE-PATH – Đường dẫn đên thư viện PAM.<br/> <br/> <br/> ----ARGUMENTS – Các biến tùy chọn cho các module.<br/> <br/> Các module ( auth, account, password, session ) được thực hiện trong stack và chúng được thực hiện theo thứ tự xuất hiện trong file config.<br/> <br/> Các chương trình yêu cầu xác thực đều có thể sử dụng PAM.<br/> <br/> <br/> <b>5. Sau đây tôi xin giới thiệu chức năng của một số module</b><br/> <br/> * pam_access.so:<br/> - Support module type : account<br/> - Module này sử dụng file thiết lập trong etc/security/access.conf .<br/> File cấu hình này có dạng như sau:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>&lt; + or - &gt; : : + : grant permission<br/> - : deny permission</pre><br/> 		</div><br/> <br/> Với username list là người dùng hay nhóm người dùng, tty list là login qua console, host list xác định các host hay domain. Chúng ta có thể sử dụng các từ khóa ALL=tất cả, EXCEPT=trừ,LOCAL=cục bộ.<br/> <br/> Ví dụ: sau cho cấm osg login từ tất cả, và cho phép linet login từ xa.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>account required pam_access.so<br/> -:osg:ALL<br/> +:linet:ALL EXCEPT LOCAL</pre><br/> 		</div><br/> <br/> * pam_chroot.so:<br/> Support module type :account; session; authentication<br/> Dùng để chroot cho các user thiết lập trong /etc/security/chroot.conf<br/> Ví dụ, tôi thực hiện chroot cho sshd để người dùng linet chỉ có quyền truy cập trong /home/osg mà không có quyền truy cập đến các thư mục home của người dùng khác<br/> Thêm dòng sau trong /etc/pam.d/sshd ( lưu ý trong /etc/sshd/sshd_config phải thiết lập UsePAM = yes )<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>session required pam_chroot.so</pre><br/> 		</div><br/> <br/> * pam_deny.so:<br/> <br/> Support module type: account; authentication; password; session<br/> Module này luôn trả về giá trị false. Vd nó được dùng trong /etc/pam.d/other để từ chối mọi truy cập của người dùng khi truy cập vào các PAM-aware program mà không có file cấu hình PAM<br/> <br/> - Acount module type: Từ chối người dùng quyền truy cập vào hệ thống<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#add this line to your other login entries to disable all accounts<br/> login account required pam_deny.so</pre><br/> 		</div><br/> <br/> - Authentication module type: từ chối truy cập, thiết lập giá trị mặc định. vd trong /etc/pam.d/other. Khi người dùng login vào hệ thống, đầu tiên sẽ gọi các module trong /etc/pam.d/login ra và yêu cầu người dùng nhập thông tin tương ứng ( username, password ), nếu các thông tin này không đáp ứng thì PAM sẽ gọi /etc/pam.d/other ra để deny quyền truy cập.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#/etc/pam.d/other<br/> auth required /lib/security/$ISA/pam_deny.so<br/> account required /lib/security/$ISA/pam_deny.so<br/> password required /lib/security/$ISA/pam_deny.so<br/> session required /lib/security/$ISA/pam_deny.so</pre><br/> 		</div><br/> <br/> - Password module type: Không cho phép change password<br/> <br/> ví dụ không cho phép người dùng đổi passwd<br/> Thêm dòng sau vào /etc/pam.d/passwd<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>password required pam_deny.so</pre><br/> 		</div><br/> <br/> * pam_limits.so<br/> - Support module type: session<br/> Thiết lập các giới hạn tài nguyên trong /etc/security/limit<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>username|@groupname type resource limit.</pre><br/> 		</div><br/> <br/> A resource can be one of these keywords:<br/> · core - Limits the size of a core file (KB).<br/> · data - Maximum data size (KB).<br/> · fsize - Maximum file size (KB).<br/> · memlock - Maximum locked-in memory address space (KB).<br/> · nofile - Maximum number of open files.<br/> · rss - Maximum resident set size (KB).<br/> · stack - Maximum stack size (KB).<br/> · cpu - Maximum CPU time in minutes.<br/> · nproc - Maximum number of processes.<br/> · as - Address space limit.<br/> · maxlogins - Maximum number of logins allowed for this user.<br/> <br/> Thông tin chi tiết ở trong /etc/security/limits.conf<br/> <br/> Vd dưới đây, tất cả user giới hạn 10 MB mỗi session và cho phép max là 4 logins đồng thời. ftp được cho phép 10 login đồng thời ( hứu ích cho anonymous ftp ); thành viên của nhóm manager giới hạn 40 process, nhóm developers giới hạn 64MB bộ nhớ, và các user thuộc wwwusers không thể tạo files lớn hơn 50 MB = 500000 KB.<br/> <br/> Setting quotas and limits<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>* hard rss 10000<br/> * hard maxlogins 4<br/> * hard core 0<br/> bin -<br/> ftp hard maxlogins 10<br/> @managers hard nproc 40<br/> @developers hard memlock 64000<br/> @wwwusers hard fsize 50000</pre><br/> 		</div><br/> <br/> Để active các limits này, bạn cần thêm dòng sau vào cuối /etc/pam.d/login:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>session required /lib/security/pam_limits.so.</pre><br/> 		</div><br/> <br/> <br/> * pam_listfile.so<br/> <br/> Module này đọc thông tin trong file và thực hiện hành động được thiết lập ( như cho phép hay không cho phép truy cập ) dựa vào sự tồn tại hay không của các nhân tố như username, host, groups, …<br/> <br/> Ví dụ trong vsftpd<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>auth required /lib/security/pam_listfile.so item=user \<br/> sense=deny file=/etc/ftpusers onerr=succeed</pre><br/> 		</div><br/> <br/> <br/> Yêu cầu PAM load pam_listfile module và đọc trong /etc/ftpusers, nếu /etc/ftpusers chứa các dòng username, thì PAM sẽ sử dụng sense=deny để quyết định ngăn cản các user này truy cập vào. Vậy các user trong /etc/ftpusers sẽ ko có quyền truy cập vào ftp.<br/> <br/> * pam_rootok.so<br/> <br/> Sử dụng module này để yêu cầu root không cần nhập password khi thực hiện chương trình, vd nó được gán vào su để chi rằng root không cần gõ passwd khi đánh lệnh su<br/> <br/> * pam_wheel.so<br/> Chỉ cho phép quyền truy cập root với group wheel. Ví dụ chỉ cho phép những người thuộc nhóm wheel có quyền su lên root.<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#<br/> # root gains access by default &#40;rootok&#41;, only wheel members can<br/> # become root &#40;wheel&#41; but Unix authenticate non-root applicants.<br/> #<br/> auth sufficient pam_rootok.so<br/> auth required pam_wheel.so<br/> auth required pam_unix_auth.so</pre><br/> 		</div><br/> <br/> <br/> ----------------------  Tham khảo -----------------------------------<br/> Document:<span class="link"> http://www.kernel.org/pub/linux/libs/pam/pre/doc/</span><br/> Mã nguồn module:<span class="link"> http://cvs.sourceforge.net/viewcvs.py/pam/Linux-PAM/modules/</span><br/> <br/> Trên đây là một số thông tin tôi cung cấp về PAM. Hy vọng sẽ giúp ích phần nào cho các bạn trong security linux. Mọi chi tiết xin liên hệ <a href="mailto:kiennd@gmail.com">kiennd@gmail.com</a>. Thanks!!!<br/> <br/> <br/> Tác giả <b>linet</b></div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/448.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/118.hva#448" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

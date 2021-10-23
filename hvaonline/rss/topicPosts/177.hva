@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Ký sự các vụ DDoS đến HVA - Phần 3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Ký sự các vụ DDoS đến HVA - Phần 3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 3</title>
+				<description><![CDATA[ <b>Sáng 12/10</b>
+Sáng nay công việc có phần thư thả hơn mọi ngày, tôi quyết định log vào server HVA để bắt đầu xem xét cẩn thận cấu hình kernel / firewall / web server xem thử cần phải làm gì để &quot;trị&quot; căn bệnh x-flash này. Tôi quên bẵng là firewall / proxy của công ty không cho phép đi thẳng đến cổng 22 <font color='orange'>-12-</font>, bây giờ mới đớ người ra vì không vào HVA server được. Tôi đã &quot;bị&quot; kẹt vụ này đã lâu cho nên phải biến cổng SSH trên firewall riêng ở nhà từ 22 thành 443 vì firewall của hãng chỉ cho truy cập đến cổng 80 và 443 (xuyên qua proxy dùng HTTP CONNECT), nhưng đây là chuyện khác, không khéo tôi lại lạc đề ở đây. Sau vài phút trầm ngâm, tôi nảy ra ý tạo tunnel từ máy của mình đến firewall riêng ở nhà rồi mới tạo ssh connection từ máy của mình đến HVA server xuyên qua tunnel này. Biết rằng &quot;tunnel trong tunnel&quot; <font color='orange'>-13-</font> chắc là chuối lắm vì chậm, nhưng không còn cách nào khác. 
+
+Sau một phút thử nghiệm, tôi thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh localhost -p 25250</pre>
+		</div>
+(localhost của tôi lắng nghe trên cổng 25250 và forward thông tin đến firewall riêng của tôi ở nhà, từ đó nó mới đi đến HVA server). Ái chà, nó chạy! Hơi chậm một tí nhưng không sao cả. Tôi mở thêm một console khác cũng xuyên qua tunnel này. Tốt rồi, hai cái shell là đủ làm việc.
+
+Tôi tìm hồ sơ mà tôi đã hí hoáy ghi xuống chằng chịt ngày hôm trước rồi rà xuyên qua nó. Đây rồi <i>Hơn 15 ngàn request đến HVA server mỗi ngày. Tập trung khoảng 8 giờ đến 10 giờ tối VN, cao điểm là 9 giờ. Từ 8 giờ đến 10 giờ tối có độ chừng 10 ngàn đến 12 ngàn x-flash requests. Có khoảng 1 truy cập hợp lệ cho mỗi 30 giây (HTTP GET, HTTP POST) của các thành viên duyệt diễn đàn khi diễn đàn đông nhất.</i> Cứ cho là trong 2 giờ cao điểm này có 12 ngàn x-flash requests đến HVA server, số &quot;lẻ tẻ&quot; còn lại không đáng kể.
+
+<b>(12000 requests / 120 phút) / 60 giây = 1.6 request mỗi giây</b>
+
+Nói về mặt tần số truy cập thì đây là một con số khá cao. Dựa trên số liệu thành viên truy nhập diễn đàn và gởi / xem bài một cách hợp thức và bình thường (lấy từ log của web server) xấp xỉ:
+
+<b>(200 thành viên sign-in mỗi giờ / 60 phút) / 60 giây = 0.05 request mỗi giây</b>
+
+So sánh hai con số trên thì tần số &quot;truy cập&quot; bất hợp lệ (x-flash) gấp 32 lần tần số truy cập hợp lệ. Kinh nhể? 
+Câu hỏi cũng như câu trả lời ở giai đoạn này trở nên quá hiển nhiên: 
+<b>- hỏi: vô hiệu hoá các truy cập bất hợp lệ ra sao đây?</b> trả lời: giới hạn các truy cập bất hợp lệ.
+<b>- hỏi: vậy giới hạn là giới hạn thế nào? trả lời:</b> hèm... cái này thì đang tính toán đây.
+
+Phải hình thành một công thức để tạo giá trị trung bình của một kết nối bình thường và từ đó mới có thể hình thành giới hạn hợp lý được. Vì HTTP là một giao thức có tính stateless <font color='orange'>-14-</font> cho nên, thông tin giữa client (trình duyệt) và server (web server) thường được kết thúc càng nhanh càng tốt và connection này sẽ được tắt bỏ sau khi quy trình chuyển gởi thông tin hoàn tất. Tuy nhiên, trong quá trình chuyển đổi, giữa client và server sẽ mở thêm các connection nếu dữ liệu được truyền quá lớn hoặc cần chuyển tải thông tin nhanh chóng. Mục đích là để đẩy thông tin đi đến client (hoặc server) càng nhanh càng tốt (HTTP GET và HTTP POST). Hãy xem thử một x-flash stream xem sao. Tôi điều chỉnh hai console đã được kết nối vào HVA server cho chúng nằm song song. Trên console thứ nhất tôi &quot;tail&quot; web server log của HVA, trên console thứ nhì tôi chạy netstat. À ha, có vài chú x-flash đang đi vào, tôi lấy ngay IP đang hiển thị trên console theo dõi log của web server và chuyển sang console có chứa netstat. Hãy thử IP 221.132.39.253 xem sao:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@hvaonline httpd&#93;# netstat -nat | grep 221.132.39.253
+tcp        0      0 192.168.1.100:80        221.132.39.253:4548      SYN_RECV
+tcp        0      1 192.168.1.100:80        221.132.39.253:4544      LAST_ACK
+tcp        0    723 192.168.1.100:80        221.132.39.253:4545      ESTABLISHED
+tcp        0    723 192.168.1.100:80        221.132.39.253:4546      ESTABLISHED
+tcp        0    723 192.168.1.100:80        221.132.39.253:4547      ESTABLISHED
+tcp        0      0 192.168.1.100:80        221.132.39.253:4523      TIME_WAIT
+tcp        0      0 192.168.1.100:80        221.132.39.253:4526      CLOSE_WAIT
+tcp        0      0 192.168.1.100:80        221.132.39.253:4527      CLOSE_WAIT
+tcp        0      0 192.168.1.100:80        221.132.39.253:4494      TIME_WAIT
+tcp        0      0 192.168.1.100:80        221.132.39.253:4504      TIME_WAIT
+tcp        0      0 192.168.1.100:80        221.132.39.253:4505      TIME_WAIT</pre>
+		</div>
+Cha chả, chú <b>221.132.39.253</b> này tham lam quá nhỉ? một mình chú đã có đến những 3 cái &quot;ESTABLISHED&quot;, lại thêm 1 cái &quot;SYN_RECV&quot; và một mớ &quot;CLOSE_WAIT&quot;, &quot;TIME_WAIT&quot;. Dựa trên thông tin của hình minh hoạ ở trên thì &quot;thái độ&quot; tham lam này hoàn toàn phù hợp, bởi lẽ, một HTTP POST có payload đến trên 2 ngàn bytes thì nó phải đòi mở thêm connection để &quot;đẩy&quot; dữ kiện đến HVA server càng nhanh càng tốt mà (bạn có để ý đến chi tiết ACK-PSH của TCP segment chứa HTTP POST đã nói trong bài trước không?). Tôi tiếp tục theo dõi thì thấy chú 221.132.39.253 có đến những tám cái &quot;ESTABLISHED&quot; cả thảy trong suốt quá trình chú hối hả POST lên server của HVA, điều này có nghĩa là có ít nhất 8 cái SYN đã gởi đến HVA server và vì nó là legitimate request (yêu cầu truy cập hợp pháp) cho nên HVA server không hề cản mà cho chúng đi xuyên qua các bước TCP handshake rồi đi đến tình trạng &quot;ESTABLISHED&quot;. Có thể 8 cái &quot;ESTABLISHED&quot; này không dành riêng cho một stream mà có ai đó cũng dùng chung cái IP này để truy cập HVA server. Có lẽ đường dẫn giữa IP này và HVA server hơi chuối, cũng có lẽ chính chú bị nghẽn vì đồng đội của chú cũng đang hối hả flood HVA, cho nên, chú phải đòi mở nhiều connection đến HVA server đến như vậy. Như vậy, tổng số socket cần mở ra cho chú 221.132.39.253 và đồng đội của chú (từ nhiều IP khác) cho tất cả các stream sẽ lớn lắm đây. Cứ cho rằng mỗi stream chứa HTTP POST mở ra 6 connections, chúng ta có:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40; 12000 requests tạo &#41; 12000 streams x 8 sockets = 72000 connections &#40;cho mỗi giờ&#41;.
+&#40; 72000 connection / 120 &#41; / 60 = 10 connections cho mỗi giây.</pre>
+		</div>
+Ôi giời ơi, sao mà kinh thế? Cho dù SYN state thoát ra rất nhanh, cho dù ESTABLISHED state chỉ chiếm vài giây nhưng hậu quả của mớ &quot;TIME_WAIT&quot; và &quot;CLOSE_WAIT&quot; sau khi &quot;ESTABLISHED&quot; tắt bỏ thật sự mới khinh khủng.
+
+Tôi càng tin tưởng vào ý định dùng giới hạn connection thay vì giới hạn packet rate <font color='orange'>-15-</font>. Lý do hết sức đơn giản: người dùng bình thường chỉ cần 4 connections là nhiều (tôi phỏng đoán với nội dung thông thường của 1 trang trên HVA forum). Chỉ có những chú &quot;x-flash&quot; tham lam kia mới cần hơn 4 connections vì HTTP POST chứa payload quá lớn.
+
+Để bảo đảm, tôi dùng chính trình duyệt của mình để thử truy cập vào một trang trên diễn đàn HVA. Hèm, hãy thử netstat trên một console xem sao:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@hvaonline root&#93;# netstat -nat | grep xxx.xx.xxx.98
+tcp        0      0 192.168.1.100:80        grep xxx.xx.xxx.98:9322      SYN_RECV
+tcp        0      1 192.168.1.100:80        grep xxx.xx.xxx.98:9313      LAST_ACK
+tcp        0    198 192.168.1.100:80        grep xxx.xx.xxx.98:9307      ESTABLISHED
+tcp        0    198 192.168.1.100:80        grep xxx.xx.xxx.98:9306      ESTABLISHED
+tcp        0      0 192.168.1.100:80        grep xxx.xx.xxx.98:9303      TIME_WAIT
+tcp        0      0 192.168.1.100:80        grep xxx.xx.xxx.98:9288      CLOSE_WAIT
+tcp        0      0 192.168.1.100:80        grep xxx.xx.xxx.98:9292      TIME_WAIT</pre>
+		</div>
+Rất tiếc tôi phải xoá cái IP của mình và thay thế bằng xxx.xx.xxx.98 vì IP này là IP toàn thời (tôi muốn ăn ngon, ngủ yên nên không thể tiết lộ IP của mình). Trở lại câu chuyện chính, bất chấp tôi vào trang nào, bất chấp trang ấy có nhiều hay ít thông tin, tôi không hề thấy có hơn 4 connection hiện diện cho mỗi lần. Tôi cũng thử lệnh netstat ngay trên máy con của mình và xác nhận được điều này. Phần lớn là 3 connections cho mỗi lần, ngoại trừ trang nào lớn lắm thì mới thấy có 4 connections nhưng tỉ lệ này chỉ 1/100 (xấp xỉ 100 lần duyệt mới có một lần). Một chi tiết đáng nêu ra nữa là: thời gian một socket nằm ở vị trí &quot;ESTABLISHED&quot; chưa bao giờ lâu hơn 2 giây, phần lớn chỉ 1/2 giây hoặc 1 giây là tối đa. Điều này giúp chúng ta rút ra vài điều rất lý thú:
+- mỗi trình duyệt cần tối đa 4 connection để duyệt 1 trang.
+- 4 connections này không ở tình trạng &quot;ESTABLISHED&quot; cùng 1 lúc, chỉ tối đa 2 sockets ở tình trạng &quot;ESTABLISHED&quot; cho mỗi lần.
+
+Giả sử 200 thành viên của HVA đang có mặt trên diễn đàn và cho rằng có 1/10 số lượng người đang bấm vào một số trang nào đó (đây là trường hợp cực đoan vì theo thông tin của web server log, thì trung bình mỗi 30 giây có một &quot;GET&quot; trong khoảng thời gian server bận rộn), và số lượng 1/10 này ít nhất là dùng 5 IP (5 proxy khác nhau) để truy cập HVA server:
+(( 200 / 10) x 2 &quot;ESTABLISHED&quot;) / 1 giây = 40 &quot;ESTABLISHED&quot;
+40 &quot;ESTABLISHED&quot; / 5 IP = <b>8 &quot;ESTABLISHED&quot; connections</b> là số connection hợp lệ cho mỗi IP tại bất kì thời điểm nào.
+
+<b>8 &quot;ESTABLISHED&quot; connections</b> tối đa cho mỗi IP một lần, con số này trông rất vừa phải. Nếu quy định cho firewall chỉ cho phép tiếp nhận tối đa 8 connections đến web server một lần thì nó đã dư sức phục vụ cho 200 thành viên có mặt trên diễn đàn cùng một lúc. Đó là chưa kể trường hợp khi một thành viên thứ nhất cần duyệt 1 trang nào đó, nếu nó bị xếp vào dạng quá connection thì trình duyệt của thành viên ấy sẽ tiếp tục gởi request đến HVA server để &quot;thử lại&quot;, cơ hội &quot;thử lại&quot; lần thứ nhì này tạo connection trong phạm vi giới hạn 8 connections rất cao. Đối với người dùng bình thường, sự chậm trễ do &quot;thử lại&quot; này chỉ là một chậm trễ rất nhỏ. Tại sao tôi chọn tình trạng TCP &quot;ESTABLISHED&quot; để biểu thị cho &quot;connection&quot;? <font color='orange'>-16-</font> lý do rất đơn giản là một kết nối đã đi đến tình trạng &quot;ESTABLISHED&quot; thì kết nối đó đã thành công, đã có thông tin qua lại giữa 2 đầu. Phải đi qua được giai đoạn TCP handshake thành công thì mới đến tình trạng &quot;ESTABLISHED&quot;. 
+
+Cũng nên đào sâu thêm một tí về giới hạn 8 connections đã nêu ra ở trên về mặt logic. Giả sử chúng ta đã hình thành chế độ firewall được ấn định cho phép truy cập đến HVA web server từ bất cứ nơi đâu, miễn sao mỗi IP chỉ được phép dùng tối đa là 8 connections. 8 connections này có dạng na ná như một loại connection pools. Ví dụ, IP 203.162.5.100 là IP của một proxy server nào đó, đằng sau IP này có 10 người đang dùng để truy cập HVA server:
+- người dùng thứ nhất chiếm 3 connections (nếu truy cập bình thường như tôi đã thử từ trình duyệt của tôi ở trên) --&gt; <font color='orange'>&quot;pool&quot; còn lại 5 connections</font>
+- người dùng thứ hai chiếm 3 connections --&gt; trong khi đó, người dùng thứ nhất đã trả lại 2 connection --&gt; (5 + 2) - 3 = <font color='orange'>&quot;pool&quot; còn lại 4 connections</font>
+- ngay khi người thứ ba chiếm 3 connection nữa thì 3 connections của người dùng thứ nhất đã hoàn thành và đã trả lại 1, người dùng thứ hai trả lại 2 --&gt; (4 + 2 + 1) - 3 = &quot;pool&quot; còn 4 connections
+
+Và cứ thế mà xoay tròn. Đây là nói theo tình trạng truy cập sequential (theo chu trình) hết người này đến người khác, còn nếu tình trạng truy cập đồng thời thì sao? Cũng 10 người dùng proxy trên để truy cập HVA server:
+- hai người 1 và 2 cùng truy cập một lúc, chiếm 6 connections --&gt; <font color='orange'>&quot;pool&quot; còn 2 connections</font>
+- người thứ 3 và 4 kế tiếp cùng truy cập, chiếm 6 connections --&gt; 1 và 2 ở trên trả lại ít nhất 4 connections --&gt; (4 + 2) - 6 = <font color='orange'>&quot;pool&quot; còn 0 connection</font>
+- người thứ 5 và 6 cùng truy cập, chiếm 6 connections --&gt; 1 và 2 trả lại hết các connection còn lại (2), 3 và 4 trả lại ít nhất 4 connections --&gt; (2 + 4) - 6 = &quot;pool&quot; còn 0 connection
+Theo phân tích trên, ngay cả trường hợp 2 người dùng cùng truy cập một lượt và dùng chung 1 IP (1 proxy server) để truy cập thì vẫn không bị ảnh hưởng gì từ chế độ cản của firewall (với ấn định tối đa 8 connections).
+
+Nếu như kế tiếp có người thứ 7, 8 và 9 cùng truy cập thì sao? Chắc chắn là thiếu 2 connection. Tuy nhiên, anh chàng nào hơi chậm chân một tí thì trình duyệt sẽ &quot;retry&quot; ngay sau đó và khi &quot;retry&quot; packet này đụng đến server thì cơ hội có connection để vào rất cao vì khi ấy người thứ 3, 4, 5, 6 đã trả lại một loạt connection rồi. Đối với người dùng bình thường, đây là một &quot;delay&quot; rất nhỏ và có thể tiếp nhận được. Trên thực tế, chuyện này hiếm xảy ra. Theo thông tin đã thâu thập được từ log của web server thì cứ 30 giây mới có một xuất truy cập mới. Quy định 8 connections một lúc cho mỗi IP thật sự còn quá thư giãn so với hoàn cảnh thực tế. Tuy nhiên, cứ tạm dùng con số này làm điểm khởi đầu rồi chỉnh sửa sau vậy.
+
+Vậy nếu HVA server bị &quot;flood&quot; liên tục và chiếm hết connections, làm cho người dùng bình thường không vào được thì sao? Đây là điểm đòi hỏi phải chỉnh sửa các thông số tcp/ip trên kernel để điều tiết cho thích hợp hơn. Nếu các giá trị ấn định cho tcp/ip cho phép &quot;backlog&quot; <font color='orange'>-17-</font> thì vẫn giải quyết được trường hợp bị &quot;flood&quot;. Tất nhiên là máy con truy cập sẽ bị chậm hơn nhưng vẫn còn tốt hơn là hoàn toàn bị &quot;từ chối&quot;. Một ưu điểm rất lớn mà tôi tìm thấy được qua nhiều lần &quot;táy máy&quot; là trong trường hợp bị &quot;flood&quot;, backlog queue này còn giúp cho IDS (Intrusion Detection System) kịp thời gởi gói tin xử lý đến những gói tin vi phạm với hiệu quả cao hơn<font color='orange'>-18-</font>.
+
+Dựa trên những điểm đã phân tích ở trên, tôi thấy rõ phương pháp dùng &quot;connection pool&quot; ở trên có hai điểm ưu việt hơn dùng phương pháp packet rates:
+- giới hạn connection tính theo biên độ và trường độ truy cập cho phép người dùng có thể truy cập với băng thông tối đa và loại bỏ những truy cập &quot;tham lam&quot;, không thực tế.
+- với giới hạn này, nó giúp giới hạn tài nguyên cho máy chủ (và những bộ phận gắn liền với máy chủ), ví dụ như backend database chẳng hạn. Connection limit bảo đảm tối đa chỉ có 8 xuất query đến database một lần nếu những connection này đụng chạm đến database server (nên nhớ: truy nhập và lấy dữ kiện từ database tốn tài nguyên hơn bất cứ giai đoạn nào khác trên hệ thống).
+
+Trong khi đó, packet rate giới hạn số packets trong một đơn vị thời gian nào đó, cái này chỉ làm chậm mọi quy trình lại nhưng không áp đặt một giới hạn nào rõ ràng. Nếu dùng packet rate, số xuất truy cập vào database có thể lên đến số lượng đã áp đặt trên chính cấu hình database mà thôi và đây là điều rất kẹt vì rất tốn kém tài nguyên của máy chủ. Đến một mức độ nào đó, đường truyền sẽ bị dung hoà (saturated) và các client hợp pháp sẽ vào được nhưng cực kỳ chậm nhưng để đạt tới mức độ này, ít nhất đường truyền dùng để tấn công phải hơn đường truyền của máy chủ HVA ít nhất là 3 lần. Giới hạn connection bảo đảm một điều tối quan trọng, cho dù máy chủ bị &quot;flood&quot; cỡ nào cũng không thể &quot;giết&quot; được nó. 
+
+Được rồi, hãy quyết định khai triển hướng giới hạn connection trước để cắt bỏ phần lớn khối 20 connections / 1 giây của các con bọ &quot;x-flash&quot; kia trước rồi tiếp tục khai triển bước &quot;triệt tiêu&quot; chúng hoàn toàn sau.
+
+Chuyển sang console thứ nhất đã được kết nối vào HVA server, tôi chạy một loạt lệnh để kiểm tra:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># lsmod</pre>
+		</div>
+Hèm... không thấy mấy cái modules mình muốn, hẳn là như vậy vì module mình muốn đâu nằm trong &quot;base modules&quot; của kernel.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ls /proc/sys/net/ipv4/netfilter</pre>
+		</div>
+Hèm... quả thật mấy cái modules mình muốn chưa hề có trong kernel, cũng nên xác định cho rõ.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># sysctl -a | grep net</pre>
+		</div>
+Whoa... đa số là giá trị mặc định, chi tiết này phải ghi xuống để chỉnh lại sau, không thì quên nữa.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iptables -L -v | more</pre>
+		</div>
+Nhìn ok nhưng... còn thắt lại được nhiều lắm.
+
+Chà chà, lão JAL và mấy lão BQT &quot;hiền&quot; quá, mấy cái rules này của firewall không dễ để &quot;đột phá&quot; nhưng nó có quá ít ảnh hưởng đến mớ x-flash quái đản kia. &quot;Packet rate&quot; cũng đã áp đặt nhưng với tần số 1.6 request / 1 giây thì.... bó tay, hơn nữa, áp đặt này chỉ làm cho bà con thành viên truy cập vào diễn đàn chậm hơn. Kernel hiện tại cần thiết lập vài modules quan trọng để thực sự giới hạn truy cập. Tôi chưa muốn xem xét các tầng cao hơn vì kế hoạch mà tôi đã hình thành trong đầu là: thắt từ dưới lên và hiện nay tôi đang ở tầng dưới cùng trong các tầng giao thức, những tầng kia sẽ xét sau.
+
+Tôi gởi ngay cho JAL một PM về việc tái biên dịch kernel để thêm vài modules quan trọng cho kernel cũng như loại bỏ nhiều modules không cần thiết. Mười lăm phút trôi qua, rồi một giờ trôi qua. Chà, sao không thấy tăm hơi lão JAL đâu nhỉ? Tôi quyết định bắt tay vào thực hiện ý định của mình rồi sẽ thông báo để lão tái khởi động máy sau vậy.
+
+Tôi dùng wget, tiện ích tôi rất ưa thích để lấy mã nguồn của kernel và các bản vá cần thiết. Trong khi wget tải những thứ lỉnh kỉnh kia về, tôi vi ngay hồ sơ cấu hình biên dịch của kernel (tiết kiệm thời gian mà lị). Hèm.... mười lăm phút đầy những Y, N và M trên một hồ sơ cấu hình biên dịch của kernel, hơi oải... nhưng biết sao hơn? Băng thông khá tốt nên mới sau vài phút thì những thứ tôi cần đã được tải hết về máy. Tôi xả nén mã nguồn kernel, vá và bắt tay vào chuyện biên dịch. 
+
+Tôi rà kỹ qua hồ sơ cấu hình biên dịch kernel một lần cuối... ok, mọi chuyện đâu vào đó. Một, hai, ba... chạy. Hơn ba mươi phút trôi qua với hàng loạt thông điệp chạy vi vút trên màn hình. Kinh khủng, kinh khủng, kernel được biên dịch xong dưới ba mươi lăm phút, đúng là dual CPU có khác, đây là không kể đến hoàn cảnh server hiện nay đang phải dùng sức để đối phó với đám loạn quân &quot;x-flash&quot; kia. Kernel đã xong nhưng vẫn chưa thấy tăm hơi lão JAL đâu. Thôi vậy, để xem thêm thử có gì khác cần phải làm nhưng chắc để lúc khác, đã đến lúc phải giải quyết vài công chuyện ở sở không thì bê trễ cả ra.
+
+<b>Sáng 13/10</b>
+Đang trên tàu lửa trên đường đi làm, tôi trầm ngâm lượt qua các chi tiết đã phân tích hôm qua. Vẫn chưa thấy JAL hồi đáp, cha chả, lão này đi chơi đâu mà bặt vô âm tín vậy nhỉ? Tôi chợt nhớ là kernel đã tái biên dịch xong nhưng firewall rules mới chưa hề có một mảnh. Tôi mở laptop lên, phóng ngay chú &quot;vim&quot; lên màn hình và bắt đầu gõ.
+
+Tôi khá chắc là HVA cần dùng bấy nhiêu dịch vụ nên tôi quyết định dùng kiểu block function (hàm theo nhóm) để hình thành các phần logic của firewall rules. Ba mươi lăm phút trôi qua, chà tôi phải đổi sang chuyến tàu thứ nhì (tôi cần phải đổi tàu 2 lần mới đến sở làm). Nhìn xuyên qua đoạn script, tôi khá hài lòng vì nó đã gần như hoàn tất, chỉ cần điểm xuyết thêm, thắt chặt dăm ba điểm và tạo một số thông điệp thông báo khi chạy firewall script (để lão nào chạy nó thì còn biết chuyện gì xảy ra). Rất tiếc tôi không thể trình bày chi tiết firewall rules này có những gì ở đây vì lý do... bảo mật.
+
+Lên chuyến tàu thứ nhì, tôi mở laptop ra và tiếp tục hoàn tất những thứ đã dự định trong đầu. Tôi ngẩng lên nhìn đồng hồ, chà! còn đến 15 phút nữa mới đến sở. Tôi quyết định rà lại từng dòng một trên cái firewall script. Mèn... tưởng đã hoàn chỉnh, hoá ra rà qua lại &quot;nẻ&quot; ra lỗi, rà lại cũng &quot;nẻ&quot; ra lỗi. Còn 10 phút... tôi nảy ra ý định tạo thêm một lớp safe-guard (bảo kê) cho mỗi truy cập đến dịch vụ đã được cho phép. Xong xuôi, tôi khá hài lòng vì sáu mươi phút đồng hồ trôi qua khá bổ ích. Thôi được, thử upload cái script này lên và chạy thử trên HVA server xem sao. Nếu có gì kẹt thì &quot;đì bấc&quot; tại chỗ chớ làm sao hơn được?
+
+Sau mấy giờ đồng hồ liên tục làm việc, tôi đã hoàn tất cả đống công việc. Giờ này lão JAL bên Nhật chắc cũng đã có mặt ở sở, để xem lão có hồi báo gì không. Tôi log vào diễn đàn, khè khè &quot;Bạn có 3 PM&quot;, chắc là của lão JAL chớ không ai vào đây. Quả thật, lão JAL &quot;mê&quot; chơi đâu quá nên tối hôm qua về trễ. Tôi upload cái firewall script lên HVA server, xem xét mọi thứ một lần nữa. Rồi, gởi cho JAL một cái PM thông báo chuyện khởi động lại server.
+
+Lão JAL hồi đáp trong tích tắc. Lão cho biết sẽ khởi động server lúc &quot;vắng vẻ&quot; một tí. Mèn.... sau vài phút cái SSH console của tôi chợt báo &quot;socket error&quot;, lão JAL này nói &quot;đợi khi nào server vắng vẻ một tí rồi restart&quot; vậy mà làm liền vậy sao cà? Quả thật lão &quot;làm liền&quot;. Chưa đầy 2 phút sau, tôi hối hả thử log vào HVA server, vào được ngay! Tôi phóng ngay mấy cái lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># less /var/log/boot
+# lsmod
+# /usr/local/sbin/iptables -L -v | more 
+# tail -f /var/log/messages</pre>
+		</div>
+&quot;I can't believe it&quot;, tôi thốt lên một mình. &quot;First hit wonder!&quot; tôi lẩm nhẩm tiếp. Firewall chạy như ý muốn ngay lần đầu tiên. Mọi chuyện đều ổn từ kernel lên tới firewall và các dịch vụ khác (Vậy mà ngày hôm ấy lão thần bài phát hiện ngay ra một lỗi, lỗi gì vậy lão thần bài? ). Nhìn cái &quot;đuôi&quot; 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tail -f /var/log/messages</pre>
+		</div>
+tôi muốn ngộp thở:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Oct 13 07:12:44 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=221.132.49.131 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=113 ID=22369 DF PROTO=TCP SPT=50257 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:44 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=221.132.49.131 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=113 ID=22379 DF PROTO=TCP SPT=50258 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:44 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=203.113.160.94 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=111 ID=7049 DF PROTO=TCP SPT=2370 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:44 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=221.132.49.131 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=113 ID=22381 DF PROTO=TCP SPT=50257 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:45 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=221.132.49.131 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=113 ID=22382 DF PROTO=TCP SPT=50258 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:45 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=203.113.160.94 DST=192.168.1.100 LEN=48 TOS=0x00
+PREC=0x00 TTL=111 ID=7070 DF PROTO=TCP SPT=2370 DPT=80 WINDOW=64240 RES=0x00 SYN URGP=0
+Oct 13 07:12:45 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=203.113.135.196 DST=192.168.1.100 LEN=48 TOS=0x0
+0 PREC=0x00 TTL=110 ID=43299 PROTO=TCP SPT=42913 DPT=80 WINDOW=16384 RES=0x00 SYN URGP=0
+Oct 13 07:12:45 hvaonline kernel: OVERCONNLIMIT: IN=eth0 OUT= SRC=203.113.135.196 DST=192.168.1.100 LEN=48 TOS=0x0
+0 PREC=0x00 TTL=110 ID=43764 PROTO=TCP SPT=42913 DPT=80 WINDOW=16384 RES=0x00 SYN URGP=0</pre>
+		</div>
+Vâng vâng và vâng vâng..... Chuyện gì đây? Hồi sau sẽ rõ :)
+
+<i>Các bạn có thể theo dõi tiếp phần 4 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/178.hva</span> 
+
+<b>Chú thích:</b>
+<font color='orange'>-13-</font> Bạn có thể tạo secure tunnel (đường ống) từ máy của mình đến một máy chủ nào đó bằng cách dùng SSH. Bên trong tunnel này, các thông tin chuyển lưu hoàn toàn được mã hoá. Tuy chậm nhưng khá an toàn nếu dùng SSH2. Nếu thích bạn nên thử đọc tài liệu và tải software từ openssh ở<span class="link"> http://www.openssh.org.</span>
+
+<font color='orange'>-14-</font> HTTP là một giao thức stateless, sau khi thông tin giữa hai đầu server và client hoàn tất, connection này được tắt bỏ.
+
+<font color='orange'>-15-</font> Giới hạn connection là giới hạn bao nhiêu sockets được mở ra để phục vụ một IP nào đó. Ví dụ, tối đa 4 connections từ một IP nào đó. Nếu IP này &quot;đòi&quot; mở thêm 1 connection thứ 5 thì connection này bị loại bỏ.
+Giới hạn packet rates là giới hạn số packet được truyền tải trong một đơn vị thời gian nào đó. Ví dụ: giới hạn 100 packets / 1 giây từ một IP nào đó chỉ cho phép server nhận tối đa là 100 packets 1 giây, packet thứ 101 trở đi sẽ bị loại bỏ.
+
+<font color='orange'>-16-</font>Tôi dùng thuật ngữ &quot;connection&quot; ở đây là để chỉ chung cho các giai đoạn: SYN từ client, SYN-ACK từ HVA server, ACK-ACK từ hai đầu client và HVA server và sau đó là ACK-PSH hay bất cứ gì khác từ client cho đến khi &quot;ESTABLISHED&quot; trở thành &quot;TIME_WAIT&quot;. Giới hạn connection ở đây thật sự là giới hạn SYN. ESTABLISHED chỉ dùng để biểu thị connection đã hình thành một cách hợp lệ và đúng quy định mà thôi. Nếu truy cập từ cùng một IP mà quá giới hạn 8 &quot;connections&quot;, có nghĩa là SYN vẫn được gởi nhưng nếu hiện đã có 8 ESTABLISHED connections thì SYN đứng đó chờ hoặc SYN bị huỷ. ESTABLISHED dùng để đo lường số connection hiệu hữu và SYN dùng để cản (hoặc cho phép) các truy cập tiếp theo dựa trên số connection đã hiện hữu
+
+<font color='orange'>-17-</font> &quot;backog&quot; là số lượng công việc bị dồn ứ lại. Với TCP connections, ví dụ nếu chỉ định 100 &quot;backlog&quot; chẳng hạn thì gói SYN thứ 101 trở đi sẽ bị hủy bỏ, dẫn đến tình trạng người dùng không truy cập được. Nếu chỉnh định 10000 &quot;backlog&quot; thì vẫn tạo cơ hội cho các truy cập đang đợi có thể vào thay vì bị huỷ.
+
+<font color='orange'>-18-</font> Hầu hết các IDS hiện đại đều có khả năng tác ứng đến các gói tin mang tính vi phạm. Riêng trong trường hợp này, tôi dùng snort vì nó miễn phí. Nó có thể gởi nhiều gói RST đến cả client lẫn server cùng một lúc để &quot;xé&quot; ngang đường nối hiện hữu giữa client và server.
+
+<i>Cập nhật: 
+10/11/2004: chỉnh sửa các chi tiết tính toán bị sai lẫn do mrro tìm thấy trong bài tường trình và thêm chi tiết giải thích cho khái niệm &quot;connection&quot;.</i> 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/177.hva#590</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/177.hva#590</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 09:00:50]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 3</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">prof wrote:</cite><br>
+		<blockquote><b>Sáng 12/10</b>
+Sáng nay công việc có phần thư thả hơn mọi ngày, tôi quyết định log vào server HVA để bắt đầu xem xét cẩn thận cấu hình kernel / firewall / web server xem thử cần phải làm gì để "trị" căn bệnh x-flash này. Tôi quên bẵng là firewall / proxy của công ty không cho phép đi thẳng đến cổng 22 <font color='orange'>-12-</font>, bây giờ mới đớ người ra vì không vào HVA server được. Tôi đã "bị" kẹt vụ này đã lâu cho nên phải biến cổng SSH trên firewall riêng ở nhà từ 22 thành 443 vì firewall của hãng chỉ cho truy cập đến cổng 80 và 443 (xuyên qua proxy dùng HTTP CONNECT), nhưng đây là chuyện khác, không khéo tôi lại lạc đề ở đây. <font color='orange'>Sau vài phút trầm ngâm, tôi nảy ra ý tạo tunnel từ máy của mình đến firewall riêng ở nhà rồi mới tạo ssh connection từ máy của mình đến HVA server xuyên qua tunnel này</font>. Biết rằng "tunnel trong tunnel" <font color='orange'>-13-</font> chắc là chuối lắm vì chậm, nhưng không còn cách nào khác. 
+
+Sau một phút thử nghiệm, tôi thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh localhost -p 25250</pre>
+		</div>
+(localhost của tôi lắng nghe trên cổng 25250 và forward thông tin đến firewall riêng của tôi ở nhà, từ đó nó mới đi đến HVA server). Ái chà, nó chạy! Hơi chậm một tí nhưng không sao cả. Tôi mở thêm một console khác cũng xuyên qua tunnel này. Tốt rồi, hai cái shell là đủ làm việc.
+&nbsp;
+		</blockquote>
+Đoạn <font color='orange'>màu cam</font> là SSH local port forwarding phải không anh?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ssh user@Home_IP -L 25250:HVA_IP:22</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/177.hva#211534</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/177.hva#211534</link>
+				<pubDate><![CDATA[Mon, 24 May 2010 02:08:40]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 3</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Cứ cho rằng mỗi stream chứa HTTP POST mở ra 6 connections, chúng ta có:
+<blockquote>
+( 12000 requests tạo ) 12000 streams x <font color='orange'>8</font> sockets = 72000 connections (<font color='orange'>cho mỗi giờ</font>).
+( 72000 connection / <font color='orange'>120</font> ) / 60 = 10 connections cho mỗi giây.
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Chỗ này là nhân 6 và cho mỗi 2 giờ chứ anh nhỉ.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Được rồi, hãy quyết định khai triển hướng giới hạn connection trước để cắt bỏ phần lớn khối <font color='orange'>20 connections / 1 giây</font> của các con bọ &quot;x-flash&quot; kia trước rồi tiếp tục khai triển bước &quot;triệt tiêu&quot; chúng hoàn toàn sau.
+&nbsp;
+		</blockquote>
+10 connections / 1 giây chứ anh.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Còn 10 phút... tôi nảy ra ý định tạo thêm một lớp safe-guard (bảo kê) cho mỗi truy cập đến dịch vụ đã được cho phép. 
+&nbsp;
+		</blockquote>
+Anh nói rõ hơn chỗ này giúp em với?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/177.hva#226621</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/177.hva#226621</link>
+				<pubDate><![CDATA[Tue, 7 Dec 2010 14:44:16]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Phương pháp khai thác trên Win32 qua "messaging system""]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Phương pháp khai thác trên Win32 qua "messaging system""]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ <b>Khai thác lỗi thiết kế trong lập trình giao diện của Win32 về vấn đề gia tăng chủ quyền. Hay...
+Những cuộc tấn công đầy hiểm hoạ - Cách phá vỡ Windows.</b>
+
+<b>Giới thiệu</b>
+Bài viết này minh hoạ một phát sinh tấn công mới đến Microsoft Windows, và có thể đến các hệ thống thông điệp khác (message-based systems). Những lỗi được minh hoạ trong bài viết này, ở thời điểm bài này được viết, thuộc dạng không thể chữa được. Giải pháp duy nhất để loại trừ những loại tấn công này đòi hỏi chức năng không có sẵn trong hệ điều hành Windows, và ngay cả trong những ứng hoạt khác cho hệ Windows. Lâu nay Microsoft biết rõ những lỗi này; khi tôi cảnh báo họ loại tấn công trên, họ cho biết rằng họ không xếp loại phương thức tấn công đó như một dạng lỗi của Windows – bạn có thể xem bức điện thư ở đây <b>-1-</b>. Khảo cứu trên bùng ra từ lời phát biểu của ông Jim Allchin, phó chủ tịch Microsoft, cho rằng có quá nhiều lỗi trong hệ Windows đến nỗi, nếu mã nguồn của Windows bị tiết lộ sẽ trở nên mối đe doạ đến an ninh quốc gia. Ông ta đề cập đến “xếp hàng thông điệp” (Message Queuing), và ngay sau đó hối hận vì đã đề cập đến vấn đề này. Tuy nhiên, dựa trên số lượng khảo sát trên toàn thế giới hiện nay đến vấn đề trên sau lời phát biểu của ông Allchin, đây là lúc cộng đồng “mũ trắng” <b>-2-</b> lột tả thực trạng này.
+
+Bài viết này thuộc dạng từng bước một chỉ dẫn cách khai thác một điển hình của lỗi ở trên. Có nhiều phương pháp tấn công khác đã được bàn thảo, tuy nhiên ví dụ của các loại tấn công khác không được trình bày ở đây. Có rất nhiều cách khai thác các lỗi trên và nhiều biến thái của từng giai đoạn được trình bày. Ðây chỉ là một ví dụ.
+
+<b>Nền tảng – hệ thống thông điệp của Win32</b>
+Các nội ứng trình của Windows hoàn toàn được điều hành xuyên qua phương pháp ứng dụng thông điệp. Khi một phím được nhấn, một thông điệp được gởi đến khung động hiện tại (current active window), thông điệp này cho biết là một phím nào đó đã được “nhấn”. Khi Windows quyết định rằng một ứng trình cần vẽ lại phạm vi của client của nó, Windows gởi một thông điệp đến ứng trình này. Thật ra, khi một biến cố (event) xảy ra mà một ứng trình nào đó cần biết, nó bèn gởi một thông điệp đi. Những thông điệp này được đặt vào một hàng đợi (queue) và được ứng trình xử lý theo tuần tự.
+
+Ðây là một cơ chế hết sức đáng tin cậy để điều hành các ứng trình. Tuy nhiên, cơ chế dùng để điều hành các thông điệp trên Win32 bị lỗi. Bất cứ một ứng trình nào cũng có thể gởi thông điệp đến bất cứ khung (window) nào trên cùng desktop, bất chấp ứng trình gởi thông điệp có làm chủ khung đó hay không, và bất chấp ứng trình được nhận thông điệp có muốn nhận các thông điệp này hay không. Hoàn toàn không có một cơ chế nào dùng để xác minh nguồn gốc của các thông điệp; vô phương để phân biệt sự khác nhau giữa một thông điệp được gởi từ một ứng trình hiểm độc và một thông điệp từ lõi (kernel) của Window. Ðó là thiếu sót cơ chế xác minh mà chúng ta sẽ khai thác với chủ đích: sử dụng các thông điệp này để thao túng các khung và các quy trình làm chủ các window trong Windows.
+
+<b>Tổng quát</b>
+Trong ví dụ này, tôi sẽ  khai thác Network Associate VirusScan phiên bản 4.5.1, chạy trên Windows 2000 Professional. Tôi truy nhập như “guest” và VirusScan Console chạy trên desktop là “LocalSystem”, mục đích dùng để lừa VirusScan chạy mã riêng để gia tăng chủ quyền cho tôi. Mục đích này đạt được qua nhiều phân đoạn đơn giản:
+1.Tìm một khung thích hợp trong VirusScan (một hòm chỉnh [edit box] là hoàn hảo), và lấy một khung đó để xử dụng.
+2.Bỏ đi giới hạn phân độ trong edit box để tôi có thể đánh vào một số lượng dữ kiện tùy ý.
+3.Dán vào một số mã nhị phân (binary code).
+4.Buộc VirusScan thi triển mã của tôi (như LocalSystem)
+
+Những bước trên thực sự rất dễ làm. Windows cung cấp trọn bộ các chức năng tiện dụng mà chúng ta cần. Tôi viết một ứng trình nhỏ gọi là Shatter <b>-3-</b> nó thực hiện chức năng gia tăng chủ quyền này. Bạn cũng sẽ cần một hex editor có khả năng chép dữ liệu nhị phân vào clipboard (tôi dùng UltraEdit<span class="link"> www.ultraedit.com</span>)), và một debugger (tôi dùng WinDbg<span class="link"> www.microsoft.com/ddk/debugging/installx86.asp</span>)).
+
+<b>XIN NHỚ:</b> Vài bộ quét virus cảnh báo người dùng virus “Win32/Beavuh” trong hồ sơ sploit.bin thuộc phần nén Shatter.zip. Ðây không phải là virus. Bộ quét đánh dấu đúng hồ sơ này (sploit.bin) – mã nguồn của hồ sơ này được thiết kế dùng để mở một command shell và tra nó vào một socket của mạng. Một cách tổng quát mà nói, làm như vậy không tốt (đối với bảo mật), bởi thế bộ quét có phản ứng đúng trong quy trình tạo cảnh báo. Mã nguồn này quả thật được thiết kế với dụng ý đen tối, tuy nhiên bộ quét nhận diện nó như một thứ virus là sai.
+
+Các thông điệp của Windows bao gồm 3 phần, một phần nhận diện cho thông điệp và hai tham số. Các tham số được sử dụng một cách khác nhau tùy thuộc vào thông điệp gì được gởi. Ðiều này tạo điều kiện đơn giản hơn cho chúng ta, vì chúng ta chỉ phải lo đến 4 điểm: một điều dụng khung (window handle) để nhận thông điệp, một thông điệp và hai tham số. Hãy thử xem chuyện này dễ như thế nào..
+
+<b>Bước 1: Tìm khung</b>
+Chúng ta cần xác định một loại quản trị điều chỉnh (edit control) nào đó – một nơi chúng ta có thể đánh dữ kiện vào. Ðừng ngại nếu bị giới hạn, chúng ta có thể hoá giải vấn đề này. Khởi động VirusScan console và đánh vào nút đầu tiên - “New Task”. Một cách thuận tiện, trên đầu của dialog này hiện ra một edit box. Cái này tuyệt hảo. Bây giờ, chúng ta cần một điều dụng (handle) để chúng ta có thể tương tác (interact) với nó. Windows sẵn sàng cho chúng ta một handle đến bất cứ một window nào chúng ta muốn – chúng ta chỉ cần hỏi nó. Khởi động Shatter và điều chỉnh vị trí để bạn có thể thấy được VirusScan edit control bên dưới. Bấm vào “Get cursor window” - Shatter sẽ thêm và một đơn vị trong hòm danh sách bên dưới tương tự như “102f2 – Get cursor window”. Cái này là do chúng ta yêu cấu Windows cho chúng ta một handle đến window trực tiếp phía dưới cursor. Chuyển cursor sang VirusScan edit control và đánh phím “Space” để gọi Shatter một lần nữa. Shatter sẽ xoá hòm danh sách và cho bạn biết handle của mục tiêu window – trường hợp của tôi là 30270. Bây giờ chúng ta có thể tương tác với một window đang chạy với tính cách lập trình và với chủ quyền cao hơn. Hãy dán vào một ít shellcode <b>-4-</b>.
+
+<b>Bước 2: Xóa bỏ các hạn chế</b>
+Khi đã có một window handle, chúng ta có thể gởi bất cứ thông điệp gì theo ý muốn đến control này và nó sẽ thừa hành yêu cầu một cách mù loà. Chuyện gì trước làm trước, đầu tiên chúng ta phải nắm chắc là có đủ khoảng trống cho shellcode.
+
+Trong Shatter, đánh window handle của bạn vào hòm “Handle”. Thông điệp để chỉnh phân độ tối đa của các chữ trong một edit box là EM_SERLIMITTEXT. Tham số thứ nhất dành cho phân độ tối đa của chữ, và khỏi cần quan tâm đến tham số thứ nhì. Ðánh số 4 vào box WPARAM, và 0 và box thứ 3. Bấm vào EM_SETLIMITTEXT để gởi thông điệp và thử đánh gì đó vào trong edit box của VirusScan. Bạn chắc hẳn không thể đánh hơn 4 chữ. Thay đổi số 4 thành FFFFFFFF và gởi thông điệp lại. Bây giờ thử đánh vào edit box của VirusScan; bạn có khoảng trống hơn 4Gb (trên lý thuyết) trong phần edit control. Nhất định phải đủ chỗ cho cả một shellcode lãng phí nhất. 
+
+<b>Bước 3: Tiêm shellcode</b>
+Kế tiếp, hãy thử dán cái gì đó vào trong box. Ðúng là bạn có thể dùng right-click và chọn Paste, nhưng để thoả mãn các tham số cứ nghĩ là chúng ta không thể làm như vậy được. Xoá edit box của VirusScan và khởi động Notepad. Ðánh vài chữ vào trong Notepad, rồi chép những chữ này. Trở lại Shatter, chúng ta muốn gởi VirusScan một thông điệp từ trong Clipboard (vừa chép ở trên) đó là WM_PASTE. Cả hai tham số cho thông điệp này nên là zero, bởi thế phải chỉnh WPARAM và LPARAM thành zero, để yên handle như vậy. Bấm vào WM_PASTE và xem những chữ của bạn xuất hiện trên edit box của VirusScan. Bấm nó một lần nữa, hẳn phải có chữ của bạn xuất hiện lần thứ hai. Vui nhỉ?
+
+Nào, “quậy” vậy là đủ. Xoá edit box của VirusScan một lần nữa và khởi động hex editor của bạn. Tải sploit.bin trong hồ sơ nén Shatter. Shellcode này lấy từ Jill (Hey, Dark Spyrit!),nó khởi động một command shell tầm xa trở ngược lại bạn. Nó được hard-coded để gởi command shell đến địa chỉ loopback tại port 123, lúc này là lúc thích hợp để khởi động một Netcat listener <b>-5-</b> trước khi bạn quên. Khởi động một cmd (32-bit command line), đánh vào “nc -lp 123” và khỏi lo đến nó nữa. Trở lại hex edit, chép shellcode vào clipboard, bạn nhất thiết phải chép trọn bộ shellcode (bao gồm luôn FOON từ đầu – chúng ta sẽ cần đến nó trong vòng 1 giây). Trở lại Shatter và bấm nút WM_PASTE lần nữa. Bạn hẳn thấy hàng loạt chữ quái đản trong edit box của VirusScan, đó là shellcode của chúng ta đã được dán vào một cách tốt đẹp.
+
+<b>Bước 4: Thi hành mã</b>
+Ðây là phần duy nhất của trọn bộ chu trình đòi hỏi kỹ năng. Khởi động debugger của bạn và đính nó vào chu trình avconsol.exe (dùng lệnh WinDbg: <b>s -a 00000001 10000000 “FOON”</b>, bạn cũng có thể dùng một debugger khác. Viết xuống vị trí bộ nhớ (memory location) nơi dòng hiển thị vị trí bộ nhớ xuất hiện; có lẽ nó sẽ xuất hiện một vài lần, đừng hỏi tôi tại sao. Bất cứ dòng nào cũng được. Trên system của tôi, shellcode xuất hiện ở 0x00148c28, giá trị này có lẽ không khác mấy nếu bạn dùng cùng một phiên bản. Bây giờ tắt bỏ debugger, truy cập vào như guest và chuẩn bị đón nhận chủ quyền LocalSystem. Theo từng bước 1 đến 3 lại, nhớ là mọi thứ vẫn làm việc như guest. Ðừng quên Netcat listener để nhận shell.
+
+Lúc này có lẽ bạn đang cho rằng thủ thuật đính vào một debugger là một thứ hoạt động mang tính chủ quyền. Ðúng vậy. Tuy nhiên, tương tự như khi viết  khai thác phần tràn bộ đệm (buffer overflow), bạn có thể làm chuyện ấy trên bất cứ bộ phận nào của system; bạn chỉ cần tải địa chỉ, địa chỉ này nhất định phải làm việc trên bất cứ system nào có cùng phiên bản. Thật ra bạn cũng chẳng cần phải làm chuyện này. Hầu hết các ứng trình đều có điều dụng ngoại lệ (exception handlers) (VirusScan nhất định phải có), bởi thế nếu các ứng trình có vi phạm acess violation, chúng chỉ xử lý với violation này và tiếp tục hoạt động thay vì treo máy. Bởi thế, chẳng có gì ngăn bạn dán vào vài trăm Kb NOPs rồi cứ lần dò qua bộ nhớ cho đến khi đụng đến đúng địa chỉ và shellcode của bạn sẽ được thi hành. Chưa hẳn là đẹp mắt, nhưng chạy được.
+
+Thông điệp cuối chúng ta sắp sửa tận dụng là WM_TIMER. Phần này hơi bất thường và khá nguy hiểm vì nó có thể chứa (đại loại như tham số thứ nhì) địa chỉ của chức năng hồi khuyển timer (callback function). Nếu tham số thứ nhì không phải là zero, phần thi hành sẽ nhảy thẳng đến vị trí đã định. Ðúng vậy, bạn không đọc sai; bạn có thể gởi một thông điệp WM_TIMER tới bất cứ window nào với trị giá không phải là zero cho tham số thứ nhì (tham số thứ nhất là timer ID) và phần thi hành nhảy thẳng tới địa chỉ đó. Theo tôi biết, thông điệp chẳng đến xếp hàng trong dãy thông điệp (message queue), bởi thế ứng trình này không có cơ hội để tránh thông điệp đó. Ngớ ngẩn, ngớ ngẩn, ngớ ngẩn....
+
+Vậy, bên trong Shatter, handle chắc phải được chỉnh dụng edit control của VirusScan để chứa shellcode của chúng ta. Tham số thứ nhất có thể bất cứ giá trị gì bạn muốn và tham số thứ hai nên dùng 512 bytes hoặc hơn địa chỉ chúng ta đã chọn ra từ debugger ở trên (chúng ta có 1K NOP trước shellcode, bởi vậy chúng ta hẳn rớt ngay vào giữa các địa chỉ); trên system của tôi đó là: 0x148c28 + 0x200 = 0x148e28. Bấm vào WM_TIMER và netcat listener của bạn sẽ thức dậy với một command prompt. Một lệnh WHOAMI sẽ cho thấy bạn quả thật chuyển hóa từ guest sang LocalSystem <b>-6-</b>. Enjoy.
+
+<b>Các kỹ thuật khác</b>
+Có một số cách khác hơn những bước chúng làm ở trên, sử dụng các cơ chế căn bản tương tự nhưng có lẽ hơn phức tạp hơn. Thông điệp EM_GETLINE ra lệnh một edit control chép phần chứa của nó tới một địa điểm định sẵn bên trong thông điệp. Làm cách nào để bạn viết một số lượng tùy thích dữ liệu vào các địa chỉ trong bộ nhớ theo ý muốn? Bạn muốn khai thác dễ dàng như thế nào? Chúng ta đã thấy các giới hạn có thể được loại bỏ từ phân độ của một edit control; chuyện gì xảy ra khi một ứng trình phụ thuộc vào các giới hạn này? Khi một ứng trình dự phỏng 16 bytes dữ liệu từ một edit box có giới hạn 16 bytes, chúng ta có thể đánh vào một vài gigs. Mọi người, đếm đến ba: 1...2...3.... Tràn Bộ Ðệm! Có lẽ trên stack nữa, bởi 16 bytes dữ liệu chắc hẳn là không phải từ  trữ liệu của bộ nhớ (heap). Hơn nữa, khi chúng ta gởi WM_TIMER đi, tham số chúng ta ấn định cho timer ID bị đẩy vào trong chồng memory (stack) cùng với cả đống rác rưởi khác. Ðể tìm một chức năng có thể tận dụng được chức năng của tham số thứ 3 và vô năng của các tham số khác là điều không thể không mường tượng được, chức năng này cho phép chúng ta nhảy thẳng vào khai thác chỉ bằng một thông điệp.
+
+Nói về trữ liệu của bộ nhớ, có thêm một điểm ác liệt cho các loại khai thác như trên. Tổng quát mà nói, các ứng trình thường tạo các dialog box trên trữ liệu của bộ nhớ trước khi những chế hoạt trong bộ nhớ xảy ra; bởi vậy shellcode của chúng ta nằm ở dạng tĩnh (static). Kinh nghiệm bản thân tôi thấy hiếm khi có hơn 20 bytes được chuyển dịch giữa các instances. Các địa chỉ tĩnh có hoán chuyển cũng không thành vấn đề, nhưng, ai mà lo? Gởi một ứng trình một thông điệp EM_GETLINE để nó viết shellcode của bạn đến vị trí bạn muốn (thật là quỷ quái, viết chồng lên trữ liệu của bộ nhớ. Ai mà lo?) và rồi chỉ định cùng địa chỉ trong thông điệp WV_TIMER. Một cách khai thác hoàn toàn không có NOP! Thật là nhộn.
+
+<b>Sửa lỗi</b>
+Rồi, kiểu khai thác này khá dễ dàng. Vậy mọi người làm sao sửa lỗi này? Tôi thấy có hai phương pháp nhanh và ẹ sẽ phá vỡ hàng loạt chức năng khai thác và một giải pháp lê thê, giải pháp này sẽ không bao giờ là một giải pháp trọn vẹn. Ðể tôi giải thích.
+<b>1. Không cho phép thiên hạ lược duyệt (enumerate) windows -7- </b>Nguy hiểm. Ðổ vỡ hàng loạt. Trên mặt lý thuyết mà nói, có thể chận đứng enumerate, tuy nhiên, bản thân tôi rất ghét khi thấy thiên hạ cố công cố sức mà chẳng biết loại windows gì đang ở trên desktop khi họ cần.
+
+<b>2. Không cho phép các thông điệp chuyển dịch giữa các ứng trình với những chủ quyền khác nhau.</b> Ðiều này có nghĩa, bạn bạn không thể tương tác được với những window đang chạy trên desktop không thuộc chủ quyền của bạn; cũng có nghĩa là ít nhất VirusScan (và có lẽ hầu hết các tường lửa cá nhân nữa) cần được tái thiết.  
+
+<b>3. Thêm chi tiết nguồn gốc vào các thông điệp, và tùy thuộc vào các ứng trình quyết định có xử lý thông điệp hay không</b> Ðiều này cần một giải mở rộng (extension) trong Win32 API, và cả đống công việc cho thiên hạ sử dụng. Lớn chuyện, và thiên hạn vẫn có thể làm sai như thường. Hãy nhìn vào các điển hình tràn bộ đệm – loại lỗi này đã có hàng nhiều năm và giờ đây vẫn rất phổ biến.
+
+Căn bản mà nói, chẳng có một giải pháp đơn giản nào, đây là lý do tại sao Microsoft vẫn ếm kỹ vấn đề này. Khổ nỗi, nếu tôi có khả năng tìm ra lỗi này, tôi dám bảo đảm những người khác cũng đã tìm ra. Có thể họ đã không cho ai biết và lần sau, khi họ lẻn vào hệ thống của bạn như một guest, bạn sẽ không biết đường trời nào tại sao họ có được LocalSystem từ guest. Tận cùng mà nói, bạn luôn luôn cập nhật với các patches đó chớ?
+
+<b>Phụ lục: Tại sao đây là vấn đề?</b>
+Khi Microsoft thấy bản sao của bài viết này, họ gởi hồi âm cho tôi nói rõ là họ biết các loại tấn công này, và họ không xếp loại những lỗi này thuộc dạng yếu điểm bảo mật. Tôi tin quan điểm của họ là đúng. Có hai lý do Microsoft đưa ra a) loại khai thác trên đòi hỏi khả năng tiếp cận vô giới hạn đến máy của bạn, hoặc b) loại khai thác trên đòi hỏi bạn chạy một thứ mã đen tối nào đó trên máy. Tôi hoàn toàn đồng ý cả hai trường hợp, làm chủ máy thì dễ thực hiện khai thác rồi. Tuy nhiên, họ bị lạc đề. Kẻ tấn công có thể dùng những kỹ thuật trên để <b>gia tăng chủ quyền</b>. Nếu họ có thể truy cập vào ở mức độ là guest tới máy, những loại tấn công trên cho phép bạn thu hoạch chủ quyền LocalSystem từ bất cứ account nào. Có ai đã từng nghe đến một món đồ nghề nhỏ có cái tên là hk.exe không? Vậy còn ErunAsX (AKA DebPloit)? Và rồi iishack.dll? Tất cả các đồ nghề này khai thác vài lỗi cho phép bạn gia tăng chủ quyền SAU KHI bạn đã truy cập được vào máy. Tất cả những loại khai thác này đã được Microsoft nhận diện và patched.
+
+Trường hợp máy desktop của công ty, thông thường những máy này được khoá kỹ. Người dùng trên máy không làm được gì cho lắm bởi họ không được phép. Nếu máy đó bị hổng do Shatter tấn công, người dùng có thể chiếm chủ quyền LocalSystem và làm gì tùy thích. Trường hợp Terminal Server (hoặc Citrix) còn tệ hại hơn nữa. Thử mường tượng một công ty cung cấp khách hàng các chức năng của dịch vụ terminal vì mục đích nào đó. Công ty đó nhất định KHÔNG cho người dùng của họ bất cứ một chủ quyền “thật” nào cả. Sự tấn công của Shatter sẽ cho phép các người dùng kia nắm giữ hoàn toàn máy chủ đó; chủ quyền LocalSystem cao hơn cả Administrator, và trong một chia phân máy chủ (shared server) đó chính là vấn đề. Ồ, và nó cũng chẳng đòi hỏi truy cập trên console nữa – Tôi đã thử tấn công một Terminal Server thành công cách xa vài trăm dặm. 
+
+Một thực trạng đơn giản là Microsoft BIẾT rõ họ không thể sửa các lỗi này. Cơ chế sử dụng trong Win32 API từ phiên bản NT 3.5 phát hành năm 1993 đã khá “tĩnh”. Microsoft không thể thay đổi nó được. Cách duy nhất họ có thể chặn đứng những tấn công này là không cho phép các ứng trình chạy trên desktop có chủ quyền cao hơn chủ quyền những người truy cập vào system. Microsoft tin rằng desktop nằm trên biên giới bảo mật, và bất kỳ window nào trên desktop đó được xếp loại là phi tín (untrusted). Ðiều này đúng, nhưng chỉ đúng đối với Windows, và cũng vì các lỗi trên. Cách này hay cách kia, Microsoft phá vỡ luật của chính họ; có quá nhiều windows chạy trên desktop với chủ quyền LocalSystem. Hãy dùng đồ nghề shatter của tôi mà xác minh vấn đề này – có cả đống windows vô danh cũng có thể chạy với chủ quyền LocalSystem, và nhất định phải có một ít windows ẩn (invisible) (chẳng hạn như DDE server) cũng chạy với chủ quyền LocalSystem. Biên giới bảo mật cái khỉ mốc! (tạm dịch trệch đi từ nguyên bản vì lý do tế nhị trong ngôn ngữ).
+
+<b>Phải đây chỉ là vấn đề của Win32?</b>
+Vâng, có lẽ là vậy. Ðấu thủ chính trường (mainstream) lớn nhất với Windows trên phương diện khung hệ (windowing systems) phải nói là X windows. X dựa trên hạ tầng kỹ thuật tương tự, kỹ thuật này cũng bao gồm xếp hàng và chuyển dịch các thông điệp giữa các windows. Tuy nhiên X có hai điểm khác biệt chính yếu. Trước hết, một khung (window) trên X chỉ là một khung – đó là một khung trống mà trên đó, ứng trình muốn làm gì thì làm. Không như Win32 cứ mỗi khiển tác (control) lại có một khung với chủ quyền riêng của nó, một control trên X chỉ là một bức hình. Khi bạn bấm vào control, thực sự bạn bấm trên những window xung quanh nó và ứng trình có trách nhiệm tính ra xem thử có một control bên dưới con chuột (mouse) của bạn hay không và ứng tác đến control này cho thích hợp. Sau nữa và quan trọng hơn nữa, các thông điệp của X chỉ là các thông điệp tường trình, không phải là các thông điệp dùng để điều khiển. Bạn không cách gì bảo X window làm việc gì đó cho bạn bằng cách gởi đến nó một thông điệp. Bạn không thể bảo nó dán chữ. Bạn không thể bảo nó thay đổi giới hạn input trên một control. Nhất là bạn không thể bảo nó nhảy đến một địa chỉ trên memory và bắt đầu khởi động. Cùng lắm bạn chỉ có thể gởi nó các cú bấm trên chuột hoặc các cú gõ trên bàn phím có tính liên đới đến một lệnh dán – nhất định bạn không thể bảo một control dán từ nội dung của một clipboard. Trên mặt lý thuyết vẫn có thể tấn công X được nhưng trên mặt thực tế, điều này hẳn không dễ dàng. Bạn có thể dội (flood) một ứng trình bằng thông điệp giả và xem các phản ứng của nó; bạn thử gởi các thông điệp bị vỡ và xem nó phản ứng ra sao. Kết quả cho thấy nó sẽ gánh vác ngon lành bởi nó quyết định sẽ xử lý thông điệp nào và xử lý mỗi lần một thông điệp được dội đến.
+
+Thôi nhá các cậu, chúc vui, chơi cho đẹp, xử sự cho đàng hoàng. Và nhớ rằng – nếu nó chưa vỡ, đập cho nó thêm một cái.
+
+
+<bài viết của Chris Paget (FOON), hnd dịch và chú thích
+nguồn:<span class="link"> http://www.vninformatics.com/forum/?action=msg&msg=1023407069></span>
+
+<b>Chú thích:</b>
+
+<b>-1-</b>: nguyên bản bức điện thư giữa tác giả và Microsoft ở URL này:<span class="link"> http://security.tombom.co.uk/response.txt</span>
+
+<b>-2-</b>: Whitehat hay “mũ trắng”, tiếng lóng trong ngành bảo mật ám chỉ  các tay nghiên cứu bảo mật với dụng ý tốt. Blackhat hay “mũ đen” ám chỉ các tay nghiên cứu bảo mật với dụng ý xấu. Các whitehay thường cố công khám phá các lỗi bảo mật và công bố rộng rãi để mọi người có thể đề phòng và điều chỉnh bảo mật cho mình, trong khi đó, các blackhat khám phá các lỗi bảo mật và không bao giờ công bố để sử dụng những khám phá của mình cho mục đích riêng. (chú thích của người dịch)
+
+<b>-3-</b>: Chương trình shatter có thể tải về từ URL sau:<span class="link"> http://security.tombom.co.uk/shatter.zip</span>
+
+<b>-4-</b>: Shellcode, một thuật ngữ thông dụng trong bảo mật và những lập trình ngôn ngữ assembly. Shellcode thường là một chuỗi hex của các lệnh assembler. Nó được dùng trong các quá trình khai thác bảo mật ở mức độ trực tiếp tương tác với memory buffer. Các kỹ thuật khai thác tràn bộ đệm (buffer overflow) thường dùng shellcode với nhiều phương thức khác nhau để đưa đến kết quả. Nếu bạn muốn biết thêm về shellcode, nên đọc các tài liệu khá điển hình về tràn bộ đệm ở:<span class="link"> http://www.phrack.org/show.php?p=49&a=14</span> (Bài “Smashing the stack for fun and profit”)<span class="link"> http://www.insecure.org/stf/mudge_buffer_overflow_tutorial.html</span> (chú thích của người dịch)
+
+<b>-5-</b>: Netcat, một thứ “đồ nghề” không thể thiếu cho những ai khai thác bảo mật. Trong làng bảo mật nó được mệnh danh là “Swiss Army Knife” hay là “Dao xếp của quân đội Thụy Sĩ” để ám chỉ khả năng ứng dụng rộng rãi của nó. Netcat có trên tất cả các hệ điều hành của Windows và đa số các nhánh Unix; được viết cho Unix bởi Hobbit và sau này Weld mang nó qua Windows. Loại đồ nghề này hơi khó dùng một tí vì chạy hoàn toàn trên command line (không có GUI), nó có khắp nơi trên Internet nếu bạn muốn thử qua. Phải nói thêm, trong bài viết trên, tác giả không đi sâu vào chi tiết sử dụng các loại đồ nghề mà chỉ chuyên chú và các thủ thuật cần thiết. Bạn phải tự tìm hiểu cách sử dụng các loại đồ nghề và tự hiểu các lệnh trong bài có nghĩa là gì (chú thích của người dịch)
+
+<b>-6-</b>: LocalSystem, trên hệ điều hành Windows, một process hoặc một service chạy với tư cách LocalSystem có chủ quyền tương đương với “root” trên một máy Unix. Mục tiêu cuối cùng của các cuộc khai thác bảo mật là đạt được “root”; nói theo thuật ngữ hacking là: “owned the box” hoặc “làm chủ máy”. Từ bước đạt được LocalSystem đến bước khai phá trọn bộ máy này và trọn bộ mạng / liên mạng của máy bị “owned” chỉ là một bước đơn giản. Games Over  là tiếng lóng trong bảo mật ám chỉ quá trình khai thác đi đến giai đoạn đạt được LocalSystem trên Windows hoặc “root” trên Unix. (chú thích của người dịch)
+
+<b>-7-</b>: enumerate, một giai đoạn khá quan trọng trong chu trình khai thác một system hoặc một network. Ðây là bước “nhận diện” mục tiêu khai phá không thể bỏ qua được nếu người khai phá muốn đi sâu hơn đến những bước kế tiếp. Ðối với những “script-kiddies”, bước enumerate không mấy quan trọng vì họ chuyên theo lối “đánh túi bụi, đánh nhanh, rút gọn”, tấn công một cách mù loà vào các mục tiêu để phá bên ngoài thay vì đi từng bước đến chỗ “own” luôn mục tiêu. Ðối với các tay chuyên khai phá, enumeration là điểm tiên quyết để quyết định tiếp tục khai phá hay kết thúc khai phá. Ðối với các nhân sự bảo mật, kiến thức về enumerate hết sức cần thiết để kiện toàn bảo mật tính cho mạng / liên mạng của mình. (chú thích của người dịch)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#9900</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#9900</link>
+				<pubDate><![CDATA[Tue, 25 Jul 2006 13:33:00]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ThangCuEm wrote:</cite><br>
+		<blockquote>Cái này cũng xưa rồi, và chính MS cũng không công nhận nó là bug, chỉ công nhận nó là một vấn đề thuộc về design của Win OS. Mà hình như nó chỉ được nêu ra trên lý thuyết, chứ thực tế thì không thấy.&nbsp;
+		</blockquote>
+hình như là như vậy thật, đã có ai thử chưa zạ... ; :D) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10089</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10089</link>
+				<pubDate><![CDATA[Tue, 25 Jul 2006 18:42:54]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ Bài này có lâu rồi và anh Diêu cũng dịch lâu rồi. Theo lý thuyết thì Windows có lỗ hổng là không check xem nguồn gởi thông điệp là từ đâu. Nhưng hình như thực tế Microsoft đã chặn lỗ hổng này ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#9988</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#9988</link>
+				<pubDate><![CDATA[Tue, 25 Jul 2006 19:26:35]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ThangCuEm wrote:</cite><br>
+		<blockquote>Cái này cũng xưa rồi, và chính MS cũng không công nhận nó là bug, chỉ công nhận nó là một vấn đề thuộc về design của Win OS. Mà hình như nó chỉ được nêu ra trên lý thuyết, chứ thực tế thì không thấy.&nbsp;
+		</blockquote>
+
+Tất nhiên là xưa vì bài này được đăng và được dịch cách đây đến những 4 năm nhưng nguyên tắc vẫn còn giá trị.
+
+Thà rằng M$ chấp nhận đó là bug còn nhẹ "tội" hơn công nhận đó là "design flaw"  :twisted: 
+
+Sao bồ không thử xem mà chỉ "hình như"? :)). Tôi đã thử 2 lần: một lần trên Windows 2000 (không có service pack) và một lần sau đó trên Windows 2000 (service pack 2). Cả hai lần đều thành công. Tôi chưa thử lại trên Windows XP nên không biết tình hình thế nào.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10096</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10096</link>
+				<pubDate><![CDATA[Tue, 25 Jul 2006 21:32:22]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ Cái này cũng xưa rồi, và chính MS cũng không công nhận nó là bug, chỉ công nhận nó là một vấn đề thuộc về design của Win OS. Mà hình như nó chỉ được nêu ra trên lý thuyết, chứ thực tế thì không thấy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10056</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10056</link>
+				<pubDate><![CDATA[Wed, 26 Jul 2006 00:10:46]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ Anh conmale thấy bài này đáng học hỏi mới post lên
+Lâu hay mới đây đâu quan trọng
+Quan trọng học được gì , rút kinh nghiệm được gì từ post
+Tránh tình trạng chê bài viết lỗi thời và xưa rồi :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10087</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10087</link>
+				<pubDate><![CDATA[Wed, 26 Jul 2006 01:53:10]]> GMT</pubDate>
+				<author><![CDATA[ Vickizw]]></author>
+			</item>
+			<item>
+				<title>Phương pháp khai thác trên Win32 qua "messaging system"</title>
+				<description><![CDATA[ em ko biết liệu có phải vì lỗi này mà các hacker đã lợi dụng viết worm ko ta ??
+
+vd như worm qua yim chẳng hạn :D ! 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>hwndp=FindWindow&#40;"IMClass",NULL&#41;;
+hwnd=FindWindowEx&#40;hwndp,NULL,"YIMInputWindow",NULL&#41;;
+SendMessage&#40;hwnd, WM_SETTEXT, 0, &#40;LPARAM&#41;text&#41;;
+SendMessage&#40;hwnd, WM_KEYDOWN,VK_RETURN,0&#41;;
+
+//vc++</pre>
+		</div>
+
+:D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10188</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1955.hva#10188</link>
+				<pubDate><![CDATA[Wed, 26 Jul 2006 13:45:51]]> GMT</pubDate>
+				<author><![CDATA[ nhocbmt]]></author>
+			</item>
+	</channel>
+</rss>

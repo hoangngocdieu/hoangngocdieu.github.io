@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "uClibc và BusyBox"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "uClibc và BusyBox"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>uClibc và BusyBox</title>
+				<description><![CDATA[ <b>uClibc và BusyBox</b>
+
+October 28th 2005
+uClibc
+
+uClibc là một thư viện C có thể được dùng để phát triển phần mềm cho các hệ thống Linux nhỏ (ví dụ như embedded Linux system).
+
+Thư viện C được sử dụng trên Linux là thư viện GNU C (glibc). Khi viết một chương trình C và compile với glibc, chương trình của bạn sẽ được link tới các file thư viện của glibc để sử dụng các hàm của chúng. Nếu bạn tự tạo ra một hệ thống Linux cho mình, để chạy được chương trình đã compile với glibc, bạn phải copy tất cả các file thư viện cần thiết vào hệ thống của mình. Điều này không dễ dàng với các hệ thống bị hạn chế không gian lưu trữ, ví dụ như một hệ thống Linux chứa trên đĩa mềm, do file thư viện glibc có dung lượng rất lớn.
+
+uClibc là một thư viện có kích thước nhỏ hơn rất nhiều so với glibc, và có chức năng gần đầy đủ so với glibc. Có thể nói uClibc tương thích với glibc, nên phần lớn các chương trình viết để compile với glibc có thể compile được với uClibc. Sử dụng uClibc thay thế cho glibc khi bạn muốn tạo ra một hệ thống chạy Linux mà nó không đủ sức chứa các file thư viện cần thiết của glibc.
+
+<b>BusyBox</b>
+
+Khi tạo một hệ thống Linux, thường bạn cần có các chương trình tiện ích như shell, các chương trình làm việc với file... Các chương trình tiện ích chuẩn của GNU có kích thước lớn, nhiều khi không tiện để đưa vào các hệ thống bị giới hạn không gian lưu trữ và bộ nhớ. BusyBox cung cấp hầu hết các chương trình tiện ích đó, nhưng có đặc điểm là được thiết kế để có kích thước nhỏ và sử dụng ít tài nguyên hệ thống.
+
+Thực ra, BusyBox là sự tích hợp các tiện ích phổ dụng của Linux vào trong một file thực thi (executable file) duy nhất, và nó có kích thước rất nhỏ.
+
+BusyBox có thể được compile với uClibc.
+
+<b>Kết hợp uClibc và BusyBox</b>
+
+Khi tự tạo ra một hệ thống Linux, bạn phải copy vào hệ thống đầy đủ các file thư viện mà các chương trình bạn sẽ sử dụng cần tới (để biết một chương trình cần những thư viện nào, sử dụng lệnh ldd). Ngồi liệt kê ra các thư viện cần thiết cho các chương trình đó khá nhàm chán và dễ gây nhầm lẫn. uClibc và BusyBox có thể giúp bạn tránh được việc này. uClibc đủ nhỏ để đưa lên một hệ thống Linux chạy trên đĩa mềm, và BusyBox là một file duy nhất chứa tất cả các tiện ích bạn cần đến. Hơn nữa, đi kèm mã nguồn của uClibc và BusyBox là tiện ích tự cài đặt chúng lên file system của hệ thống Linux, nên sẽ đỡ cho bạn nhiều công sức.
+
+Cho tới phiên bản 0.9.21 của uClibc, bạn dùng lệnh make PREFIX=<prefix> install_target để cài đặt uClibc lên một Linux file system. BusyBox cũng có lệnh để cài đặt lên Linux file system (tham khảo)
+
+Tuy nhiên, sau này đã xuất hiện Buildroot, là một tiện ích giúp bạn tạo ra môi trường để sử dụng uClibc (gọi là uClibc toolchain), đồng thời tạo ra Linux root filesystem với uClibc và BusyBox được cài đặt sẵn. Dưới đây sẽ giới thiệu cách sử dụng Buildroot.
+
+<b>Sử dụng Buildroot</b>
+
+Buildroot được sử dụng để tạo ra môi trường giúp bạn compile chương trình với uClibc, đồng thời tạo sẵn một Linux root filesystem chứa thư viện uClibc và tiện ích BusyBox để bạn có thể sử dụng nếu muốn tạo ra hệ thống Linux của riêng mình.
+
+<b>1. Download buildroot</b>
+
+Buildroot có thể download từ homepage, hoặc sử dụng svn tool trên hệ thống Linux của bạn (nếu có) bằng cách gõ lệnh:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>svn co<span class="link"> svn://uclibc.org/trunk/buildroot</span></pre>
+		</div>
+
+<b>2. Sử dụng Buildroot</b>
+
+Cấu hình Buildroot
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>make menuconfig</pre>
+		</div>
+
+Bạn có thể thiết lập cấu hình cho uClibc và BusyBox, cũng như root filesystem mà Buildroot sẽ tạo ra, nhưng lần đầu tiên, có lẽ nên để tất cả theo mặc định (tôi có thay đổi một số thiết lập là ... và ... thì không sao, như một số thay đổi khác có thể gây ra lỗi khi chạy Buildroot lần đầu tiên).
+
+Chạy Buildroot
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>make</pre>
+		</div>
+
+Buildroot sẽ download các mã nguồn cần thiết, tiến hành compile, cài đặt, cũng như tạo ra hệ thống root filesystem cho bạn. Việc này mất khá nhiều thời gian.
+Nếu mọi việc kết thúc êm đẹp, bạn sẽ có một uClibc toolchain dùng để compile các chương trình C, và một root fileystem được chứa trong file root_fsXXX (XXX là cái gì gì đó). Dùng lệnh mount với tham số -o loop để mount file này vào một thư mục nào đó, bạn có thể xem bên trong nó có những gì :)
+
+Chú ý: Ở thời điểm hiện tại (Ngày 28 tháng 10 năm 2005), tôi không thể chạy được Buildroot khi khởi động Fedora Core 3 với kernel support SMP. Luôn bị lỗi khi compile file nào đó (không nhớ) liên quan đến pthread. Nếu khởi động FC3 với kernel không support SMP thì OK.
+
+<b>3. Cấu hình root filesystem</b>
+
+Nếu nhìn vào trong root file system mà Buildroot đã tạo ra (chứa trong file root_fsXXX), bạn sẽ thấy có nhiều thứ có thể không cần thiết (quá nhiều device entry trong thư mục dev, các file cấu hình trong etc, một đống terminfo trong usr/share/terminfo). Bạn có thể giảm bớt những thứ này, cũng như thêm các file mà mình muốn.
+
+Để thêm/bớt các device entry trong dev, sửa file target/generic/device_table.txt
+
+Để xóa bớt các file không cần thiết trong etc, usr/share/, vào trong thư mục target/generic/target_skeleton/ và xóa chúng. Có thể thêm các file vào các thư mục có sẵn trong target_skeleton.
+
+Để tạo lại root filesystem, chạy make Buildroot (nhớ umount nếu đang mount file root_fsXXX).
+
+<b>4. Cấu hình uClibc</b>
+
+Bạn có thể muốn cấu hình lại uClibc (thêm/bớt một số tính năng cho thư viện uClibc). Vào thư mục toolchain_build_XXX/uClibc/, chạy make menuconfig, cấu hình nó. Sau đó copy file .config vào thư mục toolchain/uClibc/uClibc.config và chạy make Buildroot lại.
+
+<b>5. Cấu hình BusyBox</b>
+
+BusyBox đã được cài đặt vào root filesystem có thể có nhiều tiện ích không cần thiết, bạn muốn bỏ đi hoặc muốn thêm các tiện ích khác (mà BusyBox có nhưng chưa được cài đặt). Vào build_XXX/busybox/, chạy make menuconfig, cấu hình BusyBox. Sau đó copy file .config vào thư mục package/busybox/busybox.config và chạy make Buildroot lại.
+
+Reference
+
+    * uClibc :<span class="link"> http://www.uclibc.org/</span>
+    * BusyBox :<span class="link"> http://busybox.net/</span>
+    * Buildroot :<span class="link"> http://buildroot.uclibc.org/</span>
+
+
+Trần Trung Thành - vnhacker.org]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1560.hva#7413</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1560.hva#7413</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 11:41:06]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

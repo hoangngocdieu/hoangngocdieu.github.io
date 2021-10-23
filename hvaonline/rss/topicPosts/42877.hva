@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi khi phân quyền thư mục chứa mailbox trong postfix"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi khi phân quyền thư mục chứa mailbox trong postfix"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ Xin chào,
+Em có build 1 server Centos : Postfix - PostfixAdmin - Dovecot - MySQL.
+Em gặp rắc rối ở phân quyền thư mục chứa mailbox.
+Nội dung file dovecot.conf:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>protocols = imap imaps pop3 pop3s 
+...
+mail_location = maildir:/home/virtual/%d/%n
+...</pre>
+		</div>
+
+Nội dung file main.cf:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>....
+virtual_mailbox_base = /home/virtual
+....</pre>
+		</div>
+
+Em tiến hành permission cho thư mục "virtual"
+# chown –R postfix:postfix  /home/virtual
+# chmod –R 700  /home/virtual
+
+Lỗi xảy ra khi tạo Domain và add Mailbox trong PostfixAdmin:
+Nội dung file maillog 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>- mail postfix/virtual&#91;13921&#93;: warning: maildir access problem for UID/GID=125/125: create maildir file /home/virtual/domain02/user1/tmp/1342127514.P13921.mail.maillocal.com: Permission denied
+- mail postfix/virtual&#91;13921&#93;: warning: perhaps you need to create the maildirs in advance
+- mail postfix/virtual&#91;13921&#93;: 2534685BD9C: to=&lt;user1@domain02.com&gt;, relay=virtual, delay=0.11, delays=0.05/0.01/0/0.05, dsn=4.2.0, status=deferred &#40;maildir delivery failed: create maildir file /home/virtual/domain02/user1/tmp/1342127514.P13921.mail.maillocal.com: Permission denied&#41;</pre>
+		</div>
+
+Em mong được giúp đỡ vấn đề này.
+Cám ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266707</link>
+				<pubDate><![CDATA[Fri, 13 Jul 2012 05:39:31]]> GMT</pubDate>
+				<author><![CDATA[ tphau]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ Thư mục <font color='red'>/home/virtual/domain02/</font> cần được account nào làm chủ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266708</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266708</link>
+				<pubDate><![CDATA[Fri, 13 Jul 2012 05:48:08]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ Em edit thêm nội dung file dovecot.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail_location = maildir:/home/virtual/%d/%n 
+first_valid_uid = 125 
+last_valid_uid = 125 
+first_valid_gid = 125 
+last_valid_gid = 125</pre>
+		</div>
+
+# ls -la /home/virtual
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>drwx------ 5     125     125 4096 Jun 29 04:26 domain2</pre>
+		</div>
+
+#cat /etc/passwd | grep postfix
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>postfix : x :89:89::/var/spool/postfix:/sbin/nologin</pre>
+		</div>
+
+1 dòng lỗi từ trong maillog:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>warning: maildir access problem for UID/GID=125/125</pre>
+		</div>
+
+Em nghĩ lỗi phát sinh từ uid/gid em quy định trong dovecot.conf.
+Nhưng trình em còn hạn chế - 1 số options em chưa hiểu rõ hết được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266711</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266711</link>
+				<pubDate><![CDATA[Fri, 13 Jul 2012 05:59:55]]> GMT</pubDate>
+				<author><![CDATA[ tphau]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ UID/GID 125 là của user nào vậy? Bạn tham khảo thêm 2 parameters: `virtual_uid_maps` và `virtual_gid_maps` nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266934</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266934</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 02:39:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ tại sao bạn lại chmod /home/virtual sang postfix:postfix để làm gì....
+theo như trên thì bạn nên :
+
+tạo 1 user virtual: useradd virtual -u 125 -g 125 (tạo user virtual có UID/GID=125/125)
+trong main.cf : home_mailbox = Maildir/
+trong dovecot.conf: mail_location = maildir:/home/virtual/%d/%n/Maildir
+
+tức là bạn đang tạo 1 user mà trong thư mục home của nó chứa mailbox. sau đó bạn cấu hình để postfix và dovecot móc vào mailbox thông qua user này.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266956</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#266956</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 04:37:57]]> GMT</pubDate>
+				<author><![CDATA[ tmlinhkct]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ Cám ơn quanta & tmlinhkct đã quan tâm. Mình đã giải quyết được vấn đề trên.
+Server mình hiện giờ có thể gửi & nhận mail trong local ổn rồi. 
+Hí hửng gửi mail ra ngoài đến 1 domain khác, yahoo hoặc gmail lại phát hiện lỗi.
+Note: Server mình build tạm cho cỡ 20 user sử dụng với IP tĩnh VNPT (IP ở công ty).
+- Đây là log khi gửi cho 1 domain khác:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail postfix/smtp&#91;4805&#93;: certificate verification failed for mail.exdomain.com: num=18:self signed certificate
+mail postfix/smtp&#91;4805&#93;: certificate verification failed for mail.exdomain.com: num=10:certificate has expired
+mail postfix/smtp&#91;4805&#93;: certificate verification failed for mail.exdomain.com:certificate has expired
+mail postfix/smtp&#91;4805&#93;: certificate verification failed for mail.exdomain.com:certificate has expired
+mail postfix/smtp&#91;4805&#93;: ADC0685BD9A: to=&lt;hautp@exdomain.com&gt;, relay=mail.exdomain.com&#91;118.69.199.233&#93;:25, delay=0.9, delays=0.05/0.04/0.42/0.39, dsn=2.0.0, status=sent &#40;250 OK id=1SrK0W-0008RY-UG&#41;
+mail postfix/qmgr&#91;4786&#93;: ADC0685BD9A: removed</pre>
+		</div>
+
+- Phát hiện IP trong Spamhaus's list khi gửi cho yahoo mail:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail postfix/smtp&#91;4827&#93;: 4DAFC85BD9A: host mta6.am0.yahoodns.net&#91;209.191.88.254&#93; refused to talk to me: 553 Mail from 14.161.4.44 not allowed - 5.7.1 &#91;BL21&#93; Connections not accepted from IP addresses on Spamhaus PBL; see<span class="link"> http://postmaster.yahoo.com/errors/550-bl21.html</span> &#91;550&#93;
+mail postfix/smtp&#91;4827&#93;: 4DAFC85BD9A: host mta7.am0.yahoodns.net&#91;66.94.237.139&#93; refused to talk to me: 553 5.7.1 &#91;BL21&#93; Connections will not be accepted from 14.161.4.44, because the ip is in Spamhaus's list; see<span class="link"> http://postmaster.yahoo.com/550-bl23.html</span>
+mail postfix/smtp&#91;4827&#93;: 4DAFC85BD9A: host mta6.am0.yahoodns.net&#91;67.195.103.232&#93; refused to talk to me: 553 5.7.1 &#91;BL21&#93; Connections will not be accepted from 14.161.4.44, because the ip is in Spamhaus's list; see<span class="link"> http://postmaster.yahoo.com/550-bl23.html</span>
+mail postfix/smtp&#91;4827&#93;: 4DAFC85BD9A: host mta7.am0.yahoodns.net&#91;66.94.236.34&#93; refused to talk to me: 553 5.7.1 &#91;BL21&#93; Connections will not be accepted from 14.161.4.44, because the ip is in Spamhaus's list; see<span class="link"> http://postmaster.yahoo.com/550-bl23.html</span>
+mail postfix/smtp&#91;4827&#93;: 4DAFC85BD9A: to=&lt;exmail@yahoo.com&gt;, relay=mta6.am0.yahoodns.net&#91;66.196.118.33&#93;:25, delay=7.5, delays=0.05/0.01/4.5/2.9, dsn=2.0.0, status=sent &#40;250 ok dirdel&#41;</pre>
+		</div>
+
+- Và khi gửi cho gmail:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail postfix/smtp&#91;4848&#93;: certificate verification failed for gmail-smtp-in-v4v6.l.google.com: num=20:unable to get local issuer certificate
+mail postfix/smtp&#91;4848&#93;: certificate verification failed for gmail-smtp-in-v4v6.l.google.com: num=27:certificate not trusted
+mail postfix/smtp&#91;4848&#93;: 7EBA285BD9A: to=&lt;exmail@gmail.com&gt;, relay=gmail-smtp-in-v4v6.l.google.com&#91;173.194.79.26&#93;:25, delay=5.9, delays=0.06/0.01/3.4/2.4, dsn=5.7.1, status=bounced &#40;host gmail-smtp-in-v4v6.l.google.com&#91;173.194.79.26&#93; said: 550-5.7.1 &#91;14.161.4.44&#93; The IP you're using to send mail is not authorized to 550-5.7.1 send email directly to our servers. Please use the SMTP relay at your 550-5.7.1 service provider instead. Learn more at 550 5.7.1<span class="link"> http://support.google.com/mail/bin/answer.py?answer=10336</span> km8si3030829pbc.94 &#40;in reply to end of DATA command&#41;&#41;</pre>
+		</div>
+
+Nội dung file config của dovecot.conf:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>protocols = imap imaps pop3 pop3s 
+ssl_cert_file = /etc/ssl/dovecot/cert.pem 
+ssl_key_file = /etc/ssl/dovecot/key.pem 
+mail_location = maildir:/home/virtual/%d/%n
+first_valid_uid = 125 
+first_valid_gid = 125 
+protocol imap { 
+   mail_plugins = quota imap_quota 
+} 
+protocol pop3 { 
+    mail_plugins = quota 
+} 
+protocol lda { 
+    postmaster_address = postmaster @ hautp.co.cc 
+} 
+auth default { 
+# passdb pam { 
+# args = session=yes dovecot 
+# } 
+passdb sql { 
+args = /etc/dovecot-sql.conf 
+ } 
+# userdb passwd { 
+# args = blocking=yes 
+# } 
+userdb sql { 
+args = /etc/dovecot-sql.conf 
+} 
+client { 
+path = /var/spool/postfix/private/auth 
+mode = 0660 
+user = postfix 
+group = postfix 
+}</pre>
+		</div>
+
+File config của postfix:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>soft_bounce = no 
+myhostname = mail.hautp.co.cc 
+mydomain = hautp.co.cc 
+mydestination = localhost.$mydomain, localhost 
+relay_domains = proxy:mysql:/etc/postfix/mysql_relay_domains_maps.cf 
+# SASL CONFIG 
+broken_sasl_auth_clients = yes 
+smtpd_sender_restrictions = permit_sasl_authenticated,  permit_mynetworks 
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_non_fqdn_hostname, reject_non_fqdn_sender, reject_non_fqdn_recipient, reject_unauth_destination, reject_unauth_pipelining, reject_invalid_hostname, reject_rbl_client list.dsbl.org, reject_rbl_client bl.spamcop.net, reject_rbl_client sbl-xbl.spamhaus.org 
+smtpd_sasl_auth_enable = yes 
+smtpd_sasl_authenticated_header = yes 
+smtpd_sasl_local_domain = $myhostname 
+smtpd_sasl_security_options = noanonymous 
+smtpd_sasl_type = dovecot 
+smtpd_sasl_path = private/auth 
+
+# TLS CONFIG 
+smtp_use_tls = yes 
+smtpd_use_tls = yes 
+smtp_tls_note_starttls_offer = yes 
+mtpd_tls_key_file = /etc/postfix/smtpd.key
+smtpd_tls_cert_file = /etc/postfix/smtpd.crt
+smtpd_tls_CAfile = /etc/postfix/cacert.pem
+smtpd_tls_loglevel = 0 
+smtpd_tls_received_header = yes 
+smtpd_tls_session_cache_timeout = 3600s 
+tls_random_source = dev:/dev/urandom 
+
+# MySQL Configuration 
+virtual_alias_maps = proxy:mysql:/usr/local/etc/postfix/mysql_virtual_alias_maps.cf 
+virtual_gid_maps = static:125 
+virtual_mailbox_base = /home/virtual
+virtual_mailbox_domains = proxy:mysql:/usr/local/etc/postfix/mysql_virtual_domains_maps.cf 
+virtual_mailbox_limit = 51200000 
+virtual_mailbox_maps = proxy:mysql:/usr/local/etc/postfix/mysql_virtual_mailbox_maps.cf 
+virtual_minimum_uid = 125 
+virtual_transport = virtual 
+virtual_uid_maps = static:125 
+
+# Additional for quota support 
+virtual_create_maildirsize = yes 
+virtual_mailbox_extended = yes 
+virtual_mailbox_limit_maps = proxy:mysql:/etc/postfix/mysql_virtual_mailbox_limit_maps.cf 
+proxy_read_maps = $local_recipient_maps $mydestination $virtual_alias_maps $virtual_alias_domains $virtual_mailbox_maps $virtual_mailbox_domains $relay_recipient_maps $relay_domains $canonical_maps $sender_canonical_maps $recipient_canonical_maps $relocated_maps $transport_maps $mynetworks $virtual_mailbox_limit_maps 
+virtual_mailbox_limit_override = yes 
+virtual_maildir_limit_message = Sorry quota exceeded. 
+virtual_overquota_bounce = yes</pre>
+		</div>
+
+Note: Đã tiến hành gỡ IP khỏi list spamhaus.
+Mình build con server này theo 1 tài liệu tìm được trên mạng. 
+Nội dung config có gì sai (hoặc thừa) mong anh/chị giúp đỡ mình.
+Vật vã hơn cả tuần - ăn ngủ không yên - kiến thức ít ỏi đúng là gây khổ cho bản thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#267039</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#267039</link>
+				<pubDate><![CDATA[Wed, 18 Jul 2012 02:32:19]]> GMT</pubDate>
+				<author><![CDATA[ tphau]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi phân quyền thư mục chứa mailbox trong postfix</title>
+				<description><![CDATA[ Bạn có thể bắt đầu từ đây:
+
+<blockquote>mail postfix/smtp[4848]: 7EBA285BD9A: to=&lt;exmail@gmail.com&gt;, relay=gmail-smtp-in-v4v6.l.google.com[173.194.79.26]:25, delay=5.9, delays=0.06/0.01/3.4/2.4, dsn=5.7.1, <font color='orange'>status=bounced</font> (host gmail-smtp-in-v4v6.l.google.com[173.194.79.26] said: 550-5.7.1 [14.161.4.44] <font color='orange'>The IP you're using to send mail is not authorized to 550-5.7.1 send email directly to our servers.</font> Please use the SMTP relay at your 550-5.7.1 service provider instead. Learn more at 550 5.7.1<span class="link"> http://support.google.com/mail/bin/answer.py?answer=10336</span> km8si3030829pbc.94 (in reply to end of DATA command))&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42877.hva#267040</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42877.hva#267040</link>
+				<pubDate><![CDATA[Wed, 18 Jul 2012 02:52:03]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

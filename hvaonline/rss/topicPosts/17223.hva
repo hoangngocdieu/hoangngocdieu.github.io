@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Mã hóa trong Linux với GnuPG"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Mã hóa trong Linux với GnuPG"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Mã hóa trong Linux với GnuPG - Phần 1</title>
+				<description><![CDATA[ Trước tiên các bạn đọc bài viết của <b>tranvanminh</b> tại <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/2303.hva</span>
+
+Nguồn: <span class="link"> http://linsec.ca/Using_GnuPG</span>
+
+<font color='cyan'><b>Giới thiệu</b></font>
+GnuPG được sử dụng để mã hóa hoặc tạo các chữ ký số cho emails hoặc files. Nó sử dụng hệ thống 2 khoá: <b><i>private key</i></b> được dùng để đánh dấu và mã hoá, <b><i>public key</i></b> dùng để giải mã và xác nhận.
+
+<font color='cyan'><b>Generating a Key </b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;quanta@localhost ~&#93;$ gpg --gen-key
+gpg &#40;GnuPG&#41; 1.4.7; Copyright &#40;C&#41; 2006 Free Software Foundation, Inc.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions. See the file COPYING for details.
+
+Please select what kind of key you want:
+   &#40;1&#41; DSA and Elgamal &#40;default&#41;
+   &#40;2&#41; DSA &#40;sign only&#41;
+   &#40;5&#41; RSA &#40;sign only&#41;
+Your selection? 1
+DSA keypair will have 1024 bits.
+ELG-E keys may be between 1024 and 4096 bits long.
+What keysize do you want? &#40;2048&#41; 
+Requested keysize is 2048 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      &lt;n&gt;  = key expires in n days
+      &lt;n&gt;w = key expires in n weeks
+      &lt;n&gt;m = key expires in n months
+      &lt;n&gt;y = key expires in n years
+Key is valid for? &#40;0&#41; 0
+Key does not expire at all
+Is this correct? &#40;y/N&#41; y
+
+You need a user ID to identify your key; the software constructs the user ID
+from the Real Name, Comment and Email Address in this form:
+    "Heinrich Heine &#40;Der Dichter&#41; &lt;heinrichh@duesseldorf.de&gt;"
+
+Real name: quanta
+Email address: quanta@love.com
+Comment: Linux is my hobby
+You selected this USER-ID:
+    "quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;"
+
+Change &#40;N&#41;ame, &#40;C&#41;omment, &#40;E&#41;mail or &#40;O&#41;kay/&#40;Q&#41;uit? O
+You need a Passphrase to protect your secret key.
+
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action &#40;type on the keyboard, move the mouse, utilize the
+disks&#41; during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+++++++++++++++++++++++++++++++++++++++++.+++++++++++++++++++++++++.+++++++++++++++...++++++++++++++++++++++++++++++.+++++++++++++++.+++++&gt;.++++++++++....................................................................+++++
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action &#40;type on the keyboard, move the mouse, utilize the
+disks&#41; during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+.+++++.++++++++++++++++++++.++++++++++++++++++++.+++++++++++++++.+++++++++++++++..+++++++++++++++..+++++.++++++++++++++++++++++++++++++++++++++++++++++++++&gt;....++++++++++&gt;+++++................&gt;.+++++.....................&lt;..+++++............................................................+++++^^^
+gpg: key F5A60BA5 marked as ultimately trusted
+public and secret key created and signed.
+
+gpg: checking the trustdb
+gpg: 3 marginal&#40;s&#41; needed, 1 complete&#40;s&#41; needed, PGP trust model
+gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
+pub   1024D/F5A60BA5 2007-12-11
+      Key fingerprint = CE51 C39F 1D65 B1FF DAF2  B526 5F96 C546 F5A6 0BA5
+uid                  quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;
+sub   2048g/A27B406C 2007-12-11</pre>
+		</div>
+Sau đó, bạn có thể sử dụng GPG để liệt kê thông tin về khoá mới của bạn:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --list-keys
+gpg: checking the trustdb
+gpg: 3 marginal&#40;s&#41; needed, 1 complete&#40;s&#41; needed, PGP trust model
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/home/quanta/.gnupg/pubring.gpg
+-------------------------------
+pub   1024D/F5A60BA5 2007-12-11
+uid                  quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;
+sub   2048g/A27B406C 2007-12-11</pre>
+		</div>
+Lệnh này sẽ trả về thông tin public cũng như private về khoá của bạn. Bây giờ hãy chú ý đến key <font color='orange'><b>fingerprint</b></font> của bạn, mỗi fingerprint của key sẽ định danh duy nhất cho key. Khi bạn đưa ra key của bạn, mọi người có thể so sánh fingerprint được cung cấp với key bạn đưa cho họ để chắc chắn rằng key đó là chính xác:
+<blockquote>
+$ gpg --fingerprint quanta@love.com
+pub   1024D/F5A60BA5 2007-12-11
+      Key fingerprint = CE51 C39F 1D65 B1FF DAF2  B526 5F96 C546 F5A6 0BA5
+uid                  quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+sub   2048g/A27B406C 2007-12-11
+&nbsp;
+		</blockquote>
+fingerprint cho key này là: CE51 C39F 1D65 B1FF DAF2  B526 5F96 C546 F5A6 0BA5. Bạn nên chép ra hoặc lưu nó ở đâu đó an toàn. Bạn có thể thêm nó vào email như một phần chữ ký của bạn. Bạn có thể sử dụng nó để xác nhận một thông báo là hợp lệ nếu key được sử dụng để đánh dấu thông báo giống với fingerprint trong chữ ký của bạn.
+
+<font color='cyan'><b>Sử dụng GnuPG để đánh dấu/mã hoá</b></font>
+Sau khi đã có key-pair bạn có thể bắt đầu tạo chữ ký số cho email hoặc files và mã hoá dữ liệu.
+Đầu tiên bạn tạo một file <i>wish.txt</i> với nội dung: I want to become a white-hat hacker:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ echo "I want to become a white-hat hacker" &gt; wish.txt</pre>
+		</div>
+Để mã hoá file này, bạn thực hiện:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg -ea -r quanta wish.txt</pre>
+		</div>
+Lệnh này sẽ mã hoá file wish.txt sử dụng public key của quanta - điều này có nghĩa là chỉ có quanta mới có thể giải mã file này.
+<font color='violet'><b>-e</b></font>: encrypt
+<font color='violet'><b>-a</b></font>: ASCII
+<font color='violet'><b>-r</b></font>: recipient (quanta): bạn có thể sử dụng tên đầy đủ hoặc email
+Kết thúc lệnh này, một file mới với tên gọi <i>wish.txt.asc</i> được tạo ra, chứa đựng các dữ liệu đã được mã hoá. Thử <font color='olive'><i>cat</i></font> file này xem sao:
+<blockquote>
+$ cat wish.txt.asc
+-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+
+hQIOA6yzMbyie0BsEAgAl9AcgLdHFu0SSs/PKkJm5+i/aerrmBH5j7kcmdJIbvFA
+1mHI8lEAgTFi4m5Eyedc19LNPPniHcyJwc1slVI2CuzsKYdnEevytNwzJhzwKI76
+GZqgIPXsvT/+b33HQV82kkPQQoi+lUT4WceWzZ9eGVUQSn2bAW523gADXIXsnKhz
+6Dl77fq8C+ielPH9CeDu1jMbjSEb+TSbut8tow+lGRdLd/S8AtHnFYN9wu1G4tgv
+B60gWuw1Xx7Bptd4Dg2DMV9yFiviQD3C4vEN7zSRg7ADVcE1BZ6uPrMHw5Aen4zq
+U4e7q6ShyefxDiufLgs+Z/36/9QjHnZrXLTDYZKPJwf/bDtu6U+eG4h9T57sedLx
+STC6Jv+gaEyY4MU2TZNkItkoCLOvwKSbV8YvD9+J4fu0IwAi1tDD7fBMu5nGHe3o
+Gg+wQQw2rfhzpwLKDO431O7BZAMcWVx/O1eKXKZDZbobRc3pf9aoK3HX0OTLKXTl
+7ITsddnxfQuYaX/9xpecjtyVf0vD7KtDMu3D4Ypr0WU3mNP1JCChqW6pMMmApO26
+t73lnUpjj1p6yhU/Vd2sDYqsIay5dtDQ4OWVM8ssKXjMYekKaVppX254yfC00euf
+PGW9WtvkECAk2w6SSbOESRUwlaPJchG3B7/pQPNvqdDM5ePKfahzYeGLKzCkInEZ
+jNJnAQO9PYBid2KhMKqkl8bevKLndeQpJsfoY89gB6AG21joHylH55m3m1KFSAwL
+OlCH8+a/OkZXO3/OJsnM200FkEhnPgFFqYJR+NSpEK4Qzrtu5ZeaNI1bhepYs281
+SS+/mloG3HgzpQ==
+=/1oo
+-----END PGP MESSAGE-----
+&nbsp;
+		</blockquote>
+Muốn giả mã, bạn thực hiện lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg -d wish.txt.asc &gt; wish.txt</pre>
+		</div>
+Lệnh này sẽ nhắc bạn nhập <i>passphrase</i> khi giả mã, sau khi nhập đúng, dữ liệu sẽ được giải mã và chi tiết về khoá mã hoá sẽ in ra trên màn hình:
+<blockquote>
+$ gpg -d wish.txt.asc &gt; wish.txt
+
+You need a passphrase to unlock the secret key for
+user: "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+2048-bit ELG-E key, ID A27B406C, created 2007-12-11 (main key ID F5A60BA5)
+
+gpg: encrypted with 2048-bit ELG-E key, ID A27B406C, created 2007-12-11
+      "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+&nbsp;
+		</blockquote>
+Như bạn nhìn thấy, dữ liệu đã được giải mã với key bí mật của quanta
+
+<font color='cyan'><b>Sử dụng GnuPG để đánh dấu chữ ký số cho files</b></font>
+Có 2 cách:
++ Nhúng luôn chữ ký vào bản thân file đó (thường dùng cho các tài liệu dạng text)
++ Đính kèm chữ ký số (binary files)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --clearsign -a wish.txt</pre>
+		</div>
+Lệnh này sẽ tạo một file với tên: wish.txt.asc có nội dung như sau:
+<blockquote>
+$ cat wish.txt.asc
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+I want to become a white-hat hacker
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+
+iD8DBQFHXtufX5bFRvWmC6URAgh2AKC6nCq8RNv+eVdbyvtCdJfGOgCTGQCeJOu4
+omRfpVfhnW4Amgb6ZNO8otA=
+=kSyl
+-----END PGP SIGNATURE-----
+&nbsp;
+		</blockquote>
+Như bạn nhìn thấy, đầu tiên là nội dung của file đó, sau đó là thông tin về chữ ký. 
+
+Bây giờ bạn thử mở file <i>wish.txt.asc</i> ra và thêm một dấu ! vào cuối, sau đó thử verify lại, GPG sẽ chỉ ra rằng chữ ký của bạn là không hợp lệ:
+<blockquote>
+$ gpg --verify wish.txt.asc
+gpg: Signature made Wed 12 Dec 2007 01:49:03 AM ICT using DSA key ID F5A60BA5
+gpg: BAD signature from "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+&nbsp;
+		</blockquote>
+Bạn cũng có thể đánh dấu file theo cách không rõ ràng (non-clearsigned), nó sẽ tạo ra 1 file <b>.asc</b> khác, nhìn qua thì có vẻ mã hoá, nhưng thật sự thì không. Bất kỳ ai cũng có thể sử dụng tùy chọn <font color='violet'><b>-d</b></font> để giải mã và xem nội dung của nó. Để đánh dấu theo cách này bạn sử dụng tùy chọn <font color='violet'><b>-s</b></font> thay vì <font color='violet'><b>--clearsign</b></font>
+<blockquote>
+$ gpg -s -a wish.txt
+
+You need a passphrase to unlock the secret key for
+user: "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+1024-bit DSA key, ID F5A60BA5, created 2007-12-11
+&nbsp;
+		</blockquote>
+<blockquote>
+$ cat wish.txt.asc
+-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+
+owGbwMvMwCQYP+2o29dl3EsZ11glcZRnFmfolVSUuMfdv+epUJ6YV6JQkq+QlJqc
+n5uqkKhQnpFZkqqbkViikJGYnJ1apKgQlJqYk1PJ1WHPzMoA0gQzTZDpJAvD/Orz
+exfecmesPDot0+eIUnX118s5yxkWrD+84lLE4lNTD2TtMHvEm3HyTcqFDgA=
+=QyNg
+-----END PGP MESSAGE-----
+&nbsp;
+		</blockquote>
+
+Nếu bạn muốn tạo một chữ ký số cho một file nhị phân, bạn phải sử dụng tùy chọn <font color='violet'><b>-b</b></font>. Giả sử bạn đã có một file <i>dream.tar.gz</i>, bạn có thể tạo một chữ ký đính kèm cho nó bằng lệnh:
+<blockquote>
+$ gpg -ba dream.tar.gz 
+
+You need a passphrase to unlock the secret key for
+user: "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+1024-bit DSA key, ID F5A60BA5, created 2007-12-11
+&nbsp;
+		</blockquote>
+Chữ ký đính kèm sẽ được lưu trong file <i>dream.tar.gz.asc</i>. Bây giờ nếu ai đó download file của bạn và cả file chữ ký đính kèm, để kiểm tra xem file này có nguyên vẹn hay không họ có thể thi hành lệnh:
+<blockquote>
+$ gpg --verify dream.tar.gz.asc 
+gpg: Signature made Wed 12 Dec 2007 02:17:34 AM ICT using DSA key ID F5A60BA5
+gpg: Good signature from "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+&nbsp;
+		</blockquote>
+Lệnh này sẽ so sánh chữ ký trong <b>.asc</b> file với lại file thật sự và GPG sẽ trả về good signature nếu chúng giống nhau, ngược lại là bad signature.
+
+Những phần tiếp theo:
+<ul><li>Importing and Managing GPG Keys</li></ul>
+<ul><li>Revoking a GPG Key</li></ul>
+<ul><li>GPG Signatures in RPM Files </li></ul>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17223.hva#103505</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17223.hva#103505</link>
+				<pubDate><![CDATA[Wed, 12 Dec 2007 04:49:47]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Mã hóa trong Linux với GnuPG - Phần 2</title>
+				<description><![CDATA[ <font color='cyan'><b>Importing and Managing GPG Keys</b></font>
+
+Sau khi đã biết cách mã hoá (encrypt), giải mã (decrypt), đánh dấu (sign) và xác nhận (verify) các dữ liệu GPG, bây giờ bạn sẽ học cách thao tác với public keys của mọi người. Các bước trên tạo tiền đề để bạn đưa public keys của bạn tới những người khác. Public keys là an toàn khi trao đổi, nhưng private keys phải được tuyệt đối giữ bí mật. Public keys có thể được trao đổi qua vài cách: có những PGP/GPG keyservers trên Internet, và bạn có thể upload lên đó, những người khác có thể tìm kiếm, download về, và import vào. Hoặc bạn có thể gửi email trực tiếp cho mọi người, hoặc đặt lên website của bạn. 
+
+Để export public key của bạn, sử dụng lệnh:
+<blockquote>$ gpg --export -a quanta@love.com &gt; user.asc&nbsp;
+		</blockquote>
+Lệnh này sẽ export public key của <i>quanta@love.com</i> và đưa vào file <i>user.asc</i>. Bạn cũng có thể export trực tiếp đến một keyserver bằng cách:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --send-keys --keyserver wwwkeys.pgp.net F5A60BA5</pre>
+		</div>
+Để biết được public key của mình (trong ví dụ này là: <b><font color='orange'>F5A60BA5</font></b>), bạn sử dụng lệnh:
+<blockquote>
+$ gpg --list-keys
+/home/quanta/.gnupg/pubring.gpg
+-------------------------------
+pub   1024D/<font color='orange'><b>F5A60BA5</b></font> 2007-12-11
+uid                  quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+sub   2048g/A27B406C 2007-12-11
+&nbsp;
+		</blockquote>
+Bạn có thể thay thế địa chỉ keyserver bằng bất kỳ một PGP/GPG keyserver hợp lệ nào khác. Để tìm thêm các PGP/GPG keyserver, mời bạn google.
+
+Bây giờ, nếu mở site <span class="link"> wwwkeys.pgp.net</span> lên, bạn có thể tìm thấy key của bạn trên đó:
+Đầu tiên, nhập public key của bạn vào ô <i>Search String</i> (<font color='orange'><b>nhớ thêm 0x vào phía trước nếu public key của bạn có dạng hexadecimal</b></font>):
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/SearchString.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nhấn vào <i>Do the search!</i> để thực hiện việc tìm kiếm, kết quả sẽ như sau (nếu bạn chọn chế độ Verbose Index):
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/Searchresults.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nếu ai đó gửi GPG public key cho bạn, hoặc bạn tìm thấy trên website bạn có thể import bằng lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --import user.asc
+gpg: key F5A60BA5: "quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1</pre>
+		</div>
+Ở đây, <i>user.asc</i> là public key của họ, hoặc public key bạn lấy từ keyserver. Lệnh này sẽ cộng public key của họ vào public key của bạn.
+
+Để download trực tiếp một public key từ keyserver, bạn có thể dùng lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --recv-keys --keyserver wwwkeys.pgp.net F5A60BA5
+gpg: requesting key F5A60BA5 from hkp server wwwkeys.pgp.net
+gpg: key F5A60BA5: "quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1</pre>
+		</div>
+
+Để liệt kê các keys trên public keyring của bạn:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --list-key
+/home/quanta/.gnupg/pubring.gpg
+-------------------------------
+pub   1024D/F5A60BA5 2007-12-11
+uid                  quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;
+sub   2048g/A27B406C 2007-12-11</pre>
+		</div>
+
+Liệt kê tất cả các keys bí mật:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --list-secret-key
+/home/quanta/.gnupg/secring.gpg
+-------------------------------
+sec   1024D/F5A60BA5 2007-12-11
+uid                  quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;
+ssb   2048g/A27B406C 2007-12-11</pre>
+		</div>
+
+Sau khi download, bạn có thể chỉnh sửa key đó bằng lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --edit-key F5A60BA5</pre>
+		</div>
+Lệnh này sẽ đem đến một menu tương tác (<b><i>Command&gt;</i></b>) cho bạn làm việc. Để liệt kê danh sách cách lệnh có thể, bạn gõ <font color='violet'><b>help</b></font>:
+<blockquote>
+$ gpg --edit-key F5A60BA5
+gpg (GnuPG) 1.4.7; Copyright (C) 2006 Free Software Foundation, Inc.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions. See the file COPYING for details.
+
+Secret key is available.
+
+pub  1024D/F5A60BA5  created: 2007-12-11  expires: never       usage: SC  
+                     trust: ultimate      validity: ultimate
+sub  2048g/A27B406C  created: 2007-12-11  expires: never       usage: E   
+[ultimate] (1). quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+
+Command&gt; help
+quit        quit this menu
+save        save and quit
+help        show this help
+fpr         show key fingerprint
+list        list key and user IDs
+uid         select user ID N
+key         select subkey N
+check       check signatures
+sign        sign selected user IDs [* see below for related commands]
+lsign       sign selected user IDs locally
+tsign       sign selected user IDs with a trust signature
+nrsign      sign selected user IDs with a non-revocable signature
+adduid      add a user ID
+addphoto    add a photo ID
+deluid      delete selected user IDs
+addkey      add a subkey
+addcardkey  add a key to a smartcard
+keytocard   move a key to a smartcard
+bkuptocard  move a backup key to a smartcard
+delkey      delete selected subkeys
+addrevoker  add a revocation key
+delsig      delete signatures from the selected user IDs
+expire      change the expiration date for the key or selected subkeys
+primary     flag the selected user ID as primary
+toggle      toggle between the secret and public key listings
+pref        list preferences (expert)
+showpref    list preferences (verbose)
+setpref     set preference list for the selected user IDs
+keyserver   set the preferred keyserver URL for the selected user IDs
+notation    set a notation for the selected user IDs
+passwd      change the passphrase
+trust       change the ownertrust
+revsig      revoke signatures on the selected user IDs
+revuid      revoke selected user IDs
+revkey      revoke key or selected subkeys
+enable      enable key
+disable     disable key
+showphoto   show selected photo IDs
+clean       compact unusable user IDs and remove unusable signatures from key
+minimize    compact unusable user IDs and remove all signatures from key
+
+* The `sign' command may be prefixed with an `l' for local signatures (lsign),
+  a `t' for trust signatures (tsign), an `nr' for non-revocable signatures
+  (nrsign), or any combination thereof (ltsign, tnrsign, etc.).
+
+Command&gt; 
+&nbsp;
+		</blockquote>
+
+<font color='violet'><b>fpr</b></font> sẽ trả về các fingerprint của key:
+<blockquote>
+Command&gt; fpr
+pub   1024D/F5A60BA5 2007-12-11 quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+ Primary key fingerprint: CE51 C39F 1D65 B1FF DAF2  B526 5F96 C546 F5A6 0BA5
+&nbsp;
+		</blockquote>
+
+<font color='violet'><b>check</b></font> sẽ liệt kê chữ ký của key:
+<blockquote>
+Command&gt; check
+uid  quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+sig!3        F5A60BA5 2007-12-11  [self-signature]
+&nbsp;
+		</blockquote>
+
+Bạn cũng có thể chỉnh sửa key của bạn bằng cách thêm vào các bí danh, các subkeys. Điều này hữu ích khi bạn sử dụng những keys giống nhau với nhiều địa chỉ emails. Để làm điều này, từ command menu, gõ lệnh <font color='violet'><b>adduid</b></font>:
+<blockquote>
+Command&gt; adduid
+Real name: strategist
+Email address: strategist@love.com
+Comment: This is my nickname
+You selected this USER-ID:
+    "strategist (This is my nickname) &lt;strategist@love.com&gt;"
+
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
+
+You need a passphrase to unlock the secret key for
+user: "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+1024-bit DSA key, ID F5A60BA5, created 2007-12-11
+
+                  
+pub  1024D/F5A60BA5  created: 2007-12-11  expires: never       usage: SC  
+                     trust: ultimate      validity: ultimate
+sub  2048g/A27B406C  created: 2007-12-11  expires: never       usage: E   
+[ultimate] (1)  quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+[ unknown] (2). strategist (This is my nickname) &lt;strategist@love.com&gt;
+&nbsp;
+		</blockquote>
+
+Để xóa một <b>uid</b> bạn dùng lệnh <font color='violet'><b>deluid</b></font> - theo sau là số thứ tự của uid bạn muốn xóa (trước tiên nên sử dụng lệnh <font color='violet'><b>list</b></font> để xem các uid hiện tại)
+<blockquote>
+Command&gt; list
+
+pub  1024D/F5A60BA5  created: 2007-12-11  expires: never       usage: SC  
+                     trust: ultimate      validity: ultimate
+sub  2048g/A27B406C  created: 2007-12-11  expires: never       usage: E   
+[ultimate] (1)* quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+[ unknown] (2). strategist (This is my nickname) &lt;strategist@love.com&gt;
+
+Command&gt; deluid 1
+Really remove this user ID? (y/N) N
+
+Command&gt; deluid 2
+Really remove this user ID? (y/N) y
+
+pub  1024D/F5A60BA5  created: 2007-12-11  expires: never       usage: SC  
+                     trust: ultimate      validity: ultimate
+sub  2048g/A27B406C  created: 2007-12-11  expires: never       usage: E   
+[ unknown] (1). strategist (This is my nickname) &lt;strategist@love.com&gt;
+&nbsp;
+		</blockquote>
+
+Những phần tiếp theo: 
+<ul><li>Revoking a GPG Key</li></ul>
+<ul><li>GPG Signatures in RPM Files </li></ul>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17223.hva#103570</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17223.hva#103570</link>
+				<pubDate><![CDATA[Wed, 12 Dec 2007 18:31:42]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Mã hóa trong Linux với GnuPG - Phần 3</title>
+				<description><![CDATA[ <font color='cyan'><b>Revoking a GPG Key</b></font>
+
+Một lúc nào đó bạn cần huỷ bỏ 1 key đã tạo. Về cơ bản, việc ai đó có thể truy cập key bí mật của bạn (hoặc đơn giản là bạn đánh mất key bí mật của mình) bất cứ độ mạnh yếu của passphrase  là có thể xảy ra, lúc đó bạn nên cân nhắc đến việc huỷ key đó và tạo một key mới. Bất cứ lý do nào thì lúc này bạn cũng nên tạo một <font color='orange'>revocation certificate</font> với tuỳ chọn <font color='violet'><b>--gen-revoke</b></font>
+<blockquote>
+$ gpg --gen-revoke quanta@love.com
+
+sec  1024D/F5A60BA5 2007-12-11 quanta (Linux is my hobby) &lt;quanta@love.com&gt;
+
+Create a revocation certificate for this key? (y/N) y
+Please select the reason for the revocation:
+  0 = No reason specified
+  1 = Key has been compromised
+  2 = Key is superseded
+  3 = Key is no longer used
+  Q = Cancel
+(Probably you want to select 1 here)
+Your decision? 0
+Enter an optional description; end it with an empty line:
+&gt; Yesterday, my computer was hacked, ...
+&gt; 
+Reason for revocation: No reason specified
+Yesterday, my computer was hacked, ...
+Is this okay? (y/N) y
+
+You need a passphrase to unlock the secret key for
+user: "quanta (Linux is my hobby) &lt;quanta@love.com&gt;"
+1024-bit DSA key, ID F5A60BA5, created 2007-12-11
+
+ASCII armored output forced.
+Revocation certificate created.
+
+Please move it to a medium which you can hide away; if Mallory gets
+access to this certificate he can use it to make your key unusable.
+It is smart to print this certificate and store it away, just in case
+your media become unreadable.  But have some caution:  The print system of
+your machine might store the data and make it available to others!
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+Comment: A revocation certificate should follow
+
+iG8EIBECAC8FAkdj5BYoHQBZZXN0ZXJkYXksIG15IGNvbXB1dGVyIHdhcyBoYWNr
+ZWQsIC4uLgAKCRBflsVG9aYLpRd4AKC6e5w1mqiTwCXh5DQnD7CZvZkO9QCeJhf8
+/ZAOLuxUCbl8s45Y3JXGA84=
+=TiNq
+-----END PGP PUBLIC KEY BLOCK-----
+&nbsp;
+		</blockquote>
+Tiếp theo bạn cần copy đoạn bắt đầu từ <i>"BEGIN PGP PUBLIC KEY BLOCK"</i> đến <i>"END PGP PUBLIC KEY BLOCK"</i> và dán vào một file text, có thể đặt tên là <b>revoke.gpg</b> chẳng hạn:
+<blockquote>
+$ cat revoke.gpg 
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+Comment: A revocation certificate should follow
+
+iFsEIBECABsFAkdj5X0UHQBJIGxvc3QgdGhlIGtleSAuLi4ACgkQX5bFRvWmC6WB
+MQCggmM5mIxuGAjZ+jQGLPKCqzezxkwAn2LvSJjFCoJHmeqGevt6PBmGLEXZ
+=HWPA
+-----END PGP PUBLIC KEY BLOCK-----
+&nbsp;
+		</blockquote>
+Sau này khi cần sử dụng revocation certificate, hãy import nó vào khoá công khai của bạn hoặc của ai đó rồi gửi đến keyservers để những người khác có thể lấy về và cập nhật key với revocation:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --import revoke.gpg 
+gpg: key F5A60BA5: "quanta &#40;Linux is my hobby&#41; &lt;quanta@love.com&gt;" revocation certificate imported
+gpg: Total number processed: 1
+gpg:    new key revocations: 1
+gpg: 3 marginal&#40;s&#41; needed, 1 complete&#40;s&#41; needed, PGP trust model
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gpg --send-keys --keyserver wwwkeys.pgp.net F5A60BA5
+gpg: sending key F5A60BA5 to hkp server wwwkeys.pgp.net</pre>
+		</div>
+
+<font color='cyan'><b>GPG Signatures in RPM Files</b></font>
+
+Gói RPM có thể được gán chữ ký GPG. Điều này thường xuyên được làm trong khi build hoặc sau khi built. Theo mặc định, RPM được gán chữ ký MD5
+
+Để kiểm tra chữ ký của một gói rpm bạn có thể dùng lệnh <b>rpm</b> với tuỳ chọn <font color='violet'><b>-K</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -K livna-release-7.rpm 
+livna-release-7.rpm: &#40;sha1&#41; dsa sha1 md5 gpg OK</pre>
+		</div>
+Dòng này chỉ ra rằng cả chữ ký DSA, SHA1, MD5 và GPG đều đúng và nguyên vẹn. 
+
+Một gói khác chỉ được gán SHA1 và MD5 mà không được gán GPG:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -K x-unikey-1.0.3b-FC4.i586.rpm 
+x-unikey-1.0.3b-FC4.i586.rpm: sha1 md5 OK</pre>
+		</div>
+
+Để xem key nào được gán cho một gói, bạn có thể thêm tùy chọn <font color='violet'><b>-v</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -Kv livna-release-7.rpm 
+livna-release-7.rpm:
+    Header V3 DSA signature: OK, key ID a109b1ec
+    Header SHA1 digest: OK &#40;5d7864a2d8897a202accb671b3dc166d68be96b2&#41;
+    MD5 digest: OK &#40;c3632a97756ab4858993737dbf931b13&#41;
+    V3 DSA signature: OK, key ID a109b1ec</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -Kv x-unikey-1.0.3b-FC4.i586.rpm 
+x-unikey-1.0.3b-FC4.i586.rpm:
+    Header SHA1 digest: OK &#40;12cc26c2316fad140a15d8fab75baf03b2bf5ff2&#41;
+    MD5 digest: OK &#40;e8af2a0e4abdadfd901e6f997581d79c&#41;</pre>
+		</div>
+
+Nếu bạn download một gói RPM về, check MD5 hoặc GPG thấy lỗi, đừng cài đặt nó. Rất có thể nó ẩn chứa một con trojan. Hiện tại MandrakeUpdate/rpmdrake có thể cấu hình để kiểm tra chữ ký RPM trong suốt quá trình cài đặt, nhưng &lt;a href="http://www.urpmi.org/" target="_blank"&gt;<font color='yellow'>urpmi</font>&lt;/a&gt; thì chưa hỗ trợ việc này.
+
+<font color='green'><b>HẾT.</b></font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17223.hva#104201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17223.hva#104201</link>
+				<pubDate><![CDATA[Sun, 16 Dec 2007 00:32:12]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

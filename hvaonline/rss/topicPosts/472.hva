@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Low Level Format"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/26.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Low Level Format"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Low Level Format</title>
+				<description><![CDATA[ <font size='+1'><font color='yellow'>Format cấp thấp (low level format )</font></font>
+
+Đây thực tế là giai đoạn đầu tiên trong cách tổ chức đĩa cứng ,khác với đĩa mềm trước khi sử dụng đĩa mới ta cần phải format chúng ,nhưng đối với một đĩa cứng mới giai đoạn này dài hơn ,nó phải bao gồm đủ ba bước Format cấp thấp (format vật lý ) ,fdisk để chia đĩa ,và format cấp cao (format cấu trúc hay còn được gọi là format logic )
+Sở dĩ từ trước đến nay người ta mua một đĩa cứng về chỉ cần fdisk và format nó lại là có thể dử dụng được ngay là vì trước khi tung đĩa cứng ra thị trường thì nhà sản xuất đã low level format nó rồi cho nên ,không cần phải làm nữa ,nói như thế nhưng nếu như chúng ta muốn low level format thì ta vẫn có thể format bình thường mà không có chuyện gì xảy ra cả
+
+<font color='red'>Nhiệm vụ của low level format :</font>
+
+<font color='yellow'><b>Trong quá trình low level format ,nó sẽ thực hiện ba nhiệm vụ sau :</b></font>
+
++<font color='orange'>chia track</font> -Tạo Track Number ở mỗi đầu track để quản lý track .
+
++<font color='orange'>chia sector</font> -tạo sector ID (identify ) ở đầu mỗi sector để giúp cho đầu từ có thể nhận diện được bắt đầu của một sector .Tạo một byte kiểm tra lỗi hay kiểm tra tình trạng của sector CRC (Cyclic Redundancy Check ).Giữa hai sector kế tiếp nhau trên cùng một track sẽ cách nhau một khoảng trống ,khoảng trống này được dùng để dự phòng trong trường hợp đầu từ bị lệch ,nó vẫn có thể đọc được sector tiếp theo
+
++<font color='orange'>đánh số thứ tự của các sector trên track</font> (đánh Interleaving cho đĩa cứng )
+*<u>Interleaving hay hệ số đan xen của đĩa cứng </u>.
+
+Thực chất lúc trước khi đánh số thứ tự của các sector trên track nhà sản xuất không nghĩ đến chuyện đan xen các sector là gì cả và đơn giản nhà sản xuất đĩa chỉ việc đánh số thứ tự của các sector trêntrack liên tục nhau .Nhưng sau một thời gian sử dụng đĩa thì họ nhận thấy rằng tốc độ truy cập đĩa chậm đi một cách bất bình thường bởi vì nếu đánh số thứ tự của các sector trên track liên tục như thế thì tốc độ làm việc của card điều khiển đĩa HDC (Hard Disk Controller )ngay lúc này không thể nào làm việc kịp với tốc độ quay đĩa (ta biết tốc độ làm việc của HDC trong thời gian này rất chậm bởi vì nó thực hiện rất nhiều thao tác để hoàn tất việc đọc ghi 1 sector :nhận lệnh từ CPU , định vị đầu từ , điều khiển đọc ghi , đọc vào buffer ,chuyển dữ liệu ,báo ready )và nếu như thế thì mỗi khi đọc một sector xong , để đọc được sector kế tiếp đĩa phải đợi đúng một vòng quay .Như vậy để không mất thời gian chờ ,nhà sản xuất đi tính tốc độ làm việc của card điều khiển ,tính tốc độ quay đĩa tương ứng với khoảng thời gian đó và như thế đan xen đi một vài sector, mới đánh số thứ tự của sector tiếp theo .Làm như thế thì khi truy xuất sector đầu xong , đến sector thứ hai thì đĩa sẽ vừa quay đến đầu sector này và sẽ làm việc ngay mà không mất thời gian chờ quay đĩa nữa
+.Nói tóm lại hệ số đan xen là một khái niệm tương đối quan trọng đối với các đĩa cứng thời “khai sinh lập địa “khi các card điều khiển còn tương đối chậm . đối với các HDD có dung lương như hiện nay thì hệ số đan xen không còn nữa vì tốc độ của các card điều khiển trên các đĩa cứng này đã làm việc cực nhanh ,có thể ngang bằng với tốc độ quay đĩa ,và như thế số thứ tự của các sector trên cùng một track lúc này mặc nhiên sẽ được đánh liên tục nhau và như thế lúc nào hệ số đan xen = 1 cũng là tối ưu nhất
++<font color='orange'>Trong trường hợp nào ta nên low level format lại đĩa</font>
+
+Dĩ nhiên format cấp thấp có thể không trực tiếp làm hư đĩa nhưng nói chung nó vẫn có hại về mặt từ tính và an toàn dữ liệu .Như vậy tuyệt đối không nên lạm dụng nó một cách quá đáng .Thông thường ta chỉ nên format cấp thấp lại đĩa trong các trừong hợp sau :
+- Không Fdisk được đĩa cứng: Đấy là trừong hợp bắt buộc bởi vỉ như ta đã biết nếu một HDD không fdisk đượcc thì không thể format được và như thế thì không thể sử dụng được .Khi không fdisk được ta có thể gặp các tình trạng sau
+- ++ chạy fdisk –Enter –Máy báo <b>No fixed disk present</b>
+- ++vào fdisk được nhưng khi chọn mục đầu tiên để tạo primary Dos –chương trình fdisk hỏi ta có dành maximum sizeđể chia 1 hay không ,lúc này cho dù ta chọn yes hoặc no gì thì cũng bị treo máy
+- Không format được ,lúc ta format c: /s thì có thể ta nhận được một câu thông báo hư track 0 giống như thường gặp ở đĩa mềm :Bad track 0 –Disk Unsusable .
+- Ngàoi trừong hợp không fdisk và format được ,thì các trường hợp sau ta có thể lựa chọn được có nên format cấp thấp hay không bởi vì ít nhất trong các trường hợp này thì đĩa vẫn còn chạy được
++++ Khi format cấp cao format c: /s khi máy đang chạy số % format thì có thể ta gặp một loạt các thông báo “Trying to recover allocation unit 8711. Lúc này máy đang báo cho ta biết rằng cluster 8711 trên đĩa bị hư và nó đang cố gắng phục hồi lại cluster đó ,nhưng thông thường thì mỗi khi ta nhận được thông báo lỗi này thì ta đã bị Bad trên đĩa
++++Khi ta chạy scandisk c: hay NDD c: /DT hay bất kỳ 1 phần mềm nào để kiểm tra bề mặt đĩa (surface Scan )ta sẽ gặp trên đĩa có rất nhiểu khối bị BAD (Bad Block)
++++Khi chạy bất kỳ một chương trình nào ,ngẫu nhiên ta sẽ nhận được một bảng thông báo có nội dung lỗi đại loại như sau :Error reading data on drive C:,retry ,Abort ,Ignore,Fail?hoặc Sector not found on drive C:,hoặc Data error on drive c:
++++Khi chạy bấtt kỳ một chương trình nào ,ngẫu nhiên ta sẽ nhận được một bảng thông báo lỗi hình chữ nhật nhỏ :A serious error occur when reading drive c: Retry or Abort ?
++++ Khi đang dùng DiskEdit để khảo sát đĩa thì hiện một câu thông báo Error on hard disk 129 ,Retry or Abort ?
+Nói chung trong những trường hợp bên trên đều là những trường hợp đĩa bị hư quá nhiều hoặc chạy không được ổn định và trong những trường hợp này theo tôi thì ta nên format cấp thấp đĩa lại bởi vì chính việc format cấp thấp này lại có lợi .Thông thường khi nhà sản xuất ,sản xuất đĩa , để dự phòng một số sự cố hay dự phòng cho một số sector trên đĩa bị hư ,lúc nào người ta cũng sản xuất dung lượng vật lý trên đĩa luôn lớn hơn dung lương thực tế khai báo trong CMOS và thực tế theo một số tài liệu về HDD thì cứ mỗi 1 track hay 1 Cylinder đều có dư 1 sector để dự phòng ,và thực chất kích thước thật của một sector vật lý trên đĩa lúc nào cũng lớn hơn 512 bytes rất nhiều (có thể là 574 bytes ,582 bytes …tuỳ theo từng loại đĩa)
+Như thế nếu trong quá trình format cấp thấp nếu số sector trên đĩa bị hư ít hơn số sector dự phòng thì lúc này có thê các chương trình này sẽ lấy sector dự phòng còn tốt trên đĩa để lắp qua thay cho 1 sector bị hư ,và nếu như vậy thì bề mặt đĩa của chúng ta trở nên sạch và tốt trở lại ,nhưng nếu số lương các sector bị bad trên đĩa nhiều hơn số sector dư phòng thì có thể đĩa cứng chúng ta sẽ bị mất một ít dung lượng đi hoặc vẫn còn bị một ít BAD ,nhưng chắc chắn tình trạng của đĩa cứng lúc này luôn sẽ khá hơn trước khi format (tuỳ thuộc vào chương trình format cấp thấp ,không theo một rule nào cố định cả )
+
+Một chương trình dùng để LF khá thông dụng là LF.exe ( shareware)
+
+khi ta chạy lf.exe thì sẽ hiện ra một số thông báo sau:
+
+
+<font color='yellow'>Before running this utility ,following steps must be done first
+1.Entering CMOS Setup Utility
+2.In Standard CMOS SETUP ,set TYPE option to "Auto" and set MODE option to "NORMAL " for the hard disk to be formated
+3.In BIOS FEATURES SETUP ,Set Boot Sequence option to "A,C,xx" or "C,A,xx"
+4.Save CMOS and exit setup</font>
+
+Have you done the above steps (Y/N)? Y
+
+nếu bạn chọn Y bạn sẽ gặp tiếp dòng thông báo sau :
+
+Select the number of the hard disk to be formated (1/none )? 1
+
+<font color='yellow'>Warning:All DATA on Non-ReMovable Disk
+Drive c: Will be lost And you must Repartition later !</font>
+
+Proceed with lowlevel format (Y/N) ? Y
+
+tới đây là ngắm nhìn nó chạy ,còn không đi uống cafe với bạn ,để cho chạy xong rồi restart lại máy vậy là xong
+(chú ý đọc kỹ hướng dẫn sử dụng trước khi dùng greenbiggrin.gif )
+
+
+<font color='orange'>bài post của NguyenTracHuy (HVA 15/09/2005)</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/472.hva#1300</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/472.hva#1300</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 00:18:16]]> GMT</pubDate>
+				<author><![CDATA[ batdoi]]></author>
+			</item>
+	</channel>
+</rss>

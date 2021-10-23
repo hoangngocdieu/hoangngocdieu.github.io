@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Thảo luận] Phân tích một crackme trên Linux :)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Thảo luận] Phân tích một crackme trên Linux :)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Xin chào anh chị em HVA
+Box reverse engineering này mình thấy rất hay, tuy nhiên chưa thấy bài nào bàn về thủ thuật reversing trên linux, nên mạn phép mở chủ đề này ra bàn bạc.
+Chúng ta hãy đi phân tích crackme cơ bản này
+<font color='yellow'><span class="link"> http://www.reversing.be/article.php?story=2005030218092760&query=linux</span></font>
+
+Download
+<font color='yellow'><span class="link"> http://www.reversing.be/easyfile/file.php?download=20050302180927229</span></font>
+
+Nhìn sơ qua mình thấy có ít nhất 4 cách để reverse nó (patching, serial hịacking, kegen ...) và đặc biệt là phần nhập username/serial bị buffer overflow. Các bạn có thể dùng mọi cách miễn là cho nó hiện ra good boy :)
+Demo 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>user / serial : meoluoi / 9118715</pre>
+		</div>
+Xin mời các bạn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135429</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135429</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2008 16:48:27]]> GMT</pubDate>
+				<author><![CDATA[ mèo lười]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Cho tui khai trương trước, crack thì tui hơi lười, chỉ RE ra source để bà con crack tiếp ;)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int __cdecl main&#40;&#41;
+{
+    char szName&#91;72&#93;;
+    char szInputSerial&#91;64&#93;;
+    int idx;
+    char szRealSerial&#91;64&#93;;
+
+    cout &lt;&lt; "-&gt; Small crackme for Stingduk &lt;-" &lt;&lt; endl;
+    cout &lt;&lt; ""Give me your name &#40;max 50 chars&#41;: ";
+    cin &gt;&gt; szName;
+    cout &lt;&lt; "Pass me the serial &#40;max 50 chars&#41;: ";
+    cin &gt;&gt; szInputSerial;
+
+    idx = 0;
+    while &#40;szName&#91;idx&#93; != 0&#41;
+    {
+        char ch  = szName&#91;idx&#93;;
+        szRealSerial&#91;idx++&#93; = ch % 10 + 48;
+    }
+    szRealSerial&#91;idx&#93; = 0;
+
+    if &#40;0 != strcmp&#40;szRealSerial, szInputSerial&#41;&#41;
+   {
+        cout &lt;&lt; "No luck here mate :&#40;" &lt;&lt; endl;
+    }
+    else
+    {
+        cout &lt;&lt; "Great work!" &lt;&lt; endl;
+    }
+
+    return 0;
+}</pre>
+		</div>
+
+Crackme này đơn giản, chỉ làm nhiêu đó thôi.
+Tool: IDA + HexRays.
+Thời gian đọc, phân tích: 2 phút.
+Thời gian copy&paste: 30 phút. Cái này mới lâu nè, làm biếng mà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135444</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135444</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2008 18:16:01]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Chời, em quên giao kèo là chỉ xài các debugger, disassembler trên linux (gdb, objdump ..) :D. Thanks bác TQN, trông đoạn decompiler trên thì có thể keygen được rồi. Bác nào thử phân tích step by step bằng gdb xem, serial fishing, buffer overflow exploit blah blah được chấp nhận hết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135455</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135455</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2008 19:10:46]]> GMT</pubDate>
+				<author><![CDATA[ mèo lười]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Cách 1 [serial fishing]
+Trông đoạn code decompiler của bác TQN, chúng ta dễ dàng nhận ra tử huyệt của crackme này là function strcmp.
+Xem qua prototype của function strcmp:
+<blockquote>Prototype: int strcmp (const char *string1, const char *string2);
+Header File: string.h (C) or cstring (C++)
+Explanation: Tests the strings for equality. Returns a negative number if string1 is less than string2, returns zero if the two strings are equal, and returns a positive number is string1 is greater than string2 
+&nbsp;
+		</blockquote>
+Chúng ta sẽ set một bp tại strcmp để fishing real serial:
+B1:
+<blockquote>$ file small
+small: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), for GNU/Linux 2.2.5, dynamically linked (uses shared libs), not stripped&nbsp;
+		</blockquote>
+--&gt; Trông cái executable thấy bình thường, em nghĩ hình nó ko bị pack (ko biết đúng ko?) Bác nào có kinh nghiệm về detect các packer trong linux xin chia sẻ.
+B2:
+<blockquote><font color='yellow'>$ gdb ./small -q</font>
+Using host libthread_db library "/lib/libthread_db.so.1".
+(gdb) disassemble main
+Dump of assembler code for function main:
+0x080487bc &lt;main+0&gt;:    push   %ebp
+0x080487bd &lt;main+1&gt;:    mov    %esp,%ebp
+0x080487bf &lt;main+3&gt;:    sub    $0xe8,%esp
+.........................
+.........................
+0x080488c4 &lt;main+264&gt;:  push   %eax ; fake serial
+0x080488c5 &lt;main+265&gt;:  push   %edx ; real serial
+<font color='yellow'>0x080488c6 &lt;main+266&gt;:  call   0x8048668 &lt;strcmp@plt&gt; ;bp here</font>
+0x080488cb &lt;main+271&gt;:  add    $0x10,%esp
+0x080488ce &lt;main+274&gt;:  test   %eax,%eax
+<font color='yellow'>0x080488d0 &lt;main+276&gt;:  jne    0x80488fa &lt;main+318&gt; ; Nhảy đến Bad boy nếu sai serial, có thể patch tại đây</font>
+0x080488d2 &lt;main+278&gt;:  sub    $0x8,%esp
+0x080488d5 &lt;main+281&gt;:  push   $0x80486d8
+---Type &lt;return&gt; to continue, or q &lt;return&gt; to quit---return
+0x080488da &lt;main+286&gt;:  sub    $0xc,%esp
+0x080488dd &lt;main+289&gt;:  push   $0x8048b84 ; Great work!
+0x080488e2 &lt;main+294&gt;:  push   $0x8049db8
+0x080488e7 &lt;main+299&gt;:  call   0x8048698 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+0x080488ec &lt;main+304&gt;:  add    $0x14,%esp
+0x080488ef &lt;main+307&gt;:  push   %eax
+0x080488f0 &lt;main+308&gt;:  call   0x8048658 &lt;_ZNSolsEPFRSoS_E@plt&gt;
+0x080488f5 &lt;main+313&gt;:  add    $0x10,%esp
+0x080488f8 &lt;main+316&gt;:  jmp    0x8048920 &lt;main+356&gt;
+0x080488fa &lt;main+318&gt;:  sub    $0x8,%esp
+0x080488fd &lt;main+321&gt;:  push   $0x80486d8
+0x08048902 &lt;main+326&gt;:  sub    $0xc,%esp
+0x08048905 &lt;main+329&gt;:  push   $0x8048b90 ; No luck here mate :(
+0x0804890a &lt;main+334&gt;:  push   $0x8049db8
+&nbsp;
+		</blockquote>
+B3:
+<blockquote>(gdb)<font color='yellow'> break *main+266</font>
+Breakpoint 1 at 0x80488c6
+(gdb) <font color='yellow'>run</font>
+Starting program: /usr/local/src/crackme/small 
+-&gt; Small crackme for Stingduk &lt;-
+<font color='yellow'>Give me your name (max 50 chars): hvaonline.net
+Pass me the serial (max 50 chars): 123456</font>
+
+Breakpoint 1, 0x080488c6 in main ()
+(gdb) <font color='yellow'>i r</font>
+eax            0xbfb03a80       -1078969728
+ecx            0xbfb03a4c       -1078969780
+edx            0xbfb03a40       -1078969792
+ebx            0xb7ed3ff4       -1209188364
+esp            0xbfb03a10       0xbfb03a10
+ebp            0xbfb03b08       0xbfb03b08
+esi            0xb7fedce0       -1208034080
+edi            0x0      0
+eip            0x80488c6        0x80488c6 &lt;main+266&gt;
+eflags         0x200296 [ PF AF SF IF ID ]
+cs             0x73     115
+ss             0x7b     123
+ds             0x7b     123
+es             0x7b     123
+fs             0x0      0
+gs             0x33     51
+(gdb) <font color='yellow'>x/s $eax</font>
+0xbfb03a80:      "123456" &lt;-- FAke Serial
+(gdb)<font color='yellow'> x/s $edx</font>
+0xbfb03a40:      "4871085016016" &lt;-- Real Serial &nbsp;
+		</blockquote>
+...!!! Done
+Vậy là ta mới câu được <blockquote>hvaonline.net / 4871085016016&nbsp;
+		</blockquote>
+Xin mời các bác thảo luận tiếp :)
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135779</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#135779</link>
+				<pubDate><![CDATA[Mon, 16 Jun 2008 12:56:58]]> GMT</pubDate>
+				<author><![CDATA[ mèo lười]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Cho tui khai trương trước, crack thì tui hơi lười, chỉ RE ra source để bà con crack tiếp ;)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int __cdecl main&#40;&#41;
+{
+    char szName&#91;72&#93;;
+    char szInputSerial&#91;64&#93;;
+    int idx;
+    char szRealSerial&#91;64&#93;;
+
+    cout &lt;&lt; "-&gt; Small crackme for Stingduk &lt;-" &lt;&lt; endl;
+    cout &lt;&lt; ""Give me your name &#40;max 50 chars&#41;: ";
+    cin &gt;&gt; szName;
+    cout &lt;&lt; "Pass me the serial &#40;max 50 chars&#41;: ";
+    cin &gt;&gt; szInputSerial;
+
+    idx = 0;
+    while &#40;szName&#91;idx&#93; != 0&#41;
+    {
+        char ch  = szName&#91;idx&#93;;
+        szRealSerial&#91;idx++&#93; = ch % 10 + 48;
+    }
+    szRealSerial&#91;idx&#93; = 0;
+
+    if &#40;0 != strcmp&#40;szRealSerial, szInputSerial&#41;&#41;
+   {
+        cout &lt;&lt; "No luck here mate :&#40;" &lt;&lt; endl;
+    }
+    else
+    {
+        cout &lt;&lt; "Great work!" &lt;&lt; endl;
+    }
+
+    return 0;
+}</pre>
+		</div>
+
+Crackme này đơn giản, chỉ làm nhiêu đó thôi.
+Tool: IDA + HexRays.
+Thời gian đọc, phân tích: 2 phút.
+Thời gian copy&paste: 30 phút. Cái này mới lâu nè, làm biếng mà.&nbsp;
+		</blockquote>
+
+Ok, đây là cách solve thứ 2:
+Nhìn đoạn code mà anh TQN đã decompiler, chúng ta sẽ tận dụng lỗi buffer overflow do cin đọc vào.
+1. Chúng ta tận dụng làm tràn bộ đệm của szName[72], hoặc szInputSerial[64];
+Điều cần làm trước tiên là phải tính toán chính xác cần đủ bao nhiêu byte để ghi đè lên con trỏ EIP. Chúng ta hãy hình dung stack như sau
+<blockquote>High mem (đáy stack)
+.......
+.......
+EIP
+EBP
+szName[72];
+szInputSerial[64];
+idx
+......
+Low mem (đỉnh stack)&nbsp;
+		</blockquote>
+
+Nhìn cấu trúc stack trên ta dễ dàng phán đoán, nếu khai thác vào phần input username của bộ đệm szName[72] chúng ta cần 72 + 4 (EBP)+ 4(EIP) =80byte để ghi đè đủ vừa khít lên 4 byte EIP
+Tương tự cần 64+72+4+4=142 byte ghi đè vừa khít lên 4 byte EiP
+(thôi coi đá banh, mai post tiếp :D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#138996</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#138996</link>
+				<pubDate><![CDATA[Mon, 30 Jun 2008 03:46:21]]> GMT</pubDate>
+				<author><![CDATA[ mèo lười]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Nếu chỉ cần hiện ra "Great work!" thì có cách đơn giản thế này:
+
+$ python -c 'print "\x00\x0a\x00\x0a"' | ./small
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name (max 50 chars): Pass me the serial (max 50 chars): Great work!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#139006</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#139006</link>
+				<pubDate><![CDATA[Mon, 30 Jun 2008 06:33:55]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>Nếu chỉ cần hiện ra "Great work!" thì có cách đơn giản thế này:
+
+$ python -c 'print "\x00\x0a\x00\x0a"' | ./small
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name (max 50 chars): Pass me the serial (max 50 chars): Great work!&nbsp;
+		</blockquote>
+
+HOW?  -:-)  -:-)  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#139019</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#139019</link>
+				<pubDate><![CDATA[Mon, 30 Jun 2008 10:49:20]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>Nếu chỉ cần hiện ra "Great work!" thì có cách đơn giản thế này:
+
+$ python -c 'print "\x00\x0a\x00\x0a"' | ./small
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name (max 50 chars): Pass me the serial (max 50 chars): Great work!&nbsp;
+		</blockquote>
+Trường hợp của bạn mrro là một tình huống đặc biệt của keygen  :-/ và \x0a tương đương với "\r\n"  :-/  :-/ 
+Nên dùng python để input cái serial của bạn mèo thì cũng có thể làm thế này ?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "meoluoi\x0a9118715\x0a"' |./small</pre>
+		</div>
+hoặc đặc biệt hơn nữa
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x00\x20\x00"' |./small</pre>
+		</div>
+ :-/ 
+Còn mình chỉ biết patch  :D 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gdb --write ./small -q
+Using host libthread_db library "/lib/libthread_db.so.1".
+&#40;gdb&#41; disassemble main
+Dump of assembler code for function main:
+0x080487bc &lt;main+0&gt;: push %ebp
+0x080487bd &lt;main+1&gt;: mov %esp,%ebp
+0x080487bf &lt;main+3&gt;: sub $0xe8,%esp
+.........................
+.........................
+0x080488c4 &lt;main+264&gt;: push %eax ; fake serial
+0x080488c5 &lt;main+265&gt;: push %edx ; real serial
+0x080488c6 &lt;main+266&gt;: call 0x8048668 &lt;strcmp@plt&gt; ;bp here
+0x080488cb &lt;main+271&gt;: add $0x10,%esp
+0x080488ce &lt;main+274&gt;: test %eax,%eax
+0x080488d0 &lt;main+276&gt;: jne 0x80488fa &lt;main+318&gt; ; Nhảy đến Bad boy nếu sai serial, có thể patch tại đây
+0x080488d2 &lt;main+278&gt;: sub $0x8,%esp
+0x080488d5 &lt;main+281&gt;: push $0x80486d8
+---Type &lt;return&gt; to continue, or q &lt;return&gt; to quit---return
+0x080488da &lt;main+286&gt;: sub $0xc,%esp
+0x080488dd &lt;main+289&gt;: push $0x8048b84 ; Great work!
+0x080488e2 &lt;main+294&gt;: push $0x8049db8
+0x080488e7 &lt;main+299&gt;: call 0x8048698 &lt;_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt&gt;
+0x080488ec &lt;main+304&gt;: add $0x14,%esp
+0x080488ef &lt;main+307&gt;: push %eax
+0x080488f0 &lt;main+308&gt;: call 0x8048658 &lt;_ZNSolsEPFRSoS_E@plt&gt;
+0x080488f5 &lt;main+313&gt;: add $0x10,%esp
+0x080488f8 &lt;main+316&gt;: jmp 0x8048920 &lt;main+356&gt;
+0x080488fa &lt;main+318&gt;: sub $0x8,%esp
+0x080488fd &lt;main+321&gt;: push $0x80486d8
+0x08048902 &lt;main+326&gt;: sub $0xc,%esp
+0x08048905 &lt;main+329&gt;: push $0x8048b90 ; No luck here mate
+0x0804890a &lt;main+334&gt;: push $0x8049db8
+------
+&#40;gdb&#41; x/x *0x080488d0
+0xec832875:     Cannot access memory at address 0xec832875
+&#40;gdb&#41; set {int} 0x080488d0=0xec832874
+&#40;gdb&#41; quit</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./small 
+-&gt; Small crackme for Stingduk &lt;-
+Give me your name &#40;max 50 chars&#41;: hello-world
+Pass me the serial &#40;max 50 chars&#41;: gudbye-world
+Great work!</pre>
+		</div>
+
+
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#146396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#146396</link>
+				<pubDate><![CDATA[Tue, 12 Aug 2008 12:18:02]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Phân tích một crackme trên Linux :)</title>
+				<description><![CDATA[ Còn một cách nữa để phishing serial là dùng cách này của bác Izik
+Tham khảo
+<span class="link"> http://www.tty64.org/doc/revengwithld.txt</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22743.hva#146400</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22743.hva#146400</link>
+				<pubDate><![CDATA[Tue, 12 Aug 2008 12:32:22]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+	</channel>
+</rss>

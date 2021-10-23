@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình VNC server/viewer trong Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình VNC server/viewer trong Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <font color='orange'><font size='+1'><b>Phần 1: Cấu hình VNC server/viewer</b></font></font>
+
+Nguồn: <span class="link"> http://www.bobpeers.com/linux/vnc.php</span>
+(Bài viết được minh hoạ với CentOS 5 - server và Fedora 8 - client)
+
+VNC - Virtual Networked Computing là một cách kiểm soát máy tính từ xa như là khi bạn ngồi trước nó. Trong thế giới Windows nó được biết đến với tên gọi remote desktop.
+
+<font color='cyan'><b><i>Bước 1</i></b></font>: <i><u>Enable Remote desktop</u></i>
+Vào System -&gt; Preferences -&gt; Internet and Network -&gt; Remote Desktop. Đánh dấu chọn vào Allow other users to view your desktop và Require the users to enter this password -&gt; sau đó nhập password vào
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/RemoteDesktopPreferences.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<font color='cyan'><b><i>Bước 2</i></b></font>: <i><u>Kiểm tra xem vnc và vnc-server đã được cài chưa</u></i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -qa | grep vnc
+vnc-server-4.1.2-23.fc8
+vnc-4.1.2-23.fc8</pre>
+		</div>Nếu chưa hãy cài chúng qua yum
+
+<font color='cyan'><b><i>Bước 3</i></b></font>: <i><u>Thêm users</u></i>
+Mở <b><i>/etc/sysconfig/vncservers</i></b> với quyền root và bỏ chú thích 2 dòng cuối để trở thành:
+<blockquote>
+# The VNCSERVERS variable is a list of display:user pairs.
+#
+# Uncomment the lines below to start a VNC server on display :2
+# as my 'myusername' (adjust this to your own).  You will also
+# need to set a VNC password; run 'man vncpasswd' to see how
+# to do that.  
+#
+# DO NOT RUN THIS SERVICE if your local area network is
+# untrusted!  For a secure way of using VNC, see
+# &lt;URL:http://www.uk.research.att.com/archive/vnc/sshvnc.html&gt;.
+
+# Use "-nolisten tcp" to prevent X connections to your VNC server via TCP.
+
+# Use "-nohttpd" to prevent web-based VNC clients connecting.
+
+# Use "-localhost" to prevent remote VNC clients connecting except when
+# doing so through a secure tunnel.  See the "-via" option in the
+# `man vncviewer' manual page.
+
+ <font color='orange'>VNCSERVERS="1:quanta"
+ VNCSERVERARGS[1]="-geometry 800x600 -nolisten tcp -nohttpd -localhost"</font>
+&nbsp;
+		</blockquote>
+Dòng VNCSERVERS="1:quanta" sẽ sets up một user cho vnc server, bạn có thể thêm bao nhiêu users tuỳ ý. 
+Dòng VNCSERVERARGS[1] set các tham số cho user 1
+
+Chú ý rằng: session number user cũng nói cho chúng ta biết cổng mà vncserver sẽ lắng nghe. Nhớ rằng, Gnome Remote Desktop hỏi chúng ta để sử dụng computername:0 như một chuỗi kết nối, <font color='orange'><i>session number sẽ được cộng thêm 5900 để ra cổng mà vncserver sẽ lắng nghe</i></font>. Trong trường hợp này chúng ta cần sử dụng cổng 5901, nên chúng ta dùng session 1. Bạn có thể sử dụng bất kỳ số nào, ví dụ:
+<blockquote>VNCSERVERS="2000:bobpeers"
+VNCSERVERARGS[2000]="-geometry 1024x768 -depth 16"&nbsp;
+		</blockquote>
+Lúc này thì chúng ta phải dùng cổng 7900
+
+<font color='cyan'><b><i>Bước 4</i></b></font>: <i><u>Đặt password</u></i>
+Để tăng độ bảo mật, bạn cần thêm 1 password trước khi kết nối được thi hành, từ Terminal gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncpasswd
+Password:
+Verify:</pre>
+		</div>
+Lệnh này sẽ tạo 1 thư mục ẩn với tên gọi <b><i>.vnc</i></b> trong home, để chứa password file
+
+<font color='cyan'><b><i>Bước 5</i></b></font>: <i><u>Khởi động server với các tuỳ chọn</u></i>
+Để khởi động server, bạn gõ "<font color='olive'><i>vncserver</i></font>" kèm theo session mà bạn muốn khởi động (nếu bạn gán nhiều hơn 1 entry trong /etc/sysconfig/vncservers)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncserver :1
+
+New 'localhost.localdomain:1 &#40;quanta&#41;' desktop is localhost.localdomain:1
+
+Starting applications specified in /home/quanta/.vnc/xstartup
+Log file is /home/quanta/.vnc/localhost.localdomain:1.log</pre>
+		</div>
+
+Lúc này server đã khởi động và bạn có thể kết nối được rồi, tuy nhiên rất có thể bạn chỉ có được 1 màn hình xám xịt, bởi theo mặc định kết nối không tạo một session mới của X để khởi động. 
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/VNClocalhostlocaldomain1root.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Để khắc phục hiện tượng này, chúng ta cần chỉnh lại startup script trong <b><i>$HOME/.vnc</i></b> như sau:
+<blockquote>
+$ vi ~/.vnc/xstartup
+#!/bin/sh
+
+<font color='orange'><i># Uncomment the following two lines for normal desktop:
+ unset SESSION_MANAGER
+ exec /etc/X11/xinit/xinitrc</i></font>
+
+[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+xsetroot -solid grey
+vncconfig -iconic &
+xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+twm &&nbsp;
+		</blockquote>
+
+Tiếp theo bạn cần restart vncserver để thay đổi có hiệu lực:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncserver -kill :1
+Killing Xvnc process ID 13728</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncserver :1
+New 'localhost.localdomain:1 &#40;quanta&#41;' desktop is localhost.localdomain:1
+
+Starting applications specified in /home/quanta/.vnc/xstartup
+Log file is /home/quanta/.vnc/localhost.localdomain:1.log</pre>
+		</div>
+
+<font color='cyan'><b><i>Bước 6</i></b></font>: <i><u>Sử dụng vncviewer</u></i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncviewer 192.168.1.3:5901</pre>
+		</div>
+Lệnh này sẽ mở một hộp thoại để bạn nhập password:
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/vncviewer.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nhập password và Enter, bạn sẽ thấy màn hình của CentOS 5:
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/VNCCentOSscreen.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<i><u>Dừng vncserver</u></i>
+Có 2 cách: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ /sbin/service vncserver stop
+Shutting down VNC server: 1:quanta                       &#91;  OK  &#93;</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncserver -kill :1
+Killing Xvnc process ID 13728</pre>
+		</div>
+
+<font color='cyan'><b><i>Cho phép kết nối từ xa</i></b></font>
+Nếu muốn cho phép kết nối từ xa thì bạn phải thực hiện như sau:
+
+<i><u>Add port</u></i>
+System -&gt; administration -&gt; Firewall and Linux -&gt; chọn Firewall Options tab 
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/SecurityLevelConfiguration.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+-&gt; Other ports -&gt; Add button, nhập 5901 với giao thức là tcp -&gt; OK
+
+<br>
+			<div align="center" class="limitview"><img src='http://i86.photobucket.com/albums/k106/strategistquanta/AddPort.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<i><u>Chỉnh sửa iptables để mở cổng</u></i>
+<blockquote>$ sudo vim /etc/sysconfig/iptables
+-A FORWARD -j RH-Firewall-1-INPUT
+-A RH-Firewall-1-INPUT -i lo -j ACCEPT
+-A RH-Firewall-1-INPUT -p icmp --icmp-type any -j ACCEPT
+-A RH-Firewall-1-INPUT -p 50 -j ACCEPT
+-A RH-Firewall-1-INPUT -p 51 -j ACCEPT
+-A RH-Firewall-1-INPUT -p udp --dport 5353 -d 224.0.0.251 -j ACCEPT
+-A RH-Firewall-1-INPUT -p udp -m udp --dport 631 -j ACCEPT
+-A RH-Firewall-1-INPUT -p tcp -m tcp --dport 631 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 21 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 25 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 2049 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m udp -p udp --dport 137 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m udp -p udp --dport 138 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 139 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 445 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 23 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+<font color='orange'><i>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 5901 -j ACCEPT</i></font>
+-A RH-Firewall-1-INPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+&nbsp;
+		</blockquote>
+
+<i><u>Restart lại iptables service</u></i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo /sbin/service iptables restart
+Flushing firewall rules:                                   &#91;  OK  &#93;
+Setting chains to policy ACCEPT: filter                    &#91;  OK  &#93;
+Unloading iptables modules:                                &#91;  OK  &#93;
+Applying iptables firewall rules:                          &#91;  OK  &#93;
+Loading additional iptables modules: ip_conntrack_netbios_n&#91;  OK  &#93;</pre>
+		</div>
+
+<i><u>Cuối cùng, các bạn nhớ NAT port 5901 trên modem và thử kết nối</u></i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncviewer &lt;public_IP_address&gt;:5901</pre>
+		</div>
+Nếu việc kết nối chậm, bạn có thể chỉnh lại depth color hoặc screen resolution trong <b><i>/etc/sysconfig/vncservers</i></b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98434</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98434</link>
+				<pubDate><![CDATA[Sun, 18 Nov 2007 12:56:26]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <font color='orange'><b><font size='+1'>Phần 2: Cấu hình VNC qua SSH</font></b></font>
+Nguồn: <span class="link"> http://www.bobpeers.com/linux/vnc_ssh</span>
+
+<font color='cyan'><b>1. Khái quát về VNC qua SSH</b></font>
+
+Một phần vì password kết nối qua VNC không được bảo mật cũng như tất cả lệnh, và thông tin không được mã hoá qua kết nối. Trong một mạng LAN ở nhà, đó không phải là vấn đề lắm, nhưng tôi khuyến cáo rằng, bạn không nên thực hiện nó qua mạng Internet. Trong bài viết này bạn sẽ học cách kết nối từ Fedora client đến CentOS server chạy vncserver.
+
+<font color='cyan'><b>2. Yêu cầu</b></font>
+
+<font color='green'><i><u>Linux host</u></i></font>
+Máy chủ của bạn phải đang chạy vncserver, và openssh server đã được cài đặt
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># rpm -qa | grep openssh-server
+openssh-server-4.3p2-16.el5</pre>
+		</div>
+<font color='green'><i><u>Linux client machine</u></i></font>
+Bạn đã cài openssh, có thể check như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ rpm -qa | grep openssh
+openssh-askpass-4.7p1-2.fc8
+openssh-clients-4.5p1-6.fc7
+openssh-4.7p1-2.fc8
+openssh-askpass-4.5p1-6.fc7
+openssh-clients-4.7p1-2.fc8
+openssh-4.5p1-6.fc7
+openssh-server-4.5p1-6.fc7
+openssh-server-4.7p1-2.fc8</pre>
+		</div>
+
+<font color='cyan'><b>3. Cài đặt trên máy chủ</b></font>
+
+<font color='green'><i><u>Chỉnh sửa /etc/hosts.allow</u></i></font>
+Trên CentOS, theo mặc định thì không cho phép bất kỳ kết nối nào đến dịch vụ ssh. Để cho phép client có thể kết nối đến server bạn cần chỉnh <b><i>/etc/hosts.allow</i></b> và thêm vào dòng sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+# hosts.allow   This file describes the names of the hosts which are
+#               allowed to use the local INET services, as decided
+#               by the '/usr/sbin/tcpd' server.
+#
+sshd:192.168.1.2</pre>
+		</div>
+Phần 192.168.1.2 chính là địa chỉ IP của máy client. Nếu muốn bạn có thể dùng <font color='olive'><i>sshd:ALL</i></font> để cho phép bất kỳ kết nối nào đều có thể truy cập.
+
+<font color='green'><i><u>Opening ports</u></i></font>
+Tiếp theo chúng ta cần mở cổng trên firewall để dịch vụ ssh có thể lắng nghe trên đó, theo mặc định cổng này là 22. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT</pre>
+		</div>
+Khởi động lại iptables để thay đổi có hiệu lực:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># sudo /sbin/service iptables restart
+Flushing firewall rules:                                   &#91;  OK  &#93;
+Setting chains to policy ACCEPT: filter                    &#91;  OK  &#93;
+Unloading iptables modules:                                &#91;  OK  &#93;
+Applying iptables firewall rules:                          &#91;  OK  &#93;
+Loading additional iptables modules: ip_conntrack_netbios_ns ip_conntrack_ftp                                          &#91;  OK  &#93;</pre>
+		</div>
+<font color='green'><i><u>Khởi động dịch vụ ssh và vncserver</u></i></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># sudo /sbin/service sshd start
+Starting sshd:                                             &#91;  OK  &#93;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># vncserver :1 192.168.1.3
+
+New 'localhost.localdomain:1 &#40;root&#41;' desktop is localhost.localdomain:1
+
+Starting applications specified in /root/.vnc/xstartup
+Log file is /root/.vnc/localhost.localdomain:1.log</pre>
+		</div>
+
+<font color='cyan'><b>4. Cài đặt trên client</b></font>
+
+Để cài đặt port forwarding trên Linux, bạn mở terminal và gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh -N -T -L 5901:192.168.1.3:5901 &</pre>
+		</div>
+Lệnh này forwards cổng 5901 trên local (Fedora) đến cổng 5901 trên server (CentOS). Phần 192.168.1.3 chính là địa chỉ IP của server. Các tham số còn lại:
+-L: tuỳ chọn forward cổng của local
+-N: tuỳ chọn để ngăn cản shell từ việc mở cổng, do đó bạn không thể thi hành lệnh
+-T: tuỳ chọn để disable pseudo-tty allocation
+
+<font color='cyan'><b>5. Kết nối qua ssh tunnel</b></font>
+
+Lúc này, ssh tunnel đã được tạo và bạn có thể sử dụng vncviewer để kết nối qua tunnel này. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncviewer 192.168.1.3:5901</pre>
+		</div>
+Như thường lệ, sau khi nhập password một vnc session sẽ được tạo nhưng lúc này tất cả các dữ liệu gửi giữa 2 máy đã được mã hoá qua ssh
+
+<font color='cyan'><b>Một cách kết nối khác</b></font>
+
+Trong <i>~/.ssh/config</i>, bạn thêm vào những dòng sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Host 192.168.1.3
+     User quanta
+     Port 2234 &#40;giả sử bạn đã đổi port mặc định&#41;</pre>
+		</div>
+chmod 600 cho file này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ chmod 600 ~/.ssh/config</pre>
+		</div>
+
+Sau đó bạn chạy <b>vncviewer</b> với tùy chọn <font color='#6699CC'><b>-via</b></font> (tùy chọn này sẽ tạo một tunnel được mã hóa trước khi kết nối):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ vncviewer -via 192.168.1.3 192.168.1.3:1</pre>
+		</div>
+Nhập password cho user <b>quanta</b>, sau đó nhập tiếp password cho VNC, kết nối được thi hành.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98689</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98689</link>
+				<pubDate><![CDATA[Mon, 19 Nov 2007 15:10:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re:Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Tớ đã làm nhiều lần trên desktop của tớ, nhưng X windows load images rất chậm không hiểu do video card của vncserver yếu (GeForce 440 MX 64 MB) hay vì vncviewer chạy trên Windows.
+Tớ muốn cắm cái màn hình ngoài vào cái laptop rồi chạy vncviewer trên cái màn hình đấy cho tiện (2 máy nối cùng 1 HUB). Một bàn fím, 1 chuột để làm việc với 2 máy (laptop - wins, desktop - linux), nhưng chậm quá, thà chuyển qua chuyển lại giữa 2 cái bàn fím, 2 chuột còn hơn.
+Mọi người dùng thì thấy thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98785</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98785</link>
+				<pubDate><![CDATA[Mon, 19 Nov 2007 21:43:54]]> GMT</pubDate>
+				<author><![CDATA[ antiw007]]></author>
+			</item>
+			<item>
+				<title>Re:Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">antiw007 wrote:</cite><br>
+		<blockquote>Tớ đã làm nhiều lần trên desktop của tớ, nhưng X windows load images rất chậm không hiểu do video card của vncserver yếu (GeForce 440 MX 64 MB) hay vì vncviewer chạy trên Windows.
+Tớ muốn cắm cái màn hình ngoài vào cái laptop rồi chạy vncviewer trên cái màn hình đấy cho tiện (2 máy nối cùng 1 HUB). Một bàn fím, 1 chuột để làm việc với 2 máy (laptop - wins, desktop - linux), nhưng chậm quá, thà chuyển qua chuyển lại giữa 2 cái bàn fím, 2 chuột còn hơn.
+Mọi người dùng thì thấy thế nào?&nbsp;
+		</blockquote>
+hi ku,
+Tớ chạy vncviewer từ con laptop (Fedora 8) sang con desktop (CentOS 5) thấy cũng hơi chậm thôi. Khi mình vừa remote vào, sẽ có 1 lớp "cuộn sóng" của màn hình từ trên xuống dưới, hehe.  Mọi thao tác sau đó diễn ra bình thường, nói chung ok.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98801</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#98801</link>
+				<pubDate><![CDATA[Mon, 19 Nov 2007 23:39:57]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Anh cho em hỏi, em đã làm đi làm lại chục lần với cái server của mình theo cách của anh và 
+ở đây
+http://www.erpvn.com/index.php?option=com_kunena&Itemid=94&func=view&catid=13&id=170&lang=en
+và ở đây
+http://hackingart.com/bao_mat_tren_centos/30-config_firewall_tren_centos.html
+
+nhưng vẫn cứ bị màn hình đen xì ra.
+Đã thử mở port bằng cách edit file iptables nhưng không được, nó cứ báo lỗi ở line 1.
+Em đã open port bằng cách dùng chế độ đồ họa có hướng dẫn trong http://hackingart.com/bao_mat_tren_centos/30-config_firewall_tren_centos.html. Nhưng vẫn cứ bị màn hình màu đen.
+Server ở US cài Centos.
+Mong anh giúp đỡ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#177977</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#177977</link>
+				<pubDate><![CDATA[Tue, 21 Apr 2009 01:33:16]]> GMT</pubDate>
+				<author><![CDATA[ rosewhite]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Có ai giúp em với được không ạ :-s]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178243</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178243</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 13:58:13]]> GMT</pubDate>
+				<author><![CDATA[ rosewhite]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rosewhite wrote:</cite><br>
+		<blockquote>Anh cho em hỏi, em đã làm đi làm lại chục lần với cái server của mình theo cách của anh và 
+ở đây<span class="link"> http://www.erpvn.com/index.php?option=com_kunena&Itemid=94&func=view&catid=13&id=170&lang=en</span>
+và ở đây<span class="link"> http://hackingart.com/bao_mat_tren_centos/30-config_firewall_tren_centos.html</span>
+
+nhưng vẫn cứ bị màn hình đen xì ra.
+Đã thử mở port bằng cách edit file iptables nhưng không được, nó cứ báo lỗi ở line 1.
+Em đã open port bằng cách dùng chế độ đồ họa có hướng dẫn trong<span class="link"> http://hackingart.com/bao_mat_tren_centos/30-config_firewall_tren_centos.html.</span> Nhưng vẫn cứ bị màn hình màu đen.
+Server ở US cài Centos.
+Mong anh giúp đỡ&nbsp;
+		</blockquote>
+- Máy client chạy hệ điều hành gì vậy bạn?
+- Log file trong <b>.vnc</b> có nội dung ra sao?
+- Trong file <b>xstartup</b> bạn đã sửa thành cái window manager tương ứng chưa, chẳng hạn:
+<blockquote>
+unset SESSION_MANAGER
+gnome-session &
+&nbsp;
+		</blockquote>
+- SELinux trên server thế nào?
+- ...
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178273</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178273</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 17:47:43]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Cảm ơn anh đã giúp, em đã contact với bọn seller server rồi, chúng bảo là không hỗ trợ VNC.
+Nó bảo là muốn thì phải cài Gnome và X11 gì gì đấy, O/S là Centos5. Máy client Windows.
+Bác thấy nó nói thế có đúng không nhỉ :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178915</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#178915</link>
+				<pubDate><![CDATA[Wed, 29 Apr 2009 01:07:05]]> GMT</pubDate>
+				<author><![CDATA[ rosewhite]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <blockquote>VNCSERVERS="1:quanta" 
+VNCSERVERARGS[1]="-geometry 800x600 -nolisten tcp -nohttpd -localhost" &nbsp;
+		</blockquote>
+
+Nếu muốn thêm 1 user không có quyền root thì có được không bác Quân? Sẽ cấu hình thêm ntn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#237458</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#237458</link>
+				<pubDate><![CDATA[Thu, 19 May 2011 21:00:19]]> GMT</pubDate>
+				<author><![CDATA[ van_security]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">van_security wrote:</cite><br>
+		<blockquote><blockquote>VNCSERVERS="1:quanta" 
+VNCSERVERARGS[1]="-geometry 800x600 -nolisten tcp -nohttpd -localhost" &nbsp;
+		</blockquote>
+
+Nếu muốn thêm 1 user không có quyền root thì có được không bác Quân? Sẽ cấu hình thêm ntn?&nbsp;
+		</blockquote>
+Được. Bạn thêm 2 dòng tương tự như thế với cổng khác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#237460</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#237460</link>
+				<pubDate><![CDATA[Thu, 19 May 2011 21:10:06]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Hi anh quanta,
+
+Em cài VNC Viewer lên Window XP để remote vào Linux server. Em đã cấu hình rồi mà sao nó cứ ra màn hình xanh lè thế này. Click chuột trái, phải, bấm phím chả có tác dụng gì. Chỉ mỗi màn hình màu xanh, không thao tác được gì cả. Một số Server khác em vẫn remote được. Anh giúp em với.
+<br>
+			<div align="center" class="limitview"><img src='https://lh6.googleusercontent.com/-uPSsgJRsI4c/TzUBSmna7BI/AAAAAAAAAx4/94MOX-NnMsA/s640/VNC.JPG' border="0" onload="maxImg(this, 500px);" /></div>
+Các file trên linux server của em như sau
+# vi /root/.vnc/xstartup
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# Uncomment the following two lines for normal desktop:
+unset SESSION_MANAGER
+exec /etc/X11/xinit/xinitrc
+
+&#91; -x /etc/vnc/xstartup &#93; && exec /etc/vnc/xstartup
+&#91; -r $HOME/.Xresources &#93; && xrdb $HOME/.Xresources
+xsetroot -solid grey
+vncconfig -iconic &
+xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+twm &</pre>
+		</div>
+# vi /etc/sysconfig/vncservers
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>VNCSERVERS="1:root"
+VNCSERVERARGS&#91;1&#93;="-geometry 800x600 -nolisten tcp -nohttpd -localhost"</pre>
+		</div>
+# rpm -qa | grep vnc
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vnc-server-4.1.2-14.el5
+vnc-4.1.2-14.el5
+xorg-x11-server-Xvnc-source-1.1.1-48.52.0.1.el5</pre>
+		</div>
+Mong anh giúp đỡ. Cảm ơn anh nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253476</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253476</link>
+				<pubDate><![CDATA[Fri, 10 Feb 2012 05:49:37]]> GMT</pubDate>
+				<author><![CDATA[ soidamientrung]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ - Nên tạo một account khác để remote, đừng dùng root.
+- Trong `/root/.vnc/`, bạn mở `hostname:1.log` ra xem có gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253483</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253483</link>
+				<pubDate><![CDATA[Fri, 10 Feb 2012 10:07:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">soidamientrung wrote:</cite><br>
+		<blockquote>
+Các file trên linux server của em như sau
+# vi /root/.vnc/xstartup
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# Uncomment the following two lines for normal desktop:
+unset SESSION_MANAGER
+exec /etc/X11/xinit/xinitrc
+
+&#91; -x /etc/vnc/xstartup &#93; && exec /etc/vnc/xstartup
+&#91; -r $HOME/.Xresources &#93; && xrdb $HOME/.Xresources
+xsetroot -solid grey
+vncconfig -iconic &
+xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+twm &</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Trong file xstartup này comment sửa lại như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#twm &
+gnome-session &</pre>
+		</div>
+
+Ra ngoài kill session hiện tại đang của vnc đi (dùng vncserver -kill) rồi start lại xem có gì xảy ra ko]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253493</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253493</link>
+				<pubDate><![CDATA[Fri, 10 Feb 2012 21:43:44]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">K4i wrote:</cite><br>
+		<blockquote>
+
+Trong file xstartup này comment sửa lại như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#twm &
+gnome-session &</pre>
+		</div>
+
+Ra ngoài kill session hiện tại đang của vnc đi (dùng vncserver -kill) rồi start lại xem có gì xảy ra ko&nbsp;
+		</blockquote>
+
+Cảm ơn anh @K4i và anh @quanta đã reply giúp đỡ.
+Sau khi thêm lệnh <b><font color='red'>gnome-session &</font></b> vào file xstartup thì đã vncviewer tới được linux server với màn hình desktop.
+
+Em cũng google, có trang thì dùng lệnh <b><font color='red'>twm &</font></b> có trang thì dùng lệnh <font color='red'><b>startx &</b></font> , còn trường hợp này thì phải dùng <b><font color='red'>gnome-sesion &</font></b> mới thành công. Các anh có thể chỉ cho em một tí nữa để rõ hơn không. Thật sự là em chưa hiểu khi nào thì dùng lệnh nào.
+
+Thanks,
+HaiMT2.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253541</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253541</link>
+				<pubDate><![CDATA[Sun, 12 Feb 2012 22:11:56]]> GMT</pubDate>
+				<author><![CDATA[ soidamientrung]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ <b><font color='red'>gnome-session &</font></b> là câu lệnh yêu cầu vncserver bật một phiên làm việc phục vụ giao diện GNOME cho bạn.
+
+<font color='red'><b>twm</b></font> thì bật giao diện X11 Window Manager lên cho một phiên làm việc của vnc.
+
+<font color='red'><b>startx</b></font> thì sẽ bật giao diện đồ hoạ mặc định mà hệ thống đang thiết lập.
+
+Việc sử dụng 3 câu lệnh này thì tuỳ thuộc vào việc bạn biết trình quản lý cửa sổ (window manager) mà linux box đang cài đặt là cái gì.
+
+Thông thường như mình khi cài CentOS thường chỉ cài X11 Window, thế nên mình có thể dùng <font color='red'><b>twm</b></font> hoặc <font color='red'><b>startx</b></font> thì giao diện trả về cũng sẽ chỉ là giao diện của X11 là mành hình xanh lè bạn nhìn thấy ban đầu. Trong trường hợp này thì chạy <b><font color='red'>gnome-session &</font></b> cũng vô hiệu
+
+Nếu như máy bạn cài sẵn GNOME thì có thể sử dụng twm hoặc gnome-session đều được. Theo mình, nếu như ít kinh nghiệm làm việc với X11 window manager thì trong quá trình cài đặt nên cài sẵn GNOME và dùng lệnh gnome-session
+
+Dấu <b><font color='red'>&</font></b> là lệnh yêu cầu chuyển process này về chạy ở background
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253547</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253547</link>
+				<pubDate><![CDATA[Sun, 12 Feb 2012 22:32:23]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Hi anh K4i 
+
+Em còn một server khác cũng bị lỗi màn hình xanh tương tự. Em đã thêm lệnh gnome-session & vào file ~/.vnc/xstart rồi nhưng vẫn còn lỗi. 
+
+/etc/sysconfig/vncservers
+<blockquote>VNCSERVER="1:root"
+VNCSERVERARGS[1]="-geometry 800x600 -nolisten tcp -nohttpd -localhost"&nbsp;
+		</blockquote>
+
+rpm -qa | grep vnc
+<blockquote>vnc-server-4.1.2-14.el5
+vnc-4.1.2-14.el5
+xorg-x11-server-Xvnc-source-1.1.1-48.52.0.1.el5&nbsp;
+		</blockquote>
+
+Lạ thật????]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253733</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253733</link>
+				<pubDate><![CDATA[Tue, 14 Feb 2012 03:07:34]]> GMT</pubDate>
+				<author><![CDATA[ soidamientrung]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Bạn có chắc là server đó đang dùng GNOME không?
+
+- ssh vào, kiểm tra xem nó đang chạy ở runlevel mấy?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ runlevel</pre>
+		</div>
+- nếu là runlevel 5, kiểm tra tiếp xem những desktop environment nào đã được cài:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ find /usr/share/xsessions/ -name "*.desktop" -exec basename "{}" .desktop \;</pre>
+		</div>
+từ đó tính tiếp.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253740</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253740</link>
+				<pubDate><![CDATA[Tue, 14 Feb 2012 03:21:08]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ Hi anh @quanta
+
+Dạ em cũng không chắc, vì 2 server này do bên IT cấp và IT cài sẵn OS lên đó rồi.
+
+<blockquote>[root@erplab02 ~]# runlevel
+N 3
+[root@erplab02 ~]# uname -a
+Linux erplab02.com.vn 2.6.18-128.el5 #1 SMP Wed Jan 21 08:45:05 EST 2009 x86_64 x86_64 x86_64 GNU/Linux&nbsp;
+		</blockquote>
+
+Cảm ơn anh quanta đã giúp em.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253823</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253823</link>
+				<pubDate><![CDATA[Tue, 14 Feb 2012 19:26:44]]> GMT</pubDate>
+				<author><![CDATA[ soidamientrung]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ @soidamientrung
+
+bạn đang ở runlevel 3, tức là đang chạy console =&gt; không có giao diện đồ hoạ X.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253843</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253843</link>
+				<pubDate><![CDATA[Tue, 14 Feb 2012 21:38:15]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ @vd_
+
+Cảm ơn bạn đã giúp.
+Mình thử khởi động chế độ đồ hoạ nhưng cũng chưa được:
+
+<blockquote>[root@erplab02 ~]# init 5
+[root@erplab02 ~]# runlevel
+3 5&nbsp;
+		</blockquote>
+
+mong bạn chỉ giúp.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253898</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#253898</link>
+				<pubDate><![CDATA[Wed, 15 Feb 2012 02:33:47]]> GMT</pubDate>
+				<author><![CDATA[ soidamientrung]]></author>
+			</item>
+			<item>
+				<title>Cấu hình VNC server/viewer trong Linux</title>
+				<description><![CDATA[ bạn thử  kiểm tra xem đã cài GNOME chưa, nếu chưa thì :
+# yum groupinstall "X Window System" "GNOME Desktop Environment"]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16417.hva#267368</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16417.hva#267368</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 12:57:24]]> GMT</pubDate>
+				<author><![CDATA[ ga_cum06]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Bảo mật Wireless với FreeRADIUS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Bảo mật Wireless với FreeRADIUS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ Bài viết ghi lại việc dùng FreeRADIUS để xác thực  Wireless. Mô hình như sau:
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/887.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bao gồm:
+<ul><li>1 Linux server chạy Debian dùng để cài FreeRADIUS
+1 Cisco Aironet 1240AG Access Point - ở đây đóng vai trò là NAS (Network Access Server)
+1 Cisco Catalyst switch
+2 clients: 1 dùng Slackware, 1 dùng Windows XP</li></ul>
+<font color='yellow'>Tiến hành cài FreeRADIUS:</font>
+
+	Bước này không có gì khó khăn cả. Bạn download về, giải nén và cài như bình thường. Bạn có thể dùng <b>–prefix=/usr/local/freeradius</b> và <b>sudo make install | tee /var/log/source/freeradius.log</b> nếu muốn.
+
+
+<font color='yellow'>Tạo certificates:</font>
+
+	Chuyển đến thư mục <b>/usr/local/etc/raddb/certs</b>, đọc <b>README</b> file và làm theo hướng dẫn. Mỗi khi tạo một client certificate đặt hết vào một thư mục với tên là common Name cho dễ tìm. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>su -
+cd /usr/local/etc/raddb/certs
+mkdir quanta</pre>
+		</div>
+Mình sửa Makefile như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>openssl req -new  -out quanta/client.csr -keyout quanta/client.key -config ./client.cnf
+	openssl ca -batch -keyfile ca.key -cert ca.pem -in quanta/client.csr  -key $&#40;PASSWORD_CA&#41; -out quanta/client.crt -extensions xpclient_ext -extfile xpextensions -config ./client.cnf
+	openssl pkcs12 -export -in quanta/client.crt -inkey quanta/client.key -out quanta/client.p12  -passin pass:$&#40;PASSWORD_CLIENT&#41; -passout pass:$&#40;PASSWORD_CLIENT&#41;
+	openssl pkcs12 -in quanta/client.p12 -out quanta/client.pem -passin pass:$&#40;PASSWORD_CLIENT&#41; -passout pass:$&#40;PASSWORD_CLIENT&#41;
+	cp quanta/client.pem quanta/$&#40;USER_NAME&#41;.pem
+        cp quanta/client.key quanta/$&#40;USER_NAME&#41;.key</pre>
+		</div>
+<i>(Trong bài viết mình dùng EAP-TLS nên yêu cầu cả server và client certs).</i>
+
+Lúc này trong thư mục quanta có những file sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ls -l quanta
+total 32
+-rw-r--r-- 1 root radius 4104 2010-02-24 13:59 client.crt
+-rw-r--r-- 1 root radius 1017 2010-02-24 13:59 client.csr
+-rw-r--r-- 1 root radius 1743 2010-02-24 13:59 client.key
+-rw-r--r-- 1 root radius 2493 2010-02-24 13:59 client.p12
+-rw-r--r-- 1 root radius 3389 2010-02-24 13:59 client.pem
+-rw-r--r-- 1 root radius 1743 2010-02-24 14:03 quan.ta$domain.vn.key
+-rw-r--r-- 1 root radius 3389 2010-02-24 13:59 quan.ta$domain.vn.pem</pre>
+		</div>
+<font color='yellow'>
+Chỉnh sửa các file cấu hình:</font>
+
+	<b>/usr/local/etc/raddb/radiusd.conf: </b>
+		<ul><li>uncomment 2 dòng <b>user = radius</b> và <b>group = radius</b>
+		sửa <b>ipaddr</b> thành IP của freeRADIUS server (172.16.128.12)</li></ul>
+	<b>/usr/local/etc/raddb/eap.conf</b>
+		<ul><li>sửa giá trị của <b>default_eap_type</b> từ md5 thành tls
+		tìm đến section tls, sửa <b>private_key_password</b> thành password mà bạn đã gán khi tạo server certificate
+		Chạy <b>openssl dhparam -out certs/dh 1024</b> để tạo DH file
+		sửa <b>random_file</b> thành /dev/urandom</li></ul>
+	<b>/usr/local/etc/raddb/clients.conf</b>
+		<ul><li>Thêm một client section như sau: <span class="quotetxt"><b>Code:</b></span></li><li>
+		<div class="coded"">
+		<pre>client 172.16.128.128 {
+	secret = 41r0n3t
+	shortname = aironet
+	nastype = cisco
+}</pre>
+		</div></li></ul>
+	<b>/usr/local/etc/raddb/users</b>
+		<ul><li>thêm một dòng như sau: <b>quan.ta	Auth-Type := EAP</b>, trong đó quan.ta chính là common Name khi tạo client certificate ở trên.</li></ul>
+Thử start freeRADIUS ở debug mode: <b>/usr/local/sbin/radiusd -X -x</b>
+Nếu bạn nhìn thấy những dòng cuối cùng như sau:
+<blockquote>Wed Feb 24 17:35:28 2010 : Debug: listening on authentication address 172.16.128.12 port 1812
+Wed Feb 24 17:35:28 2010 : Debug: listening on accounting address * port 1813
+Wed Feb 24 17:35:28 2010 : Debug: listening on command file /usr/local/var/run/radiusd/radiusd.sock
+Wed Feb 24 17:35:28 2010 : <font color='#6699CC'>Info: Ready to process requests</font>.
+&nbsp;
+		</blockquote>
+chứng tỏ bạn đã cấu hình và khởi động freeRADIUS thành công.
+
+
+<font color='yellow'>Cấu hình Access Point như sau:</font>
+
+<blockquote>
+aaa new-model
+!
+!
+aaa group server radius rad_eap
+ <b>server 172.16.128.12 auth-port 1812 acct-port 1813</b>
+...
+dot11 ssid xx
+   <b>authentication open eap eap_methods 
+   authentication network-eap eap_methods 
+   authentication key-management wpa</b>
+   guest-mode
+...
+bridge irb
+!         
+!         
+interface Dot11Radio0
+ no ip address
+ no ip route-cache
+ !        
+ <b>encryption mode ciphers tkip </b>
+...
+ip default-gateway 172.16.128.252
+ip http server
+ip http authentication local
+no ip http secure-server
+ip http help-path<span class="link"> http://www.cisco.com/warp/public/779/smbiz/prodconfig/help/eag</span>
+ip radius source-interface BVI1 
+!         
+cdp timer 45
+cdp holdtime 120
+radius-server attribute 32 include-in-access-req format %h
+radius-server host 172.16.128.12 auth-port 1812 acct-port 1813 key 7 <font color='orange'>131112011F0405242C</font>
+radius-server vsa send accounting
+&nbsp;
+		</blockquote>
+<font color='orange'>--&gt;</font> phần key này chính là Shared secret mà bạn đã gán trong file <b>/usr/local/etc/raddb/clients.conf</b> (<font color='orange'>41r0n3t</font>).
+
+<font color='yellow'>Bây giờ chúng ta cấu hình Linux làm client để thử kết nối.</font>
+<i>(coi như bổ sung vào phần còn thiếu trên wiki)</i>
+<p></p>
+		<cite class="blockquote">http://wiki.freeradius.org/WPA_HOWTO wrote:</cite><br>
+		<blockquote>
+... (at present, I have no experience with Linux clients and so cannot document this)&nbsp;
+		</blockquote>
+
+Nếu muốn dùng <b>eapol_test</b> bạn có thể:
+Remove binary package của wpa_supplicant và compile lại từ source.
+	<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>wget /path/to/wpa_supplicant-0.6.10.tar.gz
+tar zxvf wpa_supplicant-0.6.10.tar.gz
+cd wpa_supplicant-0.6.10/wpa_supplicant/
+cp defconfig .config</pre>
+		</div>
+
+Trong file <b>.config</b>, kiểm tra chắc chắn rằng 
+<ul><li>đã enable EAP-TLS: <b>CONFIG_EAP_TLS=y</b>
+uncomment dòng <b>#CONFIG_EAPOL_TEST=y </b></li></ul>
+	<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>make eapol_test
+make
+sudo make install</pre>
+		</div>
+
+Soạn thảo file cấu hình <b>/etc/wpa_supplicant.conf</b> như sau:
+	<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>network={
+  scan_ssid=1
+  ssid=&quot;xx&quot;
+  key_mgmt=WPA-EAP
+  pairwise=CCMP TKIP
+  group=CCMP TKIP
+  eap=TLS
+  identity=&quot;quan.ta&quot;
+  ca_cert=&quot;/etc/radiusclient/certs/ca.pem&quot;
+  client_cert=&quot;/etc/radiusclient/certs/quan.ta@domain.vn.pem&quot;
+  private_key=&quot;/etc/radiusclient/certs/quan.ta@domain.vn.key&quot;
+  private_key_passwd=&quot;quan.ta_pass&quot;
+}</pre>
+		</div>
+
+Trong đó: 
++ ca.pem, quan.ta@domain.vn.pem và quan.ta@domain.vn.key được copy từ server về
++ <b>identity</b> chính là common Name khi tạo client certificate
++ <b>private_key_passwd</b> chính là giá trị của <b>output_password</b> bạn đã gán trong <b>client.cnf</b> khi tạo client certificate (nếu bạn tạo client cert trực tiếp bằng openssl thì nó chính là passphrase).
+
+Thử start wpa_supplicant ở debug mode:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>wpa_supplicant -d -c /etc/wpa_supplicant.conf -i wlan0 -Dwext</pre>
+		</div>
+Nếu bạn nhìn thấy những dòng như:
+<blockquote>EAPOL: SUPP_BE entering state REQUEST
+EAPOL: getSuppRsp
+EAP: EAP entering state RECEIVED
+EAP: Received EAP-Request id=8 method=13 vendor=0 vendorMethod=0
+EAP: EAP entering state METHOD
+SSL: Received packet(len=126) - Flags 0x80
+SSL: TLS Message Length: 1130
+SSL: (where=0x1001 ret=0x1)
+SSL: SSL_connect:SSLv3 read server session ticket A
+SSL: (where=0x1001 ret=0x1)
+SSL: SSL_connect:SSLv3 read finished A
+SSL: (where=0x20 ret=0x1)
+SSL: (where=0x1002 ret=0x1)
+SSL: 0 bytes pending from ssl_out
+SSL: No Application Data included
+SSL: No data to be sent out
+EAP-TLS: Done
+EAP-TLS: Derived key - hexdump(len=64): [REMOVED]
+EAP-TLS: Derived EMSK - hexdump(len=64): [REMOVED]
+SSL: Building ACK (type=13 id=8 ver=0)
+EAP: method process -&gt; ignore=FALSE methodState=DONE decision=UNCOND_SUCC
+EAP: EAP entering state SEND_RESPONSE
+EAP: EAP entering state IDLE
+EAPOL: SUPP_BE entering state RESPONSE
+EAPOL: txSuppRsp
+TX EAPOL: dst=00:1b:2b:a9:0c:f0
+EAPOL: SUPP_BE entering state RECEIVE
+RX EAPOL from 00:1b:2b:a9:0c:f0
+EAPOL: Received EAP-Packet frame
+EAPOL: SUPP_BE entering state REQUEST
+EAPOL: getSuppRsp
+EAP: EAP entering state RECEIVED
+EAP: Received EAP-Success
+EAP: EAP entering state SUCCESS
+CTRL-EVENT-EAP-SUCCESS <font color='#6699CC'>EAP authentication completed successfully</font>&nbsp;
+		</blockquote>
+
+đồng thời trên cửa sổ đang chạy radiusd bạn thấy:
+<blockquote>
+Wed Feb 24 18:17:26 2010 : <font color='#6699CC'>Auth: Login OK: [quan.ta] (from client aironet port 410 cli 001f.3bd8.62bf)</font>
+Wed Feb 24 18:17:26 2010 : Info: +- entering group post-auth {...}
+Wed Feb 24 18:17:26 2010 : Info: ++[exec] returns noop
+<font color='#6699CC'>Sending Access-Accept of id 95 to 172.16.128.128 port 1645</font>
+	MS-MPPE-Recv-Key = 0x3140c0a5ffd54cae58ec5d2bd7f68318ec0efc3edac4c9036b3ba708188cf7a4
+	MS-MPPE-Send-Key = 0xf39ea7042321a9d7ee933520f6669758b43b38d5c147485489690842d26511a3
+	EAP-Message = 0x03080004
+	Message-Authenticator = 0x00000000000000000000000000000000
+	User-Name = &quot;quan.ta&quot;
+&nbsp;
+		</blockquote>
+chứng tỏ bạn đã được xác thực. Xin chúc mừng.
+
+Cuối cùng là gán IP cho wlan0:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># dhcpcd wlan0
+# ifconfig wlan0
+wlan0     Link encap:Ethernet  HWaddr 00:1f:3b:d8:62:bf  
+          inet addr:172.16.128.131  Bcast:172.16.128.255  Mask:255.255.255.0
+          inet6 addr: fe80::21f:3bff:fed8:62bf/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:57843 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:27473 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:18020958 &#40;17.1 MiB&#41;  TX bytes:4709688 &#40;4.4 MiB&#41;</pre>
+		</div>
+
+Phần cấu hình với Windows làm client các bạn có thể tham khảo trên wiki của freeRADIUS.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205466</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205466</link>
+				<pubDate><![CDATA[Wed, 24 Feb 2010 05:56:50]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ Bài viết khá tốt, trình bày rõ ràng và dễ hiểu theo phương pháp thực hành, đã lâu rồi mới thấy một bài viết chất lượng. Đã copy và paste vào file Word để sử dụng khi cần. Cám ơn đã chia sẻ.
+
+Thân. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205469</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205469</link>
+				<pubDate><![CDATA[Wed, 24 Feb 2010 07:39:34]]> GMT</pubDate>
+				<author><![CDATA[ demingcycle]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ Theo em nên dùng LDAP làm CSDL chứng thực chứ không dùng cert, vậy thì trên linux không cần phải compile lại wpa_supplicant]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205572</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205572</link>
+				<pubDate><![CDATA[Thu, 25 Feb 2010 19:53:58]]> GMT</pubDate>
+				<author><![CDATA[ nhanth87]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nhanth87 wrote:</cite><br>
+		<blockquote>Theo em nên dùng LDAP làm CSDL chứng thực chứ không dùng cert, vậy thì trên linux không cần phải compile lại wpa_supplicant&nbsp;
+		</blockquote>
+Cảm ơn bạn đã góp ý nhưng mà việc dùng cái gì để chứng thực đâu có liên quan đến việc compile lại wpa_supplicant đâu, mình compile lại chỉ để dùng eapol_test thôi, bạn hoàn toàn có thể dùng binary package của wpa_supplicant hoặc đơn giản hơn là wicd để kết nối.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205884</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#205884</link>
+				<pubDate><![CDATA[Mon, 1 Mar 2010 21:49:52]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ may quá gặp cái đang gặp trouble này cả ngày hôm qua
+
+quan ta, cậu up lên dùm file quanta.cnf, ca.cnf, server.cnf dùm
+
+Hoặc up dùm tớ thư mục raddb luôn tớ xem các file cert cậu thế nào? không biết bỏ vào cài radius đang dùng của tớ freeradius-1.1.7-3.1.fc8 có tương thích ko nữa
+
+- Sau khi cấu hình 3 file trên tớ dùng lệnh ./bootstrap để tạo ra các file cert, nhưng khi import vào windows thì nó báo cert invalid?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214374</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214374</link>
+				<pubDate><![CDATA[Wed, 30 Jun 2010 22:27:15]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>may quá gặp cái đang gặp trouble này cả ngày hôm qua
+
+quan ta, cậu up lên dùm file quanta.cnf, ca.cnf, server.cnf dùm
+
+Hoặc up dùm tớ thư mục raddb luôn tớ xem các file cert cậu thế nào? không biết bỏ vào cài radius đang dùng của tớ freeradius-1.1.7-3.1.fc8 có tương thích ko nữa
+&nbsp;
+		</blockquote>
+Tớ không còn lưu trên máy.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+- Sau khi cấu hình 3 file trên tớ dùng lệnh ./bootstrap để tạo ra các file cert, nhưng khi import vào windows thì nó báo cert invalid?
+&nbsp;
+		</blockquote>
+Bạn import cái gì vào: root hay client cert và import vào đâu? Toàn bộ thông báo lỗi thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214393</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214393</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 00:26:20]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ Quanta:
+
+Tớ import <b>client cert</b> và <b>server cert</b> nó bị báo lỗi, (import vào Trusted Root Certification Authorities hoặc để nó auto install ko chọn đường dẫn)
+
+<font color='yellow'>"windows does not have enough information to verify this certificate"</font>
+
+Tương tự hình này (mượn tạm, nhưng thời gian là valid)
+<br>
+			<div align="center" class="limitview"><img src='http://www.jacco2.dds.nl/networking/screenshots/cert/certnotenoughinfo.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+sau đó search thử trên google bảo import cái CA root vào luôn để nó verify cái client và server cert thì sau khi import vào nó báo cert là ..expired or invalid .. đại khái là vậy, mặc dù cert này mới generated ra và chỉnh ngày rất dài trước khi tạo để ko bị expired mà vẫn bị,
+
+Tớ tử nhiều lần với máy khác cũng vẫn vậy (xp, win7), chưa biết vấn đề ở đâu
+
+Đây là các file cấu hình trước khi gen, Makefile, bootstrap<span class="link"> http://www.mediafire.com/?wjjm2jlqzyi</span>
+
+Cái folder /certs trước khi tạo<span class="link"> http://www.mediafire.com/?zinmqzy2mml</span>
+
+cậu coi thử bị gì Quanta.
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214403</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 01:48:18]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>Quanta:
+
+Tớ import <b>client cert</b> và <b>server cert</b> nó bị báo lỗi, (import vào Trusted Root Certification Authorities hoặc để nó auto install ko chọn đường dẫn)
+...
+sau đó search thử trên google bảo import cái CA root vào luôn để nó verify cái client và server cert thì sau khi import vào nó báo cert là ..expired or invalid .. đại khái là vậy, mặc dù cert này mới generated ra và chỉnh ngày rất dài trước khi tạo để ko bị expired mà vẫn bị,
+&nbsp;
+		</blockquote>
+Sao trên client (Windows) mà lại cần import cả server cert vậy? Bạn nên đọc thật kỹ lại tài liệu để biết cái nào dùng vào việc gì và phải import vào đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214440</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 11:59:47]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ thường thì cần import client cert là được, nhưng nếu mình import dư đâu có sao?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214453</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 20:46:23]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>thường thì cần import client cert là được, nhưng nếu mình import dư đâu có sao?&nbsp;
+		</blockquote>
+Ơ, thế không cần root certificate à? Mà client cert <b>phải</b> import vào đâu vậy? Tốt nhất là bạn nên đọc kỹ cái này:<span class="link"> http://wiki.freeradius.org/WPA_HOWTO</span> và tìm thêm một vài nguồn khác để đọc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214455</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214455</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 20:50:32]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>thường thì cần import client cert là được, nhưng nếu mình import dư đâu có sao?&nbsp;
+		</blockquote>
+Ơ, thế không cần root certificate à? Mà client cert <b>phải</b> import vào đâu vậy? Tốt nhất là bạn nên đọc kỹ cái này:<span class="link"> http://wiki.freeradius.org/WPA_HOWTO</span> và tìm thêm một vài nguồn khác để đọc.&nbsp;
+		</blockquote>
+
+bài hướng dẫn của quanta, chỉ nói về trường hợp cấu hình radius, còn gen cert nó bảo đọc README mà readme mình đã làm theo cũng ko thành công?
+
+thực tế mình đã import nhiều trường hợp và có trường hợp có root, client, server như bài đầu tiên nhưng ko dc, vấn đề ko phải ở cấu hình radius sai
+
+vì chạy lệnh radiusd -x -X hoặc vẫn đc, nhưng ko hiểu cert đã gen ra nhưng import vào báo invalid và expire mặc dùng đã import thành công vào đúng đường dẫn?
+
+- còn 1 thắc mắc nữa là mình ko hiểu các file private key dùng để làm gì, các password nhập vào private key để làm gì,?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214466</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214466</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 21:39:20]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+bài hướng dẫn của quanta, chỉ nói về trường hợp cấu hình radius, còn gen cert nó bảo đọc README mà readme mình đã làm theo cũng ko thành công?
+&nbsp;
+		</blockquote>
+Không thành công ở bước nào, sao bạn không post chi tiết lên. Nếu muốn hiểu rõ hơn thì nên chạy trực tiếp openssl mà không dùng Makefile có sẵn.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+thực tế mình đã import nhiều trường hợp và có trường hợp có root, client, server như bài đầu tiên nhưng ko dc, vấn đề ko phải ở cấu hình radius sai
+
+vì chạy lệnh radiusd -x -X hoặc vẫn đc, nhưng ko hiểu cert đã gen ra nhưng import vào báo invalid và expire mặc dùng đã import thành công vào đúng đường dẫn?
+&nbsp;
+		</blockquote>
+Hỏi lại lần cuối: root cert bạn import vào đâu, client cert bạn import vào đâu?
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+- còn 1 thắc mắc nữa là mình ko hiểu các file private key dùng để làm gì, các password nhập vào private key để làm gì,?
+&nbsp;
+		</blockquote>
+Vậy thì bạn nên đọc về Asymmetric cryptography trước.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214494</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214494</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 23:06:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Hỏi lại lần cuối: root cert bạn import vào đâu, client cert bạn import vào đâu?
+
+chắc mình trả lời đây là lần cuối, bạn hỏi 2 lần đều trả lời 2 lần rồi mà vẫn hỏi lại?
+<blockquote>
+(import vào Trusted Root Certification Authorities hoặc để nó auto install ko chọn đường dẫn) &nbsp;
+		</blockquote>
+
+dùng lệnh  cái chạy openssl thì command cũng giống như các command trong make file thôi mà? trong khi make file chạy thành công mình xé nhỏ ra chạy tay làm gì?
+
+@quanta: mình thấy discuss với bạn trouble shoot 3 bài rồi mà ko đâu tới đâu? ko biết do mình hỏi ko hiểu hay bạn ko có kinh nghiệm trên phần cert này,? cái kiểu quăng tài liệu các link và nói đọc đi thì chả thấy help gì, có thể câu trả lời liên quan tới 1 phần nào đó trong link bạn thì bạn trích lại 1 phần đó quăng ra đâu cần phải quăng 1 đống vậy? tóm lại thấy quanta ko mặn mà mấy cái trouble shoot kiểu này ngoài command linux nên có thể tạm dừng ở đây.
+
+thank quanta]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214499</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214499</link>
+				<pubDate><![CDATA[Thu, 1 Jul 2010 23:34:18]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+chắc mình trả lời đây là lần cuối, bạn hỏi 2 lần đều trả lời 2 lần rồi mà vẫn hỏi lại?
+<blockquote>
+(import vào Trusted Root Certification Authorities hoặc để nó auto install ko chọn đường dẫn) &nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Vấn đề là thằng nào import vào Trusted root, thằng nào để nó auto install. Hỏi 2 lần rồi mà vẫn hỏi lại vì đã trả lời đúng câu hỏi đâu.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+dùng lệnh  cái chạy openssl thì command cũng giống như các command trong make file thôi mà? trong khi make file chạy thành công mình xé nhỏ ra chạy tay làm gì?
+&nbsp;
+		</blockquote>
+Để hiểu rõ hơn, không rồi đến lúc lại hỏi "private key để làm gì?".
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+@quanta: mình thấy discuss với bạn trouble shoot 3 bài rồi mà ko đâu tới đâu? ko biết do mình hỏi ko hiểu hay bạn ko có kinh nghiệm trên phần cert này,? 
+&nbsp;
+		</blockquote>
+Do bạn không biết cách đặt câu hỏi. À, còn phần cryptography mà bạn nói mình cũng lơ tơ mơ thôi, nhưng ít ra mình cũng hiểu được private key để làm gì.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+cái kiểu quăng tài liệu các link và nói đọc đi thì chả thấy help gì, có thể câu trả lời liên quan tới 1 phần nào đó trong link bạn thì bạn trích lại 1 phần đó quăng ra đâu cần phải quăng 1 đống vậy? 
+&nbsp;
+		</blockquote>
+Ừ, nếu bạn thấy thế thì thôi vậy.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+tóm lại thấy quanta ko mặn mà mấy cái trouble shoot kiểu này ngoài command linux nên có thể tạm dừng ở đây.
+&nbsp;
+		</blockquote>
+Mặn mà "mạnh" ấy chứ, nhưng chỉ với những người đưa thông tin một cách đầy đủ, rõ ràng thôi. Còn câu "command linux" là ý gì vậy?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214511</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214511</link>
+				<pubDate><![CDATA[Fri, 2 Jul 2010 00:33:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote> Vấn đề là thằng nào import vào Trusted root, thằng nào để nó auto install. Hỏi 2 lần rồi mà vẫn hỏi lại vì đã trả lời đúng câu hỏi đâu. &nbsp;
+		</blockquote>
+
+bạn ko đọc lại 2 bài trên à, import vào nhiều chỗ cho mỗi thằng, và mình mix nhiều case thì trường hợp root hoặc client ở chỗ nào cùng nhau hoặc khác nhau cũng có, có thể coi cái chỗ import này ko quan trọng, bạn ko thấy chỗ này ko giải quyết đc gì sao mà cứ tra chỗ này?
+
+còn auto import thì mặc định ai cũng biết nó nằm vào thư mục nào rồi ko cần trả lời nữa.
+
+vậy bạn đưa ra cái cách import chuẩn xem, mình làm theo thử nó khác ko
+
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote> Do bạn không biết cách đặt câu hỏi. À, còn phần cryptography mà bạn nói mình cũng lơ tơ mơ thôi, nhưng ít ra mình cũng hiểu được private key để làm gì. &nbsp;
+		</blockquote>
+
+đang hỏi cái password cho private key thôi chứ có hỏi private key làm gì đâu?
+
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote> Mặn mà "mạnh" ấy chứ, nhưng chỉ với những người đưa thông tin một cách đầy đủ, rõ ràng thôi. Còn câu "command linux" là ý gì vậy?&nbsp;
+		</blockquote>
+
+kiểu như hỏi: command nào tạo ra 100 user, 10 user đầu nằm trong group 1, có quyền là xyz... thì bạn trả lời ào ào đưa ra command,
+
+còn hỏi ví dụ như : TLS hoạt động thế nào? cái key nào quan trọng nhất trong quá trình handshake vì sao chẳng hạn thì ko mặn mà :(
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214524</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214524</link>
+				<pubDate><![CDATA[Fri, 2 Jul 2010 02:26:59]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Bảo mật Wireless với FreeRADIUS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+bạn ko đọc lại 2 bài trên à, import vào nhiều chỗ cho mỗi thằng, và mình mix nhiều case thì trường hợp root hoặc client ở chỗ nào cùng nhau hoặc khác nhau cũng có, có thể coi cái chỗ import này ko quan trọng, 
+&nbsp;
+		</blockquote>
+Nhỡ nó có quan trọng thì sao?
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+bạn ko thấy chỗ này ko giải quyết đc gì sao mà cứ tra chỗ này?
+&nbsp;
+		</blockquote>
+Nhỡ nó giải quyết được thì sao?
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+còn auto import thì mặc định ai cũng biết nó nằm vào thư mục nào rồi ko cần trả lời nữa.
+&nbsp;
+		</blockquote>
+Ừ, thế thì thôi vậy. Cứ ngồi trộn client cert, server cert và <i>"sau đó search thử trên google bảo import cái CA root vào luôn để nó verify cái client và server cert"</i> rồi thử import vào mmc cũng là một cách.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+vậy bạn đưa ra cái cách import chuẩn xem, mình làm theo thử nó khác ko
+&nbsp;
+		</blockquote>
+- import root cert vào Trusted root 
+- import client cert vào Personal.
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+đang hỏi cái password cho private key thôi chứ có hỏi private key làm gì đâu?
+&nbsp;
+		</blockquote>
+Đọc lại nhé:
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>- còn 1 thắc mắc nữa là mình ko hiểu các file private key dùng để làm gì, các password nhập vào private key để làm gì,? 
+&nbsp;
+		</blockquote>
+<p></p>
+		<cite class="blockquote">B 0 0 B wrote:</cite><br>
+		<blockquote>
+kiểu như hỏi: command nào tạo ra 100 user, 10 user đầu nằm trong group 1, có quyền là xyz... thì bạn trả lời ào ào đưa ra command,
+
+còn hỏi ví dụ như : TLS hoạt động thế nào? cái key nào quan trọng nhất trong quá trình handshake vì sao chẳng hạn thì ko mặn mà :(
+&nbsp;
+		</blockquote>
+Cảm ơn bạn đã chỉ ra điểm yếu của mình.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214527</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/33419.hva#214527</link>
+				<pubDate><![CDATA[Fri, 2 Jul 2010 03:12:39]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

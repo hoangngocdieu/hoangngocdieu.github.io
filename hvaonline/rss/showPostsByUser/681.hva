@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "WinDak"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/681.hva</link>
+		<description><![CDATA[Messages posted by "WinDak"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ @xnohat  -:|- thanks lão coi dùm phần đó.
+
+<p></p>
+		<cite class="blockquote">namnx wrote:</cite><br>
+		<blockquote>Theo mình nghĩ thì việc xác định 2 sản phẩm này có dùng mã nguồn của nhau không bằng cách reverse 2 file APK thì khó mà chính xác được. 2 sản phẩm này đều có 2 phần là front-end (app trên smartphone) và back-end. Mình nghĩ rằng đối với những sản phẩm như Zalo và WeChat, bằng back-end sẽ nặng và phức tạp hơn nhiều so với phần front-end. Còn phần back-end được phát triển như thế nào chỉ có những người phát triển nó mới biết, người ngoài thì khó mà biết được. 
+
+Do đó chỉ có reverse 2 app này để kết luận thì hơi... thiếu chính xác.
+&nbsp;
+		</blockquote>
+
+Cảm ơn đóng góp của anh namnx, mục đích của mình là so sánh ứng dụng Android xem có xài source của nhau không, còn phần back-end thì chưa có ý kiến và cũng chỉ có thể phán đoán qua các gói tin chứ không thể kết luận được.
+
+@TQN: source sau khi extract em có upload đó :D cảm ơn nhiều nếu anh giúp đỡ, cũng sẽ thử SourceInsight xem sao.
+
+@logichvaonline: thường thì bạn phải root máy mới chui vào dc /data/app, có thể xài các "root explorer" app hoặc adb ( xài lệnh adb pull ) 
+
+Mình rất hoan nghênh và cảm ơn các bạn có đóng góp tiếp tục phân tích 2 ứng dụng này.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44782/276106.hva#276106</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44782/276106.hva#276106</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 07:12:25]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Dịch ngược APK để so sánh WeChat và Zalo</title>
+				<description><![CDATA[ Gần đây có một người bạn nhờ tôi kiểm tra xem WeChat – một ứng dụng Android (Android App) của tàu khựa có liên hệ gì với Zalo sản phẩm có tính năng tương tự của Việt Nam, do hãng VNG sản xuất hay không. Chưa từng reverse Android App nên tôi cũng mày mò và tranh thủ học hỏi thêm. Bài viết này nhằm 2 mục đích:
+
+<ol><li>Giới thiệu và thảo luận phương pháp và một số công cụ reverse một Android App
+Thảo luận và so sánh WeChat và Zalo, về các mặt: mã nguồn, vấn đề bảo mật người dùng, các tính năng có thể nguy hại đến người dùng</li></ol>
+
+<font size='+1'><font color='orange'>Phần 1: Dịch ngược:</font></font>
+
+Để bắt đầu thì trong bài viết này tôi sử dụng 2 file apk sau cho 2 ứng dụng:
+<ul><li>WeChat:<span class="link"> http://dl.dropbox.com/u/11027388/WeChat_4.5.apk</span>
+Zalo :<span class="link"> http://dl.dropbox.com/u/11027388/Zalo_1.0.8.apk</span></li></ul>
+
+File APK chính là file thực thi của một ứng dụng Android, nó thực ra là một file đóng gói của ngôn ngữ Java mà hệ điều hành Android có thể đọc được và thực thi trong môi trường HDH Android. 
+
+Khi cài đặt 1 ứng dụng từ google play, file apk sẽ nằm trong thư mục <b>/data/app</b> trong máy ( bài tập cho bạn: làm sao lấy được nó ra khỏi máy ? )
+
+Sau khi lấy được 2 file này, chúng ta cần một số công cụ để dịch ngược file apk thành file java ban đầu.  Để làm việc này tôi sử dụng 2 công cụ:
+
+<ol><li>dex2jar :<span class="link"> https://code.google.com/p/dex2jar/</span>
+jd-gui :<span class="link"> http://java.decompiler.free.fr/?q=jdgui</span></li></ol>
+
+Công cụ (1) giúp chuyển tập tin apk thành định dạng “jar” (Java Archive) một file đóng gói khác của java. 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dex2jar.sh Zalo_1.0.8.apk
+ls
+Zalo_1.0.8.jar</pre>
+		</div>
+
+Tuy nhiên trong file .jar chỉ toàn là java bytescode gồm các mã lệnh dưới dạng binary của java, rất khó để đọc vì vậy tôi đã sử dụng tiếp chương trình (2).
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./jd-gui</pre>
+		</div>
+
+Kết quả:
+<br>
+			<div align="center" class="limitview"><img src='http://i.imgur.com/gQSupw8.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Mã nguồn rất tuyệt và dễ đọc hơn java bytecode gấp 10000 lần :D
+
+Tuy nhiên ta còn một vấn đề nhỏ. Trong quá trình đóng gói ứng dụng, 1 số thông tin của các hàm, biến v.v... đã bị xóa khỏi ứng dụng, vì mục đích obfuscation (làm cho khó đọc). Chính vì thế ta thấy rất nhiều các file a,b,c,d … .java xuất hiện như trên hình.
+
+Để đỡ rối khi đọc, tạm thời tôi di chuyển các file chưa xác định tên tuổi này vào 1 package gọi là “unk”    (nghĩa là chưa biết). Một đoạn ruby script nhỏ sẽ giúp ta làm điều này.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>`mkdir unk 2&gt;/dev/null` 
+Dir.glob&#40;&quot;**/*&quot;&#41;.select { |f| not File.dirname&#40;f&#41; =~ /^unk/ and File.basename&#40;f&#41; =~ /^&#91;a-z&#93;{0,3}\.java$/}.each do |f| 
+    puts f 
+    content = open&#40;f&#41;.read&#40;&#41;.sub&#40;&quot;package &quot;, &quot;package unk.&quot;&#41; 
+    open&#40;f,&quot;w&quot;&#41;.write&#40;content&#41; 
+    `mkdir -p unk/#{File.dirname&#40;f&#41;} 2&gt;/dev/null` 
+    `mv #{f} unk/#{f}` 
+end</pre>
+		</div>
+
+Ngoài ra tôi cũng sử dụng thêm công cụ apktool tại<span class="link"> https://code.google.com/p/android-apktool/</span> để thực hiện việc lấy các thông tin về resources của ứng dụng android. (Apktool cũng sẽ convert các file byte code thành dạng smalli và ta cũng có thể sử dụng để hiểu thêm về ứng dụng)
+
+Toàn bộ quá trình trên sau khi hoàn tất tôi đã đưa kết quả lên github cho các bạn nếu thích thì tìm hiểu cùng:
+
+<ul><li>WeChat: <span class="link"> https://github.com/danghvu/WeChatRE</span>
+Zalo:<span class="link"> https://github.com/danghvu/ZaloRE</span></li></ul>
+
+<i>( Kết quả của apktool nằm trong src/resources/* )</i>
+
+<font color='orange'><font size='+1'>Phần 2: So sánh mã nguồn</font></font>
+
+Để so sánh mã nguồn 2 chương trình này, tôi sử dụng gói ứng dụng PMD:<span class="link"> http://pmd.sourceforge.net/</span>
+
+Gói ứng dụng PMD có kèm theo 1 chương trình cho phép kiểm tra các đoạn code copy & paste của các file source code trong cùng 1 thư mục. Tôi tiến hành copy file source của Zalo và WeChat vào cùng 1 thư mục và thực hiện:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./bin/run.sh cpd --minimum-tokens 50 --files ./src/ --language java</pre>
+		</div>
+
+( cpd là công cụ “copy-paste-detector”, minimum-token xác định độ dài tối thiểu của đoạn mã cần so sánh. )
+
+Output của chương trình ra giống như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Found a 257 line &#40;1735 tokens&#41; duplication in the following files: 
+Starting at line 278 of ./src/ZaloRE/src/unk/com/zing/zalo/utils/a.java 
+Starting at line 545 of ./src/ZaloRE/src/unk/com/zing/zalo/e/a.java 
+
+    qC = new int&#91;&#93; { 1, 2, 4, 8, 16, 32, 64, 128, 27, 54, 108, 216, 171, 77, 154, 47, 94, 188, 99, 198, 151, 53, 106, 212, 179, 125, 250, 239, 197, 145 }; 
+    int&#91;&#93; arrayOfInt1 = new int&#91;256&#93;; 
+    arrayOfInt1&#91;0&#93; = -1520213050; 
+    arrayOfInt1&#91;1&#93; = -2072216328; 
+….
+===================================================================== 
+Found a 177 line &#40;1211 tokens&#41; duplication in the following files: 
+Starting at line 663 of ./src/WeChat/com/tencent/qqpim/dao/SYSSmsDaoV2.java 
+Starting at line 585 of ./src/WeChat/com/tencent/qqpim/dao/SYSSmsDaoV1.java 
+...</pre>
+		</div>
+
+Kông tốt lắm :) vì cpd không so sánh 2 bộ mã nguồn mà chỉ có so sánh trong cùng một bộ tuy vậy ta có thể làm được điều mình muốn bằng một thủ thuật nhỏ đó là tìm những file giống nhau trong 2 folder khác nhau từ output của chương trình.
+
+Tiếp tục luyện kungfu ruby script:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>zalo = wechat = found = nil 
+File.open&#40;ARGV&#91;0&#93;&#41;.each_line do |line| 
+    if line =~ /^=+$/ 
+        puts &quot;#{found}#{zalo}#{wechat}\n&quot; if &#40;zalo and wechat&#41; 
+        found = zalo = wechat = nil 
+    end 
+    found = line if line =~ /Found/ 
+    zalo = line if line =~ /Zalo/ 
+    wechat = line if line =~ /WeChat/ 
+end
+puts &quot;#{found}#{zalo}#{wechat}\n&quot; if &#40;zalo and wechat&#41;</pre>
+		</div>
+
+<b>Sau khi chạy script trên với output phần trước thì ta thấy cpd đã tìm ra được tổng cộng 7 tập tin sau đây có sự trùng lặp giữa mã nguồn của Zalo và WeChat =]]]]</b>
+
+<i>(Các file dưới đây các bạn có thể xem tại github mình đã up lên ở phía trên, ví dụ file đầu tiên có thể xem ở<span class="link"> https://github.com/danghvu/ZaloRE/blob/master/src/com/facebook/android/Util.java</span>)
+</i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Found a 10 line &#40;86 tokens&#41; duplication in the following files: 
+Starting at line 131 of ./src/ZaloRE/src/com/facebook/android/Util.java 
+Starting at line 62 of ./src/WeChat/src/unk/com/tencent/mm/ui/facebook/a/m.java 
+
+Found a 5 line &#40;70 tokens&#41; duplication in the following files: 
+Starting at line 87 of ./src/ZaloRE/src/unk/com/a/b/e.java 
+Starting at line 155 of ./src/WeChat/src/unk/com/tencent/mm/sdk/platformtools/bg.java 
+
+Found a 5 line &#40;69 tokens&#41; duplication in the following files: 
+Starting at line 87 of ./src/ZaloRE/src/unk/com/a/b/e.java 
+Starting at line 562 of ./src/WeChat/src/unk/com/tencent/mm/platformtools/bf.java 
+
+Found a 16 line &#40;65 tokens&#41; duplication in the following files: 
+Starting at line 81 of ./src/ZaloRE/src/unk/com/zing/zalo/uicontrol/w.java 
+Starting at line 55 of ./src/WeChat/src/unk/com/tencent/mm/modelemoji/l.java 
+
+Found a 11 line &#40;59 tokens&#41; duplication in the following files: 
+Starting at line 21 of ./src/ZaloRE/src/me/zing/vn/gl/FilterGLSurfaceView$ConfigChooser.java 
+Starting at line 21 of ./src/WeChat/src/unk/com/badlogic/gdx/backends/android/w.java 
+
+Found a 13 line &#40;59 tokens&#41; duplication in the following files: 
+Starting at line 161 of ./src/ZaloRE/src/com/zing/zalo/uicontrol/HorizontalPager.java 
+Starting at line 148 of ./src/WeChat/src/com/tencent/mm/ui/base/MMFlipper.java 
+
+Found a 16 line &#40;55 tokens&#41; duplication in the following files: 
+Starting at line 12 of ./src/ZaloRE/src/unk/com/zing/zalo/plugin/a.java 
+Starting at line 36 of ./src/WeChat/src/com/android/internal/telephony/ISms$Stub.java</pre>
+		</div>
+
+Hm.. liệu Zalo có ăn cắp mã của WeChat / ngược lại ? Tôi cẩn thận xem xét từng file và nhận thấy những đoạn code giống nhau là từ những mã nguồn của các thư viện mở mà 2 ứng dụng này cùng sử dụng.
+
+Lấy ví dụ, ta thử so sánh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Starting at line 131 of ./src/ZaloRE/src/com/facebook/android/Util.java 
+Starting at line 62 of ./src/WeChat/src/unk/com/tencent/mm/ui/facebook/a/m.java 
+if &#40;!paramBundle.containsKey&#40;&quot;method&quot;&#41;&#41; &quot;
+        paramBundle.putString&#40;&quot;method&quot;, paramString2&#41;; 
+      if &#40;paramBundle.containsKey&#40;&quot;access_token&quot;&#41;&#41; 
+        paramBundle.putString&#40;&quot;access_token&quot;, URLDecoder.decode&#40;paramBundle.getString&#40;&quot;access_token&quot;&#41;&#41;&#41;; 
+      localHttpURLConnection.setRequestMethod&#40;&quot;POST&quot;&#41;; 
+      localHttpURLConnection.setRequestProperty&#40;&quot;Content-Type&quot;, &quot;multipart/form-data;boundary=&quot; + &quot;3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f&quot;&#41;; 
+      localHttpURLConnection.setDoOutput&#40;true&#41;; 
+      localHttpURLConnection.setDoInput&#40;true&#41;; 
+      localHttpURLConnection.setRequestProperty&#40;&quot;Connection&quot;, &quot;Keep-Alive&quot;&#41;; 
+      localHttpURLConnection.connect&#40;&#41;;</pre>
+		</div>
+
+Đây là một đoạn xử lý khi ứng dụng muốn gửi 1 request lên ứng dụng facebook ( vì Zalo và WeChat đều có facebook integration ) nằm trong bộ Facebook-Sdk (File version nằm ở src/com/facebook/FacebookSdkVersion.java )
+
+Một điều thú vị nữa khi đọc đoạn code này là dường như cả Zalo và WeChat đều không sử dụng giao thức HTTPS :D, bởi vì cả 2 cùng sử dụng “HttpURLConnection” thay vì &quot;HttpsURLConnection” , attacker có thể dễ dàng “sniff” các gói tin … Để khẳng định điều này chúng ta sẽ sniff packet của Zalo và WeChat để so sánh, nhưng xin hẹn lại dịp sau.
+
+Kết luận của tôi tạm thời hiện nay qua việc kiểm tra mã nguồn thì tuy có 1 số trùng lặp trong code nhưng điều đó chưa chứng tỏ được Zalo có sử dụng mã nguổn sao chép từ WeChat.
+
+Để khẳng định rõ hơn nữa thì cần phải tiếp tục rà soát các yếu tố trong các tính năng chính của cả 2 bên, phần bộ nhớ lúc thực thi (phần sau sẽ hướng dẫn sử dụng debugger cho android) và các phần mã bị làm rối mà jd-gui không dịch ngược lại được. ( Chẳng hạn : WeChat/src/unk/com/tencent/mm/sdk/platformtools/bg.java :1272 )
+
+<i>To be continue ..</i>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44782/276065.hva#276065</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44782/276065.hva#276065</link>
+				<pubDate><![CDATA[Tue, 28 May 2013 10:17:34]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Cách kiểm tra lỗi CSRF ( Cross-Site Forgery Request )</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>Làm khó bạn rồi windak :( HVA có csrf cũng khó mà khai thác được vì có quá nhiều giới hạn khó vượt qua&nbsp;
+		</blockquote>
+=p hihi, làm khó mới ló cái khôn chứ xnohat
+
+Thôi hỏi lùi về 1 bước vậy. Hva có cơ chế chống CSRF như thế nào ? Có ai xung phong trả lời câu này không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43600/270360.hva#270360</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43600/270360.hva#270360</link>
+				<pubDate><![CDATA[Mon, 22 Oct 2012 02:52:53]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Cách kiểm tra lỗi CSRF ( Cross-Site Forgery Request )</title>
+				<description><![CDATA[ Học phải đi đôi với hành. 
+Bài tập cho bạn là hãy tìm lỗi CSRF trên chính forum này của HVA.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43600/270293.hva#270293</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43600/270293.hva#270293</link>
+				<pubDate><![CDATA[Fri, 19 Oct 2012 03:54:05]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Error based SQLi không có information_schema</title>
+				<description><![CDATA[ Nếu chắc chắn đó là Mysql 5.1.xx thì có khả năng là information_schema bị filter hoặc replace bởi giá trị khác.
+
+Cách giải quyết thì phải tùy trường hợp rồi.. nhiêu đó thông tin thì không đủ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43388/269341.hva#269341</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43388/269341.hva#269341</link>
+				<pubDate><![CDATA[Wed, 12 Sep 2012 11:35:05]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>(HVA News) Công cụ khai thác Social Engineering ra lò phiên bản 3.2</title>
+				<description><![CDATA[ <i>Nhằm tối ưu và hỗ trợ cho kĩ thuật "tấn công tâm lý" ( Social Engineering ), các hacker đã cho ra đời bộ công cụ Social-Engineer Toolkit (SET), giúp các tin tặc dễ dàng hiện thực kiểu tấn công này trong đời thực</i>
+
+Công cụ khai thác Social-Engineering (SET) là một công cụ tổng hợp các cách tấn công tận dụng sơ hở của người sử dụng qua các yếu tố tâm lý kết hợp với các lỗi bảo mật đã được phát hiện. Giao diện của SET khá lạ so với các công cụ khác bao gồm nhiều câu hỏi và lựa chọn tương ứng với các tình huống khác nhau khi khai thác Social Engineering.  Phiên bản 3.2 mới được cập nhật có giao diện như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bt:/pentest/exploits/set# ./set
+ ..snip..
+   Welcome to the Social-Engineer Toolkit &#40;SET&#41;. Your one
+    stop shop for all of your social-engineering needs..
+    
+    Join us on irc.freenode.net in channel #setoolkit
+
+         Help support the toolkit, rank it here:
+ <span class="link"> http://sectools.org/tool/socialengineeringtoolkit/#comments</span>
+
+ Select from the menu:
+
+   1&#41; Social-Engineering Attacks &#40;Tấn công Social-Engineering&#41;
+   2&#41; Fast-Track Penetration Testing &#40;Kiểm tra bảo mật nhanh&#41;
+   3&#41; Third Party Modules &#40; Các thư viện của tổ chức khác &#41;
+   4&#41; Update the Metasploit Framework &#40; Cập nhật Metasploit &#41;
+   5&#41; Update the Social-Engineer Toolkit &#40; Cập nhật ứng dụng &#41;
+   6&#41; Help, Credits, and About &#40;Giúp đỡ&#41;
+
+  99&#41; Exit the Social-Engineer Toolkit &#40;Thoát&#41; 
+
+set&gt;</pre>
+		</div>
+
+Chọn 1 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Select from the menu:
+
+   1&#41; Spear-Phishing Attack Vectors &#40;Tấn công dạng lừa đảo email Spear-Phishing&#41;
+   2&#41; Website Attack Vectors  &#40; Tấn công dựa trên lỗ hổng web &#41; 
+   3&#41; Infectious Media Generator &#40; Tạo những file media độc &#41;
+   4&#41; Create a Payload and Listener &#40; Tạo payload tấn công và cài mã độc&#41;
+   5&#41; Mass Mailer Attack &#40; Gửi email hàng loạt &#41;
+   6&#41; Arduino-Based Attack Vector &#40; Tấn công dựa trên Arduino &#41;
+   7&#41; SMS Spoofing Attack Vector &#40; Tấn công mạo danh SMS &#41;
+   8&#41; Wireless Access Point Attack Vector &#40; Tấn công mạng không dây &#41; 
+   9&#41; QRCode Generator Attack Vector &#40; Tạo các mã QR độc &#41;
+  10&#41; Third Party Modules &#40; Các thư viện của tổ chức khác &#41;
+
+  99&#41; Return back to the main menu. &#40; Quay về menu chính &#41;</pre>
+		</div>
+
+Sau khi chọn một trong các kiểu tấn công, SET còn giải thích rõ nguyên lý hoạt động của kiểu tấn công đó. Ví dụ nếu ta chọn mục số 6 trong các mục ở trên SET sẽ in ra:
+<i>The Arduino-Based Attack Vector utilizes the Arduin-based device to program the device. You can leverage the Teensy's, which have onboard storage and can allow for remote code execution on the physical system. Since the devices are registered as USB Keyboard's it will bypass any autorun disabled or endpoint protection on the system.
+</i>..snip..
+<i>Phương pháp tấn công Arduino tận dụng những thiết bị chuẩn Arduin để cài chương trình vào thiết bị đó. Bạn có thể sử dụng công cụ của Teensy mà có bộ nhớ trong cho phép thực thi mã độc khi cắm vào máy. Vì thiết bị này được xử lý như một bàn phím USB, nó có thể vượt qua các phần bảo vệ của hệ thống (như ngăn cản autorun).
+</i>
+
+SET có sẵn trong backtrack, nhưng là phiên bản rất cũ ;) bạn cần phải tự mình update lên phiên bản mới nhất.
+
+Phiên bản 3.2 với mã tên &quot;#FreeHugs&quot; có thêm nhiều cải tiến bao gồm 1 phần cho phép lựa chọn payload để tạo HTTP reverse shell xây dựng riêng cho ứng dụng. Thêm vào đó rất nhiều exploit của Metasploit cũng được thêm vào phần tấn công lợi dụng lỗ hổng trình duyệt web. Tóm tắt những thay đổi quan trọng gồm có:
+
+* cải tiến cho phần tấn công thông qua HTTP, phần Reverse HTTP Shell sẽ sử dụng mã hoá AES khi gửi lệnh và  nhận kết quả.
+* thiết lập khả năng tạo RevHTTP shell khi tấn công bằng Java Applet
+* thêm công cụ tận dụng lỗi &quot;AtomicReferenceArray Type Violation Vulnerability&quot;,&quot;Adobe Flash Player MP4 ‘cprt’ Overflow exploit&quot;,&quot;MS12-004 midiOutPlayNextPolyEvent Heap Overflow&quot;,  vào các công cụ tấn công sử dụng Metasploit
+...
+
+Toàn bộ phần thay đổi có thể xem thêm tại<span class="link"> https://www.secmaniac.com/blog/2012/04/02/the-social-engineer-toolkit-v3-2-codename-freehugs-has-been-released/</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42281/263170.hva#263170</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42281/263170.hva#263170</link>
+				<pubDate><![CDATA[Mon, 14 May 2012 12:32:15]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Mã hoá rồi kí hay kí rồi mã hoá?</title>
+				<description><![CDATA[ Hình như cái bạn foaato đang nó là asymmetric key để tạo MAC anh mrro:
+<blockquote>
+A: quy trình trong trường hợp mã hóa rồi mới kí như sau: Alice dùng khóa công khai của Bob để mã hóa thông điệp, gọi cái thông điệp sau khi đã đc mã hóa này là Z. Sau đó dùng khóa bí mật của mình (Alice) + nội dung thông điệp (đã mã hóa) để kí. Gọi cái chữ kí này là Y. Khi đó Alice sẽ truyền đi cặp (Z,Y), Khi Bob nhận được thì sẽ thử tất cả các khóa công khai mà mình có để xem ai là chủ của cái chữ kí này (ở đây là Alice), sau khi đã xác định được ai kí lên thì mới bắt đầu giải mã thông điệp 
+&nbsp;
+		</blockquote>
+
+Nhưng cách giải thích chắc cũng tương tự + khoái vụ cái kéo kỳ diệu :P giờ thì đã hiểu bản chất hậu quả của vụ tấn công này của bạn foaato. 
+
+mrro nghĩ sao vụ replay attack ? có thể sảy ra không anh ?
+A -&gt; B : M = [ E(P = chuyển khoản 100$ cho C) || MAC ]
+C tóm được M, thấy tài khoản tăng 100, nhào dzo ngay sau đó gửi M đi 100 lần =&gt; C có 10000$ trong tài khoản.
+
+Bạn foaato rất nên tham gia lớp crypto-class online của Stanford do mrro trợ giảng ;). Trong đó có 1 bài giải thích sự khác nhau giữa Mac-AND-encrypt , Mac-THEN-Encrypt, Encrypt-THEN-Mac
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42243/263012.hva#263012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42243/263012.hva#263012</link>
+				<pubDate><![CDATA[Fri, 11 May 2012 15:32:31]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>(HVA News) Lỗ hổng bảo mật của Skype làm lộ địa chỉ IP của người dùng</title>
+				<description><![CDATA[ Skype khuyến cáo người dùng cẩn thận vì đã xuất hiện một trang web cho phép bất cứ ai có thể tìm thấy thông tin địa chỉ IP của một người dùng bất kỳ. Một đoạn mã nguồn cũng đã được tải lên Github cho phép thực hiện công việc tương tự. Địa chỉ IP mạng nội bộ và mạng bên ngoài và các cổng truy cập đều có thể bị đánh cắp. (Hiện nay trang web đó đã bị gỡ xuống và không truy cập được)
+
+Giám đốc quản lý bảo mật của Skype lên tiếng: "<i>Chúng tôi đang điều tra sự xuất hiện của công cụ mới này. Đây là một vấn đề lâu dài và của chung mọi công ti phần mềm peer-to-peer. Chúng tôi luôn làm việc hết sức để đảm bảo an toàn và bảo mật cho người dùng và đang chuẩn bị cách tốt nhất để bảo vệ họ</i>".
+
+Chứng minh cách khai thác khá đơn giản. Một kẻ xấu chỉ việc tải 1 phiên bản Skype đã bị chỉnh sửa và thay đổi một số khoá trong phần Registry của Windows để tạo những tập tin mà mục đích ban đầu là để gỡ lỗi cho chương trình. Sau đó hắn sẽ gửi yêu cầu kết bạn đến account cần tấn công, giữa quá trình này thông tin về account của người đó sẽ bị lưu lại.
+
+Chương trình và cách tấn công còn được đưa lên <span class="link"> http://pastebin.com/rBu4jDm8 </span>kèm theo 1 số chỉnh sửa nhỏ để kẻ tấn công có thể biết IP lấy được có đang online hay không và cách thức đơn giản 'whois' để lấy thông tin về địa chỉ vật lý như thành phố, quốc gia. Phiên bản Skype 5.5 vẫn đang bị lỗi này dù lỗ hổng đã được tìm ra và công bố tại hội nghị "Internet Measurement Conference" năm 2011 tại Berlin.
+
+Đến giờ vẫn chưa có cách nào chống lại phương thức tấn công này ngoài cách tạo một mạng riêng ảo hoặc sử dụng proxy để che dấu IP khi vào Skype
+
+Theo 
+<span class="link"> http://thehackernews.com/2012/05/skype-vulnerability-exposing-user-ip.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42249/263011.hva#263011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42249/263011.hva#263011</link>
+				<pubDate><![CDATA[Fri, 11 May 2012 14:26:42]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Mã hoá rồi kí hay kí rồi mã hoá?</title>
+				<description><![CDATA[ Có thể chống lại việc "đổi tên" của bạn bằng việc khi encrypt kèm thêm 1 đoạn mã [Tôi là A] vào message, thì cho dù C có sign lại message thì B vẫn biết message này đã bị ký sai sau khi giải mã message.
+
+Nhưng nếu chỉ xem xét một lệnh send như thế thì theo mình không đủ đánh giá cả quá trình truyền thông điệp là "an toàn" hay "tối ưu". 
+
+Đầu tiên là MAC sử dụng cùng private key thì giúp đảm bảo thông điệp không bị thay đổi và đảm bảo thông điệp được gửi đi từ người ký thông điệp (integrity & authenticity). Mã hoá thì giúp bảo đảm không ai đọc được thông điệp trừ người tham gia ( confidentiality )
+
+Nó không chống lại kiểu tấn công "replay attack" như bạn nói ( mình cũng không biết kiểu tấn công đổi tên như thế gọi là gì, nhưng cái này có vẻ gần với replay attack khi kẻ tấn công có thể lấy những thông điệp cũ à gửi như là 1 thông điệp 'valid' )
+
+Để chống lại kiểu tấn công đó và các kiểu tấn công khác cần có 1 protocol hoàn chỉnh từ đầu quá trình gửi tin giữa 2 bên đến lúc kết thúc. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42243/262974.hva#262974</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42243/262974.hva#262974</link>
+				<pubDate><![CDATA[Fri, 11 May 2012 04:26:08]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>HVANews-Lỗ hổng bảo mật tạo account quyền admin của Joomla 1.6/1.7/2.5</title>
+				<description><![CDATA[ <i>Một lỗi khá mới nhắm vào phần mềm quản trị nội dung (CMS) nổi tiếng - Joomla, được công bố từ tháng 3/2012 trên blog của Jeff Channell [1] nhưng vẫn chưa được nhiều người biết đến.</i>
+
+Kẻ xấu có thể khai thác lỗi bằng cách chèn thêm vào form đăng ký của Joomla trường  jform[groups][] với giá trị &quot;7&quot; tương đương với nhóm admin và cố tình đăng nhập lỗi ( ghi sai password hay captcha ). Joomla lúc này sẽ lưu giá trị group này vào phiên làm việc và trong lần đăng ký ngay sau đó kẻ tấn công sẽ đăng ký thành công với quyền hạn cao nhất. Từ đây hắn có thể đăng nhập vào phần quản trị, upload mã độc và leo thang đặc quyền chiếm cả máy chủ.
+
+Lỗi này nằm ở trong tập tin : /components/com_users/models/registration.php dòng số 190 trong phiên bản Joomla 2.5.2
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Get the groups the user should be added to after registration.
+$this-&gt;data-&gt;groups = isset&#40;$this-&gt;data-&gt;groups&#41; ? array_unique&#40;$this-&gt;data-&gt;groups&#41; : array&#40;&#41;;</pre>
+		</div>
+
+Thật khó hiểu lý do tại sao người thiết kế Joomla muốn để chức năng này.
+Phiên bản 2.5.3 đã vá lỗi bằng cách khởi tạo 1 cách bình thường 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$this-&gt;data-&gt;groups = array&#40;&#41;;</pre>
+		</div>
+
+Exploit PoC được đính kèm bản tin này, viết dưới dạng chrome extension. Đã thử nghiệm trên Joomla 1.7.5 và 2.5.2.
+
+Source Code:<span class="link"> https://github.com/danghvu/j0wnla</span>
+
+[1]<span class="link"> http://jeffchannell.com/Joomla/joomla-161725-privilege-escalation-vulnerability.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42223/262862.hva#262862</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42223/262862.hva#262862</link>
+				<pubDate><![CDATA[Wed, 9 May 2012 21:41:27]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>( HVA News ) Lỗi bảo mật nghiêm trọng mới nhất trong PHP-CGI</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">acenux wrote:</cite><br>
+		<blockquote>Hiện tại ngay cả Facebook cũng chưa fix lỗi này trên sever của họ : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://news.softpedia.com/news/Facebook-Partially-Vulnerable-to-PHP-CGI-Bug-Security-Expert-Finds-267689.shtml</pre>
+		</div>
+
+Nếu truy cập<span class="link"> http://www.facebook/?-s</span> thì ra
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+include_once 'https://www.facebook.com/careers/department?dept=engineering&req=a2KA0000000Lt8LMAS';</pre>
+		</div>&nbsp;
+		</blockquote>
+LOL :trolled: by facebook.
+
+Chỉ là trò đùa của facebook thôi ;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42195/262838.hva#262838</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42195/262838.hva#262838</link>
+				<pubDate><![CDATA[Wed, 9 May 2012 09:59:07]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Phòng chống SQL Injection bằng PHP, hiệu quả đơn giản</title>
+				<description><![CDATA[ Thế thì có lẽ cái hàm check của chiro8x còn yếu hơn cái trong bài này =P
+
+Thay vì kiểm tra dữ liệu đầu vào có phải sql injection / xss / lfi / lrf không ;) sẽ tốt hơn nhiều nếu kiểm tra điều ngược lại !!  ( và tốt hơn nữa nếu sử dụng cả 2).
+
+Còn riêng về sql injection thì cách an toàn nhất là sử dụng câu truy vấn có chuẩn bị - "prepared statements" và sử dụng một cách chính xác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/20280/262689.hva#262689</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/20280/262689.hva#262689</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 16:35:15]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Phòng chống SQL Injection bằng PHP, hiệu quả đơn giản</title>
+				<description><![CDATA[ =P chiro8x có thể viết hết cái 
+
+<blockquote> //Check Here &nbsp;
+		</blockquote>
+
+được không ? chứ nhìn thế này thì không biết có gì khác cái cũ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/20280/262670.hva#262670</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/20280/262670.hva#262670</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 07:12:27]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Lấy vài dòng trong 1 file dump lớn hơn 500Mb trên windows như thế nào?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">nvhbk16k53 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Vậy có nghĩa là máy của bồ không có đủ RAM để notepad+ sử dụng.
+
+Thử cài VIM từ<span class="link"> http://www.vim.org/download.php#pc</span> để dùng nó mà mở.&nbsp;
+		</blockquote>
+Dùng VIM mà gặp phải những dòng quá dài thì cũng treo luôn anh à :(&nbsp;
+		</blockquote>
+
+VIM không read trọn bộ file như mấy cái wordpad, notepad, word... chuối chiên của Windows mà nó chỉ read và buffer bao nhiêu dòng hiển thị trên màn hình mà thôi. Bởi vậy, dù có 1 dòng quá dài đi chăng nữa, nó cũng chỉ read và hiển thị chính xác số ký tự khít cho trang hiển thị thuộc về 1 dòng 'quá dài' nào đó. Tình trạng bị treo có lẽ là do bugs của một phiên bản VIM nào đó chớ không phải do buffer quá lớn (hết mem) mà treo đâu.&nbsp;
+		</blockquote>
+
+Anh conmale xài vim phiên bản nào ? Như em thử nghiệm phiên bản 7.3 (default settings) thì nó vẫn đọc toàn bộ file cho đến khi Ctrl-C.
+
+Khi đọc file lớn em thường xài "less"]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42171/262669.hva#262669</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42171/262669.hva#262669</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 06:53:06]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Phòng chống SQL Injection bằng PHP, hiệu quả đơn giản</title>
+				<description><![CDATA[ @chiro8x:
+:D chính xác, đây mình cho rằng là điểm yếu của 'blacklist' tự tạo, nếu không "rành" thì dễ dàng bypass được. 
+
+chiro8x có giải pháp gì không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/20280/262664.hva#262664</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/20280/262664.hva#262664</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 06:25:43]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Phòng chống SQL Injection bằng PHP, hiệu quả đơn giản</title>
+				<description><![CDATA[ Nhìn vào "blacklist" này dễ thấy ngay 1 cách bypass để chèn các truy vấn sql. Xin hỏi anh em nào nhìn thấy không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/20280/262647.hva#262647</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/20280/262647.hva#262647</link>
+				<pubDate><![CDATA[Mon, 7 May 2012 02:52:48]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Làm an toàn thông tin thì học gì?</title>
+				<description><![CDATA[ Không thích phần "Lập trình" của anh mrro lắm, vì thiếu quyển "Introduction to Algorithms" - CLR 
+http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-046j-introduction-to-algorithms-sma-5503-fall-2005/
+
+Đã từng biết 1 vài bạn rất hiểu biết các kiến thức máy tính nhưng khi đặt tay xuống chấm ngoáy 1 cái tool thì không làm được. Cơ bản là chưa đọc quyển này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42133/262371.hva#262371</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42133/262371.hva#262371</link>
+				<pubDate><![CDATA[Thu, 3 May 2012 01:08:03]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>BkitSec Wargame</title>
+				<description><![CDATA[ Tớ vừa đóng góp 1 challenge mới. Trong phần này bạn phải sử dụng 1 lỗi mới được phát hiện gần đây và rất nhiều ứng dụng đã từng mắc phải để giải quyết.
+
+Mời bạn tham gia:
+http://bkitsec.vn/?topic=file-manager
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/41215/260079.hva#260079</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/41215/260079.hva#260079</link>
+				<pubDate><![CDATA[Wed, 28 Mar 2012 01:52:28]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Case Study: phân tích hiện trường sau khi bị thâm nhập.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Phó Hồng Tuyết wrote:</cite><br>
+		<blockquote>
+MAC là dấu chân asin trong trường hợp bạn nêu ở trên.
+
+nếu VPS Free thì yêu cầu là bạn phải đăng ký dịch vụ (dính MAC - thậm chí là IP thật), thông tin sẽ được lưu lại nơi bạn đăng ký Free VPS.
+
+Nếu VPS do bạn của bạn share thì mức độ nguy hiểm cao hơn.
+
+--- 
+trở lại vấn đề :
+
+VPS thì tất nhiên nó có ip tĩnh. khi có ip này sẽ truy ra được nhà cung cấp dịch vụ nào.
+
+Yêu cầu xin log của người mua VPS đó hoặc log đăng ký VPS.
+
+Khi có được log này thì sẽ có khả năng có được IP thật và MAC
+
+* nếu dùng FAKE IP : thì khó xác định.
+* IP Thật + MAC : :|
+
+&nbsp;
+		</blockquote>
+
+Bạn có đọc kỹ tôi viết không vậy ? Tôi có nói rõ là sử dụng TOR, vậy thì trace về VPS như thế nào ? Chưa kể những dịch vụ như Amazon EC2 còn cho phép tạo và xóa VPS trong tài khoản cá nhân 1 cách tùy ý, và cũng không thấy có điểm nào đòi bạn phải đăng ký MAC address cả
+
+Mời bạn trình bày tiếp.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/41207/256166.hva#256166</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/41207/256166.hva#256166</link>
+				<pubDate><![CDATA[Tue, 28 Feb 2012 13:49:05]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Case Study: phân tích hiện trường sau khi bị thâm nhập.</title>
+				<description><![CDATA[ Nếu kịch bản là:
+
+- Hacker login vào một free VPS, online bằng TOR
+- Cài máy ảo (VM)
+- Cài 1 hệ điều hành Linux fresh vào VM
+- Tấn công BKAV qua trình duyệt và application của VM
+- Xóa harddisk của VM
+- Ngắt kết nối với VPS
+- Không bao giờ sử dụng VPS đó nữa (disable service hoặc terminate plan)
+
+Rõ ràng cho dù có evercookie thì nó cũng chỉ save browser của máy ảo
+Như vậy liệu có cách nào phát hiện được không ? Mọi người cho ý kiến ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/41207/256091.hva#256091</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/41207/256091.hva#256091</link>
+				<pubDate><![CDATA[Tue, 28 Feb 2012 06:38:46]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Công nghệ clustering trên Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Công nghệ clustering trên Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Công nghệ clustering trên Linux</title>
+				<description><![CDATA[ <b>Công nghệ clustering trên Linux</b>
+
+Hiện nay công nghệ clustering được dùng rộng rãi cho các hệ thống cần độ sẵn sàng phục vụ cao. Các nhà cung cấp lớn đều có các giải pháp clustering của mình. Các giải pháp clustering trên Linux được đặc biệt quan tâm do tính kinh tế, khả nǎng dịch vụ cao, và đa dạng.
+
+Khái niệm clustering có nghĩa khác nhau trong các ngữ cảnh khác nhau. Clustering bao gồm có hai hướng chính là:
+
+- Clustering cho tính toán (chẳng hạn Beowulf): kết hợp sử dụng nhiều máy để tǎng sức mạnh tính toán, kiểu này thường được áp dụng cho các công việc đòi hỏi tính toán chuyên sâu. Mô hình clustering này được dùng cho các dự án khoa học trong các lĩnh vực thiên vǎn, hạt cơ bản, mô tả bản đồ gien, y học...
+
+- Khả nǎng sẵn sàng phục vụ cao (High Availability - HA): sử dụng nhiều công nghệ khác nhau nhằm đạt được mức tin cậy đặc biệt về dịch vụ khi gặp sự cố. Ví dụ như các nhà cung cấp dịch vụ Internet ISP cần phải đảm bảo dịch vụ không gián đoạn 24/7/365.
+
+Ta không nên lẫn lộn về khái niệm giữa công nghệ clustering trong tài liệu này với thuật ngữ khả nǎng chịu đựng sai sót (fault-tolerance). Các hệ thống chịu đựng sai sót sử dụng phần cứng chuyên dụng cao (với giá thành rất cao) để cung cấp một môi trường dư độ tin cậy đảm bảo cho các dịch vụ có thể hoạt động trơn tru mà không bị dừng bởi một vài lỗi nhỏ. Các hệ thống Linux có khả nǎng phục vụ cao được thiết kế để chạy trên các phần cứng thông dụng để đạt khả nǎng sẵn sàng cao tiệm cận khả nǎng sẵn sàng cao của các hệ thống có khả nǎng chịu đựng sai sót với chi phí thấp hơn vài lần.
+
+Các hệ thống Linux clustering dựa trên các cấu hình dùng hai công nghệ nền tảng là dùng máy dự phòng khi gặp lỗi (Fail Over Service - FOS) và Server ảo Linux (Linux Virtual Server-LVS). Việc lựa chọn FOS hay LVS làm công nghệ nền cho máy chủ Linux có khả nǎng phục vụ cao sẽ làm ảnh hưởng tới các yêu cầu về phần cứng và các dịch vụ có thể được hỗ trợ. Ta hãy thử xem qua một vài ví dụ về cấu hình và xem xét mức độ liên quan của chúng.
+
+<b>Các cấu hình FOS</b>
+
+Máy chủ Linux có khả nǎng phục vụ cao dựa trên FOS gồm hai hệ thống hoạt động trên nền hệ điều hành Linux. Mỗi một hệ thống phải được đảm bảo cung cấp đủ về mặt cấu hình để có thể hỗ trợ đủ tải cho các dịch vụ. Điều này là cần thiết, bởi vì tại bất kỳ thời điểm nào, chỉ có duy nhất một hệ thống (nút active) là cung cấp dịch vụ cho khách hàng của bạn.
+
+- Trong quá trình khởi tạo cấu hình của một cluster FOS, một hệ thống sẽ được coi là nút chính (primary node), và hệ thống kia sẽ được gọi là nút sao lưu (backup node). Sự khác biệt này được tạo ra để xác định hệ thống nào sẽ được khai báo là active để cả hai hệ thống sẽ tự tìm kiếm trạng thái hoạt động tại cùng một thời điểm. Trong trường hợp đó, nút chính sẽ ``chiến thắng``.
+
+Nút đang hoạt động (active node) sẽ đáp lại các yêu cầu về dịch vụ thông qua một địa chỉ IP ảo (Virtual IP hay VIP). Địa chỉ VIP là một địa chỉ IP và nó chỉ khác so với địa chỉ IP thông thường của một nút đang hoạt động.
+
+Hệ thống khác (nút không hoạt động) không trực tiếp chạy dịch vụ, thay vào đó nó quản lí các dịch vụ của nút đang hoạt động, và đảm bảo chắc chắn là nút đang hoạt động vẫn phải đang còn hoạt động. Nếu nút không hoạt động phát hiện ra 1 vấn đề nào đó với hoặc là nút hoạt động hoặc dịch vụ đang chạy trên nó, thì một thông báo lỗi sẽ được khởi tạo.
+
+Khi có lỗi, các bước sau sẽ được thực hiện:
+
+- Nút đang hoạt động sẽ trực tiếp ngắt hết các dịch vụ đang chạy (nếu nó đang chạy và vẫn còn đang kết nối mạng)
+- Nút không hoạt động sẽ khởi động các dịch vụ
+- Nút đang hoạt động sẽ ngắt không sử dụng địa chỉ VIP (nếu nó vẫn đang chạy hoặc còn đang nối mạng)
+- Nút không hoạt động bây giờ lại chuyển thành nút đang hoạt động, và ở chế độ sử dụng địa chỉ VIP
+- Nếu nó vẫn còn đang chạy và đang kết nối mạng, nút trước kia là đang hoạt động thì bây giờ trở thành không hoạt động, bắt đầu giám sát các dịch vụ và nói chung thực hiện đầy đủ các chức nǎng của một nút đang hoạt động.
+
+Hãy xem các cấu hình FOS cơ bản nhất:
+
+Một cấu hình FOS cơ bản
+
+Hình 1, là một cấu hình đơn giản FOS minh hoạ một máy chủ Linux cluster có khả nǎng phục vụ cao. Trong trường hợp này, nút đang hoạt động cung cấp các dịch vụ về Web và FTP, trong khi nút không hoạt động quản lý nút đang hoạt động và các dịch vụ đang chạy trên nó.
+
+Nếu không được minh hoạ trong sơ đồ này, cũng có thể là cả hai nút đang hoạt động và không hoạt động được dùng vào việc khác, ít cấp bách hơn, các dịch vụ trong khi thực hiện vai trò của chúng trong một FOS cluster. Ví dụ, hệ thống không hoạt động có thể chạy lệnh inn để quản lý giao thức NNTP newsfeed. Tuy nhiên, cần lưu ý là hoặc phải giữ cho hệ thống có khả nǎng còn đủ tài nguyên dư để đề phòng có một lỗi xuất hiện, hoặc chọn các dịch vụ có khả nǎng tắt hệ thống trong trường hợp có lỗi xảy ra. Hơn nữa, từ quan điểm của một người quản trị hệ thống, thì lý tưởng nhất là có thêm một hệ thống dành riêng cho nút chính và nút sao lưu để thực hiện các dịch vụ liên quan tới cluster, thậm chí ngay cả khi điều này cho kết quả của việc sử dụng ít hơn 100% tài nguyên hệ thống.
+
+
+Hình 1. Một ví dụ cấu hình FOS
+
+
+Một vấn đề của FOS cluster là khả nǎng toàn bộ cluster sẽ hạn chế khả nǎng của nút hiện tại đang hoạt động. Điều này có nghĩa là, thêm vào các khả nǎng phụ khác trực tuyến sẽ yêu cầu phải cập nhật (hoặc thay thế) cho mỗi hệ thống. Trong khi công nghệ FOS lại bao hàm ý nghĩa là các cập nhật đó có thể thực hiện được mà không làm ảnh hưởng tới tính sẵn có của dịch vụ.
+
+Cần lưu ý thêm là FOS không phải là công nghệ chia xẻ dữ liệu (data-sharing technology). Hay nói cách khác, nếu một dịch vụ đọc và ghi dữ liệu trên một nút đang hoạt động, FOS sẽ không bao hàm cơ chế sao chép dữ liệu đó sang một nút không hoạt động. Điều này có nghĩa là dữ liệu được dùng bởi các dịch vụ trên một cluster FOS sẽ thuộc vào một trong hai nhóm dưới đây:
+
+- Dữ liệu không thay đổi; nó là dữ liệu chỉ đọc (read-only)
+- Dữ liệu không còn là chỉ đọc, nhưng nó lại sẵn sàng cho cả hai nút hoạt động và không hoạt động một cách đều nhau.
+
+Trong khi cấu hình thử nghiệm ở trên có thể là phù hợp với một Web site có các trang Web là tĩnh, thì nó lại không thích hợp với một site FTP đang bận, đặc biệt là site mà các file mới được upload liên tục bởi người sử dụng FTP site. Hãy thử xem qua cách mà FOS cluster có thể sử dụng nhiều hơn các dữ liệu động.
+
+Một cấu hình FOS với dữ liệu đã được chia xẻ
+
+Như đã nói ở trên, một số cơ chế được sử dụng để tạo dữ liệu đọc-ghi sẵn có cho cả hai nút trong một FOS cluster. Một giải pháp là sử dụng khả nǎng lưu trữ NFS có thể truy cập được. Bằng cách sử dụng tiếp cận này, các lỗi xảy ra với nút đang hoạt động sẽ không ảnh hưởng đến kết quả của dữ liệu bị không truy cập được của nút không hoạt động.
+
+Tuy nhiên, cần phải thận trọng khi chặn quyền truy nhập tới các thiết bị lưu trũ NFS nếu như đó chỉ là một lỗi đơn giản. Hơn nữa, sự mất mát của kiểu lưu trữ này có thể ảnh hưởng tới kết quả ngưng chạy dịch vụ, thậm chí là ngay cả khi các nút hoạt động và không hoạt động vẫn bình thường. Giải pháp ở hình 2 là sử dụng RAID và các công nghệ khác để triển khai một máy chủ NFS chịu được lỗi (fault-resistant NFS server).
+
+Hình 2. Một kiểu cấu hình FOS với dữ liệu chia xẻ
+
+
+
+Trong khi nó có thể là các sửa đổi khác nhau đối với cấu hình FOS cluster cơ bản là có thể, thì trong thực tế, các lựa chọn là giới hạn trong một hệ thống cung cấp tất cả các dịch vụ, trong khi một hệ thống sao lưu quản lý các dịch vụ đó, và khởi tạo lỗi nếu có và khi cần. Để tǎng thêm khả nǎng mềm dẻo và một số khả nǎng khác, lựa chọn giải pháp kết hợp là cần thiết. Và sự lựa chọn đó chính là LVS.
+
+<b>Các cấu hình LVS điển hình</b>
+
+Bằng nhiều cách, một LVS cluster có thể được xem như là một FOS cluster chỉ với một sai khác nhỏ - thay vì thực sự cung cấp các dịch vụ, nút đang hoạt động trong LVS cluster lại gửi các yêu cầu tới một hoặc nhiều máy chủ mà thực sự cung cấp các dịch vụ. Các máy chủ phụ này (gọi là các máy chủ thực - real servers) được thực hiện cân bằng tải bởi nút đang hoạt động (trong thuật ngữ của LVS gọi là active router)
+
+Giống như FOS cluster, có hai hệ thống chia sẻ, đảm bảo rằng một trong hai hệ thống là đang hoạt động, trong khi một hệ thống khác (inactive router) lại ở chế độ chờ để khởi tạo lỗi. Tuy nhiên, chúng chỉ khác nhau ở điểm kết thúc.
+
+Bởi vì nhiệm vụ chính của active router là chấp nhận các yêu cầu dịch vụ gửi đến và gửi chúng tới một máy chủ thích hợp, điều đó cũng cần thiết cho active router để theo dõi tình trạng của các máy chủ thực, và xác định xem máy chủ thực nào sẽ nhận các yêu cầu dịch vụ trả về. Như vậy, active router quản lý tất cả các dịch vụ trên mỗi mỗi server thực. Ngay cả khi dịch vụ gặp sự cố trên một máy chủ thực, active server sẽ dừng việc gửi các yêu cầu dịch vụ tới nó cho tới khi dịch vụ hoạt động trở lại.
+
+Thêm vào đó, active router có thể tuỳ ý sử dụng một trong số các thông số lịch trình để xác định xem máy chủ thực nào có khả nǎng nhất trong việc xử lý các yêu cầu dịch vụ tiếp theo. Các kiểu cân tải:
+
+- Luân chuyển (Round robin);
+- Kết nối tối thiểu (least connections);
+- Luân chuyển có trọng số;
+- Kết nối tối thiểu có trọng số (least connections).
+
+Như vậy các active router có thể tính được tải hoạt động của máy chủ thực và phân tải tương ứng. Các máy chủ thực có thể sử dụng các cấu hình phần cứng khác nhau, và có một active router cân bằng tải cho mỗi real server một cách đều nhau.
+
+<b>Một cấu hình LVS cơ bản</b>
+Trong hình 3 minh hoạ một kiểu máy chủ LVS cluster với 3 máy chủ thực cung cấp dịch vụ về Web. Trong cấu hình này, các máy chủ thực được kết nối với một mạng con đã được dành riêng. Bộ phân tuyến (router) có hai card giao diện mạng:
+
+- Một giao diện cho mạng chung
+- Một giao diện cho mạng riêng
+
+Các yêu cầu dịch vụ được gửi tới các địa chỉ IP ảo của cluster được nhận bởi active router trên một giao diện, sau đó lại được chuyển sang máy chủ thực thích hợp khác thông qua một giao diện khác. Trong trường hợp này, các bộ chọn đường đồng thời có thể hoạt động như là một phần của các firewall; chỉ chuyển tiếp các dịch vụ hợp lệ tới mạng riêng của máy chủ thực
+
+Hình 3. Một cấu hình LVS điển hình
+
+
+Một LVS cluster có thể sử dụng một trong 3 phương pháp khác nhau để phân tuyến thông tin tới các máy chủ thực:
+
+- Dịch địa chỉ mạng (Network Address Translation), cho phép thiết lập một kiến trúc mạng LAN riêng.
+- Dẫn đường trực tiếp, cho phép thiết lập kiểu truyền theo kiểu mạng LAN.
+- Đường hầm - Tunnelling (đóng gói IP) cho phép có thể phân phối các máy chủ thực ở mức WAN.
+
+Trong hình 3, bộ chọn đường NAT đang được sử dụng. Trong khi bộ chọn đường dựa trên NAT cho phép nó có thể hoạt động với các máy chủ thực trong một môi trường được bảo vệ tốt hơn, bởi nó phải dịch các địa chỉ của tất cả các thành phần đi và đến từ mỗi máy chủ thực. Trong thực tế, điều này chỉ giới hạn kích thước của NAT-routed LVS cluster tới xấp xỉ 10 đến 20 máy chủ thực.
+
+Tổng chi phí cho giải pháp này sẽ là không hiện thực nếu sử dụng các bộ dẫn đường kiểu tunnel (đường hầm) hoặc dẫn đường trực tiếp, bởi vì trong các kĩ thuật dẫn đường này, các máy chủ thực phản hồi trực tiếp tới các hệ thống được yêu cầu. Với kiểu tunneling tổng chi phí sẽ còn cao hơn nhiều so với kiểu trực tiếp, nhưng nó vẫn nhỏ hơn khi so sánh với kiểu NAT.
+
+Một khía cạnh khá thú vị của cluster LVS là các máy chủ thực không phải chạy trên một hệ điều hành riêng biệt. Vì các kỹ thuật chọn đường sử dụng LVS đều dựa trên các đặc điểm chuẩn TCP/IP, do đó với bất kì một nền công nghệ nào có hỗ trợ TCP/IP đều có thể dùng được như là một phần của LVS cluster.
+
+<b>Cấu hình LVS phức tạp hơn</b>
+
+Hình 4, minh hoạ một tiếp cận phức tạp hơn để triển khai hệ thống LVS. Kiểu cấu hình này minh hoạ cho ta thấy một tiếp cận của việc triển khai các cluster bao gồm một số lượng lớn các hệ thống. Tiếp cận này theo cấu hình này là chia xẻ một tập hợp các máy chủ thực giữa nhiều router (và các router backup cùng với chúng)
+
+
+
+
+
+
+
+Hình 4. Cấu hình LVS phức tạp
+
+
+
+
+Bởi vì mỗi một active router chịu trách nhiệm xử lý các yêu cầu chọn đường gửi tới một địa chỉ VIP duy nhất (hoặc tập hợp các địa chỉ), cấu hình này về cơ bản có thể đại diện cho nhiều cluster. Tuy nhiên, round-robin DNS có thể được dung để giải quyết một hostname đơn tới một trong số các địa chỉ VIP được quản lý bởi một trong số các active router. Do đó, mỗi một yêu cầu dịch vụ sẽ được gửi tới mỗi một active router, một cách hiệu quả là phân bố đều lưu lượng truyền qua các active router.
+
+<b>Kết luận</b>
+Các nhà cung cấp giải pháp như IBM, SGI, HP, và Sun đều cung cấp các sản phẩm và dịch vụ để xây dựng các cluster trên Linux. Sự quan trọng của Linux như một nền server xoay quanh khả nǎng hỗ trợ các server lớn và các cluster cho phép cạnh tranh với các Unix server. Các bạn có thể thấy có nhiều tổ chức dùng các giải pháp cluster trên Linux để tính các bài toán lớn hoặc phục vụ các Website. Clustering là một trong các dịch vụ đã được thử thách thành công trên Linux. Việc dùng các giải pháp trên Linux đã giảm giá thành giải pháp cluster vài lần và đạt tính sẵn sàng phục vụ cao, thậm chí đến ``bốn số chín`` 99,99%. 
+
+Tác giả : Internet ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1041.hva#4275</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1041.hva#4275</link>
+				<pubDate><![CDATA[Wed, 5 Jul 2006 17:34:11]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

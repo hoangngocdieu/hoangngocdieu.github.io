@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "hacklove89"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/181863.hva</link>
+		<description><![CDATA[Messages posted by "hacklove89"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Squid-cache + NAT + VMWare</title>
+				<description><![CDATA[ Bạn ơi, mình cũng đang gặp 1 lỗi về squid, bạn có yahoo k mình liên lạc để hỏi với]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44557/275012.hva#275012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44557/275012.hva#275012</link>
+				<pubDate><![CDATA[Wed, 17 Apr 2013 07:55:29]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+			<item>
+				<title>Lỗi Squid proxy áp sai luật</title>
+				<description><![CDATA[ Bạn ơi, squid ra Internet ok r bạn ạ
+Ở client mình trỏ proxy rồi mà, khi vào bất kỳ trang web nào cũng báo là bị proxy chặn rồi, hic]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44595/275010.hva#275010</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44595/275010.hva#275010</link>
+				<pubDate><![CDATA[Wed, 17 Apr 2013 05:59:53]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+			<item>
+				<title>Lỗi Squid proxy áp sai luật</title>
+				<description><![CDATA[ Chào mọi người,
+Mình có mô hình gồm 3 máy:
+1. DC domain 2k8
+2. Proxy Centos dùng Squid
+3. 1 con Xp làm client
+
+Hiện tại mình đã cấu hình cài đặt domain và squid ok, squid và DC ra internet dc rồi.nhưng có vấn đề là khi dùng client trỏ webbrowser vào proxy server thì k ra được mạng luôn, báo là bị proxy chặn rồi, trang web nào cũng vậy, mọi ng cho hỏi mình cấu hình sai ở chỗ nào
+Đây là file squid.conf của mình , mình đã tắt iptables off rồi 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+# Recommended minimum configuration:
+#
+acl manager proto cache_object
+acl localhost src 127.0.0.1/32 ::1
+acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
+
+# Example rule allowing access from your local networks.
+# Adapt to list your &#40;internal&#41; IP networks from where browsing
+# should be allowed
+acl localnet src 10.0.0.0/8     # RFC1918 possible internal network
+acl localnet src 172.16.0.0/12  # RFC1918 possible internal network
+#acl localnet src 192.168.0.0/16        # RFC1918 possible internal network
+acl localnet src fc00::/7       # RFC 4193 local private network range
+acl localnet src fe80::/10      # RFC 4291 link-local &#40;directly plugged&#41; machines
+
+acl SSL_ports port 443
+acl Safe_ports port 80          # http
+acl Safe_ports port 21          # ftp
+acl Safe_ports port 443         # https
+acl Safe_ports port 70          # gopher
+acl Safe_ports port 210         # wais
+acl Safe_ports port 1025-65535  # unregistered ports
+acl Safe_ports port 280         # http-mgmt
+acl Safe_ports port 488         # gss-http
+acl Safe_ports port 591         # filemaker
+acl Safe_ports port 777         # multiling http
+acl CONNECT method CONNECT
+
+#
+# Recommended minimum Access Permission configuration:
+#
+# Only allow cachemgr access from localhost
+http_access allow manager localhost
+http_access deny manager
+
+# Deny requests to certain unsafe ports
+http_access deny !Safe_ports
+
+# Deny CONNECT to other than secure SSL ports
+http_access deny CONNECT !SSL_ports
+
+# We strongly recommend the following be uncommented to protect innocent
+# web applications running on the proxy server who think the only
+# one who can access services on "localhost" is a local user
+#http_access deny to_localhost
+
+#
+# INSERT YOUR OWN RULE&#40;S&#41; HERE TO ALLOW ACCESS FROM YOUR CLIENTS
+#
+
+# Example rule allowing access from your local networks.
+# Adapt localnet in the ACL section to list your &#40;internal&#41; IP networks
+# from where browsing should be allowed
+http_access allow localnet
+http_access allow localhost
+
+# And finally deny all other access to this proxy
+http_access deny all
+
+# Squid normally listens to port 3128
+http_port 8080
+
+# We recommend you to use at least the following line.
+hierarchy_stoplist cgi-bin ?
+
+# Uncomment and adjust the following to add a disk cache directory.
+#cache_dir ufs /var/spool/squid 100 16 256
+
+# Leave coredumps in the first cache dir
+coredump_dir /var/spool/squid
+
+# Add any of your own refresh_pattern entries above these.
+refresh_pattern ^ftp:           1440    20%     10080
+refresh_pattern ^gopher:        1440    0%      1440
+refresh_pattern -i &#40;/cgi-bin/|\?&#41; 0     0%      0
+refresh_pattern .               0       20%     4320
+
+#Luu log
+access_log /var/log/squid/access.log squid
+cache_log /var/log/squid/cache.log
+cache_store_log /var/log/squid/store.log
+
+#luu cache
+coredump_dir /var/spool/squid
+cache_dir ufs /var/spool/squid 10000 16 256
+cache_mem 8 MB
+
+visible_hostname proxysquid.viettel.vn
+max_filedesc 4096
+
+auth_param ntlm program /usr/bin/ntlm_auth --helper-protocol=squid-2.5-ntlmssp
+auth_param ntlm children 300
+auth_param ntlm keep_alive on
+auth_param basic program /usr/bin/ntlm_auth --helper-protocol=squid-2.5-basic
+
+auth_param basic children 100
+auth_param basic realm Squid proxy-caching web server
+auth_param basic credentialsttl 2 hours
+auth_param basic casesensitive off
+acl authenticated proxy_auth REQUIRED
+
+
+http_access deny !authenticated
+
+forwarded_for off
+request_header_access Allow allow all
+request_header_access Authorization allow all
+request_header_access WWW-Authenticate allow all
+request_header_access Proxy-Authorization allow all
+request_header_access Proxy-Authenticate allow all
+request_header_access Cache-Control allow all
+request_header_access Content-Encoding allow all
+request_header_access Content-Length allow all
+request_header_access Content-Type allow all
+request_header_access Date allow all
+request_header_access Expires allow all
+request_header_access Host allow all
+request_header_access If-Modified-Since allow all
+request_header_access Last-Modified allow all
+request_header_access Location allow all
+request_header_access Pragma allow all
+request_header_access Accept allow all
+request_header_access Accept-Charset allow all
+request_header_access Accept-Encoding allow all
+request_header_access Accept-Language allow all
+request_header_access Content-Language allow all
+request_header_access Mime-Version allow all
+request_header_access Retry-After allow all
+request_header_access Title allow all
+request_header_access Connection allow all
+request_header_access Proxy-Connection allow all
+request_header_access User-Agent allow all
+request_header_access Cookie allow all
+request_header_access All deny all
+
+external_acl_type ldapgroup ttl=60 %LOGIN /usr/lib/squid/squid_ldap_group -R -b "dc=viettel,dc=vn" -D "cn=u1,cn=Users,dc=viettel,dc=vn" -w "1" -f "&#40;&&#40;sAMAccountName=%v&#41;&#40;memberOf=cn=%a,cn=Users,dc=viettel,dc=vn&#41;&#41;" -h 192.168.1.201
+
+#dinh nghia group
+
+#acl secretgroup external ldapgroup nhom_bimat
+#acl publicgroup external ldapgroup nhom_public
+#http_access deny secretgroup  all
+#http_access allow publicgroup  all
+#http_access deny all
+
+acl webcam dstdomain "etc/squid/webcam.acl"
+acl mangnoibo src 192.168.1.0/24
+http_access deny webcam
+http_access allow mangnoibo</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44595/275005.hva#275005</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44595/275005.hva#275005</link>
+				<pubDate><![CDATA[Wed, 17 Apr 2013 05:08:24]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+			<item>
+				<title>Yêu cầu sách, reupload sách vui lòng đặt câu hỏi ở đây</title>
+				<description><![CDATA[ Mình đang cần cuốn sách "The Art of Software Security Assessment: Identifying and Preventing Software Vulnerabilities"
+Link : http://www.amazon.com/The-Software-Security-Assessment-Vulnerabilities/dp/0321444426/ref=rec_dp_0
+Bác nào có cho em xin với ạ.
+Em cảm ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/19573/274695.hva#274695</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/19573/274695.hva#274695</link>
+				<pubDate><![CDATA[Thu, 4 Apr 2013 11:51:03]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+			<item>
+				<title>Cần tài liệu CrossBeam C2</title>
+				<description><![CDATA[ E đang phải cấu hình con FW CrossBeam C2, nó chạy Centos ạ. Có bác nào có tài liệu về cấu hình em nó không ạ, share cho e với. Thank các bác nhiều !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/41819/260721.hva#260721</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/41819/260721.hva#260721</link>
+				<pubDate><![CDATA[Tue, 3 Apr 2012 00:02:51]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đỡ về chữ ký số</title>
+				<description><![CDATA[ Có bác nào biết tài liệu nào về chữ ký số không, cụ thể là về sơ đồ chữ ký số. Em đã search google những đều tìm đc những cái vô ích :| mong các bác giúp đỡ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40032/246827.hva#246827</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40032/246827.hva#246827</link>
+				<pubDate><![CDATA[Sat, 10 Sep 2011 08:51:46]]> GMT</pubDate>
+				<author><![CDATA[ hacklove89]]></author>
+			</item>
+	</channel>
+</rss>

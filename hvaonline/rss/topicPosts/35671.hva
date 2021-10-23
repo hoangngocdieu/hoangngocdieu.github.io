@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "một phương pháp mã hoá tiếng Việt (st)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "một phương pháp mã hoá tiếng Việt (st)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <b><font color='orange'>MỘT PHƯƠNG PHÁP MÃ HÓA TIẾNG VIỆT</font></b>
+Nguồn: Ada at congdongcviet.com
+
+Đây là một phương pháp mã hóa xâu ký tự do mình tự sáng tạo ra. Nó có thể mã hóa mọi xâu ký tự, nhưng đối với các xâu tiếng Anh hay ngôn ngữ khác thì chỉ đạt được hiệu quả như các phương pháp mã hóa xâu ký tự thông thường như xâu octet, UCS-2, UTF-8, UTF-16,... Chỉ khi dữ liệu là tiếng Việt mới thực sự đạt được hiệu quả cao -- gấp mấy lần. Có thể coi nó là một phương pháp nén dữ liệu đơn giản chuyên dùng cho tiếng Việt. 
+
+Nó lưu tiếng Việt ở dạng tách rời 3 thành phần: phụ âm đầu, thanh, âm vần và không phân biệt chữ hoa hay thường, nhờ đó thông tin viết bằng tiếng Việt được chuẩn tắc hóa tốt, giúp thông tin thêm chính xác, thêm nhất quán và giúp việc tìm kiếm đầy đủ, trọn vẹn. Nó là một phương pháp hướng byte (hay nói một cách chính xác, hướng octet), nên việc giải mã rất đơn giản và rất nhanh. Nó còn hỗ trợ tìm kiếm xâu (string matching) trực tiếp ở dạng mã hóa mà không cần giải mã. Vì thế nó đặc biệt thích hợp cho việc lưu trữ dữ liệu để truy vấn, chẳng hạn, trong các hệ thống thông tin.
+
+Xâu đã mã hóa rồi vẫn có thể nén tốt bằng các kỹ thuật nén thông thường, giúp cho việc truyền tải dễ dàng.
+
+Mỗi xâu được nối từ nhiều xâu thuộc 1 trong 3 loại: (1) xâu ký tự ASCII (2) xâu ký tự Unicode và (3) xâu chữ Việt.
+
+Mỗi chữ Việt được mã hóa bằng 2 octet. Mỗi đôi ký tự ASCII được mã hóa bằng 2 octet. Mỗi ký tự Unicode nhỏ hơn U+4000 (kể cả một ký tự ASCII đơn lẻ) được mã hóa bằng 2 octet. Mỗi ký tự Unicode từ U+4000 trở lên được mã hóa bằng 4 octet.
+
+
+
+<b><font color='orange'>1. Một số khái niệm về tiếng Việt</font></b>
+
+Mỗi chữ Việt cấu thành từ <font color='yellow'>phụ âm đầu</font> và <font color='yellow'>vần</font>. Ví dụ, <b>toàn</b> có phụ âm đầu là <b>t</b>, vần là <b>oàn</b>.
+
+Vần cấu thành từ <font color='yellow'>thanh</font> và <font color='yellow'>âm vần</font>. Ví dụ, <b>oàn</b> có thanh <b>huyền</b>, âm vần <b>oan</b>.
+
+Âm vần có 3 thành phần là <font color='yellow'>âm đệm</font>, <font color='yellow'>chủ âm</font>, và <font color='yellow'>âm cuối</font>. Ví dụ, <b>oan</b> có âm đệm là <b>w</b>, chủ âm là <b>a</b>, âm cuối là <b>n</b>. 
+
+Để ý rằng các ký hiệu mà mình sử dụng là chữ cái bình thường hơn là ký hiệu phiên âm, bởi 3 lý do. Thứ nhất, để dễ hiểu hơn đối với giới lập trình viên. Thứ hai, phương pháp mã hóa ở đây là để mã hóa chữ (một bài toán chính tả) chứ không phải là mã hóa phiên âm (bài toán ngữ âm học hay âm vị học). Thứ ba, với một số âm tiếng Việt những học giả khác nhau phiên âm khác nhau. Tuy vậy, đối với các âm đệm và âm cuối, mình dùng ký hiệu phiên âm -- <b>w</b> thay cho <b>u</b>, <b>o</b> còn <b>j</b> thay cho <b>i</b>, <b>y</b> -- để nhấn mạnh bản chất của chúng là những <font color='yellow'>phụ âm</font>, khác hẳn với chủ âm vốn dĩ luôn là một <font color='yellow'>nguyên âm</font>.
+
+Phụ âm đầu, âm đệm và âm cuối đều có thể là <font color='yellow'>âm trống</font> (còn gọi là âm <font color='yellow'>không</font> trong ngữ âm học), biểu thị cho cái "không có gì" và được viết bằng một xâu trống. Ví dụ, <b>a</b>, <b>ia</b>, <b>ai</b>, <b>ơi</b>, <b>oa</b>, <b>oan</b>, <b>yêu</b> là những chữ không có phụ âm đầu; trong đó, <b>a</b>, <b>ai</b>, <b>ơi</b> không có âm đệm còn <b>ia</b>, <b>oa</b>, <b>oan</b>, <b>yêu</b> thì có; và trong đó, <b>a</b>, <b>ia</b>, <b>oa</b> không có âm cuối còn <b>ai</b>, <b>ơi</b>, <b>oan</b>, <b>yêu</b> thì có.
+
+Tiếng Việt là một trong những ngôn ngữ mà mọi âm tiết đều có một nguyên âm, nói cách khác, chủ âm không thể là âm trống.
+
+<font color='orange'><b>Bảng 1. Tập hợp 32 phụ âm đầu, kể cả phụ âm trống.</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>_0   _1   _2   _3   _4   _5   _6   _7   _8   _9   _A   _B   _C   _D   _E   _F
+=================================================================================
+0_  --   b    c    ch   d    dz   đ    f   g/gh  gi   h    j    k    kh   l    m
+
+1_  n  ng/ngh nh   p    ph   q    r    s    t    th   tr   v    w    x    y    z</pre>
+		</div>
+
+Để ý rằng các chữ đồng âm có khi được mã hóa bằng cùng một mã (<b>g</b> và <b>gh</b>, <b>ng</b> và <b>ngh</b>) nhưng cũng có khi bằng những mã khác nhau (<b>c</b>, <b>k</b> và <b>q</b> đồng âm, <b>d</b> và <b>z</b> đồng âm, <b>f</b> và <b>ph</b> đồng âm, <b>gi</b> và <b>j</b> đồng âm). Ngoài ra còn có những phụ âm lạ không có trong tiếng Việt "thông thường" như <b>dz</b>, <b>f</b>, <b>j</b>, <b>p</b>, <b>w</b>, <b>z</b>. Sau này, trong bảng mã vần ta cũng sẽ thấy xuất hiện nhiều vần rất "lạ mắt". Lý do của cách mã hóa như thế là cố gắng tiết kiệm mã nhưng đồng thời cố gắng trung thành với nguyên bản (loại trừ nhập nhằng chính tả) các danh từ riêng và các từ phát âm theo lối địa phương, thường là trong văn học và báo chí, chẳng hạn như Sa Pa, Pác Bó, Bắc Kạn, Đa Kao, Plây - ku, Ja-wa, Liang Wiang, Yang Fong, Nguyễn Sinh Côông, Lý Woòng, Hồ Dzếch, Kuốc Zũng, Siu Black,...
+
+Có 13 chủ âm, là <b>a</b>, <b>ơ</b>, <b>e</b>, <b>ê</b>, <b>o</b>, <b>ô</b>, <b>u</b>, <b>ư</b>, <b>i</b>, <b>ă</b> (tức <b>a</b> ngắn), <b>â</b> (tức <b>ơ</b> ngắn), <b>oo</b> (tức <b>o</b> dài), và <b>ôô</b> (tức <b>ô</b> dài).
+
+Có 2 phụ âm có thể là âm đệm hay âm cuối, còn gọi là <font color='yellow'>nửa nguyên âm</font>, <b>j</b> và <b>w</b>. Ví dụ, âm đệm <b>j</b> có mặt trong <b>ưa</b> (tức <b>j-ơ</b>), <b>ươn</b>, <b>ia</b> (tức <b>j-ê</b>), <b>yên</b>; âm đệm <b>w</b> có mặt trong <b>oa</b>, <b>oăn</b>, <b>uơ</b>, <b>oe</b>/<b>ue</b>, <b>uây</b>, <b>ua</b> (tức <b>w-ô</b>), <b>uôn</b>, <b>uy</b>; âm cuối <b>j</b> có mặt trong <b>ai</b>, <b>ơi</b>, <b>oi</b>, <b>ôi</b>, <b>ui</b>, <b>ưi</b>, <b>oay</b>, <b>uây</b>; âm cuối <b>w</b> có mặt trong <b>ao</b>, <b>au</b>, <b>ươu</b>, <b>âu</b>, <b>eo</b>, <b>yêu</b>, <b>ưu</b>, <b>iu</b>, <b>uyu</b>. Ngoài ra, <b>wj</b> cũng là một âm đệm (<b>wj-ê</b> trong <b>uya</b>, <b>uyên</b>, <b>uyêt</b>).
+
+Có 8 phụ âm có thể là âm cuối, chia thành 2 loại: phụ âm <font color='yellow'>vang</font>, gồm <b>n</b>, <b>m</b>, <b>ng</b>, <b>nh</b>, và phụ âm <font color='yellow'>không vang</font>, gồm <b>t</b>, <b>p</b>, <b>c</b>, <b>ch</b>.
+
+Tương ứng với loại âm cuối, vần được chia thành 4 loại. Vần tận cùng bằng âm trống gọi là vần <font color='yellow'>mở</font>. Vần tận cùng bằng nửa nguyên âm gọi là vần <font color='yellow'>nửa mở</font>. Vần tận cùng bằng phụ âm vang gọi là vần <font color='yellow'>nửa khép</font>. Vần tận cùng bằng phụ âm không vang gọi là vần <font color='yellow'>khép</font>. Ví dụ, <b>a</b>, <b>oa</b>, <b>ơ</b>, <b>uơ</b>, <b>ưa</b>, <b>e</b>, <b>oe</b>, <b>ê</b>, <b>uê</b>, <b>ia</b>, <b>uya</b>, <b>u</b>, <b>ư</b>, <b>i</b>, <b>uy</b> là những vần mở; <b>ai</b>, <b>oai</b>, <b>ay</b>, <b>oay</b>, <b>ơi</b>, <b>uơi</b>, <b>ươi</b>, <b>ây</b>, <b>uây</b>, <b>oi</b>, <b>ôi</b>, <b>uôi</b>, <b>ui</b>, <b>ưi</b>, <b>ao</b>, <b>au</b>, <b>oau</b>, <b>ươu</b>, <b>âu</b>, <b>uâu</b>, <b>eo</b>, <b>oeo</b>, <b>êu</b>, <b>uêu</b>, <b>iêu</b>, <b>ưu</b>, <b>iu</b>, <b>uyu</b> là những vần nửa mở; <b>an</b>, <b>iên</b>, <b>em</b>, <b>iêm</b>, <b>ông</b>, <b>ương</b>,  <b>inh</b>, <b>uynh</b> là những vần nửa khép; <b>at</b>, <b>iêt</b>, <b>ep</b>, <b>iêp</b>, <b>ôc</b>, <b>ươc</b>, <b>ich</b>, <b>uych</b> là những vần khép.
+
+Có 6 thanh: ngang, huyền, hỏi, ngã, sắc, nặng. Ngang huyền gọi chung là thanh <font color='yellow'>bằng</font>. Hỏi ngã được gọi chung là thanh <font color='yellow'>gãy</font> (còn gọi là thanh <font color='yellow'>nghẽn</font>). Thanh bằng và thanh gãy không bao giờ xuất hiện trong vần khép, chỉ có trong vần mở, nửa mở và nửa khép mà thôi. Sắc nặng xuất hiện trong mọi vần; trong vần mở, nửa mở và nửa khép chúng được gọi là thanh <font color='yellow'>khứ</font>, còn trong vần khép được gọi là thanh <font color='yellow'>nhập</font>.
+
+<font color='orange'><b>Bảng 2. Sáu thanh</b> </font>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0       1       2       3       4       5
+------------------------------------------------
+ngang   huyền   hỏi     ngã     sắc     nặng</pre>
+		</div>
+
+
+Tổ hợp tất cả các âm đầu (kể cả trống), âm chính và âm cuối (kể cả trống) theo quy tắc ghép âm sẽ được mọi âm vần, kể cả một số vần hiếm đủ để mã hóa cả văn chương, báo chí Việt, như bảng sau đây.
+
+<font color='orange'><b>Bảng 3. Tập hợp 192 vần của tiếng Việt.</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>_0   _1   _2   _3   _4   _5   _6   _7   _8   _9   _A   _B   _C   _D   _E   _F
+===================================================================================
+0_  a    oa   ơ    uơ   ưa   e    oe   ê    uê   ia   uya  o    ô    ua   u    ư
+                                  ue
+1_  i    y    uy   ai   oai  ay   oay  ơi   uơi  ươi  ây   uây  oi   ôi   uôi  ui
+                        uai       uay
+2_  ưi   ao   oao  au   oau  ươu  âu   uâu  eo   oeo  êu   uêu  iêu  ưu   iu   uyu
+         uao       uau                           ueo            yêu
+3_  uơm  uâm  oem  uym  uơng oeng uêng uyê- uơp  uâp  oep  uyp  uơc  oec  uêc  uyêc
+              uem            ueng      ng             uep            uec
+4_  an   oan  ăn   oăn  ơn   uơn  ươn  ân   uân  en   oen  ên   uên  iên  uyên on
+         uan       uăn                                uen            yên
+5_  ôn   uôn  un   ưn   in   uyn  am   oam  ăm   oăm  ơm   ươm  âm   em   êm   uêm
+                                       uam       uăm
+6_  iêm  om   ôm   uôm  um   ưm   im   ang  oang ăng  oăng ơng  ương âng  uâng eng
+    yêm                                     uang      uăng
+7_  iêng êng  ong  oong ông  uông ôông ung  ưng  ing  anh  oanh ênh  uênh inh  uynh
+    yêng                                                   uanh
+8_  at   oat  ăt   oăt  ơt   uơt  ươt  ât   uât  et   oet  êt   uêt  iêt  uyêt ot
+         uat       uăt                                uet            yêt
+9_  ôt   uôt  ut   ưt   it   uyt  ap   oap  ăp   oăp  ơp   ươp  âp   ep   êp   uêp
+                                       uap       uăp
+A_  iêp  op   ôp   uôp  up   ưp   ip   ac   oac  ăc   oăc  ơc   ươc  âc   uâc  ec
+    yêp                                     uac       uăc
+B_  iêc  êc   oc   ooc  ôc   uôc  ôôc  uc   ưc   ic   ach  oach êch  uêch ich  uych
+    yêc                                                    uach</pre>
+		</div>
+
+Cấu trúc của bảng này có thể tóm tắt sơ lược trong vài câu.
+
+<b><font color='yellow'>00 - 3F</font></b> gồm 48 âm vần mở / nửa mở, 8 âm vần nửa khép hiếm và 8 âm vần khép hiếm.
+
+<b><font color='yellow'>40 - 7F</font></b> gồm 64 âm vần nửa khép.
+
+<b><font color='yellow'>80 - BF</font></b> gồm 64 âm vần khép.
+
+
+
+
+<font color='orange'><b>2. Mã ký tự</b></font>
+
+Ta sẽ mã hóa mỗi chữ Việt như 1 ký tự. 
+
+Từ các bảng 192 âm vần, 6 thanh và 32 phụ âm đầu, ý tưởng sơ khai hiển nhiên là mã hóa một chữ Việt bằng 2 octet có dạng 
+
+<font color='yellow'>v1...v8 t1...t3 p1...p5</font>
+
+trong đó <font color='yellow'>v1...v8</font> là 8 bit biểu diễn âm vần (theo bảng 3), <font color='yellow'>t1...t3</font> là 3 bit biểu diễn thanh (theo bảng 2), <font color='yellow'>p1...p5</font> là 5 bit biểu diễn phụ âm đầu (theo bảng 1). 
+
+Ý tưởng này được thể hiện trong bảng 4. Trong đó không gian mọi giá trị 16 bit được phân hoạch thành <b>16 ô</b> ứng với 16 giá trị khả dĩ của t1 t2 v1 v2. Các ô với t1 t2 = 11 hay v1 v2 = 11 không sử dụng là hiển nhiên. Các ô có t1 = 0 và v1 v2 = 10 không sử dụng bởi vì t1 = 0 ứng với thanh bằng hay thanh gãy, và v1 v2 = 10 ứng với 64 âm vần khép, tổ hợp mà ta đã biết là không tồn tại trong tiếng Việt.
+
+<b><font color='orange'>Bảng 4. Bản đồ quy hoạch không gian mã (sơ khai).</font></b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+-----------------------------------+
+      |               v1 v2               |
+      +--------+--------+--------+--------+
+      |   00   |   01   |   10   |   11   |
++--+--+--------+--------+--------+--------+
+|  |  |        |        |        |        |
+|  |00|  chữ   |  chữ   |        |        |
+|  |  |  Việt  |  Việt  |        |        |
+|  +--+--------+--------+--------+--------+
+|  |  |        |        |        |        |
+|  |01|  chữ   |  chữ   |        |        |
+|t1|  |  Việt  |  Việt  |        |        |
+|  +--+--------+--------+--------+--------+
+|t2|  |        |        |        |        |
+|  |10|  chữ   |  chữ   |  chữ   |        |
+|  |  |  Việt  |  Việt  |  Việt  |        |
+|  +--+--------+--------+--------+--------+
+|  |  |        |        |        |        |
+|  |11|        |        |        |        |
+|  |  |        |        |        |        |
++--+--+--------+--------+--------+--------+</pre>
+		</div>
+Như vậy, trong 16 ô chỉ có 7 ô được dùng để mã hóa tiếng Việt. Còn lại 9 ô, mình tận dụng để mã hóa thông tin khác:
+
+<ul><li>Đôi ký tự ASCII (tức là một xâu gồm 2 ký tự ASCII). Mỗi ký tự ASCII cần 7 bit. Hai ký tự dùng hết 14 bit. Dùng hết 4 ô.
+
+Ký tự Unicode từ U+0000 đến U+3FFF. Mỗi ký tự như thế cần 14 bit. Dùng hết 4 ô.
+
+Còn 1 ô, mã hóa một nửa ký tự Unicode có số thứ tự từ U+4000 trở lên.</li></ul>
+
+Mọi ký tự ASCII bất kể đơn lẻ hay đi thành đôi với ký tự ASCII khác đều được biểu diễn bằng một octet trọn vẹn với bit đầu tiên (bit cao nhất) bằng 0 và bảy bit còn lại là mã ký tự. Đây là một phương pháp truyền thống, đã được áp dụng trong hàng trăm hệ mã (đơn octet và đa octet). Truyền thống đó đảm bảo tương thích giữa các hệ mã, nhờ thế mà 1 xâu ASCII có cơ hội được giải mã đúng, tìm kiếm đúng, hiển thị đúng kể cả khi chương trình ứng dụng không biết hệ mã thực sự đã dùng.
+
+Một đôi ký tự ASCII như thế sẽ tương ứng với t1 v1 = 00, nghĩa là đụng độ với chữ Việt trong bản đồ quy hoạch không gian mã (bảng 4). Để giải quyết đụng độ, phần "chữ Việt" trong bản đồ nói trên được "lật" sang phía bên phải (xem bảng 5). 
+
+<font color='orange'><b>Bảng 5. Bản đồ quy hoạch không gian mã (hoàn thiện).</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+-----------------------------------+
+      |               v1 v2               |
+      +--------+--------+--------+--------+
+      |   00   |   01   |   10   |   11   |
++--+--+--------+--------+--------+--------+
+|  |  |        |        |        |        |
+|  |00|                 |                 |
+|  |  |       đôi       |                 |
+|  +--+-     ký tự     -+-               -+
+|  |  |      ASCII      |                 |
+|  |01|                 |      chữ        |
+|t1|  |                 |      Việt       |
+|  +--+--------+--------+-               -+
+|t2|  |  nửa   |        |                 |
+|  |10| ký tự  |                          |
+|  |  |U+4000+ |                          |
+|  +--+--------+--------+--------+--------+
+|  |  |        |        |        |        |
+|  |11|       ký tự U+0000...U+3FFF       |
+|  |  |        |        |        |        |
++--+--+--------+--------+--------+--------+</pre>
+		</div>
+
+Việc "lật sang phía bên phải" nói trên có thể được thực hiện bằng bất cứ phép biến đổi bit nào lật ngược bit v1. Ở đây để đơn giản hóa mô tả, ta lật ngược 2 bit v1 v2. Nói cách khác, trong định dạng hoàn thiện, một chữ Việt được mã hóa bằng 16 bit với định dạng như đã nêu trong ý tưởng sơ khai nói trên, nhưng với v1 v2 lật ngược.
+
+
+Một cách chi tiết, mỗi cặp octet trong xâu đã mã hóa có ý nghĩa như sau.
+<ul><li><font color='yellow'><b>0xxxxxxx 0yyyyyyy</b></font> biểu diễn một xâu gồm 2 ký tự ASCII, với mã lần lượt là xxxxxxx yyyyyyy.
+
+<font color='yellow'><b>10vvvvvv 00tppppp</b></font> biểu diễn một chữ Việt có âm vần = 01vvvvvv, thanh = 00t, phụ âm đầu = ppppp, tức thanh bằng và âm vần nửa khép.
+
+<font color='yellow'><b>11vvvvvv 00tppppp</b></font> biểu diễn một chữ Việt có âm vần = 00vvvvvv, thanh = 00t, phụ âm đầu = ppppp, tức thanh bằng và âm vần mở, nửa mở hay nửa khép hiếm.
+
+<font color='yellow'><b>10vvvvvv 01tppppp</b></font> biểu diễn một chữ Việt có âm vần = 01vvvvvv, thanh = 01t, phụ âm đầu = ppppp, tức thanh gãy và âm vần nửa khép.
+
+<font color='yellow'><b>11vvvvvv 01tppppp</b></font> biểu diễn một chữ Việt có âm vần = 00vvvvvv, thanh = 01t, phụ âm đầu = ppppp, tức thanh gãy và âm vần mở, nửa mở hay nửa khép hiếm.
+
+<font color='yellow'><b>00xxxxxx 10yyyyyy</b></font> biểu diễn một phần của một ký tự Unicode có số thứ tự từ U+4000 trở lên. Ký tự có số thứ tự xxxxxxyyyyzzzzzzuuuuu + 0x4000 biểu diễn bằng 000uuuuu 10zzzzzz 0010yyyy 10xxxxxx. Chú ý rằng những mã trị có dạng 0011xxxx 10yyyyyy không được định nghĩa.
+
+<font color='yellow'><b>01vvvvvv 10tppppp</b></font> biểu diễn một chữ Việt có âm vần = 10vvvvvv, thanh = 10t, phụ âm đầu = ppppp, tức thanh nhập và âm vần khép.
+
+<font color='yellow'><b>10vvvvvv 10tppppp</b></font> biểu diễn một chữ Việt có âm vần = 01vvvvvv, thanh = 10t, phụ âm đầu = ppppp, tức thanh khứ và âm vần nửa khép.
+
+<font color='yellow'><b>11vvvvvv 10tppppp</b></font> biểu diễn một chữ Việt với âm vần = 00vvvvvv, thanh = 10t, phụ âm đầu = ppppp, tức thanh khứ và âm vần mở, nửa mở, nửa khép hiếm, hoặc thanh nhập và âm vần khép hiếm.
+
+<font color='yellow'><b>xxxxxxxx 11yyyyyy</b></font> biểu diễn ký tự Unicode có số thứ tự yyyyyyxxxxxxxx, tức là một ký tự trong khoảng U+0 đến U+3FFF. Chú ý rằng <b>0xxxxxxx 11000000</b> cũng đồng thời biểu diễn 1 ký tự ASCII đơn lẻ có mã xxxxxxx.</li></ul>
+
+
+
+
+
+<font color='orange'><b>3. Mã hóa xâu</b></font>
+
+Để mã hóa một xâu, ta phân tích nó thành các xâu con và xác định loại cho chúng: xâu chữ Việt, xâu ASCII hay xâu Unicode. <font color='yellow'>Xâu chữ Việt</font> là xâu gồm các chữ Việt phân cách nhau bởi 1 dấu trắng hoặc không được phân cách. <font color='yellow'>Xâu ASCII</font> là xâu mà mọi ký tự đều có mặt trong bảng ASCII. <font color='yellow'>Xâu Unicode</font> là xâu mà mọi ký tự đều có mặt trong bảng Unicode. (Trường hợp giữa hai chữ Việt có hai hay nhiều dấu trắng hơn, hay giữa hai chữ Việt có những dấu cách hay dấu ngăn khác thì những dấu này được xem như những xâu ASCII hay Unicode chen giữa 2 xâu chữ Việt.) Rồi ta mã hóa từng xâu con như sau.
+
+<ul><li>Với xâu chữ Việt, ta phân tích từng chữ thành 3 thành phần phụ âm đầu, âm vần và thanh, rồi mã hóa từng thành phần. Một dấu trắng phân cách 2 chữ Việt sẽ được mã hóa thành xâu trống (nói cách khác, dấu trắng ta bỏ qua). Giữa hai chữ Việt không phân cách, ta xem như có 1 xâu trống và mã hóa xâu trống này bằng một mã nào đó mà ta quy ước dành riêng cho việc này (chẳng hạn, 0000, 00C0 hoặc 200B).
+
+Với xâu ASCII, ta mã hóa từng đôi ký tự thành 2 octet, còn ký tự lẻ cuối xâu (nếu có) thì mã hóa thành 1 octet và nối thêm vào 1 octet với giá trị C0 (tức 11000000 nhị phân).
+
+Với xâu Unicode, ta mã hóa từng ký tự thành 2 hay 4 octet.</li></ul>
+
+Định nghĩa xâu chữ Việt, xâu ASCII và xâu Unicode như trên là đúng đắn nhưng hiển nhiên là chưa cho phép xác lập một thuật toán mã hóa tất định. Một ví dụ kinh điển, NHA MAY CO KHI GIA LAM là một xâu chữ Việt, đồng thời cũng là một xâu ASCII, và cũng là một xâu Unicode. Và còn có nhiều cách hiểu khác, ví dụ NHA và CO được hiểu là những xâu con chữ Việt, MAY và KHI được hiểu là những xâu con ASCII, còn GIA LAM được hiểu là xâu con Unicode. Có bao nhiêu cách hiểu sẽ có bấy nhiêu kết quả mã hóa khác nhau!
+
+Để xây dựng một thuật toán mã hóa tất định, cần đặt ra thêm các tiêu chuẩn khác để xác định loại xâu. Ví dụ:
+
+<font color='yellow'>(1) Ưu tiên chữ Việt và ASCII hơn Unicode</font>: một xâu chỉ được xem là xâu Unicode khi nó không thể là xâu chữ Việt hay xâu ASCII.
+
+<font color='yellow'>(2) Ưu tiên chữ Việt hơn ASCII</font>: một xâu chỉ được xem là xâu ASCII khi nó không thể là xâu chữ Việt.
+
+<font color='yellow'>(3) Ưu tiên ASCII hơn chữ Việt</font>: một xâu chỉ được xem là xâu chữ Việt khi nó không thể là xâu ASCII.
+
+<font color='yellow'>(4) Không ưu tiên một cách máy móc</font>: dựa vào ngữ cảnh, dựa vào từ điển, dựa vào thông tin do người sử dụng cung cấp, phân tích hình thái, phân tích cú pháp hay các tiêu chuẩn heuristic phức tạp khác để xác định loại xâu.
+
+Người lập trình tùy theo mục đích sử dụng mà xây dựng thuật toán mã hóa phù hợp. Để mã hóa một bản danh sách học sinh, (1) và (2) có thể là phù hợp. Để mã hóa một danh sách công ty đa quốc gia, (1) và (3) có thể là phù hợp. Để mã hóa một thư viện sách báo, có thể phải xây dựng một thuật toán phức tạp phối hợp cả 4 tiêu chuẩn trên. Việc trình bày thuật toán mã hóa cho từng ứng dụng cụ thể vượt ra ngoài khuôn khổ của bài này.
+
+Dù thuật toán nào, để có thể tìm kiếm xâu con trực tiếp trên dữ liệu mã hóa, xâu cần tìm phải được mã hóa bằng chính thuật toán đã dùng để mã hóa dữ liệu.
+
+
+
+
+<font color='orange'><b>4. Ví dụ</b></font>
+
+<font color='yellow'><b>Ví dụ 1.</b></font> 4E 6F 76 61 giải mã thành <b>Nova</b>.
+
+<font color='yellow'><b>Ví dụ 2.</b></font> 31 2B 31 3D 32 C0 giải mã thành <b>1+1=2</b>.
+
+<font color='yellow'><b>Ví dụ 3.</b></font> C6 45 C6 31 C6 2D C6 28 C6 27 giải mã thành <b>مرحبا</b>, tức 06 45 06 31 06 2D 06 28 06 27 theo mã UCS-2 (là mã "big-endian Unicode" theo cách gọi của Microsoft).
+
+<font color='yellow'><b>Ví dụ 4.</b></font> 18 A1 25 80 09 9C 23 80 giải mã thành <b>永安</b>, tức 6C 38 5B 89 theo mã UCS-2.
+
+<font color='yellow'><b>Ví dụ 5.</b></font> C4 B1 B2 89 giải mã thành <b>Ngựa Gióng</b> (hay <b>ngựa gióng</b>, <b>NGỰA GIÓNG</b>, <b>ngỰA giÓng</b>,... hiểu sao cũng được).
+
+
+
+
+
+<font color='orange'><b>5. Đánh giá</b></font>
+
+Một xâu ký tự ASCII có độ dài là số chẵn được mã hóa thành xâu octet cùng độ dài (xem ví dụ 1). Một xâu ký tự ASCII có độ dài là số lẻ được mã hóa thành xâu octet chỉ dài hơn 1 octet (xem ví dụ 2). Như thế đối với các xâu ký tự ASCII, phương pháp mã hóa xâu của mình có hiệu quả tương đương với các phương pháp truyền thống (chẳng hạn như ISO 8859-15, TCVN3, hay UTF-8).
+
+Một ký tự Unicode có số thứ tự không quá U+3FFF được mã hóa thành 2 octet. Đối với các xâu ký tự như thế (xem ví dụ 3), phương pháp của mình có hiệu quả ngang với UCS-2 và UTF-16, và đối với 14336 ký tự từ U+0800 đến U+3FFF thì hiệu quả hơn UTF-8 (vốn dĩ phải mã hóa bằng 3 octet).
+
+Một ký tự Unicode có số thứ tự từ U+4000 trở lên được mã hóa bằng 4 octet. Như thế phương pháp của mình chỉ thua UCS-2 / UTF-16 đối với 49 152 ký tự từ U+4000 đến U+FFFF (xem ví dụ 4) còn đối với 1 048 576 ký tự từ U+10000 trở lên thì hiệu quả lại ngang với UTF-16.
+
+Một chữ Việt được mã hóa bằng 2 octet (xem ví dụ 5). Biểu diễn bằng Unicode dựng sẵn (TCVN 6909:2001), một chữ Việt bình quân có khoảng 3-4 ký tự; khi mã hóa ở dạng UCS-2 / UTF-16 mỗi ký tự mất 2 octet. Như thế, đối với tiếng Việt, phương pháp của mình hiệu quả hơn các phương pháp thông thường chừng 3-4 lần.
+
+Chú ý rằng Unicode dựng sẵn là một dạng mã hóa <font color='yellow'>không chuẩn tắc</font>, nghĩa là một chữ Việt thường có nhiều cách viết khác nhau do vị trí đánh dấu thanh và phân biệt chữ hoa / thường, gây khó khăn cho việc tìm kiếm thông tin. Còn Unicode tổ hợp (chuẩn đã dẫn), một cách mã hóa tiếng Việt khá chuẩn tắc, nhưng dài hơn nhiều, mà đem so sánh với phương pháp của mình thì sự khác biệt về hiệu quả còn rõ rệt hơn nhiều nữa.
+
+
+(-THE END-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219367</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219367</link>
+				<pubDate><![CDATA[Sun, 29 Aug 2010 11:05:59]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Mình chưa đọc hết kỹ thuật mã hoá (vì nó khá dài), mới đọc giới thiệu và đánh giá. Cho mình hỏi là mục đích phương pháp mã hoá này là để rút ngắn kích thước lưu trữ hơn là rút ngắn thời gian xử lý ? Ví dụ hàm UpperCase (chuyển chuỗi thành chữ hoa) sẽ chạy như thế nào ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219386</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219386</link>
+				<pubDate><![CDATA[Sun, 29 Aug 2010 20:20:28]]> GMT</pubDate>
+				<author><![CDATA[ invalid-password]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Mã hóa xong giải mã ra khác hẳn nhau (Ngựa Gióng NGỰA GIÓNG ngựa gióng như trong ví dụ) thì làm sao mà xài được đây?
+
+Vả lại, hình như thiếu mất phụ âm "qu" thì phải? Hay là quân được hiểu là phụ âm q và vần uân?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219426</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219426</link>
+				<pubDate><![CDATA[Mon, 30 Aug 2010 08:31:13]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">invalid-password wrote:</cite><br>
+		<blockquote>Mình chưa đọc hết kỹ thuật mã hoá (vì nó khá dài), mới đọc giới thiệu và đánh giá. Cho mình hỏi là mục đích phương pháp mã hoá này là để rút ngắn kích thước lưu trữ hơn là rút ngắn thời gian xử lý ? Ví dụ hàm UpperCase (chuyển chuỗi thành chữ hoa) sẽ chạy như thế nào ?&nbsp;
+		</blockquote>
+
+Chào bạn. Alice đã đọc hết. Nhưng vì bạn mới đọc phần đầu và phần cuối nên alice chỉ dùng thông tin ở 2 phần đó để trao đổi với bạn. Alice nghĩ rằng mục đích của phương pháp mã hoá này là để chuẩn hoá data. Trung uý, trung uý, TRUNG ÚY, TRUNG UÝ,... là những từ khác nhau nhưng về phương diện nào đó là tương đương với nhau. Chuẩn hoá là biểu diễn tất cả các dạng tương đương này bằng 1 mã duy nhất. Do đó, với chuỗi tiếng Việt, nếu bạn vẫn cố quan tâm tới UpperCase thì... UpperCase(x) == x.
+
+Về kích thước lưu trữ v. thời gian xử lý, alice nghĩ rằng cốt yếu trước hết ở tính đồng nhất của độ dài. Độ dài càng đồng nhất, xử lý sẽ càng dễ và càng nhanh. ASCII là một mã mà mọi chữ cái đều có cùng 1 độ dài (7 bit), khác với Morse là một loại mã mà các chữ cái có độ dài khác nhau. Morse ngắn hơn, ASCII vậy hẳn phải có gì tốt hơn Morse nên người ta mới lấy ASCII mà thay cho Morse chứ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219428</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219428</link>
+				<pubDate><![CDATA[Mon, 30 Aug 2010 09:27:32]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lamer wrote:</cite><br>
+		<blockquote>Mã hóa xong giải mã ra khác hẳn nhau (Ngựa Gióng NGỰA GIÓNG ngựa gióng như trong ví dụ) thì làm sao mà xài được đây?&nbsp;
+		</blockquote>
+
+Chào bạn. Bạn nghĩ rằng Ngựa Gióng và NGỰA GIÓNG là "khác hẳn nhau". Nhưng có lẽ mục đích của việc mã hoá không phải để phục vụ cho nhu cầu hiển thị thông tin nên hai từ đó chỉ được xem là 1.
+
+<p></p>
+		<cite class="blockquote">lamer wrote:</cite><br>
+		<blockquote>Vả lại, hình như thiếu mất phụ âm "qu" thì phải? Hay là quân được hiểu là phụ âm q và vần uân?&nbsp;
+		</blockquote>
+
+Phụ âm "qu" gồm 2 phụ âm "q" và "u", trong đó "q" được xem là phụ âm đầu, còn "u" thì được xem là "âm đệm" tức là có mặt trong vần. Bởi thế, Alice cũng nghĩ giống như bạn, quân = q+uân.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219429</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219429</link>
+				<pubDate><![CDATA[Mon, 30 Aug 2010 09:35:19]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Vậy thì sao "gi" lại là "gi" mà không phải là "g" và "i"?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219462</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219462</link>
+				<pubDate><![CDATA[Tue, 31 Aug 2010 01:56:03]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ "qu" không được xem là phụ âm đầu, nhưng "gi" thì được, vì 02 phụ âm đầu "g" và "gi" không đồng âm - cách đọc khác nhau, trong khi mình không thấy ai định nghĩa cách đọc "phụ âm" "qu" cả. Mọi ng thấy đúng ko nhỉ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219522</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219522</link>
+				<pubDate><![CDATA[Wed, 1 Sep 2010 04:04:59]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">alice wrote:</cite><br>
+		<blockquote>
+Chào bạn. Bạn nghĩ rằng Ngựa Gióng và NGỰA GIÓNG là "khác hẳn nhau". Nhưng có lẽ m<font color='red'>ục đích của việc mã hoá không phải để phục vụ cho nhu cầu hiển thị thông tin</font> nên hai từ đó chỉ được xem là 1.
+
+&nbsp;
+		</blockquote>
+
+Mình thắc mắc điểm này, nếu việc mã hoá xâu kí tự tiếng việt không phục vụ việc giải mã và tái lập hiện trạng ban đầu lúc được nhập vào của xâu kí tự để con người có thể nhận biết được dễ dàng ( Human read ) thì phương pháp mã hoá này đem lại ích lợi như thế nào khi nó làm sai lệch dữ liệu ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219558</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219558</link>
+				<pubDate><![CDATA[Wed, 1 Sep 2010 23:35:23]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lamer wrote:</cite><br>
+		<blockquote>Vậy thì sao "gi" lại là "gi" mà không phải là "g" và "i"?&nbsp;
+		</blockquote>
+
+Một câu hỏi rất xác đáng. Alice nghĩ rằng, với "giết" chẳng hạn, có 3 cách mã hoá:
+
+gi+ết
+
+g+iết
+
+gi+iết
+
+Hệ mã này rõ ràng là dựa trên cơ sở phát âm nên tác giả của nó chắc sẽ prefer cách thứ ba, bởi vì chỉ có cách ấy là đúng về phát âm, mặc dù giải mã phức tạp hơn hai cách kia (phải loại trừ một chữ i). 
+
+Việc giải mã phải căn cứ vào cả phụ âm đầu và vần không phải chỉ ở 1 trường hợp đơn lẻ gi+iết. Bất cứ cặp đồng âm đồng mã nào cũng phải được xử lý như thế. Ví dụ, g/gh, ng/ngh phải được giải mã tuỳ theo vần đi sau, oa/ua, oan/uan phải được giải mã tuỳ theo phụ âm đi trước.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219575</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219575</link>
+				<pubDate><![CDATA[Thu, 2 Sep 2010 09:45:50]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">alice wrote:</cite><br>
+		<blockquote>
+Chào bạn. Bạn nghĩ rằng Ngựa Gióng và NGỰA GIÓNG là "khác hẳn nhau". Nhưng có lẽ m<font color='red'>ục đích của việc mã hoá không phải để phục vụ cho nhu cầu hiển thị thông tin</font> nên hai từ đó chỉ được xem là 1.
+
+&nbsp;
+		</blockquote>
+
+Mình thắc mắc điểm này, nếu việc mã hoá xâu kí tự tiếng việt không phục vụ việc giải mã và tái lập hiện trạng ban đầu lúc được nhập vào của xâu kí tự để con người có thể nhận biết được dễ dàng ( Human read ) thì phương pháp mã hoá này đem lại ích lợi như thế nào khi nó làm sai lệch dữ liệu ?&nbsp;
+		</blockquote>
+
+Alice không nghĩ nó làm sai lệch dữ liệu. Ngược lại, nó "chuẩn tắc hoá" dữ liệu, nghĩa là làm cho dữ liệu chính xác hơn, đúng với thực chất hơn. 
+
+Việc truyền tin, lưu trữ tin có thể ví như việc cô giáo đọc bài cho học sinh ghi chép.  Nội dung từ vở giáo án có thể được tái hiện sang vở học sinh khá chính xác mà không cần cô giáo phải đọc các thông tin phụ giúp cho việc định dạng hiển thị (trình bày). 
+
+Nhưng nếu muốn thật chính xác, cô giáo có thể truyền thêm các thông tin phụ giúp cho việc trình bày vở: chỗ này viết hoa, chỗ kia in hoa, ở đây nét đậm, ở đó gạch chân,... Những thông tin phụ như thế mỗi cô giáo có một cách truyền và, ít nhất, môn chính tả không có mục đích là chuẩn hoá cách thức truyền đạt ấy.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219576</link>
+				<pubDate><![CDATA[Thu, 2 Sep 2010 10:10:50]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Trong bảng 3, ở dòng 2_ có 2 chỗ sai, phải sửa như thế này: <b>uao</b> phải thuộc cùng một mã với <b>oao</b>, và <b>uau</b> phải thuộc cùng một mã với <b>oau</b>.
+
+Ví dụ 3 có chỗ sai. Theo spec ở phần 2, phải sửa lại thế này: 45 C6 31 C6 2D C6 28 C6 27 C6 giải mã thành مرحبا, tức 45 06 31 06 2D 06 28 06 27 06 theo little-endian UCS-2, tức "Unicode" trong ngôn từ của Microsoft.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219578</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#219578</link>
+				<pubDate><![CDATA[Thu, 2 Sep 2010 10:29:15]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Xác xuất các chữ được viết hoa trong một văn bản là nhỏ, nên cách nén trên vẫn tỏ ra hiệu quả. Các từ được viết hoa có thể được xử lý không cần mã hoá.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220667</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220667</link>
+				<pubDate><![CDATA[Mon, 13 Sep 2010 20:23:32]]> GMT</pubDate>
+				<author><![CDATA[ huynhfxvn]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ Xác xuất các chữ được viết hoa trong một văn bản là nhỏ, nên cách nén trên vẫn tỏ ra hiệu quả. Các từ được viết hoa có thể được xử lý không cần mã hoá. Vì vậy phương pháp trên vẫn có thể sử dụng để hiện thị thông tin được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220668</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220668</link>
+				<pubDate><![CDATA[Mon, 13 Sep 2010 20:25:29]]> GMT</pubDate>
+				<author><![CDATA[ huynhfxvn]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ @Alice Nếu mã hoá như thế này chữ "THÙC" có tồn tại hay không???
+Trong trường hợp người dùng gõ sai "THÙ C..." thành "THÙC ..." thì phản ứng như thế nào???  ;)  ;)  :x  :x 
+Phần này mình nhớ mang máng là nằm trong luận án cao học của đồng chí nào đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220670</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220670</link>
+				<pubDate><![CDATA[Mon, 13 Sep 2010 21:09:27]]> GMT</pubDate>
+				<author><![CDATA[ louisnguyen27]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huynhfxvn wrote:</cite><br>
+		<blockquote>Xác xuất các chữ được viết hoa trong một văn bản là nhỏ, nên cách nén trên vẫn tỏ ra hiệu quả. Các từ được viết hoa có thể được xử lý không cần mã hoá. Vì vậy phương pháp trên vẫn có thể sử dụng để hiện thị thông tin được.&nbsp;
+		</blockquote>
+
+Alice đồng ý với bạn về vấn đề xác suất. Nhưng alice nghĩ rằng viết hoa vẫn nên được mã hoá như bình thường. Còn các thông tin định dạng, kể cả phân biệt hoa/thường, được lưu và truyền riêng trong một stream có bandwidth nhỏ và chỉ được dùng khi cần hiển thị. Như thế, data có thể sẽ nhỏ hơn và các việc không cần hiển thị (chẳng hạn tìm kiếm) sẽ nhanh hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220726</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220726</link>
+				<pubDate><![CDATA[Tue, 14 Sep 2010 18:05:34]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">louisnguyen27 wrote:</cite><br>
+		<blockquote>@Alice Nếu mã hoá như thế này chữ "THÙC" có tồn tại hay không???
+Trong trường hợp người dùng gõ sai "THÙ C..." thành "THÙC ..." thì phản ứng như thế nào???  ;)  ;)  :x  :x 
+Phần này mình nhớ mang máng là nằm trong luận án cao học của đồng chí nào đó.&nbsp;
+		</blockquote>
+
+Alice nghĩ rằng khi phương pháp mã hoá đã "có thể mã hoá được mọi xâu ký tự" thì đối với nó không tồn tại xâu "sai" hay "đúng". Kể cả THÙC cũng mã hoá được. Nhưng không thể mã hoá như 1 chữ tiếng Việt bởi vì "huyền" là 1 thanh "bằng" còn "UC" là một vần "khép".
+
+Mặt khác, Alice cho rằng không có gì ngăn cản người lập trình tích hợp mã hoá vào 1 giải thuật xử lý bàn phím của người dùng ngay từ trước khi tạo ra văn bản, hay 1 giải thuật xử lý văn bản trước khi mã hoá, để phát hiện sai sót và thông báo lỗi hay tự sửa lỗi.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220730</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#220730</link>
+				<pubDate><![CDATA[Tue, 14 Sep 2010 18:15:22]]> GMT</pubDate>
+				<author><![CDATA[ alice]]></author>
+			</item>
+			<item>
+				<title>một phương pháp mã hoá tiếng Việt (st)</title>
+				<description><![CDATA[ nói chung là làm cái này nó cũng khá hay nhưng mà hơi dài dòng quá ^^ tìm cách nào ngắn gọn đê anh ơi ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35671.hva#221315</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35671.hva#221315</link>
+				<pubDate><![CDATA[Thu, 23 Sep 2010 06:59:16]]> GMT</pubDate>
+				<author><![CDATA[ cóc đại nhân]]></author>
+			</item>
+	</channel>
+</rss>

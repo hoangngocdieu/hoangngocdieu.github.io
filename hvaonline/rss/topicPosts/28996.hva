@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Splish_HardCoded_KeygenMe"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Splish_HardCoded_KeygenMe"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Splish_HardCoded_KeygenMe</title>
+				<description><![CDATA[ Cái này là bài tập bác kienmanowar để trong tut OllyDbg 15.
+Bắt đầu nhé.
+
+Đầu tiên, chúng ta chạy Splish thử xem. Một Splash Screen hiện ra, sau đó hiện cửa sổ đòi Hard Coded, Name, Serial.
+Nhập đại 1 fake HardCoded (vd: so61pi ) -&gt; Nag "Sorry, please try again."
+Tiếp tục thử Name và Serial -&gt; Nag "Sorry, please try again."
+Xong bước đầu rồi. #:S 
+
+Công việc là Disable Splash Screen, tìm Hard Coded, Keygen. Chúng ta sẽ đi lần lượt. :-* 
+*<u>Disable Splash Screen:</u>
+Load Splish vào Olly, theo ta thấy ban đầu thì có thể chương trình dùng hàm ShowWindow để hiện Splash Screen.
+Đặt BreakPoint tại hàm ShowWindow, run thử -&gt; Olly break rồi  :D . Tiếp tục F9, Splash Screen hiện ra vài giây rồi biến mất =&gt; vậy có thể bỏ Splash Screen bằng cách bỏ lời gọi hàm ShowWindow. Tìm về nơi gọi hàm
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>00401546  |. E8 21020000    CALL &lt;JMP.&USER32.ShowWindow&gt;            ; \ShowWindow</pre>
+		</div>
+fill NOP, sau đó run thử. Hì, Slpash Screen đã không còn ;) . Save để lần sau khỏi phải làm lại.
+___
+Trễ rồi, lần sau mình sẽ post tiếp phần tìm HardCoded.
+Mong mọi người có ý kiến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28996.hva#178703</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28996.hva#178703</link>
+				<pubDate><![CDATA[Mon, 27 Apr 2009 13:21:35]]> GMT</pubDate>
+				<author><![CDATA[ so61pi]]></author>
+			</item>
+			<item>
+				<title>Re: Splish_HardCoded_KeygenMe</title>
+				<description><![CDATA[ Ah, nói thêm một tí về hàm ShowWindow. Trong Olly ta thấy như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0040153E  |.  6A 01           PUSH    1                                ; /ShowState = SW_SHOWNORMAL
+00401540  |.  FF35 11324000   PUSH    DWORD PTR &#91;403211&#93;               ; |hWnd = NULL
+00401546  |.  E8 21020000     CALL    &lt;JMP.&USER32.ShowWindow&gt;         ; \ShowWindow</pre>
+		</div>
+Hàm ShowWindow nhận 2 tham số nên phía trên hàm có 2 lệnh Push, khi thực hiện, hàm sẽ lấy 2 tham số đó ra sử dụng, nếu ta chỉ fill NOP ở lệnh ShowWindow thì Stack không được bảo toàn ( 2 tham số không sử dụng vẫn ở trên Stack ) -&gt; rác Stack. Vì vậy nên fill NOP ở 2 lệnh Push phía trên luôn.
+Tạm xong phần Disable Splash Screen ( còn quay lại sau ). Tiếp theo là phần tìm Hard Coded.
+
+*<u>Tìm Hard Coded:</u>
+Đặt BreakPoint tại hàm GetWindowTextA, run Splish, điền vào HardCoded bất kì, Check Hardcoded, Olly break tại vị trí sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0040136A  |.  E8 BB030000   CALL    &lt;JMP.&USER32.GetWindowTextA&gt;     ; \GetWindowTextA</pre>
+		</div>
+Tiếp tục trace xuống dưới gặp đoạn code
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0040136F  |.  8D05 53134000 LEA     EAX, DWORD PTR &#91;401353&#93;   ; &lt;== Đưa Hard coded vào EAX
+00401375  |.  8D1D 15324000 LEA     EBX, DWORD PTR &#91;403215&#93;   ; &lt;== Đưa chuỗi ta nhập vào EBX
+0040137B  |&gt; /8038 00       /CMP     BYTE PTR &#91;EAX&#93;, 0
+0040137E  |. |74 0C         |JE      SHORT 0040138C
+00401380  |. |8A08          |MOV     CL, BYTE PTR &#91;EAX&#93;    ; &lt;== Lấy từng kí tự HardCoded vào
+00401382  |. |8A13          |MOV     DL, BYTE PTR &#91;EBX&#93;    ; &lt;== Lấy từng kí tự trong chuỗi của ta
+00401384  |. |38D1          |CMP     CL, DL    ; &lt;== So sánh 2 kí tự
+00401386  |. |75 4A         |JNZ     SHORT 004013D2
+00401388  |. |40            |INC     EAX
+00401389  |. |43            |INC     EBX
+0040138A  |.^\EB EF         \JMP     SHORT 0040137B</pre>
+		</div>
+Đoạn code trên có nhiệm vụ so sánh chuỗi ta nhập vào với HardCoded. Ta thấy nó chỉ so sánh trực tiếp mà không qua tính toán nào cả, mà chuỗi Hard coded của nó là "HardCoded", vậy là tìm được Hard coded rồi ;) .
+Thử lại xem, "Congratulations, you got the hard coded serial". :D 
+Vậy là xong phần Hard Coded.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28996.hva#178819</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28996.hva#178819</link>
+				<pubDate><![CDATA[Tue, 28 Apr 2009 12:05:00]]> GMT</pubDate>
+				<author><![CDATA[ so61pi]]></author>
+			</item>
+	</channel>
+</rss>

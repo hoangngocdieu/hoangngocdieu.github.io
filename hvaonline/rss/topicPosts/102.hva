@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thiết kế mạng không dây: Dùng Linux làm Access Point"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thiết kế mạng không dây: Dùng Linux làm Access Point"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thiết kế mạng không dây: Dùng Linux làm Access Point</title>
+				<description><![CDATA[ <b>Thiết kế mạng không dây: Dùng Linux làm Access Point </b>
+
+Có lẽ chẳng còn lâu nữa mạng không dây [1] sẽ được sử dụng rộng rãi khắp nơi. Từ thư viện đến quán cà phê, từ trạm xe điện đến sân bay, khách sạn, từ nhà bạn đến nhà hàng xóm, mọi người sẽ sử dụng mạng không dây. Bạn có biết là nếu nhà bạn có mạng không dây thi hàng xóm sẽ có thể 'share' mạng với bạn mà không cần có một internet account? Hoặc nếu bạn chuẩn bị thiết kế mạng cho nhiều văn phòng trong một tòa nhà, hoặc từ tòa nhà này sang tòa nhà khác (cách nhau trong khoảng 457m hay 1500ft) mà chưa có dây cáp thì có lẽ mạng không dây là một trong những thiết kế có thể sử dụng. Nhưng bác Larry ơi mạng không dây đắt tiền lắm. Không hẵn! Bạn Chương Đào có nói độ này card mạng cho mạng không dây có thể mua khoảng $27 (loại USB) hoặc thấp hơn.
+
+Bài viết sau sẽ giải thích cách cài đặt mạng không dây 802.11b sử dụng Linux. Có rất nhiều loại mạng không dây khác nhau nhưng bài viết này sẽ dùng 802.11b và trong vòng nữa giờ bạn có thể sử dụng mạng không dây để đọc VietLUG mailing list :)
+
+Muốn thiết kế mạng không dây bạn cần có:
+
+<b>1. Một máy chạy Windows sẽ làm Access Point (AP)
+
+2. Một card mạng cho mạng không dây
+
+3. Một internet connection (dsl, cable modem, dial-up modem)
+
+4. Và dĩ nhiên một máy làm client.</b>
+
+À quên số 1. nên viết là 'Một máy chạy Linux sẽ làm Access Point' chứ không phải Windows.
+
+Muốn dùng máy Linux để làm AP thì bạn cần phải sử dụng card mạng sử dụng chipset Intersil's Prism2/2.5/3. Thế cái chương trình gì cho phép Linux làm Access Point được vậy? Nó là HostAP viết bởi Jouni Malinen. Cho mục đích của bài viết mình sẽ sử dụng hai máy:
+
+<b>1. Access Point là máy Gentoo với card mạng NetGear PCI MA311
+
+2. Wireless client là máy xách tay Mandrake với card mạng NetGear MA401.</b>
+
+Một số cards cũng sử dụng Prism2 chipset là Compaq WL100 and WL200, D-Link DWL-650 (not 650A nor 650B), and Linksys WPC11 (loại cũ), Orinoco/Lucent/Agere/Avaya cards. Nên nhớ bạn chỉ cần cái máy AP xài Prism2/2.5/3 chipset còn máy clients thì lam sao cards chạy đu+ợc trên Linux là đủ. Xem thêm danh sách của Prism2 cards tại đây [2]
+
+Những bước chuẩn bị cho Access Point trên máy Gentoo:
+
+<b>1. Cài đặt hostap bằng lệnh:</b>
+
+      emerge hostap
+
+Nếu bạn không xài Gentoo thì có thể download HostAP driver từ đây. Sau đó cài đặt bằng lệnh:
+
+      . tar xvzf hostap-version.tar.gz
+      . cd hostap-version
+      . make pci
+
+      Nếu mọi chuyện êm xui thì gõ tiếp make install
+
+<b>2. Khởi động card với lệnh:</b>
+
+      modprobe hermes
+
+Lưu ý: nếu bản Linux của bạn đã khởi động card thì bạn không cần chạy lệnh này nữa.
+
+ 
+
+<b>3. Khởi động HostAP driver bằng lệnh:</b>
+
+      modprobe hostap_pci
+
+<b>4. Chỉ định IP cho card bằng lệnh:</b>
+
+      ifconfig wlan0 192.168.1.1
+
+<b>5. Tạo ID, channel, mode cho card bằng lệnh:</b>
+
+      iwconfig wlan0 essid em_thèm_mạng_không_dây channel 1 mode master
+
+essid: bạn muốn dùng từ gì cũng được. Đây là ID của mạng không dây.
+channel: mình sử dụng giá trị từ 1 đến 11.
+mode: nếu là Access Point thì mode phải là Master. Có 7 modes khác nhau: Master (Access Point), Managed, Ad-Hoc, Repeater, Secondary, Monitor, Auto.
+
+<b>6. Mở port forward và MASQUERADING với lệnh:</b>
+
+      echo 1 > /proc/sys/net/ipv4/ip_forward
+      iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -j MASQUERADE
+
+Sáu bước trên đã kết thúc việc cài đặt cho máy AP. Nếu khi chạy lệnh iwconfig mà bị báo lỗi nghĩa là máy bạn chưa có wireless-tools cài đặt. Bạn có thể tải wireless-tools từ đây
+
+Những bước chuẩn bị cho máy xách tay Mandrake:
+
+<b>1. Chỉ định IP, essid, mode cho card:</b>
+
+Mandrake sẽ tự động tìm thấy và khởi động card NetGear MA401 bạn chỉ cần chỉ định IP 192.168.1.[2..254], essid giống như của máy AP, trong ví dụ này là 'em_mê_mạng_không_dây', mode sẽ là 'Managed', default gateway là 192.168.1.1 bằnh cách sử dụng MandrakeControlCenter (lệnh mcc), chọn phần Network.
+
+<b>1.Non-Mandrake users có thể chạy những lệnh sau:</b>
+
+      ifconfig eth0 192.168.1.2
+      iwconfig eth0 mode managed essid em_mê_mạng_không_dây channel 
+
+<b>2. Đặt giá trị cho gateway bằng lệnh:</b>
+
+      route add -net default gw 192.168.1.1
+
+<b>3. Xem lại giá trị của dns: bạn nên xài dns servers giống như máy AP bằng cách điền vào /etc/resolv.conf</b>
+
+Bây giờ thử ping 192.168.1.1 xem nó có reply không? Nếu có thì...xin chúc mừng! Mạng không dây của bạn đã hoạt động.
+
+Vấn đề an toàn của mạng không dây:
+
+Mạng không dây nổi tiếng với chuyện bị crackers vào system. Đó là lý do users hay dùng WEP (Wired Equivalent Privacy) encryption. Bạn có thể sử dụng WEP bằng lệnh $iwconfig wlan0 key your_encryption_key_or_alphanumerical_letters_here. Bạn cũng có thể có nhiều hơn một key, chỉ việc thay thế key bằng key1, key2 ..v..v..
+
+Tuy nhiên sử dụng WEP vẫn không phải là biện pháp tối ưu. Gần đây các nhà nghiên cứu đang chuẩn bị giới thiệu một kiểu encryption mới cho mạng không dây (Wi-Fi Protected Access - WPA) nằm trong 802.11i. Bạn đừng lo 802.11i sẽ vẫn hoạt động tốt với 802.11a và b. Hiện tại trên thị trường cũng đã có 802.11g, khác với a và b là tốc độ có thể lên đến 54Mbps thay vì 11Mbps.
+
+Cám ơn bạn Hoàng (dr bsd), bác Chương (dr foobar) đã nhiệt tình trao đổi kinh nghiệm về wireless với mình. Xin gởi feedback cho bài viết đến mạng_không_dây@vnlinux.org. Hy vọng bạn có thể dùng chút ít trong bài viết này cho việc thiết kế mạng trong tương lai.
+
+HostAP<span class="link"> http://hostap.epitest.fi/</span>
+
+Wireless tools for Linux<span class="link"> http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html</span>
+
+[1] Mạng không dây: wireless network. Wi-Fi (wireless fidelity) là từ hay dùng cho wireless network. Bạn cũng sẽ nghe WLAN: wireless local area network.
+
+[2] Danh sách card sử dụng Prism2 chipset<span class="link"> http://www.personaltelco.net/index.cgi/Prism2Card</span>
+
+Tác giả: Larry - vnLinux.org]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/102.hva#410</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/102.hva#410</link>
+				<pubDate><![CDATA[Sat, 17 Jun 2006 00:58:38]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Thiết kế mạng không dây: Dùng Linux làm Access Point</title>
+				<description><![CDATA[ Cho em hỏi có ai đã làm cho mạng này thông chưa ạ?
+
+Em định dùng đề tài này để làm đề tài tốt nghiệp mà không biết có khả thi không? Có ai làm được rồi thì cho em ý kiến với, em sẽ tiếp tục theo đề tài này.
+
+Em cảm ơn, mong được reply sớm!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/102.hva#175105</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/102.hva#175105</link>
+				<pubDate><![CDATA[Sat, 28 Mar 2009 13:30:43]]> GMT</pubDate>
+				<author><![CDATA[ _BSOD_]]></author>
+			</item>
+			<item>
+				<title>Thiết kế mạng không dây: Dùng Linux làm Access Point</title>
+				<description><![CDATA[ anh cho em hỏi: Ví dụ có 1 máy linux (em đang dùng Ubuntu 9.10) đang kết nối Internet bằng cable, mình có thể để máy linux đó thành ad-hoc để kết nối với các thiết bị khác (laptop, PDA, iphone,...) để các thiết bị đó có thể sử dụng internet chung với máy linux đó ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/102.hva#209133</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/102.hva#209133</link>
+				<pubDate><![CDATA[Fri, 16 Apr 2010 00:14:10]]> GMT</pubDate>
+				<author><![CDATA[ VitaminGauGau]]></author>
+			</item>
+			<item>
+				<title>Thiết kế mạng không dây: Dùng Linux làm Access Point</title>
+				<description><![CDATA[ Tất nhiên là được, nếu đủ thiết bị (trọng tâm là card bắt sóng wifi), và biết cách cấu hình, bài viết đã nói rồi mà? Tuy công nghệ đã đổi mới nhiều từ năm 2006 đến giờ, nhưng về cơ bản là vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/102.hva#209151</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/102.hva#209151</link>
+				<pubDate><![CDATA[Fri, 16 Apr 2010 05:41:45]]> GMT</pubDate>
+				<author><![CDATA[ jforum3000]]></author>
+			</item>
+			<item>
+				<title>Thiết kế mạng không dây: Dùng Linux làm Access Point</title>
+				<description><![CDATA[ Như vậy thì các lệnh cấu hình vẫn như trên àh? Hay mỗi OS Linux khác nhau sẽ có lệnh khác nhau? Anh có thể hướng dẫn em thêm được không ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/102.hva#209175</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/102.hva#209175</link>
+				<pubDate><![CDATA[Fri, 16 Apr 2010 11:36:27]]> GMT</pubDate>
+				<author><![CDATA[ VitaminGauGau]]></author>
+			</item>
+	</channel>
+</rss>

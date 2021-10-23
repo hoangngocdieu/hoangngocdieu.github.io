@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cải tiến một chút về cấu hình vsftpd với virtual user"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cải tiến một chút về cấu hình vsftpd với virtual user"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cải tiến một chút về cấu hình vsftpd với virtual user</title>
+				<description><![CDATA[ Chào mọi người,
+
+Trong bài viết <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/2109.hva</span> của bác <b>chairuou</b>, ở bước thiết lập các virtual users:
+<blockquote>
+Cài đặt virtual user:
+-----------------------
+
+root@slackware10:/#useradd my_ftp -s /bin/false -d /var/ftp_pub
+root@slackware10:/#passwd my_ftp my_password
+&nbsp;
+		</blockquote>
+vẫn phải tạo một user mới, chỉ có điều shell được cản với <b>/bin/false</b>.
+
+Có một cách theo tôi là hay hơn để tạo các ftp users theo đúng nghĩa là "virtual" thật sự. File cấu hình <b>vsftpd.conf</b> của tôi thế này:
+<blockquote>
+local_enable=YES
+write_enable=YES
+local_umask=0022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+xferlog_std_format=NO
+vsftpd_log_file=/var/log/vsftpd.log
+listen=YES
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+
+<font color='orange'>user_sub_token=$USER
+local_root=/home/vsftp/$USER
+</font>chroot_local_user=YES
+guest_enable=YES
+guest_username=vsftp
+<font color='orange'>virtual_use_local_privs=YES</font>
+anon_umask=0022
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+anon_other_write_enable=NO
+&nbsp;
+		</blockquote>
+Ở đây, <b>vsftp</b> chỉ là một user "giả", được tạo ra với lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># useradd -d /home/vsftp -s /bin/false vsftp</pre>
+		</div>
+Mục đích của việc tạo user này là:
++ Tạo ra một thư mục <b>/home/vsftp</b> để chứa các FTP home directories
++ Owned các thư mục này
+
+Tiếp theo, bạn cũng tạo một file <b>virtual_users.txt</b> với nội dung:
+<blockquote>
+user1
+password1
+user2
+password2
+&nbsp;
+		</blockquote>
+Để mỗi virtual user có một thư mục home riêng biệt, bạn có thể tạo các thư mục con trong <b>/home/vsftp</b> hoặc tạo symbolic links như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cd /home/vsftp
+$ ln -s /mnt/data/Music user1
+$ ln -s /mnt/data/Video user2
+$ sudo chown -R vsftp /mnt/data/Music
+$ sudo chown -R vsftp /mnt/data/Video</pre>
+		</div>
+Cuối cùng là tạo file <b>virtual_users.db</b> từ <b>virtual_users.txt</b> bằng lệnh db4x_load. File này sẽ được dùng bởi thư viện <b>pam_userdb.so</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># db45_load -T -t hash -f /etc/vsftpd/virtual_users.txt /etc/vsftpd/virtual_users.db
+# chmod 600 /etc/vsftpd/virtual_users.txt /etc/vsftpd/virtual_users.db</pre>
+		</div>
+Mỗi khi muốn thêm một user, ngoài việc thêm username và password vào file <b>virtual_users.txt</b>, bạn cần xóa file <b>virtual_users.db</b> đi và chạy lại lệnh trên.
+
+Ở đây có vài điểm chú ý:
+
+1. Trong file cấu hình <b>vsftpd.conf</b>, bạn cần có dòng này:
+<blockquote><font color='orange'>virtual_use_local_privs=YES</font>&nbsp;
+		</blockquote>
+Mục đích: Để map permission giữa user thật và user "ảo". Nếu không, virtual user sẽ không thể upload, và bạn sẽ gặp lỗi:
+<blockquote><font color='red'>550 Permission denied</font>&nbsp;
+		</blockquote>
+
+2. Các FTP home directories cần được owned bởi vsftp:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chown -R vsftp /mnt/data/Music
+$ sudo chown -R vsftp /mnt/data/Video</pre>
+		</div>
+Nếu không, vsftpd sẽ "báo cáo" ngay khi upload:
+<blockquote><font color='red'>553 Could not create file</font>&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24059.hva#145090</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24059.hva#145090</link>
+				<pubDate><![CDATA[Mon, 4 Aug 2008 17:08:11]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

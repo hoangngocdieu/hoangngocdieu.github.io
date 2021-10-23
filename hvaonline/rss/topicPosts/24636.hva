@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật</title>
+				<description><![CDATA[ <b><font color='red'>Nguyên lý thiết kế cho các hệ thống bảo mật (Design Principles for Security-conscious Systems)</font></b>
+
+Bài viết này được dựa trên phần lược dịch của bài báo có tiêu đề <font color='orange'><i>“Protection of Information in Computer Systems” </i></font>(tạm dịch là “Sự bảo vệ thông tin trong các hệ thống máy tính”) của hai tác giả Jerome H. Saltzer và Micheal D. Schroeder. Mặc dù bài báo được ra đời khá lâu (từ năm 1975) tuy nhiên những tư tưởng được hai tác giả đề cập đén trong bài báo thì vẫn được coi là kinh điển trong giới nghiên cứu An toàn thông tin (Information Security). Khá nhiều course về Computer Security của các trường đại học như Stanford hay Berkeley, … đều yêu cầu sinh viên phải đọc bài báo này như một bài học nhập môn.
+
+Dưới đây, tôi sẽ lược dịch lại một phần được đánh giá là quan trọng nhất trong bài báo. Đó là các nguyên lý thiết kế cho một hệ thống bảo mật. Thêm vào đó tôi có bổ sung thêm một số ý trong một bài giảng tại course “Computer Security” của đại học Berkeley để đảm bảo một số vấn đề sẽ được cập nhật. Bài giảng có tiêu đề là <font color='orange'><i>"Design Principles for Security-conscious Systems"</i></font>  :D 
+
+<b>Abstract - Tổng quan về bài báo</b>
+Bài báo này đề cập đến việc bảo vệ các máy tính lưu trữ thông tin từ các yêu cầu sử dụng không được cấp phép hoặc sửa đổi. Bài báo tập trung vào những kiến trúc hệ thống cần thiết để hỗ trợ cho việc bảo vệ thông tin, bất kể là phần cứng hay phần mềm. Bài báo gồm có ba phần chính: phần 1 đề cập đến những chức năng bắt buộc, nguyên lý thiết kế và một số ví dụ về các thành tố bảo vệ cũng như cơ chế xác thực. Người đọc nếu đã quen thuộc với việc sử dụng máy tính nên bắt đầu đi từ phần này để có thể hiểu hơn về vấn đề. Phần hai đòi hỏi người đọc phải có những kiến thức nhất định về kiến trúc máy tính. Phần này đánh giá theo chiều sâu về nguyên lý của các hệ thống bảo vệ ngày nay cũng như mối quan hệ giữa các hệ thống khả năng (capabilities systems) và danh sách kiểm soát truy nhập <font color='orange'>[1]</font> và một số phân tích tóm tắt về các hệ thống con cũng như các đối tượng được bảo vệ. Nếu người đọc không nắm rõ được các yêu cầu kĩ thuật tối thiểu hoặc quá mệt mỏi với phần hai có thể chuyển sang phần 3. Phần 3 sẽ tổng kết lại hiện trạng và các dự án nghiên cứu của lĩnh vực này cũng như những lời khuyến cáo cho việc nghiên cứu xa hơn.
+
+<b>Các nguyên lý thiết kế (hay còn gọi là các nguyên lý Saltzer và Schroeder)</b>
+Bất kì một cấp độ chức năng được yêu cầu hay tập họp các cơ chế bảo vệ phải dựa trên khả năng của hệ thống để tránh các xung đột về bảo mật. Thực tế đã chứng minh rằng để cho ra đời một hệ thống đáp ứng được các yêu cầu chức năng ở bất kì một cấp độ nào (ngoại trừ cấp độ 1) là cực kì khó. Những người dùng tinh rang nhất của bất kì một hệ thống nào đều có thể biết ít nhất một cách để làm sụp đổ hệ thống, từ chối các truy cập hợp lệ khác. Các tình huống penetration (do thám) ở các hệ thống lớn với các mục đích hoạt động khác nhau đã cho thấy người dùng có thể xây dựng các chương trình có thể truy cập trái phép tới các tới nơi chứa thông tin. Ngay cả các hệ thống trong quá trình thiết kế cũng như xây dựng có coi bảo mật như là một thành tố quan trọng thì chỉ cần một lỗi nhỏ trong quá trình thiết kế cũng như xây dựng cũng sẽ tạo ra một con đường để phá vỡ các ràng buộc truy cập. Mặc dù các kĩ thuật thiết kế cũng như xây dựng một hệ thống không lỗi là đề tài cho rất nhiều các hoạt động nghiên cứu tuy nhiên cho tới nay vẫn chưa có một phương án nào được coi là hoàn thiện để xây dựng các hệ thống lớn, đa mục đích. Điểm khó nhất trong vấn đề này liên quan đến chất lượng âm (negative quality) của yêu cầu phòng ngừa tất cả các truy cập không được phép.
+
+Sự xuất hiện của những phương pháp này, cũng như những kinh nghiệm trong thực tế đã cung cấp những nguyên lý cơ bản để có thể hướng dẫn thiết kế và xây dựng một hệ thống không có lỗi. 
+Bài báo này đề cập đến 8 nguyên lý khi thiết kế một hệ thống an ninh sau đây. Để tiện cho bạn đọc dễ hiểu, tôi sẽ để lại từ khóa tiếng anh cho từng nguyên lý một.
+-	Tính kinh tế của bộ máy (<b><font color='orange'>Economics of Mechanism</font></b>): giữ cho hệ thống càng nhỏ và càng đơn giản càng tốt.
+
+-	<font color='orange'><b>Fail-safe defaults</b></font>: dựa trên các quyết định truy cập hoặc quyền hạn cho phép thay vì ngăn chặn và loại trừ.
+
+-	Dàn xếp hoàn toàn (<font color='orange'><b>Complete mediation</b></font>): tất cả các truy nhập tới các đối tượng phải được kiểm tra quyền hạn.
+
+-	Tính mở của thiết kế (<font color='orange'><b>Open Design</b></font>): các thiết kế không nên bí mật.
+
+-	Phân chia các đặc quyền (<b><font color='orange'>Separation of Privilege</font></b>): sẽ an toàn hơn nếu như có hai đảng đồng ý phóng một tên lửa thay vì chỉ duy nhất một đảng.
+
+-	Đặc quyền tối thiểu (<font color='orange'><b>Least Privilege</b></font>): Hoàn thành các công việc cụ thể với ít quyền nhất có thể.
+
+-	Cơ chế ít phổ biến (<b><font color='orange'>Least common mechanism</font></b>): thu hẹp các hệ thống con chia sẻ hoặc các hệ thống con hoạt động dựa trên các người dùng không đáng tin tưởng.
+
+-	Chấp nhận khía cạnh tâm thần học (<b><font color='orange'>Psychological acceptability</font></b>): Hệ thống bảo mật phải dễ sử dụng.
+
+<font color='orange'>[1]</font> Access Control List và Capabilites System là hai trong các phương thức kiểm soát truy cập được thực thi ở các hệ điều hành hiện nay.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24636.hva#148888</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24636.hva#148888</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 00:56:47]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: [Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật</title>
+				<description><![CDATA[ Tất cả các nguyên lý thiết kế ở đây là khá chung chung và áp dụng cho các hệ thống khác nhau, chúng ta có thể áp dụng vào một mô hình cụ thể như thiết kết một máy chủ web server (sử dụng hệ điều hành Linux RedHat server hoặc Windows 2003 server) để đạt hiệu xuất cao nhất, an toàn và bảo mật không nhỉ? Mình nghĩ rằng vấn đề này khá thiết thực. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149764</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149764</link>
+				<pubDate><![CDATA[Thu, 4 Sep 2008 21:48:03]]> GMT</pubDate>
+				<author><![CDATA[ servererror]]></author>
+			</item>
+			<item>
+				<title>Re: [Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">servererror wrote:</cite><br>
+		<blockquote>Tất cả các nguyên lý thiết kế ở đây là khá chung chung và áp dụng cho các hệ thống khác nhau, chúng ta có thể áp dụng vào một mô hình cụ thể như thiết kết một máy chủ web server (sử dụng hệ điều hành Linux RedHat server hoặc Windows 2003 server) để đạt hiệu xuất cao nhất, an toàn và bảo mật không nhỉ? Mình nghĩ rằng vấn đề này khá thiết thực. &nbsp;
+		</blockquote>
+
+Thực ra bài viết chưa hết, vì còn một số phần diễn giải những nguyên lý trên cho người đọc dễ hiểu nhất. Mấy hôm nay mình đang có mấy việc riêng nên không tiếp tục dịch tiếp. Đây là những nguyên lý thiết kế kinh điển và chung nhất, khá hàn lâm, mang tính định hướng là chính. Còn việc áp dụng vào việc thiết kế từng hệ thống riêng biệt ra sao thì lại phụ thuộc vào yêu cầu cụ thể, kinh nghiệm cũng như kĩ năng của những người thiết kế.  
+
+:d]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149794</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149794</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 01:04:15]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: [Bài dịch]Nguyên lý thiết kế cho các hệ thống bảo mật</title>
+				<description><![CDATA[ bài này định hướng khá tốt đấy. mình chỉ hiểu được khoản 30% hà, vì còn gà mong mọi người chỉ thêm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149844</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24636.hva#149844</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 10:58:23]]> GMT</pubDate>
+				<author><![CDATA[ changkho0207]]></author>
+			</item>
+	</channel>
+</rss>

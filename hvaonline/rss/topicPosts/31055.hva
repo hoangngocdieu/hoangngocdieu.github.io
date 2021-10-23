@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "CDE bị treo trên SunOS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "CDE bị treo trên SunOS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ Sáng nay tôi gặp 1 lỗi trên máy chủ SUNOS như sau :
+Khi đăng nhập vào máy chủ với tài khoản bình thường bằng giao diện CDE thì quá trình đăng nhập thành công nhưng treo ở màn hình CDE.Tuy nhiên tôi đăng nhập với quyền root thì vào bình thường . 
+
+Tôi thử xóa account <b>subnetwork</b> thì thông báo như sau xuất hiện
+<blockquote>Internal error : cannot check unix session to user to subnetwork (the network is broken at least one registered client is down) &nbsp;
+		</blockquote>
+
+Tôi tạo 1 tài khoản khác thì thông báo như trên vẫn xuất hiện như củ.
+
+Tôi thử dùng <b>userdel -r subnetwork</b> 
+hoặc dùng 
+<b>useradd -u 500 -g network -d /home/subnetwork -s /usr/bin/bash -c &quot;thphuoc&quot; subnetwork</b>
+
+Thì thông báo như trên vẫn xuất hiện
+
+Mô hình kết nối như sau :
+Sun --&gt; Switch Cisco --&gt; Client (account là subnetwork)
+
+Trên Switch Cisco tôi đã no shutdown port cần nối kết và kiểm tra interface đã hoạt động tốt, từ client tôi ping,ssh đến máy chủ thành công nhưng không thể nào log in thành công vào máy chủ thông qua CDE.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191669</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191669</link>
+				<pubDate><![CDATA[Mon, 31 Aug 2009 22:09:14]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ Không biết THPhuoc dùng bản SunOS mấy nhưng trên máy tôi có thử với lệnh 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# useradd  -d /home/subnetwork -s /usr/bin/bash -c "thphuoc" subnetwork
+UX: useradd: subnetwork name too long.
+-bash-3.00# useradd  -d /home/sub -s /usr/bin/bash -c "thphuoc" sub
+-bash-3.00# passwd sub
+New Password:
+Re-enter new Password:
+passwd: password successfully changed for sub</pre>
+		</div>
+
+Khi đó Xmanager đến SunOS bằng tài khoản sub thì vào được rồi lại bị logout ra luôn.
+Nguyên nhân là lệnh useradd không tự tạo thư mục home. Ta phải tạo thư mục home bằng lệnh trước khi tạo user sub
+Kiểm tra thư mục home thì thấy thư mục sub không tự tạo
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# ls /home/
+-bash-3.00# ls -al /home/
+total 5
+dr-xr-xr-x   1 root     root           1 Sep  2 23:24 .
+drwxr-xr-x  50 root     root        1536 Sep  3 03:47 ..
+-bash-3.00#</pre>
+		</div>
+
+Phải tự tay tạo thư mục home bằng user root
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# mkdir /sub
+-bash-3.00# usermod  -d /sub -s /usr/bin/bash -c "thphuoc" sub</pre>
+		</div>
+
+Thử Xmanager lại thì đã log vào được CDE nhưng vẫn bị báo lỗi không vào làm việc được
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>drwxr-xr-x   2 root     root         512 Sep  3 10:12 sub</pre>
+		</div>
+Thử chown phát
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# chown -R sub /sub</pre>
+		</div>
+
+Giờ thì vào rất OK .
+THPhước thử làm theo các bước trên xem có được không :)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# cat /etc/release
+                       Solaris 10 8/07 s10s_u4wos_12b SPARC
+           Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+                        Use is subject to license terms.
+                            Assembled 16 August 2007</pre>
+		</div>
+CDE version 1.6.3]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191890</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191890</link>
+				<pubDate><![CDATA[Thu, 3 Sep 2009 10:19:11]]> GMT</pubDate>
+				<author><![CDATA[ MrMe]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ Thanks <b>MrMe</b> giúp đỡ nhưng mình làm thử theo lão, khi truy xuất đến CDE thì màn hình treo luôn nhưng kèm theo thông báo <b>Due to a processing error the login failed</b> , để tiện quản lý tôi dùng X Manager 
+
+<b># cat /etc/release     </b>        
+                       Solaris 10 11/06 s10s_u3wos_10 SPARC
+           Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+                        Use is subject to license terms.
+                           Assembled 14 November 2006
+
+<b>#uname -a</b>
+SunOS system 5.10 Generic_118833-36 sun4u sparc SUNW,Sun-Fire-V215
+
+<b># mkdir /users/phuoc
+# useradd -d /users/phuoc -s /usr/bin/bash -c "thphuoc" phuoc
+
+# passwd phuoc </b>
+New Password: 
+Re-enter new Password: 
+passwd: password successfully changed for phuoc
+
+<b># chown -R phuoc /users/phuoc</b>
+
+CDE của mình là CDE version 1.6.3
+
+Mình nghĩ rằng CDE có lỗi mặc dù hiện giờ mình có bản backup khôi phục nó trở về trạng thái tốt nhất cũng được nhưng mình muốn giải quyết được lỗi này. Server của mình hiện giờ đang chạy trên môi trường Internal-không cho phép truy xuất ra Internet . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191944</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191944</link>
+				<pubDate><![CDATA[Fri, 4 Sep 2009 02:43:33]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ @tranhuuphuoc: Anh cho em output của 2 câu lệnh này
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>df -h</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>useradd -D</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191987</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191987</link>
+				<pubDate><![CDATA[Sat, 5 Sep 2009 02:20:36]]> GMT</pubDate>
+				<author><![CDATA[ Midou]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ Hi <b>Midou</b> , đây là output 2 câu lệnh của nó đây bạn
+
+Quyền hạn root trên server này do mình nằm và trên server này không mở bất kỳ shell cho account nào cả , mình cũng không thay đổi bất cứ thứ gì trước khi nó bị lỗi. 
+
+<b>$ df -h</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Filesystem             size   used  avail capacity  Mounted on
+/dev/dsk/c1t0d0s0      9.8G   529M   9.2G     6%    /
+/devices                 0K     0K     0K     0%    /devices
+ctfs                     0K     0K     0K     0%    /system/contract
+proc                     0K     0K     0K     0%    /proc
+mnttab                   0K     0K     0K     0%    /etc/mnttab
+swap                   3.4G   1.2M   3.4G     1%    /etc/svc/volatile
+objfs                    0K     0K     0K     0%    /system/object
+/dev/dsk/c1t0d0s6      9.8G   3.5G   6.3G    36%    /usr
+/platform/sun4u-us3/lib/libc_psr/libc_psr_hwcap1.so.1
+                       9.8G   529M   9.2G     6%    /platform/sun4u-us3/lib/libc
+_psr.so.1
+/platform/sun4u-us3/lib/sparcv9/libc_psr/libc_psr_hwcap1.so.1
+                       9.8G   529M   9.2G     6%    /platform/sun4u-us3/lib/spar
+cv9/libc_psr.so.1
+fd                       0K     0K     0K     0%    /dev/fd
+/dev/dsk/c1t0d0s3       23G   3.1G    19G    14%    /var
+swap                   3.5G    12M   3.4G     1%    /tmp
+swap                   3.4G    40K   3.4G     1%    /var/run
+/dev/dsk/c1t0d0s5      242M   1.0M   217M     1%    /metadb
+/dev/dsk/c1t0d0s7       21G   1.4G    19G     8%    /opt</pre>
+		</div>
+
+<b># useradd -D</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>group=other,1  project=default,3  basedir=/home  
+skel=/etc/skel  shell=/bin/sh  inactive=0  
+expire=  auths=  profiles=  roles=  limitpriv=  
+defaultpriv=  lock_after_retries=</pre>
+		</div>
+
+Mình thử tạo useradd bằng cách dùng shell /bin/sh hay /usr/bin/bash và dùng homedir là /home hay /users đều bị lỗi như trên . 
+
+Kiểm tra syslog thì không phát hiện lỗi nào cả , mình không biết nguyên nhân do đâu, mong anh em tư vấn tiếp . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191990</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191990</link>
+				<pubDate><![CDATA[Sun, 6 Sep 2009 14:50:36]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranhuuphuoc wrote:</cite><br>
+		<blockquote>Hi <b>Midou</b> , đây là output 2 câu lệnh của nó đây bạn
+
+Quyền hạn root trên server này do mình nằm và trên server này không mở bất kỳ shell cho account nào cả , mình cũng không thay đổi bất cứ thứ gì trước khi nó bị lỗi. 
+
+<b>$ df -h</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Filesystem             size   used  avail capacity  Mounted on
+/dev/dsk/c1t0d0s0      9.8G   529M   9.2G     6%    /
+/devices                 0K     0K     0K     0%    /devices
+ctfs                     0K     0K     0K     0%    /system/contract
+proc                     0K     0K     0K     0%    /proc
+mnttab                   0K     0K     0K     0%    /etc/mnttab
+swap                   3.4G   1.2M   3.4G     1%    /etc/svc/volatile
+objfs                    0K     0K     0K     0%    /system/object
+/dev/dsk/c1t0d0s6      9.8G   3.5G   6.3G    36%    /usr
+/platform/sun4u-us3/lib/libc_psr/libc_psr_hwcap1.so.1
+                       9.8G   529M   9.2G     6%    /platform/sun4u-us3/lib/libc
+_psr.so.1
+/platform/sun4u-us3/lib/sparcv9/libc_psr/libc_psr_hwcap1.so.1
+                       9.8G   529M   9.2G     6%    /platform/sun4u-us3/lib/spar
+cv9/libc_psr.so.1
+fd                       0K     0K     0K     0%    /dev/fd
+/dev/dsk/c1t0d0s3       23G   3.1G    19G    14%    /var
+swap                   3.5G    12M   3.4G     1%    /tmp
+swap                   3.4G    40K   3.4G     1%    /var/run
+/dev/dsk/c1t0d0s5      242M   1.0M   217M     1%    /metadb
+/dev/dsk/c1t0d0s7       21G   1.4G    19G     8%    /opt</pre>
+		</div>
+
+<b># useradd -D</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>group=other,1  project=default,3  &#91;color=#444444&#93;&#91;color=red&#93;ba&#91;/color&#93;sedir=/home&#91;/color&#93;  
+skel=/etc/skel  shell=/bin/sh  inactive=0  
+expire=  auths=  profiles=  roles=  limitpriv=  
+defaultpriv=  lock_after_retries=</pre>
+		</div>
+
+Mình thử tạo useradd bằng cách dùng shell /bin/sh hay /usr/bin/bash và dùng homedir là /home hay /users đều bị lỗi như trên . 
+
+Kiểm tra syslog thì không phát hiện lỗi nào cả , mình không biết nguyên nhân do đâu, mong anh em tư vấn tiếp . &nbsp;
+		</blockquote>
+<font color='#444444'>[color</font>=red]-----&gt;[/color]<b>/home</b> không có.
+Anh kiểm tra xem trên hệ thống có dir <b>/export/home</b> ko
+Nguyên nhân của "bệnh" này, theo em đoán là dir /home không tồn tại trên hệ thống, hoặc tồn tại nhưng bị giới hạn quyền đối với user mới được tạo.
+
+PS: Có vẻ như đây là lần đầu tiên anh đăng nhập bằng acc bình thường nhỉ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191993</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#191993</link>
+				<pubDate><![CDATA[Sun, 6 Sep 2009 15:42:45]]> GMT</pubDate>
+				<author><![CDATA[ Midou]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Midou wrote:</cite><br>
+		<blockquote>
+<font color='red'>-----&gt;</font><b>/home</b> không có.
+
+Anh kiểm tra xem trên hệ thống có dir <b>/export/home</b> ko
+Nguyên nhân của "bệnh" này, theo em đoán là dir /home không tồn tại trên hệ thống, hoặc tồn tại nhưng bị giới hạn quyền đối với user mới được tạo.
+
+PS: Có vẻ như đây là lần đầu tiên anh đăng nhập bằng acc bình thường nhỉ?
+&nbsp;
+		</blockquote>
+Làm sao chú biết thư mục home không có?
+Phải dùng lệnh ls -al  / thì mới biết là thư mục /home có hay không chứ
+Thư mục home đâu quan trọng thế chú.
+Anh dùng lệnh 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-bash-3.00# useradd  -d /sub -s /usr/bin/bash -c "thphuoc" sub</pre>
+		</div>
+Để cho người dùng sub có thư mục home là /sub có sao đâu.
+Vấn đề của anh Phước không rõ là chỉ CDE bị hay anh log vào Java Desktop cũng không được luôn.
+Solaris nó có cho tùy chọn 2 giao diện đồ họa khác nhau khi vào mà.
+Lão thử cái giao diện đồ họa java coi cần gì cứ phải CDE nhỉ  ;) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192012</link>
+				<pubDate><![CDATA[Sun, 6 Sep 2009 23:26:06]]> GMT</pubDate>
+				<author><![CDATA[ MrMe]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>bash-3.00# useradd  -d /sub -s /usr/bin/bash -c "thphuoc" sub</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>bash-3.00# useradd -D
+group=other,1  project=default,3  basedir=/home  
+ skel=/etc/skel  shell=/bin/sh  inactive=0  
+ expire=  auths=  profiles=  roles=  limitpriv=  
+ defaultpriv=  lock_after_retries=</pre>
+		</div>
+Vậy theo anh nghĩ <b>basedir=/home</b> ở đây sẽ có tác dụng gì?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192028</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192028</link>
+				<pubDate><![CDATA[Mon, 7 Sep 2009 00:46:12]]> GMT</pubDate>
+				<author><![CDATA[ Midou]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Midou wrote:</cite><br>
+		<blockquote><font color='#444444'>[color</font>=red]-----&gt;[/color]<b>/home</b> không có.
+Anh kiểm tra xem trên hệ thống có dir <b>/export/home</b> ko
+Nguyên nhân của "bệnh" này, theo em đoán là dir /home không tồn tại trên hệ thống, hoặc tồn tại nhưng bị giới hạn quyền đối với user mới được tạo.
+
+PS: Có vẻ như đây là lần đầu tiên anh đăng nhập bằng acc bình thường nhỉ?
+&nbsp;
+		</blockquote>
+
+Chắc vậy quá bạn, không biết sao mình thường dùng thường $ hơn #  :D 
+
+Thư mục /home , /home/export đều có trên hệ thống cả và quyền hạn mổi thư mục gốc của người dùng đều được ấn định chính xác . 
+
+<p></p>
+		<cite class="blockquote">MrMe wrote:</cite><br>
+		<blockquote>Để cho người dùng sub có thư mục home là /sub có sao đâu.
+Vấn đề của anh Phước không rõ là chỉ CDE bị hay anh log vào Java Desktop cũng không được luôn.
+Solaris nó có cho tùy chọn 2 giao diện đồ họa khác nhau khi vào mà.
+Lão thử cái giao diện đồ họa java coi cần gì cứ phải CDE nhỉ &nbsp;
+		</blockquote>
+
+Thư mục gốc của người dùng mình thường để ở <b>/users</b> thay vì <b>/home</b> việc này không sao cả :)
+Login vào CDE hay Java trên con server bị lỗi thì màn hình treo luôn và kèm theo thông báo Due to a processing error the login failed , nó treo ở đó mà trong syslog /var/adm/messages hay /var/log,... đều không thấy bất kỳ lỗi nào cả . 
+
+Cũng trên con server khác có cấu hình tương tự thì việc tạo user sau đó đăng nhập vào hệ thống đều thành công thông qua CDE hay Java đều được . Theo mình nghĩ có vấn đề sai xót gì đó trên server này chứ không phải .... gõ lộn lệnh  :-) Đến đường cùng chắc mình phải restore bản backup mới nhất mà thôi . 
+
+Thanks bà con giúp đỡ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192045</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192045</link>
+				<pubDate><![CDATA[Mon, 7 Sep 2009 11:46:33]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ @Anh Phước: Nếu như anh restore bản backup mới nhất, anh có thể cho em output của các lệnh sau được ko? Em muốn biết được chính xác "bệnh" của nó là gì?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># df -h</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># useradd  -d /sub -s /usr/bin/bash -c "thphuoc" sub</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># su -s sub</pre>
+		</div>
+
+PS: Sao đầu hàng sớm vậy anh. :p
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192046</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192046</link>
+				<pubDate><![CDATA[Mon, 7 Sep 2009 11:58:14]]> GMT</pubDate>
+				<author><![CDATA[ Midou]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ /var/adm/loginlog có gì không anh? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192048</link>
+				<pubDate><![CDATA[Mon, 7 Sep 2009 12:20:03]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>CDE bị treo trên SunOS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Midou wrote:</cite><br>
+		<blockquote>@Anh Phước: Nếu như anh restore bản backup mới nhất, anh có thể cho em output của các lệnh sau được ko? Em muốn biết được chính xác "bệnh" của nó là gì?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># df -h</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># useradd  -d /sub -s /usr/bin/bash -c "thphuoc" sub</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># su -s sub</pre>
+		</div>
+
+PS: Sao đầu hàng sớm vậy anh. :p
+&nbsp;
+		</blockquote>
+
+Mình ghi ở bài viết trước rồi mà  :) 
+Không phải đầu hàng mà đôi khi công ăn việc làm quan trọng cần giải quyết sớm và dứt điểm, để ngồi thử nghiệm hoài chắc ...ăn cám mất quá bạn . 
+
+Cái lỗi này không phải là do sai cú pháp tạo người dùng hoặc sử dụng admintool, sam sai, không đúng vì không lẽ có hàng trăm account trên hệ thống, không lẽ mình tạo sai hết sao . Nếu tạo sai thì chắc mình ... về vườn từ lâu rồi bạn  :-) 
+
+
+<p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>/var/adm/loginlog có gì không anh? &nbsp;
+		</blockquote>
+
+Hôm trước anh có đọc bài trả lời của em nhưng do anh không ở quê nhà để đưa thông tin lên cho em và anh em xem tiếp và hôm đó anh có xem đường dẫn mà em đưa nhưng không thấy thông tin gì trong đó cả em  :) 
+
+Mình đã restore bản backup thì mọi việc đều tốt . Thanks anh em giúp đỡ  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192246</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31055.hva#192246</link>
+				<pubDate><![CDATA[Wed, 9 Sep 2009 23:25:26]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+	</channel>
+</rss>

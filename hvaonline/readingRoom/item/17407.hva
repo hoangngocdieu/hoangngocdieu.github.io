@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Others::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Viết ứng dụng đơn giản với AutoIt <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/3102.hva#17407" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: KVD - Translator:  - Entry Date: 13/02/2009 09:30:20" title="Author: KVD - Translator:  - Entry Date: 13/02/2009 09:30:20"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><font size='+1'>Khoá màn hình và yêu cầu mật khẩu khi muốn trở lại màn hình làm việc</font><br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>; ----------------------------------------------------------------------------<br/> ; Screen Lock<br/> ;<br/> ; AutoIt Version: 3.2.0.1<br/> ; Author: Hallman \ CWorks<br/> ;<br/> ; HotKeys<br/> ; F9 = Close program    <br/> ; F10 = Change password<br/> ; F11 = Enable ScreenLock<br/> ;<br/> ; ----------------------------------------------------------------------------<br/> <br/> #include &lt;guiconstants.au3&gt;<br/> #include &lt;string.au3&gt;<br/> Opt&#40;"TrayMenuMode",1&#41; <br/> Dim $Atempts = 0<br/> Dim $Lock = 0<br/> Dim $PassInput = ""<br/> Dim $Label<br/> Dim $ScreenyWindow = ""<br/> Dim $PassWindow = ""<br/> $Show_Controls_Timer = TimerInit&#40;&#41;<br/> $Controls_Shown = 0<br/> <br/> <br/> $PassWord = RegRead&#40;"HKEY_LOCAL_MACHINE\SOFTWARE\Andy\ScreenLock", "Password"&#41;<br/> <br/> If $PassWord &lt;&gt; "" Then<br/>     $PassWord = _StringEncrypt&#40;0, $PassWord, "4471"&#41;<br/> Else<br/>     Pass&#40;&#41;<br/> EndIf<br/> <br/> Lock&#40;&#41;<br/> <br/> While 1<br/>     $msg = GUIGetMsg&#40;&#41;<br/>     Select<br/>         Case $msg = $GUI_EVENT_CLOSE And $Lock = 0<br/>             Exit<br/>             <br/>         Case $msg = $PassInput<br/>             If GUICtrlRead&#40;$PassInput&#41; == $PassWord Then<br/>                 Lock&#40;&#41;<br/>                 MsgBox&#40;0, "Atempts", "An incorrect password was entered " & $Atempts & " time&#40;s&#41;."&#41;<br/>                 $Atempts = 0<br/>             Else<br/>                 $Atempts += 1<br/>                 SplashMsg&#40;"Error", "Invalid Password", 220, 100&#41;<br/>             EndIf<br/>             <br/>         Case $msg = $GUI_EVENT_PRIMARYUP And $Lock = 1<br/>             GUISetState&#40;@SW_SHOW, $PassWindow&#41;<br/>             $Controls_Shown = 1<br/>             $Show_Controls_Timer = TimerInit&#40;&#41;<br/>     EndSelect<br/>     <br/>     If TimerDiff&#40;$Show_Controls_Timer&#41; &gt; 10000 And $Controls_Shown = 1 Then<br/>         GUISetState&#40;@SW_HIDE, $PassWindow&#41;<br/>         $Controls_Shown = 0<br/>     EndIf<br/>     <br/>     If WinExists&#40;"Windows Task Manager"&#41; And $Lock = 1 Then<br/>         WinClose&#40;"Windows Task Manager"&#41;<br/>         WinKill&#40;"Windows Task Manager"&#41;<br/>     EndIf<br/>     <br/>     If WinActive&#40;$ScreenyWindow&#41; = 0 And WinActive&#40;$PassWindow&#41; = 0 And $Lock = 1 Then<br/>         WinActivate&#40;$ScreenyWindow&#41;<br/>     EndIf<br/>     <br/>     If Not BitAND&#40;WinGetState&#40;$ScreenyWindow, ""&#41;, 2&#41; = 1 And $Lock = 1 Then<br/>         GUISetState&#40;@SW_SHOW&#41;<br/>     EndIf<br/>     <br/>     If $Lock = 1 And WinExists&#40;$ScreenyWindow&#41; = 0 Then<br/>         $ScreenyWindow = GUICreate&#40;"", @DesktopWidth, @DesktopHeight, -2, -2, $WS_POPUPWINDOW, $WS_EX_TOOLWINDOW&#41;<br/>         GUISwitch&#40;$ScreenyWindow&#41;<br/>         WinSetTrans&#40;$ScreenyWindow, "", 1&#41;<br/>         GUISetState&#40;@SW_SHOW, $ScreenyWindow&#41;<br/>         WinSetOnTop&#40;$ScreenyWindow, "", 1&#41;<br/>         WinSetOnTop&#40;$PassWindow, "", 1&#41;<br/>     EndIf<br/> WEnd<br/> <br/> Func Lock&#40;&#41;<br/>     If $Lock = 0 Then<br/>         RegWrite&#40;"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableTaskMgr", "REG_DWORD", 00000001&#41;<br/>         HotKeySet&#40;"{F9}"&#41;   <br/>         HotKeySet&#40;"{F10}"&#41;<br/>         HotKeySet&#40;"{F11}"&#41;<br/> ;      HotKeySet&#40;"^!p"&#41;  ;Ctrl-Alt-p    <br/> ;      HotKeySet&#40;"^!l"&#41;  ;Ctrl-Alt-l<br/> <br/>         TraySetIcon&#40;"Shell32.dll", 47&#41;<br/>         <br/>         $ScreenyWindow = GUICreate&#40;"", @DesktopWidth + 2, @DesktopHeight + 2, -2, -2, $WS_POPUPWINDOW, $WS_EX_TOOLWINDOW&#41;<br/>         GUISwitch&#40;$ScreenyWindow&#41;<br/>         WinSetTrans&#40;$ScreenyWindow, "", 1&#41;<br/>         <br/>         Global $PassWindow = GUICreate&#40;"", 220, 80, -1, -1, $WS_POPUPWINDOW, $WS_EX_TOOLWINDOW&#41;<br/>         GUISwitch&#40;$PassWindow&#41;<br/>         GUISetState&#40;@SW_HIDE&#41;<br/>         Global $Label = GUICtrlCreateLabel&#40;"The screen has been locked.", 10, 10, -1, 15&#41;<br/>         ;      GUICtrlSetColor&#40;-1,0xff0000&#41;<br/>         Global $PassInput = GUICtrlCreateInput&#40;"Password", 10, 30, 200, 20, $ES_PASSWORD&#41;<br/>         Global $Label2 = GUICtrlCreateLabel&#40;"Type Password and hit Enter", 10, 55, -1, 15&#41;<br/>         ;      GUICtrlSetColor&#40;-1,0xff0000&#41;<br/>         GUISetState&#40;@SW_SHOW, $ScreenyWindow&#41;<br/>         WinSetOnTop&#40;$ScreenyWindow, "", 1&#41;<br/>         WinSetOnTop&#40;$PassWindow, "", 1&#41;<br/>         $Lock = 1<br/>     Else<br/>         GUIDelete&#40;$ScreenyWindow&#41;<br/>         GUIDelete&#40;$PassWindow&#41;<br/>         HotKeySet&#40;"{F9}", "close"&#41;<br/>         HotKeySet&#40;"{F10}", "Pass"&#41;    <br/>         HotKeySet&#40;"{F11}", "Lock"&#41;<br/> ;      HotKeySet&#40;"^!p", "Pass"&#41;  ;Ctrl-Alt-p<br/> ;      HotKeySet&#40;"^!l", "Lock"&#41;  ;Ctrl-Alt-l<br/> <br/>         TraySetIcon&#40;"Shell32.dll", 44&#41;<br/>         RegWrite&#40;"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableTaskMgr", "REG_DWORD", 00000000&#41;<br/>         $Lock = 0<br/>     EndIf<br/>     <br/> EndFunc   ;==&gt;Lock<br/> <br/> Func Pass&#40;&#41;<br/>     $PassWord = InputBox&#40;"Create Password", "Enter your password", "", "", 100, 100&#41;<br/>     If $PassWord = "" Then<br/>         MsgBox&#40;16, "error", "Invalid password."&#41;<br/>         Pass&#40;&#41;<br/>     Else<br/>         RegWrite&#40;"HKEY_LOCAL_MACHINE\SOFTWARE\Andy\ScreenLock", "Password", "REG_SZ", _StringEncrypt&#40;1, $PassWord, "4471"&#41;&#41;<br/>     EndIf<br/> EndFunc   ;==&gt;Pass<br/> <br/> <br/> Func SplashMsg&#40;$S_Title = "", $S_Text = "", $S_Size_X = 300, $S_Size_Y = 300&#41;<br/>     SplashTextOn&#40;$S_Title, $S_Text & @CRLF & "Press Enter to close this window.", $S_Size_X, $S_Size_Y&#41;<br/>     HotKeySet&#40;"{ENTER}", "OffSplash"&#41;<br/> EndFunc   ;==&gt;SplashMsg<br/> <br/> Func OffSplash&#40;&#41;<br/>     SplashOff&#40;&#41;<br/>     HotKeySet&#40;"{ENTER}"&#41;<br/> EndFunc   ;==&gt;OffSplash<br/> <br/> Func close&#40;&#41;<br/>     Exit<br/> EndFunc   ;==&gt;close</pre><br/> 		</div></div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/17407.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><b>Viết ứng dụng đơn giản với AutoIt</b></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17414.hva">Khoá và Mở máy tính của bạn bằng USB</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17420.hva">AIM Bot cho Shooting Flash Game</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17777.hva">Mega Tokyo Comic Ripper</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17778.hva">Windows Space Screensaver</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17780.hva">Gradient Effects on Text</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17781.hva">Tailchat FTP</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/17783.hva">Virtual Desktops</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/30517.hva">Sodoku Game</a></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/3102.hva#17407" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

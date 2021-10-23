@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tạo trang đăng ký và đăng nhập - ST"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tạo trang đăng ký và đăng nhập - ST"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ Bạn đang làm 1 website ? Site của bạn thuộc dạng chuyên nghiệp ? hay nghiệp dư ? ... thì cơ bản bạn cũng phải cần đến 1 trang đăng ký dùng để tạo tài khoản và trang đăng nhập dùng để truy nhập tài khoản đã đăng ký. Trong phạm vi bài viết này tôi sẽ trình bày cách viết 1 trang đăng ký, đăng nhập cơ bản mà bạn có thể ứng dụng ngay (Mì ăn liền mà :p). 
+
+1. Tạo kết nối database: 
+
+Tạo file "mysql.php" có code như sau: 
+
+
+<?php 
+
+$db_host = "localhost"; // Giữ mặc định là localhost 
+$db_name = "sanchoituoitre.info"; // Cần thay đổi.. 
+$db_username = "lyhuuloi"; // Cần thay đổi.. 
+$db_password = "123456"; // Cần thay đổi.. 
+
+@mysql_connect("{$db_host}", "{$db_username}", "{$db_password}") or die("Không thể kết nối database"); 
+@mysql_select_db("{$db_name}") or die("Không thể chọn database"); 
+
+?>
+
+
+Bạn cần phải thay đổi thông tin ở 3 biến $db_name, $db_username, $db_password cho phù hợp với thông tin database của bạn. 
+
+1.1. Tạo table "members" dùng dể chứa thông tin thành viên: 
+
+Sau đó bạn tạo file "create_members_table.php" có code như sau: 
+
+
+<?php 
+
+require_once("mysql.php"); 
+
+@mysql_query("CREATE TABLE `members` ( 
+`id` INT( 11 ) NOT NULL AUTO_INCREMENT , 
+`username` VARCHAR( 128 ) NOT NULL , 
+`password` VARCHAR( 32 ) NOT NULL , 
+`email` VARCHAR( 255 ) NOT NULL , 
+PRIMARY KEY ( `id` ) 
+) TYPE = MYISAM ;"); 
+
+print "Table \"members\" đã được tạo."; 
+
+?>
+
+
+Bạn tiếp tục chạy luôn file "create_members_table.php" này để tiến hành tạo table "members", sau khi tạo xong thì xóa file này đi. Nếu bạn đã quen sử dụng phpMyAdmin thì bạn có thể tự tạo table này, còn đối với newbie thì nên làm theo cách của tôi, sau này bạn có thể tự tìm hiểu thêm. 
+
+2. Tạo trang đăng ký: 
+
+Tạo file "register.php" có code như sau: 
+
+
+<?php 
+
+// Tải file mysql.php lên 
+require_once("mysql.php"); 
+
+if ( $_GET['act'] == "do" ) 
+{ 
+
+// Dùng hàm addslashes() để tránh SQL injection, dùng hàm md5() để mã hóa password 
+$username = addslashes( $_POST['username'] ); 
+$password = md5( addslashes( $_POST['password'] ) ); 
+$verify_password = md5( addslashes( $_POST['verify_password'] ) ); 
+$email = addslashes( $_POST['email'] ); 
+
+// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+if ( ! $username || ! $password || ! $verify_password || ! $email ) 
+{ 
+print "Xin vui lòng nhập đầy đủ các thông tin. <a href='javascript:history.go(-1)'>Nhấp vào đây để quay trở lại</a>"; 
+exit; 
+} 
+
+// Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+if ( $password != $verify_password ) 
+{ 
+print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. <a href='javascript:history.go(-1)'>Nhấp vào đây để quay trở lại</a>"; 
+exit; 
+} 
+
+// Tiến hành tạo tài khoản 
+@mysql_query("INSERT INTO members (username, password, email) VALUES ('{$username}', '{$password}', '{$email}')"); 
+
+// Thông báo hoàn tất việc tạo tài khoản 
+print "Tài khoản {$username} đã được tạo. <a href='login.php'>Nhấp vào đây để đăng nhập</a>"; 
+
+} 
+else 
+{ 
+
+// Form đăng ký 
+print <<<EOF 
+<form action="register.php?act=do" method="post"> 
+Tên truy nhập: <input type="text" name="username" value=""> 
+Mật khẩu: <input type="password" name="password" value=""> 
+Xác nhận mật khẩu: <input type="password" name="verify_password" value=""> 
+Địa chỉ E-mail: <input type="text" name="email" value=""> 
+<input type="submit" name="submit" value="Đăng ký tài khoản"> 
+</form> 
+EOF; 
+
+} 
+
+?>
+
+
+3. Tạo trang đăng nhập: 
+
+Tạo file "login.php" có code như sau: 
+
+
+<?php 
+
+// Tải file mysql.php lên 
+require_once("mysql.php"); 
+
+if ( $_GET['act'] == "do" ) 
+{ 
+
+// Dùng hàm addslashes() để tránh SQL injection, dùng hàm md5() để mã hóa password 
+$username = addslashes( $_POST['username'] ); 
+$password = md5( addslashes( $_POST['password'] ) ); 
+
+// Lấy thông tin của username đã nhập trong table members 
+$sql_query = @mysql_query("SELECT id, username, password FROM members WHERE username='{$username}'"); 
+$member = @mysql_fetch_array( $sql_query ); 
+
+// Nếu username này không tồn tại thì.... 
+if ( @mysql_num_rows( $sql_query ) <= 0 ) 
+{ 
+print "Tên truy nhập không tồn tại. <a href='javascript:history.go(-1)'>Nhấp vào đây để quay trở lại</a>"; 
+exit; 
+} 
+
+// Nếu username này tồn tại thì tiếp tục kiểm tra mật khẩu 
+if ( $password != $member['password'] ) 
+{ 
+print "Nhập sai mật khẩu. <a href='javascript:history.go(-1)'>Nhấp vào đây để quay trở lại</a>"; 
+exit; 
+} 
+
+// Khởi động phiên làm việc (session) 
+session_start(); 
+$_SESSION['user_id'] = $member['id']; 
+
+// Thông báo đăng nhập thành công 
+print "Bạn đã đăng nhập với tài khoản {$member['username']} thành công. <a href='index.php'>Nhấp vào đây để vào trang chủ</a>"; 
+
+} 
+else 
+{ 
+
+// Form đăng nhập 
+print <<<EOF 
+<form action="login.php?act=do" method="post"> 
+Tên truy nhập: <input type="text" name="username" value=""> 
+Mật khẩu: <input type="password" name="password" value=""> 
+<input type="submit" name="submit" value="Đăng nhập"> 
+</form> 
+EOF; 
+
+} 
+
+?>
+
+
+4. Tạo trang chủ: 
+
+Tạo file "index.php" với code như sau: 
+
+
+<?php 
+
+// Tải file mysql.php lên 
+require_once("mysql.php"); 
+
+// Khởi động phiên làm việc 
+session_start(); 
+
+if ( !$_SESSION['user_id'] ) 
+{ 
+
+print <<<EOF 
+Bạn chưa đăng nhập! <a href='login.php'>Nhấp vào đây để đăng nhập</a> 
+EOF; 
+
+} 
+else 
+{ 
+
+$user_id = intval($_SESSION['user_id']); 
+
+$sql_query = @mysql_query("SELECT * FROM members WHERE id='{$user_id}'"); 
+$member = @mysql_fetch_array( $sql_query ); 
+
+print <<<EOF 
+Bạn đang đăng nhập với tài khoản {$member['username']}. 
+EOF; 
+
+} 
+
+?>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#947</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#947</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 00:19:48]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ Mình đã thực hành từng bước rất chính xác theo bạn. Nhưng nó lại báo lỗi ở dòng <b>print <<<EOF</b> trong các file login.php và index.php ? Bạn có thể giải thích giùm chứ. Mình đã sai bước nào chăng ???]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#1346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#1346</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 03:25:58]]> GMT</pubDate>
+				<author><![CDATA[ cigcof]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">cigcof wrote:</cite><br>
+		<blockquote>Mình đã thực hành từng bước rất chính xác theo bạn. Nhưng nó lại báo lỗi ở dòng <b>print <<<EOF</b> trong các file login.php và index.php ? Bạn có thể giải thích giùm chứ. Mình đã sai bước nào chăng ???&nbsp;
+		</blockquote>
+
+<blockquote>
+<?php 
+
+$db_host = "localhost"; // Giữ mặc định là localhost 
+$db_name = "sanchoituoitre.info"; // Cần thay đổi.. 
+$db_username = "lyhuuloi"; // Cần thay đổi.. 
+$db_password = "123456"; // Cần thay đổi.. 
+&nbsp;
+		</blockquote>
+Bạn cần thay đổi thông tin giống như thông tin trong MySQL của bạn mới chạy  đc. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#1396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#1396</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 10:49:02]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ Hê hê ! 
+Bằng sự kém hiểu biết của mình, em muốn nói đôi lời về code này(nếu có gì sai mong anh em chỉ dạy thêm :D)
+Thứ nhất : 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Nếu username này không tồn tại thì.... 
+if &#40; @mysql_num_rows&#40; $sql_query &#41; &lt;= 0 &#41;</pre>
+		</div>
+Mình thì chưa thấy  @mysql_num_rows( $sql_query ) <0 bao giờ nên cũng hơi buồn cười khi thấy code này . . .  thường thì mình làm là 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; @mysql_num_rows&#40; $sql_query &#41; == 0 &#41;</pre>
+		</div>
+Thứ 2 : Để đỡ tốn thời gian của user cũng như "bớt việc" cho server, mình kiểm tra toàn bộ thông tin người dùng ngay trên trang đăng kí, chứ không để lên trên server mới làm. Như vậy theo mình sẽ bỏ: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+if &#40; ! $username || ! $password || ! $verify_password || ! $email &#41; 
+{ 
+print "Xin vui lòng nhập đầy đủ các thông tin. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+if &#40; $password != $verify_password &#41; 
+{ 
+print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+}</pre>
+		</div>
+Cũng vừa để cho chắc ăn, vừa chống flood, vừa kiểm tra được user đã đăng kí hay chưa (cái kiểm tra user exists trên code chưa có à nha), em dùng một type=hidden, name="anti_flood", value=một dẫy số do em tạo ra(theo một quy luật nào đó mà mình có thể kt được nó đúng hay sai).
+Nếu như dẫy số này trên server kt là đúng thì sẽ :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$kt_user = @mysql_query&#40;"SELECT id FROM members WHERE username='$username'"&#41;; 
+if&#40;@mysql_num_rows&#40;$kt_user&#41;!=0&#41;
+{
+echo "UserName này đã tồn tại. Mời bạn chọn User Nam khác !";
+exit;
+}
+else 
+{
+// Tiến hành tạo tài khoản 
+@mysql_query&#40;"INSERT INTO members &#40;username, password, email&#41; VALUES &#40;'{$username}', '{$password}', '{$email}'&#41;"&#41;; 
+
+// Thông báo hoàn tất việc tạo tài khoản 
+print "Tài khoản {$username} đã được tạo. &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt;"; 
+}</pre>
+		</div>
+
+Còn việc 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; !$_SESSION&#91;'user_id'&#93; &#41; 
+{ 
+
+print &lt;&lt;&lt;EOF 
+Bạn chưa đăng nhập! &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt; 
+EOF; 
+
+}</pre>
+		</div>
+Thì chuối một tí (sorry, nếu em sai !). Như mọi người đã biết giá trị của session sẽ xuyên suốt trong quá trình user làm việc với 1 cửa sổ, cho dù user chuyển từ trang này sang trang kia, trừ khi giá trị đó bị thay đổi hoặc phá huỷ. Như vậy chỗ này, em chỉ cần tạo một cái 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$_SESSION&#91;'user_id'&#93;=1;//thường của admin :D</pre>
+		</div>
+trên máy (hay trên host) rồi cũng từ cửa sổ đó chuyển sang trang đăng nhập này . . . hê hê  . . . bạn đoán xem chuyện gì sẽ xảy ra ????? 
+Theo mình là dùng setcokie (mặc dù không được tiện khi người dùng tắt cookie trên duyệt trình).
+Sau khi kiểm tra các bước đăng nhập xong ta sẽ :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>@setcookie&#40;"user","$member&#91;1&#93;",time&#40;&#41;+30*24*60*60,"tendomain"&#41; //sét trong 1 tháng :D
+@setcookie&#40;"pw","$member&#91;2&#93;",time&#40;&#41;+30*24*60*60,"tendomain"&#41; //sét trong 1 tháng :D</pre>
+		</div>
+và đoạn này
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; !$_SESSION&#91;'user_id'&#93; &#41; 
+{ 
+
+print &lt;&lt;&lt;EOF 
+Bạn chưa đăng nhập! &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt; 
+EOF; 
+
+}</pre>
+		</div>
+thay bằng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; ! $_COOKIE&#91;"user"&#93; || !$_COOKIE&#91;"pw"&#93; &#41; 
+{ 
+
+print &lt;&lt;&lt;EOF 
+Bạn chưa đăng nhập! &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt; 
+EOF; 
+
+} 
+else
+{
+...... &lt;== kt cookie. Nếu đúng thì thông báo đã đăng nhập, nếu sai thì echo "Thằng nào thích fake hả ?"; :D
+}</pre>
+		</div>
+^_^ đó là những gì trong cái đầu bé ít chữ của em . . . các bác tham khảo nếu có sai thì các bác đừng vác đá táng đầu em :D
+
+HAVE FUN!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#1484</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#1484</link>
+				<pubDate><![CDATA[Tue, 27 Jun 2006 14:07:51]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phamquoc_truong wrote:</cite><br>
+		<blockquote>
+Thứ 2 : Để đỡ tốn thời gian của user cũng như "bớt việc" cho server, mình kiểm tra toàn bộ thông tin người dùng ngay trên trang đăng kí, chứ không để lên trên server mới làm. Như vậy theo mình sẽ bỏ: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+if &#40; ! $username || ! $password || ! $verify_password || ! $email &#41; 
+{ 
+print "Xin vui lòng nhập đầy đủ các thông tin. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+if &#40; $password != $verify_password &#41; 
+{ 
+print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+ehèm, cái thứ hai của bạn đóa , đành rằng công việc kiếm tra nên để ở phía client thì tốt hơn nhưng mà cũng không thể nào không kiểm tra ở phía Server, hãy tưởng tượng, nếu dữ liệu được gửi đến Server của bạn không thông qua trình duyệt (nơi mà có sẵn các mã JavaScript xử lý trước dữ liệu) mà được gửi lên từ một ứng dụng thứ ba thì sao ? Khi đó thì rõ ràng bạn không thể kiểm soát được cái nào được gửi lên và dĩ nhiên khả năng xảy ra lỗi là rất lớn. 
+
+Thật ra việc để cho trình duyệt phía Client tự kiếm tra dữ liệu trước chỉ là một thủ thuật để nhằm tiết kiệm thời gian cho USER và phần nào giúp đỡ Server đỡ mệt mỏi thôi. Chúng ta không thể phủ định tầm quan trọng của việc kiếm tra dữ liệu phía Server. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#2180</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#2180</link>
+				<pubDate><![CDATA[Thu, 29 Jun 2006 14:36:43]]> GMT</pubDate>
+				<author><![CDATA[ Mr An Luong]]></author>
+			</item>
+			<item>
+				<title>Re: Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <blockquote> Thì chuối một tí (sorry, nếu em sai !). Như mọi người đã biết giá trị của session sẽ xuyên suốt trong quá trình user làm việc với 1 cửa sổ, cho dù user chuyển từ trang này sang trang kia, trừ khi giá trị đó bị thay đổi hoặc phá huỷ. Như vậy chỗ này, em chỉ cần tạo một cái
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$_SESSION&#91;'user_id'&#93;=1;//thường của admin</pre>
+		</div> 
+
+
+trên máy (hay trên host) rồi cũng từ cửa sổ đó chuyển sang trang đăng nhập này . . . hê hê . . . bạn đoán xem chuyện gì sẽ xảy ra ????? &nbsp;
+		</blockquote>
+
+làm cách nào mà tạo 1 biến session trên máy vậy? còn tạo trên host = local attack?  :shock: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#2767</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#2767</link>
+				<pubDate><![CDATA[Fri, 30 Jun 2006 23:38:06]]> GMT</pubDate>
+				<author><![CDATA[ iceface]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ theo minh biet la nhuoi ta dung cookie de luu thong tin tren may client ma, lam gi co chien tao session tren may cua user]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#2853</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#2853</link>
+				<pubDate><![CDATA[Sat, 1 Jul 2006 11:17:44]]> GMT</pubDate>
+				<author><![CDATA[ Mr An Luong]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ TO Mr An Luong 
+Bạn nói 2 điều thì 2 điều đều sai !
+Điều thứ nhất : 
+<blockquote>ehèm, cái thứ hai của bạn đóa , đành rằng công việc kiếm tra nên để ở phía client thì tốt hơn nhưng mà cũng không thể nào không kiểm tra ở phía Server, hãy tưởng tượng, nếu dữ liệu được gửi đến Server của bạn không thông qua trình duyệt (nơi mà có sẵn các mã JavaScript xử lý trước dữ liệu) mà được gửi lên từ một ứng dụng thứ ba thì sao ? Khi đó thì rõ ràng bạn không thể kiểm soát được cái nào được gửi lên và dĩ nhiên khả năng xảy ra lỗi là rất lớn. 
+
+Thật ra việc để cho trình duyệt phía Client tự kiếm tra dữ liệu trước chỉ là một thủ thuật để nhằm tiết kiệm thời gian cho USER và phần nào giúp đỡ Server đỡ mệt mỏi thôi. Chúng ta không thể phủ định tầm quan trọng của việc kiếm tra dữ liệu phía Server. &nbsp;
+		</blockquote>
+Thế bạn đã đọc cái dòng này chưa  ? 
+<blockquote>Cũng vừa để cho chắc ăn, <b>vừa chống flood</b>, vừa kiểm tra được user đã đăng kí hay chưa (cái kiểm tra user exists trên code chưa có à nha), <b>em dùng một type=hidden, name="anti_flood", value=một dẫy số do em tạo ra(theo một quy luật nào đó mà mình có thể kt được nó đúng hay sai). </b>
+Nếu như dẫy số này trên server kt là đúng thì sẽ : ....&nbsp;
+		</blockquote>
+Chỉ khi nào user submit bằng chính web của mình thì cái anti_flood mới được gán. Và nó sẽ được kiểm tra trên server. Nếu nó chưa được gán hoặc gán sai giá trị <== Flood và sẽ bị loại ngay. Như vậy sẽ không thể có chuyện :<blockquote>dữ liệu được gửi đến Server của bạn không thông qua trình duyệt (nơi mà có sẵn các mã JavaScript xử lý trước dữ liệu) mà được gửi lên từ một ứng dụng thứ ba&nbsp;
+		</blockquote>
+
+Điều thứ 2 :  <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>theo minh biet la nhuoi ta dung cookie de luu thong tin tren may client ma, lam gi co chien tao session tren may cua user</pre>
+		</div>
+Cookie có một vài vấn đề không thích hợp brower trong trường hợp brower của người dùng không chấp nhận cookie. Người dùng có thể vô hiệu hoá cookie trong brower. Do cookie lưu thông tin cá nhân trên máy khách nên hầu hết người dùng đều không muốn. Đó là lý do người dùng có thể vô hiệu hoá chức năng chấp nhận cookie. :D
+<b>lam gi co chien tao session tren may cua user</b> . . . hì hì câu này mình đâu có nói. :D
+Do máy mình cài apache + php nên hoàn toàn mình có thể tạo 1 session.
+@TO Mr An Luong  & iceface
+Có thể mình nhầm. Mình vừa tạo và vừa kiểm tra session ngay trên localhost của mình, nên có thể đã dẫn đến hiện tượng trên. Cảm ơn 2 bạn.
+
+P/S : Xin lưu ý bác : Bigball_hacker. Bê bài của người khác từ nơi khác sang mà không đề tên tác giả là thế nào ?
+HAVE FUN !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3034</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3034</link>
+				<pubDate><![CDATA[Sat, 1 Jul 2006 20:28:38]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; @mysql_num_rows&#40; $sql_query &#41; == 0 &#41;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; @mysql_num_rows&#40; $sql_query &#41; &lt;= 0 &#41;</pre>
+		</div>
+Mình cảm thấy không có gì đáng cười khi cẩn thận kiểm tra cả trường hợp âm lẫn trường hợp = 0 :)
+
+<blockquote>Để đỡ tốn thời gian của user cũng như "bớt việc" cho server, mình kiểm tra toàn bộ thông tin người dùng ngay trên trang đăng kí, chứ không để lên trên server mới làm. Như vậy theo mình sẽ bỏ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+ if &#40; ! $username || ! $password || ! $verify_password || ! $email &#41; 
+ { 
+ print "Xin vui lòng nhập đầy đủ các thông tin. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+ exit; 
+ } 
+ 
+ // Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+ if &#40; $password != $verify_password &#41; 
+ { 
+ print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. &lt;a href='javascript:history.go&#40;-1&#41;'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+ exit; 
+ }</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Và Bạn đã rất ẩu khi thay code mà không kiểm tra lại những gì mình viết, như vậy ở đoạn code của bạn thay lại đã thiếu:
+
+1. Kiểm tra mật khẩu nhập lần đầu, và mật khẩu xác nhận có khớp với nhau hay không ( cũng chẳng thèm kiểm tra coi có nhập mật khẩu chưa :D ).
+2. Kiểm tra email có điền chưa.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40; !$_SESSION&#91;'user_id'&#93; &#41; 
+ { 
+ 
+....
+ 
+ }</pre>
+		</div>
+Đúng là đầu bạn bé và ít chữ như bạn đã thừa nhận, nên bạn đã không hiểu dụng ý của mình khi viết đoạn này - mục đích của đoạn này chỉ là để kiểm tra xem có đăng nhập hay chưa thôi bạn ạ.
+
+
+<blockquote> Thì chuối một tí (sorry, nếu em sai !). Như mọi người đã biết giá trị của session sẽ xuyên suốt trong quá trình user làm việc với 1 cửa sổ, cho dù user chuyển từ trang này sang trang kia, trừ khi giá trị đó bị thay đổi hoặc phá huỷ. Như vậy chỗ này, em chỉ cần tạo một cái
+trên máy (hay trên host) rồi cũng từ cửa sổ đó chuyển sang trang đăng nhập này . . . hê hê . . . bạn đoán xem chuyện gì sẽ xảy ra ????? &nbsp;
+		</blockquote>
+Tớ không phủ định nhận định của bạn, nhưng bạn có thể test lại :) Tui chắc là bạn chưa test thì phải :))
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3062</link>
+				<pubDate><![CDATA[Sat, 1 Jul 2006 22:10:42]]> GMT</pubDate>
+				<author><![CDATA[ lyhuuloi]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ Trời ơi ! Bó ch*m ! Bác Lợi ơi là bác Lợi !
+<blockquote>mình kiểm tra toàn bộ thông tin người dùng ngay trên trang đăng kí&nbsp;
+		</blockquote>
+Em nói ngắn gọn lại thế này nhé :
+1) Nếu như user vào trang đăng kí, mình sẽ gắn cho họ một cái flag (người thì cookie, người thi session ...) còn em, em sẽ tạo ra một giá trị của biến anti_flood. Và nếu như người dùng không vào trang đăng kí thì sẽ không được nhận giá trị này. Nếu trên server kiểm tra, không có giá trị flood hoặc giá trị này sai, truy vấn sẽ bị loại bỏ. Cái giá trị này của anti_flood này một phần em dựa vào quy luật một phần dựa vào session => mỗi giá trị gần như là duy nhất => không thể nào làm giả được => người dùng bắt buộc phải vào trang đăng kí thật để đăng kí.
+2) Mình sẽ kiểm tra 
+<blockquote>//Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+ // Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau &nbsp;
+		</blockquote>
+Tất tần tật bằng javascript như mình đã nói 
+<blockquote>mình kiểm tra toàn bộ thông tin người dùng ngay trên trang đăng kí&nbsp;
+		</blockquote>
+như vậy dòng này :
+<blockquote>Và Bạn đã rất ẩu khi thay code mà không kiểm tra lại những gì mình viết, như vậy ở đoạn code của bạn thay lại đã thiếu: 
+
+1. Kiểm tra mật khẩu nhập lần đầu, và mật khẩu xác nhận có khớp với nhau hay không ( cũng chẳng thèm kiểm tra coi có nhập mật khẩu chưa  ). 
+2. Kiểm tra email có điền chưa. &nbsp;
+		</blockquote>
+mình hoàn toàn phủ nhận. Xin mọi người hãy đọc kĩ nhé !
+Form đăng kí như thế này : 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;form action="register.php?act=do" method="post" name="form_reg" onsubmit="return kiemtra&#40;&#41;;"&gt; 
+Tên truy nhập: &lt;input type="text" name="username" value=""&gt; 
+Mật khẩu: &lt;input type="password" name="password" value=""&gt; 
+Xác nhận mật khẩu: &lt;input type="password" name="verify_password" value=""&gt; 
+Địa chỉ E-mail: &lt;input type="text" name="email" value=""&gt; 
+&lt;input type="submit" name="submit" value="Đăng ký tài khoản"&gt; 
+&lt;/form&gt;</pre>
+		</div>
+Và đây là đoạn code kiểm tra bằng javascript mà bài trước em chỉ nói qua(mình nghĩ rằng nó rất dễ chỉ cần nói ra là mọi người đã hiểu . . .)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>function ktEmail&#40;s&#41;
+{   
+  if &#40;s==""&#41; return false;
+  if&#40;s.indexOf&#40;" "&#41;&gt;0&#41; return false;
+  if&#40;s.indexOf&#40;"@"&#41;==-1&#41; return false;
+  var i = 1;
+  var dodai = s.length;
+  if &#40;s.indexOf&#40;"."&#41;==-1&#41; return false;
+  if &#40;s.indexOf&#40;".."&#41;!=-1&#41; return false;
+  if &#40;s.indexOf&#40;"@"&#41;!=s.lastIndexOf&#40;"@"&#41;&#41; return false;
+  if &#40;s.lastIndexOf&#40;"."&#41;==s.length-1&#41; return false;
+  var str="0123456789abcdefghikjlmnopqrstuvwxyz-@._"; 
+  for&#40;var j=0;j&lt;s.length;j++&#41;
+	if&#40;str.indexOf&#40;s.charAt&#40;j&#41;&#41;==-1&#41;
+		return false;
+   return true;
+}
+function trong&#40;s&#41;
+{   
+	return &#40;&#40;s == null&#41; || &#40;s.length == 0&#41;&#41;
+}
+function khoangtrang &#40;s&#41;
+{   
+	var whitespace = " \t\n\r";
+	var i;
+
+  if &#40;trong&#40;s&#41;&#41; return true;
+  for &#40;i = 0; i &lt; s.length; i++&#41;
+  {   
+    var c = s.charAt&#40;i&#41;;
+    if &#40;whitespace.indexOf&#40;c&#41; == -1&#41; return false;
+  }
+  return true;
+}
+function so&#40;c&#41;{
+	return &#40;c&gt;="0" && c&lt;="9"&#41;;
+}
+function sos&#40;str&#41;
+{
+var kt=true;
+for&#40;var i=0;i&lt;str.length;i++&#41;
+	{
+		if&#40;!isNumer&#40;str.charAt&#40;i&#41;&#41;&#41;
+			{
+				kt=false;
+				break;
+			}
+	}
+	return kt;	
+}
+function kiemtra&#40;&#41;
+{
+	sai=0;
+	for&#40;i=0;i&lt;document.form_reg.elements.length-1;i++&#41;
+	{
+		if&#40;form_reg.elements&#91;i&#93;.value==''&#41;
+		{
+			alert&#40;'Bạn phải nhập đầy đủ thông tin !'&#41;;
+			form_reg.elements&#91;i&#93;.focus&#40;&#41;;
+			sai=1;
+			break;
+		}
+	}
+	if&#40;form_reg.password.value!=form_reg.verify_password.value && sai==0&#41;
+	{
+		alert&#40;'2 mật khẩu không trùng nhau !'&#41;;
+		form_reg.password.focus&#40;&#41;;
+		sai=1;
+	}
+	if &#40;!ktEmail&#40;form_reg.email.value&#41; && sai==0&#41;
+	{
+		alert&#40;"Bạn đã nhập sai email !"&#41;;
+		form_reg.email.focus&#40;&#41;;
+		sai=1;
+	}
+	if&#40;sai==1&#41;
+		return false;
+	else
+		return true;
+}</pre>
+		</div>
+Đoạn code của bác không kt user đã tồn tại hay chưa, email nhập vào cũng không kiểm tra xem nó có nhập vào là 1 email hay không, cũng chưa chống flood nốt. 
+Nếu như mình còn có gì chưa đúng, xin mọi người tiếp tục chỉ dạy . . . 
+
+HAVE FUN !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3190</link>
+				<pubDate><![CDATA[Sun, 2 Jul 2006 13:56:16]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr An Luong wrote:</cite><br>
+		<blockquote>theo minh biet la nhuoi ta dung cookie de luu thong tin tren may client ma, lam gi co chien tao session tren may cua user&nbsp;
+		</blockquote>
+Chán. Thế tui để chữ ST làm chi nhỉ? :-/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3248</link>
+				<pubDate><![CDATA[Sun, 2 Jul 2006 17:31:38]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <blockquote> Tất tần tật bằng javascript như mình đã nói &nbsp;
+		</blockquote>
+Lại ẩu :) Mình sẽ disable javascript thì bạn kiểm tra bằng cách gì ? Làm theo kiểu bạn là trường hợp trăm năm hiếm thấy :D
+
+Và bạn nên nhớ rằng đây là một bài viết cơ bản về PHP, bạn lại bỏ đi PHP mà dùng Javascript thay thế thì... bó tay :roll:
+
+Các bác mod, admin làm ơn khoá bài này lại hộ, kẻo lại dài ngoằn vì những nhận xét không thực tế :( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3304</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3304</link>
+				<pubDate><![CDATA[Sun, 2 Jul 2006 19:49:00]]> GMT</pubDate>
+				<author><![CDATA[ lyhuuloi]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Bigball_hacker wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Mr An Luong wrote:</cite><br>
+		<blockquote>theo minh biet la nhuoi ta dung cookie de luu thong tin tren may client ma, lam gi co chien tao session tren may cua user&nbsp;
+		</blockquote>
+Chán. Thế tui để chữ ST làm chi nhỉ? :-/&nbsp;
+		</blockquote>
+
+The chu ST nghi la gi vay, khong hieu ????
+Con bac phamquoc_truong bao rang neu user truy cap vao trang dang ky thi moi duoc gan bien anti_flood cho gi, nhung neu user ko vao trang do bang trinh duyet ma cung bang mot ung dung thu 3 thi sao ???]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#3888</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#3888</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 16:07:38]]> GMT</pubDate>
+				<author><![CDATA[ Mr An Luong]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <blockquote>Con bac phamquoc_truong bao rang neu user truy cap vao trang dang ky thi moi duoc gan bien anti_flood cho gi, nhung neu user ko vao trang do bang trinh duyet ma cung bang mot ung dung thu 3 thi sao ???&nbsp;
+		</blockquote>
+Thế thì cho nó vào đến trình duyệt thứ 100 hay một nghìn thì làm gì được vậy ? Bạn có hiểu bạn nói cái gì không ?
+<blockquote>Và nếu như người dùng không vào trang đăng kí thì sẽ không được nhận giá trị này. Nếu trên server kiểm tra, không có giá trị flood hoặc giá trị này sai, truy vấn sẽ bị loại bỏ. Cái giá trị này của anti_flood này một phần em dựa vào quy luật một phần dựa vào session => mỗi giá trị gần như là duy nhất => không thể nào làm giả được => người dùng bắt buộc phải vào trang đăng kí thật để đăng kí.&nbsp;
+		</blockquote>
+@To bác lyhuuloi. Vâng bác thử dít-sa-bờ-lết cái cookie đi rồi vào mấy diễn đàn mà đăng nhập xem ! => IPB không thực tế, VBB không thực tế, *forum không thực tế. Còn bác thì thực tế đến nỗi một user có thể có mấy thằng đăng kí. Bác thực tế quá !
+
+Cái gì mọi người góp ý, em xin ghi nhận . . . và cũng xin chào topic này. Em chả muốn anh em căng thẳng thêm nữa đâu nha. . . 
+
+HAVE FUN !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#4011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#4011</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 22:01:30]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>Re: Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ hixx... mấy anh ghê thật..... em không biết gì cả..... 
+Kinh ... giỏi kinh ....... Chỉ em... em không biết làm ...... 
+Bình thường em không biết mí cái nì ............
+
+Có source gửi cho em ... nghiên cứu ...
+Đúng là ...... em nhìn lại em không biết gì cả... 
+ :(  :oops:  :oops:  :( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#4040</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#4040</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 23:36:12]]> GMT</pubDate>
+				<author><![CDATA[ micr0vnn]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <blockquote> @To bác lyhuuloi. Vâng bác thử dít-sa-bờ-lết cái cookie đi rồi vào mấy diễn đàn mà đăng nhập xem ! => IPB không thực tế, VBB không thực tế, *forum không thực tế. Còn bác thì thực tế đến nỗi một user có thể có mấy thằng đăng kí. Bác thực tế quá ! &nbsp;
+		</blockquote>
+Không biết bạn có từng xem qua sources của IPB và VBB ở phần login và register chưa nhỉ :)
+
+Họ cũng sẽ kiểm tra xem có nhập: tên, mật khẩu và email thôi bạn à :) Bạn không tin thì bạn disable javascript rồi đăng ký mà không nhập gì vào xem coi có báo lỗi không.
+
+Nếu có thì chứng minh rằng đoạn PHP kiểm tra các thông tin nhập khi đăng ký là hoàn toàn đúng bạn à.
+
+Và dường như bạn đã nhầm khi không xem rõ đoạn code mà trước giờ bàn là nằm ở phần đăng ký chứ không phải phần đăng nhập ;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#4112</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#4112</link>
+				<pubDate><![CDATA[Wed, 5 Jul 2006 08:51:24]]> GMT</pubDate>
+				<author><![CDATA[ lyhuuloi]]></author>
+			</item>
+			<item>
+				<title>Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ Không phải thế đâu <b>micr0vnn</b> ạ !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#4138</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#4138</link>
+				<pubDate><![CDATA[Wed, 5 Jul 2006 11:15:45]]> GMT</pubDate>
+				<author><![CDATA[ Dungna]]></author>
+			</item>
+			<item>
+				<title>Re: Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[     Các huynh ơi cho em hỏi cái ạ. Em cũng thử làm như bác hướng dẫn nhưng mà khi tạo file <font color='orange'>register.php</font> thì có hiện tượng như sau: (Mời các huynh xem lại code ạ)
+   2. Tạo trang đăng ký: 
+Tạo file "register.php" có code như sau: 
+<font color='brown'>&lt;?php 
+// Tải file mysql.php lên 
+require_once("mysql.php"); 
+
+if ( $_GET['act'] == "do" ) 
+{ 
+
+// Dùng hàm addslashes() để tránh SQL injection, dùng hàm md5() để mã hóa password 
+$username = addslashes( $_POST['username'] ); 
+$password = md5( addslashes( $_POST['password'] ) ); 
+$verify_password = md5( addslashes( $_POST['verify_password'] ) ); 
+$email = addslashes( $_POST['email'] ); 
+
+// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+if ( ! $username || ! $password || ! $verify_password || ! $email ) 
+{ 
+print "Xin vui lòng nhập đầy đủ các thông tin. &lt;a href='javascript:history.go(-1)'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+if ( $password != $verify_password ) 
+{ 
+print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. &lt;a href='javascript:history.go(-1)'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Tiến hành tạo tài khoản 
+@mysql_query("INSERT INTO members (username, password, email) VALUES ('{$username}', '{$password}', '{$email}')"); 
+
+// Thông báo hoàn tất việc tạo tài khoản 
+print "Tài khoản {$username} đã được tạo. &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt;"; 
+
+} 
+else 
+{ </font>// Form đăng ký 
+<font color='red'>print &lt;&lt;&lt;EOF 
+&lt;form action="register.php?act=do" method="post"&gt; 
+Tên truy nhập: &lt;input type="text" name="username" value=""&gt; 
+Mật khẩu: &lt;input type="password" name="password" value=""&gt; 
+Xác nhận mật khẩu: &lt;input type="password" name="verify_password" value=""&gt; 
+Địa chỉ E-mail: &lt;input type="text" name="email" value=""&gt; 
+&lt;input type="submit" name="submit" value="Đăng ký tài khoản"&gt; 
+&lt;/form&gt; 
+EOF; </font>
+<font color='brown'>} 
+?&gt; </font>
+Thì nó báo lỗi: <font color='red'>Parse error: parse error in e:\appserv\www\hoa\register.php on line 34
+   </font>. Em ko hiểu vì sao nữa. Dòng 34 là dòng <font color='green'>print &lt;&lt;&lt;EOF </font>. Có phải là nó ko hiểu dòng đó ko hả các huynh. Lần trước em nhớ cũng dùng câu lệnh print &lt;&lt;&lt;EOF...EOF; và nó cũng báo lỗi tương tự như thế (vẫn chưa giải thích được lỗi đó). Và thực tế em cũng chưa hiểu thật sự nó có ý nghĩa gì? Mong các huynh giải thích giùm em. Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#95303</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#95303</link>
+				<pubDate><![CDATA[Sun, 4 Nov 2007 10:52:07]]> GMT</pubDate>
+				<author><![CDATA[ hoaitvn]]></author>
+			</item>
+			<item>
+				<title>Re: Tạo trang đăng ký và đăng nhập - ST</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hoaitvn wrote:</cite><br>
+		<blockquote>    Các huynh ơi cho em hỏi cái ạ. Em cũng thử làm như bác hướng dẫn nhưng mà khi tạo file <font color='orange'>register.php</font> thì có hiện tượng như sau: (Mời các huynh xem lại code ạ)
+   2. Tạo trang đăng ký: 
+Tạo file "register.php" có code như sau: 
+<font color='brown'>&lt;?php 
+// Tải file mysql.php lên 
+require_once("mysql.php"); 
+
+if ( $_GET['act'] == "do" ) 
+{ 
+
+// Dùng hàm addslashes() để tránh SQL injection, dùng hàm md5() để mã hóa password 
+$username = addslashes( $_POST['username'] ); 
+$password = md5( addslashes( $_POST['password'] ) ); 
+$verify_password = md5( addslashes( $_POST['verify_password'] ) ); 
+$email = addslashes( $_POST['email'] ); 
+
+// Kiểm tra 4 thông tin, nếu có bất kỳ thông tin chưa điền thì sẽ báo lỗi 
+if ( ! $username || ! $password || ! $verify_password || ! $email ) 
+{ 
+print "Xin vui lòng nhập đầy đủ các thông tin. &lt;a href='javascript:history.go(-1)'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Kiểm tra mật khẩu, bắt buộc mật khẩu nhập lúc đầu và mật khẩu lúc sau phải trùng nhau 
+if ( $password != $verify_password ) 
+{ 
+print "Mật khẩu không giống nhau, bạn hãy nhập lại mật khẩu. &lt;a href='javascript:history.go(-1)'&gt;Nhấp vào đây để quay trở lại&lt;/a&gt;"; 
+exit; 
+} 
+
+// Tiến hành tạo tài khoản 
+@mysql_query("INSERT INTO members (username, password, email) VALUES ('{$username}', '{$password}', '{$email}')"); 
+
+// Thông báo hoàn tất việc tạo tài khoản 
+print "Tài khoản {$username} đã được tạo. &lt;a href='login.php'&gt;Nhấp vào đây để đăng nhập&lt;/a&gt;"; 
+
+} 
+else 
+{ </font>// Form đăng ký 
+<font color='red'>print &lt;&lt;&lt;EOF 
+&lt;form action="register.php?act=do" method="post"&gt; 
+Tên truy nhập: &lt;input type="text" name="username" value=""&gt; 
+Mật khẩu: &lt;input type="password" name="password" value=""&gt; 
+Xác nhận mật khẩu: &lt;input type="password" name="verify_password" value=""&gt; 
+Địa chỉ E-mail: &lt;input type="text" name="email" value=""&gt; 
+&lt;input type="submit" name="submit" value="Đăng ký tài khoản"&gt; 
+&lt;/form&gt; 
+EOF; </font>
+<font color='brown'>} 
+?&gt; </font>
+Thì nó báo lỗi: <font color='red'>Parse error: parse error in e:\appserv\www\hoa\register.php on line 34
+   </font>. Em ko hiểu vì sao nữa. Dòng 34 là dòng <font color='green'>print &lt;&lt;&lt;EOF </font>. Có phải là nó ko hiểu dòng đó ko hả các huynh. Lần trước em nhớ cũng dùng câu lệnh print &lt;&lt;&lt;EOF...EOF; và nó cũng báo lỗi tương tự như thế (vẫn chưa giải thích được lỗi đó). Và thực tế em cũng chưa hiểu thật sự nó có ý nghĩa gì? Mong các huynh giải thích giùm em. Thanks.&nbsp;
+		</blockquote>
+
+Kiểm lại xem sau <b>&lt;&lt;&lt;EOF</b>, và sau <b>EOF;</b> có khoảng trắng (space) nào không, nếu có khi parse sẽ gây ra lỗi trên.
+Ref:
+<span class="link"> http://php.net/heredoc</span>
+<span class="link"> http://www.php.net/manual/en/function.print.php</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/398.hva#95307</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/398.hva#95307</link>
+				<pubDate><![CDATA[Sun, 4 Nov 2007 11:28:43]]> GMT</pubDate>
+				<author><![CDATA[ gsmth]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Case 1 - iptables và máy đơn"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Case 1 - iptables và máy đơn"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <b>Case 1 - iptables và máy đơn</b>
+Trường hợp điển hình thứ nhất trong việc ứng dụng iptables để bảo vệ.
+
+<b>1. Trường hợp:</b>
+Firewall đơn giản cho một máy đơn.
+
+<b>2. Nhu cầu:</b>
+Bảo vệ máy đơn không bị rà và truy cập trong khi kết nối vào Internet. Máy đơn này không cung cấp dịch vụ cho những máy bên ngoài truy cập vào.
+
+<b>3. Phương pháp kết nối:</b>
+Modem, xDSL, Cable.
+
+Đòi hỏi tối thiểu:
+Đã hoàn tất thành công quy trình kết nối vào Internet (xuyên qua modem, xDSL, cable....) và có thể duyệt Internet hoàn chỉnh.
+
+
+- nếu là modem, ppp0 là external interface.
+- nếu là xDSL, có hai trường hợp: ppp0 là external interface (nếu ISP ứng dụng PPPOE) hoặc eth0 là external interface (nếu ISP dùng DHCPD để assign IP cho user).
+- nếu là cable, eth0 là external interface, IP address thường được phân bố qua DHCP.
+
+<b>5. Nhóm luật:</b>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep "inet addr" | awk -F":" '{print $2}' | awk '{print $1}'`
+3.    IPT="/usr/local/sbin/iptables"
+4.
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.
+10.    $IPT -A OUTPUT -o $IF -s $IP -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT</pre>
+		</div>
+
+
+<b>6. Phân tích:</b>
+- Dòng 1: Ấn định giá trị của biến IF bằng chuỗi lệnh ngầm, chuỗi lệnh này xác định network interface nào được gán với default gateway. Khi IF này ứng động và được phân bố một địa chỉ IP, nó cũng chính là default gateway ra vào của các packets trong quá trình truy cập Internet.
+
+- Dòng 2: Ấn định giá trị của biến IP bằng chuỗi lệnh ngầm. Giá trị này được hiện hữu khi interface ở trên ứng động và kết nối vào dịch vụ cung cấp Internet. Đây là một chuỗi lệnh dùng để "tách" lấy giá trị IP hiện có trên IF. Nó tiện dụng vì bạn không cần phải điều chỉnh firewall script này mỗi khi IP address thay đổi.
+
+- Dòng 3: Ấn định giá trị của biến IPT chỉ cho vị trí chứa iptables binary. Dùng cách này có hai điểm tiện là không phải gõ trọn bộ đường dẫn đến nơi chứa iptables và nếu nơi chứa iptables thay đổi vì lý do nào đó thì chỉ cần thay đổi ở biến này.
+
+- Dòng 4: Dòng trống có chủ ý cho dễ nhìn.
+
+- Dòng 5: Lệnh iptables với thông số -F có tác dụng xoá dội các chains còn vương vãi đâu đó (nếu có) khi firewall script này khởi tác. Đây là một lệnh thuộc dạng "house-keeping" (bảo trì) để gìn giữ tính trung thực và chính xác của các "rules" do iptables tạo ra. -F (flush) là một bước nên thực hiện vì mỗi lượt firewall script này được chạy, những rules cần thiết sẽ được ứng dụng và những rules không cần dùng (và còn vương vãi trên memory) sẽ bị loại bỏ.
+
+- Dòng 6-7-8: Ba dòng trông đơn giản này kỳ thật đóng vai trò tối quan trọng. Tác dụng của mục tiêu DROP ở đây với thông số -P dùng để thiết lập chế độ (policy) cản mọi lưu thông trước khi cho phép loại lưu thông cụ thể nào đó được ra hoặc vào. DROP Policy là phương cách ngăn chặn vững nhất bởi vì những gì không cho phép sẽ bị cản. Chỉ có những gì được cho phép một cách cụ thể thì mới được đi qua. Hay nói một cách khác, khi một packet đi vào (hoặc đi ra) mà không có rule nào thích ứng cụ thể cho tính chất của packet này thì nó sẽ bị cản (DROP) theo chế độ chung của firewall.
+
+Diễn dịch luật này thành ngôn ngữ bình thường như sau: theo chế độ mặc định (-P), các chains INPUT, OUTPUT và FORWARD hoàn toàn từ chối (DROP) mọi lưu thông.
+
+- Dòng 9: Dòng trống có chủ ý cho dễ nhìn.
+
+- Dòng 10: Đây là dòng xác định OUTPUT rule cho mọi packet đi ra từ IP và IF (đã xác định ở dòng 1 và 2). Rule này cho phép mọi packet, mọi loại giao thức (protocol) đi từ IP xuyên qua IF được phép đi ra ngoài. Với iptables, nếu bạn không xác định cụ thể loại giao thức (-p) trong một rule thì nó mang giá trị ngầm là mọi giao thức. Đây là một rule rất thư giãn vì nó hoàn toàn không giới hạn cho những packet đi ra, miễn sao nó đi ra từ IP và xuyên qua IF đã định. Đối với người dùng cá nhân, rule này rất thích hợp vì bạn không muốn tự hạn chế đường ra (ngoại trừ bạn có dụng ý bảo mật khác).
+
+Diễn dịch luật này thành ngôn ngữ bình thường như sau: mọi packets  từ IP hiện dụng (-s $IP) xuyên qua interface eth0 (-o $IF) đi ra ngoài thì được chấp nhận (-j ACCEPT).
+
+- Dòng 11: Đây là dòng xác định INPUT rule cho mọi packet đi đến IP và IF (đã xác định ở dòng 1 và 2). Rule này chỉ khác OUTPUT rule ở thông số và giá trị thông số -m state --state ESTABLISHED,RELATED. Điểm tối quan trọng cũng nằm ở đây. Nếu rule trên không có thông số và giá trị của thông số -m state thì firewall này hoàn toàn vô dụng bởi vì nó cho phép bất cứ giao thức nào, ở tình trạng nào cũng có thể lưu thông. Với -m state, packets đi vào sẽ được kiểm duyệt tình trạng của packets thoả mãn điều kiện ESTABLISHED hoặc RELATED. Cũng nên đào sâu vài điểm về tình trạng ESTABLISHED và RELATED ở đây:
+
+- Một packet ở tình trạng ESTABLISHED có nghĩa nó thuộc một xuất truy cập (connection) đã hình thành và xuất truy cập này đã có diễn tiến trao đổi các packet từ hai phía "gởi và nhận". Với các luật ở dòng 10 và 11, chúng ta dễ thấy chỉ có packet từ firewall đi ra mới có thể ở tình trạng NEW để khởi tạo một xuất truy cập. Hay nói một cách khác, firewall của bạn "hỏi" thì đối tượng nào đó từ Internet mới "trả lời". Packet ở tình trạng ESTABLISHED có nghĩa là nó đã thông qua giai đoạn "hỏi / trả lời" một cách hợp thức. Điều này cũng có nghĩa, packets từ bên ngoài đi đến $IP xuyên qua $IF sẽ không được tiếp nhận ở tình trạng NEW và INVALID cho nên các packets nào "hỏi" (NEW) hoặc "chen ngang" (INVALID) từ bên ngoài đến firewall sẽ bị chặn (tham khảo thêm tài liệu căn bản về iptables cho 4 states được sử dụng).
+
+- Packet ở tình trạng RELATED không thấy nhiều như packet ở tình trạng ESTABLISHED bởi vì RELATED packet chỉ xuất hiện khi một xuất truy cập mới cần được thiết lập dựa trên tình trạng một xuất truy cập đang có đã được thiết lập một cách hợp pháp. Loại packet này có thể thấy ở giao thức FTP sau khi phân đoạn kết nối và xác minh người dùng (authentication) trên cổng 21 đã hoàn thành và cần thiết lập cổng dữ liệu 20 để chuyển tải dữ liệu. Ở đây, vì giao thức qua cổng 21 ở dạng ESTABLISHED cho nên cổng 20 được phép thiết lập thêm và phân đoạn này tạo ra packet thuộc dạng RELATED. Packet ở tình trạng RELATED cũng thường thấy ở các ICMP packets ở dạng trả lời (replies).
+
+- -m state ở trên là một trong những tính năng thuộc dạng SPI -1- (stateful packet inspection - kiểm soát đa thể trạng) của iptables. Trước đây, với kernel 2.2.x series và ipchains (tiền thân của iptables), các packets được kiểm soát ở giới hạn loại packet và không thể kiểm soát ở biên độ tình trạng packet. Tính năng đa thể trạng này không những giúp bạn đơn giản hoá nhóm luật cho firewall của mình mà còn tạo nên một firewall linh động và vững vàng hơn rất nhiều. Nếu không dùng -m state ở đây, ít nhất bạn phải mở một loạt cổng nào đó (dãy 32000 - 64000 chẳng hạn) để các packets từ bên ngoài có thể đi vào để "trả lời" các requests bạn tạo ra. Đây là một phương thức có thể tạo những điểm yếu cho firewall, đó là chưa kể đến tính luộm thuộm khi phải cho phép chuỗi cổng cho mỗi loại giao thức (tcp / udp) và loại icmp ra vào cho thích hợp.
+
+Diễn dịch luật này thành ngôn ngữ bình thường như sau: mọi packets  từ bên ngoài Internet đi vào IP hiện dụng (-s $IP) xuyên qua interface eth0 (-i $IF) vào trong máy ở chế độ ESTABLISHED,RELATED thì được chấp nhận (-j ACCEPT).
+
+<b>7. Tổng lượt dạng firewall trên:</b>
+Nhìn vào vài dòng luật của firewall trên, chắc chắn có người sẽ thắc mắc và sẽ hỏi chỉ có vậy thôi sao?.
+
+Câu trả lời ngắn: chỉ có vậy nếu chỉ cần như vậy.
+
+Câu trả lời dài: cho một máy đơn và người dùng được quyền gởi bất cứ yêu cầu truy cập trên bất cứ giao thức nào từ bên trong máy ra ngoài cũng như cản bất cứ yêu cầu truy cập trên mọi giao thức từ bên ngoài vào thì vài dòng luật như vậy là đủ. Như bạn biết, trong khi máy chạy trên Linux sẽ có một số dịch vụ đang lắng nghe (LISTEN). Những dịch vụ này chỉ phục vụ cho riêng bạn và bạn không muốn bất cứ ai từ Internet truy cập vào các dịch vụ này. Luật ở dòng 11 ấn định: các packet đi vào (INPUT) chỉ có thể ở dạng ESTABLISHED và RELATED cho nên một đòi hỏi truy cập mới (new request) từ Internet vào không thể được hình thành. Khi một packet như vậy đi vào firewall, firewall sẽ kiểm tra xem có luật INPUT nào thích hợp cho phép nó đi vào, nếu không firewall sẽ cản nó theo quy định của quy chế mặc định (-P) là DROP. Ở đây bạn có một luật INPUT duy nhất và luật này quy định rất cụ thể tình trạng packet được cho phép vào. Khi packet từ bên ngoài Internet vào, firewall sẽ kiểm tra packet này:
+- nếu nó hoàn toàn mới và không hề hiện diện trong bản tình trạng (conntrack table) của netfilter -2- thì packet này bị cản.
+- nếu nó đã hiện diện trong state table của netfilter thì nó được tiếp tục đi vào.
+
+<b>8. Mở rộng:</b>
+8.1. Vấn đề logging:
+Với các luật firewall trên, khi xét kỹ, bạn sẽ thấy thiếu một yếu tố rất quan trọng đó là thông tin logging. Nếu bạn muốn biết có bao nhiêu trường hợp các packets "vi phạm" (bên ngoài các luật cho phép của firewall trên), bạn cần dùng target LOG. Vậy đưa vào các luật để thâu thập các thông tin vi phạm ở đâu? Bạn chỉ cần thêm vài dòng tiếp theo sau dòng 11 ở trên như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_INPUT: "
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_OUTPUT: "
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_FORWARD: "
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP</pre>
+		</div>
+
+
+- Các luật trên đôi khi còn được gọi là "clean-up rules", nói theo thuật ngữ chuyên môn của firewall. Lý do chúng được gọi là "clean-up rules" vì chúng đóng vai trò "dọn dẹp" cho các luật đứng trước chúng. Các luật ở dòng 12, 13, 14, 15 ,16 và 17 có chức năng tương tự nhau, chỉ khác ở một điểm là mỗi cặp 12-13, 14-15, 16-17 có tác dụng cho các chains (INPUT, OUTPUT và FORWARD) riêng biệt.
+
+-  Diễn dịch luật ở dòng 12 thành ngôn ngữ bình thường như sau: mọi packets đi vào thuộc chain INPUT, xuyên qua interface $IF đến địa chỉ $IP sẽ được log với prefix là "BAD_INPUT" ở chế độ --log-level 5 và ở giới hạn là 1 giây.
+- Kế tiếp, ở dòng 13: vào thuộc chain INPUT, xuyên qua interface $IF đến địa chỉ $IP sẽ bị cản (sau khi bị LOG ở trên).
+- Dòng 14, 15, 16 và 17 tương tự như trên cho chain OUTPUT và FORWARD.
+
+Vậy điểm cần nhấn mạnh ở đây là vị trí của các luật trong một nhóm luật. Nếu các luật ở dòng 12-17 nằm trên các luật ở dòng 10-11 thì chắc chắn firewall của bạn trở nên vô dụng vì không có bất cứ packets nào có thể đi vào và đi ra vì, hễ một packet nào đi vào và đi ra đều "trùng" với luật đã ấn định (và đã diễn dịch ở trên). Tuy nhiên, khi các luật ở dòng 12-17 nằm dưới các luật dòng 10-11 thì chúng trở thành ích lợi. Một packet đi vào theo trình tự các luật đặt sẵn trong firewall trên, chúng ta sẽ thấy:
+- nếu packet đó đi vào để "trả lời" cho một đòi hỏi từ firewall khởi tạo trước thì nó được phép đi vào (áp đặt bởi luật dòng 11).
+- nếu packet đó đi vào mà không thoả mãn luật ở dòng 11, nó tiếp tục "bị" xét duyệt bởi các luật đi theo sau. Ở đây, dòng 12 và 13 chắc chắn sẽ "tóm" được packet vi phạm và sẽ được xử lý theo ấn định cho các packet đi vào (thuộc chain INPUT).
+- nếu không có các luật đưa ra ở dòng 12, 13, 14, 15, 16 và 17 thì các packet không thoả mãn được luật đã ấn định của firewall cũng sẽ bị cản bằng chế độ đưa ra ở dòng 6, 7, 8 nhưng cản một cách im lặng. Điểm khác biệt ở đây là luật cụ thể ở dòng 12, 13, 14, 15, 16 và 17 sẽ tạo ra log trong /var/log/messages (theo mặc định) cho những packet vi phạm và sẽ cản chúng một cách cụ thể.
+
+<b>8.2. Cản các lưu thông cụ thể</b>
+Đối với các lưu thông đi vào INPUT chain, luật ở dòng 11 đã khá vững vì không có gói tin nào từ bên ngoài có thể đi vào nếu như bạn không gởi "request" ra trước. Cho nên, chúng ta chỉ mở rộng ở OUTPUT chain ở đây.
+
+<b>8.2.1 Cản trọn bộ trước, cho phép cụ thể sau</b>
+Câu hỏi được đặt ra là các loại lưu thông cụ thể nào cần được cản? Vấn đề này phụ thuộc vào mức cẩn thận (hoặc paraniod)hoặc nhu cầu của từng người dùng. Với một cá nhân muốn truy cập bất cứ nơi đâu, bằng bất cứ giao thức nào thì dòng 10 thuộc phần 5 ở trên hoàn toàn đáp ứng nhu cầu này. Tuy nhiên, với một cá nhân chỉ cần duyệt web và chat bằng Yahoo Instance Messenger chẳng hạn thì giới hạn này có thể thu hẹp lại rất nhiều. Trong trường hợp này, dòng 10 thuộc phần 5 ở trên có thể được thay thế bởi một dòng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -j ACCEPT</pre>
+		</div>
+
+
+Dòng trên có thể được diễn dịch nôm na: các lưu thông đi đến bất cứ địa chỉ nào (-d any/0) bằng giao thức tcp (-p tcp đến cổng 80 (cổng 443 và cổng 5050) (--dport 80,443,5050) -3- thì được chấp nhận. Dòng trên không đề cập đến vấn đề "state" của các gói tin (-m state) như ở dòng 11 thuộc phần 5, điều này có nghĩa các lưu thông này có thể đi ra ngoài ở bất cứ state nào tùy thích. Tuy nhiên, nếu bạn paranoid hơn nữa thì chêm vào một đoạn -m state thì càng vững hơn, ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+
+Dòng trên tương tự như ví dụ trước nhưng chỉ định thêm là các gói tin ở tình trạng NEW và ESTABLISHED thì mới được đi ra ngoài; những gói tin ở dạng RELATED và INVALID sẽ bị cản. Lý do, giao thức http và giao thức dành cho YIM không cần đến tình trạng RELATED và các gói tin ở tình trạng INVALID thì càng nên không cho phép lưu thông. Tất nhiên nếu bạn muốn dùng POP3 và SMTP thì phải thêm giá trị 25 và 110 cho chuỗi --dport ở trên.
+
+Nếu đã thực sự "paranoid" như vậy thì tại sao không xác lập thêm một luật cho giao thức UDP? Nếu bạn không có nhu cầu gì đặc biệt thì có lẽ cổng 53 cho DNS là cổng cần thiết nhất:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$IPT -A OUTPUT -o $IF -s $IP -p udp -d &lt;DNS_của_ISP&gt; --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+<b>8.2.2 Cho phép trọn bộ trước, cản các cổng cụ thể sau</b>
+Trường hợp người dùng muốn tự do truy cập bất cứ nơi đâu, bằng bất cứ giao thức nào nhưng không muốn máy của mình "tự động" truy cập đến các cổng "nguy hại" (ví dụ như máy vô tình bị nhiễm trojan và bị biến thành zombie -4- để tham gia trong các cuộc tấn công từ chối dịch vụ chẳng hạn). Trong trường hợp này, cách giản tiện nhất là thêm hai dòng phía trên dòng 10 thuộc phần 5:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 54321,12345 -j DROP
+$IPT -A OUTPUT -o $IF -s $IP -p udp -d any/0 -m multiport --dport 54321,12345 -j DROP</pre>
+		</div>
+
+Hai dòng trên chỉ định các gói tin đi ra ngoài và đến các cổng trong chuỗi -5- ở trên sẽ bị cản (các cổng nêu ra ở đây chỉ là một ví dụ, không cụ thể áp đặt tính nguy hại của các cổng trên trên thực tế). Lý do chúng ta phải thiết lập hai dòng luật tách biệt vì mỗi dòng dành riêng cho mỗi giao thức và lý do hai dòng trên phải được đặt trước dòng thứ 10 vì những gói tin đi ra phải được kiểm tra trước khi có thể đi ra. Như đã đề cập ở phần 8.1, vị trí các luật là một yếu tố tối quan trọng, đây là yếu tố quyết định các luật của firewall hữu dụng hay vô dụng.
+
+
+<b>9. Thử nghiệm:</b>
+9.1 Thử nghiệm 1:
+Giả sử bạn có một dịch vụ đang chạy trên máy (telnet chẳng hạn, hoặc bất cứ dịch vụ nào hiện có trên máy). Sau khi đã ứng động firewall trên, bạn thử nhờ một người bạn nào khác tìm cách truy cập vào dịch vụ telnet này. Tất nhiên bạn phải cung cấp địa chỉ IP cho người bạn ấy.
+- người bạn ấy sẽ thử: telnet &lt;địa_chỉ_IP_của_bạn&gt; 23 --&gt; việc này sẽ tạo SYN packet từ bên ngoài vào cổng 23 đã được cản (filtered port) vì firewall trên không hề cho phép bất cứ truy cập nào khởi tạo từ bên ngoài.
+
+- bạn xem thử syslog: <b>tail -f /var/log/message | grep '&lt;địa_chỉ_IP_của_người_bạn&gt;'
+- bạn xem /proc/net/ip_conntrack: cat /proc/net/ip_conntrack | grep '&lt;địa_chỉ_IP_của_người_bạn&gt;'
+- bạn theo dõi tcpdump: tcpdump tcp port 23</b>
+
+<b>9.2 Thử nghiệm 2:</b>
+Giả sử bạn đã ứng dụng các luật "paranoid" ở phần 8.2.1, chỉ cho phép từ máy truy cập đến cổng 80, 443 và 5050 cho tcp và cổng 53 cho udp. Sau khi ứng động firewall trên, bạn thử:
+- truy cập đến một website không dùng cổng 80 tiêu chuẩn mà dùng cổng khác như 8000, 8080 chẳng hạn, ví dụ:<span class="link"> http://www.awebsite.com:8000.</span>
+- bạn xem thử syslog: <b>tail -f /var/log/message | grep '&lt;địa_chỉ_IP_của_website_bạn_truy_cập&gt;'
+- bạn xem /proc/net/ip_conntrack: cat /proc/net/ip_conntrack | grep '&lt;địa_chỉ_IP_của_website_bạn_truy_cập&gt;'
+- bạn theo dõi tcpdump: tcpdump tcp port &lt;cổng_website_dùng&gt;</b>
+
+Qua hai thử nghiệm trên, chắc chắn bạn sẽ tìm thấy rất nhiều thông tin mới lạ và đây chính là cánh cửa mở rộng cho những điều đằng sau một nhúm firewall script đơn giản như trên.
+
+<b>10. Kết luận:</b>
+iptables thật sự không phức tạp. Điều thật sự phức tạp là quá trình phân tích và xác định chức năng của một firewall cho một nhu cầu cụ thể nào đó. Trong quá trinh phân tích và xác định này, bạn sẽ phải đi sâu vào vấn đề khảo sát và thu thập những thông tin cần thiết để hoàn thành một nhóm luật bảo vệ máy của mình. Đây cũng chính là điểm lý thú và bổ ích trong suốt quá trình thiết lập bởi vì chắc chắn bạn sẽ không chỉ dừng lại ở phạm vi một firewall và firewall đó làm được gì. Bài viết này tôi chủ ý đào sâu vào tính năng "stateful" của iptables và bỏ qua những chi tiết thuộc kỹ năng tạo shell script, run level script... Tùy bạn chọn lựa cách điều chỉnh script theo ý mình và chỉnh init script (run level) tùy môi trường.
+
+<b>11. Bị chú:</b>
+-1- SPI: Stateful Packet Inspection hay dịch nôm na sang tiếng Việt là "kiểm soát đa thể trạng", một khái niệm được đưa ra vào những năm đầu của thập niên 90 và được ứng dụng rộng rãi cho các firewall "hiện đại". Tính "stateful" được khai triển dựa trên tính chất của giao thức TCP. Riêng với iptables, tính "stateful" này không những ứng dụng cho TCP mà còn cho UDP (được biết như một giao thức có tính stateless) và icmp. Dựa trên tính chất của từng loại giao thức, iptables / netfilter lưu trữ tình trạng diễn tiến của các packets trong bảng theo dõi (state table).
+
+-2- netfilter thuộc kernel side, iptables thuộc user side. Xem thêm các thông tin này trên website<span class="link"> http://www.iptables.org</span>
+
+-4- zombie: một bán thuật ngữ bảo mật ngầm chỉnh định cho các máy bị nhân nhượng và có thể được sai khiến từ một hoặc nhiều máy từ xa để thực hiện các ý định cụ thể nào đó.
+
+-3,5- iptables cho phép 15 cổng trong chuỗi comma delimeter (,) cho giá trị --dport (destination port) và --sport (source port) nếu dùng match -m multiport. Dùng cách này hiệu năng hơn cách dùng từng dòng luật cho mỗi cổng cần cản hoặc cần cho phép.
+
+Liệt kê nhóm luật "paranoid" cho phần 8.2.1:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep "inet addr" | awk -F":" '{print $2}' | awk '{print $1}'`
+3.    IPT="/usr/local/sbin/iptables"
+4.    ISP_DNS="xxx.xxx.xxx.xxx"
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.    $IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state state NEW,ESTABLISHED -j ACCEPT
+10.    $IPT -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_INPUT: "
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_OUTPUT: "
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix "BAD_FORWARD: "
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP</pre>
+		</div>
+
+
+Tác giả : Conmale(hnd)
+Nguồn  : www.diendantinhoc.net
+
+=========================================================
+quanta: Tớ chèn thêm 1 khoảng trắng vào giữa <b>print</b> và <b>$x</b> để bài viết chính xác hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#413</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#413</link>
+				<pubDate><![CDATA[Sat, 17 Jun 2006 01:21:52]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ bổ xung thêm link
+<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/135.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#171431</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#171431</link>
+				<pubDate><![CDATA[Sat, 28 Feb 2009 13:52:19]]> GMT</pubDate>
+				<author><![CDATA[ kenshin8x]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>
+
+<blockquote>
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT <font size='+2'><font color='green'>-i</font></font> $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP
+&nbsp;
+		</blockquote>
+
+<blockquote>
+$IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+&nbsp;
+		</blockquote>
+<blockquote>
+$IPT -A OUTPUT -o $IF -s $IP -p udp -d &lt;DNS_của_ISP&gt; --dport 53 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+&nbsp;
+		</blockquote>
+
+<blockquote>
+1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+3.    IPT=&quot;/usr/local/sbin/iptables&quot;
+4.    ISP_DNS=&quot;xxx.xxx.xxx.xxx&quot;
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.    $IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+10.    $IPT -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT <font size='+2'><font color='green'>-i</font></font> $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP&nbsp;
+		</blockquote>
+
+&nbsp;
+		</blockquote>
+
+Đào mộ 1 phát :D
+
+<font color='red'>----&gt;</font>    sửa thành:    <font color='red'>state --state</font>
+<font color='green'>----&gt;</font> sử thành       <font color='green'>-o</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224631</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224631</link>
+				<pubDate><![CDATA[Wed, 10 Nov 2010 01:56:16]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phanledaivuong wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>
+
+<blockquote>
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT <font size='+2'><font color='green'>-i</font></font> $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP
+&nbsp;
+		</blockquote>
+
+<blockquote>
+$IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+&nbsp;
+		</blockquote>
+<blockquote>
+$IPT -A OUTPUT -o $IF -s $IP -p udp -d &lt;DNS_của_ISP&gt; --dport 53 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+&nbsp;
+		</blockquote>
+
+<blockquote>
+1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+3.    IPT=&quot;/usr/local/sbin/iptables&quot;
+4.    ISP_DNS=&quot;xxx.xxx.xxx.xxx&quot;
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.    $IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m <font color='red'>state state</font> NEW,ESTABLISHED -j ACCEPT
+10.    $IPT -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT <font size='+2'><font color='green'>-i</font></font> $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF -d $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP&nbsp;
+		</blockquote>
+
+&nbsp;
+		</blockquote>
+
+Đào mộ 1 phát :D
+
+<font color='red'>----&gt;</font>    sửa thành:    <font color='red'>state --state</font>
+<font color='green'>----&gt;</font> sử thành       <font color='green'>-o</font>&nbsp;
+		</blockquote>
+
+Cám ơn bồ. Tớ quả có gõ sai vài chỗ mà cũng không rà soát lại trong suốt ngần ấy năm  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224642</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224642</link>
+				<pubDate><![CDATA[Wed, 10 Nov 2010 04:16:35]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Cám ơn bồ. Tớ quả có gõ sai vài chỗ mà cũng không rà soát lại trong suốt ngần ấy năm  :P &nbsp;
+		</blockquote>
+
+Em có config firewall của mình như bài viết này./
+
+
+<blockquote>
+#/bin/bash
+
+IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+ISP_DNS=&quot;8.8.8.8&quot;
+
+iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
+
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+<font color='red'>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state --state NEW,ESTABLISHED -j ACCEPT</font>
+iptables -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+iptables -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state --state NEW,ESTABLISHED -j ACCEPT
+
+iptables -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+iptables -A INPUT -i $IF -d $IP -j DROP
+iptables -A OUTPUT -o $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+iptables -A OUTPUT -o $IF -d $IP -j DROP
+iptables -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+iptables -A FORWARD -i $IF -d $IP -j DROP
+&nbsp;
+		</blockquote>
+
+Do em có sử dụng thêm dịch vụ Torrent
+nên em có sử dụng -&gt; <font color='red'>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m state --state NEW,ESTABLISHED -j ACCEPT</font>
+Vậy có thể có cách nào để có thể thu hẹp OUTPUT hơn được ko vậy? vì em có thử dùng Wireshark để capture lại nhưng thấy dữ liệu được đi ra với rất nhiều port và các port này ko cố định nên ko biết cách nào để giới hạn thêm.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224689</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224689</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 03:23:59]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ Bạn khó (hoặc không thể) giới hạn torrent theo port được. Do vậy, bạn thử ngâm cứu opendpi xem:<span class="link"> http://code.google.com/p/opendpi/</span>
+
+Ví dụ:
+
+<b># iptables -A OUTPUT -m opendpi --edonkey --fasttrack --gnutella --directconnect --bittorrent --apple --winmx --soulseek -j ACCEPT
+</b>
+PS: Nghe nói l7-filter cũng có thể lọc torrent traffic được nhưng mình chưa thử.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224700</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224700</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 09:24:53]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phanledaivuong wrote:</cite><br>
+		<blockquote>
+Do em có sử dụng thêm dịch vụ Torrent
+nên em có sử dụng -&gt; <font color='red'>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m state --state NEW,ESTABLISHED -j ACCEPT</font>
+Vậy có thể có cách nào để có thể thu hẹp OUTPUT hơn được ko vậy? vì em có thử dùng Wireshark để capture lại nhưng thấy dữ liệu được đi ra với rất nhiều port và các port này ko cố định nên ko biết cách nào để giới hạn thêm.
+&nbsp;
+		</blockquote>
+
+Về khoản này thì em cần xác định em xài torrent ngay trên chính máy chạy iptables hay môt máy khác và máy chạy iptables chỉ cung cấp NAT / packet filtering.
+
+Nếu em chạy torrent ngay trên máy chạy iptables thì sau khi accept <b>-m multiport --dport 80,443,5050</b>, em nên tạo thêm một rule khác để deny các ports khác. Ví dụ: 
+<b>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport <font color='red'>!</font> --dport 80,443,5050 -j DROP</b>
+
+ Nếu em chạy torrent trên một máy khác (là NAT client của máy chạy iptables) thì em cần áp dụng luật tương tự như trên nhưng trên FORWARD chain.
+
+Good luck.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224709</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224709</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 17:33:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ Anh <b>conmale</b>, 
+
+Em nghĩ ý bạn ấy là cho phép (ACCEPT) chứ không phải là chặn (DROP) anh à.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224716</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224716</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 20:06:24]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Anh <b>conmale</b>, 
+
+Em nghĩ ý bạn ấy là cho phép (ACCEPT) chứ không phải là chặn (DROP) anh à.&nbsp;
+		</blockquote>
+
+Anh thì hiểu là bạn ấy muốn ngăn cản torrent. Bởi vậy, bạn ấy mới cho phép 80, 443 và 5050. Nếu đã ACCEPT hết thì còn phải nêu đến chuyện "giới hạn" làm chi nữa em?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224718</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224718</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 20:12:23]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Anh <b>conmale</b>, 
+
+Em nghĩ ý bạn ấy là cho phép (ACCEPT) chứ không phải là chặn (DROP) anh à.&nbsp;
+		</blockquote>
+
+Anh thì hiểu là bạn ấy muốn ngăn cản torrent. Bởi vậy, bạn ấy mới cho phép 80, 443 và 5050. Nếu đã ACCEPT hết thì còn phải nêu đến chuyện "giới hạn" làm chi nữa em?&nbsp;
+		</blockquote>
+
+Ở đoạn Code trên của em: sau khi em
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1# iptables -P OUTPUT DROP 
+2# iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state --state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+thì em chỉ có thể sử dụng được HTTP, HTTPs, Yahoo Messenger. Nhưng do nhu cầu sử dụng thêm dịch vụ Torrent nên em phải thay 2# bằng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m state --state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+Với rules thế này thì máy em có thể sử dụng tất cả các dịch vụ. nhưng em muốn giới hạn chỉ cho máy sử dụng: HTTP, HTTPs, Yahoo Messenger, Torrent. vì thế nên em muốn giới hạn OUTPUT.
+
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Bạn khó (hoặc không thể) giới hạn torrent theo port được. Do vậy, bạn thử ngâm cứu opendpi xem:<span class="link"> http://code.google.com/p/opendpi/</span>
+Ví dụ:
+<b># iptables -A OUTPUT -m opendpi --edonkey --fasttrack --gnutella --directconnect --bittorrent --apple --winmx --soulseek -j ACCEPT
+</b>
+PS: Nghe nói l7-filter cũng có thể lọc torrent traffic được nhưng mình chưa thử.
+&nbsp;
+		</blockquote>
+Em sẽ tìm hiểu thêm về opendpi và l7-filter. có gì em sẽ post tiếp lên đây. 
+
+Cám ơn 2 anh nhiều ạ :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224721</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224721</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 20:36:26]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phanledaivuong wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Anh <b>conmale</b>, 
+
+Em nghĩ ý bạn ấy là cho phép (ACCEPT) chứ không phải là chặn (DROP) anh à.&nbsp;
+		</blockquote>
+
+Anh thì hiểu là bạn ấy muốn ngăn cản torrent. Bởi vậy, bạn ấy mới cho phép 80, 443 và 5050. Nếu đã ACCEPT hết thì còn phải nêu đến chuyện "giới hạn" làm chi nữa em?&nbsp;
+		</blockquote>
+
+Ở đoạn Code trên của em: sau khi em
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1# iptables -P OUTPUT DROP 
+2# iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state --state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+thì em chỉ có thể sử dụng được HTTP, HTTPs, Yahoo Messenger. Nhưng do nhu cầu sử dụng thêm dịch vụ Torrent nên em phải thay 2# bằng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m state --state NEW,ESTABLISHED -j ACCEPT</pre>
+		</div>
+
+Với rules thế này thì máy em có thể sử dụng tất cả các dịch vụ. nhưng em muốn giới hạn chỉ cho máy sử dụng: HTTP, HTTPs, Yahoo Messenger, Torrent. vì thế nên em muốn giới hạn OUTPUT.
+
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Bạn khó (hoặc không thể) giới hạn torrent theo port được. Do vậy, bạn thử ngâm cứu opendpi xem:<span class="link"> http://code.google.com/p/opendpi/</span>
+Ví dụ:
+<b># iptables -A OUTPUT -m opendpi --edonkey --fasttrack --gnutella --directconnect --bittorrent --apple --winmx --soulseek -j ACCEPT
+</b>
+PS: Nghe nói l7-filter cũng có thể lọc torrent traffic được nhưng mình chưa thử.
+&nbsp;
+		</blockquote>
+Em sẽ tìm hiểu thêm về opendpi và l7-filter. có gì em sẽ post tiếp lên đây. 
+
+Cám ơn 2 anh nhiều ạ :D&nbsp;
+		</blockquote>
+
+À ra vậy. Anh hiểu sai vấn đề  :P .
+
+Nếu em muốn cho phép luôn torrent thì không có cách gì giới hạn được vì torrent clients sử dụng chuỗi cổng 6881-6999 (theo tài liệu chính thức) nhưng thực tế thì  lại trao đổi xuyên qua các ephemeral ports (1024-65535). Một khi em muốn cho phép torrent rồi thì không thể giới hạn một cách hữu hiệu được. Ngay cả một số module như opendpi cũng đưa vào chuỗi port cho phép và có thể khiến cho torrent client bị giới hạn đáng kể (giảm hiệu suất download).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#224728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#224728</link>
+				<pubDate><![CDATA[Thu, 11 Nov 2010 21:22:42]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <blockquote>1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+3.    IPT=&quot;/usr/local/sbin/iptables&quot;
+4.    ISP_DNS=&quot;xxx.xxx.xxx.xxx&quot;
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.    $IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state state NEW,ESTABLISHED -j ACCEPT
+10.    $IPT -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT -i $IF <font color='red'>-d</font> $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF <font color='red'>-d</font> $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP&nbsp;
+		</blockquote>
+---&gt; Híc bài đã lâu những e xin đào mộ một chút ---&gt; có phải nó là <font color='red'>-s</font> chứ không phải là<font color='red'> -d</font> không nhỉ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#250903</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#250903</link>
+				<pubDate><![CDATA[Fri, 9 Dec 2011 09:26:23]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Case 1 - iptables và máy đơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote><blockquote>1.    IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+2.    IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+3.    IPT=&quot;/usr/local/sbin/iptables&quot;
+4.    ISP_DNS=&quot;xxx.xxx.xxx.xxx&quot;
+5.    $IPT -F
+6.    $IPT -P INPUT DROP
+7.    $IPT -P OUTPUT DROP
+8.    $IPT -P FORWARD DROP
+9.    $IPT -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state state NEW,ESTABLISHED -j ACCEPT
+10.    $IPT -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state state NEW,ESTABLISHED -j ACCEPT
+11.    $IPT -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+12.    $IPT -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+13.    $IPT -A INPUT -i $IF -d $IP -j DROP
+14.    $IPT -A OUTPUT -i $IF <font color='red'>-d</font> $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+15.    $IPT -A OUTPUT -o $IF <font color='red'>-d</font> $IP -j DROP
+16.    $IPT -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+17.    $IPT -A FORWARD -i $IF -d $IP -j DROP&nbsp;
+		</blockquote>
+---&gt; Híc bài đã lâu những e xin đào mộ một chút ---&gt; có phải nó là <font color='red'>-s</font> chứ không phải là<font color='red'> -d</font> không nhỉ&nbsp;
+		</blockquote>
+
+-d bạn ạ, hiện tại đang dùng windows nên không test hộ bạn được, nhưng trước mình dùng ubuntu 10.04 chạy đoạn script dưới này OK.
+
+<blockquote>
+#/bin/bash
+
+IF=`/sbin/route | grep -i 'default' | awk '{print $8}'`
+IP=`/sbin/ifconfig $IF |  grep &quot;inet addr&quot; | awk -F&quot;:&quot; '{print $2}' | awk '{print $1}'`
+ISP_DNS=&quot;8.8.8.8&quot;
+
+iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
+
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+iptables -A OUTPUT -o $IF -s $IP -p tcp -d any/0 -m multiport --dport 80,443,5050 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A INPUT -i $IF -d $IP -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+iptables -A OUTPUT -o $IF -s $IP -p udp -d $ISP_DNS --dport 53 -m state --state NEW,ESTABLISHED -j ACCEPT
+
+iptables -A INPUT -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_INPUT: &quot;
+iptables -A INPUT -i $IF -d $IP -j DROP
+iptables -A OUTPUT -o $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_OUTPUT: &quot;
+iptables -A OUTPUT -o $IF -d $IP -j DROP
+iptables -A FORWARD -i $IF -d $IP -m limit --limit 1/s -j LOG --log-level 5 --log-prefix &quot;BAD_FORWARD: &quot;
+iptables -A FORWARD -i $IF -d $IP -j DROP
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/105.hva#250922</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/105.hva#250922</link>
+				<pubDate><![CDATA[Fri, 9 Dec 2011 23:52:43]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Mã bảo vệ tiến trình không bị End Task trong Windows"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Mã bảo vệ tiến trình không bị End Task trong Windows"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Mã bảo vệ tiến trình không bị End Task trong Windows</title>
+				<description><![CDATA[ Đoạn code sau đây sử dụng các tính năng sercurity object trên
+Win2K/XP. Một process cần được bảo vệ sẽ được tạo ra với quyền
+truy cập được hạn chế bằng cách đặt thuộc tính SECURITY_ATTRIBUTES
+trong khi gọi hàn CreateProcess để tạo process được bảo vệ!
+
+
+<Tham khảo trong MSDN Platform SDK: Access Control  8)  >
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// SecurityObj.cpp : Defines the entry point for the application.
+//
+
+#include "stdafx.h"
+
+#include &lt;windows.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;aclapi.h&gt;
+
+BOOL CreateProtectedProcess&#40;
+LPCTSTR lpApplicationName,                 // name of executable module
+LPTSTR lpCommandLine,                      // command line string   
+DWORD dwCreationFlags                      // creation flags
+&#41;;
+
+int APIENTRY WinMain&#40;HINSTANCE hInstance,
+                    HINSTANCE hPrevInstance,
+                    LPSTR     lpCmdLine,
+                    int       nCmdShow&#41;
+{
+CreateProtectedProcess&#40;"c:\winnt\system32\calc.exe",           NULL, 0 &#41;;
+return 0;
+}
+
+BOOL CreateProtectedProcess&#40;
+LPCTSTR lpApplicationName,                 // name of executable module
+LPTSTR lpCommandLine,                      // command line string   
+DWORD dwCreationFlags                      // creation flags
+&#41;
+{
+DWORD dwRes;
+PSID pEveryoneSID = NULL, pAdminSID = NULL;
+PACL pACL = NULL;
+PSECURITY_DESCRIPTOR pSD = NULL;
+EXPLICIT_ACCESS ea&#91;2&#93;;
+SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+SECURITY_ATTRIBUTES sa;
+
+// Create a well-known SID for the Everyone group.
+
+if&#40;! AllocateAndInitializeSid&#40; &SIDAuthWorld, 1,
+                SECURITY_WORLD_RID,
+                0, 0, 0, 0, 0, 0, 0,
+                &pEveryoneSID&#41; &#41; 
+{    
+ return FALSE;
+}
+
+// Initialize an EXPLICIT_ACCESS structure for an ACE.
+// The ACE will allow Everyone read access to the object.
+
+ZeroMemory&#40;&ea, 2 * sizeof&#40;EXPLICIT_ACCESS&#41;&#41;;
+ea&#91;0&#93;.grfAccessPermissions = GENERIC_READ;
+ea&#91;0&#93;.grfAccessMode = DENY_ACCESS;
+ea&#91;0&#93;.grfInheritance= NO_INHERITANCE;
+ea&#91;0&#93;.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+ea&#91;0&#93;.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+ea&#91;0&#93;.Trustee.ptstrName  = &#40;LPTSTR&#41; pEveryoneSID;
+
+// Create a SID for the BUILTIN\Administrators group.
+
+if&#40;! AllocateAndInitializeSid&#40; &SIDAuthNT, 2,
+                SECURITY_BUILTIN_DOMAIN_RID,
+                DOMAIN_ALIAS_RID_ADMINS,
+                0, 0, 0, 0, 0, 0,
+                &pAdminSID&#41; &#41; 
+{    
+ goto Cleanup; 
+}
+
+// Initialize an EXPLICIT_ACCESS structure for an ACE.
+// The ACE will allow the Administrators group full access to the key.
+
+ea&#91;1&#93;.grfAccessPermissions = GENERIC_READ;
+ea&#91;1&#93;.grfAccessMode = DENY_ACCESS;
+ea&#91;1&#93;.grfInheritance= NO_INHERITANCE;
+ea&#91;1&#93;.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+ea&#91;1&#93;.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+ea&#91;1&#93;.Trustee.ptstrName  = &#40;LPTSTR&#41; pAdminSID;
+
+// Create a new ACL that contains the new ACEs.
+
+dwRes = SetEntriesInAcl&#40;2, ea, NULL, &pACL&#41;;
+if &#40;ERROR_SUCCESS != dwRes&#41; 
+{    
+ goto Cleanup;
+}
+
+// Initialize a security descriptor.  
+
+pSD = &#40;PSECURITY_DESCRIPTOR&#41; LocalAlloc&#40;LPTR, 
+                        SECURITY_DESCRIPTOR_MIN_LENGTH&#41;; 
+if &#40;pSD == NULL&#41; 
+{     
+ goto Cleanup; 
+} 
+
+if &#40;!InitializeSecurityDescriptor&#40;pSD, SECURITY_DESCRIPTOR_REVISION&#41;&#41; 
+{      
+ goto Cleanup; 
+} 
+
+// Add the ACL to the security descriptor. 
+
+if &#40;!SetSecurityDescriptorDacl&#40;pSD, TRUE,     // fDaclPresent flag   
+  pACL, FALSE&#41;&#41;   // not a default DACL 
+{      
+ goto Cleanup; 
+} 
+
+// Initialize a security attributes structure.
+
+sa.nLength = sizeof &#40;SECURITY_ATTRIBUTES&#41;;
+sa.lpSecurityDescriptor = pSD;
+sa.bInheritHandle = FALSE;
+
+// Use the security attributes to set the security descriptor 
+// when you create a key.
+
+PROCESS_INFORMATION pi; 
+STARTUPINFO si;
+memset&#40;&pi,0,sizeof&#40;pi&#41;&#41;;
+memset&#40;&si,0,sizeof&#40;si&#41;&#41;;
+si.cb = sizeof&#40;si&#41;;
+si.wShowWindow = SW_SHOW;
+
+CreateProcess&#40;lpApplicationName,lpCommandLine, &sa,  &sa,dwCreationFlags,0,0,0,&si,&pi&#41;;
+
+// clean up data
+Cleanup:
+
+   if &#40;pEveryoneSID&#41;     FreeSid&#40;pEveryoneSID&#41;;
+   if &#40;pAdminSID&#41;         FreeSid&#40;pAdminSID&#41;;
+   if &#40;pACL&#41;         LocalFree&#40;pACL&#41;;
+   if &#40;pSD&#41;         LocalFree&#40;pSD&#41;;
+   
+return TRUE;
+
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/82.hva#365</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/82.hva#365</link>
+				<pubDate><![CDATA[Thu, 15 Jun 2006 09:18:07]]> GMT</pubDate>
+				<author><![CDATA[ ngoalong]]></author>
+			</item>
+	</channel>
+</rss>

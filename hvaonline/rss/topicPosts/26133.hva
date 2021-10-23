@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Học LVM (Logical Volume Manager)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Học LVM (Logical Volume Manager)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ Chào mọi người,
+
+Tôi đang đọc về LVM nên muốn ghi chép lại một số thứ nhằm mục đích tra cứu hoặc đào sâu hơn.
+
+Khi cài Red Hat/Fedora, nếu các bạn chọn <i>"create the default layout (LVM)"</i>, hệ thống sẽ phân vùng tự động giúp bạn theo kiểu LVM. Nhưng nếu để ý một chút hẳn các bạn sẽ tự hỏi: tại sao <b>/boot</b> lại vẫn đặt trên một partition riêng rẽ mà không phải là LVM?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+                      1.9G  1.7G  136M  93% /
+/dev/hda1              99M   15M   80M  15% /boot
+tmpfs                 188M     0  188M   0% /dev/shm</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># fdisk -l
+
+Disk /dev/hda: 3221 MB, 3221225472 bytes
+255 heads, 63 sectors/track, 391 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/hda1   *           1          13      104391   83  Linux
+/dev/hda2              14         391     3036285   8e  Linux LVM</pre>
+		</div>
+Lý do là: <b>/boot</b> chứa thông tin về boot loader mà boot loader lại không thể đọc thông tin trên LVM, do đó nếu bạn 'cố tình' đặt <b>/boot</b> trên LVM thì bạn sẽ không thể boot vào Linux được.
+
+Thử tìm hiểu thêm một chút về LVM:
+
+Đầu tiên, xem các physical volume mà bạn có:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># pvdisplay 
+  --- Physical volume ---
+  PV Name               /dev/hda2
+  VG Name               VolGroup00
+  PV Size               2.90 GB / not usable 21.12 MB
+  Allocatable           yes &#40;but full&#41;
+  PE Size &#40;KByte&#41;       32768
+  Total PE              92
+  Free PE               0
+  Allocated PE          92- 
+  PV UUID               G1qMnk-bhr1-W0a9-YHFm-Q5hZ-sxQN-0mqf3F</pre>
+		</div>
+Ở đây: 
+- bạn chỉ có một Physical Volume (PV) <b>/dev/hda2</b>, thuộc Volume Group (VG) <b>VolGroup00</b>.
+- PV này có dung lượng là 2.9 GB
+- Kích cỡ của một PE (Physical Extent) là 32768K, tức là 32M. Do đó, số lượng PE sẽ là: 2.9GB / 32MB = 92
+
+Xem tiếp thông tin về Volume Group:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># vgdisplay 
+  --- Volume group ---
+  VG Name               VolGroup00
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  3
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                2
+  Open LV               2
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               2.88 GB
+  PE Size               32.00 MB
+  Total PE              92
+  Alloc PE / Size       92 / 2.88 GB
+  Free  PE / Size       0 / 0   
+  VG UUID               8QbvcQ-Bvq4-NwjX-1tgl-5ACq-5vh3-saX64x</pre>
+		</div>
+Kết quả này cho thấy:
+- Hiện tại bạn có 2 Logical Volume
+- Và 1 Physical Volume (như đã thấy ở trên)
+
+Tiếp theo là thông tin về Logical Volume:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># lvdisplay 
+  --- Logical volume ---
+  LV Name                /dev/VolGroup00/LogVol00
+  VG Name                VolGroup00
+  LV UUID                ndZawv-DhRO-rsYF-6fyi-rcn8-5R4O-7fvezl
+  LV Write Access        read/write
+  LV Status              available
+  # open                 1
+  LV Size                1.91 GB
+  Current LE             61
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     0
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Name                /dev/VolGroup00/LogVol01
+  VG Name                VolGroup00
+  LV UUID                qVltHV-WgGB-DCdn-4aXe-3AgY-YdIp-IJf1jZ
+  LV Write Access        read/write
+  LV Status              available
+  # open                 1
+  LV Size                992.00 MB
+  Current LE             31
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     0
+  Block device           253:1</pre>
+		</div>
+
+Logical Volume đầu tiên có ký hiệu <b>LogVol00</b>, dung lượng 1.91GB, số Logical Extents là 61, được mount với <b>/</b>
+Logical Volume thứ 2 có ký hiệu <b>LogGol01</b>, dung lượng 992MB, số lượng Logical Extents là 31, được mount với <b>/swap</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># free -m
+             total       used       free     shared    buffers     cached
+Mem:           375        347         28          0         36        155
+-/+ buffers/cache:        155        220
+Swap:          991          0        991</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cat /etc/fstab 
+/dev/VolGroup00/LogVol00 /                       ext3    defaults        1 1
+LABEL=/boot             /boot                   ext3    defaults        1 2
+tmpfs                   /dev/shm                tmpfs   defaults        0 0
+devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
+sysfs                   /sys                    sysfs   defaults        0 0
+proc                    /proc                   proc    defaults        0 0
+/dev/VolGroup00/LogVol01 swap                    swap    defaults        0 0</pre>
+		</div>
+Như vậy tổng số lượng LEs bằng 92, đúng bằng số lượng PEs. Đây là minh chứng cho việc ánh xạ giữa LEs và PEs.
+
+Kết luận: Các bạn có thể hiểu:
+- PV như một partition vật lý, 1 đĩa cứng có thể được chia thành 1 hoặc nhiều PV
+- VG là tập hợp của nhiều PV
+- LV như là mount point mà bạn gắn PV lên đó (trong trường hợp này là /, và /swap)
+- Một PV được chia thành nhiều PEs, một LV được chia thành nhiều LEs, và có một sự ánh xạ giữa PE và LE.
+
+Ở phần tiếp theo, chúng ta sẽ tìm hiểu cách phân vùng ổ cứng 'bằng tay' theo kiểu LVM trong khi cài đặt Red Hat / Fedora.
+
+PS: Có chỗ nào diễn đạt sai hoặc tối nghĩa thì các bác 'chỉnh' giùm. Cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158561</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158561</link>
+				<pubDate><![CDATA[Wed, 12 Nov 2008 01:41:09]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Alloc PE / Size       92 / 2.88 GB
+   Free  PE / Size       0 / 0</pre>
+		</div>
+
+Sau Free PE/ size lại là 0 / 0, nếu là 0 / 0 thì dữ liệu được ghi vào đâu anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158764</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158764</link>
+				<pubDate><![CDATA[Thu, 13 Nov 2008 13:59:31]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote><span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Alloc PE / Size       92 / 2.88 GB
+   Free  PE / Size       0 / 0</pre>
+		</div>
+
+Sau Free PE/ size lại là 0 / 0, nếu là 0 / 0 thì dữ liệu được ghi vào đâu anh?&nbsp;
+		</blockquote>
+Data nó ghi vào allocated PE mà em. Free PE là 'not allocated'.
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158773</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158773</link>
+				<pubDate><![CDATA[Thu, 13 Nov 2008 14:55:47]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># pvdisplay 
+   --- Physical volume ---
+   PV Name               /dev/hda2
+   VG Name               VolGroup00
+   PV Size               2.90 GB / not usable 21.12 MB
+   Allocatable           yes &#40;but full&#41;
+   PE Size &#40;KByte&#41;       32768
+   Total PE              92
+   Free PE               0
+   Allocated PE          92- 
+   PV UUID               G1qMnk-bhr1-W0a9-YHFm-Q5hZ-sxQN-0mqf3F</pre>
+		</div>
+
+Em thử giải thích thêm vài cái thông số, xem thử em hiểu được tới đâu.
+<b>Allocatable           yes (but full)</b>
+
+Lúc đầu hơi nhầm tưởng chỗ này, nhưng hỏi xong anh trả lời rồi đọc vài tài liệu, suy bậy ra: ta có 92 PEs, và số Allocated PE là 92, không còn Free PE (Unallocated PE) nào nên thông số là yes(but full). Nếu như thông số ở trên là
+
+<b>Total PE              92
+Free PE               52</b>
+
+Thì số Free PE còn lại là 52, thông số Allocatable sẽ là Yes, không có not full
+
+Ngoài ra <b>Allocated PE          92-</b>, ở đây em hiểu 92- có nghĩa là chưa có PE nào được dùng hết, thông số này sẽ được biểu diễn từ 92- cho đến 0, cái này là em suy diễn, chứ chưa có kiểm chứng :D
+
+Giả sử output của vgdisplay là như bên dưới
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># vgdisplay 
+   --- Volume group ---
+   VG Name               VolGroup00
+   System ID             
+   Format                lvm2
+   Metadata Areas        1
+   Metadata Sequence No  3
+   VG Access             read/write
+   VG Status             resizable
+   MAX LV                0
+   Cur LV                2
+   Open LV               2
+   Max PV                0
+   Cur PV                1
+   Act PV                1
+   VG Size               2.88 GB
+   PE Size               32.00 MB
+   Total PE              92
+   Alloc PE / Size       40 / 1.22 GB
+   Free  PE / Size      52 / 1.66 GB   
+   VG UUID               8QbvcQ-Bvq4-NwjX-1tgl-5ACq-5vh3-saX64x</pre>
+		</div>
+
+thì để sử dụng số Free PEs còn lại, ta dùng lệnh lvextend 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>lvm lvextend -l+52 /dev/hda2</pre>
+		</div>
+
+thì output của vgdisplay trở lại như trên ( Alloc PE / Size 92 / 2.88 GB | Free PE / Size 0 / 0)
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#158951</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 23:29:49]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ Chào anh quanta,
+
+Em đọc được bài này và cũng thử làm lab. Tuy nhiên có chỗ chưa hiểu lắm như sau:
+
+<blockquote>
+If a Linux partition is to be converted make sure that it is given partition type 0x8E using fdisk, then use pvcreate:
+
+<b>pvcreate /dev/hda1</b>
+
+Link: <span class="link"> http://www.redhat.com/magazine/009jul05/features/lvm2/</span>
+&nbsp;
+		</blockquote>
+
+Theo như bài báo này của RedHat thì trước khi tạo PVs thì các partitions cần được <b>fdisk</b> theo kiểu <b>0x8E</b> (Linux LVM). Tuy nhiên em quên không <b>fdisk</b> mà tạo PV, VG, LV luôn:
+
+<blockquote><b>pvcreate /dev/hda
+pvcreate /dev/hdb
+vgcreate  volume_group_one /dev/hda /dev/hdb
+lvcreate -n logical_volume_one   --size 2G volume_group_one 
+</b>&nbsp;
+		</blockquote>
+
+Kết quả là tạo thành công, ghi dữ liệu không có vấn đề gì cả. Vậy có cần bước <b>fdisk</b> như trên không ạ?
+
+Cám ơn anh nhiều.
+
+<i>P/S: Em dùng RHEL 5.2.</i>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160268</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160268</link>
+				<pubDate><![CDATA[Tue, 25 Nov 2008 19:56:53]]> GMT</pubDate>
+				<author><![CDATA[ mrtantien]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrtantien wrote:</cite><br>
+		<blockquote>Chào anh quanta,
+
+Em đọc được bài này và cũng thử làm lab. Tuy nhiên có chỗ chưa hiểu lắm như sau:
+
+<blockquote>
+If a Linux <font color='orange'>partition</font> is to be converted make sure that it is given partition type 0x8E using fdisk, then use pvcreate:
+
+<b>pvcreate /dev/hda1</b>
+
+Link: <span class="link"> http://www.redhat.com/magazine/009jul05/features/lvm2/</span>
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Có lẽ mình cần phải chú ý đến chữ 'partition' trong câu này.
+<p></p>
+		<cite class="blockquote">mrtantien wrote:</cite><br>
+		<blockquote>
+Theo như bài báo này của RedHat thì trước khi tạo PVs thì các partitions cần được <b>fdisk</b> theo kiểu <b>0x8E</b> (Linux LVM). Tuy nhiên em quên không <b>fdisk</b> mà tạo PV, VG, LV luôn:
+
+<blockquote><b>pvcreate /dev/hda
+pvcreate /dev/hdb
+vgcreate  volume_group_one /dev/hda /dev/hdb
+lvcreate -n logical_volume_one   --size 2G volume_group_one 
+</b>&nbsp;
+		</blockquote>
+
+Kết quả là tạo thành công, ghi dữ liệu không có vấn đề gì cả. Vậy có cần bước <b>fdisk</b> như trên không ạ?
+
+Cám ơn anh nhiều.
+
+<i>P/S: Em dùng RHEL 5.2.</i>
+
+&nbsp;
+		</blockquote>
+Ở đây em làm việc với toàn bộ đĩa cứng mà.
+
+<span class="link"> http://forums13.itrc.hp.com/service/forums/questionanswer.do?admit=109447627+1227631519863+28353475&threadId=1119966</span> hỏi giống hệt em này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160305</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160305</link>
+				<pubDate><![CDATA[Wed, 26 Nov 2008 01:52:46]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Học LVM (Logical Volume Manager)</title>
+				<description><![CDATA[ Cám ơn anh, đúng là hôm qua em chưa đọc kỹ để phân biệt cả ổ đĩa và một phân vùng.
+
+Ngoài ra, theo tài liệu thì khi <b>fdisk</b>, phải chọn kiểu phân vùng là <b>0x8e</b> (Linux LVM). Nhưng em thử <b>fdisk</b> dùng <b>0x83</b> (Linux) thì vẫn thành công, không có gì khác với <b>0x8e</b> cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160347</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26133.hva#160347</link>
+				<pubDate><![CDATA[Wed, 26 Nov 2008 13:02:40]]> GMT</pubDate>
+				<author><![CDATA[ mrtantien]]></author>
+			</item>
+	</channel>
+</rss>

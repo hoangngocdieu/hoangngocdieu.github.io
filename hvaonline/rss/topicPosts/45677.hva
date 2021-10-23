@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cách tính mức chịu tải của server"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cách tính mức chịu tải của server"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ 
+
+Em cũng đã tìm kiếm về vấn đề tính chịu tải cho server này rồi nhưng chưa tự trả lời được cho mình, để tính được mức chịu tải thì phụ thuộc vào rất nhiều yếu tố: như lượng người dùng, dữ liệu load lên, dữ liệu lưu trữ trên server, băng thông, .... nhưng cũng muốn được hỏi mọi người để hiểu thấu đáo và làm tốt hơn cho hệ thống, định hướng cho lâu dài chứ không phải tới lúc bị nghẽn rồi đầu tư, giải quyết vấn đề.
+
+Hiện tại server bên em có cấu hình như sau:
+
+CPU: Xeon (R) E5-2620 @2.00Ghz (2 processors)
+RAM: 32GB
+OS: Winserver 2012 x64
+HDD: C: 118 GB (50 GB used); D: 3TB (1,8TB used)
+
+Đường truyền: 160 Mbps
+
+Bình thường hiện tại CPU chiếm khoảng 10%, Memory: 20%, hệ thống hoạt động bình thường (khoảng 5000 lượt view mỗi ngày). Mỗi lần load website thì người sử dụng tiêu tốn khoản 500Kb băng thông.
+
+Em muốn hỏi để biết được lượng người truy cập tối đa bao nhiêu thì hệ thống bị nghẽn, không hoạt động được để có thể nâng cấp được phần cứng, tối ưu hoặc tăng băng thông cho hệ thống về lâu dài. (Nếu có công thức tính được thì quá tốt ạ).
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280843</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280843</link>
+				<pubDate><![CDATA[Tue, 17 Jun 2014 22:32:39]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ Mình thấy khá hiếm người như bạn, có ý định tính trước vấn đề tải trọng và phần cứng như vậy. Như thế bạn đang thực hiện công việc người ta gọi là sizing, một việc nói chung là khó và không có công thức chung.
+
+Tuy nhiên có vài nguyên tắc chung thế này:
+
+- Để tính đường mạng, người ta dựa vào băng thông và kích thước trung bình của mỗi request (như web) hoặc mỗi người sử dụng. Cái này chắc không cần nói bạn cũng biết, ví dụ vào 1 web tốn mỗi lần khoảng 100KByte, đường truyền 160Mbps ~ 16MByte/s (đã trừ phụ phí) =&gt; 16000K/100K = 160 request/s. Như thế ra công suất mạng chịu được.
+
+- Tính RAM: thường mỗi connection (session) kết nối và chạy sẽ tốn bao nhiều MB RAM (cái này monitor hoặc đo đạc các web process là ra, ví dụ ta được con số là 4MB/session chẳng hạn. Mỗi request (tốn 1 session) sẽ xử lý trung bình trong vòng 3s, vị chi là mỗi giây máy 32GB RAM của bạn, trừ đi OS và các thứ linh tinh, ví dụ là 4GB, còn ra 28GB = 28000MB/4MB RAM = 7000 session đồng thời, chia cho 3s =&gt; 7000/3 = 2300request/s. Vậy là ra số cho RAM, nhưng cái này phải chú ý cái thời gian xử lý, thời gian đợi client... cả 7000 session cùng lúc có thể xử lý không phải là 3s mà là 10s thì số request/s giảm đi rất nhiều.
+- Tính tải CPU: Cái này khó nhất. Người ta thường phải dùng cái gọi là stress test để thử tải. Cách làm là dùng công cụ giả như client, kết nối đến server và tạo thật nhiều request với số lượng session tăng dần tới ngưỡng đã tính với RAM ở trên, kết hợp với công cụ monitor tải (CPU/RAM/IO) của server ngay tại lúc đó. Nếu tất cả các core của CPU đạt 100% ở 1 số lượng session nào đó, không tăng hơn được, hoặc đạt ngưỡng session rồi mà CPU cũng chưa hết 100% (nhưng tăng nữa session thì hết RAM), hoặc vấn đề có khi lại ở HDD, IO chạy busy 100% rồi mà RAM/CPU vẫn còn dư. Thường công cụ này làm test trong mạng LAN nhanh, để giảm ảnh hưởng của mạng (chắc là cần nhanh hơn 160Mb/s, 1Gbit ok rồi), dùng nhiều client cùng chạy (tập trung chục cái PC vào cùng chạy chắc dư sức đạt 7000 session), chạy khi không có ai khác sử dụng server để chính xác hơn. =&gt; đo và đây là giá trị cuối cùng.
+Giá trị này nó tùy thuộc rất nhiều vào ứng dụng, database, đĩa, CPU, nhiều yếu tố khác... Ví dụ bạn đo và đạt được 1000req/s với 7000 session cùng lúc chẳng hạn.
+
+Khi xong, đó gần như là con số cuối mà server của bạn chịu được. Từ đó bạn thiết lập rào cản limit... để không cho vượt quá ngưỡng đã test đó. Mạng có thể nghẽn trước, hoặc server có thể quá tải trước, tùy nhưng nói chung ta biết ngưỡng của cả 2 thứ để liệu. Nếu mạng phù hợp (160request/s hơi thấp so với 1000 của server), bạn có thể tăng đường mạng lên hoặc giảm tải dữ liệu, nén dữ liệu khi truyền... (100K xuống 50K thì số request sẽ gấp 2). Rồi lại test lại.... Xong.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280847</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280847</link>
+				<pubDate><![CDATA[Wed, 18 Jun 2014 11:53:48]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Mình thấy khá hiếm người như bạn, có ý định tính trước vấn đề tải trọng và phần cứng như vậy. Như thế bạn đang thực hiện công việc người ta gọi là sizing, một việc nói chung là khó và không có công thức chung.
+
+.....
+&nbsp;
+		</blockquote>
+
+Dạ, em xin cám ơn anh đã hướng dẫn một cách chi tiết như thế, đúng là cái này em tìm rồi mà chưa có giải đáp cụ thể, có lẽ cách nghĩ mình khác quá, hehe... Em đã dần mườn tượng thêm được cách tính cho hệ thống của mình, nhưng e còn một số thắc mắc muốn hỏi thêm anh..
+
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>- Tính RAM: thường mỗi connection (session) kết nối và chạy sẽ tốn bao nhiều MB RAM (cái này monitor hoặc đo đạc các web process là ra, ví dụ ta được con số là 4MB/session chẳng hạn. Mỗi request (tốn 1 session) sẽ xử lý trung bình trong vòng 3s, vị chi là mỗi giây máy 32GB RAM của bạn, trừ đi OS và các thứ linh tinh, ví dụ là 4GB, còn ra 28GB = 28000MB/4MB RAM = 7000 session đồng thời, chia cho 3s =&gt; 7000/3 = 2300request/s. Vậy là ra số cho RAM, nhưng cái này phải chú ý cái thời gian xử lý, thời gian đợi client... cả 7000 session cùng lúc có thể xử lý không phải là 3s mà là 10s thì số request/s giảm đi rất nhiều.&nbsp;
+		</blockquote>
+
+về phần RAM và lượng request, em thử tính thời gian xử lý trung bình của 4MB tại trang <span class="link"> http://www.ibeast.com/content/tools/band-calc.asp</span> mới tốc độ đường truyền là 160Mpbs thì thời gian gần như bằng 0, em muốn hỏi anh cái <b>3s</b> đó là mình dự tính như thế thôi, hay anh có cơ sở từ đâu ạ?
+
+Về phần CPU thì đọc bài của anh em mới hiểu thêm được, đúng là rất khó để xác định, mình cũng không có nhiều công cụ để thử nghiệm, nhưng em sẽ thử theo cách monitor và tìm các giả lập các Client request đến server để tính tải.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280850</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280850</link>
+				<pubDate><![CDATA[Thu, 19 Jun 2014 00:09:24]]> GMT</pubDate>
+				<author><![CDATA[ superbmt]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ Thời gian 3s là ước chừng thôi, vì Server của bạn có thể xử lý xong 1 request dưới 1s, nhưng thời gian dữ liệu đó đến được với người dùng thì nó phụ thuộc vào tốc độ đường truyền mạng và vị trí địa lý nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280851</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280851</link>
+				<pubDate><![CDATA[Thu, 19 Jun 2014 01:02:18]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ Bạn vncybernet nói đúng đó. Đó là ước chừng theo kinh nghiệm. Nó cũng do test thử nữa. Chức năng developer tool của trình duyệt Chrome hoặc Firefox, trong tab Network sẽ phân tích thời gian xử lý xong request khi bạn truy cập 1 URL, bao nhiêu cho network, bao nhiêu chờ web server.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280858</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280858</link>
+				<pubDate><![CDATA[Fri, 20 Jun 2014 00:40:48]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ Mình thấy có gì đó không đúng ở cách tính chịu tải dựa trên bandwidth thì phải. 
+
+Ví dụng mình dùng pingdom-tool để đo thử trang vnexpress, page size vào home-page là 3.9MB.
+
+Giải dụ vnexpress thuê bw là 1Gbps (khá cao), tương đương 128 Megabyte/s vậy tính ra với băng thông đó, chưa tính mức độ chịu tải về hardware thì chỉ với xấp xỉ 33 req là hết băng thông. Không biết có gì sai ở đây không nhỉ?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280902</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280902</link>
+				<pubDate><![CDATA[Fri, 27 Jun 2014 21:20:04]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote>Mình thấy có gì đó không đúng ở cách tính chịu tải dựa trên bandwidth thì phải. 
+
+Ví dụng mình dùng pingdom-tool để đo thử trang vnexpress, page size vào home-page là 3.9MB.
+
+Giải dụ vnexpress thuê bw là 1Gbps (khá cao), tương đương 128 Megabyte/s vậy tính ra với băng thông đó, chưa tính mức độ chịu tải về hardware thì chỉ với xấp xỉ 33 req là hết băng thông. Không biết có gì sai ở đây không nhỉ?
+
+&nbsp;
+		</blockquote>
+
+Đó là tính theo lượt người dùng mới. Tức là user mới vô vnexpress lần đầu sẽ phải load toàn bộ site về. Còn từ lần 2 trở đi, do site đã cache trên máy user rồi nên load lại site sẽ chiếm ít băng thông hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280917</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280917</link>
+				<pubDate><![CDATA[Tue, 1 Jul 2014 04:37:28]]> GMT</pubDate>
+				<author><![CDATA[ tmlinhkct]]></author>
+			</item>
+			<item>
+				<title>Cách tính mức chịu tải của server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote>Mình thấy có gì đó không đúng ở cách tính chịu tải dựa trên bandwidth thì phải. 
+
+Ví dụng mình dùng pingdom-tool để đo thử trang vnexpress, page size vào home-page là 3.9MB.
+
+Giải dụ vnexpress thuê bw là 1Gbps (khá cao), tương đương 128 Megabyte/s vậy tính ra với băng thông đó, chưa tính mức độ chịu tải về hardware thì chỉ với xấp xỉ 33 req là hết băng thông. Không biết có gì sai ở đây không nhỉ?
+
+&nbsp;
+		</blockquote>
+
+Không hề sai đâu bạn, việc đáp ứng được nhiều req/s hơn với băng thông cụ thể nào đó nó lại chuyển qua phân mục tối ưu hoá, cache ... rồi bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280970</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45677.hva#280970</link>
+				<pubDate><![CDATA[Wed, 9 Jul 2014 04:06:24]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+	</channel>
+</rss>

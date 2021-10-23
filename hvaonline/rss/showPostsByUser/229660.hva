@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "McSteven"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/229660.hva</link>
+		<description><![CDATA[Messages posted by "McSteven"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Sinh viên sắp ra trường, muốn theo Sysadmin, cần chuẩn bị những gì?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+- Với cùng một lượng requests, tại sao MPM worker lại thường cần dùng ít tài nguyên (RAM) hơn so với prefork?
+
+- Nếu cho bạn setup Apache từ đầu (ví dụ chạy PHP đi), căn cứ vào đâu để bạn quyết định sẽ chọn MPM nào? Tại sao?
+&nbsp;
+		</blockquote>
+ 
+Với cùng lượng request thì MPM worker ít tốn Ram hơn bởi vì nó sử dụng multithread trên process và chia sẽ không gian địa chỉ bộ nhớ cho nhau làm giảm hao tốn. Cái này thì có thề phụ thuộc vào OS Kernel.
+
+Nều cho mình setup Apache từ đầu thì mình sẽ dùng MPM Worker hoặc MPM Event ! Còn tại sao thì chưa biết! 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44813/276441.hva#276441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44813/276441.hva#276441</link>
+				<pubDate><![CDATA[Sat, 8 Jun 2013 02:05:15]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Sinh viên sắp ra trường, muốn theo Sysadmin, cần chuẩn bị những gì?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Và chỉ multi-threaded thôi à?
+&nbsp;
+		</blockquote>
+Có sự hiều sai lầm của mình ở đây : nó phục vụ cả non-thread(MPM Prefok)và multithread (Event,Worker)
+- Apache MPM Prefork:
+Ưu điểm : khả năng xử lí các request nhanh chóng vì mỗi process sẽ phục vụ mỗi request.Nó không bị ảnh hưởng bời các process khác.
+Nhược điểm : Tốn tài nguyên của server vì mồi process chỉ phục vụ 1 request làm hao tốn rất nhiều nhiều tài nguyên đề duy trì các process này.
+- Apache MPM Worker:
+Ưu điểm : phục vụ nhiều request vì mỗi process chứa các thread bênh trong.Do đó số lượng của process có giới hạn và sử dụng ít tài nguyên hơn.Việc điều chỉnh số lượng thread / process phụ thuộc vào file httpd.conf.
+Nhược điểm : thì mình không biết, có thể có vài vần đề nếu sử dụng với PHP, tốn nhiều thread hơn so với MPM event
+- Apache MPM Event:
+Ưu điểm: Hình như cái event này dùng cho Apache 2.4 trở lên.Gần giống với MPM Worker nhưng có 1 khác biệt lớn ở đây . Với MPM Event sẽ giải phóng thread  ngay sau khi các yêu cầu được đáp ứng song không phụ thuộc vào kết nối http. giúp làm giảm số thread per process . Còn MPM Worker sẽ giữ các request này dù các request này có xử lí hay không.Hỗ trợ nều chỉ số KeepAlive khá lâu.
+Nhược điểm: không biết!
+Còn thiều gì mong Quanta góp ý thêm cho.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44813/276436.hva#276436</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44813/276436.hva#276436</link>
+				<pubDate><![CDATA[Sat, 8 Jun 2013 01:00:58]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Việc làm cho sinh viê mới ra trường khi làm lĩnh vực Sysadmin</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Quanta wrote:</cite><br>
+		<blockquote>
+
+<blockquote>- Khi một request đi đến server, Apache sẽ tạo ra một process mới để xử lý hay là thế nào?
+- Multi-Processing Module là gì? Có những loại chính nào? Ưu, nhược điểm của từng loại? &nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+
+Theo mình nghĩ thì số lượng child process này sẽ có số lượng giới hạn.
+- Khi một request đi đền sever , Apache sẽ không tạo ra 1 process mới để xử lý mà dùng multithread đề xử lý các request này! Mỗi process sẽ chứa 1 lượng multithread cố định.Nều mỗi thread này được giải phóng thì nó sẽ được tái sử dụng cho các request khác đ. Nếu số lượng process vượt quá giới hạn của child process thì nó sẽ chết đi và root process sẽ sinh ra 1 child process khác để phục vụ tuỳ vào lưu lượng số request. 
+- Multi-Processing Module là 1 module dùng để thực hiện multithread trên Apache ( Mình chỉ có thề nói tới đó còn thiều thì hay sai xót thì Quanta bổ sung ) . 
+-Có 3 loại chính : Event, Prefok, Worker.
+Còn về ưu nhược điểm thì mình chưa nghiên cứu kĩ lằm. Có thề Quanta trợ giúp câu hỏi này nhé!
+ 
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44813/276430.hva#276430</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44813/276430.hva#276430</link>
+				<pubDate><![CDATA[Fri, 7 Jun 2013 22:55:27]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Việc làm cho sinh viê mới ra trường khi làm lĩnh vực Sysadmin</title>
+				<description><![CDATA[ Cảm ơn Quanta chỉ dẫn cho mình hiều thêm vài thứ!
+Sau khi được dẫn dắt 1 chút thì mình cũng tìm kiếm được ít thông tin về vì sao có các Process owned chạy dưới quyền root:
+Vì chỉ có root mới có đủ quyền chạy Apache với những port thấp hơn 1024 ( 80 port : http và 443 port : https).
+
+Các process owned bởi Apache được sinh ra bởi process owned root dùng đề phục vụ cho các request đền server.
+
+Mình nghĩ kí tự đầu của httpd .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44813/276402.hva#276402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44813/276402.hva#276402</link>
+				<pubDate><![CDATA[Fri, 7 Jun 2013 08:20:36]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Việc làm cho sinh viê mới ra trường khi làm lĩnh vực Sysadmin</title>
+				<description><![CDATA[ Với câu hỏi Quanta mình xin được trả lời nếu có sai xót thì cũng xem như bài học cho mình. Vì hiều biết của mình về Linux còn rất yếu.
+Có nhiều process nhưng cái thì chạy bởi owner Root vì Apache là 1 daemon process nên cần phải chạy với quyền root. 
+Còn lại chạy với user Apache để đảm bảo rằng sẽ không xảy ra leo thang lên quyền root với cái process khác nhằm đảm bảo security.
+Còn dầu ngoặc vuông thì đảm bảo chắc chằn rằng chỉ tìm những kí tự đầu luôn là "h".
+Khả nằng mình trả lời chỉ tới đó.Nếu có sai xót mong mọi người góp ý. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44813/276396.hva#276396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44813/276396.hva#276396</link>
+				<pubDate><![CDATA[Fri, 7 Jun 2013 04:42:20]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Phân tích tính chất vài trận DDoS HVA vừa qua.</title>
+				<description><![CDATA[ Nói về cafe thì uống 1 cốc nhỏ là đủ thức trắng đêm! Không nhiều đá như trong Sài Gòn này.
+Như anh Conmale nói thì HVA vẫn còn DDOS sao? Em tưởng hết rối chứ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39641/248638.hva#248638</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39641/248638.hva#248638</link>
+				<pubDate><![CDATA[Thu, 13 Oct 2011 07:38:04]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Phân tích tính chất vài trận DDoS HVA vừa qua.</title>
+				<description><![CDATA[ Giớ mới biết bác TQN là đồng hương.
+Vietnamnet thì em vẫn vào bình thường không sao cả mà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39641/248588.hva#248588</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39641/248588.hva#248588</link>
+				<pubDate><![CDATA[Wed, 12 Oct 2011 03:34:02]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Account không nằm trong Member Group nào trong Windows 7</title>
+				<description><![CDATA[ Đã giải quyết xong mong Mod dời vào Trash nhé! Cảm ơn mọi người.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39847/245576.hva#245576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39847/245576.hva#245576</link>
+				<pubDate><![CDATA[Mon, 22 Aug 2011 05:26:36]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Account không nằm trong Member Group nào trong Windows 7</title>
+				<description><![CDATA[ Mặc định thì Adminitrator trong W7 sẽ bị disable.
+Khi cài W7 thì "User mình tạo" nằm trong Group Adminitrators nhưng sau khi mình Remove "user mình tạo" ra khỏi Group Adminitrators thì mình không còn nằm trong Group nào nữa và user hiện tại của mình thì không thể làm gì được.
+Vậy có cách nào mình có thề thành Member của Group Adminitrators không ngoài cách reinstall lại W7  :( ?
+Cảm ơn mọi sự đóng góp của mọi người! :) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39847/245515.hva#245515</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39847/245515.hva#245515</link>
+				<pubDate><![CDATA[Sun, 21 Aug 2011 11:33:03]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Phân tích tính chất vài trận DDoS HVA vừa qua.</title>
+				<description><![CDATA[ Em theo dõi Topic này lấu rồi! Em mong mọi người vạc trần bọn stl đó chứ để chúng làm những việc thật là bỉ ổi như vậy được!
+Và còn 1 câu để nói : Bọn STL là ai mà ai cũng biết mà không ai dám nói !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39641/245210.hva#245210</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39641/245210.hva#245210</link>
+				<pubDate><![CDATA[Wed, 17 Aug 2011 09:30:05]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>phá pass wifi</title>
+				<description><![CDATA[ Mình nghĩ các bạn xem mã hoá thuật toán theo gì đã?
+WEP---&gt; black track
+Còn lại mình chịu.Tự tìm hiểu Back Track nhé.Đôi lúc tự tìm kiếm sẽ có cái hay của nó,tạo cho bạn niềm đan mê.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39436/242704.hva#242704</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39436/242704.hva#242704</link>
+				<pubDate><![CDATA[Sun, 3 Jul 2011 11:29:24]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Giúp em về cài đặt UBUNTU 10.10</title>
+				<description><![CDATA[ Em xin trình bày tình hình hiện tại máy của em:
+-Vì quá hoảng hốt do mất hết dữ liệu em táy máy cài lại UBUNTU 1 lần nữa nhưng giữa chừng nghĩa sao lấy đĩa ra nên 1 số filesystem của UBUNTU trước đã bị remove không thể vào được UBUNTU nữa mà cứ xuất hiện dấu nháy liên tục không làm được gì hết.
+-Còn bỏ đĩa Window vào cài thì nó bảo là không định dạng được và cũng không cho fomat lại ổ đĩa để cài.
+-Khi thử cài UBUNTU thì vào phần "Specify partitions manually" thì hiện ra thế này:
+        -/dev/sda1 : 313 G
+        -/dev/sda5: 6 G (type:swap)
+Mong mọi người đưa ra phương án tốt nhất để cứu dữ liệu hay cải lại window được không ạ? Và cả cách cài 2 hệ điều hành này luôn trên 1 máy ?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37646/231697.hva#231697</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37646/231697.hva#231697</link>
+				<pubDate><![CDATA[Tue, 22 Feb 2011 20:27:38]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Giúp em về cài đặt UBUNTU 10.10</title>
+				<description><![CDATA[ Em mới cài UBUNTU 10.10 .Lúc cài đặt em đã chọn là: ¨install alongside other OS¨ , rồi sau đó để cho tự cài đặt nhưng sau khi Restart lúc vào BIOS lại không hiện ra mục chọn 1 trong 2 hệ điều hành để em chọn.Mà tự động chạy thẳng vào UBUNTU luôn.
+Mong ai giúp em chạy lại window được không ạ.? Và dữ liệu ở Window có mất không ? Có thể phục hồi lại dữ liệu ở ổ E và D của window được không ạ?Xin cảm ơn mọi sự đóng góp và giúp đỡ của mọi người.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37646/231647.hva#231647</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37646/231647.hva#231647</link>
+				<pubDate><![CDATA[Tue, 22 Feb 2011 02:10:04]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Xu hướng tấn công và bảo mật 2010 - 2011</title>
+				<description><![CDATA[ Mình cũng nghĩ rằng tấn công mobile là cách tấn công sẽ sử dụng rất nhiều trong 2011.
+Hệ điều hành Android sẽ là mục tiêu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/36344/227707.hva#227707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/36344/227707.hva#227707</link>
+				<pubDate><![CDATA[Thu, 23 Dec 2010 11:03:04]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+			<item>
+				<title>Tấn công máy chủ linux</title>
+				<description><![CDATA[ Nếu muốn nghiên cứu Linux thì em nên đọc cái gì để bắt đầu hiểu cơ bản về Linux với 1 người chập chững?
+Mong mọi người giúp đỡ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/36237/222733.hva#222733</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/36237/222733.hva#222733</link>
+				<pubDate><![CDATA[Tue, 12 Oct 2010 23:50:14]]> GMT</pubDate>
+				<author><![CDATA[ McSteven]]></author>
+			</item>
+	</channel>
+</rss>

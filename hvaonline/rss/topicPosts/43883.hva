@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xây dựng hệ thống HA Load Balancer Mysql Cluster"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xây dựng hệ thống HA Load Balancer Mysql Cluster"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xây dựng hệ thống HA Load Balancer Mysql Cluster</title>
+				<description><![CDATA[ Xin chào mọi người, mình tham gia diễn đàn cũng được 1 thời gian ngắn thôi nhưng đã nhận được rất nhiều kiến thức từ các anh chị trong diễn đàn. Những câu hỏi mình đưa ra đều được mọi người giải đáp, mình rất cảm kích điều ấy  :x . Sau một thời gian chỉ biết đặt câu hỏi ^^, thì nay mình xin gởi đến mọi người một bài viết về hệ thống mình mà mình mới thực hiện xong. Đó là hệ thống HA Load Balancer Mysql Cluster (đây là hệ thống tổng hợp nên mình cũng đặt tên tổng hợp như vậy  :) ), mình chỉ mới chạy demo trên local nên không dám chắc là có thể áp dụng thực tế được không, nên xin mọi người góp ý thêm cho mình ^^
+Để thực hiện được hệ thống này, mình xin gởi lời cảm ơn sâu sắc đến anh <font color='orange'>quanta</font>, nhờ những giải đáp của anh mà em mới hoàn thành được.
+
+Mô hình như sau:
+<br>
+			<div align="center" class="limitview"><img src='http://direct1.anhso.net/original/10/107857/30112012155151200.png' border="0" onload="maxImg(this, 500px);" /></div>
+Dữ liệu được lưu tại các Storage Node (2 Storage được đồng bộ hoá dữ liệu), 2 SQL Node có chỉ có nhiệm vụ xử lý các câu lệnh SQL và lấy dữ liệu từ Storage Node để trả về. Tất nhiên do lấy chung 1 nguồn data nên 2 SQL Node đều được đồng bộ hoá dữ liệu. Quản lý phần này thuộc về Manager Node.
+
+Mình xin chia bài viết thành 3 phần cho mọi người dễ theo dõi.
+
+Xây Dựng Hệ Thống HA Load Balancer Mysql Cluster
+Phần 1:
+Xây dựng hệ thống Mysql Cluster
+Phần 2: 
+Xây dựng hệ thống Load Balancer cho Mysql Cluster
+Phần 3:
+HA cho hệ thống Load Balancer
+
+----------------------------------------------------------------------------------------------------------------------
+PHẦN 1: XÂY DỰNG HỆ THỐNG MYSQL CLUSTER
+Chuẩn bị:
+Đầu tiên các bạn cần download file <i>mysql-cluster-gpl-x.x.xx-linux-x86_64-glibc23.tar.gz</i> tại <span class="link"> http://dev.mysql.com/downloads/cluster/7.1.html#downloads</span>
+Các bạn cần chuẩn bị 5 server (mình thực hiện trên Ubuntu) sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>192.168.2.52 là Manager Node
+192.168.2.53 là SQL Node &#40;hostname: server01&#41;
+192.168.2.54 là SQL Node &#40;hostname: server02&#41;
+192.168.2.55 là Storage Node
+192.168.2.56 là Storage Node</pre>
+		</div>
+Chuyển qua quyền root
+<font color='brown'>Step 1: Đầu tiên cấu hình trên manager node</font>
+Copy file mysql cluster vào folder /usr/local
+Thực hiện lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>groupadd mysql 
+useradd -g mysql mysql</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local
+tar -zxvf mysql-cluster-gpl-7.1.24-linux-x86_64-glibc23.tar.gz
+ln -s mysql-cluster-gpl-7.1.14-linux-i686-glibc23 mysql-cluster
+cd mysql-cluster
+chown -R mysql:mysql /usr/local/mysql-cluster/
+mkdir -p /var/lib/mysql-mgmd-config-cache
+mkdir -p /var/lib/mysql-mgmd-data</pre>
+		</div>
+Tạo file khai báo các thông tin Manager, SQL và Storage Node
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat &gt;&gt; /var/lib/mysql-mgmd-data/config.ini &lt;&lt; EOF
+&#91;ndbd default&#93;
+NoOfReplicas = 2
+DataDir= /var/lib/mysql-ndb-data
+DataMemory = 64M
+IndexMemory = 128M
+ 
+&#91;ndb_mgmd&#93;
+# Management process options:
+DataDir = /var/lib/mysql-mgmd-data
+PortNumber = 2205
+HostName = 192.168.2.52
+ 
+&#91;ndbd&#93;
+# Options for data node ndb1
+hostname = 192.168.2.55
+ 
+&#91;ndbd&#93;
+# Options for data node ndb2
+hostname = 192.168.2.56
+&#91;mysqld&#93;
+# SQL node options for dbsrv3
+hostname = 192.168.2.53
+ 
+&#91;mysqld&#93;
+# SQL node options for dbsrv4
+hostname = 192.168.2.54
+EOF</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/mysql-cluster/bin</pre>
+		</div>
+Thực hiện lệnh sau để khởi động Manager Node
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./ndb_mgmd --initial --configdir=/var/lib/mysql-mgmd-config-cache --config-file=/var/lib/mysql-mgmd-data/config.ini</pre>
+		</div>
+Hiện thông báo như hình dưới là bạn đã tạo Manager Node thành công
+<br>
+			<div align="center" class="limitview"><img src='http://direct1.anhso.net/original/10/107857/29112012195351531.png' border="0" onload="maxImg(this, 500px);" /></div>
+<font color='brown'>Step 2: Cấu hình Storage Node</font>
+Copy file mysql cluster vào folder /usr/local
+Thực hiện lệnh sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>groupadd mysql 
+useradd -g mysql mysql</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local
+tar -zxvf mysql-cluster-gpl-7.1.24-linux-x86_64-glibc23.tar.gz
+ln -s mysql-cluster-gpl-7.1.14-linux-i686-glibc23 mysql-cluster</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd mysql-cluster
+chown -R mysql:mysql /usr/local/mysql-cluster/</pre>
+		</div>
+Thực hiện lệnh kết nối tới Manager Node
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>scripts/mysql_install_db --user=mysql --datadir=/var/lib/mysql-ndb-data
+bin/ndbd  --ndb-connectstring=192.168.2.52:2205</pre>
+		</div>
+Thấy xuất hiện như thế này là đã connect thành công
+<br>
+			<div align="center" class="limitview"><img src='http://direct1.anhso.net/original/10/107857/29112012195422941.png' border="0" onload="maxImg(this, 500px);" /></div>
+Lập lại lệnh trên đối với các node data còn lại
+Xong thì bạn login vô manager node để kiểm tra xem các data node này đã kết nối hay chưa
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/mysql-cluster
+bin/ndb_mgm --ndb-connectstring=192.168.2.52:2205
+show</pre>
+		</div>
+<font color='brown'>Step 3: Cấu hình cho các SQL Node</font>
+Copy file mysql cluster vào folder /usr/local
+Thực hiện các lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>groupadd mysql 
+useradd -g mysql mysql</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local
+tar -zxvf mysql-cluster-gpl-7.1.24-linux-x86_64-glibc23.tar.gz
+ln -s mysql-cluster-gpl-7.1.14-linux-i686-glibc23 mysql-cluster
+cd mysql-cluster
+chown -R mysql:mysql /usr/local/mysql-cluster/</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>scripts/mysql_install_db --user=mysql --datadir=/var/lib/mysql-node-data --basedir=/usr/local/mysql-cluster</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apt-get install libaio1</pre>
+		</div>
+Định nghĩa file kết nối Manager Node
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat &gt;&gt; /etc/mysqld-cluster.cf &lt;&lt;EOF
+&#91;mysqld&#93;
+ndbcluster
+ndb-connectstring=192.168.2.52:2205
+EOF</pre>
+		</div>
+Thực hiện lệnh kết nối tới Manager Node
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>bin/mysqld_safe --defaults-extra-file=/etc/mysqld-cluster.cf --user=mysql --datadir=/var/lib/mysql-node-data --basedir=/usr/local/mysql-cluster &</pre>
+		</div>
+Xong thì bạn login vô manager node để kiểm tra xem các sql node này đã kết nối hay chưa
+Hiện như hình dưới là ok
+<br>
+			<div align="center" class="limitview"><img src='http://direct1.anhso.net/original/10/107857/2911201219542494.png' border="0" onload="maxImg(this, 500px);" /></div>
+*. Cấu hình password cho mysql server
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/mysql-cluster# bin/mysqladmin -u root password 'PaSSw0rd'</pre>
+		</div>
+*. Đăng nhập
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@ubuntu:/usr/local/mysql-cluster# bin/mysql -u root -p</pre>
+		</div>
+*. Shutdown sql node an toàn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@ubuntu:/usr/local/mysql-cluster# ./bin/mysqladmin -u root -pPaSSw0rd shutdown</pre>
+		</div>
+<font color='red'>Lưu ý:</font> để có thể đồng bộ hóa các bảng giữa 2 SQL Node thì tất cả các table phải thay đổi engine từ MyISAM hay InoDB sang engine NDBCLUSTER. Thao tác này có thể sử dụng lệnh alter table.
+alter table tên_bảng engine=ndbcluster;
+Ví dụ 1 câu lệnh tạo bảng mẫu:
+create table mytable(col1 int not null primary key auto_increment, col2 varchar(100))engine=NDBCLUSTER;
+
+Hết phần 1
+Mình mới viết bài lần đầu, nên có gì sai và thiếu sót mong mọi người nhắc nhở&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271442</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271442</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2012 07:04:04]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+			<item>
+				<title>Xây dựng hệ thống HA Load Balancer Mysql Cluster</title>
+				<description><![CDATA[ Cảm ơn bạn ngtrongtri!
+
+Mình xin có một góp ý nhỏ như sau:
+Sẽ dễ hiểu hơn cho những ai chưa xây dựng hệ thống kiểu như thế này bao giờ nếu bạn cung cấp thêm một hình vẽ và giải thích về vai trò và data flow giữa các server. Chẳng hạn như Manager Node, SQL Node và Storage Node chúng có vai trò như thế nào và đứng ở vị trí nào trong data flow.
+
+Mong chờ các phần tiếp theo của bạn.
+
+Cảm ơn!
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271471</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271471</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2012 00:33:23]]> GMT</pubDate>
+				<author><![CDATA[ ngocson2vn]]></author>
+			</item>
+			<item>
+				<title>Xây dựng hệ thống HA Load Balancer Mysql Cluster</title>
+				<description><![CDATA[ Bạn ngtrongtri có thời gian thì viết tiếp bài 2 nhé, để mọi người đọc nửa chừng rồi trốn thế.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271767</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271767</link>
+				<pubDate><![CDATA[Tue, 11 Dec 2012 19:28:45]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>Xây dựng hệ thống HA Load Balancer Mysql Cluster</title>
+				<description><![CDATA[ Phần 2: Load Balancer Mysql Cluster 
+ 
+I. Setup HAProxy server 
+1. Cài đặt, chuẩn bị 
+Chúng ta cài đặt trên HAProxy server 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apt-get install haproxy</pre>
+		</div>
+2. Cấu hình 
+Backup lại file /etc/haproxy/haproxy.cfg 
+Cấu hình như sau: 
+nano /etc/haproxy/haproxy.cfg 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># this config needs haproxy-1.4.20 
+global 
+        log 127.0.0.1   local0 
+        log 127.0.0.1   local1 notice 
+stats socket /var/run/haproxy.stat mode 600 
+        maxconn 4096 
+#        uid 99 
+#        gid 99 
+        daemon 
+        #debug 
+        #quiet 
+defaults 
+        log     global 
+        mode    http 
+        option  tcplog 
+        option  dontlognull 
+ 
+ 
+        retries 3 
+        option        redispatch 
+        maxconn 2000 
+        contimeout      5000 
+        clitimeout      50000 
+        srvtimeout      50000 
+ 
+listen mysql-cluster 0.0.0.0:3306 
+    mode tcp 
+    balance roundrobin 
+   # option mysql-check user root 
+#    listen webcluster *:80 
+#    stats   enable 
+#    stats   auth admin:admin 
+   option httpchk 
+    server db01 192.168.2.53:3306 check port 9200 
+    server db02 192.168.2.54:3306 check port 9200</pre>
+		</div>
+3. Config tiếp 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>nano /etc/default/haproxy</pre>
+		</div>
+ENABLED=1 
+4. Xong restart haproxy 
+II. Cài đặt xinetd script trên SQL Node 
+Chúng ta thực hiện các bước sau trên 2 SQL Node 
+Đầu tiên cài đặt xinetd 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apt-get install xinetd</pre>
+		</div>
+Step 1: Trên con mysql server, ta tạo file /opt/mysqlchk_status 
+ 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash 
+MYSQL_HOST=&quot;localhost&quot; 
+MYSQL_PORT=&quot;3306&quot; 
+MYSQL_USERNAME=&quot;ngtrongtri&quot; 
+MYSQL_PASSWORD=&quot;ngtrongtri&quot; 
+ERROR_MSG=`/usr/local/mysql-cluster/bin/mysql  --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USERNAME --password=$MYSQL_PASSWORD -e &quot;show databases;&quot; 2&gt;/dev/null` 
+if &#91; &quot;$ERROR_MSG&quot; != &quot;&quot; &#93; 
+then 
+        # mysql is fine, return http 200         
+/bin/echo -e &quot;HTTP/1.1 200 OK\r\n&quot;         
+/bin/echo -e &quot;Content-Type: Content-Type: text/plain\r\n&quot;         
+/bin/echo -e &quot;\r\n&quot;         
+/bin/echo -e &quot;MySQL is running.\r\n&quot;         
+/bin/echo -e &quot;\r\n&quot; 
+else         
+# mysql is fine, return http 503         
+/bin/echo -e &quot;HTTP/1.1 503 Service Unavailable\r\n&quot;         
+/bin/echo -e &quot;Content-Type: Content-Type: text/plain\r\n&quot;         
+/bin/echo -e &quot;\r\n&quot;         
+/bin/echo -e &quot;MySQL is *down*.\r\n&quot;         
+/bin/echo -e &quot;\r\n&quot; 
+fi</pre>
+		</div>
+ 
+Step 2: Trên mysql server, thực hiện lệnh sau 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GRANT ALL PRIVILEGES ON *.* TO 'ngtrongtri'@'localhost' IDENTIFIED BY 'ngtrongtri';</pre>
+		</div>
+ 
+ 
+Step 3:  
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chown nobody /opt//mysqlchk_status  
+chmod 744 /opt//mysqlchk_status</pre>
+		</div>
+ 
+Step 4: Check 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@server02:~# /opt/mysqlchk_status 
+HTTP/1.1 200 OK 
+Content-Type: Content-Type: text/plain 
+MySQL is running.</pre>
+		</div>
+ 
+Step 5: Thêm dòng sau đây vào /etc/services vào cuối  
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysqlchk_status         9200/tcp                        # mysqlchk</pre>
+		</div>
+Step 6: Tạo file sau /etc/xinetd.d/mysqlchk_status 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># default: on 
+# description: mysqlchk 
+service mysqlchk_status 
+{ 
+        flags           = REUSE 
+        socket_type     = stream 
+        port            = 9200 
+        wait            = no 
+        user            = nobody 
+        server          = /opt/mysqlchk_status 
+        log_on_failure  += USERID 
+        disable         = no 
+        only_from       = 0.0.0.0/0 # recommended to put the IPs that need 
+ 
+ 
+                                    # to connect exclusively &#40;security purposes&#41; 
+        per_source      = UNLIMITED # Recently added &#40;May 20, 2010&#41; 
+                                    # Prevents the system from complaining 
+                                    # about having too many connections open from 
+                                    # the same IP. More info: 
+                                    #<span class="link"> http://www.linuxfocus.org/English/November2000/article175.shtml</span> 
+}</pre>
+		</div>
+Step 7: restart xinetd 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/init.d/xinetd restart</pre>
+		</div>
+Step 8: check 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@server02:~# netstat --inet -nlp | grep :9200 
+tcp        0      0 0.0.0.0:9200            0.0.0.0:*               LISTEN      6498/xinetd     
+root@server02:~# telnet localhost 9200 
+Trying ::1... 
+Trying 127.0.0.1... 
+Connected to localhost. 
+Escape character is '^&#93;'. 
+HTTP/1.1 200 OK 
+ 
+Content-Type: Content-Type: text/plain 
+ 
+MySQL is running. 
+ 
+Connection closed by foreign host.</pre>
+		</div>
+  
+Ta telnet tới server HAProxy thử 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@server02:~# telnet 192.168.2.58 3306 
+Trying 192.168.2.58... 
+Connected to 192.168.2.58. 
+Escape character is '^&#93;'. 
+K 
+5.1.63-ndb-7.1.24-cluster-gpl&#93;GM,2WA~ceQFJ#lw5=tQ</pre>
+		</div>
+Vậy là bạn đã cấu hình Load Balancer thành công.
+Hết phần 2.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271786</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43883.hva#271786</link>
+				<pubDate><![CDATA[Wed, 12 Dec 2012 04:50:52]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+			<item>
+				<title>Xây dựng hệ thống HA Load Balancer Mysql Cluster</title>
+				<description><![CDATA[ Còn phần nữa làm nốt đi ngtrongtri]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43883.hva#273525</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43883.hva#273525</link>
+				<pubDate><![CDATA[Thu, 21 Feb 2013 01:52:15]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+	</channel>
+</rss>

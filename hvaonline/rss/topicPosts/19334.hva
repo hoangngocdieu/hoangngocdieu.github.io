@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Thủ thuật] Thay đổi label cho các partitions trong Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Thủ thuật] Thay đổi label cho các partitions trong Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Thủ thuật] Thay đổi label cho các partitions trong Linux</title>
+				<description><![CDATA[ Trong Linux, khi tạo mới một partition ext2/ext3 với lệnh <font color='orange'>mkfs.ext2</font>, bạn có thể dùng tuỳ chọn <b>-L</b> đi kèm để gán label cho partition đó. 
+
+Vậy câu hỏi đặt ra là: với một partition đang sử dụng, có thể thay đổi label của nó hay không?
+Câu trả lời là: <b>Có</b>. Để làm việc này bạn có thể dùng lệnh <font color='orange'>e2label</font>, cú pháp:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>e2label device &#91; new-label &#93;</pre>
+		</div>
+
+Ví dụ, trong <i>/etc/fstab</i>, label của /tmp partition của bạn là <font color='#6699CC'><b>/tmp</b></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LABEL=/tmp              /tmp                    ext3    defaults        1 2</pre>
+		</div>
+Bây giờ bạn muốn đổi nó thành <font color='#6699CC'><b>temporary</b></font> xem sao.
+Đầu tiên, bạn gõ <font color='orange'>df</font> để xác định /tmp partition:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ df
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda7               497829     56123    416004  12% /tmp</pre>
+		</div>
+Tiếp theo, thay đổi label cho /tmp partition bằng lệnh <font color='orange'>e2label</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo e2label /dev/sda7 temporary</pre>
+		</div>
+Cuối cùng nhớ chỉnh lại trong <i>/etc/fstab</i> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LABEL=temporary                 /tmp                       ext3    defaults        1 2</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115232</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115232</link>
+				<pubDate><![CDATA[Mon, 18 Feb 2008 02:12:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [Thủ thuật] Thay đổi label cho các partitions trong Linux</title>
+				<description><![CDATA[ Xin lỗi cho mình hỏi 1 câu hơi ngu, việc thay đổi Label của partion có ý nghĩa và tác dụng như thế nào vậy? Vả lại mọi người dùng Linux quen với việc nhìn thư mục root là "/" hơn chứ nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115400</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115400</link>
+				<pubDate><![CDATA[Tue, 19 Feb 2008 00:57:47]]> GMT</pubDate>
+				<author><![CDATA[ SuperChicken]]></author>
+			</item>
+			<item>
+				<title>Re: [Thủ thuật] Thay đổi label cho các partitions trong Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Siêu trộm wrote:</cite><br>
+		<blockquote>Xin lỗi cho mình hỏi 1 câu hơi ngu, việc thay đổi Label của partion có ý nghĩa và tác dụng như thế nào vậy?&nbsp;
+		</blockquote>
+Xin lỗi, tớ nghĩ đây là một câu hỏi hay.
+
+Tớ xin chia sẻ thế này:
+Với các Distro khác tớ không rõ lắm nhưng Red Hat/Fedora có vẻ "khoái" đánh label cho các partitions để tham chiếu chúng. Chẳng hạn, trong <i>/boot/grub/grub.conf</i>, có một đoạn:
+<blockquote>
+title Fedora (2.6.23.14-115.fc8)
+        root (hd0,0)
+        kernel /vmlinuz-2.6.23.14-115.fc8 ro <font color='orange'>root=LABEL=/</font> rhgb quiet
+        initrd /initrd-2.6.23.14-115.fc8.img&nbsp;
+		</blockquote>
+<font color='orange'>--&gt;</font> Các Distro khác chỗ này có thể là <b>root=/dev/sda2</b>
+
+Hồi đầu "vọc" Linux, sau khi cài thành công, tớ dùng một cái tool partition manager nào đó, view partitions table lên thì thấy <i>"Quái, sao cái label của cái partition này lại đặt tên có mỗi dấu <font color='#6699CC'>/</font> nhỉ, mình sẽ đổi thành tên khác hay hơn. Thế là tớ đổi nó thành tên khác"</i>. Kết quả chắc mọi người đã rõ (sẽ "nghỉ" boot vào linux luôn vì đổi label của the root directory mà chưa sửa lại trong <i>grub.conf</i>). Sau đó phải sửa lại như cũ.
+
+Thêm một chia sẻ nữa, có lần tớ chia các partitions /var, /usr, /tmp, ... riêng biệt và cài Fedora nên đó. Sau này do gặp vấn đề với âm thanh, tớ muốn fresh install lại. Tớ giữ lại mỗi $HOME, còn lại format hết và fresh install. Sau khi cài xong, cat thử /etc/fstab, tớ để ý thấy label mà Fedora đánh cho các partitions trên là: /var1, /usr1, /tmp1, ...Tớ thắc mắc là "Tại sao nó lại đánh thế? Có cách nào đổi lại như cũ là: /var, /usr, /tmp, ... không? Tớ google ra cái lệnh <font color='orange'>e2label</font> trên. Xin hết.
+
+ps: Dù sao nó cũng chỉ là cái "nhãn" cho partition thôi. Tớ nghĩ thế.
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115423</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115423</link>
+				<pubDate><![CDATA[Tue, 19 Feb 2008 01:42:31]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [Thủ thuật] Thay đổi label cho các partitions trong Linux</title>
+				<description><![CDATA[ Oh, bây giờ thì tui đã hiểu :D
+Cũng không quan trọng lắm nhỉ, chắc vì tui là người thích default setting (luôn luôn để label rỗng hoặc default cho các partition, từ Windows sang Linux :P ). Vả lại cũng ít xài FC, thích Ubuntu hơn và cũng "khoái" cách config của Ubuntu hơn, có vẻ user-friendly và tiện hơn :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115435</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19334.hva#115435</link>
+				<pubDate><![CDATA[Tue, 19 Feb 2008 02:35:26]]> GMT</pubDate>
+				<author><![CDATA[ SuperChicken]]></author>
+			</item>
+			<item>
+				<title>Re: [Thủ thuật] Thay đổi label cho các partitions trong Linux</title>
+				<description><![CDATA[ Kể ra xài label thế nó cũng hay, nhưng với một người hay quên như em thì xài nó có khi lại rắc rối, vì nhiều khi hứng lên đổi label cái rồi quên sửa hết các thứ dùng đến nó thì sẽ rắc rồi.
+Thế nên nếu có cần gõ nhanh một cái địa chỉ dài, em gán nó vào một biến, xài với tính năng auto complete thì hết xẩy  :D.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19334.hva#116488</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19334.hva#116488</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 17:49:28]]> GMT</pubDate>
+				<author><![CDATA[ lihavim]]></author>
+			</item>
+	</channel>
+</rss>

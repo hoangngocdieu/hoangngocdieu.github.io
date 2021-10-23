@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xác định nguyên nhân gây quá tải trên server"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xác định nguyên nhân gây quá tải trên server"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Chào mọi người, hiện tại tớ đang quản trị một server tự ráp với thông số như sau:
+Intel(R) Xeon(R) CPU X3210  @ 2.13GHz
+Memory: 2GB
+2 hard disk ATA 150GB chạy RAID 1
+Ubuntu Server 8.0.4 LTS
+Builtin Apache 2.2.8, Mysql 5.0.51a sử dụng toàn bộ cấu hình mặc định
+
+Hiện tại server đang đặt tại FPT và host 1 website công ty (php) và 1 ứng dụng web nội bộ (ruby), tất cả đều do công ty tớ phát triển. Website php có truy xuất thông tin từ ứng dụng ruby qua web services. Số lượng người sử dụng ứng dụng ruby không đáng kể. 
+Thông tin truy cập website php trung bình mỗi ngày theo thống kê của google analytics hiện tại như sau:
+Visits: ~5000
+Page views: ~14000
+
+Ở thời điểm bình thường, thông số hoạt động của server như sau:
+server load average: 0 - 4
+cpu using: 0 - 30%
+mem free: ~200MB
+swap used: 60MB
+Số process của apache: ~30 processes
+
+Tuy nhiên ở một số thời điểm trong ngày server có hiện tượng như sau: 
+server load average: tăng dần đến &gt; 50  :-O 
+cpu using: 0 - 30%. 
+free mem: ~50MB
+swap used: ~2GB, 
+Số process của apache: &gt; 150 ( MaxClients của apache2.conf đang set là 150 ), 
+
+Server lúc này gần như không thể sử dụng được, toàn bộ truy cập từ browser đều không thực hiện được, ngay cả việc truy cập bằng ssh cũng rất khó khăn. Tớ phải restart apache và khoảng 5' sau thì tất cả lại trở lại như thời điểm bình thường.
+
+Tớ đang tìm nguyên nhân của hiện tượng này và có một số suy nghĩ sau: 
+- Một process nào đó chiếm hết tài nguyên CPU trong một khoảng thời gian, các apache processes vì thế bị queue lại và dẫn tới giả thiết tiếp theo.
+- Khi số người dùng truy cập tăng lên, số process của apche tăng theo dẫn tới việc hết ram và phải sử dụng swap, làm cho các request bị xử lý chậm. Riêng ứng dụng ruby với 3 processes đã chiếm hết ~500MB ram rồi, mỗi apache process ~20MB ram nữa nên nếu tính ra thì chỉ nên set MaxClients khoảng 50 thôi.
+- Có thể việc chạy RAID 1 trên hard disk chuẩn ATA làm tăng thời gian xử lý I/O, nhưng thực ra các tác vụ ghi không nhiều, chủ yếu là đọc thôi.
+- Hiện tại do server chạy chung cả apache và mysql nhưng theo như tớ theo dõi thì mysql-slow-log chỉ có log tại thời điểm server đã bị quá tải, còn ở thời điểm bình thường thì ko có log (long_query_time = 2 trong my.cnf). Như vậy thì nguyên nhân không phải do db, mặc dù mysql chưa tweak gì.
+
+Hiện tại tớ vẫn đang theo dõi server, nếu có thêm suy nghĩ hay thông tin gì tớ sẽ cập nhật tiếp. Kinh nghiệm sử dụng linux cũng như quản trị server của tớ còn hạn chế, rất mong mọi người  có ý kiến trợ giúp về hướng xác định nguyên nhân và các công cụ nên sử dụng cho việc quản trị web, db server.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#231915</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#231915</link>
+				<pubDate><![CDATA[Fri, 25 Feb 2011 02:05:39]]> GMT</pubDate>
+				<author><![CDATA[ invisible_]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Lúc nào Load Average cao bạn thử chạy lệnh sau rồi gửi kết quả lên nhé:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps -eo pid,user,state,cmd | awk '$3 ~ /D/ { print $0 }'</pre>
+		</div>
+Một cách gần đúng để check xem process nào đang dùng swap:
+top --&gt; O --&gt; p --&gt; enter
+hoặc:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps -eo pid,user,vsize,rss,cmd --sort -vsize | head -5</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#231917</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#231917</link>
+				<pubDate><![CDATA[Fri, 25 Feb 2011 02:30:00]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Dưới đây là kết quả của lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps -eo pid,user,state,cmd | awk '$3 ~ /D/ { print $0 }'</pre>
+		</div>
+khi server đang ở tình trạng quá tải:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2500 root     D &#91;md0_raid1&#93;
+2617 root     D &#91;kjournald&#93;
+20248 root     D &#91;pdflush&#93;
+21438 www-data D /usr/sbin/apache2 -k start
+21512 www-data D /usr/sbin/apache2 -k start
+21667 www-data D /usr/sbin/apache2 -k start
+21677 www-data D /usr/sbin/apache2 -k start
+21764 www-data D /usr/sbin/apache2 -k start
+21851 www-data D /usr/sbin/apache2 -k start
+22309 www-data D /usr/sbin/apache2 -k start
+22539 www-data D /usr/sbin/apache2 -k start
+22597 www-data D /usr/sbin/apache2 -k start
+...</pre>
+		</div>
+
+Mỗi lần chạy có kết quả không giống nhau, nhưng đây là những processes có tần số xuất hiện cao nhất nên tớ note lại.
+Theo như kết quả googling thì 3 processes đầu tiên đều liên quan đến I/O, các processes có trạng thái D (uninterruptible sleep) còn lại đều là apache, như vậy có phải là do ổ cứng có vấn đề ko nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232130</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232130</link>
+				<pubDate><![CDATA[Sun, 27 Feb 2011 21:02:15]]> GMT</pubDate>
+				<author><![CDATA[ invisible_]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Hết RAM ---&gt; nhảy qua swap ---&gt; CPU lên cao ----&gt; teo.
+
+Giải phảp: upgrade thêm RAM, càng nhiều càng tốt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232131</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232131</link>
+				<pubDate><![CDATA[Sun, 27 Feb 2011 21:06:02]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Hết RAM ---&gt; nhảy qua swap ---&gt; CPU lên cao ----&gt; teo.
+
+Giải phảp: upgrade thêm RAM, càng nhiều càng tốt.&nbsp;
+		</blockquote>
+
+Em cũng nghĩ nếu upgrade thêm ram sẽ giải quyết được vấn đề nhưng em muốn tìm hiểu xem những gì đang xảy ra trong hệ thống cũng như thử tune trước anh ạ.
+
+P/s: Cách đây lâu lắm rồi anh có trả lời em 1 lần cách xử lý khi cài linux xong không vào được windows nữa. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232132</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232132</link>
+				<pubDate><![CDATA[Sun, 27 Feb 2011 21:22:17]]> GMT</pubDate>
+				<author><![CDATA[ invisible_]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">invisible_ wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Hết RAM ---&gt; nhảy qua swap ---&gt; CPU lên cao ----&gt; teo.
+
+Giải phảp: upgrade thêm RAM, càng nhiều càng tốt.&nbsp;
+		</blockquote>
+
+Em cũng nghĩ nếu upgrade thêm ram sẽ giải quyết được vấn đề nhưng em muốn tìm hiểu xem những gì đang xảy ra trong hệ thống cũng như thử tune trước anh ạ.
+
+P/s: Cách đây lâu lắm rồi anh có trả lời em 1 lần cách xử lý khi cài linux xong không vào được windows nữa. :)&nbsp;
+		</blockquote>
+
+Em đã nhận định: <i>"ứng dụng ruby với 3 processes đã chiếm hết ~500MB ram rồi, mỗi apache process ~20MB ram nữa nên nếu tính ra thì chỉ nên set MaxClients khoảng 50 thôi."</i> cho nên đây là cốt lõi của vấn đề. Nếu cần tune, em phải compile lại apache và chỉ enable các apache modules cần thiết mà thôi. Làm việc này sẽ "save" được một ít memory nhưng cũng không nhiều lắm vì em chạy php nên phải dùng "prefork" mà prefork thì mỗi process được tạo ra ngốn một đống memory rất lớn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232134</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232134</link>
+				<pubDate><![CDATA[Sun, 27 Feb 2011 21:32:34]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Vâng, em cũng đang tìm hiểu về việc liệu có thể dùng worker với php không và / hoặc sử dụng một web server khác để xử lý các static file thay vì tất cả các processes apache 20MB đều dùng chung cho cả dynamic và static requests.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#232139</link>
+				<pubDate><![CDATA[Sun, 27 Feb 2011 21:47:42]]> GMT</pubDate>
+				<author><![CDATA[ invisible_]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">invisible_ wrote:</cite><br>
+		<blockquote>Dưới đây là kết quả của lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps -eo pid,user,state,cmd | awk '$3 ~ /D/ { print $0 }'</pre>
+		</div>
+khi server đang ở tình trạng quá tải:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2500 root     D &#91;md0_raid1&#93;
+2617 root     D &#91;kjournald&#93;
+20248 root     D &#91;pdflush&#93;
+21438 www-data D /usr/sbin/apache2 -k start
+21512 www-data D /usr/sbin/apache2 -k start
+21667 www-data D /usr/sbin/apache2 -k start
+21677 www-data D /usr/sbin/apache2 -k start
+21764 www-data D /usr/sbin/apache2 -k start
+21851 www-data D /usr/sbin/apache2 -k start
+22309 www-data D /usr/sbin/apache2 -k start
+22539 www-data D /usr/sbin/apache2 -k start
+22597 www-data D /usr/sbin/apache2 -k start
+...</pre>
+		</div>
+
+Mỗi lần chạy có kết quả không giống nhau, nhưng đây là những processes có tần số xuất hiện cao nhất nên tớ note lại.
+Theo như kết quả googling thì 3 processes đầu tiên đều liên quan đến I/O, các processes có trạng thái D (uninterruptible sleep) còn lại đều là apache, như vậy có phải là do ổ cứng có vấn đề ko nhỉ?&nbsp;
+		</blockquote>
+Hôm nay, một con server chỗ mình cũng gặp tình trạng wait I/O khá cao (~ 60%), Ganglia đỏ lòm. `watch` thử thì thấy: kmirrord, kjournald, pdflush liên tục bị stucked ở D state. Google được vài cái links liên quan:
+<span class="link"> http://www.westnet.com/~gsmith/content/linux-pdflush.htm</span><span class="link"> http://www.evanjones.ca/linux-write-caching.html</span>
+
+Default của các thông số này là:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vm.dirty_background_ratio = 10                      
+vm.dirty_ratio = 40                      
+vm.dirty_expire_centisecs = 2999                    
+vm.dirty_writeback_centisecs = 499</pre>
+		</div>
+mình turning thử như sau thì thấy cũng khá hiệu quả.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vm.dirty_background_ratio = 5       
+vm.dirty_ratio = 20                 
+vm.dirty_expire_centisecs = 1499    
+vm.dirty_writeback_centisecs = 29999</pre>
+		</div>
+
+Để theo dõi thêm xem sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236243</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236243</link>
+				<pubDate><![CDATA[Tue, 26 Apr 2011 05:12:40]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Apache đã chiếm hết RAM bạn có thể set giá trị MaxrequestPerChild xuống thấp hơn để tránh memory leak. RAM 2Gb và page view 14000/ ngày có lẽ nên để 500~800 thôi.
+
+have fun,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236245</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236245</link>
+				<pubDate><![CDATA[Tue, 26 Apr 2011 05:45:40]]> GMT</pubDate>
+				<author><![CDATA[ zeno]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Mình đang sử dụng VPS RAM 784 và blog wordpress với ~6k visits và ~60k pageviews/day.
+
+Giải pháp của mình là sử dụng nginx làm reverse proxy để xử lý static content. Mình config lại my.cnf xuống các giá trị thấp để ít dùng RAM làm cache. Config prefork lại xuống thấp 1 chút để có thể chống quá tải.
+
+Mặc khác mình còn viết 2 script. 1 để control PHP nếu xử lý quá nhiều và quá lâu thì suspend hoặc restart lại Apache. 1 script khác để control RAM server, nếu thấy &lt;30 MB RAM thì restart server. Vì kinh nghiệm của mình là mình restart thì thời gian restart để vào lại web còn nhanh hơn là khách không ai truy cập được và dẫn đến crash server.
+
+Mình còn dùng thêm monit để monitor một số services để thông báo cho mình viết khi quả tải sắp xảy ra.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236470</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236470</link>
+				<pubDate><![CDATA[Sat, 30 Apr 2011 11:16:19]]> GMT</pubDate>
+				<author><![CDATA[ phonglanbiec]]></author>
+			</item>
+			<item>
+				<title>Xác định nguyên nhân gây quá tải trên server</title>
+				<description><![CDATA[ Tắt hoặc giảm swap đi còn 128M hoặc 512M (swap -a off hoặc phải chỉnh lại phân vùng 1 chút), thử xem máy lên đến bao nhiêu apache process thì máy die (hoặc báo lỗi out of memory).
+=&gt; 2GB RAM chịu được bao nhiều concurrent process. Sau đó tune apache, giảm các module được load lên, càng ít càng tốt. Thử lại, rồi setMaxClient = số đó thì sẽ ổn.
+Theo kinh nghiệm của tớ, sau khi giảm module + tối giản config thì tớ giảm 1/2 số memory mà apache chiếm (vẫn có php nhé). Mặt khác, dù load module lên thành các process riêng nhưng Linux share chung vùng nhớ các module code dùng chung, nên thực tế mỗi process sẽ chỉ chiếm 1 ít memory riêng thôi (cho biến + các thông tin riêng của process). Máy 2GB thì nếu làm tối thiểu tớ đã cho gánh được kịch kim khoảng 1000 concurrent apache process (vị chi chưa đến 2M/1 process). Trừ đi ruby và mysql thì con số 150 client của bạn có vẻ dưới cơ rất nhiều so với khả năng có thể của máy =&gt; có vấn đề lớn ở đâu đó chiếm mem quá nhiều. Lưu ý ứng dụng PHP nhé, vì nếu ứng dụng web của bạn chạy ngốn hết memory cho phép trong php.ini (ví dụ 8 hay 16M, thậm chị 32M) thì lượng process chạy cùng lúc sẽ giảm đi nhiều lắm.
+
+P/S: swap, trong nhiều trường hợp nên giảm đi, ko nên máy móc theo kiểu 2*total RAM. 2GB RAM mà có 2GB swap thì nhiều khi bạn ko nhận được thông báo out of memory nhưng máy chạy như rùa ấy.
+
+Về số requests của bạn, ko có gì là nhiều cả. Tớ có máy 8GB RAM, mà máy cũng chịu con số đến 4000 session, 1 ngày tới 18 triệu request (chỉ tập trung trong vòng 8h hành chính) =&gt; vẫn chạy ngon.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236530</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37695.hva#236530</link>
+				<pubDate><![CDATA[Mon, 2 May 2011 08:28:56]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+	</channel>
+</rss>

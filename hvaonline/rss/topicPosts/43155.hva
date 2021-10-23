@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Giúp đỡ cấu hình Postfix làm Mail Relay ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Giúp đỡ cấu hình Postfix làm Mail Relay ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Giúp đỡ cấu hình Postfix làm Mail Relay ?</title>
+				<description><![CDATA[ Xin chào !
+
+Hiện tại tôi có một mail sever dùng Sendmai và một mail sever dùng Postfix
+Tôi muốn relay tất cả các email từ Sendmail qua Postfix để ra ngoài Internet.
+Vậy tôi phải cấu hình như thế nào để Postfix chập nhận email relay từ Senmail.
+
+Rất mong nhận được sự giúp đỡ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268264</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268264</link>
+				<pubDate><![CDATA[Thu, 9 Aug 2012 23:36:27]]> GMT</pubDate>
+				<author><![CDATA[ huyptit2007]]></author>
+			</item>
+			<item>
+				<title>Giúp đỡ cấu hình Postfix làm Mail Relay ?</title>
+				<description><![CDATA[ Chào bạn,
+
+Từ thông tin bạn cung cấp thì tôi nghĩ bạn cần config như sau:
+
+Thứ nhất bạn phải đảm bảo là khi bạn đứng ở server sendmail bạn có thể thực hiện được những lệnh sau:
+
+# telnet &lt;Postfix's IP&gt; 25
+MAIL FROM:nobody
+RCPT TO: &lt;your email address&gt;
+DATA
+Hi,
+This is a test.
+.
+
+Nếu bạn ko telnet được đến Postfix server và ko gửi mail thành công thì bạn cần cấu hình lại inet_interfaces của Postfix để Postfix listen trên tất cả các NIC.
+
+Nếu thành công thì thực hiện step tiếp theo như sau:
+
+Trên server sendmail:
+# vi /etc/mail/sendmail.cf
+
+Tìm đến dòng
+# "Smart" relay host (may be null)
+DS
+
+Sử lại thành
+# "Smart" relay host (may be null)
+DS&lt;Postfix's IP&gt;
+
+Rồi restart lại sendmail.
+
+Test lại xem có được ko.
+Chúc bạn thành công.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268269</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268269</link>
+				<pubDate><![CDATA[Fri, 10 Aug 2012 01:27:43]]> GMT</pubDate>
+				<author><![CDATA[ ngocson2vn]]></author>
+			</item>
+			<item>
+				<title>Giúp đỡ cấu hình Postfix làm Mail Relay ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ngocson2vn wrote:</cite><br>
+		<blockquote>Chào bạn,
+
+Từ thông tin bạn cung cấp thì tôi nghĩ bạn cần config như sau:
+
+Thứ nhất bạn phải đảm bảo là khi bạn đứng ở server sendmail bạn có thể thực hiện được những lệnh sau:
+
+# telnet &lt;Postfix's IP&gt; 25
+MAIL FROM:nobody
+RCPT TO: &lt;your email address&gt;
+DATA
+Hi,
+This is a test.
+.
+
+Nếu bạn ko telnet được đến Postfix server và ko gửi mail thành công thì bạn cần cấu hình lại inet_interfaces của Postfix để Postfix listen trên tất cả các NIC.
+
+Nếu thành công thì thực hiện step tiếp theo như sau:
+
+Trên server sendmail:
+# vi /etc/mail/sendmail.cf
+
+Tìm đến dòng
+# "Smart" relay host (may be null)
+DS
+
+Sử lại thành
+# "Smart" relay host (may be null)
+DS&lt;Postfix's IP&gt;
+
+Rồi restart lại sendmail.
+
+Test lại xem có được ko.
+Chúc bạn thành công.&nbsp;
+		</blockquote>
+
+Chào ngocson2vn,
+Tôi đã thực hiện cấu hình relay host trên Sendmail và telnet thành công đến Postfix.
+Nhưng khi thực hiện đến dòng RCPT TO: &lt;email address &gt; thì nó thông báo: " Relay access denied "]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268270</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268270</link>
+				<pubDate><![CDATA[Fri, 10 Aug 2012 02:17:21]]> GMT</pubDate>
+				<author><![CDATA[ huyptit2007]]></author>
+			</item>
+			<item>
+				<title>Giúp đỡ cấu hình Postfix làm Mail Relay ?</title>
+				<description><![CDATA[ Vậy thì bạn cần cấu hình lại Postfix LISTEN trên tất cả các network interface.
+Bạn chạy lệnh netstat xem Postfix đang LISTEN trên interface nào? Có phải là 127.0.0.1:25 không? Nếu đúng vậy thì cấu hình lại inet_interfaces = all hoặc là inet_interfaces = &lt;Postfix's IP&gt;.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268279</link>
+				<pubDate><![CDATA[Fri, 10 Aug 2012 05:09:35]]> GMT</pubDate>
+				<author><![CDATA[ ngocson2vn]]></author>
+			</item>
+			<item>
+				<title>Giúp đỡ cấu hình Postfix làm Mail Relay ?</title>
+				<description><![CDATA[ Cấu hình như vậy đã chủ chưa bạn ngocson2vn, Có một số yêu cầu cấu hình relay trên postfix nữa mà không thấy bạn đề cập.
+Mình cũng đang có ý định postfix làm relay cho Zimbra server phía sau.Bạn hướng dẫn giúp mình cách làm với nhé]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268307</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43155.hva#268307</link>
+				<pubDate><![CDATA[Sat, 11 Aug 2012 05:57:39]]> GMT</pubDate>
+				<author><![CDATA[ hoakhanh281]]></author>
+			</item>
+	</channel>
+</rss>

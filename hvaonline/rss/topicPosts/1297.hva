@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình DHCP server"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình DHCP server"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình DHCP server</title>
+				<description><![CDATA[ <b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cấu hình DHCP
+   3. Tham khảo
+
+Giới thiệu
+
+<b>Cấu hình DHCP</b>
+
+Soạn file cấu hình<b> /etc/dhcpd.conf</b>
+
+<blockquote>ddns-update-style interim;
+ignore client-updates;
+
+subnet 172.16.0.0 netmask 255.240.0.0 {
+	# default gateway
+	option routers			172.31.255.254;
+
+	option subnet-mask		255.240.0.0;
+	option nis-domain		"nis-domain";
+	option domain-name		"domain.name";
+	option domain-name-servers	ns1.domain.name, ns2.domain.name;
+	# ntp server, nếu có
+	# option ntp-servers		172.16.0.2;
+
+	# dành 100 địa chỉ IP cho DHCP client
+	range dynamic-bootp 172.30.255.1 172.30.255.100;
+	default-lease-time 7200;
+	max-lease-time 18000;
+
+	# những máy luôn nhận IP cố định
+	host duyendang {
+		hardware ethernet 08:00:20:xx:xx:xx;
+		fixed-address 172.31.0.1;
+	}
+	host xinhxinh {
+		hardware ethernet 00:03:93:xx:xx:xx;
+		fixed-address 172.31.0.2;
+		option host-name "xinhxinh";
+	}
+}&nbsp;
+		</blockquote>
+
+Xong khởi động dhcpd
+
+	<b># /etc/init.d/dhcpd start</b>
+
+Ví dụ về script khởi động /etc/init.d/dhcpd (của FC1)
+
+<blockquote>#!/bin/sh
+#
+# dhcpd         This script takes care of starting and stopping
+#               dhcpd.
+#
+# chkconfig: - 65 35
+# description: dhcpd provide access to Dynamic Host Control Protocol.
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+. /etc/sysconfig/dhcpd
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+[ -f /usr/sbin/dhcpd ] || exit 0
+[ -f /etc/dhcpd.conf ] || exit 0
+[ -f /var/lib/dhcp/dhcpd.leases ] || touch /var/lib/dhcp/dhcpd.leases
+
+RETVAL=0
+prog="dhcpd"
+
+configtest()
+{
+	local retval TEMP=/tmp/dhcpd$$.err
+
+	/usr/sbin/dhcpd -t 2>$TEMP
+	retval=$?
+	if [ $retval -ne 0 ]
+	then
+		cat $TEMP
+		rm -f $TEMP
+	fi
+
+	return $retval
+}
+
+start() {
+	# Start daemons.
+	echo -n $"Starting $prog: "
+	daemon /usr/sbin/dhcpd ${DHCPDARGS}
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/dhcpd
+	return $RETVAL
+}
+
+stop() {
+	# Stop daemons.
+	echo -n $"Shutting down $prog: "
+	killproc dhcpd
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/dhcpd
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	configtest || exit $?
+	stop
+	start
+	RETVAL=$?
+	;;
+  condrestart)
+	if [ -f /var/lock/subsys/dhcpd ]; then
+		stop
+		start
+		RETVAL=$?
+	fi
+	;;
+  configtest)
+	configtest
+	RETVAL=$?
+	;;
+  status)
+	status dhcpd
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|configtest|status}"
+	exit 1
+esac
+
+exit $RETVAL&nbsp;
+		</blockquote>
+
+<b>Tham khảo</b>
+
+   1. /usr/share/doc/dhcp-x.x.x/dhcpd.conf.sample
+   2. man dhcpd.conf
+
+Nguồn :<span class="link"> http://james.dyndns.ws/index.php</span> 
+James Nguyen.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1297.hva#6105</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1297.hva#6105</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 10:11:36]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cấu hình DHCP server</title>
+				<description><![CDATA[  -:|-  cảm ơn rất nhiều mình đang rất cần cái này]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1297.hva#203858</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1297.hva#203858</link>
+				<pubDate><![CDATA[Mon, 25 Jan 2010 02:53:24]]> GMT</pubDate>
+				<author><![CDATA[ meomagadong]]></author>
+			</item>
+	</channel>
+</rss>

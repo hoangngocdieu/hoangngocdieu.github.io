@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Liên tục bị tấn công SYN FLOOD và DNS Ampli DDoS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Liên tục bị tấn công SYN FLOOD và DNS Ampli DDoS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Liên tục bị tấn công SYN FLOOD và DNS Ampli DDoS</title>
+				<description><![CDATA[ Hello các bạn
+
+Server mình dạo này thường xuyên bị ddos, attacker có 2 kiểu ddos như sau  :
+
+Mình dùng tcpdump, mình dùng Linux server, file pcap mình open trên windows
+
+Loại thứ 1 : SYN FLOOD 
+
+http://i.upanh.com/vpvtsn
+
+File capture package : http://www.mediafire.com/download/09dy34d9y99adk4/ddos-servervn.pcap
+
+Tình trạng : SSH vẫn truy cập bình thường, nhưng apache port 80 bị treo dẫn đến toàn bộ website không tải được.
+
+Kiểm tra trạng thái kết nối, mình thấy thế này : 
+
+  5 ESTABLISHED
+  1 FIN_WAIT2
+  3 LISTEN
+  5 TIME_WAIT
+300 SYN_RECV
+
+Dùng CSF enable SYNFLOOD giới hạn lại cũng chẳng ăn thua
+
+Loại thứ 2 : DNS Ampli DDoS
+
+http://i.upanh.com/vpvtsd
+
+File dump : http://www.mediafire.com/?ptdl4qifm9etdxc
+
+Loại này kinh khủng quá, nó ddos vào là server die liền, ko kịp ngáp, OFF mạng của Dedicated, dùng KVM remote vào, lệnh #iptraf, thấy TCP bình thường, nhưng UDP chạy chóng mặt, card mạng mình max là 100mbps, nó ddos vào 15s là lên đến 99mbps, server die ngay lập tức, không thể SSH, chỉ có thể ngồi tại phòng server mà gõ terminal.
+
+Nếu cần mình sẽ attack file pcap dump đc khi bị ddos lên cho các bạn xem và dễ hình dung nhé.
+
+Mong các bạn hỗ trợ mình, vì ngày nào mình cũng chịu ít nhất là 2 giờ bị ddos, không biết làm sao để thoát nạn cả.  :( 
+
+Cảm ơn các bạn đã quan tâm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277634</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277634</link>
+				<pubDate><![CDATA[Sun, 21 Jul 2013 14:15:19]]> GMT</pubDate>
+				<author><![CDATA[ cacthanh123]]></author>
+			</item>
+			<item>
+				<title>Liên tục bị tấn công SYN FLOOD và DNS Ampli DDoS</title>
+				<description><![CDATA[ Về chống SYN FLOOD thì có khá nhiều rồi em thấy có cái này là hữu hiệu nhất (với DoS,DDoS em không có kinh nghiệm):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -I INPUT -p tcp --syn --dport 80 -m limit --limit 5/s --limit-burst 3 -j DROP
+
+Điều chỉnh /etc/sysctl.conf và thêm mấy dòng:
+net.netfilter.nf_conntrack_tcp_timeout_syn_sent = 30
+net.netfilter.nf_conntrack_tcp_timeout_syn_recv = 5
+net.ipv4.tcp_syn_retries = 5
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_fin_timeout = 10</pre>
+		</div>
+
+cái file pcap của bác sao bắt kiểu gì mà source port cái nào cũng là 1234 vậy. Nếu mà đúng như vậy thì drop gói tin có source là port này là được.
+
+p/s: hóng hớt tý kiếm kinh nghiệm thôi, en newbie mà :D ,chúc bác sớm giải quyết được.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277655</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277655</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 10:16:21]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+			<item>
+				<title>Liên tục bị tấn công SYN FLOOD và DNS Ampli DDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">cacthanh123 wrote:</cite><br>
+		<blockquote>Hello các bạn
+
+Server mình dạo này thường xuyên bị ddos, attacker có 2 kiểu ddos như sau  :
+
+Mình dùng tcpdump, mình dùng Linux server, file pcap mình open trên windows
+
+Loại thứ 1 : SYN FLOOD 
+<span class="link"> http://i.upanh.com/vpvtsn</span>
+
+File capture package :<span class="link"> http://www.mediafire.com/download/09dy34d9y99adk4/ddos-servervn.pcap</span>
+
+Tình trạng : SSH vẫn truy cập bình thường, nhưng apache port 80 bị treo dẫn đến toàn bộ website không tải được.
+
+Kiểm tra trạng thái kết nối, mình thấy thế này : 
+
+  5 ESTABLISHED
+  1 FIN_WAIT2
+  3 LISTEN
+  5 TIME_WAIT
+300 SYN_RECV
+
+Dùng CSF enable SYNFLOOD giới hạn lại cũng chẳng ăn thua
+
+Loại thứ 2 : DNS Ampli DDoS
+<span class="link"> http://i.upanh.com/vpvtsd</span>
+
+File dump :<span class="link"> http://www.mediafire.com/?ptdl4qifm9etdxc</span>
+
+Loại này kinh khủng quá, nó ddos vào là server die liền, ko kịp ngáp, OFF mạng của Dedicated, dùng KVM remote vào, lệnh #iptraf, thấy TCP bình thường, nhưng UDP chạy chóng mặt, card mạng mình max là 100mbps, nó ddos vào 15s là lên đến 99mbps, server die ngay lập tức, không thể SSH, chỉ có thể ngồi tại phòng server mà gõ terminal.
+
+Nếu cần mình sẽ attack file pcap dump đc khi bị ddos lên cho các bạn xem và dễ hình dung nhé.
+
+Mong các bạn hỗ trợ mình, vì ngày nào mình cũng chịu ít nhất là 2 giờ bị ddos, không biết làm sao để thoát nạn cả.  :( 
+
+Cảm ơn các bạn đã quan tâm.&nbsp;
+		</blockquote>
+
+Hi bồ,
+
+Về syn flood thì bồ cản lọc dựa trên phân tích tần suất syn packet trong file dump của bồ
+
+Về DNS amplify DDoS thì bồ có 2 thứ cần làm
+1. Liên hệ Datacenter yêu cầu filter từ router biên các kết nối UDP không cần thiết ( dựa trên phân tích file dump của bồ )
+
+2. Phân tải cho server bằng việc tăng các reverse proxy, ở trường hợp của bồ tăng thêm 2 cái nằm ở 2 DC với 2 ISP internet khác nhau là ổn
+
+Tham khảo thêm:<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/44934.hva</span><span class="link"> http://www.hvaonline.net/hvaonline/posts/list/44935.hva</span>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277660</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44985.hva#277660</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 13:23:35]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+	</channel>
+</rss>

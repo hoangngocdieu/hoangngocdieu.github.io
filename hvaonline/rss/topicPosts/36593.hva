@@ -1,0 +1,1003 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Nhờ tư vấn về bảo mật (DDos - X-Flash)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Nhờ tư vấn về bảo mật (DDos - X-Flash)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Chào mọi người,
+
+Cả tuần nay, website của mình bị X-Flash DDOS 1 cách dồn dập. Qua nhiều nguồn tham khảo, nhất là HVA, mình đã áp dụng các biện pháp sau để hạn chế và ngăn chặn bớt. Tuy nhiên, kết quả vẫn thê thảm  ~(X .
+
+Sơ lược những gì mình đã làm:
+
+- Tối ưu TCP/IP stack ở kernel.
+- Thay đổi tham số Apache.
+- Cản lọc bớt ở iptables.
+- Cài đặt mod-security, mod-evasive và cản lọc ở Apache.
+
+Cụ thể như sau:
+
+1. Dấu hiệu nhận biết:
+
+- Thông tin các cú SYN server:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -nat | grep SYN
+
+tcp        0      0 69.64.56.140:80         1.53.25.120:56472       SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:64553      SYN_RECV
+tcp        0      0 69.64.56.140:80         123.20.119.94:42780     SYN_RECV
+tcp        0      0 69.64.56.140:80         58.186.67.208:3426      SYN_RECV
+tcp        0      0 69.64.56.140:80         118.71.152.184:11671    SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:62809     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.168.15.135:3827     SYN_RECV
+tcp        0      0 69.64.56.140:80         123.20.119.94:42839     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:63879     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:61159      SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:61049     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:60983     SYN_RECV
+tcp        0      0 69.64.56.140:80         123.20.119.94:42781     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:61595     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:64531      SYN_RECV
+tcp        0      0 69.64.56.140:80         113.168.15.135:4934     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:65243     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:60111     SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:59943     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.168.15.135:4933     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:64205      SYN_RECV
+tcp        0      0 69.64.56.140:80         113.161.94.195:51861    SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:60131      SYN_RECV
+tcp        0      0 69.64.56.140:80         118.69.35.164:64899     SYN_RECV
+tcp        0      0 69.64.56.140:80         113.23.71.96:64279      SYN_RECV</pre>
+		</div>
+
+- 1 phần  access log của apache:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>58.187.103.83 - - &#91;13/Nov/2010:08:56:45 +0700&#93; "GET / HTTP/1.1" 403 745 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:46 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:46 +0700&#93; "GET / HTTP/1.1" 403 745 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:46 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:46 +0700&#93; "GET / HTTP/1.1" 403 745 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:47 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:47 +0700&#93; "GET / HTTP/1.1" 403 745 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:47 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:48 +0700&#93; "GET / HTTP/1.1" 403 745 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:48 +0700&#93; "GET / HTTP/1.1" 403 709 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:48 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:49 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:49 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:49 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:50 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:50 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:50 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:51 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:51 +0700&#93; "GET / HTTP/1.1" 403 744 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+58.187.103.83 - - &#91;13/Nov/2010:08:56:52 +0700&#93; "GET / HTTP/1.1" 403 709 "http://xuongphim.com/ver11/mediaplayer.swf" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7"
+123.20.23.64 - - &#91;13/Nov/2010:09:06:08 +0700&#93; "GET / HTTP/1.1" 400 735 "http://secuyou.co.cc/logo.swf" "Mozilla/4.0 &#40;compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; SIMBAR={75530FC6-8C96-11DD-BA4E-AA56B0F29AA1}; GTB0.0; ShopperReports 3.0.487.0; SRS_IT_E879027FB476585334AA97&#41;"
+117.0.8.153 - - &#91;13/Nov/2010:09:18:08 +0700&#93; "GET / HTTP/1.1" 400 735 "http://secuyou.co.cc/logo.swf" "Mozilla/4.0 &#40;compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0&#41;"
+123.26.252.3 - - &#91;13/Nov/2010:09:23:38 +0700&#93; "GET / HTTP/1.1" 400 735 "http://secuyou.co.cc/logo.swf" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727&#41;"</pre>
+		</div>
+
+
+- Chụp package để phân tích: tcpdump -s0 -i eth0 -p tcp port 80
+
+Xem những gói HTTP thì thấy thông tin sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET / HTTP/1.1
+
+Accept: */*
+
+Accept-Language: en-US
+
+Referer:<span class="link"> http://secuyou.co.cc/logo.swf</span>
+
+x-flash-version: 10,1,85,3
+
+Accept-Encoding: gzip, deflate
+
+User-Agent: Mozilla/4.0 &#40;compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; GTB6.6&#41;
+
+Host: vuvu.mobi
+
+Connection: Keep-Alive
+
+Cookie: PHPSESSID=66ff22765d9540838022fda33fb8ee19
+
+GET / HTTP/1.1
+
+Host: vuvu.mobi
+
+Connection: keep-alive
+
+Referer:<span class="link"> http://xuongphim.com/ver11/mediaplayer.swf</span>
+
+Accept: */*
+
+User-Agent: Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7
+
+Accept-Encoding: gzip,deflate,sdch
+
+Accept-Language: en-US,en;q=0.8
+
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Cookie: __gads=ID=96466adc00e47a3b:T=1285772916:S=ALNI_MZ8BbwCmt_STaXhaQdpAbHkRO75pg; __utmz=87422111.1285772931.1.1.utmcsr=google|utmccn=&#40;organic&#41;|utmcmd=organic|utmctr=phim%20%22huyen%20thoai%20tran%20chan%22; __utma=87422111.1139690866.1285772924.1285772924.1285772924.1
+
+
+
+HTTP/1.1 403 Forbidden
+
+Date: Thu, 11 Nov 2010 15:45:35 GMT
+
+Server: Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8
+
+Content-Length: 403
+
+Keep-Alive: timeout=5, max=2
+
+Connection: Keep-Alive
+
+Content-Type: text/html; charset=iso-8859-1
+
+
+
+&lt;!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"&gt;
+&lt;html&gt;&lt;head&gt;
+&lt;title&gt;403 Forbidden&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Forbidden&lt;/h1&gt;
+&lt;p&gt;You don't have permission to access /
+on this server.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8 Server at vuvu.mobi Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;
+GET / HTTP/1.1
+
+Host: vuvu.mobi
+
+Connection: keep-alive
+
+Referer:<span class="link"> http://xuongphim.com/ver11/mediaplayer.swf</span>
+
+Accept: */*
+
+User-Agent: Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7
+
+Accept-Encoding: gzip,deflate,sdch
+
+Accept-Language: en-US,en;q=0.8
+
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Cookie: __gads=ID=96466adc00e47a3b:T=1285772916:S=ALNI_MZ8BbwCmt_STaXhaQdpAbHkRO75pg; __utmz=87422111.1285772931.1.1.utmcsr=google|utmccn=&#40;organic&#41;|utmcmd=organic|utmctr=phim%20%22huyen%20thoai%20tran%20chan%22; __utma=87422111.1139690866.1285772924.1285772924.1285772924.1
+
+
+
+HTTP/1.1 403 Forbidden
+
+Date: Thu, 11 Nov 2010 15:45:36 GMT
+
+Server: Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8
+
+Content-Length: 403
+
+Keep-Alive: timeout=5, max=1
+
+Connection: Keep-Alive
+
+Content-Type: text/html; charset=iso-8859-1
+
+
+
+&lt;!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"&gt;
+&lt;html&gt;&lt;head&gt;
+&lt;title&gt;403 Forbidden&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Forbidden&lt;/h1&gt;
+&lt;p&gt;You don't have permission to access /
+on this server.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8 Server at vuvu.mobi Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;
+GET / HTTP/1.1
+
+Host: vuvu.mobi
+
+Connection: keep-alive
+
+Referer:<span class="link"> http://xuongphim.com/ver11/mediaplayer.swf</span>
+
+Accept: */*
+
+User-Agent: Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US&#41; AppleWebKit/534.7 &#40;KHTML, like Gecko&#41; Chrome/7.0.517.44 Safari/534.7
+
+Accept-Encoding: gzip,deflate,sdch
+
+Accept-Language: en-US,en;q=0.8
+
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Cookie: __gads=ID=96466adc00e47a3b:T=1285772916:S=ALNI_MZ8BbwCmt_STaXhaQdpAbHkRO75pg; __utmz=87422111.1285772931.1.1.utmcsr=google|utmccn=&#40;organic&#41;|utmcmd=organic|utmctr=phim%20%22huyen%20thoai%20tran%20chan%22; __utma=87422111.1139690866.1285772924.1285772924.1285772924.1
+
+
+
+HTTP/1.1 403 Forbidden
+
+Date: Thu, 11 Nov 2010 15:45:36 GMT
+
+Server: Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8
+
+Content-Length: 403
+
+Connection: close
+
+Content-Type: text/html; charset=iso-8859-1
+
+
+
+&lt;!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"&gt;
+&lt;html&gt;&lt;head&gt;
+&lt;title&gt;403 Forbidden&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Forbidden&lt;/h1&gt;
+&lt;p&gt;You don't have permission to access /
+on this server.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.2.8 &#40;Ubuntu&#41; mod_ssl/2.2.8 OpenSSL/0.9.8g mod_python/3.3.1 Python/2.5.2 PHP/5.2.4-2ubuntu5.12 with Suhosin-Patch mod_perl/2.0.3 Perl/v5.8.8 Server at vuvu.mobi Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;</pre>
+		</div>
+
+- Số cú X-Flash bị cản bởi mod-security:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/modsecurity/logs/modsec_debug.log | grep Pattern | wc -l
+7084</pre>
+		</div>
+
+Đúng ra còn nhiều hơn nhưng do 1 số đã bị chặn bởi mod-evasive.
+
+2. Thông số thay đổi ở kernel:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sysctl -a
+
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_synack_retries = 3
+net.ipv4.tcp_max_syn_backlog = 2048</pre>
+		</div>
+
+3. Thông số thay đổi ở apache:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Timeout 200
+KeepAlive On
+MaxKeepAliveRequests 500
+KeepAliveTimeout 5
+
+&lt;IfModule mpm_prefork_module&gt;
+    StartServers          20
+    MinSpareServers       20
+    MaxSpareServers      50
+    ServerLimit         500
+    MaxClients          500
+    MaxRequestsPerChild  10000
+&lt;/IfModule&gt;</pre>
+		</div>
+
+4. Cản lọc bớt ở iptables mình dùng bộ rule sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -N SYN_FLOOD
+iptables -A INPUT -p tcp --syn --dport 80 -j SYN_FLOOD
+iptables -A SYN_FLOOD -m limit --limit 2/m --limit-burst 20 -j RETURN
+iptables -A SYN_FLOOD -j DROP</pre>
+		</div>
+
+5. Pattern dùng ở apache module:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mode-security
+
+&#91;code&#93;SecRule REQUEST_HEADERS_NAMES "x-flash-version" "deny,status:400"
+SecRule "HTTP_REFERER" "http://secuyou.co.cc/logo.swf"
+SecRule "HTTP_REFERER" "http://xuongphim.com/ver11/mediaplayer.swf"
+
+mode-evasive
+
+DOSHashTableSize 3097
+DOSPageCount 2
+DOSSiteCount 10
+DOSPageInterval 1
+DOSSiteInterval 1
+DOSBlockingPeriod 3600
+DOSLogDir /var/log/apache2/mod_evasive</pre>
+		</div>
+
+Thông tin con dedicated server:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /proc/cpuinfo
+
+processor       : 6
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 23
+model name      : Intel&#40;R&#41; Xeon&#40;R&#41; CPU           E5405  @ 2.00GHz
+stepping        : 10
+cpu MHz         : 1995.002
+cache size      : 6144 KB
+
+free -m 
+
+             total       used       free     shared    buffers     cached
+Mem:          7995       1385       6609          0         55        195
+-/+ buffers/cache:       1135       6860
+Swap:         1953        203       1749</pre>
+		</div>
+
+Tình trạng hiện tại, chặn/chụp được nhưng cũng không ai vào được site hết  :| 
+
+Nhờ mọi người xem giúp có sai hoặc thiếu sót gì chỉ giúp mình. Sẵn tiện cảm ơn các bài viết của anh conmale và loạt bài kí sự đã giúp mình hiểu được nhiều điều.
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224813</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224813</link>
+				<pubDate><![CDATA[Fri, 12 Nov 2010 21:21:23]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Mình nghĩ bạn check lại phần iptable rule
+
+<blockquote>iptables -N SYN_FLOOD
+ iptables -A INPUT -p tcp --syn --dport 80 -j SYN_FLOOD
+ iptables -A SYN_FLOOD -m limit --limit 2/m --limit-burst 20 -j RETURN
+ iptables -A SYN_FLOOD -j DROP
+&nbsp;
+		</blockquote>
+
+Định danh rồi rồi drop luôn hỉ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224816</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224816</link>
+				<pubDate><![CDATA[Fri, 12 Nov 2010 21:48:13]]> GMT</pubDate>
+				<author><![CDATA[ CoolMD]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Chạy crontab Phân tích những access log gần nhất của Apache; đứa nào request nhiều thì DROP trên iptables luôn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224818</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224818</link>
+				<pubDate><![CDATA[Fri, 12 Nov 2010 22:16:58]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ @CoolMD: Xin lỗi, mình không hiểu ý bạn lắm.
+
+@lQ: Mình đã áp dụng cách này, nhưng làm vậy block list của iptables thì nhiều mà kết quả thì vẫn vậy. Vì nguồn tấn công đến từ rất nhiều IP.
+
+Thanks các bạn đã góp ý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224819</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224819</link>
+				<pubDate><![CDATA[Fri, 12 Nov 2010 22:20:58]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Tui nghĩ cách tui đề xuất đơn giản và có thể xử lý tốt với nguồn DDoS lên đến 300 zombies. Bạn cứ thử rồi theo dõi so sánh performance (CPU, memory, IO, bandwidth...) trước và sau khi áp dụng xem sao.
+
+Àh nhớ iptables có thêm thì cũng nên có *bớt* nhé :).
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224823</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224823</link>
+				<pubDate><![CDATA[Fri, 12 Nov 2010 23:02:22]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Mới dùng Firebug để xem 1 chút thì thấy thằng xuongphim này nó gọi đến 1 cái file cấu hình: http://secuyou.co.cc/site.xml để load lên site nào nó cần DDOS. Mà cái domain secuyou.co.cc này chỉ mới đựoc đăng ký vài ngày thôi, chắc là đã và đang quyết tâm triệt hạ quá. Hix, hiện tại vuvu.mobi đang là nạn nhân liên tục bi request này 1 cách đều đặn.
+
+Với lực lượng vài ngàn user online có nghĩa là có khoảng vài ngàn zombies cùng lúc tấn công, server không chết mới là lạ.
+
+xuongphim này đã rất có  1 đống popup và quảng cáo tùm lum, bi giờ lại thêm cái trò này nữa, biến tất cả các user thành công cụ để tấn công người khác.
+
+ACE nên cẩn thận khi vào site này khi vô tình trở thành công cụ để người ta lợi dụng. hix.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224825</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224825</link>
+				<pubDate><![CDATA[Sat, 13 Nov 2010 02:38:06]]> GMT</pubDate>
+				<author><![CDATA[ huynhtronghoan]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Bạn thử áp dụng giải pháp sau:
+1. Tắt KeepAlive đi (Off) nó, cái này sẽ giúp cho mỗi child process của httpd giải phóng tài nguyên ngay khi kết thúc request và đón thêm connection khác. Tuy nó sẽ làm khách hàng truy cập chậm hơn 1 chút nhưng ko tệ quá đâu.
+
+2. Sửa config và thêm 1 đoạn cho httpd như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>RewriteEngine On
+RewriteBase   /
+RewriteCond  %{HTTP_REFERER} xuongphim\.com
+RewriteRule  ^/ /youarevictim.html  &#91;L&#93;
+
+&lt;Location /youarevictim.html&gt;
+        AuthType Basic
+        AuthName "Xin ra khoi xuongphim.com"
+        # &#40;Following line optional&#41;
+        AuthBasicProvider file
+        AuthUserFile /tmp/passwords
+        Require user victim
+&lt;/Location&gt;</pre>
+		</div>
+
+3. Tạo 1 file password để bắt phải xác thực:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>htpasswd -c /tmp/passwords victim</pre>
+		</div>
+
+Mật khẩu thì bạn đặt đại 1 chuỗi nào đó chỉ bạn biết.
+
+Cách này, nghĩa là nó ép những client vào xuongphim.com mà laij refer sang web của bạn, thì trình duyệt sẽ bật hộp thoại bắt xác thực. Càng nhiều request gửi đến, việc xác thực càng nhiều, mọi người sẽ khó chịu với nó mà có sức ép với chủ site (bị hack hoặc cố tình) buộc họ phải thay đổi.
+Cửa sổ xác thực cũng giúp ngăn chỉ có request đầu tiên là tới, các request kế tiếp sẽ phải cancel hộp thoại hoặc ok đại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224831</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224831</link>
+				<pubDate><![CDATA[Sat, 13 Nov 2010 06:40:01]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Mấy cái này thì trị không khó đâu. Nếu đã dùng mod_security và iptables thì có thể kết hợp hai cái này một cách dễ dàng. Quan trọng nhất là <font color='red'>phải dùng mod_security 2.x</font> thì mới trị được dùng mod_security 1.9.x thì bó tay.
+
+<b>1. Trên httpd.conf (phần virtual host của site đang bị tấn công), thêm mấy dòng này:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SecAction &quot;phase:1,t:none,pass,nolog,initcol:global=global,initcol:ip=%{remote_addr}&quot;
+SecRule REQUEST_URI &quot;^/$&quot; &quot;nolog,phase:1,setvar:ip.ddos=+1,deprecatevar:ip.ddos=30/60,expirevar:ip.ddos=120&quot;
+SecRule IP:DDOS &quot;@gt 10&quot; &quot;phase:1,log,msg:'DDoS_from_%{REMOTE_ADDR}',exec:/path/to/blocker.sh&quot;
+SecRule IP:DDOS &quot;@gt 5&quot; &quot;phase:1,log,drop,msg:'DDoS'&quot;</pre>
+		</div>
+
+<b>2. Nội dung của file blocker.sh như sau:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+/bin/echo +$REMOTE_ADDR &gt;/proc/net/xt_recent/BLACKLIST</pre>
+		</div>
+
+<b>3. Trên iptables nên có vài dòng tạo bảng &quot;BLACKLIST&quot; như sau:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -N blacklist
+iptables -A blacklist -j LOG --log-prefix &quot;BLACKLISTING: &quot;
+iptables -A blacklist -m recent --name BLACKLIST --set -j DROP
+iptables -A INPUT -m recent --name BLACKLIST --update --seconds 60 -j blacklist
+chown &lt;account_run_apache&gt; /proc/net/xt_recent/BLACKLIST</pre>
+		</div>
+
+* nếu kernel vẫn dùng "recent" table dạng cũ thì phải:
+<b>chown &lt;account_run_apache&gt; /proc/net/ipt_recent/BLACKLIST</b>
+
+và blocker.sh phải đổi thành:
+<b>/bin/echo +$REMOTE_ADDR &gt;/proc/net/ipt_recent/BLACKLIST</b>
+
+/path/to/blocker.sh nên là một nơi nào đó account chạy apache có thể thấy và execute được và nội dung blocker.sh phải chính xác (từng dấu và khoảng trống như trên) thì mới chạy được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224871</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224871</link>
+				<pubDate><![CDATA[Sun, 14 Nov 2010 03:26:46]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ conmale ơi, vì lượng online user của xuongphim rất lớn, tầm 2500-4000 (http://whos.amung.us/stats/l7ujg4dannls/), thì liệu dùng iptables & mod security của apache có chống đỡ nổi hông, vì số lương IP rải rác khắp nơi và lượng truy cập đồng thời lại cao nữa. Anh có cao kiến gì để phòng thủ trong trường hợp này không.
+
+myquartz ơi, cách của bạn rất tuyệt.
+
+Cám ơn 2 bạn nhiều nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224875</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224875</link>
+				<pubDate><![CDATA[Sun, 14 Nov 2010 05:38:03]]> GMT</pubDate>
+				<author><![CDATA[ huynhtronghoan]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ e vào xưởng phim xong cũng bị dính:((
+nó ra cái này đây
+<blockquote>
+A username and password are being requested by<span class="link"> http://vuvu.mobi.</span> The site says: "Xuongphim dang loi dung ban de phat tan virus tan cong DDOS vao vuvu.mobi.Thong tin cua ban dang bi xam pham,vui long dung truy cap ngay lap tuc." &nbsp;
+		</blockquote>
+đành restore lại máy ngay]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224892</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224892</link>
+				<pubDate><![CDATA[Sun, 14 Nov 2010 11:08:05]]> GMT</pubDate>
+				<author><![CDATA[ Mr.uot]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huynhtronghoan wrote:</cite><br>
+		<blockquote>conmale ơi, vì lượng online user của xuongphim rất lớn, tầm 2500-4000 <span class="link"> http://whos.amung.us/stats/l7ujg4dannls/</span>), thì liệu dùng iptables & mod security của apache có chống đỡ nổi hông, vì số lương IP rải rác khắp nơi và lượng truy cập đồng thời lại cao nữa. Anh có cao kiến gì để phòng thủ trong trường hợp này không.
+
+myquartz ơi, cách của bạn rất tuyệt.
+
+Cám ơn 2 bạn nhiều nhé.&nbsp;
+		</blockquote>
+
+Cách tốt nhất là bồ thử nghiệm và đưa ra kết luận xem "có chống đỡ nổi không". Đặc biệt, bồ cần hiểu chính xác những gì tớ đưa ra là gì (và có tác dụng gì). Tớ không có thói quen đưa ra giải pháp cho vui  :P .
+
+PS: cỡ mod_security và iptables mà còn sợ "đỡ không nổi" thì mấy giải pháp dùng "basic auth" và "rewrite" trên apache thì làm sao mà chịu nổi. 
+
+Đừng dùng mod_evasive vì nó đang đóng góp cho việc "từ chối dịch vụ" đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224898</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224898</link>
+				<pubDate><![CDATA[Sun, 14 Nov 2010 15:22:52]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Hôm qua ngồi xem hết 1 lượt về "Ký sự các vụ DDoS đến HVA" thì mới sáng ra 1 số điều hay + thêm những hàm ý "sâu xa" của conmale về sức mạnh của iptables & mod security thì đã thấy yên tâm hơn rồi, sẽ có cách giải quyết vụ này. :x 
+Để nghiên cứu và thử nghiệm rồi sẽ báo cáo kết quả cho anh em biết.  [-O( 
+Cám ơn conmale.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224910</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224910</link>
+				<pubDate><![CDATA[Sun, 14 Nov 2010 23:15:11]]> GMT</pubDate>
+				<author><![CDATA[ huynhtronghoan]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Nick "gac_kiem28";
+Tên "Nguyễn Trường Sang";
+Ngày sinh "15 dec 1991";
+yahoo "gac_kiem28@yahoo.com";
+  
+Định danh của người tấn công chăng ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224920</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224920</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 00:53:09]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Nick "gac_kiem28";
+Tên "Nguyễn Trường Sang";
+Ngày sinh "15 dec 1991";
+yahoo "gac_kiem28@yahoo.com";</pre>
+		</div>
+
+Cái này xnohat thấy trong action-script của cái Flash từ xuongphim phải không?  :D 
+
+@Anh conmale: Tối qua em có thử cách của anh nhưng có lỗi với file blocker.sh nên em tạm thời chưa apply. Để chiều về em thử lại và sẽ báo kết quả sau. Phía cty mẹ mới đổi cái gì mà bị tịt hết rồi, vào HVA cũng không được  :| ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224923</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224923</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 01:05:49]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">huynhtronghoan wrote:</cite><br>
+		<blockquote>conmale ơi, vì lượng online user của xuongphim rất lớn, tầm 2500-4000 <span class="link"> http://whos.amung.us/stats/l7ujg4dannls/</span>), thì liệu dùng iptables & mod security của apache có chống đỡ nổi hông, vì số lương IP rải rác khắp nơi và lượng truy cập đồng thời lại cao nữa. Anh có cao kiến gì để phòng thủ trong trường hợp này không.
+
+myquartz ơi, cách của bạn rất tuyệt.
+
+Cám ơn 2 bạn nhiều nhé.&nbsp;
+		</blockquote>
+
+Cách tốt nhất là bồ thử nghiệm và đưa ra kết luận xem "có chống đỡ nổi không". Đặc biệt, bồ cần hiểu chính xác những gì tớ đưa ra là gì (và có tác dụng gì). Tớ không có thói quen đưa ra giải pháp cho vui  :P .
+
+PS: cỡ mod_security và iptables mà còn sợ "đỡ không nổi" thì mấy giải pháp dùng "basic auth" và "rewrite" trên apache thì làm sao mà chịu nổi. 
+
+Đừng dùng mod_evasive vì nó đang đóng góp cho việc "từ chối dịch vụ" đó.&nbsp;
+		</blockquote>
+
+Hihì, cách của em không phải để chống đỡ cuộc tấn công, mà tấn công lại bằng các hộp thoại cho các user vào site bị dính x-flash. Đây là cách để gây khó chịu cho user, user phàn nàn với chủ site và giảm sự hấp dẫn của site, kết quả là chủ site phải loại bỏ flash lỗi và sẽ giảm sức ép lên mình. Em thấy bên xuongphim.com đã loại bỏ flash tấn công vuvu.mobi rồi đó, hacker có thể tìm site khác để tránh kiểm tra refer, ta lại chạy đua với họ.
+Cái này vẫn phải kết hợp với mod_security và iptables. Ngoài ra, để hiệu quả hơn thì cần là việc chạy đua vũ trang nữa, tăng sức mạnh phần cứng của mình lên, tối ưu hệ thống hơn. Ví dụ với 4000 client của xuongphim.com, thì máy chủ của ta sẽ phải gánh được tầm bằng ấy. Chứ nếu chỉ gánh được tầm 1000 là xong đời mình trước khi gây khó chịu cho user.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224927</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 02:09:39]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Mình cũng bị 1 số site ddos mình nhưng nó ddos theo phương thức khác.
+http://www.autokiemthe.com/
+http://www.kiemthe.info/
+Attack mình liên tục.
+Mỗi lần truy cập vào website đó thì rất nhiều request đến các host trên server của mình.
+Xin hỏi conmale mình phải làm cách nào để chặn các site như thế này.
+Mình đã chặn Referer các domain trên nhưng vẫn không ăn thua gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224937</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224937</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 04:58:18]]> GMT</pubDate>
+				<author><![CDATA[ thekill]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote><span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Nick "gac_kiem28";
+Tên "Nguyễn Trường Sang";
+Ngày sinh "15 dec 1991";
+yahoo "gac_kiem28@yahoo.com";</pre>
+		</div>
+
+Cái này xnohat thấy trong action-script của cái Flash từ xuongphim phải không?  :D 
+
+@Anh conmale: Tối qua em có thử cách của anh nhưng có lỗi với file blocker.sh nên em tạm thời chưa apply. Để chiều về em thử lại và sẽ báo kết quả sau. Phía cty mẹ mới đổi cái gì mà bị tịt hết rồi, vào HVA cũng không được  :| &nbsp;
+		</blockquote>
+
+Bạn xem thử kernel bao nhiêu, hình như cái này kernel mới nó mới có :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224944</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224944</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 08:31:08]]> GMT</pubDate>
+				<author><![CDATA[ h0itm]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">h0itm wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>
+@Anh conmale: Tối qua em có thử cách của anh nhưng có lỗi với file blocker.sh nên em tạm thời chưa apply. Để chiều về em thử lại và sẽ báo kết quả sau.&nbsp;
+		</blockquote>
+Bạn xem thử kernel bao nhiêu, hình như cái này kernel mới nó mới có :D&nbsp;
+		</blockquote>
+Kiểm tra lại xem kernel của bạn đã enable recent module cho iptables chưa:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ grep -i recent /path/to/.config</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224946</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224946</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 09:28:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Kernel mình đang sử dụng "ipt_recent". Script đó chạy lúc đầu không sao nhưng được 1 lúc mod_security báo lỗi như thế này
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Exec: Execution failed while reading output: /home/www-data/blocker.sh &#40;End of file found&#41;
+&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Failed to execute: /home/www-data/blocker.sh
+&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Access denied with connection close &#40;phase 1&#41;. Operator GT matched 5 at IP:ddos. &#91;file "/var/www/vhosts/vuvu.mobi/conf/httpd.include"&#93; &#91;line "94"&#93; &#91;msg "DDoS"&#93;</pre>
+		</div>
+
+Đoán là do cái "ip_list_tot=100" quá ít nên tăng lên 3000 nhưng thử lại thì vẫn còn lỗi đó. 
+
+Đang check kĩ lại...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224949</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224949</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 09:36:19]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>Kernel mình đang sử dụng &quot;ipt_recent&quot;. Script đó chạy lúc đầu không sao nhưng được 1 lúc mod_security báo lỗi như thế này
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Exec: Execution failed while reading output: /home/www-data/blocker.sh &#40;End of file found&#41;
+&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Failed to execute: /home/www-data/blocker.sh
+&#91;15/Nov/2010:21:13:02 +0700&#93; &#91;vuvu.mobi/sid#3ef61f8&#93;&#91;rid#45d93a8&#93;&#91;/&#93;&#91;1&#93; Access denied with connection close &#40;phase 1&#41;. Operator GT matched 5 at IP:ddos. &#91;file &quot;/var/www/vhosts/vuvu.mobi/conf/httpd.include&quot;&#93; &#91;line &quot;94&quot;&#93; &#91;msg &quot;DDoS&quot;&#93;</pre>
+		</div>
+
+Đoán là do cái &quot;ip_list_tot=100&quot; quá ít nên tăng lên 3000 nhưng thử lại thì vẫn còn lỗi đó. 
+
+Đang check kĩ lại...&nbsp;
+		</blockquote>
+
+Hello em,
+&quot;ip_list_tot&quot; nằm trên kernel. Nó là một biến cho phép ipt_recent chứa tổng số IP để theo dõi nhiều hay ít. Nếu có quá nhiều IP tấn công thì nên gia tăng con số này (nhưng cẩn thận xét xem số physical memory trên server có đủ nhiều hay không trước khi gia tăng). &quot;ip_list_tot&quot; không có liên quan trực tiếp gì tới việc mod_security &quot;gọi&quot; cái script &quot;blocker.sh&quot; đâu em. Cho dù &quot;ip_list_tot&quot; có giá trị là 100 và lúc ấy danh sách IP được đưa vô bảng BLACLKLIST đã lên tới con số 100 đi chăng nữa, nếu em thực thi lệnh &quot;blocker.sh&quot; bằng tay thì IP mới vẫn được chèn vô bảng ấy. 
+
+Thật sự, &quot;ip_list_tot&quot; chỉ có giá trị và hiệu lực cụ thể đối với -m recent ngay trên iptabes.
+
+Đôi khi em thấy log của apache / mod_security cảnh bảo &quot;Failed to execute&quot; nhưng thật sự cái script này vẫn đã thực thi. Để xác minh có đúng điều này xảy ra hay không, em thử chèn thêm 1 dòng trong &quot;blocker.sh&quot;:
+
+<b>/bin/echo +$REMOTE_ADDR &gt;&gt; /tmp/badip.txt</b>
+
+Sau đó tail dòng cuối cùng của /tmp/badip.txt để tìm IP cuối được blocker.sh thực thi rồi thử:
+<b>cat /proc/net/ipt_recent/BLACKLIST | grep &lt;ip&gt;</b>
+
+Mấy dòng logs ở trên chứng tỏ mod_security của em chạy ngon lành rồi đó. Bây giờ chỉ cần kiểm tra xem các IP bị blacklisted do mod_security tường trình có được đưa vô BLACKLIST hay không là xong.
+
+Source của mod_security ở phần thực thi script bên ngoài:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>static apr_status_t msre_action_exec_execute&#40;modsec_rec *msr, apr_pool_t *mptmp,
+        msre_rule *rule, msre_action *action&#41;
+    {
+        #if defined&#40;WITH_LUA&#41;
+        if &#40;action-&gt;param_data != NULL&#41; { /* Lua */
+            msc_script *script = &#40;msc_script *&#41;action-&gt;param_data;
+            char *my_error_msg = NULL;
+   
+            if &#40;lua_execute&#40;script, NULL, msr, rule, &my_error_msg&#41; &lt; 0&#41; {
+                msr_log&#40;msr, 1, &quot;%s&quot;, my_error_msg&#41;;
+                return 0;
+            }
+        } else
+        #endif
+        { /* Execute as shell script. */
+            char *script_output = NULL;
+    
+            int rc = apache2_exec&#40;msr, action-&gt;param, NULL, &script_output&#41;;
+            if &#40;rc != 1&#41; {
+                msr_log&#40;msr, 1, &quot;Failed to execute: %s&quot;, action-&gt;param&#41;;
+                return 0;
+            }
+        }
+    
+        return 1;
+    }</pre>
+		</div>
+
+ở đây, rc có thể có giá trị hồi báo không phải là 1 cho nên được tường trình là &quot;Failed to execute&quot; nhưng thực sự cái script đó đã được thực thi và trước đó log cảnh báo <i>&quot;Execution failed while reading output&quot;</i> có nghĩa là mod_security không thể read được đoạn &quot;script_output&quot; mà thôi. Điều quan trọng em cần lưu ý là cái script &quot;blocker.sh&quot; đó có path cho phép account chạy apache truy cập được và thực thi được. /proc/net/ipt_recent/BLACKLIST cũng được gán quyền để account chạy apache có thể &quot;write&quot; vô đó.
+
+@myquartz: tớ biết giải pháp của bồ nhằm cảnh báo các nạn nhân bị biến thành công cụ ddos kẻ khác nhưng giải pháp này không lâu dài được. Chủ nhân của cái trò x-flash này chỉ cần có một thay đổi nhỏ là các nạn nhân sẽ không nhận được thông điệp nào nữa. Những biện pháp cản referer, cản headers.... dần dà sẽ mất tác dụng vì những giá trị này có thể biến thiên liên tục.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224961</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#224961</link>
+				<pubDate><![CDATA[Mon, 15 Nov 2010 14:09:47]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Hi anh conmale,
+
+Đúng như anh nói, script đã được thực thi thành công nhưng do không thấy output nên mod_security mới báo lỗi đó.
+Sau khi apply cách của anh và monitor server trong khoảng 4 tiếng, em thấy cần phải thêm thắt và tuỳ chỉnh thêm 1 vài chổ để server có thể chịu đựng 1 cách bền bỉ và lâu dài. Tuy nhiên, trong khi vẫn đang tìm kiếm các thông số thích hợp thì bên tấn công họ đã ngừng nên tạm thời em chưa thể khẳng định được gì nhiều #:S 
+Sau việc này em học được khá nhiều kinh nghiệm nhất là 2 điểm sau:
+
+- Phải hiểu rõ các công cụ mà mình đang sử dụng.
+- Không có thông số nào là chính xác cho tất cả các trường hợp.
+
+Cảm ơn anh conmale, lQ và myquartz đã giúp đỡ.
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225306</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225306</link>
+				<pubDate><![CDATA[Sun, 21 Nov 2010 09:52:03]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Đơn giản nếu tấn công kiểu như vậy nên cấm IP đó luôn không nữa thì viết 1 cái htaccess để cấm trong khoảng nào
+tuy nhiên dùng cái này thi hơi nguy hiểm! tốt nhất là dùng biện pháp bảo mật bằng tường lửa]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225347</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225347</link>
+				<pubDate><![CDATA[Mon, 22 Nov 2010 02:58:26]]> GMT</pubDate>
+				<author><![CDATA[ c0ngit]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">c0ngit wrote:</cite><br>
+		<blockquote>Đơn giản nếu tấn công kiểu như vậy nên cấm IP đó luôn không nữa thì viết 1 cái htaccess để cấm trong khoảng nào
+tuy nhiên dùng cái này thi hơi nguy hiểm! tốt nhất là dùng biện pháp bảo mật bằng tường lửa&nbsp;
+		</blockquote>
+
+X-Flash được chèn vào 1 web, lúc này các khách truy cập vô tình trở thành kẻ tấn công.
+Vậy cấm ai đây bạn ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225445</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225445</link>
+				<pubDate><![CDATA[Wed, 24 Nov 2010 22:13:07]]> GMT</pubDate>
+				<author><![CDATA[ lequi]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lequi wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">c0ngit wrote:</cite><br>
+		<blockquote>Đơn giản nếu tấn công kiểu như vậy nên cấm IP đó luôn không nữa thì viết 1 cái htaccess để cấm trong khoảng nào
+tuy nhiên dùng cái này thi hơi nguy hiểm! tốt nhất là dùng biện pháp bảo mật bằng tường lửa&nbsp;
+		</blockquote>
+
+X-Flash được chèn vào 1 web, lúc này các khách truy cập vô tình trở thành kẻ tấn công.
+Vậy cấm ai đây bạn ?&nbsp;
+		</blockquote>
+
+bạn c0ngit nói cũng không phải sai
+
+Đoạn shell mà conmale tư vấn cho chủ thớt 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+ /bin/echo +$REMOTE_ADDR &gt;/proc/net/xt_recent/BLACKLIST</pre>
+		</div>
+
+Đoạn này liên tục cập nhật các IP đang bị lợi dụng DoS vào một danh sách
+
+Sau đó ta sẽ cập nhật danh sách này vào iptables khoảng 60s ( 1 phút ) một lần, để iptables DROP cuộc tấn công của các ip này.
+
+Việc thêm vào nên cần đi cùng với việc bớt ra , làm đúng thì công tác trên cũng cản lọc được đáng kể các cuộc tấn công]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225446</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225446</link>
+				<pubDate><![CDATA[Wed, 24 Nov 2010 22:21:31]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">h0itm wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>
+@Anh conmale: Tối qua em có thử cách của anh nhưng có lỗi với file blocker.sh nên em tạm thời chưa apply. Để chiều về em thử lại và sẽ báo kết quả sau.&nbsp;
+		</blockquote>
+Bạn xem thử kernel bao nhiêu, hình như cái này kernel mới nó mới có :D&nbsp;
+		</blockquote>
+Kiểm tra lại xem kernel của bạn đã enable recent module cho iptables chưa:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ grep -i recent /path/to/.config</pre>
+		</div>&nbsp;
+		</blockquote>
+
+Để enable iprecent thì làm thế nào nhỉ, mình chưa biết vấn đề này.
+Đừng gọi mình gà  -:|- ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225463</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225463</link>
+				<pubDate><![CDATA[Thu, 25 Nov 2010 01:57:21]]> GMT</pubDate>
+				<author><![CDATA[ zjm_zjm]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ @zjm_zjm: Dùng lệnh <font color='yellow'>mobprobe</font>  để liệt kê, thêm, bớt các loadable modules. Còn cụ thể các options thế nào thì bạn google là ra thôi.
+
+@lequi: Điều bạn nói chính là cái khó nhất của vấn đề. Để xác định được chính xác cần cấm ai, cho phép ai cần phải trải qua 1 quá trình chuẩn bị và phân tích kĩ lưỡng. Trong trường hợp của mình, do chủ quan và thiếu kiến thức bảo mật, nên những thông tin khi server hoạt động bình thường mình không có. Đến khi server bị tấn công, mình rất khó xác định được đâu là các tham số thích hợp do đó cứ bị lẩn quẩn ở chổ "try and try". #:S
+
+Topic này <font color='orange'>http://www.hvaonline.net/hvaonline/posts/list/20/32553.hva</font> đã chỉ ra rõ điều trên.
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225470</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225470</link>
+				<pubDate><![CDATA[Thu, 25 Nov 2010 04:46:50]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>@zjm_zjm: Dùng lệnh <font color='yellow'>mobprobe</font>  để liệt kê, thêm, bớt các loadable modules. Còn cụ thể các options thế nào thì bạn google là ra thôi.
+&nbsp;
+		</blockquote>
+Nếu nó đang disable thì trước tiên cần recompile kernel đã. 
+
+`modprobe -l` có thể thay bằng lsmod, `modprobe -r` có thể thay bằng rmmod. Bạn đọc man page có đủ cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225475</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#225475</link>
+				<pubDate><![CDATA[Thu, 25 Nov 2010 06:02:14]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Xin chào các anh,
+
+Em áp dụng luật từ đoạn anh comale đưa vào, nhưng không thể hoạt động được. Em có tìm hiểu thì ở đây có nói là Apache chạy SuExec sẽ không chạy được (bài cuối cùng):<span class="link"> http://www.webhostingtalk.com/archive/index.php/t-357782.html</span>
+
+Cấu hình cho iptables
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -N MOD_SECURITY
+iptables -A MOD_SECURITY -j LOG --log-prefix "MOD_SECURITY: "
+iptables -A MOD_SECURITY -m recent --name MOD_SECURITY_CHECK --set -j DROP
+iptables -A INPUT -m recent --name MOD_SECURITY_CHECK --update --seconds 120 -j MOD_SECURITY</pre>
+		</div>
+Các luật trên nạp vào iptables thành công
+Đã chown nobody.nobody /proc/net/ipt_recent/MOD_SECURITY_CHECK để cho tất cả user đều chạy được
+
+Phần lệnh cho chạy ModSecurity
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SecAction "phase:1,t:none,pass,nolog,initcol:global=global,initcol:ip=%{remote_addr}"
+SecRule &REQUEST_HEADERS:Accept "@eq 0" "phase:1,id:20002,log,setvar:ip.ddos=+1,deprecatevar:ip.ddos=30/60,expirevar:ip.ddos=120"
+SecRule IP:DDOS "@gt 0" "phase:1,log,msg:'DDoS_from: %{REMOTE_ADDR}',exec:/root/check/fw/blocker_modsec.sh"</pre>
+		</div>
+Cũng đã chown nobody.nobody cho /root/check/fw/blocker_modsec.sh
+
+Khi xem qua ghi nhận lại từ mod_security báo về thì
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Exec: Execution failed while reading output: /root/check/fw/blocker_modsec.sh &#40;End of file found&#41;
+Failed to execute: /root/check/fw/blocker_modsec.sh
+Access denied with connection close &#40;phase 1&#41;. Operator GT matched 0 at IP:ddos. &#91;file "/usr/local/apache/conf/modsec2.user.conf"&#93; &#91;line "51"&#93; &#91;msg "DDoS_from: 113.180.94.59"&#93;</pre>
+		</div>
+Theo như vậy và bài ở trên của anh comale thì đã được thực thi thành công.
+Tuy nhiên em xem thử nội dung của /proc/net/ipt_recent/MOD_SECURITY_CHECK thì rỗng.
+
+Em xin cảm ơn đã xem]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248145</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248145</link>
+				<pubDate><![CDATA[Tue, 4 Oct 2011 11:13:22]]> GMT</pubDate>
+				<author><![CDATA[ mapthulu]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Account nào đó chạy apache có thể access <b><font color='red'>/root/</font>check/fw/blocker_modsec.sh</b> được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248148</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248148</link>
+				<pubDate><![CDATA[Tue, 4 Oct 2011 20:00:49]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Cảm ơn anh đã hồi âm,
+
+Đoạn anh tô đỏ, em hiểu đã hiểu vấn đề là thư mục root nên các user khác không thể "dòm ngó" được.
+
+Em thử chuyển đoạn blocker_modsec.sh sang thư mục /home thì cũng chưa thực thi được
+
+Cấu hình Apache và PHP của em như sau:
+_Apache: SuExec
+_PHP: SuPHP
+
+Do vậy, nếu mình đưa vào từng thư mục đúng với /home/$user đó thì không thể (hệ thống bên em là share hosting khá nhiều user)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248156</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248156</link>
+				<pubDate><![CDATA[Tue, 4 Oct 2011 21:07:34]]> GMT</pubDate>
+				<author><![CDATA[ mapthulu]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mapthulu wrote:</cite><br>
+		<blockquote>Cảm ơn anh đã hồi âm,
+
+Đoạn anh tô đỏ, em hiểu đã hiểu vấn đề là thư mục root nên các user khác không thể "dòm ngó" được.
+
+Em thử chuyển đoạn blocker_modsec.sh sang thư mục /home thì cũng chưa thực thi được
+
+Cấu hình Apache và PHP của em như sau:
+_Apache: SuExec
+_PHP: SuPHP
+
+Do vậy, nếu mình đưa vào từng thư mục đúng với /home/$user đó thì không thể (hệ thống bên em là share hosting khá nhiều user)&nbsp;
+		</blockquote>
+
+Nói tóm lại, nếu em muốn cái script .sh nào đó thực thi thì tất cả các account nào ấn định cho SuExec đều phải có quyền access và execute cái script ấy. Ví dụ, /tmp là 1 một vị trí mà các account đều có thể access.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248179</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248179</link>
+				<pubDate><![CDATA[Wed, 5 Oct 2011 04:17:48]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nhờ tư vấn về bảo mật (DDos - X-Flash)</title>
+				<description><![CDATA[ Cảm ơn anh và chúc anh sức khỏe :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248329</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36593.hva#248329</link>
+				<pubDate><![CDATA[Fri, 7 Oct 2011 21:37:20]]> GMT</pubDate>
+				<author><![CDATA[ mapthulu]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thắc mắc về SGID và sudo"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thắc mắc về SGID và sudo"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thắc mắc về SGID và sudo</title>
+				<description><![CDATA[ 1. Tôi làm một phép thử với SGID như sau:
+
++ Login với user <b>quanta</b>, tôi tạo một file <i>yourscript.sh</i> có nội dung:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "test" &gt;&gt; yourlog.log</pre>
+		</div>
+File <i>yourscript.sh</i> này có permission là: 
+<blockquote>-rwxrwxr-x  1 quanta quanta&nbsp;
+		</blockquote>
++ chmod <i>yourscript.sh</i> và chạy nó lần đầu tiên để tạo file <i>yourlog.log</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod +x yourscript.sh
+$ sh yourscript.sh</pre>
+		</div>Bây giờ tôi đã có file <i>yourlog.log</i>, permission của nó là:
+<blockquote>-rw-rw-r--  1 quanta quanta&nbsp;
+		</blockquote>
+Bạn để ý là những user khác <font color='orange'>không cùng nhóm với quanta</font> sẽ không có quyền write trên file này
++ Tiếp theo, tôi thử SGID cho <i>yourscript.sh</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod g+s yourscript.sh</pre>
+		</div>
+Rồi login sang một user khác <font color='orange'>không cùng nhóm với quanta</font> và chạy xem sao. Về lý thuyết thì tôi đã echo được "test" thêm vào <i>yourlog.log</i> nhưng test thử thì bị <b><i>Permission denied</i></b>. Vấn đề này có phải do bash shell drop permission không hay còn liên quan gì đến EUID, mong mọi người giải thích giúp
+
+2. Mọi người đều biết: sudo cho phép một người dùng bình thường có thể thực thi một lệnh với đặc quyền superuser hoặc root. Trong /etc/sudoers tôi thêm:
+<blockquote>quanta ALL=(ALL) ALL&nbsp;
+		</blockquote>
+Login với root, tôi tạo một file test.log với permission như sau:
+<blockquote>-rw-rw-r--  1 root   root&nbsp;
+		</blockquote>
+Sau đó login sang user quanta (không thuộc root group), và thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo echo "sudo troubleshoot" &gt;&gt; test.log</pre>
+		</div>
+thì gặp: <blockquote><font color='orange'>bash: test.log: Permission denied</font>&nbsp;
+		</blockquote>
+Nhờ mọi người giải thích và thảo luận thêm về trường hợp này]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104923</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104923</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 03:22:46]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về SGID và sudo</title>
+				<description><![CDATA[ 1) Vấn đề ở chỗ <b>login sang một user khác</b> và user này thuộc nhóm nào? Nhóm ấy có quyền gì đến log file kia?
+
+2) Không hiểu ý em.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104932</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104932</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 07:13:34]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về SGID và sudo</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>1) Vấn đề ở chỗ <b>login sang một user khác</b> và user này thuộc nhóm nào?
+&nbsp;
+		</blockquote>
+OK, em đã sửa lại thành "<font color='orange'><i>và login sang một user khác không cùng nhóm với quanta</i></font>"
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Nhóm ấy có quyền gì đến log file kia?&nbsp;
+		</blockquote>
+Cái này đã trả lời rồi anh:
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+...
+Bây giờ tôi đã có file yourlog.log, permission của nó là:
+<blockquote>-rw-rw-r-- 1 quanta quanta &nbsp;
+		</blockquote>
+Bạn để ý là những user khác không cùng nhóm với quanta sẽ không có quyền write trên file này
+&nbsp;
+		</blockquote>2) Không hiểu ý em.&nbsp;
+		</blockquote>
+Ý em hỏi: 
+1. sudo có change EUID của người đang chạy nó không?
+2. Tại sao trong trường hợp này: đã dùng sudo rồi mà vẫn không đủ permission để wwwect một đoạn text vào test.log?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104955</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104955</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 11:30:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về SGID và sudo</title>
+				<description><![CDATA[ 1) SGID và SUID chỉ được ứng hiệu khi user có euid=0 còn không thì kể file đó có bật SGID thì vẫn bị bashdrop permission.Trong trường hợp trên thì user có euid #0 nên SGID không có hiệu lực
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104977</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17488.hva#104977</link>
+				<pubDate><![CDATA[Thu, 20 Dec 2007 12:47:43]]> GMT</pubDate>
+				<author><![CDATA[ pearltran]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về SGID và sudo</title>
+				<description><![CDATA[ 2.
+Vấn đề này là do chỉ mỗi thằng echo có quyền do sudo đưa cho, còn việc wwwect thì không, do đó dẫn đến việc không có quyền.
+Để giải quyết việc này, có một số cách như sau:
+
+1/Như <span class="link"> http://notfaq.wordpress.com/2007/09/26/unixlinux-wwwect-output-as-sudo/</span>.
+Dùng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$sudo bash -c “echo "sudo troubleshoot" &gt;&gt; test.log"</pre>
+		</div>
+
+2/Dùng tee.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$echo "sudo troubleshoot" | sudo tee -a  test.log</pre>
+		</div>
+
+3/Cách luộm thuộm  :D.
+Thảy tất cả vô 1 cái bash script, cho quyền chạy rồi xài sudo thoải mái  :*- .
+
+
+Góp ý chút về cách dùng sudo trong phần 1: Vì yourscript.sh đã có quyền là 
+<blockquote>-rwxrwxr-x 1 quanta quanta &nbsp;
+		</blockquote>
+Nên user quanta dùng sudo khi chmod là không cần thiết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17488.hva#105527</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17488.hva#105527</link>
+				<pubDate><![CDATA[Sun, 23 Dec 2007 13:17:09]]> GMT</pubDate>
+				<author><![CDATA[ lihavim]]></author>
+			</item>
+	</channel>
+</rss>

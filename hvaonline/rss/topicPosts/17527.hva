@@ -1,0 +1,844 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tất cả về Linux swap space"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tất cả về Linux swap space"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <font color='#6699CC'><i><u>Nguồn</u></i></font>: <span class="link"> http://www.linux.com/feature/121916</span>
+
+Khi máy tính cần chạy những chương trình lớn hơn khả năng có thể của bộ nhớ vật lý (RAM), hệ điều hành sẽ sử dụng một công nghệ có tên gọi <font color='orange'>swapping</font>. Nói nôm na thì công nghệ này sẽ dùng đến những mảng bộ nhớ tạm được lưu trên đĩa cứng, trong khi phần dữ liệu khác vẫn được chuyển vào RAM. Công nghệ này giúp bạn quản lý việc hoán đổi (swapping) tốt hơn cũng như tăng hiệu năng sử dụng.
+
+Linux chia bộ nhớ vật lý thành các <font color='orange'>pages</font>. swapping là một tiến trình thực hiện việc copy một page của bộ nhớ đến một không gian đã được cấu hình trước trên đĩa cứng (gọi là <font color='orange'>swap space</font>), để giải phóng các pages của bộ nhớ. Tổng dung lượng của RAM và không gian hoán đổi (swap space) chính là tổng số bộ nhớ ảo (<font color='orange'>virtual memory</font>) 
+
+<font color='cyan'>swapping cần thiết vì 2 lý do</font>:
+1. Khi hệ thống yêu cầu một lượng bộ nhớ nhiều hơn mức RAM cho phép, chức năng hoán đổi của kernel sẽ đẩy bớt các pages được dùng ít hơn ra ngoài và gửi lượng bộ nhớ cho ứng dụng đang cần ngay lập tức.
+2. Có một số pages quan trọng được sử dụng bởi 1 ứng dụng trong suốt quá trình startup, có thể chỉ được dùng cho khởi tạo thôi, sau đó không bao giờ dùng lại nữa, hệ thống có thể swap out những pages này ra, giải phóng bộ nhớ cho những ứng dụng khác, hoặc cho việc cache đĩa.
+
+Tuy nhiên, swapping có một bất lợi. Tốc độ truy cập đĩa (milliseconds) chậm hơn từ 10 đến 1000 lần so với tốc độ truy cập RAM (nanoseconds). Thỉnh thoảng sẽ xảy ra sự trao đổi quá mức, kiểu như: một pages vừa được swapped out, ngay sau đó lại 
+swapped in rồi lại swapped out và cứ thế. Trong trường hợp này, hệ thống vừa phải vật lộn để tìm những phần bộ nhớ rỗi, vừa phải giữa cho các ứng dụng kia vẫn chạy. Cách tốt nhất trong tình huống này là tăng RAM lên.
+
+<font color='cyan'>Có 2 loại swap space, đó là: swap partition và swap file</font>. <font color='orange'>swap partition</font> là một phân vùng độc lập nằm trên đĩa cứng, chỉ có mục đích là hoán đổi (swapping), không có file nào khác nằm trên đó. <font color='orange'>swap file</font> là một file riêng biệt nằm trên hệ thống, nó có thể nằm giữa hệ thống của bạn và các file dữ liệu
+
+<font color='cyan'>Để xem swap space trên hệ thống</font>, bạn có thể dùng lệnh <font color='olive'><i>swapon -s</i></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ swapon -s
+Filename                                Type            Size    Used    Priority
+/dev/sda9                               partition       1132540 0       -1</pre>
+		</div>
+Mỗi dòng là một swap space tách biệt trên hệ thống của bạn. <b><i>Type</i></b> chỉ ra rằng swap space là partition hay file. <b><i>Filename</i></b> như bạn thấy là sda9 (partition). <b><i>Size</i></b> là kích cỡ tính bằng KB của swap space. <b><i>Used</i></b> là lượng swap hiện đang được dùng. <b><i>Priority</i></b> chỉ ra swap nào sẽ được dùng trước (nếu bạn có nhiều swap). Một điều thú vị là: nếu bạn mount 2 hoặc nhiều swap space trên 2 thiết bị khác nhau với cùng độ ưu tiên, hệ thống sẽ thực hiện xen kẽ việc swapping giữa 2 swap space này để tăng performance.
+
+<font color='cyan'>Thêm 1 swap partition vào hệ thống</font>
++ Xác định partition nào sẽ lấy làm swap
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># fdisk -l
+/dev/sda9         swap                    swap    defaults        0 0</pre>
+		</div>
++ Tạo hệ thống file swap cho nó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mkswap /dev/sda9</pre>
+		</div>
++ Kích hoạt nó ngay lập tức:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon /dev/sda9</pre>
+		</div>
++ Xác nhận xem nó đã được dùng chưa bằng lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon -s</pre>
+		</div>
+Để mount swap space tự động khi boot, bạn chỉnh sửa /etc/fstab và thêm vào một dòng tương tự như:
+<blockquote>/dev/sda9         swap                    swap    defaults        0 0&nbsp;
+		</blockquote>
+
+Để kiểm tra xem swap space đã được mounted tự động chưa mà không cần reboot, bạn có thể gõ, <font color='olive'><i>swapoff -a</i></font>, sau đó lại <font color='olive'><i>swapon -a</i></font> và check bằng <font color='olive'><i>swapon -s</i></font>
+
+<font color='orange'>Swap file</font> cũng hoàn toàn tương tự như <font color='orange'>swap partition</font>. Thuận lợi của nó là không cần tìm một partition độc lập hoặc phân vùng lại đĩa cứng để thêm vào. Có thể tạo swap file bằng lệnh <font color='olive'><i>dd</i></font> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dd if=/dev/zero of=/swapfile bs=1024 count=1048576</pre>
+		</div>
+Lệnh này tạo một file trống có kích thước 1048576 KB (1GB), với tên gọi <i>swapfile</i>
+
+Tạo và mount nó:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mkswap /swapfile
+swapon /swapfile</pre>
+		</div>
+Thêm một dòng vào <i>/etc/fstab</i> cũng tương tự như trên:
+<blockquote>/swapfile       swap                    swap    defaults        0 0&nbsp;
+		</blockquote>
+
+<font color='cyan'>Tôi nên dành bao nhiêu dung lượng cho swap space?</font>
+Không có một nguyên tắc nào cả, nhưng mọi người thường chia theo quy luật:
++ Hệ thống Desktop: nên để bằng 2*RAM - đủ để bạn chạy một số lượng lớn các ứng dụng
++ Server: cần ít hơn (có người cho rằng chỉ cẩn để bằng 1/2*RAM). Tuy nhiên bạn cần theo dõi swap space và tăng lượng RAM nếu cần thiết
++ Older desktop (hệ thống có ít RAM - 128 MB chẳng hạn): bạn có thể dành 3*RAM cho swap, hoặc có thể để 1GB.
+
+Với Linux kernel 2.6 có 1 tham số mới là <font color='orange'>swappiness</font> - để bạn có thể tweak cách mà Linux hoán đổi. Tham số này có giá trị từ 0 đến 100. Giá trị cao có nghĩa là nhiều paged được swapped, giá trị thấp có nghĩa là nhiều ứng dụng được giữ trong bộ nhớ - ngay cả khi chúng không làm gì cả (idle). Giá trị mặc định của <b>swapiness</b> là 60, bạn có thể thay đổi nó tạm thời (reboot mới có hiệu lực thật sự) bằng lệnh sau (với root):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo 50 &gt; /proc/sys/vm/swappiness</pre>
+		</div>
+
+Nếu bạn muốn thay đổi vĩnh viễn, có thể chỉnh <b>vm.swappiness</b> trong <i>/etc/sysctl.conf</i>
+
+Quản lý swap space là công việc cần thiết của người quản trị hệ thống. Một kế hoạch tốt kết hợp với việc sử dụng đúng đắn sẽ đem lại nhiều lợi ích. Đừng sợ thử nghiệm, hãy luôn luôn theo dõi hệ thống của bạn, chắc chắn bạn sẽ thu được những kết quả mong muốn.
+
+QuanTA.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#105159</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#105159</link>
+				<pubDate><![CDATA[Fri, 21 Dec 2007 02:25:50]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Mình có xem qua file /etc/fstab, có dòng cấu hình:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SWAP-sda4 swap swap defaults 0 0</pre>
+		</div>
+Khi khởi động thì swap partition được mount tự động. Sau khi dùng lệnh swapoff -a thì swap partition này không được mount tự động khi khởi động, mình phải đổi dòng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SWAP-sda4 swap swap defaults 0 0</pre>
+		</div>
+thành
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/dev/sda4 swap swap defaults 0 0</pre>
+		</div>
+thì OK.
+
+Ai có thể giải thích giúp không?
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106187</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106187</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 12:00:08]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Tớ nghĩ thế này:
+Dòng <blockquote>SWAP-sda4 swap swap defaults 0 0&nbsp;
+		</blockquote> được tự động chèn vào <i><font color='olive'>/etc/fstab</font></i> sau khi kết thúc việc cài đặt (trong quá trình cài bạn chọn <b>/dev/sda4</b> làm swap partition). Lúc này Linux "vẫn hiểu" cái label <b>SWAP-sda4</b> là swap partition nào và auto mount khi khởi động. Sau khi bạn gõ lệnh <font color='orange'>swapoff -a</font>, swap partition này bị disabled. Không những nó không được auto mount nữa mà khi khởi động tớ nghĩ bạn sẽ gặp thông báo sau:
+<blockquote>Unable to access resume device SWAP-sda4&nbsp;
+		</blockquote>
+Do đó bạn phải sửa lại trong <font color='olive'><i>/etc/fstab</i></font> thành:
+<blockquote>/dev/sda4 swap swap defaults 0 0&nbsp;
+		</blockquote>
+rồi dùng <font color='orange'>swapon /dev/sda4</font> để enabled nó lên. Lúc này swap partition lại được auto mount.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106195</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106195</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 12:24:01]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Không những nó không được auto mount nữa mà khi khởi động tớ nghĩ bạn sẽ gặp thông báo sau: 
+<blockquote>Unable to access resume device SWAP-sda4&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+uhm, mình phải thêm <font color='orange'>noresume</font> vào /etc/fstab:
+<blockquote>... ro root=LABEL=/ rhgb quiet <font color='orange'>noresume</font>&nbsp;
+		</blockquote>
+
+Vấn đề là cơ chế để thay thế /dev/sda4 bằng SWAP-sda4 mà vẫn mount partition sda4?
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106202</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106202</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 12:47:49]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Không những nó không được auto mount nữa mà khi khởi động tớ nghĩ bạn sẽ gặp thông báo sau: 
+<blockquote>Unable to access resume device SWAP-sda4&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+uhm, mình phải thêm <font color='orange'>noresume</font> vào <font color='brown'>/etc/fstab</font>:
+<blockquote>... ro root=LABEL=/ rhgb quiet <font color='orange'>noresume</font>&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Ý bạn nói là: khi bạn thêm <font color='orange'>noresume</font> vào <font color='olive'><i>/boot/grub/menu.lst</i></font> thì cái thông báo kia mới mất hả? Không cần mà, chỉ cần chỉnh lại trong <i>/etc/fstab</i>, sau đó gõ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon /dev/sda4</pre>
+		</div> là OK (tớ đã test).
+<p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>Vấn đề là cơ chế để thay thế /dev/sda4 bằng SWAP-sda4 mà vẫn mount partition sda4?&nbsp;
+		</blockquote>
+Ý bạn là: muốn để <b>SWAP-sda4</b> trong <i>/etc/fstab</i> mà vẫn auto mount được? Tớ nghĩ là không thể. Lý do: có lẽ cái <b>LABEL=SWAP-sda4</b> sẽ mất đi khi bạn dùng <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapoff -a</pre>
+		</div>sau này có muốn gán lại nó cũng không hiểu nữa. Và chỉ có cách duy nhất là dùng <b>/dev/sda4</b> (device name) nó mới hiểu.
+Làm gì có "cơ chế thay thế" gì đâu.
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106205</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106205</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 13:11:20]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Không những nó không được auto mount nữa mà khi khởi động tớ nghĩ bạn sẽ gặp thông báo sau: 
+<blockquote>Unable to access resume device SWAP-sda4&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+uhm, mình phải thêm <font color='orange'>noresume</font> vào <font color='brown'>/etc/fstab</font>:
+<blockquote>... ro root=LABEL=/ rhgb quiet <font color='orange'>noresume</font>&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Ý bạn nói là: khi bạn thêm <font color='orange'>noresume</font> vào <font color='olive'><i>/boot/grub/menu.lst</i></font> thì cái thông báo kia mới mất hả? Không cần mà, chỉ cần chỉnh lại trong <i>/etc/fstab</i>, sau đó gõ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon /dev/sda4</pre>
+		</div> là OK (tớ đã test).
+&nbsp;
+		</blockquote>
+sorry, không phải trong file /etc/fstab, mà trong thư mục /boot/grub( mình không nhớ chính xác tên file, hình như là conf, buổi tối mới về nhà bật con Linux lên được) 
+mình cũng đã thử swapon -a nhưng vẫn còn thông báo thì mới thếm <font color='orange'>noresume</font>
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>Vấn đề là cơ chế để thay thế /dev/sda4 bằng SWAP-sda4 mà vẫn mount partition sda4?&nbsp;
+		</blockquote>
+Ý bạn là: muốn để <b>SWAP-sda4</b> trong <i>/etc/fstab</i> mà vẫn auto mount được? Tớ nghĩ là không thể. Lý do: có lẽ cái <b>LABEL=SWAP-sda4</b> sẽ mất đi khi bạn dùng <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapoff -a</pre>
+		</div>sau này có muốn gán lại nó cũng không hiểu nữa. Và chỉ có cách duy nhất là dùng <b>/dev/sda4</b> (device name) nó mới hiểu.
+Làm gì có "cơ chế thay thế" gì đâu.
+&nbsp;
+		</blockquote>
+Mình chỉ nghĩ đơn giản trước khi dùng lệnh swapoff -a thì nó vẫn làm việc, nghĩa là khi đọc đến dòng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SWAP-sda4 swap swap defaults 0 0</pre>
+		</div>
+trong file /etc/fstab, OS sẽ lấy thông tin được lưu ở <font color='red'>đâu đó(?) </font>chỉ đến /dev/sda4, sau khi dùng swapoff -a thì thông tin này bị xóa đi, mình nghĩ nếu biết được điểm này mình sẽ gán lại được SWAP-sda4
+
+ps: Mình mới cài Linux không biết nhiều, mong học hỏi thêm
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106221</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 14:42:28]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>
+sorry, không phải trong file /etc/fstab, mà trong thư mục /boot/grub( mình không nhớ chính xác tên file, hình như là conf, buổi tối mới về nhà bật con Linux lên được) 
+mình cũng đã thử swapon -a nhưng vẫn còn thông báo thì mới thếm&nbsp;
+		</blockquote>
+<i>/boot/grub/grub.conf</i> và <i>/boot/grub/menu.lst</i> có nội dung hoàn toàn giống nhau. 
+Thử thay bằng <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon /dev/sda4</pre>
+		</div> và sau đó kiểm tra lại bằng <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapon -s</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>Vấn đề là cơ chế để thay thế /dev/sda4 bằng SWAP-sda4 mà vẫn mount partition sda4?&nbsp;
+		</blockquote>
+Ý bạn là: muốn để <b>SWAP-sda4</b> trong <i>/etc/fstab</i> mà vẫn auto mount được? Tớ nghĩ là không thể. Lý do: có lẽ cái <b>LABEL=SWAP-sda4</b> sẽ mất đi khi bạn dùng <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># swapoff -a</pre>
+		</div>sau này có muốn gán lại nó cũng không hiểu nữa. Và chỉ có cách duy nhất là dùng <b>/dev/sda4</b> (device name) nó mới hiểu.
+Làm gì có "cơ chế thay thế" gì đâu.
+&nbsp;
+		</blockquote>
+Mình chỉ nghĩ đơn giản trước khi dùng lệnh swapoff -a thì nó vẫn làm việc, nghĩa là khi đọc đến dòng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SWAP-sda4 swap swap defaults 0 0</pre>
+		</div>
+trong file /etc/fstab, OS sẽ lấy thông tin được lưu ở <font color='red'>đâu đó(?) </font>chỉ đến /dev/sda4, sau khi dùng swapoff -a thì thông tin này bị xóa đi, mình nghĩ nếu biết được điểm này mình sẽ gán lại được SWAP-sda4
+
+ps: Mình mới cài Linux không biết nhiều, mong học hỏi thêm
+&nbsp;
+		</blockquote>
+Thì đó, ý mình là: cái <b>SWAP-sda4</b> chỉ là <b>LABEL</b> cho <b>/dev/sda4</b> thôi. Nó được gán tự động khi bạn chọn swap partition lúc cài đặt. Khi boot, Linux tìm thấy <b>SWAP-sda4</b> trong <i>/etc/fstab</i>, nó hiểu được LABEL này là của <b>/dev/sda4</b> nên tiến hành mount bình thường. Sau khi bạn dùng <font color='orange'>swapoff -a</font>, /dev/sda4 bị disabled, label của nó cũng mất luôn, khởi động lại nó đọc <i>/etc/fstab</i> và không hiểu <b>SWAP-sda4</b> nên "báo cáo" là đúng thôi.
+
+ps: Nếu bạn cho tham số <font color='cyan'>noresume</font> vào <i>/boot/grub/menu.lst</i> thì bạn không dùng được Suspend hoặc Hibernate đâu. Bạn đang dùng Distro nào vậy?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106227</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106227</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 15:09:06]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Trước khi thi hành #swapoff -a, OS lưu thông tin SWAP-sda4 là "LABEL" của /dev/sda4 ở đâu ???
+
+
+
+ps: mình dùng fedora7.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106264</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106264</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 17:25:12]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote>Trước khi thi hành #swapoff -a, OS lưu thông tin SWAP-sda4 là "LABEL" của /dev/sda4 ở đâu ???
+
+ps: mình dùng fedora7.&nbsp;
+		</blockquote>
+Oạch, tớ có nói thế bao giờ đâu nhỉ. Nguyên văn đây:
+<blockquote>cái <b>SWAP-sda4</b> chỉ là LABEL cho <b>/dev/sda4</b> thôi&nbsp;
+		</blockquote>
+Trước khi bạn thực hiện <font color='orange'># swapoff -a</font>, Linux lưu label của <b>/dev/sda4</b> là <b>SWAP-sda4</b>, trong <i>/etc/fstab</i> chứ còn ở đâu nữa.
+
+Thử thêm <b>resume=/dev/sda4</b> vào cuối dòng kernel trong <i>/boot/grub/menu.lst</i> xem thông báo <i>"Unable to access resume device SWAP-sda4"</i> có mất đi không?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106275</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106275</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 18:00:43]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Nguyên văn đây:
+<blockquote>cái <b>SWAP-sda4</b> chỉ là LABEL cho <b>/dev/sda4</b> thôi&nbsp;
+		</blockquote>
+Trước khi bạn thực hiện <font color='orange'># swapoff -a</font>, Linux lưu label của <b>/dev/sda4</b> là <b>SWAP-sda4</b>, trong <i>/etc/fstab</i> chứ còn ở đâu nữa.
+&nbsp;
+		</blockquote>
+Hì, tóm lại là không dùng "label" được, mà phải dùng absolute pathname chỉ đến partition cần mount  :D 
+
+<p></p>
+		<cite class="blockquote">mount wrote:</cite><br>
+		<blockquote>
+Thử thêm <b>resume=/dev/sda4</b> vào cuối dòng kernel trong <i>/boot/grub/menu.lst</i> xem thông báo <i>"Unable to access resume device SWAP-sda4"</i> có mất đi không?
+&nbsp;
+		</blockquote>
+Mới chạy ở nhà ra tiệm, tí nữa về thử có gì sáng mai reply
+---
+
+Mình để ý, sau khi thực hiện những thao tác ở trên( swapoff, swapon, /dev/sda4) thì dung lượng bộ nhớ swap trên máy mình rất ít, chẳng hạn mình vừa mới kiểm tra khi nãy có chỉ 44KB, trước đây thường vài chục MB, không biết vì sao?
+
+
+
+
+
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106351</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106351</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 23:53:21]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Thử thêm <b>resume=/dev/sda4</b> vào cuối dòng kernel trong <i>/boot/grub/menu.lst</i> xem thông báo <i>"Unable to access resume device SWAP-sda4"</i> có mất đi không?
+&nbsp;
+		</blockquote>
+OK.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106426</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#106426</link>
+				<pubDate><![CDATA[Thu, 27 Dec 2007 12:53:11]]> GMT</pubDate>
+				<author><![CDATA[ enn3exlibs]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">enn3exlibs wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Nguyên văn đây:
+<blockquote>cái <b>SWAP-sda4</b> chỉ là LABEL cho <b>/dev/sda4</b> thôi&nbsp;
+		</blockquote>
+Trước khi bạn thực hiện <font color='orange'># swapoff -a</font>, Linux lưu label của <b>/dev/sda4</b> là <b>SWAP-sda4</b>, trong <i>/etc/fstab</i> chứ còn ở đâu nữa.
+&nbsp;
+		</blockquote>
+Hì, tóm lại là không dùng "label" được, mà phải dùng absolute pathname chỉ đến partition cần mount  :D 
+ &nbsp;
+		</blockquote>
+Chào <b>enn3exlibs</b>, 
+
+Lâu lâu, lục lại cái topic này chơi. Đọc lại <b>man</b> của <font color='orange'>mkswap</font> tớ thấy có tùy chọn <b>-L</b> để gán label cho swap partition (cho phép swapon bằng label). Như vậy, sau khi bạn <font color='orange'>$ swapoff -a</font>, để có thể dùng lại label  <b>SWAP-sda4</b> cho swap partition (/dev/sda4), bạn có thể:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ mkswap -L SWAP-sda4 /dev/sda4
+$ swapon -L SWAP-sda4</pre>
+		</div>
+lúc này trong /etc/fstab bạn có thể dùng 
+<blockquote>LABEL=SWAP-sda4 swap swap defaults 0 0&nbsp;
+		</blockquote>
+và swap partition vẫn được auto mount bình thường.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#115229</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#115229</link>
+				<pubDate><![CDATA[Mon, 18 Feb 2008 01:25:28]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Tôi mới làm quen Linux. Mong mọi nguời giúp đỡ. Tôi tạo swap file bằng các lệnh
+# dd if=/dev/zero of=tmpswap bs=1k count=900000
+# chmod 600 tmpswap
+# mkswap tmpswap
+# swapon tmpswap
+
+Thì báo là:  swapon: tmpswap: Operation not permitted
+Tôi phải làm thế nào để tạo được file swap này, cảm ơn mọi nguời giúp đỡ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116387</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116387</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 00:48:50]]> GMT</pubDate>
+				<author><![CDATA[ tuvom]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuvom wrote:</cite><br>
+		<blockquote>Tôi mới làm quen Linux. Mong mọi nguời giúp đỡ. Tôi tạo swap file bằng các lệnh
+# dd if=/dev/zero of=tmpswap bs=1k count=900000
+# chmod 600 tmpswap
+# mkswap tmpswap
+# swapon tmpswap
+
+Thì báo là:  swapon: tmpswap: Operation not permitted
+Tôi phải làm thế nào để tạo được file swap này, cảm ơn mọi nguời giúp đỡ&nbsp;
+		</blockquote>
+Bạn có đang chạy lệnh <b>swapon</b> với super user không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116399</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116399</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 01:36:28]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Anh quan ta cho em biết về đặc tính của 2 chú swap do PQ Magic ( có tên là SWAP SPACE 8 )và Paragon Panager (có tên là L- Swap 2) tạo ra ra được k0 anh ? 
+Em thấy dùng trình PQ Magic đọc L- Swap 2 thì ra cái tên Unformatted và k0 thể xóa partition này đi được . Với SWAP SPACE 8 xem bằng PQ Magic cũng bị tương tự :D . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116775</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116775</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2008 15:13:00]]> GMT</pubDate>
+				<author><![CDATA[ m3onh0x84]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">I Stupid ! wrote:</cite><br>
+		<blockquote>Anh quan ta cho em biết về đặc tính của 2 chú swap do PQ Magic ( có tên là SWAP SPACE 8 )và Paragon Panager (có tên là L- Swap 2) tạo ra ra được k0 anh ? 
+Em thấy dùng trình PQ Magic đọc L- Swap 2 thì ra cái tên Unformatted và k0 thể xóa partition này đi được . Với SWAP SPACE 8 xem bằng PQ Magic cũng bị tương tự :D . &nbsp;
+		</blockquote>
+Không hiểu câu hỏi này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116780</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116780</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2008 15:35:26]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Thôi ngắn gọn thì anh có thể cho em biết đặc điểm của 2 chú swap em đã nói ở trên k0 ạ ? :D Ý em là tại sao em k0 thể dùng PQ Magic format L-Swap 2 sang định dạng khác hay Paragon Manager format SWAP SPACE 8 sang dạng khác được ạ :-? . Những định dạng partition khác em format ngon lành mà ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116786</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116786</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2008 16:03:35]]> GMT</pubDate>
+				<author><![CDATA[ m3onh0x84]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">I Stupid ! wrote:</cite><br>
+		<blockquote>Thôi ngắn gọn thì anh có thể cho em biết đặc điểm của 2 chú swap em đã nói ở trên k0 ạ ? :D Ý em là tại sao em k0 thể dùng PQ Magic format L-Swap 2 sang định dạng khác hay Paragon Manager format SWAP SPACE 8 sang dạng khác được ạ :-? . Những định dạng partition khác em format ngon lành mà ?&nbsp;
+		</blockquote>
+Miêu tả lại thật chi tiết quá trình từ lúc dùng mấy cái tools trên để tạo ra <b>L-Swap 2</b> và <b>SWAP SPACE 8</b>, những thao tác sau đó, cho đến khi thử format nhưng không được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116929</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#116929</link>
+				<pubDate><![CDATA[Wed, 27 Feb 2008 12:47:18]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Quá trình em cài phân vùng swap cụ thể thế này :D
+1/ Từ 1 HDD trống trơn . Em dùng Partition Magic tạo 1 phân vùng primary rồi format nó thành swap với label là SWAP SPACE 8. 
+2/ Tiếp em dùng Paragon Partition Manager 7.0.1057 tạo 1 phân vùng extension và fomat nó thành L-Swap 2 . 
+Hình ảnh : 
+[img]http://i236.photobucket.com/albums/ff25/linhxinh_89/swapxembangGparted.png?t=1204210452[/img]
+và sơ đồ HDD xem bằng cfdisk trên Ubuntu 7.10 .
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Name        Flags      Part Type  FS Type          &#91;Label&#93;        Size &#40;MB&#41;
+ ------------------------------------------------------------------------------
+    sda1        Boot        Primary   Linux ext3                       10495.46 
+    sda2                    Primary   Linux swap / Solaris              2155.03
+    sda3                    Primary   Linux ext3                       31453.48
+    sda5                    Logical   Linux ext3                       33411.09
+    sda6                    Logical   Linux swap / Solaris              2508.72</pre>
+		</div>
+và sơ đồ HDD xem bằng lệnh fdisk -l trên Ubuntu 7.10 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1        1276    10249438+  83  Linux
+/dev/sda2            1277        1538     2104515   82  Linux swap / Solaris
+/dev/sda3            1539        5362    30716280   83  Linux
+/dev/sda4            5363        9729    35077927+   5  Extended
+/dev/sda5            5363        9424    32627983+  83  Linux
+/dev/sda6            9425        9729     2449881   82  Linux swap / Solaris</pre>
+		</div>
+em chỉ muốn biết đặc điểm tính chất của từng loại swap một thôi . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#117215</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#117215</link>
+				<pubDate><![CDATA[Thu, 28 Feb 2008 23:54:43]]> GMT</pubDate>
+				<author><![CDATA[ m3onh0x84]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Xin chào anh Quanta , em vừa mới học về linux nên có nhiều khúc mắc xin anh chỉ giáo cho . Em dùng CentOS 4.6 chạy trên máy Workstation p3 IBM RAM là RDRAM - ECC 1 GB( Em chỉ muốn nói là RAM chạy không bị lỗi )  nhưng trong quá trình chạy thì chương trình hệ thống cứ dùng RAM từ từ đến 99% mà swap thì không dùng MB nào cả. Khi máy treo hoặc chậm thì em kiểm tra RAM luc nào cũng 98 -99 % chỉ có reboot máy lại thì thì nó mới giải phóng RAM. Em cũng đã thử cài đi cài lại vài lần mà cũng bị như vậy. Em cũng đã kiếm trên google mà vẫn chưa ra được câu tra lời , 1 phần do là do tiếng Anh của em cũng tệ quá :D . Mong anh giúp em giải thích vì sao dẫn đến hiện tương như vậy và có cách nào giải phóng RAM mà mình không cần reboot không anh ? 
+ Cám ơn anh .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121263</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121263</link>
+				<pubDate><![CDATA[Wed, 26 Mar 2008 02:23:47]]> GMT</pubDate>
+				<author><![CDATA[ asterisk236]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ Xin chào asterisk236,
+
+Bạn dựa vào đâu để thấy RAM dùng đến 98-99%?
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121500</link>
+				<pubDate><![CDATA[Thu, 27 Mar 2008 09:26:09]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">asterisk236 wrote:</cite><br>
+		<blockquote>Xin chào anh Quanta , em vừa mới học về linux nên có nhiều khúc mắc xin anh chỉ giáo cho . Em dùng CentOS 4.6 chạy trên máy Workstation p3 IBM RAM là RDRAM - ECC 1 GB( Em chỉ muốn nói là RAM chạy không bị lỗi )  <font color='orange'><i>nhưng trong quá trình chạy thì chương trình hệ thống cứ dùng RAM từ từ đến 99% mà swap thì không dùng MB nào cả</i></font>. Khi máy treo hoặc chậm thì em kiểm tra RAM luc nào cũng 98 -99 % chỉ có reboot máy lại thì thì nó mới giải phóng RAM. Em cũng đã thử cài đi cài lại vài lần mà cũng bị như vậy. Em cũng đã kiếm trên google mà vẫn chưa ra được câu tra lời , 1 phần do là do tiếng Anh của em cũng tệ quá :D . Mong anh giúp em giải thích vì sao dẫn đến hiện tương như vậy và có cách nào giải phóng RAM mà mình không cần reboot không anh ? 
+ Cám ơn anh .&nbsp;
+		</blockquote>
+Chào <b>asterisk236</b>
+Trước tiên bạn tham khảo topic này: <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/17503.hva</span>
+<font color='orange'>--&gt;</font> Bạn dùng <font color='#6699CC'><b>free -m</b></font> để kiểm tra à?
+
+Những lúc treo hoặc chậm bạn gõ lệnh <font color='#6699CC'><b>top</b></font>, sau đó ấn <font color='#6699CC'><b>M</b></font> (VIẾT HOA), rồi gửi kết quả lên đây.
+
+Có một điểm cần lưu ý là: Linux sẽ tận dụng hết mức RAM có thể cho việc caching file system, cho nên không có gì là lạ lắm khi bạn có 1GB RAM và <font color='#6699CC'><b>free -m</b></font> lúc nào cũng báo cáo 700, 800 MB used
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121522</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#121522</link>
+				<pubDate><![CDATA[Thu, 27 Mar 2008 12:21:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ anh quanta giúp em vụ này với:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@dti-vps-srv82 ~&#93;# dd if=/dev/zero of=tmpswap bs=1k count=900000
+900000+0 records in
+900000+0 records out
+921600000 bytes &#40;922 MB&#41; copied, 11.3832 seconds, 81.0 MB/s
+&#91;root@dti-vps-srv82 ~&#93;# chmod 600 tmpswap
+&#91;root@dti-vps-srv82 ~&#93;# mkswap tmpswap
+Setting up swapspace version 1, size = 921595 kB
+&#91;root@dti-vps-srv82 ~&#93;# swapon tmpswap
+swapon: tmpswap: Operation not permitted</pre>
+		</div>
+
+em chạy bằng root rồi :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260346</link>
+				<pubDate><![CDATA[Thu, 29 Mar 2012 21:23:54]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>anh quanta giúp em vụ này với:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@dti-vps-srv82 ~&#93;# dd if=/dev/zero of=tmpswap bs=1k count=900000
+900000+0 records in
+900000+0 records out
+921600000 bytes &#40;922 MB&#41; copied, 11.3832 seconds, 81.0 MB/s
+&#91;root@dti-vps-srv82 ~&#93;# chmod 600 tmpswap
+&#91;root@dti-vps-srv82 ~&#93;# mkswap tmpswap
+Setting up swapspace version 1, size = 921595 kB
+&#91;root@dti-vps-srv82 ~&#93;# swapon tmpswap
+swapon: tmpswap: Operation not permitted</pre>
+		</div>
+
+em chạy bằng root rồi :(&nbsp;
+		</blockquote>
+Mình nhìn thấy chữ "vps" trong phần hostname, dùng `virt-what` check thử xem đang chạy cái gì. Tiếp theo, tìm hiểu xem liệu VPS có cho phép tạo swap file không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260348</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260348</link>
+				<pubDate><![CDATA[Thu, 29 Mar 2012 21:47:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <blockquote>
+Mình nhìn thấy chữ &quot;vps&quot; trong phần hostname, dùng `virt-what` check thử xem đang chạy cái gì. Tiếp theo, tìm hiểu xem liệu VPS có cho phép tạo swap file không.&nbsp;
+		</blockquote>
+
+đây anh
+
+<blockquote>
+[root@dti-vps-srv82 ~]# virt-what
+openvz
+xen
+xen-domU
+&nbsp;
+		</blockquote>
+
+còn VPS cho tạo hay không thì em không  biết nữa :( em cần swap để cài đặt oracle, em mới tiếp cận với linux nên chưa biết nhiều lắm.
+
+
+em có đọc qua bài này<span class="link"> https://appvz.com/knowledgebase.php?action=displayarticle&id=5</span> thấy &quot;Swap không hỗ trợ trên VPS chạy OpenVZ&quot;  ----&gt;phải chuyển  VPS khác hả anh
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260349</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260349</link>
+				<pubDate><![CDATA[Thu, 29 Mar 2012 21:50:40]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@dti-vps-srv82 ~&#93;# virt-what
+openvz
+xen
+xen-domU</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Tức là bạn đang chạy OpenVZ trên Xen.
+<p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+còn VPS cho tạo hay không thì em không  biết nữa :( 
+&nbsp;
+		</blockquote>
+Theo mình biết thì OpenVZ không cho phép tạo swap trong VE đâu. Swap của nó là dùng chung cho toàn bộ hệ thống.
+<p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+em cần swap để cài đặt oracle, em mới tiếp cận với linux nên chưa biết nhiều lắm.&nbsp;
+		</blockquote>
+Thử fake `free` command xem:<span class="link"> http://www.axelog.de/2010/02/7-oracle-ee-refused-to-install-into-openvz/</span>
+
+Cài xong nhớ trả lại như cũ nhé.
+
+PS: Oracle mang tiếng là kiểm tra nhưng mà dễ lừa nhỉ, fake /etc/redhat-release OK thì mình nghĩ fake `free` command cũng được thôi.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260356</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260356</link>
+				<pubDate><![CDATA[Thu, 29 Mar 2012 22:24:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ em có test qua bản ee thì ok, nhưng em cài bản 10g Release 2 với 11g Release 2 thì nó check không pass. 
+Dù sao cũng là 1 kinh nghiệm, cái không qua được thì fake :D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260361</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260361</link>
+				<pubDate><![CDATA[Thu, 29 Mar 2012 23:46:44]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>em có test qua bản ee thì ok, nhưng em cài bản 10g Release 2 với 11g Release 2 thì nó check không pass. 
+&nbsp;
+		</blockquote>
+Nó thông báo là gì?
+
+Thử fake tiếp `/proc/meminfo` xem:<span class="link"> http://forum.openvz.org/index.php?t=msg&goto=27275</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260366</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260366</link>
+				<pubDate><![CDATA[Fri, 30 Mar 2012 00:04:27]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Nó thông báo là gì?
+
+Thử fake tiếp `/proc/meminfo` xem:<span class="link"> http://forum.openvz.org/index.php?t=msg&goto=27275&nbsp;</span>
+		</blockquote>
+
+em fake xong dùng lệnh free thì ok
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># free -m
+             total       used       free     shared    buffers     cached
+Mem:       1048576     327264     721312          0          0          0
+-/+ buffers/cache:     327264     721312
+Swap:      2000000          0    2000000</pre>
+		</div>
+
+nhưng chạy thì<span class="link"> http://nk3.upanh.com/b5.s24.d3/ed5b88a98178c52e90804a5c6fd1ef7c_42734733.1.jpg</span>
+
+em thử chạy vzctl thì command not found lên mạng download vzctl-3.1-1.i386.rpm về cài thì 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>error: Failed dependencies:
+        libploop.so is needed by vzctl-3.1-1.i386
+        libvzctl-3.1.so is needed by vzctl-3.1-1.i386
+        ploop-lib &gt;= 1.1-1 is needed by vzctl-3.1-1.i386
+        vzctl-lib = 3.1-1 is needed by vzctl-3.1-1.i386
+        vzeventmod is needed by vzctl-3.1-1.i386
+        vzkernel is needed by vzctl-3.1-1.i386
+        vzquota &gt;= 2.7.0-4 is needed by vzctl-3.1-1.i386</pre>
+		</div>
+
+em không biết tìm mấy cái này ở đâu luôn :D chưa làm việc với cái VPS nào như cái này, thôi chắc bỏ em nản quá rồi, mò mấy ngày mà chẳng được. Cảm ơn anh đã giúp em. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260374</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260374</link>
+				<pubDate><![CDATA[Fri, 30 Mar 2012 01:42:59]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+em fake xong dùng lệnh free thì ok
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># free -m
+             total       used       free     shared    buffers     cached
+Mem:       1048576     327264     721312          0          0          0
+-/+ buffers/cache:     327264     721312
+Swap:      2000000          0    2000000</pre>
+		</div>
+&nbsp;
+		</blockquote>
+fake thì cũng vừa phải thôi chứ, làm gì mà để... 2TB swap à.
+<p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+nhưng chạy thì <br>
+			<div align="center" class="limitview"><img src='http://nk3.upanh.com/b5.s24.d3/ed5b88a98178c52e90804a5c6fd1ef7c_42734733.1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+&nbsp;
+		</blockquote>
+Bạn fake `/proc/meminfo` chưa? Vấn đề là cần phải biết xem Oracle nó check swap kiểu gì (có khi phải mở code ra đọc) để còn biết đường mà fake.
+<p></p>
+		<cite class="blockquote">o0o_nohssiw_o0o wrote:</cite><br>
+		<blockquote>
+em thử chạy vzctl thì command not found lên mạng download vzctl-3.1-1.i386.rpm về cài thì 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>error: Failed dependencies:
+        libploop.so is needed by vzctl-3.1-1.i386
+        libvzctl-3.1.so is needed by vzctl-3.1-1.i386
+        ploop-lib &gt;= 1.1-1 is needed by vzctl-3.1-1.i386
+        vzctl-lib = 3.1-1 is needed by vzctl-3.1-1.i386
+        vzeventmod is needed by vzctl-3.1-1.i386
+        vzkernel is needed by vzctl-3.1-1.i386
+        vzquota &gt;= 2.7.0-4 is needed by vzctl-3.1-1.i386</pre>
+		</div>
+
+em không biết tìm mấy cái này ở đâu luôn :D chưa làm việc với cái VPS nào như cái này, thôi chắc bỏ em nản quá rồi, mò mấy ngày mà chẳng được. Cảm ơn anh đã giúp em. 
+&nbsp;
+		</blockquote>
+Bạn thử `rpm -qa | grep vz` xem có vzctl chưa? Nếu có rồi, thử lại với `/usr/sbin/vzctl`.
+
+PS: mới thế mà đã nản à :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260377</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260377</link>
+				<pubDate><![CDATA[Fri, 30 Mar 2012 02:51:41]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Tất cả về Linux swap space</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Bạn thử `rpm -qa | grep vz` xem có vzctl chưa? Nếu có rồi, thử lại với `/usr/sbin/vzctl`.
+
+PS: mới thế mà đã nản à :P &nbsp;
+		</blockquote>
+
+xin lỗi anh vì mấy ngày này không rep lại cho anh được. Nói ra thì ngại quá nhưng em bận thi lại mấy môn :D, cả nước nghỉ có mấy thằng em đi thi lại :-&lt;
+
+tiếp tục với anh đây:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@dti-vps-srv82 ~&#93;# rpm -qa | grep vz
+vzdummy-jre-el5-1.0-1.swsoft
+vzdummy-apache-1.0-1.swsoft
+vzdev-1.0-7.swsoft
+vzdummy-glibc-1.0-1.swsoft
+vzdummy-kernel-el5-2.0-1.ce.swsoft
+&#91;root@dti-vps-srv82 ~&#93;#</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/sbin/vzctl
+-bash: /usr/sbin/vzctl: No such file or directory</pre>
+		</div>
+
+p/s: em đã cài được trên cái VPS khác rồi, nhưng em vẫn muốn tìm hiểu thêm cái này, nếu có thể anh giúp đỡ em với nha.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260549</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17527.hva#260549</link>
+				<pubDate><![CDATA[Sun, 1 Apr 2012 03:29:21]]> GMT</pubDate>
+				<author><![CDATA[ o0o_nohssiw_o0o]]></author>
+			</item>
+	</channel>
+</rss>

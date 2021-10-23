@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain</title>
+				<description><![CDATA[ <font size='+2'>Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain (Active Directory)</font>
+
+<b>1. FreeNAS là gì</b>
+
+FreeNAS là một SAN/NAS firmware nguồn mở, miễn phí dựa trên hệ điều hành FreeBSD. 
+
+FreeNAS hỗ trợ hệ thống file ZFS tối tân chuyển đặt từ hệ điều hành Solaris, và, tất nhiên, hệ thống file truyền thống UFS của FreeBSD.
+
+Giống như mọi thiết bị SAN/NAS khác, trên FreeNAS, sức chứa của các đĩa cứng (vật lý) không được sử dụng trực tiếp mà thông qua một vật thể lưu trữ logic gọi là một _volume_. Một volume hình thành từ một hay nhiều đĩa cứng. Trong quá trình hoạt động, có thể mở rộng (tăng dung lượng) một volume bằng cách kết nạp thêm các đĩa cứng mới vào volume.
+
+Hệ thống file ZFS hỗ trợ ở mức volume các cơ chế _encryption_ (mật mã hóa), _compression_ (nén) và _deduplication_ (khử trùng lắp). Encryption bảo mật dữ liệu chống lại sự thâm nhập vật lý. Compression và Deduplication giúp tiết kiệm dung lượng. Compression phát hiện và khử sự trùng lắp cục bộ còn Deduplication thì phát hiện và khử sự trùng lắp toàn cục. (Như vậy, thực chất, Deduplication cũng là một hình thức nén dữ liệu.) Cả 3 cơ chế này đều _trong suốt_ đối với người dùng.
+
+Hệ thống file ZFS có một dạng RAID đặc thù gọi là RAID Zk. (Mỗi volume tương ứng 1 - 1 với một mảng RAID Zk.) Một mảng n RAIDZk là một mảng gồm n + k đĩa cứng cùng dung lượng, với dung lượng hữu ích bằng n đĩa, còn độ dư thì bằng k đĩa. Dữ liệu hữu ích được bảo toàn kể cả khi bị hỏng k đĩa bất kỳ. 
+
+Ở đây giả sử người đọc quen với khái niệm _mảng đĩa có độ dư_, tức RAID, trước hết là các kiểu RAID chuẩn như RAID5 và RAID6. Như vậy, nhìn chung thì RAID Z1 tương đương với RAID5, còn RAID Z2 tương đương với RAID6. Nhưng nhìn đúng thì RAIDZ tốt hơn: khi bị mất điện đột ngột, RAID5/RAID6 có thể bị mất dữ liệu (do một hiệu ứng không đáng mong muốn gọi là _lỗ thủng RAID_), còn RAIDZ không bao giờ làm mất dữ liệu.
+
+Hệ thống file ZFS còn hỗ trợ một khái niệm đặc thù gọi là _dataset_. Có thể xem nó như là một khái niệm lai tạp giữa volume và thư mục. Như thư mục, một dataset hình thành từ một phần hay toàn bộ một volume, và nó có chủ sở hữu (owner) riêng, nhóm sở hữu (group) riêng và các phân quyền (permissions) riêng. Như volume, một dataset có thuộc tính compression (nén) riêng, deduplication (khử trùng lắp) riêng và dung lượng (quota) riêng. 
+
+Cần phân biệt ZFS dataset với _zvol_. Một zvol về bản chất cũng là một ZFS dataset, nhưng chuyên dùng để cung cấp tài nguyên cho các client trong mạng SAN. Bài này không đề cập đến cấu hình FreeNAS như một thiết bị SAN, chỉ tập trung vào việc cấu hình thành thiết bị NAS.
+
+Là một thiết bị NAS đa hệ, FreeNAS hỗ trợ nhiều giao thức chia sẻ file, trong đó, việc chia sẻ cho các Windows client dùng giao thức CIFS.
+
+
+<b>2. Vì sao, khi nào dùng FreeNAS</b>
+
+FreeNAS miễn phí, sử dụng đơn giản (cài đặt và cấu hình đều nhanh chóng) và rất đáng tin cậy.
+
+Với các ưu điểm đó, có thể dùng FreeNAS mọi lúc, mọi nơi. 
+
+
+<b>3. Môi trường</b>
+
+Bài này trình bày việc cấu hình FreeNAS trong mạng với _một_ domain (Windows domain, a.k.a. Active Directory), cụ thể
+
+* Mọi DC đều dùng Windows.
+
+* Mọi máy trạm đều dùng Windows.
+
+Bài này không trình bày việc cấu hình cho một mạng với mô hình phức tạp hơn, như là domain tree, domain forest, hay có các máy trạm hay DC dùng hệ điều hành khác.
+
+Để định ý, dưới đây, ta sẽ giả sử domain là @congty.com@ với NetBIOS name là @CONGTY@. Thiết bị FreeNAS sẽ được đặt tên là @fs0@. Trên thiết bị đó, ta sẽ tạo volume @v@. Trên volume này sẽ tạo các (ZFS) dataset @z0@, @z1@, @z2@,... và sẽ share chúng dưới các tên tương ứng @a0@, @a1@, @a2@,...
+
+
+<b>4. Yêu cầu phần cứng</b>
+
+Một máy vi tính PC loại tốt (khuyên dùng mainboard hỗ trợ AHCI, và nên kiểm tra BIOS để khẳng định đã bật chế độ AHCI), với
+
+* 1 ổ cứng (CF, DOM, SSD hay HDD) khoảng 10 - 20 GB cho hệ điều hành;
+
+* 3 - 5 ổ cứng lớn, giống nhau, cho dữ liệu;
+
+* tối thiểu 8 GB RAM. 
+
+Chú ý
+
+* Thiết kế cẩn thận nguồn điện và luồng gió. Nguồn điện và luồng gió không tốt sẽ làm ổ cứng chết rất mau.
+
+* Nhu cầu RAM được khuyến cáo chính thức là 5 GB cho mỗi TB dữ liệu được khử trùng lắp, hoặc 1 GB cho mỗi TB dữ liệu không khử trùng lắp, cộng thêm 2 GB nếu sử dụng Active Directory, nhưng tổng lượng RAM không được nhỏ hơn 8 GB trong bất cứ trường hợp nào.
+
+
+
+
+<b>5. Yêu cầu phần mềm</b>
+
+FreeNAS bản x86_64, ver. 9.2.1. Có thể tải xuống từ địa chỉ<span class="link"> http://www.freenas.org.</span>
+
+Chú ý 
+
+* ver. 9.2.1 dùng giao thức CIFS ở chế độ SMB3 (tương đương với Windows 2012). Còn 9.2.0 chỉ SMB2 (tương đương Windows 2000).
+
+
+<b>6. Cài đặt và cấu hình cơ bản</b>
+
+6.1. Bỏ CD vào ổ và bật máy.
+
+6.2. Chọn ổ cứng để cài đặt hệ điều hành (ổ 10 - 20 GB đã kể trên).
+
+6.3. Mọi câu hỏi khác đều trả lời mặc định.
+
+6.4. Sau khi cài đặt xong, khởi động lại thì đặt địa chỉ IP, subnet mask, default gateway.
+
+6.5. Từ một máy tính bất kỳ trong mạng LAN, dùng trình duyệt Web bất kỳ, truy nhập trang web điều khiển theo địa chỉ IP vừa đặt.
+
+6.6. Vào @Network -&gt; Global@ cài đặt các thông số mạng như hostname, domain, các nameserver (DNS server).
+
+6.7. Vào @System -&gt; Settings@, trang @General@. Mục  @Timezone@ (múi giờ) chọn @Asia/HoChiMinh@. Vào @System -&gt; NTP server -&gt; Add NTP server@, thiết đặt 1 NTP server thực tế cho hệ thống, xóa mọi NTP server mặc định hiện hữu.
+
+6.8. Vào @System -&gt; Settings@, trang @General@. Mục @Directory Service@, chọn @Active Directory@.
+
+6.9. vào @Services -&gt; Directory Services -&gt; Active Directory@ khai báo các thông số liên quan đến domain như @domain name@, @NetBIOS name@,...) rồi ấn @OK@ để join domain.
+
+Lưu ý
+
+Nếu ở các bước sau gặp rắc rối khi hiển thị danh sách các account/group của domain, hãy dùng quyền domain admin vào một DC kiểm tra xem máy FreeNAS (@fs0@) đã được đăng ký (tự động) trong DNS hay chưa. Nếu chưa, hãy đăng ký (bằng tay) với một record kiểu A (host).
+ 
+
+<b>7. Tạo volume</b>
+
+7.1. Tạo 1 RAIDZ1 volume duy nhất, dùng tất cả các ổ cứng. Từ cây bên trái, vào @Storage -&gt; ZFS Volume Manager@.
+      
+      * Mục @Volume Name@, đặt tên volume (ta sẽ đặt là @v@).
+      
+      * Mục @Encryption@, check vào để mật mã hóa.
+      
+      * Mục @Initialize Safely@, không check. (Lựa chọn này chỉ có nghĩa nếu đi cùng với @Encryption@. Nếu check, quá trình khởi tạo volume sẽ format tất cả các ổ đĩa và ghi đè bằng dữ liệu ngẫu nhiên. Nhờ đó bảo mật được khối lượng dữ liệu. Tuy nhiên, quá trình này sẽ rất lâu, có thể nhiều giờ đến nhiều ngày với volume lớn.)
+      
+      * Trong khung @Available Disks@, click vào nút dấu cộng (+).
+      
+      * Trong khung @Volume Layout@ sẽ hiện ra cấu trúc của volume. Mặc định là lựa chọn tối ưu. (Khi phần cứng nhàn rỗi còn 3-5 ổ cứng, mặc định là RAIDZ1 dùng tất cả các ổ.) Hãy giữ nguyên mặc định đừng thay đổi gì cả.
+      
+      * Ấn nút @Add volume@. Mọi dữ liệu trên các ổ cứng đã chọn sẽ bị hủy. Sau khi volume được tạo thành công, ở cây phía bên trái sẽ hiện ra một nhánh mới với tên là tên đầy đủ của volume (@/mnt/v@), với 3 nhánh con: @Change Permissions@, @Create ZFS Dataset@, @Create zvol@.
+   
+7.2. Chỉnh thuộc tính volume. Từ cây bên trái, vào @Storage -&gt; Volumes -&gt; View Volumes@. Ở danh sách bên phải, chọn @v@. Ở hàng nút bên dưới, bấm nút @Edit ZFS option@.
+
+      * Mục @Compression@ chọn @lz4 (recommended)@.
+      
+      * Mục @Deduplication@ chọn @On@.
+      
+      * Bấm nút @Edit ZFS Volume@ để khẳng định.
+      
+      
+7.3. Phân quyền tối thiểu volume. Từ cây bên trái mở @Storage -&gt; Volumes -&gt; View Volumes@. Ở danh sách bên phải chọn @v@. Ở hàng nút phía dưới danh sách, bấm nút @Change Permissions@. 
+   
+     * Mục @Owner@ và @Group@, chọn một tài khoản làm owner và một nhóm làm group của volume. Đó là (những) tài khoản dự định sẽ dùng thường xuyên để quản trị (phân quyền) dữ liệu tương lai. Mặc định là @root@ và @wheel@, nhưng có thể chọn domain account nào đó và domain group nào đó, chẳng hạn @CONGTY\Administrator@ và @CONGTY\Domain Admins@. 
+     
+     * Mục @Type of ACL@ có 2 lựa chọn là @Unix@ và @Windows/Mac@. Hãy chọn @Windows/Mac@. (Khi đó, mục @Mode@ trở thành vô nghĩa, bị mờ đi.)
+
+     * Bấm nút @Change@.
+
+   
+<b>8. Tạo (ZFS) dataset</b>
+
+8.1. Tạo 1 hay nhiều dataset. Từ cây mở nhánh @Storage -&gt; Volumes -&gt; /mnt/v -&gt; Create ZFS Dataset@. Sẽ thấy mở hộp thoại @Create ZFS Dataset@.
+
+     * Mục @Dataset name@, đặt tên dataset. (Ta sẽ đặt tên là @z0@.)
+        
+     * Các tính chất còn lại (@atime@, @compression@, @deduplication@) đều giữ giá trị mặc định (@Inherit@).
+        
+     * Có thể bấm @Advanced Mode@ để mở rộng hộp thoại, nếu muốn chỉnh các tính chất khác như hạn ngạch (quota).
+        
+     * Bấm nút @Add Dataset@ để khẳng định. Sau khi dataset được tạo thành công, ở cây bên trái dưới nhánh /mnt/v sẽ thấy mọc ra nhánh mới @/mnt/v/z0@, với 3 nhánh con có tên giống như 3 nhánh con tương ứng của volume (@Change Permissions@, @Create ZFS Dataset@, @Create zvol@).
+        
+     * Tương tự, tiếp tục tạo thêm các dataset @z1@, @z2@,...
+        
+   
+8.2. Phân quyền tối thiểu dataset. Từ cây mở nhánh @Storage -&gt; Volumes -&gt; /mnt/v/z0 -&gt; Change Permissions@. 
+
+     * Tương tự như phân quyền volume, có thể chọn @Owner@ là @CONGTY\Administrator@ và @Group@ là @CONGTY\Domain Admins@. 
+     
+     * Các giá trị khác, giữ nguyên mặc định (nói riêng, @Type of ACL@ là @Windows/Mac@.) 
+
+   
+<b>9. Tạo (CIFS) share</b>
+
+9.1. Tạo 1 hay nhiều share. Từ cây bên trái, mở nhánh @Sharing -&gt; Windows (CIFS) shares -&gt; Add Windows (CIFS) shares@.
+  
+   * Mục @Name@ điền tên share định tạo. (Ta sẽ đặt tên là @a0@).
+   
+   * Mục @Path@ điền đường dẫn đến share. Để hệ thống tự điền, hãy bấm vào nút @Browse@ duyệt cây thư mục và chọn thư mục share, ở đây là @/mnt/v/z0@. 
+   
+   * Mục @Inherit Owner@ và @Inherit Permissions@ không check. (Nếu check, các folder và file mới sẽ tạo ra theo một ngữ nghĩa thừa kế chủ nhân và phân quyền khác với ngữ nghĩa quen thuộc của hệ thống NTFS/NFS4 và do đó sẽ gây bối rối cho người quản trị.)
+   
+   * Mọi mục khác, giữ nguyên mặc định.
+
+   * Bấm nút @OK@ để khẳng định. Nếu share được tạo thành công, ở cây bên trái sẽ mọc thêm một nhánh mới mang tên @Sharing -&gt; Windows (CIFS) Share -&gt; a0@.
+
+   * Tương tự, tiếp tục tạo thêm các share @a1@, @a2@,...
+   
+
+9.2. Phân quyền thư mục share. Từ một máy Windows đã join domain, truy nhập @\\fs0\a0@ bằng tên owner (@CONGTY\Administrator@ hoặc @fs0\root@, mở hộp thoại @Properties -&gt; Security@ quen thuộc của Windows:
+
+   * Phân quyền @Full Control@ cho bản thân, để phân quyền.
+
+   * Phân quyền @Full Control@ hoặc @Modify@ cho @CONGTY\Administrator@ hoặc @CONGTY\Domain Admins@, để quản trị. 
+   
+   * Phân quyền bổ sung cho các nhóm người dùng khác, chẳng hạn @CONGTY\Domain Users@, các quyền như @Modify@ hoặc @Read@, để sử dụng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280139</link>
+				<pubDate><![CDATA[Sun, 30 Mar 2014 11:30:07]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain</title>
+				<description><![CDATA[ FreeNAS từ phiên bản 9.2.1.5, hộp thoại @Add Windows (CIFS) share@ (bước 9.1) có thêm một mục là @Inherit ACL's@. Bước 9.1 cần phải bổ sung như sau:
+
+* Mục @Inherit ACL's@ không check. (Lý do: tưong tự như @Inherit Owner@ và @Inherit Permissions@, đã giải thích ở trên).
+
+Điểm trên là quan trọng bởi vì mặc định mục này được check và giá trị mặc định đó có thể xem như một lỗ thủng về phân quyền, cho phép @Domain Users@ truy nhập được các file và thư mục ngoài mong muốn của quản trị viên. (Xem chi tiết ở https://bugs.freenas.org/issues/4606.)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280710</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280710</link>
+				<pubDate><![CDATA[Tue, 27 May 2014 14:38:08]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thiết lập thiết bị NAS với FreeNAS trong môi trường Windows domain</title>
+				<description><![CDATA[ Cảm ơn bài viết của anh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280757</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45547.hva#280757</link>
+				<pubDate><![CDATA[Tue, 3 Jun 2014 07:21:32]]> GMT</pubDate>
+				<author><![CDATA[ skidubai]]></author>
+			</item>
+	</channel>
+</rss>

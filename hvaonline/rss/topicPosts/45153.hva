@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thắc mắc về cấu hình BIND"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thắc mắc về cấu hình BIND"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thắc mắc về cấu hình BIND</title>
+				<description><![CDATA[ Mình có 1 file cấu hình như thế này
+
+#cat /etc/named.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>options {
+	listen-on port 53 { any; };
+	listen-on-v6 port 53 { ::1; };
+	directory 	&quot;/var/named&quot;;
+	dump-file 	&quot;/var/named/data/cache_dump.db&quot;;
+        statistics-file &quot;/var/named/data/named_stats.txt&quot;;
+        memstatistics-file &quot;/var/named/data/named_mem_stats.txt&quot;;
+	allow-query     { any; };
+	recursion yes;
+
+	dnssec-enable yes;
+	dnssec-validation yes;
+	dnssec-lookaside auto;
+};
+
+logging {
+        channel default_debug {
+                file &quot;data/named.run&quot;;
+                severity dynamic;
+        };
+};
+
+include &quot;/etc/named.rfc1912.zones&quot;;
+include &quot;/etc/named.root.key&quot;;</pre>
+		</div>
+
+Test thử
+#dig google.com
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>; &lt;&lt;&gt;&gt; DiG 9.8.2rc1-RedHat-9.8.2-0.17.rc1.el6_4.6 &lt;&lt;&gt;&gt; google.com
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 26323
+;; flags: qr rd ra; QUERY: 1, ANSWER: 16, AUTHORITY: 4, ADDITIONAL: 4
+
+;; QUESTION SECTION:
+;google.com.			IN	A
+
+;; ANSWER SECTION:
+google.com.		300	IN	A	113.171.245.163
+google.com.		300	IN	A	113.171.245.168
+google.com.		300	IN	A	113.171.245.167
+google.com.		300	IN	A	113.171.245.152
+google.com.		300	IN	A	113.171.245.162
+google.com.		300	IN	A	113.171.245.153
+google.com.		300	IN	A	113.171.245.182
+google.com.		300	IN	A	113.171.245.148
+google.com.		300	IN	A	113.171.245.187
+google.com.		300	IN	A	113.171.245.178
+google.com.		300	IN	A	113.171.245.158
+google.com.		300	IN	A	113.171.245.157
+google.com.		300	IN	A	113.171.245.177
+google.com.		300	IN	A	113.171.245.173
+google.com.		300	IN	A	113.171.245.172
+google.com.		300	IN	A	113.171.245.183
+
+;; AUTHORITY SECTION:
+google.com.		172798	IN	NS	ns1.google.com.
+google.com.		172798	IN	NS	ns4.google.com.
+google.com.		172798	IN	NS	ns3.google.com.
+google.com.		172798	IN	NS	ns2.google.com.
+
+;; ADDITIONAL SECTION:
+ns2.google.com.		172798	IN	A	216.239.34.10
+ns1.google.com.		172798	IN	A	216.239.32.10
+ns3.google.com.		172798	IN	A	216.239.36.10
+ns4.google.com.		172798	IN	A	216.239.38.10
+
+;; Query time: 1936 msec
+;; SERVER: 127.0.0.1#53&#40;127.0.0.1&#41;
+;; WHEN: Wed Sep 11 21:43:58 2013
+;; MSG SIZE  rcvd: 420</pre>
+		</div>
+
+Mình thắc mắc là tại sao trong file named.conf không có phần thông tin cho root server hay thông tin forwarders mà nó vẫn lấy được thông tin truy vấn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278432</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278432</link>
+				<pubDate><![CDATA[Wed, 11 Sep 2013 09:47:13]]> GMT</pubDate>
+				<author><![CDATA[ sautrenla]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về cấu hình BIND</title>
+				<description><![CDATA[ <blockquote>Mình thắc mắc là tại sao trong file named.conf không có phần thông tin cho root server hay thông tin forwarders mà nó vẫn lấy được thông tin truy vấn?
+&nbsp;
+		</blockquote>
+
+Bởi vì DNS của bạn đang sử dụng chức năng Recursion để làm nhiệm vụ phân giải domain. 
+Recursion sẽ chỉ hoạt động khi bạn có 1 trong 2 điều sau 
+
+- 1. File Root.Hints
+- 2. Cấu hình Recursion ACL đi đến trực tiếp 1 hoặc nhiều Master DNS được chỉ định 
+
+Trong trường hợp này Recursion sẽ forward cái câu hỏi  `google.com là IP bao nhiêu`(1) đi đến 13 DNS master để hỏi, nhằm mục đích phân giải IP cho (1)
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>recursion yes;</pre>
+		</div>
+
+Bạn xem lại trong file cấu hình DNS  có phần nào có từ root.hints hay không ? hoặc có dòng nào ấn định việc Recursion ACL hay không nhé. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278435</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278435</link>
+				<pubDate><![CDATA[Thu, 12 Sep 2013 01:36:43]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về cấu hình BIND</title>
+				<description><![CDATA[ Toàn bộ file cấu hình mình đã post ở phía trên rồi, hoàn toàn không có phần root hint hay ACL.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278439</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45153.hva#278439</link>
+				<pubDate><![CDATA[Thu, 12 Sep 2013 10:05:50]]> GMT</pubDate>
+				<author><![CDATA[ sautrenla]]></author>
+			</item>
+	</channel>
+</rss>

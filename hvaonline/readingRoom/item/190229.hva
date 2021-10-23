@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/30837.hva#190229" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: facialz - Translator:  - Entry Date: 18/08/2009 16:35:19" title="Author: facialz - Translator:  - Entry Date: 18/08/2009 16:35:19"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody">THÊM TÍNH NĂNG DKIM<br/> cho Postfix với dkim-milter trên nền FreeBSD<br/> <br/> <br/> <b>1. DKIM là gì</b><br/> <br/> DKIM (DomainKeys Identified Mail) là một phương pháp xác thực e-mail bằng chữ ký số <u>của miền</u> gửi thư, trong đó khóa công khai thường được công bố trên DNS dưới dạng một TXT record.<br/>  <br/> Khi gửi thư, bộ ký thư sẽ chèn lên đầu thư một trường <u>DKIM-Signature</u> [1] có nội dung đại khái như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mycompany.com; s=sitec; t=1250425543; <br/> bh=qQxSOEYYHCCISqVJ6pi/vUuNCr0EqMNkRSnD0B0TNFQ=;<br/> h=Message-ID:From:To:Subject: Date:MIME-Version:Content-Type;<br/> b=aiL+F+rqOdVxmR1V0bdfwsVOvMpwv1eMcCrX5I2C6U9CX+mkyepL3t0PwkW8pLSFc<br/> CpJ5NvsBGqgOK4f2h89IubyYMFU0BkqZmtlBFlL+wyximVXLtHxO95WOxJX380tCet<br/> XwofYIOK7tx45K41hG4T7+5ylNSuO1HHMpM/WfOM=</pre><br/> 		</div><br/> Trong đó có mọi thông tin cần thiết như phiên bản DKIM (<u>v</u>), thuật toán ký (<u>a</u>), thuật toán chuẩn hóa xâu ký tự đưa đi ký ( <u>c</u> ), tên miền ký (<u>d</u>), tên cặp khóa, hay còn gọi là selector (<u>s</u>), dấu ấn thời gian (<u>t</u>), thời hạn hiệu lực của chữ ký (<u>x</u>), phương thức truy vấn để lấy khóa công khai (<u>q</u>), danh sách các trường của phần đầu thư được ký (<u>h</u>), độ dài phần thân thư được ký (<u>l</u>), giá trị hash của nội dung được ký (<u>bh</u>), và chữ ký (<u>b</u>).<br/> <br/> Khi nhận thư, bộ kiểm thư sẽ xác định khóa công khai theo phương pháp <u>q</u> (trong ví dụ trên, vốn dĩ không chỉ rõ <u>q</u>, phương pháp mặc định là truy vấn DNS tìm TXT record có tên là <u>sitec._domainkey.mycompany.com.</u>), dựa vào đó kiểm tra chữ ký rồi chèn kết quả kiểm tra vào trường <u>Authentication-Results</u> [2] của thư. Chẳng hạn, kết quả tốt được viết như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>Authentication-Results: ... dkim=pass header.i=@mycompany.com</pre><br/> 		</div><br/> Kết quả này xác thực các trường của phần đầu thư đã kể trong mục <u>h</u> (tức Message-ID, From, To, Subject, Date, MIME-Version và Content-Type trong ví dụ trên) cùng với phần thân thư có độ dài kể trong mục <u>l</u> (tức toàn bộ phần thân thư trong ví dụ trên, vốn dĩ với mục <u>l</u> mặc định).<br/> <br/> Trong dây chuyền nộp – chuyển – phát thư, bộ ký thư thường đặt tại sending MTA và bộ kiểm thư thường đặt tại receiving MTA. Khi đó DKIM thực chất chỉ xác nhận thư được bảo toàn trên suốt chặng đường <u>chuyển</u> thư. Việc đảm bảo một lá thư From:alice@mycompany.com chắc chắn thuộc về Alice nằm ngoài trách nhiệm của DKIM.<br/> <br/> Ngoài ra, tùy theo chính sách kiểm tra chữ ký DKIM của mình, bộ kiểm thư có thể tìm hiểu chính sách ký DKIM (tức ADSP,  Author Domain Signing Practices [3]) của mycompany.com bằng cách truy vấn DNS tìm TXT record tên là <u>_adsp._domainkey.mycompany.com.</u>, căn cứ vào đó (và tùy theo kết quả kiểm tra chữ ký) để quyết định có chấp nhận lá thư hay không.<br/> <br/> <br/> <b>2. Vì sao, khi nào dùng DKIM</b><br/> <br/> Nói một cách vắn tắt, nên dùng DKIM bởi vì một lá thư không có chữ ký DKIM dễ bị hiểu là spam.<br/> <br/> DKIM là một phương pháp xác thực chứ không phải là một phương pháp chống spam. Nhưng nó hỗ trợ việc chống spam bởi vì nó đảm bảo thư là thật (địa chỉ người gửi, hay ít nhất tên miền gửi thư là thật) trong khi thực tế đa số spam đều là thư giả mạo (mạo tên người khác, tên miền khác). Với DKIM, <i>ai muốn spam thì cứ thoải mái, nhưng phải spam một cách quang minh chính đại</i>; bạn không thể gửi thư từ một tên miền không thuộc sở hữu của mình được.<br/> <br/> Phát triển từ phương pháp <u>DK</u> của Yahoo và phương pháp <u>IM</u> của Cisco, với việc được cơ quan IETF cấp tư cách <u>Standards Track</u>, DKIM đã từ một phương pháp xác thực email trẻ nhất trở thành phương pháp có tiềm năng nhất.<br/> <br/> Với việc xác thực nội dung hơn là xác thực phong bì, trong các tình huống mà phong bì thay đổi, chẳng hạn, thư được forward qua một đường chuyển thư phức tạp, DKIM cho những lá thư cơ hội sống sót cao hơn so với các phương pháp xác thực địa chỉ server như là <u>SPF</u> hay <u>SIDF</u>. (Nhưng tất nhiên, trong những tình huống nội dung thay đổi, chẳng hạn qua bộ quét virus, các phương pháp kia có thể cho cơ hội sống sót cao hơn.)<br/> <br/> Với việc triển khai trên server hơn là trên client, và không đòi hỏi một hạ tầng khóa công khai phức tạp, DKIM gọn nhẹ hơn so với các phương pháp xác thực từ đầu đến cuối như là S/MIME hay PGP. (Nhưng tất nhiên, ý nghĩa xác thực cũng nhẹ hơn, DKIM không thể thay thế hoàn toàn cho các phương pháp kia.)<br/> <br/> Hiện nay DKIM chưa được dùng phổ biến. Thư có chữ ký DKIM chỉ mới thấy chủ yếu từ các ngân hàng, tổ chức tài chính (Paypal, eBay,...) và một số nhà cung cấp email (Google, Yahoo, Hotmail,...).<br/> <br/> Vì thế, chính sách dùng DKIM tốt nhất hiện nay là <i>ký triệt để mọi lá thư gửi đi từ miền mình và chỉ từ chối những lá thư không hợp lệ đến từ những miền khác có chính sách ký thư triệt để</i>.<br/> <br/> Cơ chế an ninh nào cũng có giá của nó. Việc tạo ra một chữ ký hay kiểm tra một chữ ký tiêu tốn  hàng triệu clock cycle. Với DKIM, một server có xung nhịp cỡ GHz sẽ tiêu tốn thêm chừng 1 ms cho mỗi lá thư đến hay đi.<br/> <br/> <br/> <b>3. Phần mềm</b><br/> <br/> Các thành phần chính của mail server gồm<br/> <ul><li>FreeBSD operating system  v.7.2 – GENERIC kernel.</li><li> Postfix SMTP server v.2.6.</li><li> Gói milter của sendmail, mặc định được cài đặt sẵn (cùng với sendmail) trong FreeBSD.</li><li> Dkim milter v. 2.8.3 với libdkim 1.0.17.</li></ul><br/> <br/> <br/> <b>4. Môi trường và cấu hình tổng thể</b><br/> <br/> Trên cùng một máy với Postfix đã cài đặt và hoạt động như một sending MTA đồng thời như một receiving MTA, ta sẽ cài đặt dkim-milter và cấu hình nó thành bộ ký thư đồng thời thành bộ kiểm thư, nghĩa là có nhiệm vụ ký các lá thư gửi đi, kiểm tra chữ ký những lá thư nhận được và chặn chúng nếu không hợp lệ.<br/> <br/> Trước khi cài đặt dkim-milter, cần có các điều kiện sau.<br/> <ul><li>FreeBSD đã cài đặt và cập nhật những miếng vá mới nhất.</li><li> Ports collection đã cập nhật bản mới nhất.</li><li> Postfix đã cài đặt và hoạt động.</li><li> Firewall cục bộ phải mở một cổng trên lookback interface để qua đó Postfix liên lạc với dkim-milter. Chúng ta sẽ giả sử là cổng 8891 TCP.</li></ul><br/> <br/> <br/> <b>5. Cài đặt và cấu hình chi tiết</b><br/> <br/> 1. Cài đặt libdkim và dkim-milter<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>cd /usr/ports/mail/libdkim<br/> make install clean<br/> cd /usr/ports/mail/dkim-milter<br/> make install clean</pre><br/> 		</div><br/> <br/> Các chương trình đã cài vào gồm có<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>/usr/local/bin/dkim-genkey       #chương trình tạo khóa<br/> /usr/local/bin/dkim-testkey      #chương trình thử khóa<br/> /usr/local/bin/dkim-testssp<br/> /usr/local/libexec/dkim-filter   #chương trình chính<br/> /usr/local/etc/rc.d/milter-dkim  #script chạy chương trình chính<br/> /usr/local/share/doc/dkim-milter #tài liệu</pre><br/> 		</div><br/> <br/> 2. Tạo account dịch vụ, tức là một account không có home và shell, thuộc một group tương ứng cùng tên, chúng ta sẽ đặt tên account này là <u>dkim</u>. Chi tiết của việc này được bỏ qua.<br/> <br/> 3. Tạo các thư mục để chứa khóa. Nên đặt tên theo tên miền mail cần xác thực. Chúng ta sẽ giả sử rằng ta có một miền mail cần xác thực là <u>mycompany.com</u>.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>mkdir /etc/mail/dkim<br/> mkdir /etc/mail/dkim/keys<br/> mkdir /etc/mail/dkim/keys/mycompany.com<br/> cd /etc/mail/dkim/keys/mycompany.com</pre><br/> 		</div><br/> <br/> 4. Tạo một cặp khóa công khai/bí mật cho miền này. <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>dkim-genkey -d mycompany.com -s sitec -t</pre><br/> 		</div><br/> Trong đó  -d (domain) là tên miền mail,  -s (selector) là một từ bất kỳ tùy ý, chúng ta đặt là <u>sitec</u>, có tác dụng báo danh cặp khóa, nhờ nó mà có thể tạo ra và dùng đồng thời nhiều cặp khóa cho một miền mail, và -t nói rằng cặp khoá tạo ra dùng để test thử nghiệm; khi làm chính thức thì tạo cặp khoá mới cũng bằng lệnh này nhưng không có tham số -t. Lệnh này sẽ tạo ra trong thư mục hiện thời hai file<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>sitec.private<br/> sitec.txt</pre><br/> 		</div><br/> File thứ nhất, <u>sitec.private</u>, chứa khóa bí mật. Ta hãy đổi chủ và phân quyền truy cập nó. <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>chown dkim:dkim sitec.private<br/> chmod 600 sitec.private<br/> chown dkim:dkim /etc/mail/dkim/keys/mycompany.com<br/> chmod 700 /etc/mail/dkim/keys/mycompany.com</pre><br/> 		</div><br/> File thứ hai, <u>sitec.txt</u>, chứa khóa công khai. File này có nội dung đại khái như sau.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>sitec._domainkey IN TXT "v=DKIM1; g=*; k=rsa;<br/> p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/tmJXY+kdhPLEIzy8C6Etl+PXlr3zJ8ElX<br/> DUIyT7bBHE9z69igqffuIZ42eXTeJJBXNdrWlO4QBQ6H0knnpIvZid+VwG2GVfO98FT1F4YZGx4Np<br/> plZqebT6YCQLF/T9JGctjsAN197KrCT0ilChgVmekyeT5g8f1iXBWUE4kFXwIDAQAB" ; ----- DKIM sitec for mycompany.com</pre><br/> 		</div><br/> <br/> 5. Công bố khoá công khai lên DNS bằng cách tạo trong DNS forward lookup zone <u>mycompany.com</u> một TXT record có tên là <u>sitec._domainkey.mycompany.com.</u> và có giá trị là đoạn văn bản  <u>v=DKIM1; g=*; k=rsa; p=MIGfM...IDAQAB</u> trong file nói trên. Nếu DNS server của chúng ta là BIND, việc này thực hiện đơn giản bằng cách copy paste toàn bộ nội dung của file trên vào forward lookup zone file; còn nếu là DJBDNS, việc này có thể thực hiện bằng cách copy paste từng phần của file trên vào một trang web có sẵn trên mạng Internet tên là <u>djbdns / tinydns Record Builder</u> (người đọc tự tìm), sau đó copy paste dòng kết quả từ trang web này vào file dữ liệu của DJBDNS.<br/> <br/> Ngoài ra, ta hãy công bố chính sách ký lên DNS. Hãy tạo tương tự như trên một TXT record có tên là <u>_adsp._domainkey.mycompany.com.</u> và có giá trị là <u>dkim=all</u> hoặc <u>dkim=discardable</u>; <u>all</u> tuyên bố rằng mọi lá thư của mycompany.com đều được ký, <u>discardable</u> tuyên bố rằng mọi lá thư từ mycompany.com không có chữ ký hợp lệ đều đáng vứt đi.<br/> <br/> 6. Sửa file cấu hình của Postfix. Trong file <u>/etc/postfix/main.cf</u> (hoặc /usr/local/etc/postfix/main.cf), viết thêm vài dòng như sau.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>milter_default_action = accept<br/> milter_protocol = 2           # hoặc 3<br/> smtpd_milters = inet:localhost:8891<br/> nonsmtpd_milters = inet:localhost:8891</pre><br/> 		</div><br/> <br/> 7. Tạo file cấu hình <u>/etc/mail/dkim-filter.conf</u>.  Ta có thể  sao chép từ cấu hình mẫu /usr/local/etc/mail/dkim-filter.conf.sample rồi sửa đổi vài tham số như sau.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>KeyFile    /etc/mail/dkim/keys/mycompany.com/sitec.private<br/> Socket     inet:8891@localhost <br/> Domain     mycompany.com<br/> Selector   sitec</pre><br/> 		</div><br/> <br/> 8. Sửa file cấu hình boot <u>/etc/rc.cf</u>, viết thêm vài dòng như sau.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>milterdkim_enable="YES"<br/> milterdkim_uid="dkim"<br/> milterdkim_profiles=""<br/> milterdkim_cfgfile="/etc/mail/dkim-filter.conf"</pre><br/> 		</div><br/> <br/> 9. Khởi động dkim-milter.<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>/usr/local/etc/rc.d/milter-dkim start</pre><br/> 		</div><br/> <br/> 10. Khởi động lại Postfix và DNS server. <br/> <br/> Nếu mọi bước trên đều làm chính xác, DKIM sẽ hoạt động. Ta có thể thử kiểm tra bằng cách gửi thư đến một địa chỉ chuyên dùng để thử nghiệm DKIM (người đọc tự tìm), hoặc đến một account của bản thân ở  gmail.com hay yahoo.com.<br/> <br/> <br/> <b>6. Các việc nên làm thêm</b><br/> <br/> Chúng ta đã cấu hình dkim-milter để ký và kiểm tra chữ ký, nhưng không cản lọc. Ta có thể chỉnh sửa file cấu hình dkim-filter.conf để lọc và cản các thư không có chữ ký DKIM hợp lệ đến từ những miền nhất định (chẳng hạn, những miền có chính sách <u>discardable</u>).<br/> <br/> <br/> <b>7. Tài liệu tham khảo</b><br/> <br/> [1]	Allman E. và một số tác giả khác: DomainKeys Identified Mail (DKIM) Signatures. RFC 4871. IETF Standards Track. 2007.<br/> [2]	Kucherawy M.: Message Header Field for Indicating Message Authentication Status. RFC 5451. IETF Standards Track. 2009.<br/> [3]	Allman E. và một số tác giả khác: DomainKeys Identified Mail (DKIM) Author Domain Signing Practices (ADSP) . RFC 5617. IETF Standards Track. 2009.<br/> [4]	Sendmail: FreeBSD man pages: dkim-filter(8), dkim-filter.conf(5), dkim-genkey(8).<br/> [5]	Postfix: Postfix before-queue Milter support.</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/190229.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><b>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</b></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/30837.hva#190229" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

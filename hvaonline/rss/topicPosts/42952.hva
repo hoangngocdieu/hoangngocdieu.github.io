@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Ngày nay, hệ thống giám sát đóng một vai trò quan trọng giúp theo dõi, kiểm tra sức khỏe, cung cấp thông tin và đưa ra cảnh báo khi có vấn đề xảy ra với các thành phần trong hạ tầng, ứng dụng công nghệ thông tin của tổ chức. Một hệ thống giám sát tốt cần có khả năng phát hiện nhanh chóng và chính xác những sự cố xảy ra và kịp thời gửi thông báo rõ ràng qua nhiều phương tiện như màn hình, email, tin nhắn tới người quản trị hệ thống.
+
+Việc triển khai hệ thống cảnh báo qua SMS này đã được mình thực hiện thành công trên cả môi trường ảo hóa lẫn máy chủ thực và bước đầu làm việc tốt với thiết bị D-Com 3G của Viettel.
+
+<b><font color='yellow'>1)	GIỚI THIỆU TỔNG QUAN</font></b>
+
+Hệ thống giám sát và cảnh báo qua SMS được triển khai trong bài này về cơ bản bao gồm các thành phần và hoạt động được mô tả như hình dưới đây:
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/07/sms_alert_system.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>•	Máy Monitor sẽ gồm:</b>
+
+-	<b>Phần mềm Nagios</b> giúp giám sát các bộ phận, thông số quan trọng của hạ tầng CNTT như: system metric (CPU load, RAM usage, disk usage, loaded processes, v.v..), network protocol (HTTP, SSH, FTP, SMTP, IMAP, POP3, v.v..), application (mail, web, database v.v..), service (DNS, DHCP, v.v..), server (Windows, UNIX, v.v..), network device (router, switch, firewall, v.v..).
+
+-	<b>Phần mềm Gammu</b> giúp truy cập tới các thiết bị điện thoại (trong đó có USB 3G), điều khiển việc gửi và nhận SMS cùng nhiều chức năng khác về quản lý cuộc gọi và danh bạ.
+
+-	<b>Thiết bị D-Com 3G</b> đóng vai trò làm GSM modem, liên lạc với nhà mạng di động để thực hiện việc gửi tin nhắn SMS.
+
+•	Khi có các sự kiện ngưng trễ hoặc khôi phục hoạt động từ các thành phần được giám sát, Nagios sẽ tự động tạo ra các thông báo. Nội dung của thông điệp cảnh báo này sẽ được truyền cho Gammu và từ đó đẩy tới thiết bị USB 3G rồi gửi tới số điện thoại của người quản trị.
+
+Các phần tiếp theo sẽ giải trình các bước để thực hiện cài đặt, cấu hình và vận hành hệ thống cảnh báo qua SMS này.
+
+<b><font color='yellow'>2)	CÀI ĐẶT VÀ CẤU HÌNH HỆ THỐNG CẢNH BÁO QUA SMS</font></b>
+
+<b><font color='orange'>2.1)	Yêu cầu và chuẩn bị</font></b>
+
+•	Một Nagios monitoring server
+
+•	Một USB 3G, ở đây sử dụng thiết bị D-Com 3G của Viettel.
+
+•	Gói mã nguồn của Gammu, tải về phiên bản 1.32.0 tại địa chỉ:<span class="link"> http://sourceforge.net/projects/gammu/files/gammu/1.32.0/gammu-1.32.0.tar.bz2</span>
+
+o	Các gói phụ thuộc bắt buộc cho Gammu là: CMake, pkg-config
+o	Các gói phụ thuộc tùy chọn giúp mở rộng tính năng cho Gammu là: Bluez-libs, libusb-1.0, libCURL, libiconv, Gettext, MySQL, PostgreSQL, unixODBC, libdbi, Python SQLite + libdbi-drivers + SQLite.
+
+•	Nếu máy Nagios chưa nhận ra D-Com 3G như là một USB modem thì cần cài thêm gói usb_modeswitch  để chuyển từ chế độ storage sang modem. Tải về mã nguồn của phiên bản 1.2.3 tại:<span class="link"> http://www.draisberghof.de/usb_modeswitch/usb-modeswitch-data-20120531.tar.bz2</span><span class="link"> http://www.draisberghof.de/usb_modeswitch/usb-modeswitch-1.2.3.tar.bz2</span>
+
+o	Các gói phụ thuộc cần thiết cho usb_modeswitch là: libusb-devel, tcl
+
+•	Các gói make, gcc để phục vụ quá trình biên dịch và cài đặt chương trình từ mã nguồn.
+
+•	Cần tới quyền root trong quá trình cài đặt và cấu hình hệ thống.
+
+<b><font color='orange'>2.2)	Các bước thực hiện</font></b>
+
+<b>2.2.1	Kết nối USB 3G tới máy Nagios</b>
+
+-	Kiểm tra xem máy Nagios đã nhận ra USB 3G là một GSM modem hay chưa. Gõ lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># dmesg | grep GSM</pre>
+		</div>
+
+Nếu thấy output như dưới đây thì ta chuyển qua bước 2.2.2 để làm tiếp
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>USB Serial support registered for GSM modem &#40;1-port&#41;
+option 1-1:1.0: GSM modem &#40;1-port&#41; converter detected
+usb 1-1: GSM modem &#40;1-port&#41; converter now attached to ttyUSB0
+....</pre>
+		</div>
+
+(để ý là tập tin đại diện cho thiết bị là <b>/dev/ttyUSB0</b>)
+
+-	Nếu output trống rỗng thì cần thêm gói usb_modeswitch. Trình tự cài đặt như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar jxf usb-modeswitch-data-20120531.tar.bz2
+# cd usb-modeswitch-data-20120531
+# make install
+# tar jxf usb-modeswitch-1.2.3.tar.bz2
+# cd usb-modeswitch-1.2.3
+# make install</pre>
+		</div>
+
+<b>2.2.2	Biên dịch và cài đặt Gammu</b>
+
+-	Giải nén gói mã nguồn của Gammu:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar jxvf gammu-1.32.0.tar.bz</pre>
+		</div>2
+
+-	Chuyển vào thư mục vừa được giải nén ở trên:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cd gammu-1.32.0</pre>
+		</div>
+
+-	Chạy các lệnh sau để cấu hình, biên dịch và cài đặt Gammu:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ./configure
+# make
+# make install</pre>
+		</div>
+
+-	Kiểm tra bằng lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># gammu</pre>
+		</div>
+
+-	Nếu nhận được thông báo lỗi liên quan tới library thì chạy 2 dòng lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ln -s /usr/local/lib/libGammu.so.7 /usr/lib/libGammu.so.7
+# ln -s /usr/local/lib/libgsmsd.so.7 /usr/lib/libgsmsd.so.7</pre>
+		</div>
+
+<b>2.2.3	Cấu hình Gammu để gửi SMS</b>
+
+-	Tạo tập tin chứa thông số cấu hình của USB 3G cho Gammu:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># vi /etc/gammurc</pre>
+		</div>
+
+Với nội dung mẫu như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;gammu&#93;
+port = /dev/ttyUSB0			//đường dẫn tới tập tin device của thiết bị
+connection = at19200		//loại kết nối, tương thích với tập lệnh AT</pre>
+		</div>
+
+Ngoài ra, có thể sử dụng lệnh sau để cấu hình dễ dàng cấu hình các thông số bằng giao diện đồ họa:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># gammu-config</pre>
+		</div>
+
+-	Xác nhận USB 3G đã được nhận dạng thành công:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># gammu --identify
+
+Device               : /dev/ttyUSB3
+Manufacturer         : ZTE CORPORATION
+Model                : unknown &#40;MF190S&#41;
+Firmware             : BD_MF190SV1.0.0B01
+IMEI                 : 864482000915806</pre>
+		</div>
+
+Ngoài ra còn có 2 lệnh sau để theo dõi hoạt động của thiết bị cũng như thông tin về mạng di động:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># gammu –-monitor
+# gammu –-networkinfo</pre>
+		</div>
+
+-	Nagios chạy với quyền của user nagios, vậy nên nếu muốn Nagios gửi được SMS thì user nagios phải có quyền truy cập tới các tập tin device, config và binary của Gammu. Chạy các lệnh sau để gán các quyền thích hợp đó cho user nagios:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cp /etc/gammurc /home/nagios/.gammurc
+# chown nagios.nagios /home/nagios/.gammurc
+# chmod 4755 /usr/bin/gammu
+# usermod -a -G dialout nagios
+# usermod -a -G dialout apache</pre>
+		</div>
+
+-	Chuyển qua user nagios và thử gửi một SMS mẫu:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># su - nagios
+$ echo "test SMS nagios" | gammu --sendsms TEXT +84932xxxxxx</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>If you want break, press Ctrl+C...
+Sending SMS 1/1....waiting for network answer..OK, message reference=181</pre>
+		</div>
+
+Nếu số điện thoại trong câu lệnh ở trên nhận được thông điệp “test SMS nagios” thì việc cấu hình để Gammu gửi đi SMS đã thành công. Tiếp theo sẽ cấu hình cho Nagios.
+
+<b>2.2.4	Cấu hình Nagios để gửi SMS theo nhóm</b>
+
+Phần này sẽ trình bày các bước để khởi tạo và định nghĩa các contact cho những cá nhân và nhóm sẽ nhận được cảnh báo khi một máy tính, thiết bị hay dịch vụ nào đó trong hệ thống xảy ra sự cố.
+
+-	Đầu tiên, cần thêm vào 2 câu lệnh để thực hiện việc gửi SMS tới các số điện thoại của các contact được định nghĩa trong tập tin contacts.cfg. Mở tập tin <i>/usr/local/nagios/etc/objects/commands.cfg</i> và bổ sung nội dung mẫu sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># 'notify-host-by-sms' command definition
+define command{
+        command_name    notify-host-by-sms
+        command_line    /usr/bin/printf "%b" "*** Nagios ***\n Notification Type: $NOTIFICATIONTYPE$\n Host: $HOSTNAME$\n State: $HOSTSTATE$\n Address: $HOSTADDRESS$\n Info: $HOSTOUTPUT$\n Date/Time: $LONGDATETIME$" | /usr/local/bin/gammu --sendsms TEXT $CONTACTPAGER$
+        }
+
+# 'notify-service-by-sms' command definition
+define command{
+        command_name    notify-service-by-sms
+        command_line    /usr/bin/printf "%b" "*** Nagios ***\n Notification Type: $NOTIFICATIONTYPE$\n Service: $SERVICEDESC$\n Host: $HOSTALIAS$\n Address: $HOSTADDRESS$\n State: $SERVICESTATE$\n Date/Time: $LONGDATETIME$\n Additional Info: $SERVICEOUTPUT$" | /usr/local/bin/gammu --sendsms TEXT $CONTACTPAGER$</pre>
+		</div>
+
+-	Sau đó, tùy chỉnh lại mẫu generic-contact mà Nagios cung cấp sẵn sau khi cài đặt để các contact được tạo ở bước sau sẽ nhận được thông báo qua SMS. Mở tập tin <i>/usr/local/nagios/etc/objects/templates.cfg</i> và sửa mục generic-contact như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define contact{
+       name                            generic-contact
+       service_notification_period     24x7
+       host_notification_period        24x7
+       service_notification_options    w,u,c,r
+       host_notification_options       d,u,r
+       service_notification_commands   notify-service-by-sms
+,notify-service-by-email
+       host_notification_commands      notify-service-by-sms
+,notify-host-by-email
+       register                        0
+}</pre>
+		</div>
+
+-	Tiếp đến, thêm mới các contact cho những người muốn nhận thông báo qua email và SMS từ Nagios. Mở tập tin <i>/usr/local/nagios/etc/objects/contacts.cfg</i> và bổ sung nội dung mẫu sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define contact{
+       contact_name                    manthang                        
+       use                             generic-contact                 
+       alias                           Thang Man &#40;Sysadmin&#41;
+       email                           manthang@gmail.com
+       pager                           +84983xxxxxx	//thay bằng sđt thực
+}
+
+define contact{
+       contact_name                    hoangbao                        
+       use                             generic-contact                 
+       alias                           Bao Hoang &#40;Database&#41;
+       email                           hoangbao@gmail.com
+       pager                           +84123xxxxxx	//thay bằng sđt thực
+}</pre>
+		</div>
+
+-	Giờ ta sẽ gom nhóm các contact  để gửi các thông báo thích hợp. Ví dụ, các thông báo liên quan tới thiết bị mạng chỉ được gửi tới nhóm network, thông báo liên quan tới máy chủ  sẽ được gửi tới nhóm system, thông báo liên quan tới CSDL thì gửi tới nhóm database, v.v… Cũng trong tập tin contacts.cfg trên, tạo thêm các contactgroup theo mẫu sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define contactgroup{
+       contactgroup_name               db-admins
+       alias                           Database Administrators
+       members                         hoangbao,manthang
+}
+
+define contactgroup{
+       contactgroup_name               unix-admins
+       alias                           Linux System Administrator
+       members                         manthang
+}</pre>
+		</div>
+
+-	Việc khai báo các contact ở trên không có nghĩa là họ sẽ nhận được thông báo mà ta cần liên kết các contactgroup tới một dịch vụ hoặc máy tính nào đó cần giám sát. Ví dụ, trong thư mục <i>/usr/local/nagios/etc/objects/</i> tạo ra 2 tập tin <i>email-server.cfg</i> và <i>db-server.cfg</i> rồi định nghĩa như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// trong email-server.cfg
+define host{
+       use                             linux-server
+       host_name                       email-server
+       alias                           Zimbra Server
+       address                         192.168.1.16
+       contact_groups                  unix-admins	//nhóm Unix sẽ nhận notify
+}
+
+// trong db-server.cfg
+define service{
+       use                             generic-service
+       host_name                       mysql-db
+       service_description             MySQL Database Status
+       contact_groups                  db-admins		//nhóm DB sẽ nhận notify
+       check_command                   check_nrpe!check_mysql_db
+}</pre>
+		</div>
+
+-	Kế đến, thêm 2 object trên vào tập tin cấu hình  chính của Nagios bằng cách mở tập tin <i>/usr/local/nagios/etc/nagios.cfg</i> và thêm vào 2 dòng sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cfg_file=/usr/local/nagios/etc/objects/email-server.cfg
+cfg_file=/usr/local/nagios/etc/objects/db-server.cfg</pre>
+		</div>
+
+-	Cuối cùng, chạy các lệnh sau để kiểm tra cấu hình và khởi động lại Nagios
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+# /etc/init.d/nagios restart</pre>
+		</div>
+
+Giờ thử ngưng hoạt động của một máy tính, thiết bị hay dịch vụ nào đó thì sau một khoảng thời gian quy định trước, Nagios sẽ kiểm tra trạng thái và gửi đi SMS và email thông báo tình trạng của chúng tới số điện thoại và hộp thư của người quản trị.
+
+<b><font color='yellow'>3	HƯỚNG PHÁT TRIỂN</font></b>
+
+Cải tiến hệ thống giám sát và cảnh báo dùng Nagios và Gammu để ngoài gửi thông tin, cảnh báo thì hệ thống còn có thể nhận các xác nhận, chỉ lệnh từ điện thoại của người quản trị.
+
+<b><font color='yellow'>4	THAM KHẢO</font></b>
+
+[1] Sébastien Wains. Nagios + SMS notifications with Gammu and Siemens MC35i. Xem tại:<span class="link"> http://blog.wains.be/2010/01/05/nagios-sms-notifications-gammu-siemensmc35i,</span> 2010.
+
+[2] Centreon Wiki Team. How To Send SMS With Gammu. Xem tại:<span class="link"> http://en.doc.centreon.com/HowToSendSMSWithGammu,</span> 2011.
+
+[3] Tentang Saya. Install and configure gammu in CentOS 6. Xem tại:<span class="link"> http://irhamnurhalim.wordpress.com/2012/02/09/install-dan-configure-gammu-di-centos-6,</span> 2012
+
+[4] Matt Bottrell. Nagios 2-way alerting via SMS. Xem tại:<span class="link"> http://matt.bottrell.com.au/archives/170-Nagios-2-way-alerting-via-SMS-Part-1.html,</span> 2008]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267248</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 03:57:40]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">manthang wrote:</cite><br>
+		<blockquote>
+-	Giờ ta sẽ gom nhóm các contact  để gửi các thông báo thích hợp. Ví dụ, các thông báo liên quan tới thiết bị mạng chỉ được gửi tới nhóm network, thông báo liên quan tới máy chủ  sẽ được gửi tới nhóm system, thông báo liên quan tới CSDL thì gửi tới nhóm database, v.v… &nbsp;
+		</blockquote>
+Có một việc nữa mình nghĩ là nên làm, đó là: WARNING state thì chỉ nên gửi mail, còn CRITICAL state mới bắn sms.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267249</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267249</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 04:06:39]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Đúng như bác Quanta nói, trước em có test cái sms này trên Zabbix + Gnokii bị nhận sms hoài. Khi 1 service die, nó sms liên tục.
+
+Còn việc build server để làm việc này em thấy lựa chọn Ubuntu là hợp lý :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267350</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267350</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 05:05:53]]> GMT</pubDate>
+				<author><![CDATA[ traunui]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">traunui wrote:</cite><br>
+		<blockquote>Đúng như bác Quanta nói, trước em có test cái sms này trên Zabbix + Gnokii bị nhận sms hoài. Khi 1 service die, nó sms liên tục.
+
+Còn việc build server để làm việc này em thấy lựa chọn Ubuntu là hợp lý :D&nbsp;
+		</blockquote>
+
+Ngoài việc chọn những state nào thực sự cần kíp mới notify qua SMS thì có thể chỉnh lại số lần thử check, khoảng thời gian giữa 2 lần check, sau bao lâu mới re-send notifications để hạn chế việc bị nhận SMS liên tục.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267352</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 06:07:00]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">traunui wrote:</cite><br>
+		<blockquote>Đúng như bác Quanta nói, trước em có test cái sms này trên Zabbix + Gnokii bị nhận sms hoài. Khi 1 service die, nó sms liên tục.
+
+Còn việc build server để làm việc này em thấy lựa chọn Ubuntu là hợp lý :D&nbsp;
+		</blockquote>
+
+Mình cũng đã thử qua Ubuntu Server nhưng rồi lại quay lại CentOS bản minimal.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267353</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267353</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 06:07:12]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">manthang wrote:</cite><br>
+		<blockquote>
+Mình cũng đã thử qua Ubuntu Server nhưng rồi lại quay lại CentOS bản minimal.&nbsp;
+		</blockquote>
+
+Em test trên máy ảo với CentOS việc config USB 3g gặp khó khăn nên đã chuyển sang Ubuntu và thấy nó đơn giản hơn rất nhiều + các tools Monitor này rất sẵn để apt-get :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267362</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267362</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 09:55:32]]> GMT</pubDate>
+				<author><![CDATA[ traunui]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ SMSC thay thế thành BTS là hợp lý nhất, mà manthang hay anh em có sử dụng qua USB 3G của Mobiphone rồi chưa, có gặp tình trạng như mình dưới đây không vậy cà ? 
+Anh có dùng Cacti mọi việc đều ổn nhưng có điều, có lúc tin nhắn gởi ngay lập tức khi interfaces nào đó bị sự cố (down vật lý, chừng 1 phút) có lúc interfaces đó nữa ngày sau anh mới nhận được alarm gởi đến máy điện thoại sử dụng sim của Vinaphone mặc dù Vinaphone và Mobiphone gần như sử dụng cơ sở hạ tầng như nhau :)  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267369</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267369</link>
+				<pubDate><![CDATA[Mon, 23 Jul 2012 13:01:10]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ mới đọc sơ qua bài viết thôi
+
+chưa rõ lắm, chưa thực hành lại
+
+tuy nhiên...rất cảm ơn anh vì tinh thần share for all ^^
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267442</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267442</link>
+				<pubDate><![CDATA[Tue, 24 Jul 2012 21:48:57]]> GMT</pubDate>
+				<author><![CDATA[ boy_popping]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Dear ca nha`!
+A nào cho e hỏi mới e đang build thang gammu mà nó báo lỗi thế này ạ:
+
+
+/usr/bin/ld: /usr/local/lib/libpython2.6.a(abstract.o): relocation R_X86_64_32 against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+/usr/local/lib/libpython2.6.a: could not read symbols: Bad value
+collect2: ld returned 1 exit status
+make[3]: *** [python/gammu/_gammu.so] Error 1
+make[3]: Leaving directory `/usr/local/src/gammu-1.32.0/build-configure'
+make[2]: *** [python/gammu/CMakeFiles/python_gammu.dir/all] Error 2
+make[2]: Leaving directory `/usr/local/src/gammu-1.32.0/build-configure'
+make[1]: *** [all] Error 2
+make[1]: Leaving directory `/usr/local/src/gammu-1.32.0/build-configure'
+make: *** [all] Error 2
+
+Có a nào gặp vs đã fix được lỗi thì bào e mới. thanks so much..]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267445</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267445</link>
+				<pubDate><![CDATA[Tue, 24 Jul 2012 22:12:20]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Cảm ơn Manthang, mình cũng đang cần cái này.
+Hiện tại mình đã triển khai thành công trên CentOS 6.2 - minimal :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267447</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267447</link>
+				<pubDate><![CDATA[Tue, 24 Jul 2012 22:28:09]]> GMT</pubDate>
+				<author><![CDATA[ tarzanvip]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Dear ca nha`!
+A nào cho e hỏi mới e đang build thang gammu mà nó báo lỗi thế này ạ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/bin/ld: /usr/local/lib/libpython2.6.a&#40;abstract.o&#41;: relocation R_X86_64_32 against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+/usr/local/lib/libpython2.6.a: could not read symbols: Bad value</pre>
+		</div>
+
+Có a nào gặp vs đã fix được lỗi thì bào e mới. thanks so much..&nbsp;
+		</blockquote><span class="link"> http://www.gentoo.org/proj/en/base/amd64/howtos/index.xml?part=1&chap=3</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267467</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267467</link>
+				<pubDate><![CDATA[Wed, 25 Jul 2012 03:30:35]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Ngoài 3g thì thàng gammu còn hỗ trợ 1 đống điện thoại di động khác, http://wammu.eu/phones/. 
+
+Chỉ cần thay đổi tệp tin cấu hình của wammu là được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267495</link>
+				<pubDate><![CDATA[Wed, 25 Jul 2012 22:00:03]]> GMT</pubDate>
+				<author><![CDATA[ 0x00a]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Hi ca nha`!
+
+E sử dụng máy ảo connect đến usb 3g. Nhưng nó chỉ nhận ở dạng storage mà không hề chuyển sang chế độ
+modem. E đã cài đặt các gói modem-switch.
+tuy nhiên khi check lại: dmesg | grep GSM
+output chỉ hiện ra:
+USB Serial support registered for GSM modem (1-port)
+USB version v0.7
+không thông báo :
+option 1-1:1.0: GSM modem (1-port) converter detected
+usb 1-1: GSM modem (1-port) converter now attached to ttyUSB0
+Có bác nào biết hoặc đã gặp lỗi này không ạ. e search hoài không thấy. thanks for help! :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267682</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267682</link>
+				<pubDate><![CDATA[Sun, 29 Jul 2012 20:59:35]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Hi ca nha`!
+
+E sử dụng máy ảo connect đến usb 3g. Nhưng nó chỉ nhận ở dạng storage mà không hề chuyển sang chế độ
+modem. E đã cài đặt các gói modem-switch.
+tuy nhiên khi check lại: dmesg | grep GSM
+output chỉ hiện ra:
+USB Serial support registered for GSM modem (1-port)
+USB version v0.7
+không thông báo :
+option 1-1:1.0: GSM modem (1-port) converter detected
+usb 1-1: GSM modem (1-port) converter now attached to ttyUSB0
+Có bác nào biết hoặc đã gặp lỗi này không ạ. e search hoài không thấy. thanks for help! :)&nbsp;
+		</blockquote>
+
+1. phiên bản kernel của distro bạn đang dùng? ở bài này mình dùng CentOS 6.2 với kernel version = 2.6.32. với kernel cũ quá như 2.6.18 mà mình từng test với CentOS 5.5 thì không nhận được USB 3G.
+2. nếu trong USB có gói driver cho Linux thì cài thêm thử
+3. model USB 3G của bạn? mình test OK với hàng của Huewei (3G Viettel) và ZTE.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267712</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267712</link>
+				<pubDate><![CDATA[Mon, 30 Jul 2012 06:05:44]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Hi ca nha`!
+
+E sử dụng máy ảo connect đến usb 3g. Nhưng nó chỉ nhận ở dạng storage mà không hề chuyển sang chế độ
+modem. E đã cài đặt các gói modem-switch.
+tuy nhiên khi check lại: dmesg | grep GSM
+output chỉ hiện ra:
+USB Serial support registered for GSM modem (1-port)
+USB version v0.7
+không thông báo :
+option 1-1:1.0: GSM modem (1-port) converter detected
+usb 1-1: GSM modem (1-port) converter now attached to ttyUSB0
+Có bác nào biết hoặc đã gặp lỗi này không ạ. e search hoài không thấy. thanks for help! :)&nbsp;
+		</blockquote>
+
+1. phiên bản kernel của distro bạn đang dùng? ở bài này mình dùng CentOS 6.2 với kernel version = 2.6.32. với kernel cũ quá như 2.6.18 mà mình từng test với CentOS 5.5 thì không nhận được USB 3G.
+2. nếu trong USB có gói driver cho Linux thì cài thêm thử
+3. model USB 3G của bạn? mình test OK với hàng của Huewei (3G Viettel) và ZTE.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267710</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267710</link>
+				<pubDate><![CDATA[Mon, 30 Jul 2012 06:05:57]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Hi ca nha`!
+
+E sử dụng máy ảo connect đến usb 3g. Nhưng nó chỉ nhận ở dạng storage mà không hề chuyển sang chế độ
+modem. E đã cài đặt các gói modem-switch.
+tuy nhiên khi check lại: dmesg | grep GSM
+output chỉ hiện ra:
+USB Serial support registered for GSM modem (1-port)
+USB version v0.7
+không thông báo :
+option 1-1:1.0: GSM modem (1-port) converter detected
+usb 1-1: GSM modem (1-port) converter now attached to ttyUSB0
+Có bác nào biết hoặc đã gặp lỗi này không ạ. e search hoài không thấy. thanks for help! :)&nbsp;
+		</blockquote>
+
+1. phiên bản kernel của distro bạn đang dùng? ở bài này mình dùng CentOS 6.2 với kernel version = 2.6.32. với kernel cũ quá như 2.6.18 mà mình từng test với CentOS 5.5 thì không nhận được USB 3G.
+2. nếu trong USB có gói driver cho Linux thì cài thêm thử
+3. model USB 3G của bạn? mình test OK với hàng của Huewei (3G Viettel) và ZTE.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267711</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267711</link>
+				<pubDate><![CDATA[Mon, 30 Jul 2012 06:06:14]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Hi ca nha`!
+
+E sử dụng máy ảo connect đến usb 3g. Nhưng nó chỉ nhận ở dạng storage mà không hề chuyển sang chế độ
+modem. E đã cài đặt các gói modem-switch.
+tuy nhiên khi check lại: dmesg | grep GSM
+output chỉ hiện ra:
+USB Serial support registered for GSM modem (1-port)
+USB version v0.7
+không thông báo :
+option 1-1:1.0: GSM modem (1-port) converter detected
+usb 1-1: GSM modem (1-port) converter now attached to ttyUSB0
+Có bác nào biết hoặc đã gặp lỗi này không ạ. e search hoài không thấy. thanks for help! :)&nbsp;
+		</blockquote>
+
+1. phiên bản kernel của distro bạn đang dùng? ở bài này mình dùng CentOS 6.2 với kernel version = 2.6.32. với kernel cũ quá như 2.6.18 mà mình từng test với CentOS 5.5 thì không nhận được USB 3G.
+2. nếu trong USB có gói driver cho Linux thì cài thêm thử
+3. model USB 3G của bạn? mình test OK với hàng của Huewei (3G Viettel) và ZTE.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267713</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267713</link>
+				<pubDate><![CDATA[Mon, 30 Jul 2012 06:06:26]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Dear!
+
+Thanks bạn! Đúng là do mình dùng centos5.x nên usb ko thể nhận được như vậy.
+Cho mình hỏi một chút bạn đã thử test phần time repeat của report nagios khi có lỗi chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267903</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267903</link>
+				<pubDate><![CDATA[Thu, 2 Aug 2012 02:24:58]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Dear!
+
+Thanks bạn! Đúng là do mình dùng centos5.x nên usb ko thể nhận được như vậy.
+Cho mình hỏi một chút bạn đã thử test phần time repeat của report nagios khi có lỗi chưa?&nbsp;
+		</blockquote>
+
+không hiểu time repeat trong Nagios bạn nói ở trên là gì?
+nhân tiện, nhờ mod/admin xoá giúp em mấy comment bị trùng lắp (#15 -&gt; #17) ở trên. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267927</link>
+				<pubDate><![CDATA[Thu, 2 Aug 2012 08:48:23]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ thiết bị Huewei của Tàu có 2 dòng mới bị phát hiện có backdoor . Không biết bác ở trên xài khéo lại dính thì :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267934</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267934</link>
+				<pubDate><![CDATA[Thu, 2 Aug 2012 10:10:14]]> GMT</pubDate>
+				<author><![CDATA[ thientm]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ thiết bị Huewei của Tàu có 2 dòng mới bị phát hiện có backdoor . Không biết bác ở trên xài khéo lại dính thì :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267935</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267935</link>
+				<pubDate><![CDATA[Thu, 2 Aug 2012 10:10:26]]> GMT</pubDate>
+				<author><![CDATA[ thientm]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Dear !
+
+í mình nói ở đây là thời gian cách nhau nó gửi tin report đến email hoặc sms.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267951</link>
+				<pubDate><![CDATA[Thu, 2 Aug 2012 21:31:05]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Dear !
+
+í mình nói ở đây là thời gian cách nhau nó gửi tin report đến email hoặc sms.&nbsp;
+		</blockquote>
+notification_interval? Bạn test nó không hoạt động như ý muốn hay là sao?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267972</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#267972</link>
+				<pubDate><![CDATA[Fri, 3 Aug 2012 04:55:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ SMS giới hạn bao nhiêu ký tự vậy anh/em ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#268698</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#268698</link>
+				<pubDate><![CDATA[Thu, 23 Aug 2012 22:36:22]]> GMT</pubDate>
+				<author><![CDATA[ phuongnvt]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phuongnvt wrote:</cite><br>
+		<blockquote>SMS giới hạn bao nhiêu ký tự vậy anh/em ?&nbsp;
+		</blockquote>
+
+Trích từ link này:<span class="link"> http://wammu.eu/docs/manual/gammu/</span>
+
+- Send text message up to standard 160 chars:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo "All your base are belong to us" | gammu sendsms TEXT 123456</pre>
+		</div>
+
+- Send long text message:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo "All your base are belong to us" | gammu sendsms TEXT 123456 -len 400</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#268744</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#268744</link>
+				<pubDate><![CDATA[Sat, 25 Aug 2012 05:20:23]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Mình đang bị lỗi tin nhắn có dấu $: VD: Service: $, lỗi macro 'SERVICEDESC'. Không biết có bác nào bị không?
+-----------------------------------
+[1375820667.019202] [2048.1] [pid=22474] **** BEGIN MACRO PROCESSING ***********
+[1375820667.019211] [2048.1] [pid=22474] Processing: '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: $NOTIFICATIONTYPE$\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\nDate/Time: $LONGDATETIME$\nAdditional Info: $SERVICEOUTPUT$" | /usr/local/bin/gammu --sendsms TEXT $CONTACTPAGER$'
+[1375820667.019221] [2048.2] [pid=22474]   Processing part: '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: '
+[1375820667.019231] [2048.2] [pid=22474]   Not currently in macro.  Running output (57): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: '
+[1375820667.019240] [2048.2] [pid=22474]   Processing part: 'NOTIFICATIONTYPE'
+[1375820667.019260] [2048.2] [pid=22474]   macros[29] (NOTIFICATIONTYPE) match.
+[1375820667.019276] [2048.2] [pid=22474]   Processed 'NOTIFICATIONTYPE', Clean Options: 0, Free: 0
+[1375820667.019286] [2048.2] [pid=22474]   Processed 'NOTIFICATIONTYPE', Clean Options: 0, Free: 0
+[1375820667.019295] [2048.2] [pid=22474]   Cleaning options: global=3, local=0, effective=3
+[1375820667.019306] [2048.2] [pid=22474]   Cleaned macro.  Running output (64): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM'
+[1375820667.019316] [2048.2] [pid=22474]   Just finished macro.  Running output (64): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM'
+[1375820667.019325] [2048.2] [pid=22474]   Processing part: '\nService: '
+[1375820667.019342] [2048.2] [pid=22474]   Not currently in macro.  Running output (75): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM\nService: '
+[1375820667.019352] [2048.2] [pid=22474]   Processing part: 'SERVICEDESC'
+[1375820667.019362] [2048.2] [pid=22474]   macros[3] (SERVICEDESC) match.
+[1375820667.019372] [2048.2] [pid=22474]   <font color='red'>Processed 'SERVICEDESC', Clean Options: 0, Free: 1
+[1375820667.019381] [2048.0] [pid=22474]  WARNING: An error occurred processing macro 'SERVICEDESC'!</font>
+[1375820667.019390] [2048.2] [pid=22474]   Non-macro.  Running output (75): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM\nService: '
+[1375820667.019400] [2048.2] [pid=22474]   Processing part: '\nHost: '
+[1375820667.019410] [2048.2] [pid=22474]   Not currently in macro.  Running output (96): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM\nService: $SERVICEDESC$\nHost: '
+[1375820667.019419] [2048.2] [pid=22474]   Processing part: 'HOSTALIAS'
+[1375820667.019429] [2048.2] [pid=22474]   macros[1] (HOSTALIAS) match.
+[1375820667.019440] [2048.2] [pid=22474]   Processed 'HOSTALIAS', Clean Options: 0, Free: 1
+[1375820667.019449] [2048.2] [pid=22474]   Processed 'HOSTALIAS', Clean Options: 0, Free: 1
+[1375820667.019458] [2048.2] [pid=22474]   Cleaning options: global=3, local=0, effective=3
+[1375820667.019469] [2048.2] [pid=22474]   Cleaned macro.  Running output (104): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM\nService: $SERVICEDESC$\nHost: Wireless'
+[1375820667.019478] [2048.2] [pid=22474]   Just finished macro.  Running output (104): '/usr/bin/printf "%b" "*** Nagios ***\nNotification Type: PROBLEM\nService: $SERVICEDESC$\nHost: Wireless'
+[1375820667.019488] [2048.2] [pid=22474]   Processing part: '\nAddress: ']]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278044</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278044</link>
+				<pubDate><![CDATA[Fri, 9 Aug 2013 10:23:39]]> GMT</pubDate>
+				<author><![CDATA[ boy20codon]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Config notify qua SMS như bên dưới:
+------------------------
+# 'notify-host-by-sms' command definition
+define command{
+	command_name notify-host-by-sms
+	command_line /usr/bin/printf "%b" "*** Nagios ***\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\nDate/Time: $LONGDATETIME$" | /usr/local/bin/gammu --sendsms TEXT $CONTACTPAGER$
+	}
+# 'notify-service-by-sms' command definition
+define command{
+	command_name notify-service-by-sms
+	command_line /usr/bin/printf "%b" "*** Nagios ***\nNotification Type: $NOTIFICATIONTYPE$\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\nDate/Time: $LONGDATETIME$\nAdditional Info: $SERVICEOUTPUT$" | /usr/local/bin/gammu --sendsms TEXT $CONTACTPAGER$
+	}
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278052</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278052</link>
+				<pubDate><![CDATA[Sat, 10 Aug 2013 03:18:24]]> GMT</pubDate>
+				<author><![CDATA[ boy20codon]]></author>
+			</item>
+			<item>
+				<title>Giám sát hệ thống và cảnh báo qua SMS sử dụng Nagios, Gammu và USB 3G</title>
+				<description><![CDATA[ Mình đã fix lỗi trên, do cấu hình sai ở phần define contact (làm theo hướng dẫn của Thắng thì fix chỗ này nhé)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define contact{
+       name                            generic-contact
+       service_notification_period     24x7
+       host_notification_period        24x7
+       service_notification_options    w,u,c,r
+       host_notification_options       d,u,r
+       service_notification_commands   notify-service-by-sms
+,notify-service-by-email
+       host_notification_commands      &#91;color=red&#93;notify-service-by-sms&#91;/color&#93;
+,notify-host-by-email
+       register                        0
+}</pre>
+		</div>
+
+Sửa lại thành:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define contact{
+       name                            generic-contact
+       service_notification_period     24x7
+       host_notification_period        24x7
+       service_notification_options    w,u,c,r
+       host_notification_options       d,u,r
+       service_notification_commands   notify-service-by-sms
+,notify-service-by-email
+       host_notification_commands      &#91;color=red&#93;notify-host-by-sms&#91;/color&#93;
+,notify-host-by-email
+       register                        0
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278061</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42952.hva#278061</link>
+				<pubDate><![CDATA[Sat, 10 Aug 2013 10:13:41]]> GMT</pubDate>
+				<author><![CDATA[ boy20codon]]></author>
+			</item>
+	</channel>
+</rss>

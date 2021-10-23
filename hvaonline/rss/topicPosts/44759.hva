@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Vấn đề NAT trên MikroTik Routers"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Vấn đề NAT trên MikroTik Routers"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Vấn đề NAT trên MikroTik Routers</title>
+				<description><![CDATA[ Chào mọi người,
+
+Tôi đang gặp vấn đề khi triển khai NAT trên MikroTik Routers
+
+Môi hình kết nối của tôi như sau:
+
+internet &lt;---&gt;router &lt;---&gt; switch &lt;---&gt; sever
+
+Router wan IP = 113.161.8.xxx (static)
+Router LAN IP = 192.168.1.1 (static)
+Sever IP        = 192.168.1.7 (static)
+
+Tôi muốn toàn bộ truy cập vào IP 113.161.8.xxx sẽ được NAT vào server 192.168.1.7
+
+Tôi tạo 2 rule firewall cho MikroTik Routers như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>add chain=dstnat dst-address=113.161.8.xxx action=dst-nat to-addresses=192.168.1.7 disabled=no
+add chain=srcnat src-address=192.168.1.7 action=src-nat to-addresses=113.161.8.xxx disabled=no</pre>
+		</div>
+
+Trên 192.168.1.7 tôi có dịch vụ MySQL port 3306.
+
+Tôi thử telnel đến 113.161.1.xxx:3306, nhưng telnet báo lỗi kết nối.
+
+Xem trên log của MikroTik Routers
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>00:39:06 firewall,info dstnat: in:ether2-master-local out:&#40;none&#41;, proto TCP &#40;SYN&#41;,  192.168.1.9:7426-&gt;113.161.8.175:3306, len 52
+00:39:15 firewall,info dstnat: in:ether2-master-local out:&#40;none&#41;, proto TCP &#40;SYN&#41;, 192.168.1.9:7426-&gt;192.168.1.7:3306, len 48</pre>
+		</div>
+
+Xem tcptrack -i eth0 trên máy 192.168.1.7
+<br>
+			<div align="center" class="limitview"><img src='http://i.imgur.com/4mKlit0.png' border="0" onload="maxImg(this, 500px);" /></div>
+có connect nhưng log mysql không có gì cả.
+
+Nhờ mọi người tư vấn giúp tôi, thanks!
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275939</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275939</link>
+				<pubDate><![CDATA[Thu, 23 May 2013 05:13:42]]> GMT</pubDate>
+				<author><![CDATA[ thienphg]]></author>
+			</item>
+			<item>
+				<title>Vấn đề NAT trên MikroTik Routers</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thienphg wrote:</cite><br>
+		<blockquote>
+Tôi thử telnel đến 113.161.1.xxx:3306, nhưng telnet báo lỗi kết nối.
+&nbsp;
+		</blockquote>
+Cụ thể là lỗi gì vậy bạn?
+<p></p>
+		<cite class="blockquote">thienphg wrote:</cite><br>
+		<blockquote>
+Xem trên log của MikroTik Routers
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>00:39:06 firewall,info dstnat: in:ether2-master-local out:&#40;none&#41;, proto TCP &#40;SYN&#41;,  192.168.1.9:7426-&gt;113.161.8.175:3306, len 52
+00:39:15 firewall,info dstnat: in:ether2-master-local out:&#40;none&#41;, proto TCP &#40;SYN&#41;, 192.168.1.9:7426-&gt;192.168.1.7:3306, len 48</pre>
+		</div>
+
+Xem tcptrack -i eth0 trên máy 192.168.1.7
+<br>
+			<div align="center" class="limitview"><img src='http://i.imgur.com/4mKlit0.png' border="0" onload="maxImg(this, 500px);" /></div>
+&nbsp;
+		</blockquote>
+Sao ở trên thì lỗi mà ở đây lại ESTABLISHED nhỉ?
+<p></p>
+		<cite class="blockquote">thienphg wrote:</cite><br>
+		<blockquote>
+có connect nhưng log mysql không có gì cả.
+&nbsp;
+		</blockquote>
+Bạn thử dùng một chương trình MySQL client (ví dụ: `mysql -u &lt;user&gt; -h 113.161.1.xxx -p`) xem nó có hỏi password không.
+
+PS: DB mà nhô ra ngoài Internet thì không hay lắm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275948</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275948</link>
+				<pubDate><![CDATA[Thu, 23 May 2013 10:53:09]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Vấn đề NAT trên MikroTik Routers</title>
+				<description><![CDATA[ Vấn đề có thể nằm ở việc bạn đang dùng mạng local (192.168.1.9) để truy cập đến server.
+
+Khi bạn dùng mạng local để truy cập đến server bằng IP WAN thì dstnat như bình thường. Nhưng gói tin trả về từ server(192.168.1.7) do chung subnet nên sẽ không đi qua router (không được srcnat như mong muốn) và ip source vẫn như nguyên là 192.168.1.7 chứ không phải 113.161.1.xxx
+
+Bạn nên thử lại bằng cách truy cập từ ngoài internet về IP WAN xem có ok không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275996</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44759.hva#275996</link>
+				<pubDate><![CDATA[Sat, 25 May 2013 23:10:37]]> GMT</pubDate>
+				<author><![CDATA[ DECO]]></author>
+			</item>
+			<item>
+				<title>Vấn đề NAT trên MikroTik Routers</title>
+				<description><![CDATA[ Cảm ơn mod quanta đã move bài giúp tôi.
+
+Đúng như DECO nói: khi tôi dùng mạng bên ngoài thì việc NAT thành công. 
+Vậy có cách nào để NAT cho mạng bên trong 192.168.1.x?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44759.hva#276025</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44759.hva#276025</link>
+				<pubDate><![CDATA[Mon, 27 May 2013 05:35:33]]> GMT</pubDate>
+				<author><![CDATA[ thienphg]]></author>
+			</item>
+			<item>
+				<title>Vấn đề NAT trên MikroTik Routers</title>
+				<description><![CDATA[ -Theo mình biết mikrotik router có chức năng gộp các interface vào trong 1 LAN. Bạn có thể thử sử dụng theo sơ đồ này để ép gói tin trả về từ server phải qua router -&gt; thực hiện NAT.
+
+             ether1            ether3-slave-local ( ether2-master)
+internet &lt;------&gt;router&lt;-----------------------&gt; switch &lt;---&gt; Local
+       -----------------------|  ether2-master-local
+        --------------------server
+
+- Nếu cách trên không được thì tốt nhất là từ mạng local đến server bạn cứ dùng ip 192.168.1.7 thôi.
+
+
+                            ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44759.hva#276041</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44759.hva#276041</link>
+				<pubDate><![CDATA[Mon, 27 May 2013 21:17:59]]> GMT</pubDate>
+				<author><![CDATA[ DECO]]></author>
+			</item>
+	</channel>
+</rss>

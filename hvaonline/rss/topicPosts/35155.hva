@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Duy nhất Nagios gặp lỗi với sendmail?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Duy nhất Nagios gặp lỗi với sendmail?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ Mình dùng sendmail 8.13.8-8 trên CentOS với SMTP của Gmail.
+
+Thử bằng cách gửi mail từ command line hoặc qua OSSEC thì OK. Nhưng riêng với Nagios thì gặp lỗi sau trong /var/log/maillog:
+<blockquote><font color='red'>sendmail[9026]: NOQUEUE: SYSERR(nagios): can not chdir(/var/spool/clientmqueue/): Permission denied</font>
+&nbsp;
+		</blockquote>
+Thêm <b>smmsp</b> (user chạy sendmail) vào group <b>nagios</b> và <b>nagios</b> vào group <b>smmsp</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/group:smmsp: x:51:apache,nagios
+/etc/group:nagios: x:503:apache,smmsp</pre>
+		</div>
+thì lại gặp lỗi sau:
+<blockquote><font color='red'>sendmail[26435]: NOQUEUE: SYSERR(nagios): can not write to queue directory /var/spool/clientmqueue/ (RunAsGid=0, required=51): Permission denied</font>
+&nbsp;
+		</blockquote>
+Permission của các files liên quan:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rwxr-sr-x 1 root root 775064 Jun 29 23:46 /usr/sbin/sendmail
+-rw-r--r-- 1 root root 59061 Jun 30 11:23 sendmail.cf
+-rw-r--r-- 1 root root 40336 Jun 30 12:18 submit.cf
+drwxrwx--- 2 smmsp smmsp 114688 Jul 22 22:00 /var/spool/clientmqueue/
+drwx------ 2 root mail 4096 Jul 22 22:24 /var/spool/mqueue/</pre>
+		</div>
+Chỉ khi <b>chmod 777 /var/spool/clientmqueue</b> thì lỗi trên mới biến mất và mail được gửi đi. Tất nhiên, đây không phải là giải pháp, và khi đó sendmail sẽ cảnh báo:
+<blockquote><font color='orange'>sendmail[30462]: dangerous permissions=40777 on queue directory /var/spool/clientmqueue/</font>
+&nbsp;
+		</blockquote>
+Ai biết nguyên nhân ở đâu chỉ giúp mình với. Cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216072</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216072</link>
+				<pubDate><![CDATA[Thu, 22 Jul 2010 10:37:31]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ <blockquote>
+ /etc/group:smmsp: x:51:apache,nagios
+ /etc/group:nagios: x:503:apache,smmsp
+&nbsp;
+		</blockquote>
+quanta thử rollback cái này
+
+rồi thử thay đổi permission của sendmail binary như sau:
+
+<blockquote>-rwxr-sr-x 1 root <font color='orange'>smmsp</font> 775064 Jun 29 23:46 /usr/sbin/sendmail&nbsp;
+		</blockquote>
+
+rồi restart lại service xem sao. Nếu vẫn không được bạn xem lại partition chứa sendmail có mount với option "nosuid" không nha.
+
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216330</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216330</link>
+				<pubDate><![CDATA[Mon, 26 Jul 2010 01:00:42]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote><blockquote>
+ /etc/group:smmsp: x:51:apache,nagios
+ /etc/group:nagios: x:503:apache,smmsp
+&nbsp;
+		</blockquote>
+quanta thử rollback cái này
+
+rồi thử thay đổi permission của sendmail binary như sau:
+
+<blockquote>-rwxr-sr-x 1 root <font color='orange'>smmsp</font> 775064 Jun 29 23:46 /usr/sbin/sendmail&nbsp;
+		</blockquote>
+
+rồi restart lại service xem sao. 
+&nbsp;
+		</blockquote>
+Cảm ơn bạn nhiều. Thử theo cách của bạn thì cũng có tiến triển chút ít, nghĩa là: có mail được gửi đi, còn có mail thì không và trong /var/log/maillog cũng không thông báo gì cả.
+
+Mail được gửi đi:
+<blockquote>Jul 26 15:13:07 SVR040-763 nagios: SERVICE NOTIFICATION: quanta;SVR049-3161.localdomain;Apache status;OK;notify-service-by-email;APACHE OK - 0.083 sec. response time, Busy/Idle 1/7, open 248/256, ReqPerSec 0.0, BytesPerReq 0, BytesPerSec 0 
+&nbsp;
+		</blockquote>
+<blockquote>Jul 26 15:13:07 SVR040-763 sendmail[12210]: o6Q8D7Pc012210: to=quanta@hvaonline.net, ctladdr=root (0/0), delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=30416, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (o6Q8D7FH012211 Message accepted for delivery)
+&nbsp;
+		</blockquote>
+Mail không được gửi đi, mặc dù có alert trong nagios.log:
+<blockquote>Jul 26 16:23:18 SVR040-763 nagios: SERVICE ALERT: MT333-3140.localdomain;PING;WARNING;SOFT;1;PING WARNING - Packet loss = 0%, RTA = 0.94 ms
+&nbsp;
+		</blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "Jul 26 16:23" /var/log/maillog | wc -l
+0</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>
+Nếu vẫn không được bạn xem lại partition chứa sendmail có mount với option "nosuid" không nha.
+&nbsp;
+		</blockquote>
+Không có thằng nào mount với nosuid đâu bạn à.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216370</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216370</link>
+				<pubDate><![CDATA[Mon, 26 Jul 2010 05:17:24]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ Cho mình hỏi có mail nào của cùng 1 service mà cái có, cái không nhận được không bạn?
+
+Mình nghĩ, vấn đề không nằm ở sendmail vì như bạn nói hoàn toàn không có thông tin gì ở maillog. Như vậy, chỉ có thể là nagios có vấn đề.
+
+Bạn xem lại các file config của nagios xem. Nếu có thay đổi gì với những file này thì nên tắt hẳn service rồi load lại, vì nếu chỉ reload service nó vẫn còn sử dụng bản cache cũ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216373</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216373</link>
+				<pubDate><![CDATA[Mon, 26 Jul 2010 07:42:24]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>Cho mình hỏi có mail nào của cùng 1 service mà cái có, cái không nhận được không bạn?
+&nbsp;
+		</blockquote>
+2 cái trên mình ví dụ là của cùng Nagios đấy. Từ chiều đến giờ cũng không nhận thêm cái mail nào cả, mặc dù Nagios vẫn alert đều.
+<p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>
+Mình nghĩ, vấn đề không nằm ở sendmail vì như bạn nói hoàn toàn không có thông tin gì ở maillog. Như vậy, chỉ có thể là nagios có vấn đề.
+&nbsp;
+		</blockquote>
+Có thể như bạn nói mà cũng có thể là 2 thằng này kết hợp lại nó mới tạo ra vấn đề.
+<p></p>
+		<cite class="blockquote">1mp0ss1bl3 wrote:</cite><br>
+		<blockquote>
+Bạn xem lại các file config của nagios xem. Nếu có thay đổi gì với những file này thì nên tắt hẳn service rồi load lại, vì nếu chỉ reload service nó vẫn còn sử dụng bản cache cũ.&nbsp;
+		</blockquote>
+Mình toàn restart thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216378</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216378</link>
+				<pubDate><![CDATA[Mon, 26 Jul 2010 09:52:47]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Duy nhất Nagios gặp lỗi với sendmail?</title>
+				<description><![CDATA[ <blockquote>2 cái trên mình ví dụ là của cùng Nagios đấy&nbsp;
+		</blockquote>
+Uhm, mình biết là 2 cái đó đều là của Nagios. Nhưng theo mình thấy thì 1 cái là PING alert còn cái kia là Apache service status alert. Ý mình hỏi là có cái Apache status alert nào mà lúc nhận lúc không hay không?
+
+Thông tin log của Nagios quá ít nên khó troubleshoot. Mình nghĩ quanta nên bật debug mode lên để có nhiều thông tin hơn.
+
+Mình nhớ có đọc ở đâu đó 1 thắc mắc của user về trường hợp có alert nhận được có cái không và lý do chính là những thay đổi trong file config của user đó không được Nagios load lại sau mỗi lần restart. Vì thế quanta xem lại các thông số của objects.cache và các file config có khớp không. Nếu được mình nghĩ bạn nên tắt hẳn service (kill) rồi start lại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216435</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35155.hva#216435</link>
+				<pubDate><![CDATA[Mon, 26 Jul 2010 23:47:15]]> GMT</pubDate>
+				<author><![CDATA[ 1mp0ss1bl3]]></author>
+			</item>
+	</channel>
+</rss>

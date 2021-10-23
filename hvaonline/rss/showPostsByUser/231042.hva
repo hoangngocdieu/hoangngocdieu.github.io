@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "explorer88"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/231042.hva</link>
+		<description><![CDATA[Messages posted by "explorer88"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi trong triển khai MySQL cluster </title>
+				<description><![CDATA[ Đã fix ! Lỗi là do data node có tài nguyên quá hạn chế. MySQL cluster là in-memory database nên nó sẽ load khá nhiều memory ngay tại thời điểm khởi động cluster (dù nó không dùng hết tất cả memory đó ngay). Thông báo: "Forced node shutdown completed. Occured during startphase 0. Initiated by signal 11. " cho đầu mối signal 11. Tra bảng signal thì 11 là segment fault signal. Kernel sẽ gửi signal này khi có sự xâm phạm memory từ process. 
+
+Tớ đã deploy lại cluster với những data node trên các máy tính khoẻ hơn (từ 4G Ram, 4CPUs) và chạy rất mượt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45737/281182.hva#281182</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45737/281182.hva#281182</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 10:07:45]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Lỗi trong triển khai MySQL cluster </title>
+				<description><![CDATA[ Chào các anh em,
+
+Hiện tại tớ đã dựng thử mô hình MySQL cluster để nghiên cứu nhưng gặp vài lỗi không biết xử lý sao. Mong anh em giúp đỡ.
+
+<b>Mô hình</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Mô hình của tớ gồm 4 máy ảo VirtualBox
+Node 1: management node, địa chỉ 192.168.56.205
+Node 2: sql node, địa chỉ 192.168.56.206
+Node 3: data node 1, địa chỉ 192.168.56.207
+Node 4: data node 2, địa chỉ 192.168.56.208</pre>
+		</div>
+
+<b>Thông tin chung cho cả 4 máy</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>- Sử dụng Centos 6.4, 32 bits
+- Linux kernel 2.6.32-358.el6.i686
+- Phiên bản MySQL Cluster MySQL-Cluster-gpl-7.3.6-2.el6.i686.rpm-bundle.tar
+- RAM 128MB
+- Đã tắt firewall iptables trên tất cả 4 máy: service iptables stop
+- Đã disable selinux</pre>
+		</div>
+
+<b>Thông tin cài đặt</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>- Trên cả 4 node, tớ đều cài gói MySQL-Cluster-server-gpl-7.3.6-2.el6.i686.rpm và MySQL-Cluster-shared-compat-gpl-7.3.6-2.el6.i686.rpm
+- Riêng trên node 2 - sql node, tớ còn bổ sung thêm gói cài MySQL-Cluster-client-gpl-7.3.6-2.el6.i686.rpm</pre>
+		</div>
+
+<b>Thông tin cấu hình</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Trên node 1 - management node
+- Tớ tạo thư mục /var/lib/mysql-cluster, gán quyền sở hữu mysql:mysql
+- Thiết lập file cấu hình /var/lib/mysql-cluster/config.ini có nội dung:
+
+&#91;ndbd default&#93;
+NoOfReplicas=2   
+DataMemory=80M   
+IndexMemory=18M                
+
+&#91;tcp default&#93;
+portnumber=2202  
+
+&#91;ndb_mgmd&#93;
+hostname=192.168.56.205        
+datadir=/var/lib/mysql-cluster
+
+&#91;ndbd&#93;
+hostname=192.168.56.207        
+datadir=/usr/local/mysql/data
+
+&#91;ndbd&#93;
+hostname=192.168.56.208          
+datadir=/usr/local/mysql/data  
+
+&#91;mysqld&#93;
+hostname=192.168.56.206
+
+Trên node 2 - sql node
+&#91;mysqld&#93;
+datadir = /var/lib/mysql
+port = 3306
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+ndbcluster
+
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.56.205
+
+Trên node 3 và node 4 - các data node
+- Tạo thư mục /usr/local/mysql/data, gán quyền sở hữu mysql:mysql
+- Cấu hình /etc/my.cnf như sau:
+&#91;mysqld&#93;
+ndbcluster                    
+
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.56.205</pre>
+		</div>
+<b>Thứ tự khởi động cluster</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Tại management node, tớ chạy:
+    ndb_mgmd -f /var/lib/mysql-cluster/config.ini
+Lần lượt trên các data node 1 và 2, tớ chạy
+    ndbd
+Cuối cùng trên sql node, tớ chạy
+    mysqld_safe &</pre>
+		</div>
+
+<b>Kết quả</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ndb_mgm&gt; show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2 &#40;not connected, accepting connect from 192.168.56.207&#41;
+id=3    @192.168.56.208  &#40;mysql-5.6.19 ndb-7.3.6, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.56.205  &#40;mysql-5.6.19 ndb-7.3.6&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   1 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from any host&#41;</pre>
+		</div>
+
+<b>Lỗi gặp phải</b>
+Node 2 được thông báo là: Node 2: Forced node shutdown completed. Occured during startphase 0. Initiated by signal 11.
+Trong /usr/local/mysql/data của Node 2 có một file ndb_2_error.log
+Cả ba node: node 2, node 3 và node 4 đều được cảnh báo:
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.208. Returned error: No free node id found for mysqld(API).
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.207. Returned error: No free node id found for mysqld(API).
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.206. Returned error: No free node id found for mysqld(API).
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45737/281178.hva#281178</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45737/281178.hva#281178</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 05:12:07]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Làm cách nào xác định được giá trị tcp_mem, tcp_rmem, tcp_wmem ?</title>
+				<description><![CDATA[ Ừm, cám ơn bạn đã chỉ hướng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45648/281124.hva#281124</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45648/281124.hva#281124</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2014 10:49:24]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Combine nhiều file iso thành một</title>
+				<description><![CDATA[ Không phải là không có cách để xài Centos nhưng mình muốn thử xem có nối file iso được không thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45686/281123.hva#281123</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45686/281123.hva#281123</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2014 10:40:42]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Combine nhiều file iso thành một</title>
+				<description><![CDATA[ Em vừa download 7 files iso của Centos. Em đang tìm công cụ nào cho phép kết hợp các file iso thành một file duy nhất nhưng chưa tìm ra. 
+
+Em đã thử genisoimage nhưng file iso sau khi kết hợp thì không boot được. Thử dùng cat kết hợp thì tuy boot được nhưng khi cài đặt, installer không nhận ra phần dữ liệu còn lại nên vẫn đòi các phần tiếp theo.
+
+Có anh/chị nào biết thì giúp em với.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45686/280877.hva#280877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45686/280877.hva#280877</link>
+				<pubDate><![CDATA[Tue, 24 Jun 2014 05:47:57]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Làm cách nào xác định được giá trị tcp_mem, tcp_rmem, tcp_wmem ?</title>
+				<description><![CDATA[ Em biết mấy giá trị này để xác định được cũng dài dòng lắm, liên quan nhiều đến kiến thức tcp và kernel linux. Em không biết suy luận thế nào để tìm ra các giá trị đó. Các bác chia sẻ kỹ thuật chút đi và cũng để có hướng em tìm hiểu thêm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45648/280831.hva#280831</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45648/280831.hva#280831</link>
+				<pubDate><![CDATA[Sat, 14 Jun 2014 04:48:51]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Không xóa được file trong Linux</title>
+				<description><![CDATA[ file là sfewfesfs hay password ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45661/280826.hva#280826</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45661/280826.hva#280826</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2014 23:31:23]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đỡ</title>
+				<description><![CDATA[ Tiệm net không phải nơi học tập và em không có quyền cấm đoán cắt net của ai như thế cả. Em lên thư viện ngân hàng thế giới số 63 Lý Thái Tổ thử xem. Không gian rộng rãi thoáng đãng lịch sự, tốc độ internet cao. Em chỉ mất phí gửi xe.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45664/280825.hva#280825</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45664/280825.hva#280825</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2014 23:26:41]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>DDoS và nguyên tắc phân tích gói tin</title>
+				<description><![CDATA[ Theo tinh thần open source, em chia sẻ sơ qua cách thức:
+
+Trước hết chạy tcpdump để capture gói tin:
+sudo tcpdump -vv -x -w file.pcap | strings
+
+-vv để thu thập càng nhiều thông tin càng tốt
+-x để lấy cả data packet
+Ở đây strings là lệnh quan trọng để convert data của tcp packet ra http packet hoàn chỉnh
+
+Ví dụ để hiển thị tất cả user agent, bạn cần chuyển đổi file pcap thành file text dùng tshark sau đó thực hiện awk, grep, sed, uniq, sort... trên file đó:
+
+tshark -r file.pcap -T fields -e http.user_agent | strings | sort | uniq
+
+Lý do có strings để loại bỏ các dòng rỗng. Vì với những dòng không có user agent (ví dụ tcp three way handshake) thì tshark sẽ hiện thị dòng rỗng.
+
+Tuỳ vào nhu cầu phân tích mà bạn sẽ truyền giá trị tham số -e khác nhau và áp dụng các cú pháp grep, cat, sed... khác nhau
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44935/280824.hva#280824</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44935/280824.hva#280824</link>
+				<pubDate><![CDATA[Fri, 13 Jun 2014 23:21:49]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Làm cách nào xác định được giá trị tcp_mem, tcp_rmem, tcp_wmem ?</title>
+				<description><![CDATA[ Em thấy các giá trị này thường được đặt và giữ nguyên. Nhưng trong trường hợp bị tấn công cần phải thực hiện điều chỉnh thì các giá trị này cần được tính toán thế nào để phù hợp với tình hình. Em không chủ ý nhắm vào một case cụ thể nào cả mà chỉ mong biết tcp_mem, tcp_rmem, tcp_wmem phụ thuộc vào các biến số nào và bằng cách nào phân tích từ các biến số đó để tìm được các giá trị phù hợp ? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45648/280722.hva#280722</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45648/280722.hva#280722</link>
+				<pubDate><![CDATA[Wed, 28 May 2014 21:31:25]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>DDoS và nguyên tắc phân tích gói tin</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Có bạn nào hứng thú trả lời mấy câu hỏi này không nhỉ?
+<blockquote>
+e. Có bao nhiêu requests xảy ra trong một giây, một phút, 5 phút đi từ cùng một IP và có cùng một User-Agent?
+
+f. Có bao nhiêu User-Agents khác nhau đi từ một IP trong một khoản thời gian nào đó?
+&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+
+Câu hỏi của anh quanta có ai trả lời không ạ ? Bây giờ em cũng muốn thu thập các thống kê kiểu này từ wireshark mà không biết cách ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44935/280714.hva#280714</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44935/280714.hva#280714</link>
+				<pubDate><![CDATA[Wed, 28 May 2014 04:15:54]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Em tiến hành thực nghiệm trong hai trường hợp: đều set tcp_tw_reuse=1 trước khi tiến hành
+telnet server - telnet client [1] 
+sock server - sock client [2] 
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 3, khi tắt client thì client sẽ gửi FIN, nhận ack, server cũng gửi FIN lại, client trả lời bằng ack rồi rơi vào trạng thái TIME_WAIT. &nbsp;
+		</blockquote>
+Vậy nghĩ là trạng thái TIME_WAIT là của client.&nbsp;
+		</blockquote>
+[1]: telnet client không gửi FIN, ^C được gửi đi và FIN sau đó gửi bởi server, client không có TIME_WAIT
+[2]: sock client gửi FIN, client có trạng thái TIME_WAIT
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 4, kill server, server chết luôn, server không có phục vụ client nào từ trước khi kill nên em chẳng thấy có trạng thái gì cả. &nbsp;
+		</blockquote>
+Vậy nghĩa là server sẽ không thấy trạng thái TIME_WAIT. Mình thử start/stop nhiều lần coi server của mình có trạng thái gì không? Sau đó, mình thử dùng lại chương trình sock rồi start/stop nhiều lần coi sao.&nbsp;
+		</blockquote>
+[1]: Vì gửi FIN nên server có trạng thái TIME_WAIT, nhưng server đồng thời vẫn LISTEN, kill server, không còn trạng thái LISTEN nhưng vẫn còn TIME_WAIT (Ở trạng thái TIME_WAIT, socket đó không có gắn với một process  nào cả nên không kill được), start server, server lại LISTEN, TIME_WAIT của socket cũ vẫn còn đó, stop server thì mất LISTEN, còn TIME_WAIT thì cứ hết 2MSL thì biến mất. Lúc đầu em cứ tưởng đây là tác động của tcp_tw_reuse nhưng kiểm tra nữa thì tcp_tw_reuse=0 hay =1 thì case này vẫn thế. 
+
+[2]: Vì không gửi FIN nên server không có trạng thái TIME_WAIT, kill sock server, không có trạng thái gì hết, start sock server, server lại LISTEN, stop không có trạng thái gì. 
+
+Riêng với sock server em thử chạy với tham số -A (SO_REUSEADDR) thì tính năng reuse được thể hiện (cũng bất kể tcp_tw_reuse =0 hay =1). Khi ấy kiểm tra thì em thấy sock server vừa LISTEN vừa có socket cũ ở trạng thái TIME_WAIT như trong case với telnet server.
+
+Sau cuộc kiểm tra, em thấy cư xử của telnet server hơi lạ, cần xem xét thêm, còn hiệu lực của tcp_tw_reuse em vẫn chẳng thấy đâu cả :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44689/275912.hva#275912</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44689/275912.hva#275912</link>
+				<pubDate><![CDATA[Wed, 22 May 2013 06:27:00]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>SSH File tràner client bị lỗi "Most likely the sftp-server is not in "</title>
+				<description><![CDATA[ <blockquote>4 chữ cái đầu tiên trong đoạn text mà bạn `echo` có phải là: rq%q ? &nbsp;
+		</blockquote>
+
+Hì 1920017777 =  0x72712571 = tra ASCII -&gt; rq%q đúng không ạ :D
+
+<blockquote>Chưa cần mở source ra đọc đâu. Bạn thử chạy `tcpdump` trong 2 trường hợp rồi so sánh xem. &nbsp;
+		</blockquote>
+
+Anh có phải decrypt ssh payload ra không ạ ? Em tcpdump cả hai trường hợp rồi nhìn từ tầng tcp xuống thấy không có gì đặc biệt, data trong ssh bị mã hoá hết em không đọc được. Khác duy nhất giữa hai lần tcpdump là với trường hợp có thông báo Received message too long thì client sẽ send FIN để kết thúc phiên. Anh bật mí thêm được không, em bí rồi :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44735/275911.hva#275911</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44735/275911.hva#275911</link>
+				<pubDate><![CDATA[Wed, 22 May 2013 05:25:36]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>SSH File tràner client bị lỗi &amp;quot;Most likely the sftp-server is not in &amp;quot;</title>
+				<description><![CDATA[ Mình thử tái hiện lại lỗi bằng cách echo trong ~/.bashrc, không gặp lỗi như bạn nhưng lại gặp lỗi <b>Received message too long 1920017777</b> Và khi mình bỏ dòng echo đi thì cũng giải quyết được.
+
+sftp/scp có vẻ không thích output trong shell initialization. Mình tìm thấy thông báo này trong mục FAQ:
+<span class="link"> http://www.openssh.org/faq.html#2.9</span>
+
+Đọc trong man bash thì có đoạn sau:
+
+<blockquote>Bash attempts to determine when it is being run with its standard input connected to a network connection, as when executed by the remote shell daemon, usually rshd, or the secure shell daemon sshd.  If bash  determines  it  is being run in this fashion, it reads and executes commands from ~/.bashrc&nbsp;
+		</blockquote>
+
+--&gt; Khi chạy sftp một remote bash được mở ra nhận data input từ network connection. Bash này là một non-interactive, non-login shell và chỉ đọc ~/.bashrc. Khi đọc đến file này, gặp các output từ echo, stfp thấy bối rối nên nó ném exception và kết thúc. Còn lý do tại sao nó bối rối thì chắc nằm trong mã nguồn của nó.
+
+Vài thông tin bổ sung hi vọng giúp ích cho bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44735/275869.hva#275869</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44735/275869.hva#275869</link>
+				<pubDate><![CDATA[Tue, 21 May 2013 06:47:06]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>SSH File tràner client bị lỗi "Most likely the sftp-server is not in "</title>
+				<description><![CDATA[ Hi bạn nguoixanh,
+
+Mình tò mò là tại sao dòng echo đặt ở cuối file .bashrc lại gây lỗi đó nhỉ ? Mình thử tái hiện trên máy ảo Centos (bản 6.4): Thêm dòng echo đó vào cuối /root/.bashrc nhưng mình vẫn login ssh, chạy lệnh bình thường. Trong trường hợp của mình, bản Centos đã có sẵn ssh server và client. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44735/275859.hva#275859</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44735/275859.hva#275859</link>
+				<pubDate><![CDATA[Tue, 21 May 2013 02:37:41]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Hỏi đáp về file desciptor</title>
+				<description><![CDATA[ Hình như bạn bino1810 nhầm thì phải, man của read bạn nói là  của system call, còn read mình dùng là một built in command trong bash shell mà. Man cho built in read này thì mình tìm thấy ở đấy: <span class="link"> http://wiki.bash-hackers.org/commands/builtin/read</span> chứ không có trên máy.
+
+Về câu hỏi mình nêu thì tiện đây, mình viết lại những thu lượm của mình luôn. Hi vọng sẽ có ích cho các bạn có cùng bối rối.
+
+Mình có nói là tất cả những gì mình echo đẩy vào fd0 đều không được nhận vào input data cho shell script mình viết, bằng chứng là lệnh read -p không kết thúc cho đến khi mình nhập trực tiếp và biến test chỉ nhận những gì gõ trực tiếp qua terminal. Lý do ở đây là mình đang truyền dữ liệu vào terminal chứ không phải là process đang chạy script của mình. Ở đây terminal hay bash shell cũng chính là parent của process đang chạy script. Một process được sinh ra trên linux bằng cách sử dụng fork. Tìm đọc trong man fork thì được biết parent và child process sẽ chia sẻ nhau file descriptor. 
+
+File descriptor lúc nào cũng trỏ đến một file. Khi nào lệnh thực hiện có kèm với wwwection thì những file descriptor này sẽ thay đổi trỏ đến file muốn dùng làm input data, output hay err. Mình có viết thử một script chạy liên tục echo &quot;text&quot; &gt; fileTest.txt và một script nữa cũng chạy liên tục song song với script trên chỉ với nhiệm vụ là ls -l /proc/PID of script/fd &gt; output. Sau khi xem trong file kết quả output lệnh ls -l trên thì thấy fd1 thay đổi trỏ đến fileTest.txt
+
+Quay về vấn đề của mình, mục đích ban đầu của mình là kiểm tra xem liệu có thể đẩy input data trực tiếp vào fd0 không. Lúc này mình thấy fd0 của child process kế thừa từ parent luôn trỏ đến terminal nên mình thử thay đổi file trỏ bởi fd0 của child ngay từ trong script:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo &quot;test123test&quot; &gt; ~/input.txt</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo &quot;pid = $$&quot;
+exec 0&lt;&quot;/home/username/input.txt&quot;
+read -p &quot;Enter name: &quot; test
+echo &quot;---&gt;$test&lt;----&quot;
+exit 0</pre>
+		</div>
+
+Kết quả là bước đợi nhập bàn phím của read -p bị bỏ qua và hiện ra ---&gt;test123test&lt;--- 
+Lý do bước read -p bị bỏ qua vì lệnh read -p sẽ kết thúc khi gặp ký tự xuống dòng. Mình đẩy dữ liệu vào input.txt bằng echo nên mặc định ở cuối có ký tự \n. Trường hợp mình dùng echo -n  để loại ký tự xuống dòng trong input.txt thì lệnh read -p vẫn bị bỏ qua. Lúc này lý do lại bởi system call read trả về 0 -&gt; EOF nên kết thúc việc đọc. Cái này mình biết được cũng nhờ mình kiểm tra bằng lệnh strace mà bạn bino1810 có nhắc đến :)
+
+Cám ơn bạn bino1810 và mọi người đã giúp đỡ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44673/275845.hva#275845</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44673/275845.hva#275845</link>
+				<pubDate><![CDATA[Mon, 20 May 2013 09:31:13]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Hỏi đáp về file desciptor</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Hello explorer88, 
+
+Bạn thử ghi dữ liệu vào fd 0 của script bằng cách nào? Vô hiệu là vô hiệu sao?
+
+khoai&nbsp;
+		</blockquote>
+
+Hôm nay lặp lại thí nghiệm em thử echo &quot;text&quot; &gt; /proc/PID/fd/0 hay mở file 0 ra bằng vi rồi ghi thẳng lên thì thấy dữ liệu đẩy thẳng vào terminal của em. Không hiểu sao trước mình làm gì mà không được nhỉ :D Kiếm tra thì thấy các file 0,1,2 đều là symbolic link trỏ đến terminal mà em đang chạy script nên việc dữ liệu hiển thị thế là đúng rồi. 
+
+Nhưng ở đây em thấy có một điều lạ là em đẩy dữ liệu vào có dấu xuống dòng echo -e &quot;test\n&quot; hay echo -e &quot;test\n\r&quot; thì script của em vẫn không kết thúc lệnh đọc dữ liệu. 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo &quot;pid = $$&quot;
+read -p &quot;Enter name: &quot; test
+echo $test
+exit 0</pre>
+		</div>
+
+Em phải vô trong terminal đang chạy script gõ trực tiếp test rồi enter thì đoạn đợi nhập mới qua. Lúc này biến test được in chỉ chứa những gì em nhập trực tiếp còn những gì em echo vào fd0 đều không có. Vậy thì file 0 đó đâu phải là stdin của process đâu ? Nó chỉ là đường tắt đến terminal. Sao chả thấy ăn nhập với lý thuyết gì cả, lùng bùng hết cả lên, các anh có chỉ dẫn gì hay có tài liệu gì về file descriptor không ạ ?
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44673/275812.hva#275812</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44673/275812.hva#275812</link>
+				<pubDate><![CDATA[Sat, 18 May 2013 13:46:42]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">consoko wrote:</cite><br>
+		<blockquote>Tại vì độ trễ của Network nên tcp không thể đóng kết nối ngay lập tức để chờ những gói tin còn lại nếu có, nó phải chờ một khoảng thời gian time-out để đống kết nối hoàn toàn (CLOSED) sau khi connection đã ở tình trạng close (TIME_WAIT). 
+
+Theo như tài liệu thì net.ipv4.tcp_tw_reuse=1 sử dụng connection ở trạng thái TIME_WAIT để phục vụ new connection. Nếu vậy, 
+- B1: telnet đến một con server port 80. ===&gt;&gt;&gt; 1 connection ESTABLISHED
+- B2: ngắt kết nối. ===&gt;&gt;&gt; TIME_WAIT
+- B3: connect lại tới server port 80. ===&gt;&gt;&gt; tạo 1 connection ESTABLISHED mới và connection cũ vẫn ở trong tình trạng TIME_WAIT
+Đáng lẽ tại B3, connection TIME_WAIT phải đc sử dụng để phục vụ connection mới chứ nhỉ.
+
+:(
+ &nbsp;
+		</blockquote>
+
+Tại bước 3, bạn từ client lại request đến server thì OS phía client cấp cho bạn một ephemeral port ngẫu nhiên khác với port đang trong trạng thái TIME_WAIT nên bạn thấy có một connection ESTABLISHED còn connection cũ vẫn ở trong tình trạng TIME_WAIT. Bạn có thể dùng sock để ép client sử dụng một port xác định mà bạn muốn:
+sock -b&lt;client port&gt; &lt;server ip&gt; &lt;server port&gt;
+
+Download: <span class="link"> http://www.icir.org/christian/sock.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44689/275811.hva#275811</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44689/275811.hva#275811</link>
+				<pubDate><![CDATA[Sat, 18 May 2013 13:10:34]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>explorer88,
+
+Thật ra lý thuyết vẫn đúng, mà bạn cũng đúng. Lý do là bạn đang đòi "reuse" hai thứ khác nhau. Nếu bạn có vỉtualbox hay vmware player thì hãy thử như sau:
+
+1. Máy thật là máy A, dùng để chạy server. Máy ảo là máy B, dùng để chạy client.
+2. Không thay đổi cấu hình gì hết, thử chạy server trên máy A.
+3. Dùng client từ máy B connect vào máy A, phải đảm bảo là connect được.
+4. Ngắt kết nổi. Chạy netstat trên máy B để thấy TIME_WAIT
+5. Kill server, chạy netstat trên máy A.  Bạn có thấy status gì lạ không?
+6. Thử restart server coi được không?
+
+Túm lại, mình thử nghĩ TIME_WAIT là status gì, tại sao phải có TIME_WAIT status. Nếu mình muốn server của mình stop rồi start liền thì làm sao?
+
+khoai
+PS: Câu hỏi khá hay mà không ai thèm trả lời :(&nbsp;
+		</blockquote>
+
+Chào anh Khoai. Em lập topic đã lâu cứ tưởng không còn ai trả lời nữa. Hôm qua đi dạo thấy chủ đề này có reply thì quay lại thử nghiệm tiếp :D
+
+TIME_WAIT status là trạng thái chỉ có ở  endpoint thực hiện active close trên cơ sở hai đầu đã phải thực hiện bắt tay ba bước thành công. Tóm tắt sơ qua quá trình thì như sau: Endpoint (client hoặc server) muốn đóng kết nối. Nó gửi FIN. Lúc này endpoint rơi vào trạng thái FIN_WAIT_1 có nghĩa là đã gửi yêu cầu đóng nhưng đang đợi xác nhận từ đầu còn lại. Nếu nhận được ack từ đầu còn lại thì endpoint này sẽ chuyển tiếp sang trạng thái FIN_WAIT_2 có nghĩa là kết nối đang ở trạng thái half close. Endpoint này chắc chắn sẽ không còn gửi dữ liệu ra nữa, nó chỉ còn có nhiệm vụ nhận dữ liệu từ đầu kia và xác nhận bằng cách trả lời ack cho đầu kia. Đầu kia vẫn có thể tiếp tục nói chuyện. Khi nào đầu còn lại gửi FIN để yêu cầu đóng kết nối hoàn toàn thì endpoint này sẽ ack cho gói FIN đó  rồi chuyển sang trạng thái TIME_WAIT. 
+
+Lý do phải có TIME_WAIT vì cần đảm bảo ack gửi đi đến được đầu còn lại. Trạng thái TIME_WAIT mang nghĩa là endpoint đã gửi ack rồi và nó sẽ có nhiệm vụ đợi để đảm bảo gói ack nó gửi không bị thất lạc. Để chắc chắn được điều này, endpoint sẽ phải chờ một khoảng thời gian là 2MSL = 2*Maximum Segment Length. Quãng thời gian này kéo dài khoảng 2-4 phút. Trong quãng thời gian này nếu gói ack bị thất lạc thì đầu kia sẽ phải truyền lại FIN. Nếu không có trạng thái TIME_WAIT, endpoint này gửi ack xong rồi CLOSED luôn thì đầu kia có thể không nhận được ack sẽ gửi lại FIN đến. Tình huống lúc này sẽ diễn ra là đầu kia gửi FIN đến một socket không tồn tại (do bị đóng trước đó) hoặc endpoint này không biết FIN này thuộc về connection nào. Trong cả hai trường hợp thì endpoint đều trả lời bằng RST làm đóng luôn kết nối từ đầu kia. Như phân tích thì nếu không có trạng thái TIME_WAIT, một hành vi đóng kết nối thông thường có thể dẫn đến phát sinh gói RST.
+
+Bình thường, TCP không cho phép các hành vi sử dụng các port đang nằm trong TIME_WAIT. Để thực hiện điều này thì em tìm thấy có hai cách là: điều chỉnh giá trị tcp_tw_reuse hoặc tcp_tw_recycle. Theo đánh giá từ tài liệu thì tcp_tw_cycle gặp vấn đề trong môi trường NAT và load balancing nên tcp_tw_reuse là lựa chọn an toàn hơn. Em thử nghiệm điều chỉnh tcp_tw_recycle thì thấy có hiệu lực nhưng riêng với tcp_tw_reuse thì vẫn chưa được. Em tìm hiểu mãi rồi mà vẫn không thấy mình làm sai ở đâu :(
+
+Còn chuyện anh hỏi stop và start server thì em chưa trả lời được vì em có kiểm tra thì thấy khá ngộ là:
+Em thử chạy một telnet server trên máy thật, cho một con client kết nối từ máy ảo. Kết nối đã hình thành rồi.
+Em thử stop dịch vụ telnet thì em kiểm tra trên wireshark thì thấy server chẳng gửi ra gì cả. Kiêm tra netstat thì thấy server port 23 cũng chẳng còn
+Từ client trên máy ảo em vẫn truyền dữ liệu đi, bắt trên wireshark thấy server vẫn trả lời 
+Em thử đóng client thì thấy quá trình đóng kết nối 4 bước vẫn đầy đủ.
+Server muốn start stop bao nhiêu lần cũng được, kết nối từ client vẫn không bị mất.
+Em không hiểu được điều gì diễn ra ở cuộc kiểm tra trên nên chưa trả lời anh được ạ.
+
+Giờ đến thí nghiệm mà anh đề nghị:
+Tại bước 3, khi tắt client thì client sẽ gửi FIN, nhận ack, server cũng gửi FIN lại, client trả lời bằng ack rồi rơi vào trạng thái TIME_WAIT.
+Tại bước 4, kill server, server chết luôn, server không có phục vụ client nào từ trước khi kill nên em chẳng thấy có trạng thái gì cả.
+Tại bước 5, chạy server lại được luôn.
+
+Nhưng anh ơi, server lúc này có rơi vào trạng thái TIME_WAIT nên chạy được luôn mà. Hiện tại em vẫn chưa thể thấy được hiệu lực của tcp_tw_reuse anh ạ :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44689/275810.hva#275810</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44689/275810.hva#275810</link>
+				<pubDate><![CDATA[Sat, 18 May 2013 13:04:48]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Thái độ đúng đắn cho một người thợ trong lĩnh vực công nghệ thông tin</title>
+				<description><![CDATA[ Mình nhận thấy là không phải ai hoạt động trong lĩnh vực công nghệ thông tin mà chỉ dựa vào cố gằng là thành expert hay hacker. Mỗi người đều có một giới hạn nhất định về căn cơ. Mình thì chấp nhận chuyện đó. Nói thật là trước khi chấp nhận mình cũng khá khổ sở. Tình huống này trong đạo Phật gọi là cầu bất đắc nhỉ, cũng là một cái khổ trong cõi đời này. 
+
+Ban đầu mình tìm hướng dẫn đường đi nước bước và trên HVA đều có cả: Loạt bài những cuộc đối thoại với rookie của anh Conmale cũng đã cung cấp thái độ và hướng tiếp cận đúng đắn rồi. Nhưng mình nghĩ bản thân mình, cũng như nhiều bạn khác đã đọc cẩn thận rồi nhưng khi áp dụng thì những nguyên tắc đó vẫn là nguyên tắc mà chẳng thể chuyển hoá thành thay đổi cụ thể. Làm việc không có sườn thì rất dễ sa đà vào chỗ vô định, thậm chí ngay từ thời điểm tiếp thu kiến thức căn bản. Tình huống thế này thì biết trách ai đây ? Trách anh Conmale viết chưa đủ sát thực tế, thiếu ví dụ cụ thể à. Mình thấy suy nghĩ đó rất không nên vì nếu theo dõi kỹ thì thấy tất cả các nguyên tắc đã được trình bày phân tích hết rồi, lại viết tiếng Việt, hướng đến đối tượng rookie nữa. Cái gì mình không làm được thì mình hoặc lười hoặc dở.
+
+Vài dòng về quá khứ thế thôi. Expert hay thợ thì đều có giá trị riêng cả. Hiện tại mình chỉ băn khoăn là thái độ tích cực cần có với một người thợ hoạt động trong lĩnh vực công nghệ thông tin. Chấp nhận chuyện giới hạn bản thân nhưng chẳng lẽ lại bỏ ngang, không tìm tòi học hỏi nữa hay cố gắng hơn nữa để rồi tiếp tục xa rời thực tế. Hai thái độ đó quá cực đoan. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44733/275757.hva#275757</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44733/275757.hva#275757</link>
+				<pubDate><![CDATA[Thu, 16 May 2013 05:11:46]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao export command không làm việc đúng trong shell script</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>
+...
+sử dụng one-line bash script trực tiếp không cần đến test2.sh nữa thì
+#!/bin/bash
+export test=123
+bash -c 'echo $test'
+
+cũng cho ra kết quả đúng như lý thuyết nhưng có một điểm lạ là string đằng sau bash -c phải đặt trong single quote chứ nếu đặt trong double quote dù có export hay không có export thì giá trị test vẫn được in ra. Em đang dùng bash shell version 4.2.24(1)-release (i686-pc-linux-gnu).&nbsp;
+		</blockquote>
+Có khi nào `test` env variable vẫn đang có giá trị là "123" do bạn chạy `export` từ ngoài command line từ trước rồi không.
+
+Thử tìm hiểu xem: với bash, single quotes với double quotes khác nhau như nào.&nbsp;
+		</blockquote>
+
+Em tìm hiểu thì biết: Double quote sẽ cho phép bash diễn dịch các ký tự đặc biệt như $ * @ trong string. Còn single quote sẽ ngăn cản sự diễn dịch của bash lên các ký tự đặc biệt đó. Thay vì phải dùng backslash character để escape các ký tự đặc biệt này trong double quote thì chỉ cần bao ngoài string bằng single quote.
+
+Em đã chạy thử lại ví dụ với double quote
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+bash -c "echo $test"</pre>
+		</div>
+ 
+Nhưng kết quả vẫn thế giá trị biến test được in ra dù có hay không có được export. Em bèn sửa lại:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+echo "pid of parent shell = $$"
+bash -c "echo pid of new shell = $$ and value of test var = $test"</pre>
+		</div>
+
+Kết quả là lúc nào pid của new shell cũng trùng với pid của parent shell. Em kết luận là trước khi mở một sub process cho new shell này, parent shell đã thực hiện diễn dịch đoạn string thành 'echo pid of new shell = 1234 and value of test var = 123'. Đoạn string mới này khi đi vào new shell sẽ cứ thế được in ra vì chẳng còn ký tự đặc biệt nào để diễn dịch cả. Cũng vì được parent shell diễn dịch trước đó rồi nên giá trị test lúc nào cũng được in dù có hay không có được export.
+
+Em thử đoạn script với single quote:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+echo "pid of parent shell = $$"
+bash -c 'echo pid of new shell = $$ and value of test var = $test'</pre>
+		</div>
+
+Thì kết quả cho ra pid của new shell khác với pid của parent shell. Lúc này em nghĩ parent shell sẽ không diễn dịch được đoạn string sau bash -c vì nó được bao bởi single quote nên lúc này đoạn string đó đi vào new shell mới được diễn dịch nên có pid của new shell và khi đó biến test cũng được in chỉ khi nào được export.
+
+Chà có mỗi cái thử nghiệm hiệu lực của export thôi mà dính mắc đến lắm thứ thật :D 
+
+Em cám ơn mọi người đã giúp đỡ ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44688/275606.hva#275606</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44688/275606.hva#275606</link>
+				<pubDate><![CDATA[Thu, 9 May 2013 03:40:24]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao export command không làm việc đúng trong shell script</title>
+				<description><![CDATA[ Em cám ơn Stanley_00 và anh quanta
+
+Em hiểu rồi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+bash
+echo $test</pre>
+		</div>
+
+không hoạt động vì lệnh bash sẽ mở ra một sub bash shell mới tại đó nó đợi nhập command từ người dùng. Bằng chứng là khi em chạy script đó: không có hiện tượng gì xảy ra nhưng khi gõ exit để thoát sub bash shell đó thì biến test được in ra nhưng lúc này biến test lại được in ra trong parent shell script nên không thể dùng đoạn shell script trên để kiểm tra được tính chất của export command.
+
+Tham khảo ý của Stanley_00 và anh quanta thì em đã sửa lại và test được tính chất export command như sau:
+
+Em viết hai shell script đặt trong cùng thư mục: test1.sh và test2.sh
+
+test1.sh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+bash "test2.sh" # lệnh tương đương sh "test2.sh"</pre>
+		</div>
+
+test2.sh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "$test"</pre>
+		</div>
+
+test trong hai trường hợp có và không dùng export command thấy đúng như lý thuyết luôn
+
+Còn theo hướng dẫn của anh quanta sử dụng one-line bash script trực tiếp không cần đến test2.sh nữa thì
+#!/bin/bash
+export test=123
+bash -c 'echo $test'
+
+cũng cho ra kết quả đúng như lý thuyết nhưng có một điểm lạ là string đằng sau bash -c phải đặt trong single quote chứ nếu đặt trong double quote dù có export hay không có export thì giá trị test vẫn được in ra. Em đang dùng bash shell version 4.2.24(1)-release (i686-pc-linux-gnu).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44688/275584.hva#275584</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44688/275584.hva#275584</link>
+				<pubDate><![CDATA[Wed, 8 May 2013 12:20:55]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao export command không làm việc đúng trong shell script</title>
+				<description><![CDATA[ Tất nhiên là chạy shell rồi chứ :|]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44688/275549.hva#275549</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44688/275549.hva#275549</link>
+				<pubDate><![CDATA[Tue, 7 May 2013 18:36:47]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Có chương trình nào cho phép sửa đổi các giá trị của một gói tin không</title>
+				<description><![CDATA[ Vâng em cám ơn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44690/275548.hva#275548</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44690/275548.hva#275548</link>
+				<pubDate><![CDATA[Tue, 7 May 2013 18:35:21]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Có chương trình nào cho phép sửa đổi các giá trị của một gói tin không</title>
+				<description><![CDATA[ Cả nhà ơi, có ai biết có chương trình nào cho phép tuỳ biến điều chỉnh tất cả các field của một gói tin trải dài trên tất cả các tầng giao thức tcp,udp,ip,ethernet... không ? Mình thích một chương trình như sock nhưng cho phép tuỳ biến điều chỉnh mạnh mẽ hơn.
+
+Cám ơn nhé.
+
+P/S: Command line hay GUI based thì đều được nhưng phải chạy được trên linux nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44690/275479.hva#275479</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44690/275479.hva#275479</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 13:21:52]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Em được biết sửa đổi tcp_tw_reuse có thể cho phép hệ điều hành sử dụng được các port đang trong trạng thái time wait để listen các connect mới. Lý thuyết thì như thế mà khi kiểm tra thử thì lại không chạy được như ý
+
+Thử nghiệm của em như sau:
+1. Em dùng chương trình sock để tạo một server lắng nghe trên 9999/tcp
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sock -v -s 9999</pre>
+		</div>
+
+2. Sau đó em telnet thẳng vào server này
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>telnet 127.0.0.1 9999</pre>
+		</div>
+
+3. Capture trên loopback interface thấy có đã có gói tin đến, kết nối đã hình thành rồi
+
+4. Bước cuối em terminate server đi. Kiếm tra trạng thái port 9999:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -aon | grep 9999</pre>
+		</div>
+thì thấy port đang trong trạng thái time wait nghĩa là lúc này nếu em chạy sock tạo server trên 9999 sẽ bất thành: "Address already in use". Kiểm tra thử thì thấy đúng là bị "Address already in use" thật
+
+5. Em bèn điều chỉnh giá trị /proc/sys/net/ipv4/tcp_tw_reuse sang 1
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sysctl -w net.ipv4.tcp_tw_reuse=1
+sysctl -p</pre>
+		</div>
+Xem lại giá trị đó qua sysctl và cả file /proc/sys/net/ipv4/tcp_tw_reuse kết quả đều là 1. Yên tâm là giá trị mới đã nhận, em bèn lặp lại thử nghiệm nhưng khi chạy lại sock tạo server lắng nghe trên 9999 vẫn bị "Address already in use". Sao không giống lý thuyết gì cả ? :(
+
+Toàn bộ các tác động của em là như thế đấy ạ. Mong mọi người giúp đỡ em ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44689/275478.hva#275478</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44689/275478.hva#275478</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 13:10:58]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao export command không làm việc đúng trong shell script</title>
+				<description><![CDATA[ Em được biết export command trong linux sẽ làm cho các biến trong parent process được nhìn thấy trong các sub process.
+
+Em thử trong terminal:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>export test=123
+bash
+echo $test</pre>
+		</div>
+
+thì ra kết quả 123
+
+Nhưng khi thử trong shell script
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+export test=123
+bash
+echo $test</pre>
+		</div>
+
+thì không thấy gì cả
+
+Tại sao lại xảy ra hiện tượng đó ạ ? Mong mọi người giải đáp giúp ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44688/275475.hva#275475</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44688/275475.hva#275475</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 12:14:44]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Hỏi đáp về file desciptor</title>
+				<description><![CDATA[ Ừm mình cứ nghĩ cơ chế làm việc của process với file trong linux là các data input và output được đẩy vào các file descriptor và các file descriptor này có thể can thiệp trực tiếp được nên mới thử nghiệm thế :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44673/275474.hva#275474</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44673/275474.hva#275474</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 12:02:32]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>cách sử dụng wireshark</title>
+				<description><![CDATA[ Mình chưa tìm hiểu về các giao thức WEP, WAP nhưng về chuyện filter trên wireshark thì bạn xem ở đây nè:
+[1] <span class="link"> http://wiki.wireshark.org/DisplayFilters</span>
+[2] <span class="link"> http://wiki.wireshark.org/CaptureFilters</span>
+
+P/S: Mà trong mục Help/Manual Page của phần mềm Wireshark cũng có mà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44648/275464.hva#275464</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44648/275464.hva#275464</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 05:39:53]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Hỏi đáp về file desciptor</title>
+				<description><![CDATA[ Sao chẳng ai trả lời em à. Dạo này đi hỏi chẳng ai trả lời cả, buồn ghê cơ :((]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44673/275460.hva#275460</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44673/275460.hva#275460</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 03:09:05]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

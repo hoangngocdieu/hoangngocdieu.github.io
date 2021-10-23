@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Thảo luận về địa chỉ vùng nhớ Stack"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Thảo luận về địa chỉ vùng nhớ Stack"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Mình có 1 vài vấn đề cần mọi người giúp đỡ thảo luận. Trước hết xét 2 đoạn mã sau:
+Code 1:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include"iostream"
+using namespace std;
+void display&#40;&#41;{
+  int y=-2;
+  cout&lt;&lt;&y&lt;&lt;endl;
+}
+int main&#40;&#41;{
+  int x=-1;
+  cout&lt;&lt;&x&lt;&lt;" ";
+  display&#40;&#41;;
+  return 0;
+}</pre>
+		</div>
+Code 2:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include"iostream"
+using namespace std;
+void display&#40;&#41;{
+  int y=-2;
+  cout&lt;&lt;&y&lt;&lt;endl;
+}
+void hien&#40;&#41;{
+  display&#40;&#41;;
+}
+int main&#40;&#41;{
+  int x=-1;
+  cout&lt;&lt;&x&lt;&lt;" ";
+  hien&#40;&#41;;
+  return 0;
+}</pre>
+		</div>
+
+Mình complier của 2 đoạn mã và chạy đi chạy lại chúng nhiều lần thì thấy khoảng cách địa chỉ của x và y trong 2 đoạn mã là không giống nhau . VD như trên máy mình thì trong Code 1 là 44 còn Code 2 là 60.
+Thứ 1: Tại sao khoảng cách địa chỉ của x, y lớn đến vậy, -&gt; có 1 vùng nhớ nằm giữa 2 biến x, y.
+Thứ 2: Tại sao tại sao khoảng cách địa chỉ của 2 đoạn mã là khác nhau.
+Còn đây là lập luận của mình về 2 vấn đề trên mọi người xem có đúng không:
+Như ta đã biết 1 chương trình gồm nhiều hàm được tạo lên, mỗi 1 hàm tương ứng với 1 stack frame. Mỗi khi 1 hàm được gọi thì 1 stack frame được tạo ra, và khi hàm đó trở về (function return ) thì stack frame của hàm đó bị giải phóng.
+Mỗi 1 stack frame chứa 3 thông tin:
+1. Tham số truyền vào
+2. Biến local của hàm
+3. dòng lệnh trong doạn mã mà hàm trở về (number line function return ) hay trong nhiều sách còn viết là địa chỉ mà hàm đó thực hiện (the address at which the function is executing)
+vấn đề 1: Chính vì stack frame chứa 3 thông tin trên nên trong 2 đoạn mã địa chỉ của x và y cách xa nhau đến vậy.
+vấn đề 2: Do trong code 2 có 3 stack chứ không phải 2 stack như trong code 1 nên khoảng cách địa chỉ giữa 2 đoạn mã là khác nhau.
+Không biết thế đã đúng chưa . Mong mọi người vào ủng hộ 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#108880</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#108880</link>
+				<pubDate><![CDATA[Mon, 7 Jan 2008 06:55:09]]> GMT</pubDate>
+				<author><![CDATA[ zThienLongz]]></author>
+			</item>
+			<item>
+				<title>Re:  Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Tớ nghĩ đúng như thế. Bản thân 1 hàm có thể được lưu trữ tại những vị trí khác nhau trong bộ nhớ (stack frame theo bạn nói), vị trí này phụ thuộc vào cách load chương trình vào bộ nhớ để thực thi. Theo tớ nghĩ, nó đã được tạo ra vào thời điểm chạy chương trình chứ không phải khi bắt đầu gọi hàm, và tồn tại mãi cùng chương trình nếu không có gì đặc biệt. Trong vùng nhớ của hàm có thể chứa các biến cục bộ của nó, nên địa chỉ của các biến này phụ thuộc vào địa chỉ của hàm. Do vị trí các hàm là khác nhau nên địa chỉ các biến cũng khác nhau.
+
+Bạn cũng có thể kiểm tra điều này bằng cách sử dụng 1 con trỏ hàm, rồi in thử ra giá trị của nó (tức là địa chỉ của hàm).
+
+Nói thêm 1 chút về việc truyền tham số trong hàm, tớ nghĩ không nhất thiết chúng được lưu trữ trong bản thân của vùng nhớ hàm. Chúng có thể được lưu trữ trong stack (không phải stack frame). Stack thường chứa các thông tin sau khi gọi hàm:
+- địa chỉ trở về, là địa chỉ của lệnh đã gọi hàm
+- giá trị các tham số hoặc địa chỉ của chúng
+khi hàm con được thực hiện xong, nó (hoặc hàm mẹ) có nhiệm vụ giải phóng các tham số trong stack và trả lại điều khiển cho hàm mẹ thông qua địa chỉ trở về đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#108971</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#108971</link>
+				<pubDate><![CDATA[Mon, 7 Jan 2008 19:13:38]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Re:  Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Do kích thước của của các đoạn code prolog, SEH, stack check... của các compiler # nhau.
+Sinh mã ASM tương ứng với các compiler mà cậu đang dùng để check, sẽ thấy ngay, và sẽ hiểu "à, bây giờ em mới hiểu tại sao giun chết".
+Hiểu cái này phải gọi là nhờ vào Reverse Engineering đấy. Hiểu tại sao compiler, linker, Win OS làm việc như vậy. Giỏi code chưa đủ đâu, cố gắng mò sâu hơn chút nữa. 
+Với các compiler hiện đại bây giờ, ngoài 3 cái: push function parameters, return address, local vars, còn 1 đống cái khác trên stack mà compiler sinh ra nữa. Đã vậy, mỗi ver của compiler sinh code cho stack # nhau nữa. Nhức cái đầu.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109025</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109025</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2008 01:01:58]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re:  Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Vậy cho tớ hỏi là làm thế nào để biết được tham số truyền vào cho hàm nằm trong stack mà không phải là một nơi khác? Nếu lập trình assembler bản thân người lập trình có thể gọi stack ra để truyền tham số cho hàm, còn với các ngôn ngữ khác thì sao?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109045</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109045</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2008 02:21:22]]> GMT</pubDate>
+				<author><![CDATA[ Reversing...]]></author>
+			</item>
+			<item>
+				<title>Re:  Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Tìm tài liệu về compiler cậu đang dùng, quy ước gọi: Calling Convention để đọc. VD: tìm hiểu các kiểu gọi: cdecl, pascal, stdcall, fastcall, thiscall, ....
+Tất cả các ngôn ngử lập trình và compiler mà sinh mã native code đều truyền tham số hàm qua stack và các thanh ghi, không còn nơi nào khác.
+VD: cdecl và stdcall: push các tham số vào stack từ phải qua.
+fastcall trong Delphi dùng EAX, ECX, EDX để truyền 3 tham số đầu tiên, các tham số còn lại push từ phải qua.
+pascal call trong Pascal cũ push tham số từ trái qua.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109083</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109083</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2008 11:37:17]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re:  Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Cho em hỏi ngoài 3 cái trên complier còn sinh thêm những cái gì ạ, anh có thể vd cho em vài cái đc không
+thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109154</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#109154</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2008 16:54:11]]> GMT</pubDate>
+				<author><![CDATA[ zThienLongz]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Như anh TQN có đề cập, 3 loại thông tin chính được lưu trong stack:
+
+ - Tham số truyền cho hàm: số lượng tham số, kiểu gọi hàm (tùy thuộc trình biên dịch). Tham khảo về các loại calling convention <span class="link"> http://blogs.msdn.com/oldnewthing/archive/2004/01/08/48616.aspx</span>. hoặc ở <span class="link"> http://www.angelcode.com/dev/callconv/callconv.html</span>
+
+ - Địa chỉ trả về của hàm: là địa chỉ của lệnh ngay sau lệnh <font color='white'>call</font> của assembly
+
+ - Biến cục bộ được sử dụng bên trong hàm: chú ý, biến này không bao gồm biến static.
+
+Ngoài 3 thông tin chính trên, stack còn chứa nhiều thông tin khác:
+ - Cấu trúc SEH (Structure Exception Handling): thông tin này dùng để bắt các SEH event chain(chú ý là SEH của Windows khác với SEH của C++). 
+ - Canary: Đây là một giá trị chèn vào stack nhằm chống khai thác stack overflow. Vấn đề về stack overflow protection sẽ bàn ở chủ đề khác.
+(Có thể còn một số thông tin khác, nhờ mọi người bổ sung) :)
+
+Cùng một đoạn code, khi biên dịch ở các compiler khác nhau, khi thực thi sẽ in ra địa chỉ stack khác nhau, bởi mỗi compiler có một kiểu code prolog, code epilog quản lý stack khác nhau. :).
+
+Trong Windows, mỗi thread có một stack khác nhau. Mọi hàm trong thread đều sử dụng chung stack này. Kích thước mặc định của stack này là 1MB và có thể thay đổi được khi biên dịch với tùy chọn hợp lý. Vị trí bộ nhớ chứa stack của thread và vị trí bộ nhớ chứa code thực thi của hàm hoàn toàn ở hai vùng cách biệt nhau.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#110461</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#110461</link>
+				<pubDate><![CDATA[Tue, 15 Jan 2008 15:32:42]]> GMT</pubDate>
+				<author><![CDATA[ mfeng2]]></author>
+			</item>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Máy anh cho em hỏi xí 
+Đi test công ty em fail câu này, từ nào giờ không để ý máy vụ này 
+Sau đây là 1 Class, với Class đó, cách khai báo hàm main như thế chiếm bao nhiêu byte dữ liệu và số byte đó khác với số byte của cái file .exe khi biên dịch ?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>class Student
+{
+int StudentID = 0;
+}
+void main&#40;&#41;{
+Student *a = new Student&#40;&#41;;
+}</pre>
+		</div>
+Với lại việc đặt tên Class và Attribute với nhiều kí tự hoặc ít kí tự (như Student thay = a) như vậy khi biên dịch có ảnh hưởng gì tới ô nhớ hay chỉ tăng dung lượng file Code thôi ?
+Mong các anh giúp đỡ :)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270576</link>
+				<pubDate><![CDATA[Mon, 29 Oct 2012 19:13:56]]> GMT</pubDate>
+				<author><![CDATA[ ndp1007]]></author>
+			</item>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Vậy đáp án đúng là như thế nào ? Chắc chắn cũng sai luôn.
+Câu hỏi trên trả lời no cũng được mà yes cũng xong ? Ông nào ra câu hỏi này chắc chắn cũng không nắm rõ về compiler sinh mã C/C++ ra sao, compiler nào, option compile/link như thế nào nữa.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270577</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270577</link>
+				<pubDate><![CDATA[Mon, 29 Oct 2012 20:03:45]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ndp1007 wrote:</cite><br>
+		<blockquote>Máy anh cho em hỏi xí 
+Đi test công ty em fail câu này, từ nào giờ không để ý máy vụ này 
+Sau đây là 1 Class, với Class đó, cách khai báo hàm main như thế chiếm bao nhiêu byte dữ liệu và số byte đó khác với số byte của cái file .exe khi biên dịch ?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>class Student
+{
+int StudentID = 0;
+}
+void main&#40;&#41;{
+Student *a = new Student&#40;&#41;;
+}</pre>
+		</div>
+Với lại việc đặt tên Class và Attribute với nhiều kí tự hoặc ít kí tự (như Student thay = a) như vậy khi biên dịch có ảnh hưởng gì tới ô nhớ hay chỉ tăng dung lượng file Code thôi ?
+Mong các anh giúp đỡ :)
+&nbsp;
+		</blockquote>
+
+Sao bạn không tự thử nghiệm luôn đi nhỉ? Có thể dùng sizeof để kiểm tra kích thước của class đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270579</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270579</link>
+				<pubDate><![CDATA[Mon, 29 Oct 2012 20:18:02]]> GMT</pubDate>
+				<author><![CDATA[ Stanley_00]]></author>
+			</item>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ Em nghĩ, hình như đây là câu trả lời mở, có nhiều option để trả lời, giống như anh TQN nói. 
+Điểm ghi được tuỳ theo mức độ trả lời của ứng viên. 
+Em có tìm hiểu thêm là cái đó hình như phải dựa trên platform nào 32bit, hay 64bit thì phải.
+
+<p></p>
+		<cite class="blockquote">Stanley_00 wrote:</cite><br>
+		<blockquote>
+Sao bạn không tự thử nghiệm luôn đi nhỉ? Có thể dùng sizeof để kiểm tra kích thước của class đó.&nbsp;
+		</blockquote>
+Dùng tool VS 2010 bỏ qua complier header nội dung như sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;conio.h&gt;
+class Student
+{
+	private :
+		int StudentID;
+		char* StudentName;
+	public :
+		Student&#40;&#41;
+		{
+			this-&gt;StudentID=0;
+			this-&gt;StudentName=&quot;ndp1007&quot;;
+		}
+};
+
+int main&#40;&#41;
+{
+	Student *a = new Student&#40;&#41;;
+	printf&#40;&quot;%d&quot;,sizeof&#40;a&#41;&#41;;
+	getch&#40;&#41;;
+	return 0;
+}</pre>
+		</div>
+Trên winxp 32bit : 
+Màn hình để số 4 ( dù // đi 2 attribute StudentID và Name, thay int = float, char ... cũng là số 4) <b><font color='green'>(1)</font></b>
+Size của file exe là 32 Kb ( k0 biết máy compiler của máy Editor khác ntn )
+
+<b><font color='green'>(1)</font></b> : Cái này em cũng ko rõ, huynh nào giải thích dùm em với :D
+
+Em hiểu là size của 1 lớp là = sum(Attributes of Class)
+Khi khai báo Student *a = new Student(); thì con trỏ a trỏ tới địa chỉ được cấp phát với size  = size của class Student ?
+
+Mà giữa 2 cách khai báo Student *a vs Student *a = new Student() size chiếm trong bô nhớ có khác nhau không ? ( Theo như em test code trên thì như nhau)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270643</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270643</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 20:46:22]]> GMT</pubDate>
+				<author><![CDATA[ ndp1007]]></author>
+			</item>
+			<item>
+				<title> Thảo luận về địa chỉ vùng nhớ Stack</title>
+				<description><![CDATA[ thở dài...
+
+a là pointer =&gt; size = 4
+
+sizeof(a) là size của a =&gt; 4
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270648</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18152.hva#270648</link>
+				<pubDate><![CDATA[Wed, 31 Oct 2012 23:31:40]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

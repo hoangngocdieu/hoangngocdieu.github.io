@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ THÊM TÍNH NĂNG DKIM
+cho Postfix với dkim-milter trên nền FreeBSD
+
+
+<b>1. DKIM là gì</b>
+
+DKIM (DomainKeys Identified Mail) là một phương pháp xác thực e-mail bằng chữ ký số <u>của miền</u> gửi thư, trong đó khóa công khai thường được công bố trên DNS dưới dạng một TXT record.
+ 
+Khi gửi thư, bộ ký thư sẽ chèn lên đầu thư một trường <u>DKIM-Signature</u> [1] có nội dung đại khái như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mycompany.com; s=sitec; t=1250425543; 
+bh=qQxSOEYYHCCISqVJ6pi/vUuNCr0EqMNkRSnD0B0TNFQ=;
+h=Message-ID:From:To:Subject: Date:MIME-Version:Content-Type;
+b=aiL+F+rqOdVxmR1V0bdfwsVOvMpwv1eMcCrX5I2C6U9CX+mkyepL3t0PwkW8pLSFc
+CpJ5NvsBGqgOK4f2h89IubyYMFU0BkqZmtlBFlL+wyximVXLtHxO95WOxJX380tCet
+XwofYIOK7tx45K41hG4T7+5ylNSuO1HHMpM/WfOM=</pre>
+		</div>
+Trong đó có mọi thông tin cần thiết như phiên bản DKIM (<u>v</u>), thuật toán ký (<u>a</u>), thuật toán chuẩn hóa xâu ký tự đưa đi ký ( <u>c</u> ), tên miền ký (<u>d</u>), tên cặp khóa, hay còn gọi là selector (<u>s</u>), dấu ấn thời gian (<u>t</u>), thời hạn hiệu lực của chữ ký (<u>x</u>), phương thức truy vấn để lấy khóa công khai (<u>q</u>), danh sách các trường của phần đầu thư được ký (<u>h</u>), độ dài phần thân thư được ký (<u>l</u>), giá trị hash của nội dung được ký (<u>bh</u>), và chữ ký (<u>b</u>).
+
+Khi nhận thư, bộ kiểm thư sẽ xác định khóa công khai theo phương pháp <u>q</u> (trong ví dụ trên, vốn dĩ không chỉ rõ <u>q</u>, phương pháp mặc định là truy vấn DNS tìm TXT record có tên là <u>sitec._domainkey.mycompany.com.</u>), dựa vào đó kiểm tra chữ ký rồi chèn kết quả kiểm tra vào trường <u>Authentication-Results</u> [2] của thư. Chẳng hạn, kết quả tốt được viết như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Authentication-Results: ... dkim=pass header.i=@mycompany.com</pre>
+		</div>
+Kết quả này xác thực các trường của phần đầu thư đã kể trong mục <u>h</u> (tức Message-ID, From, To, Subject, Date, MIME-Version và Content-Type trong ví dụ trên) cùng với phần thân thư có độ dài kể trong mục <u>l</u> (tức toàn bộ phần thân thư trong ví dụ trên, vốn dĩ với mục <u>l</u> mặc định).
+
+Trong dây chuyền nộp – chuyển – phát thư, bộ ký thư thường đặt tại sending MTA và bộ kiểm thư thường đặt tại receiving MTA. Khi đó DKIM thực chất chỉ xác nhận thư được bảo toàn trên suốt chặng đường <u>chuyển</u> thư. Việc đảm bảo một lá thư From:alice@mycompany.com chắc chắn thuộc về Alice nằm ngoài trách nhiệm của DKIM.
+
+Ngoài ra, tùy theo chính sách kiểm tra chữ ký DKIM của mình, bộ kiểm thư có thể tìm hiểu chính sách ký DKIM (tức ADSP,  Author Domain Signing Practices [3]) của mycompany.com bằng cách truy vấn DNS tìm TXT record tên là <u>_adsp._domainkey.mycompany.com.</u>, căn cứ vào đó (và tùy theo kết quả kiểm tra chữ ký) để quyết định có chấp nhận lá thư hay không.
+
+
+<b>2. Vì sao, khi nào dùng DKIM</b>
+
+Nói một cách vắn tắt, nên dùng DKIM bởi vì một lá thư không có chữ ký DKIM dễ bị hiểu là spam.
+
+DKIM là một phương pháp xác thực chứ không phải là một phương pháp chống spam. Nhưng nó hỗ trợ việc chống spam bởi vì nó đảm bảo thư là thật (địa chỉ người gửi, hay ít nhất tên miền gửi thư là thật) trong khi thực tế đa số spam đều là thư giả mạo (mạo tên người khác, tên miền khác). Với DKIM, <i>ai muốn spam thì cứ thoải mái, nhưng phải spam một cách quang minh chính đại</i>; bạn không thể gửi thư từ một tên miền không thuộc sở hữu của mình được.
+
+Phát triển từ phương pháp <u>DK</u> của Yahoo và phương pháp <u>IM</u> của Cisco, với việc được cơ quan IETF cấp tư cách <u>Standards Track</u>, DKIM đã từ một phương pháp xác thực email trẻ nhất trở thành phương pháp có tiềm năng nhất.
+
+Với việc xác thực nội dung hơn là xác thực phong bì, trong các tình huống mà phong bì thay đổi, chẳng hạn, thư được forward qua một đường chuyển thư phức tạp, DKIM cho những lá thư cơ hội sống sót cao hơn so với các phương pháp xác thực địa chỉ server như là <u>SPF</u> hay <u>SIDF</u>. (Nhưng tất nhiên, trong những tình huống nội dung thay đổi, chẳng hạn qua bộ quét virus, các phương pháp kia có thể cho cơ hội sống sót cao hơn.)
+
+Với việc triển khai trên server hơn là trên client, và không đòi hỏi một hạ tầng khóa công khai phức tạp, DKIM gọn nhẹ hơn so với các phương pháp xác thực từ đầu đến cuối như là S/MIME hay PGP. (Nhưng tất nhiên, ý nghĩa xác thực cũng nhẹ hơn, DKIM không thể thay thế hoàn toàn cho các phương pháp kia.)
+
+Hiện nay DKIM chưa được dùng phổ biến. Thư có chữ ký DKIM chỉ mới thấy chủ yếu từ các ngân hàng, tổ chức tài chính (Paypal, eBay,...) và một số nhà cung cấp email (Google, Yahoo, Hotmail,...).
+
+Vì thế, chính sách dùng DKIM tốt nhất hiện nay là <i>ký triệt để mọi lá thư gửi đi từ miền mình và chỉ từ chối những lá thư không hợp lệ đến từ những miền khác có chính sách ký thư triệt để</i>.
+
+Cơ chế an ninh nào cũng có giá của nó. Việc tạo ra một chữ ký hay kiểm tra một chữ ký tiêu tốn  hàng triệu clock cycle. Với DKIM, một server có xung nhịp cỡ GHz sẽ tiêu tốn thêm chừng 1 ms cho mỗi lá thư đến hay đi.
+
+
+<b>3. Phần mềm</b>
+
+Các thành phần chính của mail server gồm
+<ul><li>FreeBSD operating system  v.7.2 – GENERIC kernel.
+Postfix SMTP server v.2.6.
+Gói milter của sendmail, mặc định được cài đặt sẵn (cùng với sendmail) trong FreeBSD.
+Dkim milter v. 2.8.3 với libdkim 1.0.17.</li></ul>
+
+
+<b>4. Môi trường và cấu hình tổng thể</b>
+
+Trên cùng một máy với Postfix đã cài đặt và hoạt động như một sending MTA đồng thời như một receiving MTA, ta sẽ cài đặt dkim-milter và cấu hình nó thành bộ ký thư đồng thời thành bộ kiểm thư, nghĩa là có nhiệm vụ ký các lá thư gửi đi, kiểm tra chữ ký những lá thư nhận được và chặn chúng nếu không hợp lệ.
+
+Trước khi cài đặt dkim-milter, cần có các điều kiện sau.
+<ul><li>FreeBSD đã cài đặt và cập nhật những miếng vá mới nhất.
+Ports collection đã cập nhật bản mới nhất.
+Postfix đã cài đặt và hoạt động.
+Firewall cục bộ phải mở một cổng trên lookback interface để qua đó Postfix liên lạc với dkim-milter. Chúng ta sẽ giả sử là cổng 8891 TCP.</li></ul>
+
+
+<b>5. Cài đặt và cấu hình chi tiết</b>
+
+1. Cài đặt libdkim và dkim-milter
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/ports/mail/libdkim
+make install clean
+cd /usr/ports/mail/dkim-milter
+make install clean</pre>
+		</div>
+
+Các chương trình đã cài vào gồm có
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/bin/dkim-genkey       #chương trình tạo khóa
+/usr/local/bin/dkim-testkey      #chương trình thử khóa
+/usr/local/bin/dkim-testssp
+/usr/local/libexec/dkim-filter   #chương trình chính
+/usr/local/etc/rc.d/milter-dkim  #script chạy chương trình chính
+/usr/local/share/doc/dkim-milter #tài liệu</pre>
+		</div>
+
+2. Tạo account dịch vụ, tức là một account không có home và shell, thuộc một group tương ứng cùng tên, chúng ta sẽ đặt tên account này là <u>dkim</u>. Chi tiết của việc này được bỏ qua.
+
+3. Tạo các thư mục để chứa khóa. Nên đặt tên theo tên miền mail cần xác thực. Chúng ta sẽ giả sử rằng ta có một miền mail cần xác thực là <u>mycompany.com</u>.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mkdir /etc/mail/dkim
+mkdir /etc/mail/dkim/keys
+mkdir /etc/mail/dkim/keys/mycompany.com
+cd /etc/mail/dkim/keys/mycompany.com</pre>
+		</div>
+
+4. Tạo một cặp khóa công khai/bí mật cho miền này. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dkim-genkey -d mycompany.com -s sitec -t</pre>
+		</div>
+Trong đó  -d (domain) là tên miền mail,  -s (selector) là một từ bất kỳ tùy ý, chúng ta đặt là <u>sitec</u>, có tác dụng báo danh cặp khóa, nhờ nó mà có thể tạo ra và dùng đồng thời nhiều cặp khóa cho một miền mail, và -t nói rằng cặp khoá tạo ra dùng để test thử nghiệm; khi làm chính thức thì tạo cặp khoá mới cũng bằng lệnh này nhưng không có tham số -t. Lệnh này sẽ tạo ra trong thư mục hiện thời hai file
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sitec.private
+sitec.txt</pre>
+		</div>
+File thứ nhất, <u>sitec.private</u>, chứa khóa bí mật. Ta hãy đổi chủ và phân quyền truy cập nó. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chown dkim:dkim sitec.private
+chmod 600 sitec.private
+chown dkim:dkim /etc/mail/dkim/keys/mycompany.com
+chmod 700 /etc/mail/dkim/keys/mycompany.com</pre>
+		</div>
+File thứ hai, <u>sitec.txt</u>, chứa khóa công khai. File này có nội dung đại khái như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sitec._domainkey IN TXT "v=DKIM1; g=*; k=rsa;
+p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/tmJXY+kdhPLEIzy8C6Etl+PXlr3zJ8ElX
+DUIyT7bBHE9z69igqffuIZ42eXTeJJBXNdrWlO4QBQ6H0knnpIvZid+VwG2GVfO98FT1F4YZGx4Np
+plZqebT6YCQLF/T9JGctjsAN197KrCT0ilChgVmekyeT5g8f1iXBWUE4kFXwIDAQAB" ; ----- DKIM sitec for mycompany.com</pre>
+		</div>
+
+5. Công bố khoá công khai lên DNS bằng cách tạo trong DNS forward lookup zone <u>mycompany.com</u> một TXT record có tên là <u>sitec._domainkey.mycompany.com.</u> và có giá trị là đoạn văn bản  <u>v=DKIM1; g=*; k=rsa; p=MIGfM...IDAQAB</u> trong file nói trên. Nếu DNS server của chúng ta là BIND, việc này thực hiện đơn giản bằng cách copy paste toàn bộ nội dung của file trên vào forward lookup zone file; còn nếu là DJBDNS, việc này có thể thực hiện bằng cách copy paste từng phần của file trên vào một trang web có sẵn trên mạng Internet tên là <u>djbdns / tinydns Record Builder</u> (người đọc tự tìm), sau đó copy paste dòng kết quả từ trang web này vào file dữ liệu của DJBDNS.
+
+Ngoài ra, ta hãy công bố chính sách ký lên DNS. Hãy tạo tương tự như trên một TXT record có tên là <u>_adsp._domainkey.mycompany.com.</u> và có giá trị là <u>dkim=all</u> hoặc <u>dkim=discardable</u>; <u>all</u> tuyên bố rằng mọi lá thư của mycompany.com đều được ký, <u>discardable</u> tuyên bố rằng mọi lá thư từ mycompany.com không có chữ ký hợp lệ đều đáng vứt đi.
+
+6. Sửa file cấu hình của Postfix. Trong file <u>/etc/postfix/main.cf</u> (hoặc /usr/local/etc/postfix/main.cf), viết thêm vài dòng như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>milter_default_action = accept
+milter_protocol = 2           # hoặc 3
+smtpd_milters = inet:localhost:8891
+nonsmtpd_milters = inet:localhost:8891</pre>
+		</div>
+
+7. Tạo file cấu hình <u>/etc/mail/dkim-filter.conf</u>.  Ta có thể  sao chép từ cấu hình mẫu /usr/local/etc/mail/dkim-filter.conf.sample rồi sửa đổi vài tham số như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>KeyFile    /etc/mail/dkim/keys/mycompany.com/sitec.private
+Socket     inet:8891@localhost 
+Domain     mycompany.com
+Selector   sitec</pre>
+		</div>
+
+8. Sửa file cấu hình boot <u>/etc/rc.cf</u>, viết thêm vài dòng như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>milterdkim_enable="YES"
+milterdkim_uid="dkim"
+milterdkim_profiles=""
+milterdkim_cfgfile="/etc/mail/dkim-filter.conf"</pre>
+		</div>
+
+9. Khởi động dkim-milter.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/etc/rc.d/milter-dkim start</pre>
+		</div>
+
+10. Khởi động lại Postfix và DNS server. 
+
+Nếu mọi bước trên đều làm chính xác, DKIM sẽ hoạt động. Ta có thể thử kiểm tra bằng cách gửi thư đến một địa chỉ chuyên dùng để thử nghiệm DKIM (người đọc tự tìm), hoặc đến một account của bản thân ở  gmail.com hay yahoo.com.
+
+
+<b>6. Các việc nên làm thêm</b>
+
+Chúng ta đã cấu hình dkim-milter để ký và kiểm tra chữ ký, nhưng không cản lọc. Ta có thể chỉnh sửa file cấu hình dkim-filter.conf để lọc và cản các thư không có chữ ký DKIM hợp lệ đến từ những miền nhất định (chẳng hạn, những miền có chính sách <u>discardable</u>).
+
+
+<b>7. Tài liệu tham khảo</b>
+
+[1]	Allman E. và một số tác giả khác: DomainKeys Identified Mail (DKIM) Signatures. RFC 4871. IETF Standards Track. 2007.
+[2]	Kucherawy M.: Message Header Field for Indicating Message Authentication Status. RFC 5451. IETF Standards Track. 2009.
+[3]	Allman E. và một số tác giả khác: DomainKeys Identified Mail (DKIM) Author Domain Signing Practices (ADSP) . RFC 5617. IETF Standards Track. 2009.
+[4]	Sendmail: FreeBSD man pages: dkim-filter(8), dkim-filter.conf(5), dkim-genkey(8).
+[5]	Postfix: Postfix before-queue Milter support.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190229</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190229</link>
+				<pubDate><![CDATA[Sun, 16 Aug 2009 14:32:33]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ @facialz: bạn viết tốt quá. trình bày rõ ràng mạch lạc và đúng nội dung. mình hi vọng các bạn khác khi gửi bài lên HVA, hãy nhớ đến các bài viết của facialz mà "uốn chuột bảy lần trước khi submit".
+
+mình nghĩ DKIM hay các phương pháp diệt spam mà không có khả năng <b>cá nhân hóa cho từng người sử dụng cuối</b> thì đều khó có hiệu quả cao.
+
+spam đa số xuất phát từ botnet, và phần lớn zombie trong botnet là các máy tính trong hệ thống mạng của các công ty. các máy tính này khi gửi spam, đều sử dụng chính MTA của công ty đó để gửi, nên sẽ được ký đầy đủ. điều tương tự cũng diễn ra cho các giải pháp khác như SPF. rồi gần đây cũng có hiện tượng bọn làm botnet bắt đầu crack CAPTCHA đăng ký của GMAIL, HotMail hay Yahoo! và sử dụng MTA của các dịch vụ này để relay spam cho các máy tính không có MTA.
+
+ngoài ra còn vấn đề con gà và quả trứng nữa. muốn các giải pháp này đạt hiệu quả cao, thì phải có nhiều người sử dụng chúng. nhưng mà muốn có nhiều sử dụng chúng, thì các biện pháp này phải đạt hiệu quả cao trước đã.
+
+spam là kô thể chối bỏ, sẽ không thể có ngày mà thế giới giải quyết được spam như Bill tuyên bố. ngày đó chỉ đến khi con người ta ngừng tất cả các hoạt động kinh doanh. sở dĩ spam tồn tại cho đến bây giờ, bất kể nỗ lực của các hãng sừng sỏ như MS, là vì spam là công cụ quảng bá sản phẩm hiệu quả nhất về kinh tế.
+
+nghĩa là dẫu muốn hay không, hộp thư của người dùng cuối cũng sẽ có spam trong đó. hơn nữa có câu, "one man's spam is another man's ham". thành ra kinh nghiệm của mình là, để diệt được spam một cách triệt để thì chỉ có cách làm việc ngay trên hộp thư của người dùng cuối. GMail làm rất tốt chuyện này. mình cũng đã giải quyết được nó từ vài năm nay bằng cách sử dụng <span class="link"> http://www.nuclearelephant.com/</span>.
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190231</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190231</link>
+				<pubDate><![CDATA[Sun, 16 Aug 2009 15:40:07]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ Cảm ơn bác mrro đã động viên và chia xẻ kinh nghiệm. Tôi sẽ tìm hiểu dspam và sẽ ứng dụng nó trong những môi trường thích hợp.
+
+Tôi hiểu và đồng tình với bác ở vài điểm. Không hiểu vài điểm khác.
+
+Về DKIM như một công cụ diệt spam không có khả năng cá nhân hóa cho từng người sử dụng cuối, tôi không hiểu. Là một phương pháp xác thực, DKIM không thể là công cụ diệt spam mà chỉ có thể hỗ trợ các công cụ diệt spam (và chỉ hỗ trợ hiệu quả khi DKIM đã được dùng rộng rãi). DKIM không có khả năng cá nhân hóa cho từng người sử dụng cuối vì nó là một phương pháp xác thực miền. Nhưng khi so sánh với các phương pháp xác thực cá nhân, như chữ ký số SMIME hay PGP, thì tôi không thấy chúng có gì hơn DKIM trong việc hỗ trợ chống spam.
+
+Về con gà và quả trứng, tôi đồng tình. Tôi cũng nghĩ rằng DKIM nếu muốn hỗ trợ chống spam hiệu quả thì trước hết phải được dùng rộng rãi. Rộng rãi đến mức mà khi đó, một miền không DKIM hoặc không có chính sách ký DKIM triệt để sẽ có thể được coi như không đứng đắn, có thể lọc bỏ hoàn toàn.
+
+Về tính tất yếu của spam, tôi đồng tình. Dù cá nhân tôi không thích nhận spam và cũng không spam người khác, nhưng đã làm IT ở các công ty một thời gian tôi cũng thấy nhiều người có suy nghĩ "thoáng" hơn, họ chấp nhận quảng cáo, tin đồn, tin vô thưởng vô phạt, tin không liên quan,... ở mức độ nhất định, và họ cũng dùng e-mail để truyền bá các thông tin loại đó. Tôi chỉ có thể khuyên họ không nên spam quá độ chứ không thể khuyên họ tuyệt đối không spam được. Càng không thể cấm họ được. Đó là một phần của công việc, của business.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190413</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190413</link>
+				<pubDate><![CDATA[Tue, 18 Aug 2009 12:19:41]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ @facialz: mình nghĩ có gì đó chưa rõ ở đây. ý mình là DKIM là công cụ chống spam bằng cách xác thực email. Bạn facialz đồng ý chỗ này không? 
+
+Àh hình như ý bạn facialz là DKIM không phải là công cụ chống spam. Cái này mình không đồng ý. DKIM được ra đời với mục tiêu chính là chống spam bằng cách xác thực email, chứ nó không phải để xác thực email rồi mới có hiệu ứng lề là chống spam.
+
+Còn mấy cái như PGP hay S/MIME mục tiêu của tụi nó là mã hóa và xác thực email, và chúng nó đâu có nhiệm vụ chống spam đâu, nên đâu thể nói là S/MIME hay PGP kém trong việc chống spam so với DKIM. 
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190414</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#190414</link>
+				<pubDate><![CDATA[Tue, 18 Aug 2009 13:00:33]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ Mình có vài thắc mắc mong được giúp đỡ , search thấy nói rằng dkim là newer version của dk , vậy khi implement chỉ cần 1 trong 2 hay cả 2 ? Có một số hướng dẫn cài đặt cả 2 trên máy, vd <span class="link"> https://support.eapps.com/index.php?/Knowledgebase/Article/View/169/1/user-guide---dkim-and-dk-milter-domain-keys-for-mail-service</span> , vậy sau khi cài cả 2 file /etc/postfix/main.cf sẽ config :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>milter_default_action = accept
+milter_protocol = 2
+smtpd_milters = inet:localhost:8891,inet:localhost:8892
+non_smtpd_milters = inet:localhost:8891,inet:localhost:8892</pre>
+		</div>
+hay sao ?
+Thắc mắc thứ hai là mail của mình relay qua một mail gateway khác thì nên implement dkim trên server nào ?
+Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240023</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240023</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 01:17:31]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ DK và DKIM là 2 phương thức khác nhau của việc ký và kiểm tra email
+
+DK: Domainkey hiện nay là công nghệ không được tiếp tục phát triển và  hỗ trợ nữa. 
+DKIM: là chuẩn mới, hiện đang được phát triển và khuyến cáo sử dụng
+
+Thắc mắc 1: khi triển khai bạn chỉ sử dụng DKIM thôi.
+Thắc mắc 2: mail của bạn relay qua một mail Gateway, nếu mail Gateway này đóng vai trò relay cho cả outgoing và incoming đến mail của bạn, thì bạn nên triển khai DKIM trên mail gateway]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240044</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240044</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 02:08:31]]> GMT</pubDate>
+				<author><![CDATA[ camazalraman]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ Cảm ơn camazalraman nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240074</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240074</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 03:12:45]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ Hi all,
+Sau khi implement dkim, lại có vài thắc mắc nữa đây là header mail gửi cho yahoo và gmail của mình :
+<blockquote>Authentication-Results: 		mta173.mail.ac4.yahoo.com from=mydomain; domainkeys=neutral (no sig); from=mydomain.com; dkim=pass (ok)&nbsp;
+		</blockquote>
+<blockquote>Authentication-Results: mx.google.com; spf=pass (google.com: domain of myuser@mydomain designates x.x.x.x as permitted sender) smtp.mail=myuser@mydomain; dkim=pass (test mode) header.i=@mydomain&nbsp;
+		</blockquote>
+Google thêm chút thấy giải thích domainkey signature và dkim signature khác nhau, dkim-filter tạo dkim signature , vậy muốn mail gửi ra ngoài có domainkey signature thì phải làm thế nào ? Mình thấy lẫn lộn hết cả, vì search thì thấy từ khoá domainkey lúc nào cũng đi chung với dkim . Tình hình là gửi mail cho một số KH thì bị mail server của họ reject với lý do : "550 Message does not pass DomainKeys requirements for domain mydomain (in reply to end of DATA command)" .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240846</link>
+				<pubDate><![CDATA[Tue, 14 Jun 2011 22:55:37]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Thêm tính năng DKIM cho Postfix với dkim-milter trên nền FreeBSD</title>
+				<description><![CDATA[ Solved .
+Nguyên nhân là do nhiều mail server chỉ check domainkeys chứ không check dkim, đổi qua xài dk-filter là ok. Mình nghĩ tốt nhất sẽ implement cả 2 .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240928</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/30837.hva#240928</link>
+				<pubDate><![CDATA[Wed, 15 Jun 2011 05:20:52]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+	</channel>
+</rss>

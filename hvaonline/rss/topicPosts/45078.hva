@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi khi cài đặt dịch vụ DNS trên CENTOS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi khi cài đặt dịch vụ DNS trên CENTOS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi khi cài đặt dịch vụ DNS trên CENTOS</title>
+				<description><![CDATA[ Chào mọi người, mọi người giúp mình sử lý lỗi này với nhé , lúc trước làm thì ko sao hết , 1 nẳm nay quay lại làm thì lỗi tùm lum :(
+
+1, Mình sử dụng lệnh &quot;yum install bind&quot; để tải gói cài đặt dịch vụ DNS.
+2, mình tạo ra 4 file cơ bản để cấu hính dịch vụ bind:
+
+10.10.10.rev.db // Zone phân giải nghịch
+named.conf      // Thông tin các zone
+root.db            // Root Hind
+test.com.db    // Zone phân giải thuận
+3 chi tiết cấu hình các file như sau:
+<font color='red'>named.conf</font>
+
+options {
+	directory &quot;/etc&quot;;
+	forwarders {8.8.8.8;};
+	};
+
+zone &quot;.&quot; {
+	type hint;
+	file &quot;/etc/root.db&quot;;
+	};
+
+zone &quot;test.com&quot; {
+	type master;
+	file &quot;/var/named/test.com.db&quot;;
+	};
+zone &quot;10.10.10.in-addr.arpa&quot; {
+	type master;
+	file &quot;/var/named/10.10.10.rev.db&quot;;
+	}; 
+
+10.10.10.rev.db<font color='red'>[color=red] </font>[/color
+$ttl 1H
+@                       IN      SOA     CENTOS-01.test.com. dngs2202@gmail.com. (
+                        1305741391
+                        15M
+                        10M
+                        1D
+                        1H )
+@       IN      NS      CENTOS-01.test.com.
+1       IN      PTR     CENTOS-03.test.com.
+2       IN      PTR     CENTOS-01.test.com.
+3       IN      PTR     CENTOS-02.test.com.                                                                                                                                                                                                                 
+
+<font color='red'>test.com.db</font>
+
+$ttl 1H
+@                               IN      SOA  CENTOS-01.test.com. (
+                         1305740799
+                         15M
+                         10M
+                         1D
+                         1H )
+
+                                         IN      NS CENTOS-01.test.com.
+                                         IN      MX    10 CENTOS-02
+                                  1D   IN      A       10.10.10.3
+CENTOS-03                 1D   IN      A       10.10.10.1
+CENTOS-02                 1D   IN      A       10.10.10.3
+CENTOS-01                 1D   IN      A       10.10.10.2
+www                           1D   IN      CNAME   CENTOS-02
+mail                            1D   IN      CNAME   CENTOS-02
+ftp                               1D   IN      CNAME   CENTOS-02
+
+<font color='red'>root.db</font> ( Chứa root hint dài qua ko post )
+
+Mình dùng WinSCP kết nối tối server để copy các file vào các thư mục tương ứng:
+10.10.10.rev.db và test.com.db =&gt; /var/named/chroot/var/named/
+root.db  và named.con              =&gt; /var/named/chroot/etc/
+ Khi start dịch vụ named thì lại báo lỗi như sau :
+
+[root@CENTOS-02 ~]# service named start
+Starting named: 
+Error in named configuration:
+dns_rdata_fromtext: /var/named/test.com.db:2: near eol: unexpected end of input
+/var/named/test.com.db:4: unknown RR type '10M'
+zone test.com/IN: loading master file /var/named/test.com.db: unexpected end of input
+_default/test.com/IN: unexpected end of input
+dns_rdata_fromtext: /var/named/10.10.10.rev.db:2: near eol: unexpected end of input
+/var/named/10.10.10.rev.db:3: ignoring out-of-zone data (dngs2202.test.com)
+/var/named/10.10.10.rev.db:3: unknown RR type '15M'
+zone 10.10.10.in-addr.arpa/IN: loading master file /var/named/10.10.10.rev.db: unexpected end of input
+_default/10.10.10.in-addr.arpa/IN: unexpected end of input
+[FAILED]
+
+Ở đây máy mình muốn cấu hình dns là máy CENTOS-02.test.com có ip là 10.10.10.3
+Cảm ơn mọi người nhé , mọi người giúp mình với :) hi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278120</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278120</link>
+				<pubDate><![CDATA[Thu, 15 Aug 2013 08:57:04]]> GMT</pubDate>
+				<author><![CDATA[ msman]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi cài đặt dịch vụ DNS trên CENTOS</title>
+				<description><![CDATA[ Công nhận là cấu hình của bạn "nhoe nhoét" thật :D
+
+<blockquote>directory "/etc"; &nbsp;
+		</blockquote>
+Thường là: directory "/var/named";
+<blockquote>file "/var/named/test.com.db"; &nbsp;
+		</blockquote>
+Cũng may là bạn cấu hình đường dẫn tuyệt đối.
+
+<b><font size='+1'>Phân tích và fix lỗi</font></b>
+1. <blockquote>dns_rdata_fromtext: /var/named/test.com.db:2: near eol: unexpected end of input &nbsp;
+		</blockquote>
+Lỗi ở dòng này: <b>@ IN SOA CENTOS-01.test.com. ( </b>
+<i>Fix:</i><b>@ IN SOA CENTOS-01.test.com. <font color='red'>root.CENTOS-01.test.com.</font>( </b>
+2. <blockquote>/var/named/test.com.db:4: unknown RR type '10M' &nbsp;
+		</blockquote>
+Lỗi ở dòng này: <blockquote>@ IN SOA CENTOS-01.test.com. (
+1305740799
+15M
+<font color='red'><b>10M</b></font>
+1D
+1H )&nbsp;
+		</blockquote>
+<i>Fix:</i> <b>10H</b>
+Ngoài ra trong đoạn code trên bạn nên cho dấu <font color='red'><b>;</b></font> ở cuối mỗi chỉ số
+3. <blockquote>zone test.com/IN: loading master file /var/named/test.com.db: unexpected end of input
+_default/test.com/IN: unexpected end of input &nbsp;
+		</blockquote>
+Xem lại file named.conf bạn post lên đây so với trên server đi. Hình như ko có dấu ";" ở cuối khung zone "test.com"
+4.  <blockquote>dns_rdata_fromtext: /var/named/10.10.10.rev.db:2: near eol: unexpected end of input 
+/var/named/10.10.10.rev.db:3: ignoring out-of-zone data (dngs2202.test.com) &nbsp;
+		</blockquote>
+Lỗi ở dòng này: <blockquote>@ IN SOA CENTOS-01.test.com. <font color='red'><b>dngs2202@gmail.com</b></font>. (&nbsp;
+		</blockquote>
+<i>Fix:</i> Sửa tuơng tự như 1.
+5. <blockquote>/var/named/10.10.10.rev.db:3: unknown RR type '15M' &nbsp;
+		</blockquote>
+Sửa tuơng tự 2.
+6. <blockquote>zone 10.10.10.in-addr.arpa/IN: loading master file /var/named/10.10.10.rev.db: unexpected end of input
+_default/10.10.10.in-addr.arpa/IN: unexpected end of input &nbsp;
+		</blockquote>
+Sửa tuơng tự 3.
+7. <blockquote>IN NS CENTOS-01.test.com.
+IN MX 10 CENTOS-02
+1D IN A 10.10.10.3
+CENTOS-03 1D IN A 10.10.10.1
+CENTOS-02 1D IN A 10.10.10.3
+CENTOS-01 1D IN A 10.10.10.2
+www 1D IN CNAME CENTOS-02
+mail 1D IN CNAME CENTOS-02
+ftp 1D IN CNAME CENTOS-02 &nbsp;
+		</blockquote>
+<font color='red'><b>1D</b></font> là cái gì vậy ta?:D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278139</link>
+				<pubDate><![CDATA[Fri, 16 Aug 2013 21:45:49]]> GMT</pubDate>
+				<author><![CDATA[ __ikaZuchi]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi cài đặt dịch vụ DNS trên CENTOS</title>
+				<description><![CDATA[ Hi cảm ơn bạn đã reply lại nha , đúng là nhoè nhoẹt thật :) , mình đã làm được rồi  thanks you so much. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278147</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45078.hva#278147</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 12:52:24]]> GMT</pubDate>
+				<author><![CDATA[ msman]]></author>
+			</item>
+	</channel>
+</rss>

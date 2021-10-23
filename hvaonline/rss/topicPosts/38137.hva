@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Vấn đề configure Nginx"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Vấn đề configure Nginx"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Em mới tập tành sử dụng linux thôi, nên còn nhiều cái còn chưa biết, mong các anh giúp đỡ.
+
+Vấn đề: Con Centos (share host) dùng apache và dùng directadmin để quản lý. Giờ em muốn dùng nginx làm reverse proxy để tăng tốc độ load cho các web...nhưng làm hoài vẫn bị lỗi, ai biết làm sao giúp em với.
+
+
+File <b>httpd.conf</b>
+
+<blockquote>
+ServerRoot "/etc/httpd"
+
+<font color='yellow'>Listen 127.0.0.1:8080</font>
+
+LoadModule php5_module        /usr/lib/apache/libphp5.so
+Include	/etc/httpd/conf/extra/httpd-phpmodules.conf
+
+User apache
+Group apache
+
+ServerAdmin admin@localhost
+DocumentRoot "/var/www/html"
+
+&lt;Directory /home/*&gt;
+    AllowOverride All
+    Options -MultiViews -Indexes FollowSymlinks IncludesNoExec +Includes
+&lt;Limit GET POST OPTIONS PROPFIND&gt;
+    Order allow,deny
+    Allow from all
+&lt;/Limit&gt;
+&lt;LimitExcept GET POST OPTIONS PROPFIND&gt;
+    Order deny,allow
+    Deny from all
+&lt;/LimitExcept&gt;
+&lt;/Directory&gt;
+
+&lt;Directory /&gt;
+    Options All
+    AllowOverride All
+&lt;/Directory&gt;
+
+&lt;Directory "/var/www/html"&gt;
+    Options -Indexes FollowSymLinks
+    AllowOverride All
+    Order allow,deny
+    Allow from all
+   &lt;IfModule mod_suphp.c&gt;
+        suPHP_Engine On
+        suPHP_UserGroup webapps webapps
+	SetEnv PHP_INI_SCAN_DIR
+   &lt;/IfModule&gt;
+&lt;/Directory&gt;
+
+&lt;IfModule dir_module&gt;
+    DirectoryIndex index.html index.htm index.shtml index.php index.php5 index.php4 index.php3 index.phtml index.cgi
+&lt;/IfModule&gt;
+
+&lt;FilesMatch "^\.ht"&gt;
+    Order allow,deny
+    Deny from all
+    Satisfy All
+&lt;/FilesMatch&gt;
+
+ErrorLog /var/log/httpd/error_log
+LogLevel warn
+
+&lt;IfModule log_config_module&gt;
+    #replace %b with %O for more accurate logging
+    &lt;IfModule mod_logio.c&gt;
+      LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %O \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
+      LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %O&quot; common
+      LogFormat &quot;%O&quot; bytes
+
+      LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot; %I %O&quot; combinedio
+    &lt;/IfModule&gt;
+
+    CustomLog /var/log/httpd/access_log common
+&lt;/IfModule&gt;
+
+&lt;IfModule alias_module&gt;
+    # Include some DirectAdmin alias
+    Include conf/extra/httpd-alias.conf
+&lt;/IfModule&gt;
+
+&lt;Directory "/var/www/cgi-bin"&gt;
+    AllowOverride None
+    Options None
+    Order allow,deny
+    Allow from all
+&lt;/Directory&gt;
+
+DefaultType text/plain
+
+&lt;IfModule mime_module&gt;
+    TypesConfig conf/mime.types
+    AddType application/x-gzip .tgz
+    AddEncoding x-compress .Z
+    AddEncoding x-gzip .gz .tgz
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    AddHandler cgi-script .cgi
+    AddHandler type-map var
+    AddType text/html .shtml
+    AddOutputFilter INCLUDES .shtml
+	AddType video/x-ms-asf .avi
+	AddType video/mpeg .mpg
+	AddType video/mpeg .mpeg
+	AddType video/quicktime .mov
+	AddType video/x-ms-wmv .wmv
+&lt;/IfModule&gt;
+
+#EnableMMAP off
+#EnableSendfile off
+
+#######################################################################################
+# Do not change anything in included files, because they are rewritten by DirectAdmin #
+#######################################################################################
+
+# This is needed for PHP
+Include conf/extra/httpd-php-handlers.conf
+
+# Server-pool management (MPM specific)
+Include conf/extra/httpd-mpm.conf
+
+# Multi-language error messages
+Include conf/extra/httpd-multilang-errordoc.conf
+
+# Fancy directory listings
+Include conf/extra/httpd-autoindex.conf
+
+# Language settings
+Include conf/extra/httpd-languages.conf
+
+# User home directories
+#Include conf/extra/httpd-userdir.conf
+
+# Real-time info on requests and configuration
+Include conf/extra/httpd-info.conf
+
+# Virtual hosts
+Include conf/extra/httpd-vhosts.conf
+
+# Local access to the Apache HTTP Server Manual
+#Include conf/extra/httpd-manual.conf
+
+# Distributed authoring and versioning (WebDAV)
+Include conf/extra/httpd-dav.conf
+
+# Various default settings
+Include conf/extra/httpd-default.conf
+
+# Secure (SSL/TLS) connections
+Include conf/extra/httpd-ssl.conf
+
+# Deflate module settings
+Include conf/extra/httpd-deflate.conf
+
+# All the DirectAdmin vhosts
+Include conf/extra/directadmin-vhosts.conf
+
+# All suPHP directives
+Include conf/extra/httpd-suphp.conf
+
+# For user configurations not maintained by DirectAdmin. Empty by default.
+Include conf/extra/httpd-includes.conf
+
+#######################################################################################
+# End of included files that are rewritten by DirectAdmin                             #
+#######################################################################################
+
+&lt;IfModule ssl_module&gt;
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+&lt;/IfModule&gt;
+&nbsp;
+		</blockquote>
+
+
+File <b>httpd-vhosts.conf</b>
+<blockquote>
+Include /etc/httpd/conf/ips.conf
+&lt;VirtualHost *.8080&gt;
+    ServerAdmin webmaster@localhost
+    AliasMatch ^/~([^/]+)(/.*)* /home/$1/public_html$2
+    DocumentRoot /var/www/html
+    ServerName localhost
+    ScriptAlias /cgi-bin/ /var/www/cgi-bin/
+    CustomLog /var/log/httpd/homedir.log homedir
+&lt;/VirtualHost&gt;
+&nbsp;
+		</blockquote>
+
+
+File <b>directadmin-vhosts.conf</b>
+<blockquote>
+ServerRoot /etc/httpd
+
+&lt;VirtualHost *:8080&gt;
+
+
+	ServerName www.mydomain.com
+	ServerAlias www.mydomain.com mydomain.com
+	ServerAdmin webmaster@mydomain.com
+	DocumentRoot /home/mydomain/domains/public_html
+	ScriptAlias /cgi-bin/ /home/mydomain/domains/public_html/cgi-bin/
+
+	UseCanonicalName OFF
+
+	SuexecUserGroup site site
+	ErrorLog /var/log/httpd/domains/error.log
+
+	&lt;Directory /home/mydomain/domains/public_html&gt;
+		Options +Includes -Indexes
+
+		php_admin_flag engine ON
+		&lt;IfModule !mod_php6.c&gt;
+			php_admin_flag safe_mode OFF
+		&lt;/IfModule&gt;
+		php_admin_value sendmail_path '/usr/sbin/sendmail -t -i -f iosha789@mydomain.com'
+
+
+		php_admin_value open_basedir /home/mydomain/domains/:/tmp:/var/tmp:/usr/local/lib/php/
+
+
+	&lt;/Directory&gt;
+
+
+
+&lt;/VirtualHost&gt;
+
+&nbsp;
+		</blockquote>
+
+File <b>nginx.conf</b>
+
+<blockquote>
+
+user            nginx nginx;
+worker_processes  2;
+
+error_log  /var/log/nginx/error.log;
+
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    gzip  on;
+    include /etc/nginx/conf.d/*.conf;	    
+
+    server {
+        listen      80;
+        server_name  _;
+
+        location / {
+            proxy_pass<span class="link"> http://127.0.0.1:8080;</span>
+            include /etc/nginx/proxy.conf;
+        }
+
+
+    }
+
+	include /etc/nginx/sites/*.conf;
+
+}
+&nbsp;
+		</blockquote>
+
+File <b>/etc/nginx/sites/vhost.conf</b>
+
+<blockquote>
+server {
+    listen 80;
+    server_name www.mydomain.com mydomain.com;
+ 
+    location / {
+        proxy_pass<span class="link"> http://127.0.0.1:8080;</span>
+        include /etc/nginx/proxy.conf;
+    }
+ 
+    location ~* ^.+.(jpeg|jpg|gif|png|ico|css|zip|tgz|gz|rar|bz2|doc|xls|exe|pdf|ppt|txt|tar|mid|midi|wav|bmp|rtf|js|swf|avi|mp3)$ {
+        expires 30d;
+        root /home/mydomain/domains/public_html/;
+    }
+}
+&nbsp;
+		</blockquote>
+
+PS: Lỗi em nói ở trên là trang web không load được, không biết trong các file cấu hình ở trên em có làm sai gì không ? Mọi người xem giúp em. Cảm ơn rất nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234191</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234191</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 00:33:18]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Lỗi là gì vậy?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234203</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234203</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 03:50:57]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ PS: Lỗi em nói ở trên là trang web không load được, không biết trong các file cấu hình ở trên em có làm sai gì không ? Mọi người xem giúp em. Cảm ơn rất nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234205</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234205</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 04:17:20]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Cụ thể hơn đi bạn.
+Apache is functioning normally hay là Page not found hay là gì?
+
+Thêm nữa nếu bạn share host thì file directadmin-vhost.conf nên có dạng:
+Include /usr/local/directadmin/data/users/|username|/httpd.conf
+
+Default Directadin (DA) dùng 4 script (nằm trong /usr/local/directadmin/data/templates/)sau để tạo httpd.conf cho từng user: 
+- virtual_host2.conf
+- virtual_host2_secure.conf
+- virtual_host2_secure_sub.conf
+- virtual_host2_sub.conf
+
+Lưu ý là 4 script trên chỉ dành cho Apache2
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234209</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234209</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 04:34:52]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Tks bạn vì reply sớm. Lỗi cụ thể là khi load trang web nó báo time out.
+
+Đúng là như bạn nói là trong file directadmin-vhost.conf có dạng như thế - Nó include một file httpd.conf, nhưng muốn đơn giản hơn nên mình lấy nội dụng trong file đó để đưa lên thôi.
+
+<blockquote>Default Directadin (DA) dùng 4 script (nằm trong /usr/local/directadmin/data/templates/)sau để tạo httpd.conf cho từng user: 
+- virtual_host2.conf 
+- virtual_host2_secure.conf 
+- virtual_host2_secure_sub.conf 
+- virtual_host2_sub.conf&nbsp;
+		</blockquote>
+
+Vậy mình phải làm sao để fix lỗi này...mình vẫn chưa biết nguyên nhân lỗi do đâu. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234213</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234213</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 04:57:09]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ show cho tớ xem 1 file httpd.conf của 1 user nào đó đi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234214</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234214</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:01:53]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ File <b>httpd.conf của user uocmo</b>
+
+<blockquote>
+
+ServerRoot /etc/httpd
+
+
+
+&lt;VirtualHost 112.78.15.104:80&gt; // Mình edit lại thế thành &lt;VirtualHost *:8080&gt;
+
+
+	ServerName www.uocmo.vn
+	ServerAlias www.uocmo.vn uocmo.vn 
+	ServerAdmin webmaster@uocmo.vn
+	DocumentRoot /home/uocmo/domains/uocmo.vn/public_html
+	ScriptAlias /cgi-bin/ /home/uocmo/domains/uocmo.vn/public_html/cgi-bin/
+
+	UseCanonicalName OFF
+
+	SuexecUserGroup uocmo uocmo
+	CustomLog /var/log/httpd/domains/uocmo.vn.bytes bytes
+	CustomLog /var/log/httpd/domains/uocmo.vn.log combined
+	ErrorLog /var/log/httpd/domains/uocmo.vn.error.log
+
+	&lt;Directory /home/uocmo/domains/uocmo.vn/public_html&gt;
+		Options +Includes -Indexes
+
+		php_admin_flag engine ON
+		&lt;IfModule !mod_php6.c&gt;
+			php_admin_flag safe_mode OFF
+		&lt;/IfModule&gt;
+		php_admin_value sendmail_path '/usr/sbin/sendmail -t -i -f uocmo@uocmo.vn'
+
+
+		php_admin_value open_basedir /home/uocmo/:/tmp:/var/tmp:/usr/local/lib/php/
+
+
+	&lt;/Directory&gt;
+
+
+
+&lt;/VirtualHost&gt;
+
+
+
+&lt;VirtualHost 112.78.15.104:443&gt;
+
+	SSLEngine on
+	SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt
+	SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key
+	
+
+	ServerName www.uocmo.vn
+	ServerAlias www.uocmo.vn uocmo.vn 
+	ServerAdmin webmaster@uocmo.vn
+	DocumentRoot /home/uocmo/domains/uocmo.vn/private_html
+	ScriptAlias /cgi-bin/ /home/uocmo/domains/uocmo.vn/public_html/cgi-bin/
+
+	UseCanonicalName OFF
+
+	SuexecUserGroup uocmo uocmo
+	CustomLog /var/log/httpd/domains/uocmo.vn.bytes bytes
+	CustomLog /var/log/httpd/domains/uocmo.vn.log combined
+	ErrorLog /var/log/httpd/domains/uocmo.vn.error.log
+
+	&lt;Directory /home/uocmo/domains/uocmo.vn/private_html&gt;
+		Options +Includes -Indexes
+
+		php_admin_flag engine ON
+		&lt;IfModule !mod_php6.c&gt;
+			php_admin_flag safe_mode OFF
+		&lt;/IfModule&gt;
+		php_admin_value sendmail_path '/usr/sbin/sendmail -t -i -f uocmo@uocmo.vn'
+
+
+		php_admin_value open_basedir /home/uocmo/:/tmp:/var/tmp:/usr/local/lib/php/
+
+
+	&lt;/Directory&gt;
+
+
+
+&lt;/VirtualHost&gt;
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234216</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234216</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:09:43]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ sửa &lt;VirtualHost *:8080&gt;  thành &lt;VirtualHost 127.0.0.1:8080&gt;,rồi restart apache lại xem
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234217</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234217</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:12:55]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Vẫn bị lỗi timeout bạn ơi.
+PS: Trình duyệt không báo timeout nhưng cứ load hoài mà không hiển thị được trang web.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234220</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234220</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:31:29]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ đâu có,tớ mới vào uocmo.vn được mà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234221</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:33:58]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Là do mình chưa restart httpd thôi..vì có một số web host trên server nên mình không để out lâu quá được, nếu bị lỗi mình phải tạm tắt nginx.
+
+PS: Giờ phải về rồi nên phải tắt nginx để chạy được web...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234223</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234223</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 05:36:52]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ OKIE,tớ chỉ ngắn gọn cho bạn nhé:
+
+* APACHE SERVER:
+- Listen 127.0.0.1:8080
+
+- Setup mod_rpaf 
+<font color='yellow'>http://stderr.net/apache/rpaf/</font>
+
+- Sửa /etc/httpd/conf/ips.conf 
+<font color='yellow'>&lt;Your IP:80&gt; thành 127.0.0.1:8080</font>
+
+- Sửa /etc/httpd/conf/extra/httpd-vhost.conf
+<font color='yellow'>&lt;Your IP:80&gt; thành 127.0.0.1:8080</font>
+
+* NGINX PROXY:
+- Listen 112.78.15.104:80 (Áp dụng cho cả các user)
+
+* DIRECTADMIN:
+- Tạo file /etc/httpd/conf/ips_da.conf với nội dung như sau:
+<font color='yellow'>LogFormat "%O \"%r\"" homedir
+NameVirtualHost &lt;Your IP&gt;:80
+NameVirtualHost &lt;Your IP&gt;:443</font>
+
+- Sửa /usr/local/directadmin/conf/directadmin.conf
+<font color='yellow'>thay apacheips=/etc/httpd/conf/ips.conf thành apacheips=/etc/httpd/conf/ips_da.conf</font>
+
+- Sửa 2 file virtual_host2.conf,virtual_host2_sub.conf 
+<font color='yellow'>thay &lt;VirtualHost Your IP:80 |MULTI_IP|&gt; thành &lt;VirtualHost 127.0.0.1:8080 |MULTI_IP|&gt;</font>
+
+- Dùng lệnh sau để rewrite httpd.conf của các user:
+<font color='yellow'>echo &quot;action=rewrite&value=httpd&quot; &gt;&gt; /usr/local/directadmin/data/task.queue</font>[/code][code][/code]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234228</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234228</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 06:04:17]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Rất cảm ơn bạn đã giúp, mình sẽ test và báo kết quả khi xong :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234229</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234229</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 06:08:51]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Mình edit theo hướng dẫn của bạn thì httpd báo thế này:
+
+<blockquote>
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:80 overlaps with VirtualHos                                      t 112.78.15.104:80, the first has precedence, perhaps you need a NameVirtualHost direct                                      ive
+[Tue Mar 29 18:50:29 2011] [warn] VirtualHost 112.78.15.104:443 overlaps with VirtualHo                                      st 112.78.15.104:443, the first has precedence, perhaps you need a NameVirtualHost dire                                      ctive
+
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234231</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234231</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 07:02:29]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ bạn thêm dòng này vào httpd.conf:
+#ADD IPS
+Include /etc/httpd/conf/ips.conf
+sau đó restart apche]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234257</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234257</link>
+				<pubDate><![CDATA[Tue, 29 Mar 2011 23:04:54]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Nó vẫn báo vậy ! Tuy nhiên httpd đã start được, nhưng không load web được ...trình duyệt load rất lâu...và không trả về lỗi gì cả ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234263</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234263</link>
+				<pubDate><![CDATA[Wed, 30 Mar 2011 00:40:57]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ em config mod_rpaf như thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234311</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234311</link>
+				<pubDate><![CDATA[Wed, 30 Mar 2011 21:00:02]]> GMT</pubDate>
+				<author><![CDATA[ Dark_AngelVN]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Dạ em đã làm được rồi...tks anh đã giúp đỡ !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234340</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234340</link>
+				<pubDate><![CDATA[Thu, 31 Mar 2011 10:06:20]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Bạn đã sửa gì để thành công? Bạn show full complete và viết 1 bài tut để share cho mọi người đi :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234518</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234518</link>
+				<pubDate><![CDATA[Sun, 3 Apr 2011 02:37:57]]> GMT</pubDate>
+				<author><![CDATA[ phonglanbiec]]></author>
+			</item>
+			<item>
+				<title>Vấn đề configure Nginx</title>
+				<description><![CDATA[ Em làm theo hướng dẫn này: 
+
+Link: <span class="link"> http://www.bxtra.net/articles/2011-02-13/how-to-use-nginx-as-a-reverse-proxy-for-directadmin</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234622</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38137.hva#234622</link>
+				<pubDate><![CDATA[Sun, 3 Apr 2011 23:52:52]]> GMT</pubDate>
+				<author><![CDATA[ iosha789]]></author>
+			</item>
+	</channel>
+</rss>

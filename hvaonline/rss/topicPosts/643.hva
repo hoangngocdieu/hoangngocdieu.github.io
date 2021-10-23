@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cài đặt nhanh hệ thống phát hiện xâm nhập"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cài đặt nhanh hệ thống phát hiện xâm nhập"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ <b>Cài đặt nhanh hệ thống phát hiện xâm nhập dùng Snort+ACID :</b>
+
+Hướng dẫn cài đặt nhanh hệ thống phát hiện xâm nhập (IDS) trên Linux/Unix sử dụng Snort với cơ sở dữ liệu mysql để lưu log, alert và ACID làm giao diện theo dõi.
+
+<b>* Yêu cầu hệ thống:</b>
+- mysql-3.23+<span class="link"> http://www.mysql.org/</span>
+- apache-1.3+<span class="link"> http://httpd.apache.org/</span>
+- php-4.04+<span class="link"> http://www.php.net/</span>
+- snort-1.8.3+<span class="link"> http://www.snort.org/</span>
+- acid-0.9.6+<span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/snortacid.html</span>
+- adodb-1.2+<span class="link"> http://php.weblogs.com/adodb</span>
+- phplot-4.4.6+<span class="link"> http://phplot.sourceforge.net/</span> (tuỳ chọn để xem các thống kê dạng biểu đồ đưọc vẽ bằng thư viện gd, yêu cầu php phải được biên dịch hỗ trợ gd)
+
+<b>* Giả thiết: </b>
+- Hệ thống đã được cài đặt mysql, apache, php và hoạt động tốt (ví dụ RH 7.2).
+- Địa chỉ mạng cục bộ cần theo dõi: 192.168.1.0/24
+
+<b>* Cài đặt snort và cấu hình snort.</b>
+
+Download mã nguồn: <span class="link"> http://www.snort.org/dl/snort-1.8.6.tar.gz</span>
+
+# tar zxvf snort-1.8.6.tar.gz
+# cd snort-1.8.6
+# ./configure --with-mysql=/usr
+# make
+# make install
+# mkdir /etc/snort
+# cp *.rules classification.config snort.conf /etc/snort/
+
+Tạo bảng dữ liệu để lưu trữ snort log, alert:
+
+# mysql -u root -p
+mysql> create database snort;
+mysql> grant INSERT,SELECT on snort.* to snort@localhost identified by '<password>';
+mysql> exit
+# mysql snort -u root -p < ./contrib/create_mysqlSửa các thông số sau trong file <b>/etc/snort/snort.conf</b>
+<blockquote>
+var HOME_NET 192.168.1.0/24
+...
+output database: log, mysql, user=snort password=<password> dbname=snort host=localhost
+output database: alert, mysql, user=snort password=<password> dbname=snort host=localhostKhởi động snort: 
+&nbsp;
+		</blockquote>
+# /usr/local/bin/snort -D -d -v -i eth0 -c /etc/snort/snort.conf
+
+<b>* Cài đặt và cấu hình acid</b>
+
+Download mã nguồn: <span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/...0.9.6b21.tar.gz</span><span class="link"> http://phplens.com/lens/dl/adodb190.tgz</span><span class="link"> http://prdownloads.sourceforge.net/phplot/...ot-4.4.6.tar.gz</span>
+
+<b>Giải nén và đặt adodb, acid vào thư mục con của httpd DocumentRoot:</b>
+
+# cp acid-0.9.6b21.tar.gz /var/www/html
+# tar zxvf acid-0.9.6b21.tar.gz
+# cp adodb190.tgz /var/www/html
+# tar zxvf adodb190.tgz
+# cp phplot-4.4.6.tar.gz /var/www/html
+# tar zxvf phplot-4.4.6.tar.gz
+
+Kiểm tra xem php có được cấu hình đúng với gd không:<span class="link"> http://locolhost/phplot-4.4.6/examples/test_setup.php</span>
+
+Nếu không xem được các biểu đồ ví dụ, bạn phải xem lại php có được biên dịch với thư viện gd và đã bật hỗ trợ gd trong /etc/php.ini chưa (extension=gd.so).
+
+Tạo bảng dữ liệu để lưu trữ các alert dành riêng cho acid:
+# mysql -u root -p
+mysql> create database snort_archive;
+mysql> grant INSERT,SELECT on snort.* to snort_archive@localhost identified by '<password>';
+mysql> exit
+# mysql snort -u root -p < create_acid_tbls_mysql.sql
+
+Cấu hình các thông số cần thiết cho acid trong file <b>acid_conf.php</b>
+<blockquote>
+$DBlib_path = "../adodb";
+
+$DBtype = "mysql";
+
+/* Alert DB connection parameters */
+
+$alert_dbname = "snort";
+$alert_host = "localhost";
+$alert_port = "";
+$alert_user = "snort";
+$alert_password = "<password>";
+
+/* Archive DB connection parameters */
+
+$archive_dbname = "snort_archive";
+$archive_host = "localhost";
+$archive_port = "";
+$archive_user = "snort";
+$archive_password = "<password>";
+
+$ChartLib_path = "../phplot-4.4.6"; // tuỳ chọn, nếu php hỗ trợ gd
+
+/* File format of charts ('png', 'jpeg', 'gif') */
+$chart_file_format = "png";
+Để an toàn, nên thiết lập yêu cầu xác thực cho các truy xuất đến thư mục acid trên web server. 
+
+File /var/www/html/acid/.htaccess:
+
+AuthName ACID Secure Area
+AuthType Basic
+AuthUserFile /var/www/html/acid/.htpasswd
+Allow from all
+<limit GET POST>
+require valid-user
+</limit>&nbsp;
+		</blockquote>
+
+File /var/www/html/acid/.htpasswd:
+acid:<encrypted password>
+
+Thiết lập browser của bạn cho phép tất cả cookie từ host chạy acid. Hoàn tất quá trình cài đặt và bắt đầu sử dụng acid để theo dõi các hoạt động trên mạng được snort phát hiện:
+<span class="link"> http://localhost/acid/</span>
+
+<b>* Tham khảo tại :</b>
+<span class="link"> http://www.snort.org/</span><span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/snortacid.htm</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#2235</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#2235</link>
+				<pubDate><![CDATA[Thu, 29 Jun 2006 17:20:10]]> GMT</pubDate>
+				<author><![CDATA[ moonlight123]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Ở đoạn này
+<blockquote> * Cài đặt snort và cấu hình snort.
+Download mã nguồn:<span class="link"> http://www.snort.org/dl/snort-1.8.6.tar.gz</span>
+# tar zxvf snort-1.8.6.tar.gz
+# cd snort-1.8.6
+# ./configure --with-mysql=/usr &nbsp;
+		</blockquote>
+
+Khi bạn cài đặt Snort (ví dụ trên Fedora Core 4 nếu bạn cài đặt gặp lỗi này
+<blockquote> ERROR: unable to find mysql headers (mysql.h)
+  checked in the following places&nbsp;
+		</blockquote>
+
+Thì bạn di chuyển đến thư mục chứa Snort và sử dụng .
+<blockquote>./configure --with-mysql&nbsp;
+		</blockquote>
+
+Hoặc bạn download mysql-devel về
+<blockquote>http://rpmfind.net/linux/rpm2html/search.php?query=mysql-devel&nbsp;
+		</blockquote>
+
+Khi đó bạn mới làm các bước tiếp theo được .  :wink: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#8258</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#8258</link>
+				<pubDate><![CDATA[Thu, 20 Jul 2006 01:54:55]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Các bác cho em hỏi là tại sao em cài ACID, chạy không có lỗi gì nhưng nó không vẽ được các đồ thị, biểu đồ gì đó được?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#8897</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#8897</link>
+				<pubDate><![CDATA[Fri, 21 Jul 2006 18:52:56]]> GMT</pubDate>
+				<author><![CDATA[ hyha]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Cả nhà ơi ! Em cài snort trên puppylinux412 ( snort-2.8.0.1.pet ) đặt thành công rồi thì lại chạy và kết quả như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#snort start
+-*&gt; Snort ! &lt;*-
+............
+................
+&lt; !-- cac thong bao cua snort  --&gt;
+
+
+----------------
+A value of 0 will read the pcap until Snort í killed.
+ERROR:
+Uh, You need to tell me to do something ...
+Fata Eroror, Quitting ..</pre>
+		</div>
+
+--------&gt; Đoạn thông báo lỗi này làm em đau dầu quá. Mặc dù em vẫn chạy được các chức năng của snort nhung em là một người mới làm quen với thế giới bảo mật nên còn nhiều điều không hiểu.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort -c/root/snort-2.8.0.1/etc/snort.conf
+.....
+&lt;!-----cac thong bao cua snort  &#40; khá hoàn chỉnh&#41;
+với đoạn cuối như sau: --------&gt;
+Not Using PCAP_FRAMES</pre>
+		</div>
+
+1) Em có một vấn đê muốn các pác chỷ giáo là: các log được snort ghi lại phai dung phần mềm gi mới đọc được ( var/log/snort/snort.alert.1240307739 , var/log/snort/snort.log.1240307739 
+2) Em muon hoi la nêu như em muôn lưu nhật ký vào mysql ( chạy trong XAMPP1.7) thì phải cấu hình thế nào và việc cụ thể có thể xem kết quả thông qua XAMPP như là Acid không ? ( vì trong xampp cung có chức năng xem đồ thị )
+Mong nhận được sự giúp đỡ của mọi người. !
+PhamHuy
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178144</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178144</link>
+				<pubDate><![CDATA[Wed, 22 Apr 2009 18:04:23]]> GMT</pubDate>
+				<author><![CDATA[ saurom120584]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Em cài snort bản 2.4.5 trên con FC10. Cài ACID + PHPLOT. Chạy<span class="link"> http://localhost/acid</span> ngon lành. 
+Nhưng khi vào Console dùng lệnh :  /usr/local/bin/snort -c /etc/snort/snort.conf thì nó chạy được đến một nửa rồi hiện thông báo lỗi Mysql như sau :
+
+database: mysql_error: Duplicate entry '2-1907' for key 1
+SQL=INSERT INTO event (sid,cid,signature,timestamp) VALUES ('2', '1907', '37', '2009-04-22 15:28:11.184+-04')
+
+<br>
+			<div align="center" class="limitview"><img src='http://i267.photobucket.com/albums/ii289/tuananhgtvt/3-1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bác nào có kinh nghiệm làm về cái này giúp em với 
+Thanks các bác nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178159</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178159</link>
+				<pubDate><![CDATA[Wed, 22 Apr 2009 21:33:57]]> GMT</pubDate>
+				<author><![CDATA[ oss]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">oss wrote:</cite><br>
+		<blockquote>Em cài snort bản 2.4.5 trên con FC10. Cài ACID + PHPLOT. Chạy<span class="link"> http://localhost/acid</span> ngon lành. 
+Nhưng khi vào Console dùng lệnh :  /usr/local/bin/snort -c /etc/snort/snort.conf thì nó chạy được đến một nửa rồi hiện thông báo lỗi Mysql như sau :
+
+database: mysql_error: Duplicate entry '2-1907' for key 1
+SQL=INSERT INTO event (sid,cid,signature,timestamp) VALUES ('2', '1907', '37', '2009-04-22 15:28:11.184+-04')
+
+<br>
+			<div align="center" class="limitview"><img src='http://i267.photobucket.com/albums/ii289/tuananhgtvt/3-1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bác nào có kinh nghiệm làm về cái này giúp em với 
+Thanks các bác nhiều&nbsp;
+		</blockquote>
+Bạn đã thiết lập mySQL như thế nào? bạn đã phân quyền gì cho tài khoản snort ? 
+Bạn có thể nói rõ các bước cài đặt snort và MySQL của bạn không? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178181</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178181</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 02:08:34]]> GMT</pubDate>
+				<author><![CDATA[ kenshin8x]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Bạn chạy ps -ax|grep snort xem output nó thế nào?
+Có thể có 2 process snort chạy cùng lúc nên gây ra lỗi.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178188</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178188</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 02:32:28]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ &nbsp;
+		</blockquote>
+Bạn đã thiết lập mySQL như thế nào? bạn đã phân quyền gì cho tài khoản snort ? 
+Bạn có thể nói rõ các bước cài đặt snort và MySQL của bạn không? &nbsp;
+		</blockquote>
+
+Em cài đặ tuần tự như sau 
+
+Thư mục nguồn của snort trong /usr/src/
+
+Cài snort 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>tar zxvf  snort-2.4.5.tar
+# cd snort-2.4.5.tar
+# ./configure –with-mysql
+# make
+# make install
+# mkdir /etc/snort
+# cp *.rules classification.config snort.conf /etc/snort/</pre>
+		</div>
+Tạo bảng dữ liệu để lưu trữ snort log, alert:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mysql -u root -p
+mysql&gt; create database snort;
+mysql&gt; grant INSERT,SELECT on snort.* to ‘snort’@’localhost’ identified by ‘123456’;
+mysql&gt; exit
+# mysql snort -u root -p &lt; ./contrib/create_mysql
+
+Sửa các thông số trong file /etc/snort/snort.conf
+&#91;code&#93;output database: log, mysql, user=snort password=123456 dbname=snort host=localhost
+output database: alert, mysql, user=snort password=123456 dbname=snort host=localhost</pre>
+		</div>
+
+Khởi động snort:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/bin/snort -D -d -v -i eth0 -c /etc/snort/snort.conf</pre>
+		</div>
+
+Cài acid 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cp acid-0.9.6b21.tar.gz /var/www/html
+# tar zxvf acid-0.9.6b21.tar.gz
+# cp adodb190.tgz /var/www/html
+# tar zxvf adodb190.tgz
+# cp phplot-4.4.6.tar.gz /var/www/html
+# tar zxvf phplot-4.4.6.tar.gz</pre>
+		</div>
+
+Tạo bảng dữ liệu để lưu trữ các alert dành riêng cho acid
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; create database snort_archive;
+mysql&gt; grant INSERT,SELECT on snort.* to ‘snort_archive’@localhost identified by ‘123456’;
+mysql&gt; exit
+# mysql snort -u root -p &lt; create_acid_tbls_mysql.sql</pre>
+		</div>
+Cấu hình các thông số cần thiết cho acid trong file acid_conf.php
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$DBlib_path = “../adodb”;$DBtype = “mysql”;/* Alert DB connection parameters */
+
+$alert_dbname = “snort”;
+$alert_host = “localhost”;
+$alert_port = “”;
+$alert_user = “snort”;
+$alert_password = “123456”;
+
+/* Archive DB connection parameters */
+
+$archive_dbname = “snort_archive”;
+$archive_host = “localhost”;
+$archive_port = “”;
+$archive_user = “snort”;
+$archive_password = “123456”;
+
+$ChartLib_path = “../phplot-4.4.6″; // tuỳ chọn, nếu php hỗ trợ gd
+
+/* File format of charts &#40;’png’, ‘jpeg’, ‘gif’&#41; */
+$chart_file_format = “png”;</pre>
+		</div>
+
+Đó là toàn bộ các file cấu hình của em trong quá trình cài đặt snort.
+
+Xin các bác chỉ giáo]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178300</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178300</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 21:00:30]]> GMT</pubDate>
+				<author><![CDATA[ oss]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh hệ thống phát hiện xâm nhập</title>
+				<description><![CDATA[ Thứ nhất: Làm theo hướng dẫn của bạn mR.Bi
+Thứ hai: Thử set quyền lại cho snort trong MySQL
+<blockquote>
+grant create, insert, select, delete, <font color='red'>update </font>on snort.* to snort@localhost;
+&nbsp;
+		</blockquote>
+Thân! ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/643.hva#178308</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/643.hva#178308</link>
+				<pubDate><![CDATA[Thu, 23 Apr 2009 22:51:01]]> GMT</pubDate>
+				<author><![CDATA[ kenshin8x]]></author>
+			</item>
+	</channel>
+</rss>

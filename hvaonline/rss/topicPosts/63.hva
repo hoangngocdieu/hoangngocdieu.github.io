@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Biên dịch Linux kernel - phần 1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Biên dịch Linux kernel - phần 1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Biên dịch Linux kernel - phần 1</title>
+				<description><![CDATA[ <b>Biên dịch Linux kernel - phần 1</b>
+
+Hướng dẫn chi tiết các bước trong quá trình tái biên dịch Linux kernel cho kernel 2.4.x và 2.6.x.
+Tổng lược về Linux kernel và những yếu tố cần chuẩn bị.
+&lt;hnd viết riêng cho vninformatics.com&gt;
+
+<b>Compile Linux Kernel</b>
+
+1. Tổng quan về Linux kernel trên phương diện tái biên dịch
+
+1.1 Linux kernel và vấn đề tái biên dịch:
+
+Linux kernel là một "modern kernel", nặng tính modular. Từ kernel phiên bản 2.6.x trở đi, có rất nhiều chức năng và mở rộng được đưa vào kernel. Với tinh thần "compile kernel", một yếu tố chính yếu và quan trọng nhất cần ghi nhận đó là tính phân bộ (modularity) của Linux kernel.
+
+Đối với người dùng bình thường, tính modularity này cho phép chọn lựa cách biên dịch các drivers kernel theo dạng modules hay theo dạng biên dịch trực tiếp vào kernel. Thông thường, kernel build configuration cho phép ba chọn lựa: Y, M và N cho mỗi "driver" trong kernel configuration. Có những "driver" không thể compile như một module vì nó phải được load and link trực tiếp ngay khi kernel khởi động. Cũng có những "driver" cho phép chọn như một module và được load trong khi và sau khi kernel được boot. Điểm chính yếu cần nắm bắt trong giới hạn chủ đề "compile Linux kernel" là hiểu rõ tại sao phải chọn M (cho module), Y (cho compile trực tiếp) và N (không dùng) các drivers này.
+
+- Biên dịch trực tiếp vào kernel có nghĩa là các "drivers" này dù có được dùng hay không vẫn được load lên khi kernel khởi tác và tất nhiên nó sẽ chiếm một phần memory. Lợi điểm chính của chọn lựa này là một khi "drivers" đã được compile vào kernel thì không còn phải quan ngại đến tính trung thực của kernel và các driver nữa. Các hệ thống làm việc đòi hỏi tính bảo mật cao không dùng modules mà compile thẳng vào kernel để tránh trường hợp các modules không tin cậy "bị" cài vào kernel lúc nào đó trong quá trình hoạt động của máy. Lợi điểm kế tiếp của chọn lựa này là tính hiệu xuất (rất nhỏ), khi cần driver thì đã có sẵn và không cần ứng tải nữa.
+
+- Biên dịch như các modules cho kernel có nghĩa là chỉ khi nào cần dùng các "drivers" này mới được ứng tải. Lợi điểm của chọn lựa này nổi bật ở khía cạnh xử dụng memory và tài nguyên trên máy. Với lựa chọn này, bạn có thể tạo nên một kernel cực nhỏ và dễ dàng di chuyển cho nhiều mục đích khác nhau. Lợi điểm kế tiếp là khả năng tái biên dịch chỉ một hoặc một số modules nào đó (cần cập nhật chẳng hạn). Tất nhiên để thực hiện chuyện này thì phải thoả mãn tất cả những đòi hỏi về dependency cho system.
+
+1.2 Tóm tắt các bước biên dịch (dành cho những kẻ thiếu kiên nhẫn ;))
+Biên dịch Linux kernel rất đơn giản nếu như đã hiểu rõ các quy trình và các bước thực hiện. Sau đây là các lệnh cần thiết, giả định bạn đã có trọn bộ các công cụ để biên dịch và các công cụ này đúng phiên bản:
+1. <b>$ cd /usr/src </b># chuyển vào thư mục /usr/src, nơi thông thường chứa mã nguồn để biên dịch kernel
+
+2. $ wget<span class="link"> http://www.kernel.org/pub/linux/kern...&gt;.tar.bz2</span> (<b>&lt;KERNEL_SRC</b>&gt; là phiên bản kernel cần biên dịch, ví dụ ở đây tải mã nguồn được nén ở dạng bz2)
+
+3. <b>$ gpg --verify &lt;KERNEL_SRC&gt;.tar.bz2.sign &lt;KERNEL_SRC&gt;.tar.bz2 </b>(xác thực chữ ký và thực tính của mã nguồn)
+
+4. <b>$ bzip2 -dc &lt;KERNEL_SRC&gt;.tar.bz2 | tar xvf -</b> (xả nén gói chứa mã nguồn)
+
+5.<b> $ make xconfig </b>(dùng GUI để điều chỉnh các chọn lựa cho kernel build configuration và lưu trữ configuration)
+
+6. <b>$ make dep clean bzImage </b>(tập họp lệnh để tạo dependencies và includes, tiếp theo là dọn dẹp các objects không cần thiết và kernel image ở dạng nén)
+
+7. <b>$ make modules </b>(biên dịch các modules đã được chọn lựa)
+
+8. <b>$ su </b>(chuyển sang chế độ super user cho lệnh tiếp theo)
+
+9. <b># make modules_install </b>(cài các modules vào /lib/modules/&lt;KERNERL_SRC&gt;, chỉ có super user mới có thể thực hiện lệnh này)
+
+10.<b> # make install </b>(cài kernel vào máy, bước này bao gồm quy trình cài các hồ sơ cần thiết vào thư mục /boot)
+
+Bước thứ 10 có thể thay thế bằng một loạt thao tác bằng tay (chi tiết ở phần 9.2) nếu như Linux distribution không có sẵn một số công cụ thuộc gói mkinitrd chỉ có trong RedHat distribution và các distribution dựa trên RedHat.
+
+Lưu ý: đối với kernel 2.6.x series, bạn có thể dùng các bước như trên. Tuy nhiên bước "make dep" không cần thiết nữa. Bài viết này bao gồm kernel 2.4.x và 2.6.x series nên có một số chi tiết không cần thiết cho kernel 2.6.x. Tuy vậy, những chi tiết này sẽ không ảnh hưởng đến sự thành công của quy trình biên dịch kernel.
+
+<b>2. Tại sao cần compile lại Linux kernel?</b>
+Đối với người dùng đã quen với những hệ điều hành "đóng" thì khái niệm tái biên dịch kernel là một khái niệm hết sức lạ lẫm. Điều này cũng dễ hiểu vì kernel của các hệ điều hành "đóng" hiển nhiên là "đóng" và người dùng bình thường không thể có cơ hội tiếp cận với mã nguồn của kernel cho thao tác quy trình tái biên dịch. Trong khi đó, mã nguồn của Linux kernel hoàn toàn "mở" và đây là phương tiện cũng như động lực tiên quyết cho vấn đề tái biên dịch kernel. Câu hỏi được đặt ra là tại sao lại cần phải tái biên dịch Linux kernel?
+
+Câu trả lời ngắn: không cần nếu như không cần và cần nếu như cần :)
+
+Câu trả lời dài: có vô số lý do khiến cho người dùng cần phải tái biên dịch Linux kernel. Sau đây là một số trường hợp thường gặp nhất:
+a. tái biên dịch kernel để chữa lỗi của kernel. Nếu các lỗi này thuộc về lõi của kernel thì phải vá nguồn của kernel và tái biên dịch nó để sửa chữa các lỗi được công bố.
+
+b. tái biên dịch kernel để nâng cao hiệu năng của kernel. Theo mặc định, các Linux distribution thường kèm một phiên bản kernel biên dịch với hầu hết những thành phần có sẵn để có thể đáp ứng rộng rãi cấu hình hardware (có thể hiện diện trên các máy). Đây là điểm lợi tổng quát lúc khởi điểm. Tuy nhiên, sau khi đã cài thành công và nắm chắc máy có những thiết bị gì (sound card, graphic card, network cards, SCSI card..... ) và biết rõ cần những thành phần nào cho cấu hình của máy thì không có lý do gì phải bao gồm trọn bộ các thứ không cần thiết và không dùng. Đối với kernel 2.4.x, mức độ nâng cao hiệu năng không rõ rệt (ngoại trừ dùng phương pháp test load để đo). Tuy nhiên, từ kernel 2.6.x trở đi, tính hiệu năng qua việc tái biên dịch và điều chỉnh "driver" modules cho kernel tạo hiệu xuất rõ rệt, nhất là trong việc điều chỉnh "thời biểu" (scheduling) của các công tác mà system phải đảm nhiệm.
+
+c. tái biên dịch để loại bỏ những "drivers" không được dùng và có thể gây "hiểu lầm" cho kernel, tạo ra trường hợp máy có những triệu chứng hoạt động thiếu ổn định và hay gây lỗi.
+
+d. tái biên dịch kernel để thử nghiệm một chức năng hoặc một module mình vừa tạo ra. Trường hợp này không nhiều như các trường hợp trên nhưng cũng nằm trong các lý do phổ biến.
+
+
+<b>3. Cấu trúc và quy định phiên bản của Linux kernel</b>
+Phiên bản của Linux có quy định rất đơn giản và dễ nhớ. Vấn đề này cần nắm rõ trước khi chọn một phiên bản nào đó của Linux kernel để vá và biên dịch.
+
+Phiên bản của Linux bao gồm ba nhóm số tách ra bởi các dấu chấm. Ví dụ: 2.4.26
+
+Số thứ nhất: 2 là phiên bản
+Số thứ nhì: 4 là chỉ định cho tình trạng phiên bản. Nếu số này là số chẵn, nó chỉ định cho phiên bản ổn định (stable), có thể dùng cho môi trường production. Nếu số này là số lẻ, nó chỉ định cho phiên bản không ổn định, nó thường dùng trong môi trường đang phát triển (development). Các kernel thuộc dạng này thường có nhiều bugs và không ổn định. Nếu dùng các phiên bản này để tìm bugs và thông báo cho nhóm phát triển Linux kernel thì đây là điều rất tốt. Không nên dùng phiên bản development cho môi trường production.
+Số thứ ba: 26 là chỉ định cho số hiệu phát hành của một phiên bản Linux kernel. Một phiên bản ổn định của một Linux kernel có thể có nhiều số hiệu phát hành khác nhau.
+
+Đây là các quy định chung cho dạng Linux kernel "vanilla" có nghĩa là ứng dụng cho các phiên bản kernel từ<span class="link"> http://www.kernel.org,</span> các phiên bản kernel được điều chỉnh bởi mỗi distribution có những điểm dị biệt. Có nhiều Linux distribution xử dụng số hiệu con (extra-version) cho phiên bản kernel họ đã điều chỉnh. Ví dụ RedHat có những cập nhật phụ cho các kernel như: 2.4.20-8 chẳng hạn. <font color='orange'>Điều cần nắm ở đây là chỉ nên xử dụng phiên bản ổn định (stable) của Linux kernel (số chẵn ở giữa) cho môi trường production và dùng phiên bản thử nghiệm (development) của Linux kernel (số lẻ) cho môi trường thử nghiệm và phát triển.</font>
+
+
+<b>4. Đòi hỏi tối thiểu trong việc tái biên dịch Linux kernel</b>
+Trước khi bắt tay vào việc tái biên dịch Linux kernel, điều cần thiết là phải có đủ chỗ chứa trên disk. Ít nhất là phải đủ chỗ chứa cho mã nguồn (trước và sau khi xả nén), chỗ chứa để cài kernel và các modules mới sau khi biên dịch.
+
+Đòi hỏi quan trọng khác là phải có một bộ công cụ cần thiết và đúng phiên bản, không thể biên dịch được kernel nếu không thoả mãn yêu cầu này. Phiên bản cho bộ công cụ với mỗi series kernel khác nhau. Nên nhớ, nhóm phát triển kernel yêu cầu bạn phải có đúng phiên bản của các công cụ để đảm bảo việc biên dịch kernel thành công.
+
+4.1 Đòi hỏi cho Linux kernel 2.4.x
+Đồ nghề        Phiên bản tối thiểu    Cách xác định phiên bản có trên máy
+Gnu C                2.91.66         # gcc --version
+Gnu make          3.77            # make --version
+binutils               2.9.1.0.25      # ld -v
+util-linux             2.10o           # fdformat --version
+modutils             2.4.2           # insmod -V
+e2fsprogs           1.19            # tune2fs
+reiserfsprogs      3.x.0b          # reiserfsck 2&gt;&1|grep reiserfsprogs
+pcmcia-cs           3.1.21          # cardmgr -V
+PPP                    2.4.0           # pppd --version
+isdn4k-utils         3.1pre1         # isdnctrl 2&gt;&1|grep version
+
+Tham khảo thêm chi tiết các công cụ này và địa chỉ để tải các công cụ cho đúng (ít nhất phải cùng phiên bản đã cung cấp ở trên hoặc mới hơn) trong hồ sơ ./Documentation/changes của mã nguồn kernel bạn đang dự tính biên dịch.
+
+
+4.2 Đòi hỏi cho Linux kernel 2.6.x
+Đồ nghề        Phiên bản tối thiểu    Cách xác định phiên bản có trên máy
+Gnu C                      2.95.3           # gcc --version
+Gnu make                3.78             # make --version
+binutils                     2.12             # ld -v
+util-linux                   2.10o            # fdformat --version
+module-init-tools       0.9.10           # depmod -V
+e2fsprogs                 1.29             # tune2fs
+jfsutils                      1.1.3            # fsck.jfs -V
+reiserfsprogs             3.6.3            # reiserfsck -V 2&gt;&1|grep reiserfsprogs
+xfsprogs                   2.1.0            # xfs_db -V
+pcmcia-cs                 3.1.21           # cardmgr -V
+quota-tools               3.09             # quota -V
+PPP                          2.4.0            # pppd --version
+isdn4k-utils               3.1pre1          # isdnctrl 2&gt;&1|grep version
+nfs-utils                    1.0.5            # showmount --version
+procps                      3.1.13           # ps --version
+oprofile                     0.5.3            # oprofiled --version
+
+Tham khảo thêm chi tiết các công cụ này và địa chỉ để tải các công cụ cho đúng (ít nhất phải cùng phiên bản đã cung cấp ở trên hoặc mới hơn) trong hồ sơ ./Documentation/changes của mã nguồn kernel bạn đang dự tính biên dịch.
+
+Nếu phiên bản của các công cụ trên máy cũ hơn các phiên bản đưa ra ở trên, bạn cần phải tải phiên bản mới (đã biên dịch) từ website của distribution nào bạn đang dùng. Bạn cũng có thể chọn cách tải mã nguồn của từng công cụ về biên dịch lại. Cách này mất thời gian hơn rất nhiều và chỉ thích hợp cho những ai đã quen thuộc với vấn đề biên dịch mã nguồn trên Linux. Lợi điểm của cách này là bạn tạo cho mình một bộ công cụ rất "sạch" vì đã biên dịch theo ý, thích hợp với môi trường của máy (và vừa đủ).
+
+Đối với IA64 architecture, bạn cần GCC 64bit compliant compiler, nên tham khảo chi tiết ở:<span class="link"> http://gcc.gnu.org/install/specific.html</span> (nếu bạn may mắn có một con IA64 để thử :)
+
+<b>5. Xác định cấu hình (hardware) của máy</b>
+Phần lớn người dùng bình thường ít khi quan tâm đến cấu hình của máy ngoại trừ có nhu cầu cụ thể. Ngay cả những ai dùng Linux đã lâu và không cần phải tái biên dịch kernel, cũng ít khi quan tâm đến cấu hình hardware của máy. Dù có biết nhiều hay ít về cấu hình hardware của máy mình dùng, bạn vẫn phải thu thập thông tin chính xác của cấu hình trước khi bắt tay vào việc điều chỉnh kernel build configuration.
+
+Giả định mọi chỉnh lý đã ổn định và làm việc tốt đẹp (do installer tự detect trong khi cài Linux hay do bạn phải điều chỉnh lại), bạn cần tái biên dịch Linux kernel và cần thâu thập thông tin về cấu hình của máy, hai lệnh sau cung cấp các chi tiết hardware có trên máy:
+<b># /sbin/lspci </b>để liệt kê trọn bộ những PCI "card" đang gắn vào máy. Lệnh này liệt kê trọn bộ các "card" đang trực tiếp làm việc trên máy, hardware version và model của chúng.
+
+<b># cat /proc/cpuinfo</b> để xem chi tiết CPU của máy là loại gì. Nếu Linux distribution bạn dùng không dùng /proc filesystem thì bạn có thể dùng lệnh # dmesg để thu thập thông tin về hardware trên máy của mình. Ngoài ra, lệnh lsmod cũng ít nhiều giúp bạn xác định các modules đang được dùng trên máy và tên của các modules này.
+
+Những thông tin thâu thập được ở đây hết sức quan trọng trong giai đoạn điều chỉnh kernel build configuration. Nó giúp bạn xác định các chọn lựa đúng cho cấu hình máy, tránh đi những trở ngại có thể rất mất thời gian sau này.
+
+
+<b>6. Các bước chuẩn bị</b>
+
+6.1 Tạo một bootable floppy disk dùng kernel đang chạy
+Đây là một bước cần thiết đề phòng sự cố gì đó khiến bạn không thể boot vào Linux system sau khi cài kernel mới. Trường hợp này hiếm khi xảy ra trong quá trình biên dịch kernel và cài kernel mới nếu bạn thực hiện và điều chỉnh đúng. Những sự cố với bootloader (LILO hoặc GRUB) ít thấy xảy ra vì bootloader đã được thiết lập hoàn chỉnh trước khi cập nhật kernel. Phần lớn giai đoạn tái điều chỉnh config của LILO hoặc GRUB không chính xác tạo trở ngại. Vấn đề này sẽ được đề cập sau. Trước mắt chúng ta cần tạo một "bootable floppy disk".
+
+Có rất nhiều cách để tạo một bootable floppy lấy từ kernel hiện đang chạy trên máy. Thay vì trình bày nhiều cách khác nhau cho việc tạo bootable floppy disk, ở đây tôi chỉ đề cập đến phương thức đơn giản nhất. Cách dễ nhất có lẽ là cách dùng mkbootdisk. Đây là một binary được cài mặc định trên các RedHat distribution và hầu hết các distribution dựa RedHat. Nếu binary này không hiện diện trên máy, bạn có thể tải mã nguồn về và biên dịch cho distribution mình đang dùng. Chạy lệnh:
+<b># mkbootdisk --device /dev/fd0 `uname -r`</b>, trong đó
+`uname -r` là lệnh ngầm để lấy phiên bản kernel hiện dùng trên máy. Nếu không muốn phiên bản này, bạn có thể gõ vào phiên bản nào đó theo ý (tất nhiên là phiên bản kernel này phải hiện hữu trên system).
+
+<b>/dev/fd0</b> là "device" chỉ cho đĩa mềm thứ nhất trên máy (tương tự như drive A: trên DOS). Bạn phải chọn đúng "device" thì mới có dữ liệu viết vào đĩa mềm mình muốn tạo.
+
+Quy trình này chỉ mất khoảng vài phút. Sau khi tạo bootable floppy disk ở trên, bạn nên dùng nó để thử boot vào Linux trước khi thực hiện các bước kế tiếp. Nên nhớ phải chỉnh BIOS để cho phép máy boot từ A:
+
+Ở trang:<span class="link"> http://www.yolinux.com/TUTORIALS/Lin...Disk.html</span>
+có các hướng dẫn tạo disk cấp cứu rất hay. Bạn nên tham khảo thêm nếu trên máy mình dùng không có sẵn mkbootdisk.
+
+6.2 Tải mã nguồn
+Mã nguồn của Linux kernel cả stable lẫn development có rất nhiều nơi trên Internet. Nên vào trang trung tâm của Linux kernel ở<span class="link"> http://www.kernel.org</span> và tham khảo danh sách "mirrors" để tìm nơi "gần" chỗ mình cư ngụ nhất để tải về. Nơi "gần" không nhất thiết là "gần" theo phương diện địa lý mà nên chọn "gần" nhất dựa trên "ping time". Chịu khó lấy vài địa chỉ trên mirror và ping những địa chỉ này để chọn lấy nơi có ping time ngắn nhất mà download. Bằng cách sẽ giúp bạn đỡ mất thời gian và tiện cho vấn đề chia xẻ băng thông.
+
+Có nhiều cách tải mã nguồn. Bạn có thể dùng browser để tải qua http hoặc dùng một ftp client nào đó để tải qua ftp. Bạn cũng có thể dùng wget để download. Có lẽ đây là cách tiện nhất và nhanh nhất nếu biết rõ địa chỉ và đường dẫn đến gói mình muốn download. Ví dụ:
+$ wget<span class="link"> http://www.kernel.org/pub/linux/kern...6.tar.bz2</span> (trong trường hợp này, gói cụ thể cần tải là linux-2.4.26.tar.bz2).
+
+Mã nguồn ổn định của Linux kernel được nén ở hai dạng khác nhau: dạng có đuôi là .gz (dùng GNUzip để nén) và dạng có đuôi .bz2 (dùng bzip2 để nén). Thông thường cả hai tiện ích nén / xả nén trên đều có sẵn trong các Linux distribution thông dụng. Nếu không có sẵn trên máy thì tìm trong trong CD của distribution (tham khảo thêm tài liệu của distribution mình dùng cho cách cài thêm software trên máy) hoặc tải về từ:
+-<span class="link"> http://www.gzip.org/</span> cho GNUzip
+-<span class="link"> http://sources.redhat.com/bzip2/</span> cho bzip2
+
+&lt;kết thúc phần 1&gt;
+Các bạn có thể xem tiếp phần 2 tại <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/64.hva</span>.
+
+&lt;hnd, vninformatics.com / diendantinhoc.net - 27/05/2004&gt;
+
+Tác giả : Conmale (hnd) - 
+Nguồn  : www.diendantinhoc.net 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/63.hva#316</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/63.hva#316</link>
+				<pubDate><![CDATA[Wed, 14 Jun 2006 14:47:14]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Những thủ thuật nhỏ với Fedora"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Những thủ thuật nhỏ với Fedora"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ <font color='orange'><b>1. Hẹn giờ bật (turn on) máy</b></font>
+Hầu hết các BIOS mới đều có tính năng alarm wake - turn on hệ thống vào một thời điểm định trước. Tính năng này có thể hoạt động khi hệ thống ở trạng thái hibernate hoặc đã shutdown. Nếu bạn đã enabled tính năng này trong BIOS, thử boot vào Fedora và xem nội dung của file <i>/proc/acpi/alarm</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat /proc/acpi/alarm 
+2008-03-00 09:10:00</pre>
+		</div>
+Thay đổi nội dung của file này bằng một thời điểm nào đó trong tương lai:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># echo "2008-03-23 23:00:00" &gt; /proc/acpi/alarm</pre>
+		</div>
+Sau đó tắt máy đi và kiểm chứng.
+
+<font color='orange'><b>2. Disable Touchpad trên laptop</b></font>
+Đôi khi Touchpad gây phiền phức cho bạn khi gõ phím. Với một số máy thì nút tắt Touchpad trên bàn phím cũng không hiệu nghiệm trên Fedora. Để disable Touchpad bạn thử cách sau:
++ Mở file <i>/etc/X11/xorg.conf</i>, trong <b>Section "InputDevice"</b> thêm vào dòng <b>Option      "SHMConfig" "on"</b>, như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Section "InputDevice"
+        Identifier  "Synaptics"
+        Driver      "synaptics"
+        Option      "Device" "/dev/input/mice"
+        Option      "Protocol" "auto-dev"
+        Option      "Emulate3Buttons" "yes"
+        Option      "LeftEdge" "120"
+        Option      "RightEdge" "830"
+        Option      "TopEdge" "120"
+        Option      "BottomEdge" "650"
+        Option      "FingerLow" "14"
+        Option      "FingerHigh" "15"
+        Option      "MaxTapMove" "110"
+        Option      "VertScrollDelta" "20"
+        Option      "HorizScrollDelta" "20"
+        Option      "MinSpeed" "0.3"
+        Option      "MaxSpeed" "0.75"
+        Option      "SHMConfig" "on"
+EndSection</pre>
+		</div>
++ Disable Touchpad với lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ synclient TouchpadOff=1</pre>
+		</div>
+<i>(Enable lại với TouchpadOff=0)</i>
+Đọc man của <font color='#6699CC'>synclient</font> và <font color='#6699CC'>syndaemon</font> để tìm hiểu thêm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#120877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#120877</link>
+				<pubDate><![CDATA[Mon, 24 Mar 2008 00:20:08]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ <font color='orange'><b>3. Thao tác tiện hơn với ssh</b></font>
+Mỗi khi ssh đến một con server nào đó, bạn thường phải gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh username@domain -p &lt;port_number&gt;</pre>
+		</div>
+Để thao tác nhanh hơn bạn có thể chỉnh sửa file cấu hình ssh trên client (<i>/etc/ssh/ssh_config</i>) bằng cách thêm vào một đoạn như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Host &lt;domainname&gt;
+     Port &lt;number&gt;
+     User &lt;username&gt;</pre>
+		</div>
+sau đó bạn chỉ cần gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh &lt;domain_name&gt;</pre>
+		</div>
+
+Nếu domain hơi dài, bạn có thể đặt cho nó một cái bí danh trong <i>/etc/hosts</i> bằng cách thêm vào một dòng như sau:
+<blockquote>&lt;IP_address&gt; &lt;Alias&gt;&nbsp;
+		</blockquote>
+Sau đó sửa lại trong <i>/etc/ssh/ssh_config</i> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Host &lt;Alias&gt;
+     Port &lt;number&gt;
+     User &lt;username&gt;</pre>
+		</div>
+Bây giờ thì chỉ cần gõ <b>ssh &lt;Alias&gt;</b> là OK.
+
+<font color='orange'><b>4. Chạy các ứng dụng đồ họa từ xa</b></font>
+Để thực hiện việc này, bạn sử dụng tùy chọn <b>-X</b> khi ssh. Tùy chọn này cho phép khởi động các ứng dụng đồ họa trên một con máy ở xa (remote) và hiển thị output trên máy của bạn (local):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ssh -C -X &lt;Alias&gt;
+$ oocalc</pre>
+		</div>
+Lưu ý: Để thực hiện việc này, file cấu hình ssh <i>/etc/ssh/sshd_config</i> trên remote server bạn cần gán giá trị của <font color='#6699CC'>X11Forwarding</font> là <font color='#6699CC'>yes</font>.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#120887</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#120887</link>
+				<pubDate><![CDATA[Mon, 24 Mar 2008 00:53:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ <font color='orange'><b>5. Rolling back sau khi nâng cấp, gỡ bỏ các gói</b></font>
+
+RPM có khả năng lưu dữ liệu trước khi làm việc với các gói. Theo mặc định tính năng này không được enable. Để bật nó, bạn tạo một file <i>/etc/rpm/macros</i> với nội dung:
+<blockquote>%_repackage_all_erasures 1&nbsp;
+		</blockquote>
+Còn với yum, bạn gán giá trị cho tham số <font color='#6699CC'><b>tsflags</b></font> (transaction set flags) trong file cấu hình <i>/etc/yum.conf</i> là <font color='#6699CC'><b>repackage</b></font> như sau:
+<blockquote>
+[main]
+cachedir=/var/cache/yum
+keepcache=0
+debuglevel=2
+logfile=/var/log/yum.log
+exactarch=1
+obsoletes=1
+gpgcheck=1
+plugins=1
+metadata_expire=1800
+installonly_limit=2
+exclude=kernel*
+<font color='orange'>tsflags=repackage</font>
+
+# PUT YOUR REPOS HERE OR IN separate files named file.repo
+# in /etc/yum.repos.d
+&nbsp;
+		</blockquote>
+Bây giờ thử xoá đi một gói nào đó rồi test xem sao:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo rpm -Uvh --rollback "10 minutes ago"
+Rollback packages &#40;+1/-0&#41; to Mon Mar 24 19:29:26 2008 &#40;0x47e79ea6&#41;:
+Preparing...                ########################################### &#91;100%&#93;
+   1:pdfedit                ########################################### &#91; 50%&#93;
+Cleaning up repackaged packages:
+        Removing /var/spool/repackage/pdfedit-0.3.2-2.fc8.i386.rpm:</pre>
+		</div>
+Giá trị đi kèm với rollback rất linh động, bạn có thể sử dụng một số định dạng ngày tháng như:
+<blockquote>
+# rpm -Uhv --rollback 'last Monday'
+# rpm -Uhv --rollback '1 hours ago'
+# rpm -Uhv --rollback '24 march 2008 16:30'
+# rpm -Uhv --rollback '4:30 pm last Monday'
+# rpm -Uhv --rollback 'yesterday'
+&nbsp;
+		</blockquote>
+Trước khi rollback bạn có thể xem những gì xảy ra với tuỳ chọn <font color='#6699CC'><b>--test</b></font>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo rpm -Uvh --test --rollback "10 minutes ago"
+Rollback packages &#40;+1/-0&#41; to Mon Mar 24 19:34:31 2008 &#40;0x47e79fd7&#41;:
+Preparing...                ########################################### &#91;100%&#93;
+Cleaning up repackaged packages:
+        Removing /var/spool/repackage/pdfedit-0.3.2-2.fc8.i386.rpm:</pre>
+		</div>
+
+Repackaged files được lưu trong <i>/var/spool/repackage</i>. Nếu lúc nào đó không cần rollback, hoặc file này đã quá lớn, bạn có thể xóa nó đi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ du -sh /var/spool/repackage/
+4.8M    /var/spool/repackage/
+
+$ sudo rm -fr /var/spool/repackage/</pre>
+		</div>
+
+<i>ps: Bạn không thể rolling back quá trình cài đặt các gói bởi vì không có files nào trên hệ thống để "repackaged" cả. Tuy nhiên bạn có thể xoá nó đi, đó chính là roll-back.</i>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#121064</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#121064</link>
+				<pubDate><![CDATA[Mon, 24 Mar 2008 22:02:04]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ <font color='orange'><b>6. Xem tài liệu Word trên Terminal</b></font>
+
+Bạn cần 2 công cụ:
++ wvWare: tập hợp các tiện ích convert files
++ w3m: trình duyệt web trên Terminal
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># yum -y install wvWare w3m</pre>
+		</div>
+Thủ thuật là chúng ta sẽ convert doc file sang định dạng html và dùng w3m để hiển thị nó:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ wvWare -x wvshell_tutorial.xml shell_tutorial.doc | w3m -T text/html</pre>
+		</div>
+
+<font color='orange'><b>7. Hiển thị PDF files trên Terminal</b></font>
+
+Bạn cần tiện ích pdftohtml:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># yum -y install pdftohtml</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ pdftohtml -q -noframes -stdout OReilly-SSHTheDefinitiveGuide.pdf .pdf | elinks</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#121243</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#121243</link>
+				<pubDate><![CDATA[Tue, 25 Mar 2008 23:40:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ 8. <font color='orange'><b>Để những thay đổi trong .bashrc, .bash_profile có hiệu lực mà không cần logout rồi login lại</b></font>
+
+Giả sử trong ~/.bash_profile bạn thêm 1 biến môi trường như sau:
+<blockquote>PATH=$PATH:$HOME/bin<font color='#6699CC'><b>:/sbin:/usr/bin:/usr/sbin</b></font>&nbsp;
+		</blockquote>
+Để thay đổi này có hiệu lực bạn chỉ cần gõ:
+<blockquote>$ . ~/.bash_profile
+<i>(có một khoảng trắng sau dấu chấm đầu tiên)</i>
+&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#124328</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#124328</link>
+				<pubDate><![CDATA[Wed, 9 Apr 2008 21:08:29]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ 9. <font color='orange'><b>Thay đổi độ phân giải màn hình trong chế độ console</b></font>
+
+Mở file <b>/boot/grub/menu.lst</b>, thêm vào cuối dòng kernel đoạn text:
+<blockquote>vga=&lt;value&gt;&nbsp;
+		</blockquote>
+với &lt;value&gt; như sau:
+<blockquote>
+791 - 1024x768, 16 bit
+792 - 1024x768, 24 bit
+794 - 1280x1024, 16 bit
+795 - 1280x1024, 24 bit
+&nbsp;
+		</blockquote>
+hoặc:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>| 640x480   800x600   1024x768  1280x1024
+----+------------------------------------
+256 |  0x301    0x303     0x305     0x307
+32k |  0x310    0x313     0x316     0x319
+64k |  0x311    0x314     0x317     0x31A
+16M |  0x312    0x315     0x318     0x31B</pre>
+		</div>
+Ví dụ cần tăng độ phân giải lên 800*600, tôi chỉnh lại menu.lst như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>title Fedora &#40;2.6.25.11-97.fc9.i686&#41;
+        root &#40;hd0,0&#41;
+        kernel /vmlinuz-2.6.25.11-97.fc9.i686 ro root=UUID=a51aeddc-afc6-4dd1-b664-dd5f1c86bc57 rhgb quiet vga=0x303
+        initrd /initrd-2.6.25.11-97.fc9.i686.img</pre>
+		</div>
+
+10. <font color='orange'><b>Đổi font cho console</b></font>
+
+Mở file <b>/etc/sysconfig/i18n</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo vim /etc/sysconfig/i18n</pre>
+		</div>
+thay đổi giá trị của biến SYSFONT:
+<blockquote>
+LANG="en_US.UTF-8"
+SYSFONT="latarcyrheb-sun16"
+&nbsp;
+		</blockquote>
+Tùy chọn font này được lấy từ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls /lib/kbd/consolefonts/</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#146791</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#146791</link>
+				<pubDate><![CDATA[Thu, 14 Aug 2008 02:38:02]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>8. <font color='orange'><b>Để những thay đổi trong .bashrc, .bash_profile có hiệu lực mà không cần logout rồi login lại</b></font>
+
+Giả sử trong ~/.bash_profile bạn thêm 1 biến môi trường như sau:
+<blockquote>PATH=$PATH:$HOME/bin<font color='#6699CC'><b>:/sbin:/usr/bin:/usr/sbin</b></font>&nbsp;
+		</blockquote>
+Để thay đổi này có hiệu lực bạn chỉ cần gõ:
+<blockquote>$ . ~/.bash_profile
+<i>(có một khoảng trắng sau dấu chấm đầu tiên)</i>
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+
+cái này sao chỉ có hiệu lực trong cửa sổ terminal hiện thời thôi anh, nếu em close lại và mở cái mới ra thì thấy PATH vẫn là PATH cũ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#146793</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#146793</link>
+				<pubDate><![CDATA[Thu, 14 Aug 2008 03:17:07]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: Những thủ thuật nhỏ với Fedora</title>
+				<description><![CDATA[ Em thấy  thay dổi thật mà.
+Chắc bác quên ko SAVE rùi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20355.hva#147683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20355.hva#147683</link>
+				<pubDate><![CDATA[Tue, 19 Aug 2008 03:25:18]]> GMT</pubDate>
+				<author><![CDATA[ examen]]></author>
+			</item>
+	</channel>
+</rss>

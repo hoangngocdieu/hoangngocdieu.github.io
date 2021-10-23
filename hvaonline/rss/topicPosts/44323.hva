@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152</title>
+				<description><![CDATA[ Chào mọi người, mình có trường hợp này nhờ mọi người giải đáp giúp.
+Máy chủ mình chạy Window Web Server 2008 R2
+Đây là màn hình netstat và tasklist
+
+<br>
+			<div align="center" class="limitview"><img src='http://nv5.upanh.com/b6.s32.d1/50bcaa04d9328da3a6b1dca768a8b6d2_53542295.netstat.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://nv6.upanh.com/b4.s32.d1/5e2ed926a5196e12635c187ffb260e03_53542296.tasklist.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Trên server này chỉ cần chạy 1 blog php và Remote Destkop từ Laptop của mình.
+Port 80 thì để chạy blog php rồi
+Port 999 là port Remote Desktop mình đã thay đổi.
+Vậy là còn các port 135, 445, 3306, 49152 đến 49156, nếu mình đóng hết các port này thì có ảnh hưởng đến blog php và Remote Desktop không ? 
+Mình lần theo port 135 thì ra cái services Remote Producre Call, nhưng khi tắt services này thì báo lỗi như hình
+
+<br>
+			<div align="center" class="limitview"><img src='http://nv7.upanh.com/b1.s34.d2/4e84ee6d070e0d640f6a7055a08ecd9f_53543357.stopservices.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Vào trong Services.msc thì các nút nó mờ hết.
+
+<br>
+			<div align="center" class="limitview"><img src='http://nv8.upanh.com/b1.s35.d2/227c0be1851157d5181660118b25f281_53543428.services.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Port 445 thì mình tìm không ra services
+Port 3306 là của MySQL, theo mình biết thì services này không thể tắt được vì để MySQL còn chạy được, vậy thì MySQL phải cấu hình như thế nào đối với port này để bảo mật ?
+Còn port 49152 đến 49156 thì mình không tìm thấy service, chỉ thấy các process như trong tasklist
+
+Lưu ý : Không dùng firewall chặn các kết nối đến port nhé, mình muốn không cho các services lắng nghe trên các port
+
+Mình cám ơn mọi người.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273688</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273688</link>
+				<pubDate><![CDATA[Mon, 25 Feb 2013 22:42:51]]> GMT</pubDate>
+				<author><![CDATA[ omega88]]></author>
+			</item>
+			<item>
+				<title>Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152</title>
+				<description><![CDATA[ Phân tích các port này 1 tí trước khi xét đến việc đóng mở 
+
+135. TCP Port 135 - RPC Terminal Services Licensing
+
+Port này & port 389 RDP mà bạn đã đổi thành 999 đi kèm nhau, nhằm phục vụ cho Remote Desktop. Khi bạn khởi tạo 1 connection từ phía client, Server muốn thông qua giao thức RPC để get các thông tin như licensed, cert v.v.. thì sẽ sử dụng RPC. Nếu bạn đóng Port này thì sẽ có vấn đề đối với các dịch vụ khác cần sử dụng RPC Services  bao gồm cả RDesktop
+
+3306. Mysql, bạn có thể sử dụng chức Listen / Bind IP gì đó để thay vì nó listen all IP 0.0.0.0 thì bây giờ nó sẽ chỉ listen 1 dải IP hoặc thậm chí là chỉ listen chính nó (localhost). Tuy nhiên chú ý điểm này, nếu như MYSQL của bạn đang đặt tại 1 máy chủ khác có IP khác với địa chỉ IP server chạy Blog PHP 
+
+49152 - 49157 trong Windows Server 2008 , hay nói đúng hơn là từ (49152 - 65535) là số lượng port được W 2008 reserve phục vụ cho những application / services nào đó của hệ thống chạy sẽ sử dụng vào đó. Nếu như bạn kiểm tra thấy có port này đang mở kèm vào 1 số PID như hình thì có lẽ là do services SYstem Event Notification đang cần sử dụng nó. 
+
+445 thì đơn giản đó là SMB sử dụng cho các dịch vụ chia sẻ file. Chắc chắn rằng không có bất kì 1 folder/files nào trên hệ thống này được chia sẻ thì Port này sẽ đóng 
+
+Mình định trả lời tiếp cách nào để chặn các port này, nhưng mà thấy yêu cầu không dùng Firewall của bạn nên thôi vậy :D
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273692</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2013 01:49:57]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152</title>
+				<description><![CDATA[ Mình cũng có thắc mắc là tại sao bác chủ thớt không dùng Firewall?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273696</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44323.hva#273696</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2013 02:00:24]]> GMT</pubDate>
+				<author><![CDATA[ xuanphongdocco]]></author>
+			</item>
+	</channel>
+</rss>

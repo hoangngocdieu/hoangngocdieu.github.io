@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cài đặt nhanh Qmail+POP3+APOP"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cài đặt nhanh Qmail+POP3+APOP"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cài đặt nhanh Qmail+POP3+APOP</title>
+				<description><![CDATA[ bmuht_gpj.76252_a9753dd0257efecf683ccbc63f641a2a/6/8/6002/daolpu/enilnoavh/052.831.141.302//:ptth
+<b>Cài đặt nhanh và cấu hình Qmail + APOP   </b>
+Bài viết này dành cho những bạn reinstall qmail và các thiết bị quản lý qmail .
+thực hiện theo quá trình trong bài viết bạn có thể sử dụng được  Qmail + APOP  nhanh chóng mà không cần phải đi kiếm link hoặc các patch và đọc documents . tuy nhiên ý nghĩa của từng chương trình và lệnh sẽ không có dính kèm giải thích nào . nếu bạn chưa cài đặt qmail lần nào xin đọc bài  viết "Qmail as a Mail Gateway" để biết thêm chi tiếc và cơ cấu cu. thể của qmail tại các link sau . 
+
+------------------------------
+
+Phần 1 :<span class="link"> http://www.vnhacker.org/hvaonline/posts/list/119.hva</span>
+Phần 2 :<span class="link"> http://www.vnhacker.org/hvaonline/posts/list/120.hva</span>
+Phần 3 :<span class="link"> http://www.vnhacker.org/hvaonline/posts/list/121.hva</span>
+Phần 4 :<span class="link"> http://www.vnhacker.org/hvaonline/posts/list/122.hva</span>
+
+
+<b>1. Qmail </b><span class="link"> ftp://ftp.jp.qmail.org/qmail/qmail-1.03.tar.gz</span>
+<b>2. Tcpserver </b><span class="link"> ftp://ftp.jp.qmail.org/qmail/ucspi-tcp-0.88.tar.gz</span>
+<b>3. Patch files </b><span class="link"> http://www.qmail.org/rpms/</span>
+<b>4.  daemontools</b><span class="link"> http://cr.yp.to/daemontools/daemontools-0.76.tar.gz</span>
+<b>5. checkpw</b><span class="link"> http://checkpw.sourceforge.net/checkpw/</span>
+<b>6. checkpassword-0.90.tar.gz</b><span class="link"> http://cr.yp.to/checkpwd/install.html</span>
+
+<b>Tạo các user cần thiết cho qmail </b>
+
+[root　]# mkdir /var/qmail
+[root ]# groupadd -g 710 nofiles
+[root ]# useradd -M -u 710 -g nofiles -s /bin/false -d /var/qmail/alias alias
+[root ]# useradd -M -u 711 -g nofiles -s /bin/false -d /var/qmail qmaild
+[root ]# useradd -M -u 712 -g nofiles -s /bin/false -d /var/qmail qmaill
+[root]# useradd -M -u 713 -g nofiles -s /bin/false -d /var/qmail qmailp
+[root ]# groupadd -g 711 qmail
+[root ]# useradd -M -u 714 -g qmail -s /bin/false -d /var/qmail qmailq
+[root ]# useradd -M -u 715 -g qmail -s /bin/false -d /var/qmail qmailr
+[root ]# useradd -M -u 716 -g qmail -s /bin/false -d /var/qmail qmails
+
+<b>Compile and patch qmail</b>
+[root src]# tar zxvf qmail-1.03.tar.gz
+[root src]# cd qmail-1.03
+[root src]# wget<span class="link"> http://www.qmail.org/rpms/patches/qmail-1.03.errno.patch</span>
+[root src]# wget<span class="link"> http://www.qmail.org/qmail-smtpd-relay-reject</span>
+[root qmail-1.03]# patch -p1 &lt; ../checkpw-1.00/qmail-popup-auth.patch
+[root qmail-1.03]# patch -p1 &lt; ../qmail-smtpd-relay-reject
+[root qmail-1.03]# patch -p1 &lt; ../qmail-1.03.errno.patch 
+[root qmail-1.03]# make setup check
+[root qmail-1.03]# <font color='red'>./config-fast mail.example.jp</font>
+
+
+<b>Qmail configuration</b>
+
+File : /var/qmail/control/locals
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>localhost　　　　　　　　　　&#40;add&#41;
+ mail.example.jp
+ example.jp　　　　　　　　　&#40;add&#41;</pre>
+		</div>
+
+File : /var/qmail/control/rcpthosts
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>localhost　　　　　　　　　　&#40;add&#41;
+ mail.example.jp
+ example.jp　　　　　　　　　&#40;add&#41;</pre>
+		</div>
+
+<b>Tạo alias cho  root</b>
+[root]# cd /var/qmail/alias
+[root]# touch .qmail-postmaster .qmail-mailer-daemon .qmail-root
+[root]# chmod 644 .qmail*
+
+<b>Chỉnh sửa Mailbox thành Maildir </b>
+[root]#cp /var/qmail/boot/home /var/qmail/rc
+[root]#cat /var/qmail/rc
+<blockquote>qmail-start <font color='red'>./Maildir/ </font>splogger qmail&nbsp;
+		</blockquote>
+
+<b>Tạo Maildir cho user </b>
+
+[root]# /var/qmail/bin/maildirmake Maildir
+[root]# chown -R alias:nofiles Maildir
+
+<b>Tạo Maildir cho user đã tồn tại (ex: thanbai777)</b>
+[root alias]# su - thanbai777
+[thanbai777]$ /var/qmail/bin/maildirmake ~/Maildir
+[thanbai777]$ echo ./Maildir/ &gt; ~/.qmail
+
+<b>Đưa Maildir vào /etc/skel </b>
+[root]# /var/qmail/bin/maildirmake Maildir
+[root]# /var/qmail/bin/maildirmake /etc/skel/Maildir
+
+<b>Xoá sendmail và tạo symlink cho qmail</b>
+[root root]# rm /usr/lib/sendmail
+[root root]# rm /usr/sbin/sendmail
+[root root]# ln -s /var/qmail/bin/sendmail /usr/sbin/sendmail
+[root root]# ln -s /var/qmail/bin/sendmail /usr/lib/sendmail
+
+
+<b>Cài đặt Daemontools </b>
+
+# mkdir -p /package
+# chmod 755 /package
+# chmod +t /package
+
+# cd /package
+# wget<span class="link"> http://cr.yp.to/daemontools/daemontools-0.76.tar.gz</span>
+# tar xvpfz  daemontools-0.76.tar.gz
+# cd daemontools-0.76/src
+# wget<span class="link"> http://www.qmail.org/rpms/patches/daemontools-0.76.errno.patch</span>
+# patch -p1 &lt; daemontools-0.76.errno.patch
+  (error.h)
+
+
+
+
+# cd admin/daemontools-0.76
+# ./package/install
+
+<blockquote>Creating /service...
+Adding svscanboot to inittab...
+init should start svscan now.&nbsp;
+		</blockquote>
+
+chương trình sẽ tự động thêm dòng sau vào /etc/initab đe^? khi khởi động linux , svscan có thể tự động chạy .
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SV:123456:respawn:/usr/local/bin/svscanboot</pre>
+		</div>
+
+
+<b>Cài đặt tcpserver</b>
+# tar xvfz ../ucspi-tcp-0.88.tar.gz
+# cd ucspi-tcp-0.88/
+#wget<span class="link"> http://www.qmail.org/rpms/patches/ucspi-tcp-0.88.errno.patch</span>
+#patch -p1 &lt; ucspi-tcp-0.88.errno.patch
+patching file error.h
+# make setup check 
+
+<b>
+Cấu hình cho tcpserver </b>
+
+[root ucspi-tcp-0.88]# cat /etc/tcp.smtp
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>192.168.11.:allow,RELAYCLIENT=""
+127.:allow,RELAYCLIENT=""</pre>
+		</div> 
+[root ucspi-tcp-0.88]#<font color='orange'> /usr/local/bin/tcprules /etc/tcp.smtp.cdb /etc/tcp.smtp.tmp &lt; /etc/tcp.smtp</font>
+
+
+<b>Cài đặt chương trình quản lý password : checkpassword-0.90 </b>
+[root ]# cd /usr/local/src
+[root src]# tar zxvf checkpassword-0.90.tar.gz
+[root src]# cd checkpassword-0.90
+[root checkpassword-0.90]# make setup check
+[root checkpassword-0.90]# cd /var/qmail
+
+<b>Cài đặt chương trình quản lý password : checkpw-1.01 </b>
+[root ]# tar zxvf checkpw-1.01.tar.gz
+[root src]# cd checkpw-1.01
+[root checkpw-1.01]# make setup check
+
+<b>POP before SMTP : Cài đặt relay-ctrl  </b>
+
+[root src]# tar -zxvf relay-ctrl-3.1.1.tar.gz
+[root src]# cd relay-ctrl-3.1.1
+[root relay-ctrl-3.1.1]# make
+[root relay-ctrl-3.1.1]# ./installer
+
+* Nếu bị error sau 
+<font color='red'>installer error: Could not change directory to '/usr/local/man':</font>
+Giải quyết bằng lệnh <b><i>mkdir /usr/local/man
+</i></b> và chạy lạy <b> ./installer</b>
+
+<b>Cấu hình relay-ctrl</b>
+[root relay-ctrl-3.1.1]# cd /var/qmail/
+[root]# mkdir -p /var/qmail/relay-ctrl/allow
+[root]# chmod 700 /var/qmail/relay-ctrl
+[root]# chmod 777 /var/qmail/relay-ctrl/allow
+[root]# mkdir /etc/relay-ctrl
+[root]# echo "/var/qmail/relay-ctrl/allow " &gt; /etc/relay-ctrl/RELAY_CTRL_DIR
+[root qmail]# echo "60" &gt; /etc/relay-ctrl/RELAY_CTRL_EXPIRY
+[root]# touch /etc/relay-ctrl/RELAY_CTRL_RELAYCLIENT
+
+<b>Tạo crontab cho relay-ctrl</b>
+[root]# crontab -e
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>* * * * * /usr/local/bin/envdir /etc/relay-ctrl /usr/local/bin/relay-ctrl-age</pre>
+		</div>
+
+Bước cuối cùng là khởi động ( lại ) chương trình svscan trước khi hoặc sau khi chạy service qmail  . 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>kill -HUP 1</pre>
+		</div>
+
+Sau cùng copy code sau vào file qmail và set permission với lệnh
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># touch qmail
+# chmod +x qmail</pre>
+		</div>
+
+<b>Script cho qmail </b>
+
+<blockquote>#!/bin/sh
+
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -f /var/qmail/rc ] || exit 0
+PATH=$PATH:/var/qmail/bin:/usr/local/bin
+
+case "$1" in
+    start)
+        echo -n "Starting... qmail"
+
+        csh -cf '/var/qmail/rc &'
+
+       #For SMTP
+        envdir /etc/relay-ctrl relay-ctrl-chdir \
+        tcpserver -v -H -R -P -u 711 -g 710 0 smtp \
+        relay-ctrl-check /var/qmail/bin/qmail-smtpd 2&gt;&1 | /var/qmail/bin/splogger smtpd 3 &
+
+          #For POP3
+        envdir /etc/relay-ctrl relay-ctrl-chdir \
+        tcpserver -H -R -P -v 0 pop3 /var/qmail/bin/qmail-popup <font color='red'>hvaonline.net </font>selectcheckpw \
+        relay-ctrl-allow /var/qmail/bin/qmail-pop3d Maildir 2&gt;&1 | /var/qmail/bin/splogger pop3d 3 &
+        ;;
+    stop)
+        echo "Shutting down qmail."
+        PID=`/bin/ps -aefw | grep qmail | awk '{print $2}'`
+        if [ ! -z "$PID" ] ; then
+            /bin/kill ${PID} 1&gt; /dev/null 2&gt;&1
+        fi
+        rm -f /var/lock/qmail
+        ;;
+
+    *)
+        echo "Usage: "$0" {start|stop}"
+        exit 1
+esac
+exit 0&nbsp;
+		</blockquote>
+
+
+
+=====================
+
+<font color='green'>Update : 27/11/2008</font>
+Tác giả : 777
+Nguồn : vnhacker.org
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12060</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12060</link>
+				<pubDate><![CDATA[Wed, 2 Aug 2006 17:35:18]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cài đặt nhanh Qmail+POP3+APOP</title>
+				<description><![CDATA[ Bài hay quá ta :T, lão rãnh dịch nốt mấy cái bài trên Qmailrocks.org đi :D.
+
+PS: Bác nào giỏi tiếng Anh có thể lên đây đọc. Cách setup 1 mail server cho *nix. http://qmailrocks.org]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12143</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12143</link>
+				<pubDate><![CDATA[Thu, 3 Aug 2006 14:12:09]]> GMT</pubDate>
+				<author><![CDATA[ LM]]></author>
+			</item>
+			<item>
+				<title>Cài đặt nhanh Qmail+POP3+APOP</title>
+				<description><![CDATA[ Thank kìu lão :) 
+
+Có thời gian tui sẽ viết thêm về antivirus và antispam trên Qmail .
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12175</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2331.hva#12175</link>
+				<pubDate><![CDATA[Thu, 3 Aug 2006 15:06:12]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Cài đặt nhanh Qmail+POP3+APOP</title>
+				<description><![CDATA[ OK. Lão coi làm not cái ClaimAntivirus đi nào, Qmail-remote, Web-Based Admin: qmailadmin, vpopmail, Horde IMP, Squire...
+
+Lão nên edit thêm comment, làm như vầy nhiều khi User máy móc install & compile mà không hiểu gì thì chết.
+
+Và nên guide cái lệnh qmailctl  :D.
+
+Good Job]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2331.hva#15923</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2331.hva#15923</link>
+				<pubDate><![CDATA[Fri, 18 Aug 2006 07:04:09]]> GMT</pubDate>
+				<author><![CDATA[ LM]]></author>
+			</item>
+			<item>
+				<title>Re: Cài đặt nhanh Qmail+POP3+APOP</title>
+				<description><![CDATA[ Lão đọc lại khúc đầu của tui sẽ hiểu tại sao tui không thêm comment chi tiếc :)) 
+còn nếu lão muốn hiểu sâu về các lệnh quản lý và tools của nó thì xem bài của anh conmale hoặc đọc thêm document của chúng thôi .  
+
+nhưng nếu có thời gian tui sẽ có gắn hoàn thiện theo yêu cầu  :-)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2331.hva#16153</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2331.hva#16153</link>
+				<pubDate><![CDATA[Fri, 18 Aug 2006 23:51:38]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

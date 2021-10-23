@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Nhờ giúp đỡ xử lý lỗi Samba4"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Nhờ giúp đỡ xử lý lỗi Samba4"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Nhờ giúp đỡ xử lý lỗi Samba4</title>
+				<description><![CDATA[ Chào các anh, chị!
+
+Em đang sử dụng:
+
+<blockquote>- Centos: 6.5 64 bit (2.6.32-431.el6.x86_64)
+- Samba: Version 4.0.0rc4&nbsp;
+		</blockquote>
+
+Hiện tại em đang triển khai hệ thống chứng thực tập trung OpenLDAP, OpenLDAP em đã cài xong và cấu hình. Samba sau khi em cài bằng lệnh
+
+<blockquote>yum install samba4*&nbsp;
+		</blockquote>
+
+Cấu hình và Restart dịch vụ bình thường. Tuy nhiên sau khi em cài gói <i>smb-ldaptools (smbldap-tools-0.9.6)</i>. Rồi thay file <i>/etc/samba/smb.conf</i> bằng file<i> /usr/share/doc/smbldap-tools-0.9.6/smb.conf</i> sau đó cấu hình lại:
+
+<blockquote># Global parameters
+[global]
+        workgroup = ldaptest
+        netbios name = PDC-SRV
+        security = user
+        enable privileges = yes
+        #interfaces = 192.168.5.11
+        #username map = /etc/samba/smbusers
+        server string = Samba Server %v
+        #security = ads
+        encrypt passwords = Yes
+        min passwd length = Removed
+        #pam password change = no
+        #obey pam restrictions = No
+
+        # method 1:
+        #unix password sync = no
+        #ldap passwd sync = yes
+
+        # method 2:
+        unix password sync = yes
+        #ldap passwd sync = no
+        ldap passwd sync = yes
+         passwd program = /usr/sbin/smbldap-passwd -u "%u"
+        passwd chat = "Changing *\nNew password*" %n\n "*Retype new password*" %n\n"
+
+        log level = 0
+        syslog = 0
+        log file = /var/log/samba/log.%U
+        max log size = 100000
+        time server = Yes
+        socket options = TCP_NODELAY SO_RCVBUF=8192 SO_SNDBUF=8192
+        mangling method = hash2
+        #Dos charset = 850
+        Dos charset = CP932
+        #Unix charset = ISO8859-1
+        Unix charset = UTF-8
+
+        logon script = logon.bat
+        logon drive = H:
+        logon home =
+        logon path =
+
+        domain logons = Yes
+        domain master = Yes
+        os level = 65
+        preferred master = Yes
+        wins support = yes
+        #wins support = no
+        # passdb backend = ldapsam:"ldap://ldap1.company.com<span class="link"> ldap://ldap2.company.com</span>"
+        passdb backend = ldapsam:ldap://ldap.ldaptest.com/
+        ldap admin dn = cn=Manager,dc=ldaptest,dc=com
+        #ldap admin dn = cn=samba,ou=DSA,dc=company,dc=com
+        ldap suffix = dc=ldapsomo,dc=com
+        ldap group suffix = ou=Groups
+        ldap user suffix = ou=Users
+        ldap machine suffix = ou=Computers
+        #ldap idmap suffix = ou=Idmap
+        add user script = /usr/sbin/smbldap-useradd -m "%u"
+        #ldap delete dn = Yes
+        delete user script = /usr/sbin/smbldap-userdel "%u"
+        add machine script = /usr/sbin/smbldap-useradd -t 0 -w "%u"
+        add group script = /usr/sbin/smbldap-groupadd -p "%g"
+        delete group script = /usr/sbin/smbldap-groupdel "%g"
+        add user to group script = /usr/sbin/smbldap-groupmod -m "%u" "%g"
+        delete user from group script = /usr/sbin/smbldap-groupmod -x "%u" "%g"
+        set primary group script = /usr/sbin/smbldap-usermod -g '%g' '%u'
+        admin users = admin
+
+        # printers configuration
+        #printer admin = @"Print Operators"
+        load printers = Yes
+        create mask = 0640
+        directory mask = 0750
+        #force create mode = 0640
+        #force directory mode = 0750
+        nt acl support = No
+        printing = cups
+        printcap name = cups
+        deadtime = 10
+        guest account = nobody
+        map to guest = Bad User
+        dont descend = /proc,/dev,/etc,/lib,/lost+found,/initrd
+        show add printer wizard = yes
+        ; to maintain capital letters in shortcuts in any of the profile folders:
+        preserve case = yes
+        short preserve case = yes
+        case sensitive = no
+
+[netlogon]
+        path = /home/netlogon/
+        browseable = No
+        read only = yes
+
+[profiles]
+        path = /home/profiles
+        read only = no
+        create mask = 0600
+        directory mask = 0700
+        browseable = No
+        guest ok = Yes
+        profile acls = yes
+        csc policy = disable
+        # next line is a great way to secure the profiles
+        #force user = %U&nbsp;
+		</blockquote>
+                                        
+
+Sau khi Restart lại dịch vụ thì bị lỗi: <i>/var/log/samba/log.smbd</i>
+
+<blockquote>Copyright Andrew Tridgell and the Samba Team 1992-2012
+[2014/08/15 10:10:51,  0] ../source3/param/loadparm.c:3121(lp_do_parameter)
+  Ignoring unknown parameter "min passwd length"
+&nbsp;
+		</blockquote>
+
+Xoá dòng này thì xuất hiện thông báo: <i>/var/log/samba/log.smbd</i>
+
+<blockquote>[2014/08/15 10:13:11,  0] ../source3/smbd/server.c:1200(main)
+  smbd version 4.0.0rc4 started.
+  Copyright Andrew Tridgell and the Samba Team 1992-2012 &nbsp;
+		</blockquote>
+
+Kiểm tra bằng lệnh <i>service smb status</i> thì bị:
+
+<blockquote>smbd dead but pid file exists &nbsp;
+		</blockquote>
+
+Anh chị nào có thể giúp em tìm ra nguyên nhân và hướng cách khắc phục lỗi được không ạ.
+
+Em cảm ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45774.hva#281309</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45774.hva#281309</link>
+				<pubDate><![CDATA[Thu, 14 Aug 2014 23:30:54]]> GMT</pubDate>
+				<author><![CDATA[ BiItc]]></author>
+			</item>
+	</channel>
+</rss>

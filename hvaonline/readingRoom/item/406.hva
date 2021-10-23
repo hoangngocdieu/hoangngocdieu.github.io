@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Defense::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Làm reverse proxy với Linux + Apache httpd <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/100.hva#406" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: Dương Ngọc Thái (mrro) - Translator:  - Entry Date: 13/02/2009 15:19:45" title="Author: Dương Ngọc Thái (mrro) - Translator:  - Entry Date: 13/02/2009 15:19:45"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>1. Giới thiệu</b><br/> <br/> Chào các fan hâm mộ Linux,<br/> <br/> Bài viết này chủ yếu dựa trên hai tài liệu là <span class="link"> http://www.securityfocus.com/infocus/1739</span> của Ivan, tác giả mod_security và <span class="link"> http://www.securityfocus.com/infocus/1786</span> của Artur Maj. Bà con có thể xem đây là một bản dịch tiếng Việt của hai tài liệu trên, kèm theo những suy nghĩ riêng của bản thân tôi dựa vào kinh nghiệm thực tế khi triển khai reverse proxy <font color='green'>-0-</font>. <br/> <br/> Bài viết này có thể xem là một case study thuộc tập tài liệu "Bảo vệ máy chủ an toàn với phần mềm tự do".<br/> <br/> Nhiệm vụ của chúng ta là bảo vệ một hay nhiều content web-server <font color='green'>-1-</font> nằm trong vùng Internal <font color='green'>-2-</font>, các web-server này có thể là Apache httpd, hoặc Microsoft IIS, hoặc có thể chỉ là một web-server đơn giản được embedded vào một ứng dụng nào đó. Để hoàn thành nhiệm vụ, chúng ta sẽ tập trung vào xây dựng một firewall/ids hoạt động ở tầng application, trong tài liệu này gọi là reverse-proxy, sử dụng Apache httpd <font color='green'>-3-</font> trên nền Linux.<br/> <br/> <b>2. Reverse proxy là gì?</b><br/> <br/> <br><br/> 			<div align="center" class="limitview"><img src='http://www-106.ibm.com/developerworks/lotus/library/lwp_proxy/geno2.jpg' border="0"  /></div><br/> <br/> Một proxy, theo định nghĩa, là một thiết bị đứng giữa server và client, tham gia vào "cuộc trò chuyện" giữa hai bên. Khái niệm proxy mà chúng ta thường dùng hàng ngày tốt hơn nên được gọi là một forward proxy: một thiết bị đứng giữa một client và tất cả server mà client đó muốn truy cập vào. Một reverse proxy làm công việc hoàn toàn ngược lại: nó đứng giữa một server và tất cả client mà server này phải phục vụ. Reverse proxy giống như một nhà ga kiêm một trạm kiểm soát, các request từ client, bắt buộc phải ghé vào reverse proxy, tại reverse proxy sẽ kiểm soát, lọc bỏ các request không hợp lệ, và luân chuyển các request hợp lệ đến đích cuối cùng là các server. Chú ý là một reverse proxy có thể luân chuyển request cho nhiều server cùng lúc. <br/> <br/> Lợi thế lớn nhất của việc sử dụng reverse proxy là ở khả năng quản lí tập trung. Một khi đã đẩy được tất cả traffic đi qua một trạm kiểm soát duy nhất (là reverse proxy), chúng ta có thể áp dụng nhiều "đồ nghề" khác để tăng cường an ninh cho hệ thống của mình. Dĩ nhiên, bất kì sản phẩm hay công nghệ nào cũng có ưu và khuyết điểm của nó, đi cùng với single point of access bao giờ cũng là "bóng ma" single point of failure. Single point of failure có thể được giải quyết bằng cách xây dựng cluster. Đây là một vấn đề hoàn toàn vượt qua khỏi phạm vi của bài viết này, tôi chỉ xin giới thiệu bồ nào muốn tìm hiểu về cluster trên Linux thì thử ghé vào<span class="link"> http://www.linux-ha.org.</span> Ngoài ra áp dụng reverse proxy đúng cách sẽ giúp tăng cường performance cũng như nâng cao scalability của các web-application chạy trên các content server. Chút xíu nữa, tôi sẽ đi vào chi tiết các ưu điểm của reverse proxy cũng như làm thế nào để khai thác các ưu điểm đó. <br/> <br/> <b>3. Cài đặt máy chủ reverse-proxy </b><br/> <br/> <b>3.1. Chọn và cài đặt hệ điều hành cho reverse proxy</b><br/> <br/> Dĩ nhiên là tôi sử dụng linux cho máy chủ reverse proxy. Tôi không mô tả quá trình cài đặt linux ở đây bởi có rất nhiều tài liệu hay trên Internet nói về đề tài này, và hơn nữa tôi nghĩ là một khi đã nghĩ đến chuyện làm reverse proxy thì chắc chắn chuyện cài đặt Linux không là vấn đề.Linux có quá trời distro, thế mrro chọn distro nào? Theo tôi thì distro nào cũng như nhau cả thôi, nhưng nếu ai đó hỏi tôi câu hỏi trên thì câu trả lời sẽ là Trustix <font color='green'>-4-</font>. Bất kể chọn distro nào, nhớ là sau khi cài đặt xong, hãy dành một chút thời gian để secure cái distro của mình lại trước khi đọc tiếp <font color='green'>-5-</font>. Phần tiếp theo chúng ta sẽ bàn về việc cài đặt Apache httpd cũng như các module kèm theo của nó.<br/> <br/> <b>3.2. 1.3.x hay 2.x? </b><br/> <br/> Trước tiên, tôi nghĩ cần phải trả lời câu hỏi là chúng ta sẽ chọn phiên bản Apache nào để làm reverse proxy đây, 1.3.x hay 2.x? Tôi chọn 2.x vì ba lý do: thứ nhất là tôi "nghe đồn" là có rất nhiều 0-day trong phiên bản 1.3.x <img src="/hvaonline/images/smilies/8f173d0eaffc4b90c0c0361b8f37cc17.gif" border="0" alt="smilie" align="absbottom">. Lý do thứ hai là Apache 2.x cung cấp một bộ filtering API tốt hơn so với phiên bản 1.3.x, cho phép các module có thể nhìn thấy và tương tác với nội dung của các request cũng như các response tương ứng từ trả lời từ server. Điều này rất quan trọng đối với một reverse proxy đóng vai trò là một application gateway bởi vì nó phải kiểm tra tất cả thông tin đi xuyên qua nó trước khi chuyển giao cho bên nhận. <font color='green'>-6-</font>. Lý do cuối cùng là Apache httpd 2.x có performance cao hơn hẳn 1.3.x khi phục vụ các static content như file HTML và file hình ảnh. Tôi quan tâm đến vấn đề này là vì tôi có ý định giảm tải cho các content server bên trong bằng cách tách content ra làm hai loại là dynamic (các loại file CGI/Perl, PHP) và static (các file HTML và file hình ảnh), các content server chỉ phục vụ dynamic content, còn tất cả static content thì đưa qua máy chủ reverse proxy luôn. Lúc đó khi các request của client đi vào reverse proxy, nếu request đó có đích đến là một static content, máy chủ reverse proxy sẽ trả lời luôn cho client mà không cần forward request đó đến content server ở phía sau, chỉ những request đến các dynamic content mới được forward để các content server xử lí. Tôi sẽ đi vào chi tiết vấn đề này ở phần sau, chỉ lưu ý một điều là cuối cùng tôi lại không dùng Apache httpd cho mục đích này mà lại sử dụng một máy chủ web khác chuyên trị static content. <br/> <br/> <b>3.3. Chọn module cho Apache httpd </b><br/> <br/> Ngoài những module mà tài liệu "Securing Apache 2: step by step" đề nghị, chúng ta phải chọn thêm các module sau đây: <br/> <br/> - mod_rewrite, mod_proxy, mod_proxy_http: các module này sẽ hỗ trợ chúng ta trong việc thiết lập reverse proxy.<br/> <br/> - mod_security: module này giúp chúng ta cấu hình reverse proxy thành một application firewall để chống lại các dạng tấn công thường thấy vào các web-application chạy trên content server. <font color='green'>-7-</font><br/> <br/> - mod_ssl: module này giúp chúng ta mã hóa dữ liệu của các kết nối từ client đến server thông qua giao thức SSL và TLS, biến giao thức HTTP không an toàn thành giao thức HTTPS rất bảo mật. <font color='green'>-8-</font><br/> <br/> Phần quan trọng tiếp theo là chọn một MPM phù hợp với mục đích làm reverse proxy của chúng ta. MPM là viết tắt của cụm từ Multi-Processing Module, là một cải thiện đáng kể của Apache httpd 2.x so với Apache 1.x. Trong kiến trúc của Apache 2.x, MPM đóng vai trò hết sức quan trọng, nó chịu trách nhiệm lắng nghe trên các cổng mạng, chấp nhận các yêu cầu kết nối từ phía client, và chuyển các yêu cầu đó vào bên trong để Apache httpd xử lí <font color='green'>-9-</font>. Trong trường hợp này tôi chọn  MPM worker. MPM worker sử dụng thread để phục vụ các request, do đó nó có khả năng phục vụ một lượng lớn các request nhưng lại tốn rất ít tài nguyên so với các process-based MPM khác như prefork. Đồng thời MPM worker vẫn khai thác đặc tính ổn định của cá process-based MPM bằng cách tạo ra nhiều process để trước, mỗi process có nhiều thread để sẵn sàng phục vụ client <font color='green'>-10-</font>.<br/> <br/> <b>3.4. Biên dịch và cài đặt Apache httpd</b><br/> <br/> Câu hỏi kế tiếp là biên dịch các module theo kiểu nào. Như chúng ta đều biết, có hai cách biên dịch các module trong Apache httpd. Cách thứ nhất, gọi là phương pháp động, là biên dịch các module thành các thư viện liên kết chia sẻ (tương tự như các thư viện DLL trên Windows). Với cách này, các module sẽ được biên dịch thành các file .so, và sẽ được tải lên khi Apache httpd khởi động nếu cần (tùy theo các câu lệnh LoadModule trong file cấu hình conf/httpd.conf). Cách biên dịch thứ hai, gọi là phương pháp tĩnh, là gom tất cả module nhét vào trong file bin/httpd luôn (link statically). Khi khởi động và trong quá trình chạy, Apache httpd không cần phải tải thêm module nào nữa. Phương pháp tĩnh được xem là lựa chọn tốt hơn hết. <br/> Chọn phương pháp tĩnh, chúng ta không cần dùng đến module mod_so (module cần thiết để tải các file .so trong phương pháp động). Hơn nữa, theo khuyến cáo của Apache, sử dụng phương pháp tĩnh sẽ giúp tăng 5% về mặt performance so với phương pháp động.<br/> <br/> Chúng ta tải Apache httpd 2.x ở<span class="link"> http://httpd.apache.org/download.cgi</span> và tải mod_security tại<span class="link"> http://www.modsecurity.org</span> sử dụng các lệnh sau:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>localhost$ wget<span class="link"> http://www.tux.org/pub/net/apache/dist/httpd/httpd-2.0.54.tar.gz</span><br/> localhost$ wget<span class="link"> http://www.modsecurity.org/download/modsecurity-1.8.7.tar.gz</span> <br/> localhost$ tar -xzf httpd-2.0.54.tar.gz -C /usr/local/src<br/> localhost$ tar -xzf modsecurity-1.8.7.tar.gz -C /usr/local/src</pre><br/> 		</div><br/> <br/> Tài liệu kèm theo của mod_security chỉ hướng dẫn cách biên dịch mod_security thành một thư viện chia sẻ của Apache httpd, do đó chúng ta cần phải chuẩn bị đôi chỗ để có thể biên dịch tĩnh mod_security:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>localhost$ cd /usr/local/src<br/> localhost$ mkdir -p httpd-2.0.54/modules/security<br/> localhost$ cp modsecurity-1.8.7/apache2/mod_security.c httpd-2.0.54/modules/security<br/> localhost$ cp httpd-2.0.54/modules/echo/Makefile.in httpd-2.0.54/modules/security</pre><br/> 		</div><br/> <br/> Okay, xong xuôi, bắt đầu biên dịch như sau:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>localhost$ cd /usr/local/src/httpd-2.0.54<br/> localhost$ ./configure \<br/>                  --with-mpm=worker \<br/>                  --disable-charset-lite \<br/>                  --disable-include \<br/>                  --disable-env \<br/>                  --disable-status \<br/>                  --disable-autoindex \<br/>                  --disable-asis \<br/>                  --disable-cgid \<br/>                  --disable-cgi \<br/>                  --disable-negotiation \<br/>                  --disable-imap \ <br/>                  --disable-actions \<br/>                  --disable-userdir \<br/>                  --disable-alias \<br/>                  --disable-so \<br/>                  --with-module=security:mod_security.c \<br/>                  --enable-modules='ssl rewrite proxy proxy_http'</pre><br/> 		</div><br/> <br/> Nếu quá trình biên dịch thành công, chúng ta sẽ tiếp tục như sau để cài Apache httpd vào hệ thống (tại thư mục mặc định là /usr/local/apache):<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>localhost$ make<br/> localhost$ su<br/> localhost# umask 022<br/> localhost# make install<br/> localhost# chown -R root:sys /usr/local/apache</pre><br/> 		</div><br/> <br/> <b>3.5. Đổi "root" của server</b><br/> <br/> Phần này xin vui lòng tham khảo tài liệu "Securing Apache 2:Step by Step."<br/> <br/> (còn tiếp)<br/> <br/> <b>Phần sau:<br/> 4. Cấu hình Apache httpd làm reverse proxy-</b><br/> <br/> ----------------------<br/> <font color='green'>-0-</font>: Thực tế phần tiếng Việt của tài liệu "Securing Apache 2: Step-by-Step" tôi sao chép khá nhiều từ bản dịch và mở rộng tài liệu "Securing Apache: Step-by-Step" <span class="link"> http://www.securityfocus.com/infocus/1694</span>) của hnd (aka conmale)<br/> <br/> <font color='green'>-1-</font>: ngoài web-server ra, giải pháp reverse proxy (hoặc tương tự) có thể áp dụng cho các dịch vụ khác như VNC (xem thử<span class="link"> http://sourceforge.net/projects/vnc-reflector/</span>), mail (xem thử tài liệu "Qmail as the mail gateway" của <a href="mailto:hnd@diendantinhoc.org">hnd@diendantinhoc.org</a>). Chỉ duy nhất một dịch vụ tui chưa làm được reverse proxy là FTP, bồ nào có thông tin về ftp reverse proxy thì cho tui vài xu.<br/> <br/> -<font color='green'>2-</font>: chúng ta vẫn có thể thiết lập reverse proxy để bảo vệ cho các web-server nằm ở ngay vùng DMZ, hoặc thiết lập một reverse-proxy đặt ngay trong vùng Internal để bảo vệ các web-server ở vùng Internal từ các mối hiểm họa đến từ bên trong. <br/> <br/> <font color='green'>-3-</font>: Ngoài Apache httpd ra, còn có rất nhiều software khác có thể được ứng dụng để làm reverse proxy mà đáng kể nhất là pound. Thao khảo thêm tại địa chỉ<span class="link"> http://www.apsis.ch/pound/.</span> <br/> <br/> <font color='green'>-4-</font>: Trustix là một distro nhỏ gọn (trọn bộ cài đặt chỉ có một CD duy nhất) được xây dựng dựa trên RedHat với hai mục tiêu chính là bảo mật và ổn định. Phiên bản stable mới nhất của Trustix là 2.2, phiên bản unstable là 3.0 RC2. Tham khảo thêm tại<span class="link"> http://www.trustix.org</span><br/> <br/> <font color='green'>-5-</font>: Tham khảo tài liệu Linux Security HOWTO có tại<span class="link"> http://www.tldp.org</span> để biết thêm chi tiết. Phần mềm Bastille-Linux cũng sẽ rất hữu dụng trong việc secure cho các Linux server.<br/> <br/> <font color='green'>-6-</font>: Chỉ có sử dụng Apache 2.x thì những luật cản lọc OUTPUT của mod_security mới có tác dụng.<br/> <br/> <font color='green'>-7-</font>: Tham khảo thêm tài liệu về mod_security tại địa chỉ<span class="link"> http://www.modsecurity.org</span> và loạt kí sự của conmale về các vụ tấn công DDoS vào HVA.<br/> <br/> <font color='green'>-8-</font>: Kể từ phiên bản Apache httpd 2.0, mod_ssl đã được chính thức đưa vào Apache httpd. Tham khảo thêm tài liệu về mod_ssl tại địa chỉ<span class="link"> http://www.modssl.org.</span><br/> <br/> <font color='green'>-9-</font>: Chọn lựa MPM cho Apache 2.x là một vấn đề cực kì quan trọng, ảnh hưởng rất nhiền đến performance của server, do đó tôi đề nghị những ai quan tâm đến Apache 2.x, nên tham khảo thêm tài liệu về MPM tại<span class="link"> http://httpd.apache.org/docs-2.0/mpm.html</span><br/> <br/> <font color='green'>-10-</font>: Tại sao thread lại "ngon" hơn process về performance? Những ai quan tâm đến vấn đề này xin tìm các tìm đọc các tài liệu sau đây:<br/> - Advanced Linux programming <span class="link"> http://www.advancedlinuxprogramming.com</span>)<br/> - Understanding the Linux kernel.<br/> <br/> <br/> Tác giả <b>Mrro</b><br/> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/406.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/100.hva#406" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

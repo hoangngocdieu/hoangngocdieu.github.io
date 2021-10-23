@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Linux PPPoE Server và Cisco ACS Radius server"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Linux PPPoE Server và Cisco ACS Radius server"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ Chào các bác,
+Em đang thử nghiệm mô hình Linux PPPoE server (sử dụng rp-pppoe trên ubuntu server 12.10) xác thực qua Radius server (sử dụng Cisco ACS 4.2 trên Windows Server 2003). PPPoE server có 1 interface chia làm 2 VLAN để kết nối đến Radius server và Client. Radius địa chỉ 10.10.10.2, Client địa chỉ 192.168.10.100. Topology như hình. 
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img15/2741/pppoeubuntu.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Em đã cấu hình giống trong tài liệu trên mạng trong trang<span class="link"> http://poundcomment.wordpress.com/2011/03/30/pppoe-server-on-ubuntu/</span> . Chỉ thay đổi chút xíu. Cụ thể như sau
+Cấu hình trên PPPoE Server 
+<b>Các interfaces</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># The primary network interface
+auto eth2
+iface eth2 inet manual
+#VLAN
+auto vlan2
+iface vlan2 inet static
+address 10.10.10.1
+netmask 255.255.255.0
+vlan_raw_device eth2
+auto vlan200
+iface vlan200 inet static
+address 192.168.10.1
+netmask 255.255.255.0
+mtu 1500
+vlan_raw_device eth2</pre>
+		</div>
+<b>/etc/ppp/pppoe-server-options:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>PPPoE Settings
+# PPP options for the PPPoE Server
+# LOC: GPL
+#require-pap
+require-chap
+#login
+lcp-echo-interval 10
+lcp-echo-failure 2
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+netmask 255.255.255.0
+defaultroute
+noipdefault
+usepeerdns</pre>
+		</div>
+<b>Cấu hình username/password
+/etc/ppp/chap-secrets:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Secrets for authentication using CHAP
+# client	server	secret			IP addresses
+b * b *</pre>
+		</div>
+<b>Cấu hình pool IP
+/etc/ppp/allip:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>192.168.1.1-20</pre>
+		</div>
+<b>- Chạy PPPoE server, Client Xác thực local (không sử dụng Radius server) thì OK
+- Khi đưa Radius server vào để xác thực qua Radius, thì không được các bác ạ.</b><font color='red'> </font>
+<b>Cấu hình trên PPPoE Server</b>
+<b>/etc/ppp/pppoe-server-options:</b><span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># PPP options for the PPPoE server
+# LIC: GPL
+#require-pap
+#require-chap
+login
+auth
+plugin radius.so
+plugin radattr.so
+lcp-echo-interval 10
+lcp-echo-failure 2
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+radius-config-file /etc/radiusclient/radiusclient.conf</pre>
+		</div>
+<b>etc/radiusclient/radiusclient.conf:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>auth_order radius
+login_tries 4
+login_timeout 60
+nologin /etc/nologin
+issue /etc/radiusclient/issue
+authserver 10.10.10.2
+acctserver 10.10.10.2
+servers /etc/radiusclient/servers
+dictionary /usr/share/radiusclient/dictionary
+login_radius /usr/sbin/login.radius
+seqfile /var/run/radius.seq
+mapfile /etc/radiusclient/port-id-map
+default_realm
+radius_timeout 10
+radius_retries 3
+#bindaddr *
+login_local /bin/login</pre>
+		</div>
+<b>/etc/radiusclient/servers:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#Server Name or Client/Server pair              Key
+#----------------                               ---------------
+10.10.10.2                                 test</pre>
+		</div>
+<b>Cấu hình trên Cisco ACS server</b>
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img594/78/acs1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Username: a ; Password: 1234
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img515/1172/acs2.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Tiến hành xác thực Client kẹt ở thông báo
+ <br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img543/5883/errorckf.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Kiểm tra logfile trong /var/log/syslog
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Feb 20 15:18:17 PPPoE-serv pppoe-server&#91;2071&#93;: Session 2 created for client 08:00:27:be:49:ea &#40;192.168.1.2&#41; on vlan200 using Service-Name ''
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: Plugin radius.so loaded.
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: RADIUS plugin initialized.
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: Plugin radattr.so loaded.
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: RADATTR plugin initialized.
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: pppd 2.4.5 started by root, uid 0
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: Using interface ppp1
+Feb 20 15:18:17 PPPoE-serv pppd&#91;2071&#93;: Connect: ppp1 &lt;--&gt; /dev/pts/2
+Feb 20 15:18:19 PPPoE-serv pppd&#91;2071&#93;: rc_avpair_new: unknown attribute 11
+Feb 20 15:18:19 PPPoE-serv pppd&#91;2071&#93;: rc_avpair_new: unknown attribute 25
+Feb 20 15:18:21 PPPoE-serv pppd&#91;2019&#93;: Connection terminated.
+Feb 20 15:18:21 PPPoE-serv pppd&#91;2019&#93;: Modem hangup
+Feb 20 15:18:21 PPPoE-serv pppd&#91;2019&#93;: Exit.
+Feb 20 15:18:21 PPPoE-serv pppoe-server&#91;2007&#93;: Session 1 closed for client 08:00:27:be:49:ea &#40;192.168.1.1&#41; on vlan200
+Feb 20 15:18:21 PPPoE-serv pppoe&#91;2022&#93;: read &#40;asyncReadFromPPP&#41;: Session 1: Input/output error
+Feb 20 15:18:49 PPPoE-serv pppd&#91;2071&#93;: rc_ip_hostname: couldn't look up host by addr: %lX
+Feb 20 15:18:49 PPPoE-serv pppd&#91;2071&#93;: rc_send_server: no reply from RADIUS server unknown:1812
+Feb 20 15:18:49 PPPoE-serv pppd&#91;2071&#93;: Peer a failed CHAP authentication
+Feb 20 15:18:49 PPPoE-serv pppd&#91;2071&#93;: Connection terminated.</pre>
+		</div>
+Không biết em có thiếu gì không, hay do Cisco ACS không tuơng thích với HDH Ubuntu. Các bác giúp em với.
+Cảm ơn ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#273495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#273495</link>
+				<pubDate><![CDATA[Wed, 20 Feb 2013 03:06:14]]> GMT</pubDate>
+				<author><![CDATA[ gadichoi]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ <blockquote>
+Feb 20 15:18:49 PPPoE-serv pppd[2071]: rc_ip_hostname: couldn't look up host by addr: %lX
+Feb 20 15:18:49 PPPoE-serv pppd[2071]: rc_send_server: no reply from RADIUS server unknown:1812
+&nbsp;
+		</blockquote>
+
+Chú ý đoạn này. Nhất là port cho Radius server. ACS thường chạy port 1645, trong khi yêu cầu gửi tới server là port 1812
+
+Ngoài ra nên define các IP sử dụng (10.10.10.x) trong file /etc/hosts để nó tránh lookup mất thời gian.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#273718</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#273718</link>
+				<pubDate><![CDATA[Wed, 27 Feb 2013 00:20:16]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote><blockquote>
+Feb 20 15:18:49 PPPoE-serv pppd[2071]: rc_ip_hostname: couldn't look up host by addr: %lX
+Feb 20 15:18:49 PPPoE-serv pppd[2071]: rc_send_server: no reply from RADIUS server unknown:1812
+&nbsp;
+		</blockquote>
+
+Chú ý đoạn này. Nhất là port cho Radius server. ACS thường chạy port 1645, trong khi yêu cầu gửi tới server là port 1812
+
+Ngoài ra nên define các IP sử dụng (10.10.10.x) trong file /etc/hosts để nó tránh lookup mất thời gian.
+&nbsp;
+		</blockquote>
+
+Mình chuyển sang port khác vẫn báo lỗi <i>rc_send_server: no reply from RADIUS server unknown:1645</i>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#274033</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#274033</link>
+				<pubDate><![CDATA[Mon, 11 Mar 2013 21:24:23]]> GMT</pubDate>
+				<author><![CDATA[ gadichoi]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ Em làm được rồi các bác ạ ^^]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#274198</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#274198</link>
+				<pubDate><![CDATA[Tue, 19 Mar 2013 07:44:32]]> GMT</pubDate>
+				<author><![CDATA[ gadichoi]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ Mình cũng cấu hình PPPoE server on ubuntu 12.04 - Không sử dụng Radius nhưnng đang bị lỗi như sau.
+Nhờ mọi người kiểm tra và cho gợi ý cho mình hướng xử lý với
+
+
+using channel 20
+Using interface ppp0
+Connect: ppp0 &lt;--&gt; /dev/pts/4
+sent [LCP ConfReq id=0x1 &lt;auth chap MD5&gt; &lt;magic 0x2670ef17&gt;]
+rcvd [LCP ConfAck id=0x1 &lt;auth chap MD5&gt; &lt;magic 0x2670ef17&gt;]
+rcvd [LCP ConfReq id=0x2 &lt;mru 1480&gt; &lt;magic 0xb50522aa&gt;]
+sent [LCP ConfAck id=0x2 &lt;mru 1480&gt; &lt;magic 0xb50522aa&gt;]
+sent [LCP EchoReq id=0x0 magic=0x2670ef17]
+sent [CHAP Challenge id=0x79 &lt;ba595d3d577c21593fb21552974641c58a04&gt;, name = &quot;phe-T410&quot;]
+rcvd [LCP EchoReq id=0x0 magic=0xb50522aa]
+sent [LCP EchoRep id=0x0 magic=0x2670ef17]
+rcvd [LCP EchoRep id=0x0 magic=0xb50522aa]
+rcvd [CHAP Response id=0x79 &lt;54a9c375dfe7640ea0ba072692c57bf5&gt;, name = &quot;kcs&quot;]
+sent [CHAP Success id=0x79 &quot;Access granted&quot;]
+Initializing PAM (2) for user kcs
+---&gt; PAM INIT Result = 0
+Attempting PAM account checks
+PAM Account checks failed: 7: Authentication failure
+Peer kcs failed CHAP Session verification
+sent [LCP TermReq id=0x2 &quot;Authentication failed&quot;]
+rcvd [IPCP ConfReq id=0x1 &lt;addr 0.0.0.0&gt; &lt;ms-dns1 0.0.0.0&gt; &lt;ms-dns2 0.0.0.0&gt;]
+Discarded non-LCP packet when LCP not open
+rcvd [LCP TermAck id=0x2]
+Connection terminated.
+Waiting for 1 child processes...
+  script /usr/sbin/pppoe -n -I eth0 -e 23:f8:d1:11:8f:fc:81 -m 1412 -S '', pid 2758
+pppoe: read (asyncReadFromPPP): Session 23: Input/output error
+Script /usr/sbin/pppoe -n -I eth0 -e 23:f8:d1:11:8f:fc:81 -m 1412 -S '' finished (pid 2758), status = 0x1
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#278385</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#278385</link>
+				<pubDate><![CDATA[Thu, 5 Sep 2013 23:09:45]]> GMT</pubDate>
+				<author><![CDATA[ flashget81]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gadichoi wrote:</cite><br>
+		<blockquote>Em làm được rồi các bác ạ ^^&nbsp;
+		</blockquote>
+Bạn làm được rồi thì post để mọi người tham khảo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44282.hva#278394</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44282.hva#278394</link>
+				<pubDate><![CDATA[Sat, 7 Sep 2013 21:24:23]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+	</channel>
+</rss>

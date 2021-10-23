@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Một chút về SUID/SGID"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Một chút về SUID/SGID"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Một chút về SUID/SGID</title>
+				<description><![CDATA[ 1. Khái niệm
+	Thông thường khi một lệnh được thi hành, nó sẽ thi hành với quyền của user đang chạy nó. Ví dụ khi bạn thay đổi password của bạn với lệnh <font color='olive'><i>passwd</i></font>, password mới của bạn được lưu trong <i>/etc/shadow</i>. Với người dùng bình thường, bạn không thể có quyền đọc và ghi file này vì lý do bảo mật, nhưng khi bạn thay đổi password bạn cần phải có quyền ghi file này. Điều này có nghĩa là chương trình <font color='olive'><i>passwd</i></font> sẽ gửi thêm quyền cho bạn và bạn có thể “write” <i>/etc/shadow</i>
+<blockquote>
+$ ls -l /usr/bin/passwd 
+-rw<font color='orange'>s</font>r-xr-x 1 root root 25604 2007-04-05 15:54 /usr/bin/passwd
+&nbsp;
+		</blockquote>
+SUID và SGID sẽ xuất hiện với chữ “s” nếu quyền được gán. 
+Trong lệnh này, bạn sẽ thấy là SUID bit được gán, và lệnh này được owned bởi root
+
+	Những quyền được gửi thêm đưa tới cho chương trình là một cơ chế được biết đến với tên gọi: Set User ID (SUID) và Set Group ID (SGID). Khi bạn thi hành một chương trình với SUID bit được enables, bạn sẽ được kế thừa quyền của user hoặc group sở hữu chương trình đó mà không phải là quyền của user đang chạy nó
+Để thực hiện SUID/SGID cho một file, bạn có thể:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chmod u+s /full/path/to/filename
+chmod g+s /full/path/to/filename</pre>
+		</div>
+
+2. Định danh SUID=root
+Cách đơn giản nhất để định danh những file nào có SUID và SGID bit được set, là sử dụng lệnh <font color='olive'><i>find</i></font>. Để tìm tất cả các regular file có root owner, bạn có thể sử dụng lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>find / -perm +4000 -user root -type f -print
+find / -perm +2000 -group root -type f -print</pre>
+		</div>
+Nếu bạn muốn một file không cần thiết phải chạy với SUID hoặc SGID nữa bạn có thể sử dụng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chmod u-s /full/path/to/filename
+chmod g-s /full/path/to/filename</pre>
+		</div>Lệnh này sẽ replace quyền SUID/SGID bằng quyền x (execute) thông thường – file này sẽ vẫn được thi hành nhưng không phải với quyền của owner/group của nó. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#95852</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#95852</link>
+				<pubDate><![CDATA[Tue, 6 Nov 2007 22:03:02]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Một chút về SUID/SGID</title>
+				<description><![CDATA[ Em bổ sung 1 tí cơ chế suid,sgid chỉ  được ứng hiệu khi euid=0,nếu euid #0 thì dù file đó có bật bit suid thì cũng không ứng hiệu(cái này em học được từ bài viết của anh conmale)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#95867</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#95867</link>
+				<pubDate><![CDATA[Tue, 6 Nov 2007 23:14:18]]> GMT</pubDate>
+				<author><![CDATA[ pearltran]]></author>
+			</item>
+			<item>
+				<title>Một chút về SUID/SGID</title>
+				<description><![CDATA[ Chào anh quanta,
+
+Em đã đọc một số bài viết về SUID và SGID cũng như bài viết của anh và biết được rằng khi 1 file được gán SUID thì lúc thực thi, file đó sẽ được thực thi y như khi thực thi dưới quyền ower của nó.
+
+Em cũng đọc thử một vài ví dụ nhưng khi làm theo thì không thành công.
+
+Em có 2 file như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rw-r--r-- 1 root       root        56 Nov  3 11:01 abc
+-rwsr-sr-x 1 root       root       294 Nov  3 11:13 root.sh</pre>
+		</div>
+
+Nội dung của file root.sh chứa lệnh: echo `date` &gt;&gt; abc
+
+Tuy nhiên khi em thực thi file root.sh với quyền người dùng bình thường thì không sửa thành công file abc mà báo lỗi:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./root.sh 
+./root.sh: 8: ./root.sh: cannot create abc: Permission denied</pre>
+		</div>
+
+Em hiện đang dùng HĐH Ubuntu 12.04. 
+
+Anh và mọi người có thể giải thích tại sao khi em chạy file root.sh nó lại không thực thi thành công không ạ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270704</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270704</link>
+				<pubDate><![CDATA[Fri, 2 Nov 2012 23:52:43]]> GMT</pubDate>
+				<author><![CDATA[ heroandtn3]]></author>
+			</item>
+			<item>
+				<title>Một chút về SUID/SGID</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">heroandtn3 wrote:</cite><br>
+		<blockquote>Chào anh quanta,
+
+Em đã đọc một số bài viết về SUID và SGID cũng như bài viết của anh và biết được rằng khi 1 file được gán SUID thì lúc thực thi, file đó sẽ được thực thi y như khi thực thi dưới quyền ower của nó.
+
+Em cũng đọc thử một vài ví dụ nhưng khi làm theo thì không thành công.
+
+Em có 2 file như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rw-r--r-- 1 root       root        56 Nov  3 11:01 abc
+-rwsr-sr-x 1 root       root       294 Nov  3 11:13 root.sh</pre>
+		</div>
+
+Nội dung của file root.sh chứa lệnh: echo `date` &gt;&gt; abc
+
+Tuy nhiên khi em thực thi file root.sh với quyền người dùng bình thường thì không sửa thành công file abc mà báo lỗi:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ./root.sh 
+./root.sh: 8: ./root.sh: cannot create abc: Permission denied</pre>
+		</div>
+
+Em hiện đang dùng HĐH Ubuntu 12.04. 
+
+Anh và mọi người có thể giải thích tại sao khi em chạy file root.sh nó lại không thực thi thành công không ạ?
+&nbsp;
+		</blockquote>
+
+File root.sh của bạn là một file script, không phải file binary, do đó nó cần interpreter để thực thi kịch bản bên trong nó. Nghĩa là khi bạn ./root.sh thì thực ra lệnh đó sẽ được run như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/bin/sh root.sh
+
+hoặc
+
+/bin/bash root.sh</pre>
+		</div>
+
+Bật SUID cho sh/bash và thử lại xem :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270705</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270705</link>
+				<pubDate><![CDATA[Sat, 3 Nov 2012 00:44:45]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+			<item>
+				<title>Một chút về SUID/SGID</title>
+				<description><![CDATA[ Dupe !! Mấy nay HVA sao thế nhỉ, rất chập chờn dù cái homepage vào rất nhanh :D
+Mod xoá hộ bài dupe này nhé !
+Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270706</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270706</link>
+				<pubDate><![CDATA[Sat, 3 Nov 2012 00:48:11]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+			<item>
+				<title>Một chút về SUID/SGID</title>
+				<description><![CDATA[ Cảm ơn anh, em đã tìm hiểu và được biết là SUID không được áp dụng cho bash script <span class="link"> http://www.linuxquestions.org/questions/linux-security-4/suid-bit-on-executables-doesnt-work-247215/#post1259013</span>) mà chỉ được áp dụng cho các file binary hoặc (hình như cả) Perl Script.
+
+Em đã thử gọi ./root.sh trong 1 chương trình C, sau đó biên dịch và set SUID cho file thực thi được dịch ra và nó đã làm việc.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+/* Filename: root.c */
+int main&#40;&#41; {
+	system&#40;"./root.sh"&#41;;
+	return 0;
+}</pre>
+		</div>
+
+$ gcc root.c
+$ chown root a.out
+$ chmod u+s a.out
+$ ./a.out
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16026.hva#270707</link>
+				<pubDate><![CDATA[Sat, 3 Nov 2012 01:10:36]]> GMT</pubDate>
+				<author><![CDATA[ heroandtn3]]></author>
+			</item>
+	</channel>
+</rss>

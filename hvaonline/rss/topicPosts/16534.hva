@@ -1,0 +1,1128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình và sử dụng các log files của hệ thống"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình và sử dụng các log files của hệ thống"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <i><u>Nguồn</u></i>: Section 18.3, chương 18, phần II - LPI
+
+Nhiều sự kiện xảy ra trên hệ thống Linux của bạn nên được log lại cho mục đích quản trị. Linux sử dụng hệ thống <b><i>syslogd</i></b> để hiển thị và lưu thông tin miêu tả về các sự kiện này. Hệ thống này cho phép kiểm soát chặt chẽ logging của các messages từ kernel, từ các tiến trình đang chạy trên hệ thống, hoặc các hệ thống từ xa. Thông báo có thể hiển thị trên console, trong log files và trên màn hình text của người dùng trong hệ thống
+
+<b><font color='cyan'>Phần 1. Cấu hình syslogd</font></b>
+
+Những hành vi của <b><i>syslogd</i></b> được kiểm soát bởi file cấu hình của nó - <b><i>/etc/syslog.conf</i></b> (trên fedora 8 đã đổi thành <b><i>rsyslog.conf</i></b>). File text này cho biết những gì được log và log vào đâu. Mỗi dòng sẽ chứa đựng lời chỉ dẫn theo dạng
+<b><blockquote>facility.level action&nbsp;
+		</blockquote></b>
+Lời chỉ dẫn này được định nghĩa như sau:
+
+<font color='green'><b><i>facility</i></b></font>: đại diện cho đối tượng tạo ra thông báo (kernel, process), nó có thể nhận những giá trị sau: 
+<ul><li><b><i>auth</i></b>: sử dụng cho những sự kiện bảo mật
+<b><i>authpriv</i></b>: các thông báo liên quan đến kiểm soát truy cập và bảo mật
+<b><i>cron</i></b>: cron daemon
+<b><i>daemon</i></b>: sử dụng bởi các tiến trình hệ thống và các daemons khác
+<b><i>kern</i></b>: các thông báo từ kernel
+<b><i>lpr</i></b>: hệ thống in ấn
+<b><i>mark</i></b>: những thông báo được generated bởi bản thân syslogd. Nó chỉ chứa một biến timestamp và một chuỗi "--MARK--".
+<b><i>news</i></b>: hệ thống tin tức
+<b><i>syslog</i></b>: những thông báo được generated bởi bản thân syslogd.
+<b><i>user</i></b>: thông báo về cấp người dùng chung
+<b><i>uucp</i></b>: hệ thống con UUCP
+<b><i>local0</i></b> to <b><i>local7</i></b>: dự trữ cho sử dụng nội bộ</li></ul>
+Việc sử dụng <font color='green'><i>facility</i></font> cho phép bạn kiểm soát địa chỉ đến của messages dựa trên nguồn gốc của nó. 
+
+<font color='green'><b><i>level</i></b></font>: xác định một ngưỡng mà messages sẽ được logged. level có thể nhận các giá trị sau: 
+<ul><li><b><i>debug</i></b>: các messages ở chế độ debug
+<b><i>info</i></b>: messages mang thông tin
+<b><i>notice</i></b>: messages mang tính chất thông báo
+<b><i>warning</i></b> (hoặc warn): messages cảnh báo 
+<b><i>err</i></b> (hoặc error): messages lỗi
+<b><i>crit</i></b>: messages nguy hiểm
+<b><i>alert</i></b>: messages về các hành động phải được thực hiện ngay
+<b><i>emerg</i></b> (hoặc panic): messages khi hệ thống không thể dùng được nữa</li></ul>
+Ngoài ra còn một mức đặc biệt được gọi là <b><i>none</i></b>, mức này sẽ disable facility đi cùng. <font color='green'><i>level</i></font> định nghĩa một số lượng các bản ghi chi tiết trong log file. Dấu sao [*] có thể được sử dụng để miêu tả cho tất cả các facilities hoặc tất cả các levels.
+
+<font color='green'><b><i>action</i></b></font>: đại diện cho địa chỉ của messages tương ứng với <b>facility.level</b>. <font color='green'><i>action</i></font> có thể là một tên file, một host name đứng trước ký tự @, hoặc một danh sách người dùng ngăn cách bằng dấu phảy, hoặc một dấu *.
+Để hiểu rõ hơn về tất cả thành phần cũng như tham số này, bạn cần đọc <font color='orange'><b>man 5 syslog.conf</b></font>
+
+Ví dụ, để theo dõi các daemon bạn có thể thêm 1 dòng vào <b><i>/etc/syslog.conf</i></b> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Define a new log file for daemon facility
+daemon.*                           /var/log/daemon.log</pre>
+		</div>
+Bạn cần restart <b>syslog</b> để thay đổi này có hiệu lực:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo /sbin/service syslog restart
+Shutting down kernel logger:                               &#91;  OK  &#93;
+Shutting down system logger:                               &#91;  OK  &#93;
+Starting system logger:                                    &#91;  OK  &#93;
+Starting kernel logger:                                    &#91;  OK  &#93;</pre>
+		</div>
+Tiếp theo bạn cần reboot để <b>daemon.log</b> được tạo trong <b><i>/var/log</i></b>
+
+Để test, bạn có thể sử dụng tiện ích logger để gửi messages đến facility bằng shell script:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ logger -p daemon.notice "This is a notice"</pre>
+		</div>
+Thông báo "<i>This is a notice</i>" sẽ xuất hiện trong <b><i>/var/log/daemon.log</i></b>
+<blockquote>
+# cat /var/log/daemon.log | grep notice
+Dec  1 20:45:08 localhost quanta: This is a notice
+&nbsp;
+		</blockquote>
+Ví dụ về <b><i>/etc/rsyslog.conf</i></b> trên Fedora 8 của tớ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Log all kernel messages to the console.
+# Logging much else clutters up the screen.
+#kern.*							/dev/console
+
+# Define a new log file for daemon facility
+daemon.*                                               /var/log/daemon.log
+
+# Log anything &#40;except mail&#41; of level info or higher.
+# Don't log private authentication messages!
+*.info;mail.none;news.none;authpriv.none;cron.none		/var/log/messages
+
+# The authpriv file has restricted access.
+authpriv.*						/var/log/secure
+
+# Log all the mail messages in one place.
+mail.*							-/var/log/maillog
+
+
+# Log cron stuff
+cron.*							/var/log/cron
+
+# Everybody gets emergency messages
+*.emerg							*
+
+# Save news errors of level crit and higher in a special file.
+uucp,news.crit						/var/log/spooler
+
+# Save boot messages also to boot.log
+local7.*						/var/log/boot.log
+
+#
+# INN
+#
+news.=crit                                        /var/log/news/news.crit
+news.=err                                         /var/log/news/news.err
+news.notice                                       /var/log/news/news.notice</pre>
+		</div>
+<i>(Hết phần 1)</i>
+Đọc tiếp: <b><font color='cyan'>Phần 2. Log File Rotation</font></b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99058</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99058</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 04:03:01]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ bồ có thể cho link bản "nguồn" không?
+
+cám ơn trước.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99081</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99081</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 10:42:05]]> GMT</pubDate>
+				<author><![CDATA[ 281]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">281 wrote:</cite><br>
+		<blockquote>bồ có thể cho link bản "nguồn" không?
+
+cám ơn trước.&nbsp;
+		</blockquote>
+Bạn vui lòng search <b><i>LPI</i></b> trong box "Thông tin về các địa chỉ và tài liệu hữu ích". Có ít nhất <b><font color='green'>nil</font></b> và bác <b><font color='orange'>Golden Autumn</font></b> đã up quyển này lên. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99090</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99090</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 11:15:45]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần 2. Log File Rotation</b></font>
+
+Phần lớn các distro sẽ cài đặt một cấu hình <font color='orange'><b><i>syslog</i></b></font> mặc định cho bạn, bao gồm logging to messages và các log files khác trong <b><i>/var/log</i></b>. Để ngăn cản những files này ngày càng trở nên cồng kềnh và khó kiểm soát, một <i>hệ thống quay vòng log file</i> (<font color='orange'><b><i>a log file rotation scheme</i></b></font>) nên được cài đặt. Hệ thống <font color='orange'><b><i>cron</i></b></font> đưa ra các lệnh để thiết lập những log files mới, những file cũ được đổi tên bằng cách thay một con số ở hậu tố. Với loại quay vòng này, <b><i>/var/log/messages</i></b> của ngày hôm qua sẽ trở thành <b><i>messages.1</i></b> của ngày hôm nay và một messages mới được tạo. Sự luân phiên này được cấu hình cho một số lượng lớn các file, và các log files cũ nhất sẽ được xoá khi sự luân phiên bắt đầu chạy. Ví dụ trong <b><i>/var/log</i></b> của tớ có các messages sau: <i>messages</i>, <i>messages.1</i>, <i>messages-20071111</i>, <i>messages-20071118</i>, ...
+
+Tiện ích thi hành rotation là <font color='orange'><b><i>logrotate</i></b></font>. Lệnh này được cấu hình sử dụng cho một hoặc nhiều files - được xác định bởi các tham số đi cùng. File cấu hình mặc định là <b><i>/etc/logrotate.conf</i></b>. Ví dụ với Fedora 8 trên máy tớ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># see "man logrotate" for details
+# rotate log files weekly
+weekly
+
+# keep 4 weeks worth of backlogs
+rotate 4
+
+# create new &#40;empty&#41; log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# uncomment this if you want your log files compressed
+#compress
+
+# RPM packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# no packages own wtmp and btmp -- we'll rotate them here
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp
+    rotate 1
+}
+
+/var/log/btmp {
+    missingok
+    monthly
+    create 0600 root utmp
+    rotate 1
+}
+
+# system-specific logs may be also be configured here.</pre>
+		</div>
+Trong ví dụ này, bạn sẽ thấy:
+<ul><li>Hệ thống sẽ quay vòng log files hàng tuần
+Lưu lại những thông tin logs đáng giá trong 4 tuần
+Sử dụng định dạng <b><i>Ngày tháng</i></b> thêm vào để làm hậu tố của log files (<i>20071111</i>, <i>20071118</i>, ...)
+Thông tin về sự quay vòng log của các gói RPM nằm trong <b><i>/etc/logrotate.d</i></b>
+rotation được thiết lập cho 2 files: <b><i>/var/log/wtmp</i></b> và <b><i>/var/log/btmp</i></b></li></ul>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99134</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99134</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 13:25:05]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần 3. Examining Log Files</b></font>
+
+Bạn có thể học được nhiều về cách hoạt động của hệ thống bằng cách xem lại các log files được tạo. Một lúc nào đó sẽ cần thiết để gỡ rối vấn đề gặp phải từ những thông tin đã được logged đó. Phần lớn các log files có dạng plain text, nó rất dễ dàng để xem lại với một vài lệnh như: <b><i>tail</i></b>, <b><i>less</i></b>, và <b><i>grep</i></b>
+
+Một dòng thông báo log được tạo với các thông tin sau, ngăn cách bởi 1 khoảng trắng (space)
+<ul><li>Date/time
+Origin hostname
+Message sender
+Message text</li></ul>
+Một đoạn messages điển hình, trông giống như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>openvpn.net/howto.html#mitm for more info.
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Re-using SSL/TLS context
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: LZO compression initialized
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Control Channel MTU parms &#91; L:1542 D:138 EF:38 EB:0 ET:0 EL:0 &#93;
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Data Channel MTU parms &#91; L:1542 D:1450 EF:42 EB:135 ET:0 EL:0 AF:3/1 &#93;
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Local Options hash &#40;VER=V4&#41;: '41690919'
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Expected Remote Options hash &#40;VER=V4&#41;: '530fdded'
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: Socket Buffers: R=&#91;110592-&gt;131072&#93; S=&#91;110592-&gt;131072&#93;
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: UDPv4 link local: &#91;undef&#93;
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: UDPv4 link remote: 192.168.1.3:1194
+Nov 21 14:42:13 localhost openvpn&#91;1964&#93;: read UDPv4 &#91;ECONNREFUSED&#93;: Connection refused &#40;code=111&#41;</pre>
+		</div>
+Trong trường hợp này, hostname là localhost và messages đến từ dịch vụ <b>openvpn</b>. Bất cứ lúc nào bạn cũng có thể xem lại nội dung log files của bạn bằng cách dùng <font color='olive'><i>less</i></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ less /var/log/messages</pre>
+		</div>
+hoặc <font color='olive'><i>tail</i></font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ tail -f /var/log/messages</pre>
+		</div>
+Để tìm kiếm các thông báo xác định về <b>mouse</b>, bạn có thể dùng grep
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep '&#91;Mm&#93;ouse' /var/log/messages
+Dec  8 00:15:28 smp kernel: Detected PS/2 Mouse Port.
+Dec  8 10:55:02 smp gpm: Shutting down gpm mouse services:</pre>
+		</div>
+Thông thường, nếu bạn sử dụng grep để tìm kiếm một item đặc biệt trong <b><i>/var/log/messages</i></b>, bạn sẽ cần phải tìm kiếm tất cả các <b>rotated files</b> với một <b><i><font color='orange'>wildcard</font></i></b> (tạm dịch: ký tự đại diện). Chẳng hạn, để tìm kiếm tất cả các messages từ sendmail bạn cần:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep 'sendmail:' /var/log/messages*</pre>
+		</div>
+
+Khi bạn xác định vấn đề từ log files, hãy nhìn vào <b>hostname</b> và <b>sender</b> đầu tiên, sau đó là <b>messages text</b>. Trong nhiều trường hợp bạn có thể xác định được cái gì là sai từ thông báo đó. Thi thoảng, những thông báo lỗi đó chỉ là đầu mối, và việc xem lại toàn bộ các logs của bạn là cần thiết. Trong trường hợp này, sẽ hữu ích nếu bạn tạm thời thay đổi level trong <b><i>/etc/syslog.conf</i></b> thành <b><font color='orange'>debug</font></b> để log lại nhiều thông tin hơn giúp bạn giải quyết vấn đề.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99178</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#99178</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 16:58:57]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần 4</b></font> <i>(viết thêm)</i>: <font color='cyan'><b>Logging syslog Messages to a Remote Linux Server</b></font>
+<i><u>Nguồn</u></i>: <span class="link"> http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch05_:_Troubleshooting_Linux_with_syslog</span>
+
+Việc logging các thông báo của hệ thống đến một remote server cũng là một cách bảo mật tốt. Thuận lợi của việc này:
++ Tập trung các log files về một server trung tâm
++ Kiểm soát lỗi hoặc các hành động nguy hiểm một cách tốt hơn
++ Hành động xóa log files của kẻ xấu không thể xảy ra cùng một lúc nhất là khi bạn ngăn cản user truy cập đến logging server
+
+<font color='green'><b>Cấu hình syslog cho server</b></font>
+Theo mặc định thì syslog không nhận các thông báo từ remote clients. Để làm điều này bạn cần chỉnh <font color='olive'><b>/etc/sysconfig/syslog</b></font> (trong Fedora 8 đã đổi thành rsyslog), và thêm một tuỳ chọn <font color='orange'><b>-r</b></font> vào cuối tham số <b>SYSLOGD_OPTIONS</b>
+<blockquote>
+# Options to syslogd
+# -m 0 disables 'MARK' messages.
+# -r enables logging from remote machines
+# -x disables DNS lookups on messages recieved with -r
+# See syslogd(8) for more details
+SYSLOGD_OPTIONS="-m 0 <font color='orange'><b>-r</b></font>"
+# Options to klogd
+# -2 prints all kernel oops messages twice; once for klogd to decode, and
+#    once for processing with 'ksymoops'
+# -x disables all klogd processing of oops messages entirely
+# See klogd(8) for more details
+KLOGD_OPTIONS="-x"
+#
+SYSLOG_UMASK=077
+# set this to a umask value to use for all log files as in umask(1).
+# By default, all permissions are removed for "group" and "other".
+&nbsp;
+		</blockquote>
+Nếu trên server bạn có dùng iptables, hãy chắc chắn rằng cổng 514 cho UDP đã được mở:
+<blockquote>
+<font color='orange'>-A RH-Firewall-1-INPUT -m state --state NEW -m udp -p udp --dport 514 -j ACCEPT</font>
+&nbsp;
+		</blockquote>
+Nhớ restart iptables:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /sbin/service iptables restart
+Flushing firewall rules:                                   &#91;  OK  &#93;
+Setting chains to policy ACCEPT: filter                    &#91;  OK  &#93;
+Unloading iptables modules:                                &#91;  OK  &#93;
+Applying iptables firewall rules:                          &#91;  OK  &#93;
+Loading additional iptables modules: ip_conntrack_netbios_n&#91;  OK  &#93;ntrack_ftp</pre>
+		</div>
+
+<font color='green'><b>Cấu hình cho client</b></font>
+Syslog server đã có thể nhận các syslog messages. Ở client, bạn phải cấu hình để gửi messages đến nó. Để thực hiện điều này bạn cần sửa <font color='olive'><b>/etc/syslog.conf</b></font> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>*.debug                                       @192.168.1.3
+*.debug                                       /var/log/messages</pre>
+		</div>
+Từ bây giờ, tất cả các messages có level là <b>debug</b> hoặc cao hơn đều được log tại server <b>192.168.1.3</b> cũng như tại local (<i>/var/log/messages</i>)
+Hãy nhớ là chúng ta cần restart lại <b>syslog</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo /sbin/service syslog restart
+Password:
+Shutting down kernel logger:                               &#91;  OK  &#93;
+Shutting down system logger:                               &#91;  OK  &#93;
+Starting system logger:                                    &#91;  OK  &#93;
+Starting kernel logger:                                    &#91;  OK  &#93;</pre>
+		</div>
+
+<i><u>Test</u></i>:
+Trên client, bạn thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo /sbin/service openvpn stop
+Shutting down openvpn:                                     &#91;  OK  &#93;</pre>
+		</div>
+Trên server, kiểm tra xem đã nhận được syslog messages chưa:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tail /var/log/messages
+...
+...
+Dec  1 21:31:13 192.168.1.2 localhost openvpn&#91;4507&#93;: TCP/UDP: Closing socket
+Dec  1 21:31:13 192.168.1.2 localhost openvpn&#91;4507&#93;: SIGTERM&#91;hard,&#93; received, process exiting
+...
+...</pre>
+		</div>
+Như vậy, việc gửi logging messages đến remote server đã thành công.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101040</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101040</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 01:11:27]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Tutor rất hay, nhưng có 1 chỗ ko chuẩn. Config của /etc/rsyslog.conf, phần Save boot messages also to boot.log, đúng ra phải là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Save boot messages also to boot.log
+ local7.*						/var/log/boot.log</pre>
+		</div>
+Để *.* cho /var/log/boot.log có nghĩa là tất cả các log messages sẽ được lưu trong file đó.
+
+Ngoài ra, nên thêm vào:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Save all authorization messages to auth.log
+ auth,authpriv.*			/var/log/auth.log</pre>
+		</div>
+Để lưu chuyên biệt các messages liên quan đến cấu hình, hoặc tinh chỉnh hệ thống. VD các sudo messages chẳng hạn.
+
+
+Đối với việc lưu log tập trung, phần cấu hình syslog clients, việc edit file /etc/hosts chỉ nên sử dụng trong trường hợp mạng LAN ko có DNS server, khai báo DNS name của tất cả các server có trong LAN. Nếu đã có DNS Server thì ko cần edit file /etc/hosts nữa mà sử dụng DNS name của syslog server. Ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Log anything &#40;except mail, news, authpriv, cron&#41; of level info or higher.
+ # Don't log private authentication messages!
+ *.info;mail.none;news.none;authpriv.none;cron.none		/var/log/messages
+
+ # Lưu tập trung các thông tin của /var/log/messages về server syslog.mycompany.com
+ *.info;mail.none;news.none;authpriv.none;cron.none		@syslog.mycompany.com
+
+ # Save all authorization messages to auth.log
+ auth,authpriv.*			/var/log/auth.log
+
+ # Lưu tất cả các authorization message về syslog server
+ auth,authpriv.*			@syslog.mycompany.com</pre>
+		</div>
+
+
+Ngoài ra, nếu mạng LAN có quá nhiều server cần lưu tập trung syslog messages, thì nên nghiên cứu sử dụng 1 phần mềm khác. Tui đề cử Balabit syslog-ng. Thử tìm hiểu nhé.
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101106</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101106</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 11:40:13]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>Tutor rất hay, nhưng có 1 chỗ ko chuẩn. Config của /etc/rsyslog.conf, phần Save boot messages also to boot.log, đúng ra phải là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Save boot messages also to boot.log
+ local7.*						/var/log/boot.log</pre>
+		</div>
+Để *.* cho /var/log/boot.log có nghĩa là tất cả các log messages sẽ được lưu trong file đó.
+&nbsp;
+		</blockquote>
+Cảm ơn bác <font color='orange'><b>lQ</b></font> đã chỉ ra chỗ không chuẩn. Thực ra chỗ đó là do tớ test trên máy tớ trước khi đọc và viết cái tutor trên. Sau khi tìm đọc và hiểu rồi thì lại quên chỉnh lại. <font color='orange'><i>(Đã chỉnh lại trong bài viết trên)</i></font>
+<p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>
+Ngoài ra, nên thêm vào:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Save all authorization messages to auth.log
+ auth,authpriv.*			/var/log/auth.log</pre>
+		</div>
+Để lưu chuyên biệt các messages liên quan đến cấu hình, hoặc tinh chỉnh hệ thống. VD các sudo messages chẳng hạn.
+
+Đối với việc lưu log tập trung, phần cấu hình syslog clients, việc edit file /etc/hosts chỉ nên sử dụng trong trường hợp mạng LAN ko có DNS server, khai báo DNS name của tất cả các server có trong LAN. Nếu đã có DNS Server thì ko cần edit file /etc/hosts nữa mà sử dụng DNS name của syslog server. Ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Log anything &#40;except mail, news, authpriv, cron&#41; of level info or higher.
+ # Don't log private authentication messages!
+ *.info;mail.none;news.none;authpriv.none;cron.none		/var/log/messages
+
+ # Lưu tập trung các thông tin của /var/log/messages về server syslog.mycompany.com
+ *.info;mail.none;news.none;authpriv.none;cron.none		@syslog.mycompany.com
+
+ # Save all authorization messages to auth.log
+ auth,authpriv.*			/var/log/auth.log
+
+ # Lưu tất cả các authorization message về syslog server
+ auth,authpriv.*			@syslog.mycompany.com</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Cảm ơn bác về những góp ý này
+<p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>
+Ngoài ra, nếu mạng LAN có quá nhiều server cần lưu tập trung syslog messages, thì nên nghiên cứu sử dụng 1 phần mềm khác. Tui đề cử Balabit syslog-ng. Thử tìm hiểu nhé.
+&nbsp;
+		</blockquote>
+hì, phần này tớ đang đọc]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101113</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101113</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 12:08:40]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ không nên cấu hình syslogd chấp nhận remote logging, vì syslogd chấp nhận message từ remote client gửi tới UDP port 514, một người với mục đích xấu có thể viết 1 chương trình nho nhỏ để send junk data tới log server, nhanh chóng fill-up hết server disk space về lâu dài, hoặc fill up udp receive buffer tại log server ngay tức thời, dẫn tới việc drop các log data thực sự từ các client khác, hoặc khiến việc log audit về sau trở nên khó khăn hơn do phải parse 1 đống rác lẫn lộn với data hữu ích.
+
+Tốt hơn vẫn là viết crob job để scp logfile lên 1 server tập trung.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101135</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101135</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 13:57:39]]> GMT</pubDate>
+				<author><![CDATA[ rcrackvn]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rcrackvn wrote:</cite><br>
+		<blockquote>không nên cấu hình syslogd chấp nhận remote logging, vì syslogd chấp nhận message từ remote client gửi tới UDP port 514, một người với mục đích xấu có thể viết 1 chương trình nho nhỏ để send junk data tới log server, nhanh chóng fill-up hết server disk space về lâu dài, hoặc fill up udp receive buffer tại log server ngay tức thời, dẫn tới việc drop các log data thực sự từ các client khác, hoặc khiến việc log audit về sau trở nên khó khăn hơn do phải parse 1 đống rác lẫn lộn với data hữu ích.&nbsp;
+		</blockquote>
+Chào <b>rcrackvn</b>
+Bạn nghĩ sao nếu mình dùng <font color='orange'>syslog-ng</font> để nhận remote logging thông qua TCP port 514 thay vì UDP. Hơn nữa mình cũng có thể kết hợp <b>syslog-ng</b> với ssh để thực hiện việc remote logging.
+<p></p>
+		<cite class="blockquote">rcrackvn wrote:</cite><br>
+		<blockquote>
+Tốt hơn vẫn là viết cron job để scp logfile lên 1 server tập trung.&nbsp;
+		</blockquote>
+Cảm ơn <b>rcrackvn</b> về góp ý này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101141</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101141</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 14:22:12]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Theo tui cấp account SCP còn nguy hiểm hơn là chấp nhận remote logging. Càng nhiều máy tính có tài khoản trên Syslog server càng khó quản lý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101150</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101150</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 15:33:11]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ tui nghĩ ông hiểu lầm tui,
+ở đây ông chỉ việc generate dsa public key của log server, append nó vào authorized_keys2 trên mỗi server ông muốn nhận log, viết cron để log server scp logfile từ các server kia. Nếu log server này chỉ làm mỗi việc logging thì ông disable mọi services khác. 
+
+&gt;&gt;quanta: tui cũng nghĩ nên dùng syslog-ng thay thế cho cái syslogd cũ, và disable hoàn toàn cơ chế nhận log remotely thông qua UDP.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101221</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 23:42:26]]> GMT</pubDate>
+				<author><![CDATA[ rcrackvn]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Cách tạo cron job để copy các syslog files như ý của rcrackvn cũng có lý.  Tuy nhiên, để tránh việc nhận syslog messages từ các source không mong muốn thì còn có cách khác: cô lập các server cần quản lý syslog messages với máy tính của end-users, đồng thời cài fw để drop tất cả các syslog udp packets gửi đến syslog server. 
+
+Vẫn nên enable remote syslog là vì ngoài việc duy trì syslog server để lưu trữ log, cần phải duy trì thêm 1 server phân tích log. Splunk / Php-syslog-ng chẳng hạn. Những server phân tích log cần được nhận logs theo thời gian thực. rcrackvn đồng ý ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101309</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101309</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2007 13:19:53]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Bài viết rất bổ ích về syslog. Cảm ơn bác quanta. 
+Hiện tại em đang thử viết tool hoạt động như một IDS dựa trên phân tích syslog của webserver. Tuy nhiên còn đang mắc ở đoạn parse những syslogs (exam: apache log) này sang một chuẩn riêng. Nhân tiện cho em một số hướng giải quyết?.
+Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101341</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101341</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2007 17:03:42]]> GMT</pubDate>
+				<author><![CDATA[ azteam]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần 5: Cài đặt và cấu hình syslog-ng</b></font>
+
+<font color='orange'><b>syslog-ng</b></font> là một ứng dụng tổ hợp các tính năng của <b>logrotate</b> và <b>syslog</b>, nó cho phép tùy biến dễ dàng, và giàu tính năng hơn. 
+Ưu điểm:
++ logging đáng tin cậy vì có thể truyền qua TCP
++ Không có sự quay vòng log files mà chúng được lưu theo vị trí mặc định
++ Cải thiện các log entries
+
+<font color='green'><b>1. Cài đặt</b></font>
+Cả <b>eventlog</b> và <b>syslog-ng</b> các bạn đều có thể download từ website: www.balabit.com
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># wget<span class="link"> http://www.balabit.com/downloads/files/eventlog/0.2/eventlog-0.2.5.tar.gz</span>
+--21:43:01-- <span class="link"> http://www.balabit.com/downloads/files/eventlog/0.2/eventlog-0.2.5.tar.gz</span>
+Resolving www.balabit.com... 212.92.18.33
+Connecting to www.balabit.com|212.92.18.33|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified &#91;application/octet-stream&#93;
+Saving to: `eventlog-0.2.5.tar.gz'
+
+    &#91;                 &lt;=&gt;                    &#93; 312,164     35.3K/s   in 8.6s   
+
+21:43:29 &#40;35.3 KB/s&#41; - `eventlog-0.2.5.tar.gz' saved &#91;312164&#93;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># wget<span class="link"> http://www.balabit.com/downloads/files/syslog-ng/sources/2.0/src/syslog-ng-2.0.6.tar.gz</span>
+--21:46:37-- <span class="link"> http://www.balabit.com/downloads/files/syslog-ng/sources/2.0/src/syslog-ng-2.0.6.tar.gz</span>
+Resolving www.balabit.com... 212.92.18.33
+Connecting to www.balabit.com|212.92.18.33|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified &#91;application/octet-stream&#93;
+Saving to: `syslog-ng-2.0.6.tar.gz'
+
+    &#91;                                  &lt;=&gt;   &#93; 369,302     15.2K/s   in 21s    
+
+21:47:00 &#40;17.0 KB/s&#41; - `syslog-ng-2.0.6.tar.gz' saved &#91;369302&#93;</pre>
+		</div>
+
+Tiến hành cài thư viện <b>glib</b> (nếu chưa có)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ yum -y install glib</pre>
+		</div>
+
+Cài đặt <b>eventlog</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar -zxvf eventlog-0.2.5.tar.gz
+# cd eventlog-0.2.5
+# ./configure
+# make
+# make install</pre>
+		</div>
+
+Gán biến môi trường <b>PKG_CONFIG_PATH</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/</pre>
+		</div>
+
+Bước tiếp theo, cài <b>syslog-ng</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar -zxvf syslog-ng-2.0.6.tar.gz
+# cd syslog-ng-2.0.6
+# ./configure --sysconfdir=/etc
+# make
+# make install</pre>
+		</div>
+
+Quá trình cài đặt kết thúc, chúng ta sẽ có được các file cấu hình mẫu nằm trong thư mục <b>contrib</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost syslog-ng-2.0.6&#93;# ls contrib
+aix-packaging      init.d.solaris  Makefile.in         syslog-ng.conf.HP-UX
+fedora-packaging   init.d.SunOS    README              syslog-ng.conf.RedHat
+hpux-packaging     init.d.SuSE     relogger.pl         syslog-ng.conf.SunOS
+init.d.HP-UX       lfs-packaging   rhel-packaging      syslog-ng.vim
+init.d.RedHat      Makefile        syslog2ng
+init.d.RedHat-7.3  Makefile.am     syslog-ng.conf.doc</pre>
+		</div>
+
+Tạo một thư mục <b>syslog-ng</b> trong <font color='olive'><i>/etc</i></font> và copy các scripts và file cấu hình mẫu đến nơi tương ứng (Tuỳ vào Distro bạn đang dùng mà chọn thư mục thích hợp)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mkdir /etc/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.init /etc/init.d/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.conf /etc/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.sysconfig /etc/sysconfig/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.logrotate /etc/logrotate.d/syslog-ng</pre>
+		</div>
+
+Thay đổi quyền cho file <font color='olive'><i>/etc/init.d/syslog-ng</i></font> 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># chmod 755 /etc/init.d/syslog-ng</pre>
+		</div>
+
+Lúc này bạn cần tìm đúng vị trí của <b>syslog-ng</b> và cho init.d script trỏ đến đó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># updatedb
+# locate syslog-ng | grep bin
+/usr/local/sbin/syslog-ng
+# vi /etc/init.d/syslog-ng
+...
+#exec="/sbin/syslog-ng"
+exec="/usr/local/sbin/syslog-ng"
+...</pre>
+		</div>
+
+Dừng <b>syslog</b> và khởi tạo <b>syslog-ng</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># service syslog stop
+# service syslog-ng start</pre>
+		</div>
+
+Tạo một group logs và thêm các users cần dùng vào
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># groupadd logs
+# usermod -G logs quanta</pre>
+		</div>
+
+Cấu hình để <b>syslog-ng</b> khởi động ở lần reboot tiếp theo
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># chkconfig syslog off
+# chkconfig syslog-ng on</pre>
+		</div>
+
+Như vậy bạn đã cài đặt xong <b>syslog-ng</b> trên server. Phần tiếp theo chúng ta sẽ tìm hiểu về cách cấu hình <b>syslog-ng</b> trên server, và cấu hình <b>syslog</b> tại client.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101346</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2007 17:27:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>Bài viết rất bổ ích về syslog. Cảm ơn bác quanta. 
+Hiện tại em đang thử viết tool hoạt động như một IDS dựa trên phân tích syslog của webserver. Tuy nhiên còn đang mắc ở đoạn parse những syslogs (exam: apache log) này sang một chuẩn riêng. Nhân tiện cho em một số hướng giải quyết?.
+Thanks.&nbsp;
+		</blockquote>
+Thử tìm hiểu về OSSEC xem. Đây là 1 Host-based IDS. Một trong những tính năng của nó là phân tích logs và phát ra những alerts theo những rules đã cài đặt trước.
+
+Vì lĩnh vực phân tích log khá rộng nên để thảo luận chi tiết và tránh đi xa chủ đề syslog này, đề nghị bạn mở 1 topic chuyên về phân tích logs. Nếu chỉ đào sâu công cụ OSSEC thì đặt tiêu đề có liên quan đến phần mềm này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101350</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101350</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2007 17:41:44]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <font color='green'><b>2. Cấu hình syslog-ng</b></font>
+Lấy một ví dụ với <font color='olive'><i>/etc/syslog-ng/syslog-ng.conf</i></font> trong Fedora 8:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># syslog-ng configuration file.
+#
+# This should behave pretty much like the original syslog on RedHat. But
+# it could be configured a lot smarter.
+#
+# See syslog-ng&#40;8&#41; and syslog-ng.conf&#40;5&#41; for more information.
+# ...
+#
+
+options {
+    sync &#40;0&#41;;
+    time_reopen &#40;10&#41;;
+    log_fifo_size &#40;1000&#41;;
+    use_dns &#40;no&#41;;
+    use_fqdn &#40;no&#41;;
+    create_dirs &#40;yes&#41;;
+    keep_hostname &#40;yes&#41;;
+};
+
+source s_sys {
+    file &#40;"/proc/kmsg" log_prefix&#40;"kernel: "&#41;&#41;;
+    unix-stream &#40;"/dev/log"&#41;;
+    internal&#40;&#41;;
+    # udp&#40;ip&#40;0.0.0.0&#41; port&#40;514&#41;&#41;;
+    # tcp&#40;ip&#40;0.0.0.0&#41; port&#40;514&#41;&#41;;
+};
+
+destination d_cons { file&#40;"/dev/console"&#41;; };
+destination d_mesg { file&#40;"/var/log/messages"&#41;; };
+destination d_auth { file&#40;"/var/log/secure"&#41;; };
+destination d_mail { file&#40;"/var/log/maillog" sync&#40;10&#41;&#41;; };
+destination d_spol { file&#40;"/var/log/spooler"&#41;; };
+destination d_boot { file&#40;"/var/log/boot.log"&#41;; };
+destination d_cron { file&#40;"/var/log/cron"&#41;; };
+destination d_mlal { usertty&#40;"*"&#41;; };
+
+#filter f_filter1   { facility&#40;kern&#41;; };
+filter f_filter2   { level&#40;info..emerg&#41; and
+                     not facility&#40;mail,authpriv,cron&#41;; };
+filter f_filter3   { facility&#40;authpriv&#41;; };
+filter f_filter4   { facility&#40;mail&#41;; };
+filter f_filter5   { level&#40;emerg&#41;; };
+filter f_filter6   { facility&#40;uucp&#41; or
+                     &#40;facility&#40;news&#41; and level&#40;crit..emerg&#41;&#41;; };
+filter f_filter7   { facility&#40;local7&#41;; };
+filter f_filter8   { facility&#40;cron&#41;; };
+
+#log { source&#40;s_sys&#41;; filter&#40;f_filter1&#41;; destination&#40;d_cons&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter2&#41;; destination&#40;d_mesg&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter3&#41;; destination&#40;d_auth&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter4&#41;; destination&#40;d_mail&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter5&#41;; destination&#40;d_mlal&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter6&#41;; destination&#40;d_spol&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter7&#41;; destination&#40;d_boot&#41;; };
+log { source&#40;s_sys&#41;; filter&#40;f_filter8&#41;; destination&#40;d_cron&#41;; };
+
+# vim:set ai ts=4 sw=4 sts=4 et:</pre>
+		</div>
+
+Bạn có thể dễ dàng nhận ra file cấu hình của syslog-ng được chia thành các khối riêng rẽ: <b>options</b>, <b>source</b>, <b>filter</b>, <b>destination</b>, và <b>log</b>. Ý nghĩa cơ bản của các khối này như sau:
+<ul><li><font color='orange'>options</font>: nơi chứa những tùy chọn toàn cục, những tuỳ chọn này có thể bị ghi đè (overridden) bởi 1 trong 4 sections sau
+
+<font color='orange'>source</font>: chứa nguồn của thông báo, nó có thể là: files, local sockets hoặc remote hosts
+
+<font color='orange'>destination</font>: đích đến của thông báo. Nó cũng có thể là: files, local sockets hoặc remote hosts
+
+<font color='orange'>filter</font>: đây là một chức năng mạnh và linh động của syslog-ng. Bạn có thể dùng nó để lọc bất cứ log messages nào như là: syslogd chuẩn, log level, host names, hoặc một nội dung tùy ý như là một cụm ký tự hay một chuỗi số
+
+<font color='orange'>log</font>: Khối này chứa các câu lệnh log, kết nối giữa: source, destination, filter để báo cho syslog-ng biết là chúng phải làm gì</li></ul>
+Một khối <b>options</b> điển hình như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>options {
+    sync &#40;0&#41;;
+    time_reopen &#40;10&#41;;
+    log_fifo_size &#40;1000&#41;;
+    use_dns &#40;no&#41;;
+    use_fqdn &#40;no&#41;;
+    create_dirs &#40;yes&#41;;
+    keep_hostname &#40;yes&#41;;
+};</pre>
+		</div>
+Những lệnh trong khối options này phải sử dụng những tuỳ chọn đã được định nghĩa trong <font color='olive'><i>/etc/syslog-ng/syslog-ng.conf</i></font>. Ý nghĩa của từng tham số trong khối này:
+
+<b>sync</b>: Có bao nhiêu dòng messages sẽ được giữ lại ở hàng đợi output trước khi ghi ra đĩa. 0 là một tuỳ chọn ưa thích - điều đó có nghĩa là bạn sẽ ghi lại mọi thứ
+
+<b>time_reopen</b>: thời gian đợi (tính bằng s) trước khi những kết nối hỏng được thực hiện lại
+
+<b>log_fifo_size</b>: số dòng thông báo lớn nhất trong output queue. Output queue được hiểu là tất cả các destinations file
+
+<b>use_dns</b> (yes|no): dùng hay không dùng DNS
+
+<b>use_fqdn</b> (yes|no): Có dùng một tên miền đầy đủ thay vì một tên miền ngắn hay không
+
+<b>create_dirs</b> (yes|no): có cho phép tạo thư mục cho các file đích hay không
+
+<b>keep_hostname</b> (yes|no): Xác định xem có trust hostname trong các log messages hay không. Nếu keep_hostname có giá trị là yes và có 1 hostname trong message thì syslog-ng không làm gì cả. Ngược lại, nó luôn luôn ghi đè lên những thông tin từ nơi nhận message
+
+<font color='green'><b>Source, Destination, và Filter Statements</b></font>
+Phần này được cấu hình tùy ý. Để hiển cặn kẽ các thành phần cũng như tham số trong những khối này bạn cần đọc <font color='orange'><b>man 5 syslog-ng.conf</b></font>
+
+Khối <font color='orange'>log</font> sẽ đặt tất cả chúng (source, filter, destination) cùng nhau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>log { source&#40;s_sys&#41;; filter&#40;f_filter2&#41;; destination&#40;d_mesg&#41;; };</pre>
+		</div>
+
+<font color='green'><b>Enabling Remote Logging</b></font>
+Chúng ta có thể gửi log messages từ các remote clients đến server với <b>syslogd</b>. Nhưng cách làm này là không an toàn và thông tin có thể bị mất bởi vì <b>syslogd</b> truyền bằng UDP packets. Đó là lý do bạn cần cài đặt <b>syslog-ng</b> trên client hosts. Thêm những dòng sau vào <font color='olive'>syslog-ng.conf</font> trên server để cho phép nhận messages từ remote clients và dumps chúng ra một file trên host
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>source s_remote { tcp&#40;&#41;; };
+destination d_clients { file&#40;"/var/log/HOSTS/$HOST/"&#41;; };
+log { source&#40;s_remote&#41;; destination&#40;d_clients&#41;; };</pre>
+		</div>
+
+Lúc này trên client host bạn có thể tập hợp tất cả các local messages và gửi chúng đến remote server như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#sample syslog-ng.conf for a remote client
+source s_local { internal&#40;&#41;; unix-stream&#40;"/dev/log"&#41;; file&#40;"/proc/kmsg" log_prefix&#40;"kernel: "&#41;&#41;; };
+destination d_loghost {tcp&#40;"192.168.1.2" port&#40;514&#41;&#41;;};
+log { source&#40;s_local&#41;; destination&#40;d_loghost&#41;; };</pre>
+		</div>
+
+Hãy nhớ rằng, bất cứ khi nào bạn thay đổi <b>syslog-ng.conf</b> bạn cần khởi động lại <b>syslog-ng</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /etc/init.d/syslog-ng restart</pre>
+		</div>
+
+<i><u>Kiểm tra mọi thứ</u></i>
+Bây giờ bạn có thể chạy một vài phép thử đơn giản trên cả server và client. Thử tạo một login session mới trên server hoặc là chạy su hay sudo. Sau đó check <font color='olive'><i>/var/log/auth.log</i></font>.
+Trên client bạn thử chạy bất cứ lệnh nào đó, sau đó kiểm tra xem có thư mục mới nào được tạo cho remote client trong <font color='olive'><i>/var/log/HOSTS</i></font> hay không.
+
+Một cách khác là sử dụng lệnh logger:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># logger "this is a test"
+# logger -p auth.debug "this is a test"</pre>
+		</div>
+Lệnh này sẽ tạo một dòng như sau trong logfiles:
+<blockquote>Apr 1 16:08:42 localhost.localdomain logger: this is a test&nbsp;
+		</blockquote>
+
+Như vậy là bạn đã có cái nhìn cơ bản về <b>syslog-ng</b>. Ở phần tiếp theo, bạn sẽ học cách điều chỉnh và tổ chức <b>syslog-ng</b> theo cách bạn muốn, và mã hóa tất cả các chuyển giao qua mạng bằng <b>syslog-ng</b>.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101401</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101401</link>
+				<pubDate><![CDATA[Sat, 1 Dec 2007 02:28:51]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Tương tự như cấu hình syslog, file syslog-ng.conf cũng nên bổ sung việc lưu các message có facilitate = auth ở chỗ riêng biệt, với filename là /var/log/auth.log.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>destination d_auth_log { file&#40;"/var/log/auth.log"&#41;; };
+
+ filter f_filter9   { facility&#40;auth&#41; or facility&#40;authpriv&#41;; };
+ 
+ log { source&#40;s_sys&#41;; filter&#40;f_filter9&#41;; destination&#40;d_auth_log&#41;; };</pre>
+		</div>
+Ko có lệnh log vào file auth.log thì lấy đâu ra file này để xem :-P.
+Cũng có thể ko cần định nghĩa d_auth_log mà lưu chung 2 facilities này trong cùng file /var/log/secure.
+
+* Khi thay đổi syslog-ng.conf, không nhất thiết phải restart service này mà chỉ cần reload cũng được. Nên kiểm tra syslog-ng.conf xem có chỗ nào cấu hình sai hay ko. Vì vậy, sau khi chỉnh syslog-ng.conf, thực hiện 02 lệnh sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/usr/local/sbin/syslog-ng -s /etc/syslog-ng.conf
+/etc/init.d/syslog-ng reload</pre>
+		</div>
+(2 lệnh trên giả dụ file binary syslog-ng được cài tại /usr/local/sbin và file config nằm ở folder /etc/)
+Nếu câu lệnh kiểm tra ko xuất hiện thông báo nào thì có nghĩa là config ko bị lỗi. Ngược lại thì nên kiểm tra file config.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101432</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101432</link>
+				<pubDate><![CDATA[Sat, 1 Dec 2007 11:59:17]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>Bài viết rất bổ ích về syslog. Cảm ơn bác quanta. 
+Hiện tại em đang thử viết tool hoạt động như một IDS dựa trên phân tích syslog của webserver. Tuy nhiên còn đang mắc ở đoạn parse những syslogs (exam: apache log) này sang một chuẩn riêng. Nhân tiện cho em một số hướng giải quyết?.
+Thanks.&nbsp;
+		</blockquote>
+Thử tìm hiểu về OSSEC xem. Đây là 1 Host-based IDS. Một trong những tính năng của nó là phân tích logs và phát ra những alerts theo những rules đã cài đặt trước.
+&nbsp;
+		</blockquote>
+
+OSSEC em sẽ tìm hiểu sau vì theo em biết nó khá rộng và phức tạp.
+Hiện tại em đang tìm hiểu về <b>secwatch</b>. 
+
+<p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>
+Vì lĩnh vực phân tích log khá rộng nên để thảo luận chi tiết và tránh đi xa chủ đề syslog này, đề nghị bạn mở 1 topic chuyên về phân tích logs. Nếu chỉ đào sâu công cụ OSSEC thì đặt tiêu đề có liên quan đến phần mềm này.
+&nbsp;
+		</blockquote>
+
+Em sẽ mở topic mới về vấn đề trên. Thanks bác nhắc nhở.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#101683</link>
+				<pubDate><![CDATA[Mon, 3 Dec 2007 01:02:06]]> GMT</pubDate>
+				<author><![CDATA[ azteam]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><font color='cyan'><b>Phần 5: Cài đặt và cấu hình syslog-ng</b></font>
+
+<font color='orange'><b>syslog-ng</b></font> là một ứng dụng tổ hợp các tính năng của <b>logrotate</b> và <b>syslog</b>, nó cho phép tùy biến dễ dàng, và giàu tính năng hơn. 
+Ưu điểm:
++ logging đáng tin cậy vì có thể truyền qua TCP
++ Không có sự quay vòng log files mà chúng được lưu theo vị trí mặc định
++ Cải thiện các log entries
+
+<font color='green'><b>1. Cài đặt</b></font>
+Cả <b>eventlog</b> và <b>syslog-ng</b> các bạn đều có thể download từ website: www.balabit.com
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># wget<span class="link"> http://www.balabit.com/downloads/files/eventlog/0.2/eventlog-0.2.5.tar.gz</span>
+--21:43:01-- <span class="link"> http://www.balabit.com/downloads/files/eventlog/0.2/eventlog-0.2.5.tar.gz</span>
+Resolving www.balabit.com... 212.92.18.33
+Connecting to www.balabit.com|212.92.18.33|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified &#91;application/octet-stream&#93;
+Saving to: `eventlog-0.2.5.tar.gz'
+
+    &#91;                 &lt;=&gt;                    &#93; 312,164     35.3K/s   in 8.6s   
+
+21:43:29 &#40;35.3 KB/s&#41; - `eventlog-0.2.5.tar.gz' saved &#91;312164&#93;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># wget<span class="link"> http://www.balabit.com/downloads/files/syslog-ng/sources/2.0/src/syslog-ng-2.0.6.tar.gz</span>
+--21:46:37-- <span class="link"> http://www.balabit.com/downloads/files/syslog-ng/sources/2.0/src/syslog-ng-2.0.6.tar.gz</span>
+Resolving www.balabit.com... 212.92.18.33
+Connecting to www.balabit.com|212.92.18.33|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified &#91;application/octet-stream&#93;
+Saving to: `syslog-ng-2.0.6.tar.gz'
+
+    &#91;                                  &lt;=&gt;   &#93; 369,302     15.2K/s   in 21s    
+
+21:47:00 &#40;17.0 KB/s&#41; - `syslog-ng-2.0.6.tar.gz' saved &#91;369302&#93;</pre>
+		</div>
+
+Tiến hành cài thư viện <b>glib</b> (nếu chưa có)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ yum -y install glib</pre>
+		</div>
+
+Cài đặt <b>eventlog</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar -zxvf eventlog-0.2.5.tar.gz
+# cd eventlog-0.2.5
+# ./configure
+# make
+# make install</pre>
+		</div>
+
+Gán biến môi trường <b>PKG_CONFIG_PATH</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/</pre>
+		</div>
+
+Bước tiếp theo, cài <b>syslog-ng</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tar -zxvf syslog-ng-2.0.6.tar.gz
+# cd syslog-ng-2.0.6
+# ./configure --sysconfdir=/etc
+# make
+# make install</pre>
+		</div>
+
+Quá trình cài đặt kết thúc, chúng ta sẽ có được các file cấu hình mẫu nằm trong thư mục <b>contrib</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost syslog-ng-2.0.6&#93;# ls contrib
+aix-packaging      init.d.solaris  Makefile.in         syslog-ng.conf.HP-UX
+fedora-packaging   init.d.SunOS    README              syslog-ng.conf.RedHat
+hpux-packaging     init.d.SuSE     relogger.pl         syslog-ng.conf.SunOS
+init.d.HP-UX       lfs-packaging   rhel-packaging      syslog-ng.vim
+init.d.RedHat      Makefile        syslog2ng
+init.d.RedHat-7.3  Makefile.am     syslog-ng.conf.doc</pre>
+		</div>
+
+Tạo một thư mục <b>syslog-ng</b> trong <font color='olive'><i>/etc</i></font> và copy các scripts và file cấu hình mẫu đến nơi tương ứng (Tuỳ vào Distro bạn đang dùng mà chọn thư mục thích hợp)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mkdir /etc/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.init /etc/init.d/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.conf /etc/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.sysconfig /etc/sysconfig/syslog-ng
+# cp contrib/fedora-packaging/syslog-ng.logrotate /etc/logrotate.d/syslog-ng</pre>
+		</div>
+
+Thay đổi quyền cho file <font color='olive'><i>/etc/init.d/syslog-ng</i></font> 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># chmod 755 /etc/init.d/syslog-ng</pre>
+		</div>
+
+Lúc này bạn cần tìm đúng vị trí của <b>syslog-ng</b> và cho init.d script trỏ đến đó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># updatedb
+# locate syslog-ng | grep bin
+/usr/local/sbin/syslog-ng
+# vi /etc/init.d/syslog-ng
+...
+#exec="/sbin/syslog-ng"
+exec="/usr/local/sbin/syslog-ng"
+...</pre>
+		</div>
+
+Dừng <b>syslog</b> và khởi tạo <b>syslog-ng</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># service syslog stop
+# service syslog-ng start</pre>
+		</div>
+
+Tạo một group logs và thêm các users cần dùng vào
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># groupadd logs
+# usermod -G logs quanta</pre>
+		</div>
+
+Cấu hình để <b>syslog-ng</b> khởi động ở lần reboot tiếp theo
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># chkconfig syslog off
+# chkconfig syslog-ng on</pre>
+		</div>
+
+Như vậy bạn đã cài đặt xong <b>syslog-ng</b> trên server. Phần tiếp theo chúng ta sẽ tìm hiểu về cách cấu hình <b>syslog-ng</b> trên server, và cấu hình <b>syslog</b> tại client.&nbsp;
+		</blockquote>
+
+hi mọi người,
+em đã làm theo hướng dẫn của bác quata như trên, trêm lab thì tất cả đều ok..
+nhưng khi em triển khai thực tế. thì gặp lỗi này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>libsyslog-ng.a&#40;logsource.o&#41;: In function `log_source_init_instance':
+/root/setupsyslog/syslog-ng-2.0.6/src/logsource.c:58: undefined reference to `g_assertion_message_expr'
+collect2: ld returned 1 exit status
+make&#91;2&#93;: *** &#91;syslog-ng&#93; Error 1
+make&#91;2&#93;: Leaving directory `/root/setupsyslog/syslog-ng-2.0.6/src'
+make&#91;1&#93;: *** &#91;all-recursive&#93; Error 1
+make&#91;1&#93;: Leaving directory `/root/setupsyslog/syslog-ng-2.0.6'
+make: *** &#91;all&#93; Error 2</pre>
+		</div>
+em dùng centos 5.6, các lib em đã cài đủ.
+mọi người có thể nói hộ em là do đâu ko?e xin cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#249141</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#249141</link>
+				<pubDate><![CDATA[Wed, 26 Oct 2011 22:17:00]]> GMT</pubDate>
+				<author><![CDATA[ thuannghich]]></author>
+			</item>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Hi all,
+
+Mọi người, các anh chị đi trước, gặp lỗi này chưa, có thể bảo em được ko ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#250778</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#250778</link>
+				<pubDate><![CDATA[Tue, 6 Dec 2011 21:26:47]]> GMT</pubDate>
+				<author><![CDATA[ thuannghich]]></author>
+			</item>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Bạn đưa một đoạn log thế này thì hơi khó. Hay bạn cài qua `yum` đi, syslog-ng có trong epel repo đấy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Name        : syslog-ng
+Version     : 3.2.5
+Release     : 1.el6
+Architecture: x86_64
+Size        : 1582418
+Packager    : Fedora Project
+Group       : System Environment/Daemons
+URL         :<span class="link"> http://www.balabit.com/network-security/syslog-ng</span>
+Repository  : epel
+Summary     : Next-generation syslog server
+Description :
+syslog-ng, as the name shows, is a syslogd replacement, but with new
+functionality for the new generation. The original syslogd allows
+messages only to be sorted based on priority/facility pairs; syslog-ng
+adds the possibility to filter based on message contents using regular
+expressions. The new configuration scheme is intuitive and powerful.
+Forwarding logs over TCP and remembering all forwarding hops makes it
+ideal for firewalled environments.</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#251217</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#251217</link>
+				<pubDate><![CDATA[Sat, 17 Dec 2011 13:14:29]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Các anh cho em hỏi, em có tool nào để gửi syslog msg từ máy window về máy linux đã cai syslog-ng không ạ ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252369</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252369</link>
+				<pubDate><![CDATA[Thu, 12 Jan 2012 11:26:25]]> GMT</pubDate>
+				<author><![CDATA[ vodanh26042006]]></author>
+			</item>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ -Snare
+-winlogd]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252376</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252376</link>
+				<pubDate><![CDATA[Thu, 12 Jan 2012 22:55:18]]> GMT</pubDate>
+				<author><![CDATA[ vitcon01]]></author>
+			</item>
+			<item>
+				<title>Cấu hình và sử dụng các log files của hệ thống</title>
+				<description><![CDATA[ Em đã cài SnareIIS trên win 2003 và đã gửi được log của IIS về cho máy Ubuntu cài syslog-ng rồi. Nhưng log nhận đuợc bên  syslog-ng vẫn có dạng W3C. Các anh chỉ cho em cách config để gửi syslog được không ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252482</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16534.hva#252482</link>
+				<pubDate><![CDATA[Sat, 14 Jan 2012 10:14:49]]> GMT</pubDate>
+				<author><![CDATA[ vodanh26042006]]></author>
+			</item>
+	</channel>
+</rss>

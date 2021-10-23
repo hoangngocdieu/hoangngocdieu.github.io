@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ Chào mọi người! 
+
+Trong quá trình nâng cấp zimbra từ phiên bản zimbra 5.0.14_GA_2850 lên phiên bản 7.1.1_GA_3196 thì gặp lỗi sau: 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:/usr/local/src/zcs-7.1.1_GA_3196# su - zimbra -c &quot;zmcontrol status&quot;
+        antispam                Running
+        antivirus               Running
+        imapproxy               Running
+        ldap                    Running
+        logger                  Running
+        mailbox                 Stopped
+                zmmailboxdctl is not running.
+        memcached               Running
+        mta                     Running
+        snmp                    Running
+        spell                   Running
+        stats                   Running
+        zmconfigd               Running</pre>
+		</div>
+ 
+File /opt/zimbra/log/mailbox.log
+<blockquote>
+root@mail:/usr/local/src/zcs-7.1.1_GA_3196# tail /opt/zimbra/log/mailbox.log
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property os.name=Linux
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property os.version=2.6.24-23-server
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property sun.arch.data.model=64
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property sun.cpu.endian=little
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property sun.cpu.isalist=
+2011-07-09 07:50:53,358 INFO  [main] [] misc - System property sun.os.patch.level=unknown
+2011-07-09 07:50:53,374 INFO  [main] [] system - Setting mysql connector property: maxActive=100
+2011-07-09 07:50:53,380 INFO  [main] [] system - Setting mysql connector property: maxActive=100
+<font color='red'>2011-07-09 07:50:54,234 ERROR [main] [] Versions - DB Version Mismatch: ours=&quot;65&quot; from DB=&quot;53&quot;
+2011-07-09 07:50:54,235 FATAL [main] [] system - Data version mismatch.  Reinitialize or upgrade the backend data store.</font>
+&nbsp;
+		</blockquote>
+
+file /var/log/zimbra.log
+<blockquote>
+root@mail:/usr/local/src/zcs-7.1.1_GA_3196# tail /var/log/zimbra.log
+Jul  9 09:06:10 mail zmmailboxdmgr[27993]: assuming no other instance is running
+Jul  9 09:06:10 mail zmmailboxdmgr[27993]: file /opt/zimbra/log/zmmailboxd.pid does not exist
+Jul  9 09:06:10 mail zmmailboxdmgr[27993]: assuming no other instance is running
+Jul  9 09:06:10 mail zmmailboxdmgr[27993]: no manager process is running
+Jul  9 09:06:10 mail zmmailboxdmgr[28001]: status requested
+J<font color='orange'>ul  9 09:06:10 mail zmmailboxdmgr[28001]: stale pid 16032 found in /opt/zimbra/log/zmmailboxd_manager.pid: No such process
+Jul  9 09:06:10 mail zmmailboxdmgr[28001]: assuming no other instance is running
+Jul  9 09:06:10 mail zmmailboxdmgr[28001]: file /opt/zimbra/log/zmmailboxd.pid does not exist</font>
+Jul  9 09:06:10 mail zmmailboxdmgr[28001]: assuming no other instance is running
+Jul  9 09:06:10 mail zmmailboxdmgr[28001]: no manager process is running
+&nbsp;
+		</blockquote>
+File zmmailboxd.out
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>tail /opt/zimbra/log/zmmailboxd.out
+674  INFO  &#91;main&#93; log - Setting GID=1002
+674  INFO  &#91;main&#93; log - Setting UID=1002
+674  INFO  &#91;main&#93; log - jetty-6.1.22.z6
+770  INFO  &#91;main&#93; log - No Transaction manager found - if your webapp requires one, please configure one.</pre>
+		</div>
+
+Quá trình thực hiện nâng cấp của mình như sau: 
+- Nâng cấp từ phiên bản  zimbra 5.0.14_GA_2850 lên phiên bản 5.0.26_GA_3365: Quá trình nâng cấp bình thường, test gửi và nhận email đều tốt. 
+- Nâng cấp từ phiên bản zimbra 5.0.26_GA_3365 lên phiên bản zcs-7.1.1_GA_3196: Sau khi nâng cấp xong thì bị lỗi như trên. 
+
+- Mình đã test thử nâng cấp theo hướng sau:  zcs-5.0.14_GA_2850 =&gt; zcs-5.0.26_GA_3365 =&gt; zcs-6.0.13_GA_2918  =&gt; zcs-7.1.1_GA_3196
+Nhưng khi nâng cấp từ zcs-5.0.26_GA_3365 =&gt; zcs-6.0.13_GA_2918 cũng bị lỗi tương tự như trên. 
+
+<font color='red'>=&gt;</font> Lỗi này tìm kiếm được nhiều bài nhưng vẫn chưa khắc phục được! và thời điểm xuất hiện lỗi là khi zimbra khởi động
+
+<font color='orange'>=&gt;</font> Lỗi này thì thường là do DNS hoặc ssl Cert, nhưng trong trường hợp của mình có thể là do phát sinh từ lỗi trên. 
+
+Server của mình có khoảng 2000 User, Chạy trên nền Ubuntu-8.04 64 bit. Intel(R) Xeon(R) CPU           E5430  @ 2.66GHz - Ram 10GB 
+
+Mọi người giúp mình khắc phục với! 
+
+- Ky0 -
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243111</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243111</link>
+				<pubDate><![CDATA[Fri, 8 Jul 2011 22:07:14]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ T tớ nghĩ là do phần DB version (<font color='red'>Versions - DB Version Mismatch: ours="65" from DB="53"</font> ), thử theo hướng dẫn này xem sao:
+<p></p>
+		<cite class="blockquote">serivo;154687 wrote:</cite><br>
+		<blockquote>I'm not sure what caused this problem.
+I can thing of 2 possible sources: 
+1 - it's some kind of data copying from the main server to this copy we are testing upgrade, which arrived later than upgrade was done;
+2 - restoring by zmrestore or web interface caused rollback of mysql db including zimbra.config table.
+
+But this problem were pretty easy, although time consuming process, to resolve, looking at /opt/zimbra/libexec/* scripts, finding the scripts which increase zimbra.config's db.version, and running corresponding sql updates, sometimes on all mailboxgroups, in cycle.
+
+I will try to test if zmrestore can rollback database scheme called with some parameters, but later. For now the problem is fixed and we will test zcs-6.0.1 to determine if we are ready for upgrade on the production server.
+-- 
+  Sergey&nbsp;
+		</blockquote>
+
+looking at <font color='red'>/opt/zimbra/libexec/*</font> scripts, finding the scripts which increase <font color='red'>zimbra.config's db.version</font>, and running corresponding sql updates, sometimes on all mailboxgroups, in cycle]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243158</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243158</link>
+				<pubDate><![CDATA[Sat, 9 Jul 2011 10:10:53]]> GMT</pubDate>
+				<author><![CDATA[ neverwon]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ Sau vài ngày test đi test lại, nhận ra trên con server mình tồn tại đủ các ứng dụng đụng độ với zimbra (VD: mysql-common, mysql-client, clamav-freshclam, postfix-policyd, squid3) đã tiến hành disable hoặc gỡ bỏ 
+
+<p></p>
+		<cite class="blockquote">neverwon wrote:</cite><br>
+		<blockquote>T tớ nghĩ là do phần DB version (<font color='red'>Versions - DB Version Mismatch: ours=&quot;65&quot; from DB=&quot;53&quot;</font> ), thử theo hướng dẫn này xem sao:
+<p></p>
+		<cite class="blockquote">serivo;154687 wrote:</cite><br>
+		<blockquote>I'm not sure what caused this problem.
+I can thing of 2 possible sources: 
+1 - it's some kind of data copying from the main server to this copy we are testing upgrade, which arrived later than upgrade was done;
+2 - restoring by zmrestore or web interface caused rollback of mysql db including zimbra.config table.
+
+But this problem were pretty easy, although time consuming process, to resolve, looking at /opt/zimbra/libexec/* scripts, finding the scripts which increase zimbra.config's db.version, and running corresponding sql updates, sometimes on all mailboxgroups, in cycle.
+
+I will try to test if zmrestore can rollback database scheme called with some parameters, but later. For now the problem is fixed and we will test zcs-6.0.1 to determine if we are ready for upgrade on the production server.
+-- 
+  Sergey&nbsp;
+		</blockquote>
+
+looking at <font color='red'>/opt/zimbra/libexec/*</font> scripts, finding the scripts which increase <font color='red'>zimbra.config's db.version</font>, and running corresponding sql updates, sometimes on all mailboxgroups, in cycle&nbsp;
+		</blockquote>
+
+Cảm ơn neverwon đã quan tâm! 
+
+Thực ra lúc đầu mình cũng không hiểu ý ông này lắm! Nhưng sau đó mình đọc một vài bài viết liên quan khác, mình cũng đã hiểu được cách làm! 
+Địa chỉ thư mục trên phải đúng là: <font color='red'>/opt/zimbra/libexec/scripts/</font>
+Để nâng cấp db version thì cần chạy các script tương ứng (Versions - DB Version Mismatch: ours=&quot;65&quot; from DB=&quot;53&quot). Theo như thông báo trên thì ta cần chạy các script như sau: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su – zimbra
+zimbra@mail:~$ mysql.server start
+zimbra@mail:~$ cd /opt/zimbra/libexec/scripts
+zimbra@mail:~$./migrate20080930-MucService.pl
+zimbra@mail:~$./migrate20090315-MobileDevices.pl
+zimbra@mail:~$./migrate20090406-DataSourceItemTable.pl
+zimbra@mail:~$./migrate20090430-highestindexed.pl
+zimbra@mail:~$./migrate20100106-MobileDevices.pl
+zimbra@mail:~$./migrate20100913-Mysql51.pl
+zimbra@mail:~$./migrate20100926-Dumpster.pl
+zimbra@mail:~$ mysql.server stop
+zimbra@mail:~$ exit</pre>
+		</div>
+
+Sau đó tiến hành chạy lại 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# /opt/zimbra/libexec/zmsetup.pl</pre>
+		</div>
+
+Nhưng khi khởi động lại thì nó vẫn báo lỗi <font color='red'>Versions - DB Version Mismatch: ours=&quot;65&quot; from DB=&quot;53&quot; </font>
+Mặc dù trong thông tin trong mysql như sau: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su - zimbra
+zimbra@mail:~$ mysql -u zimbra
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 110
+Server version: 5.1.55-log Source distribution
+
+Copyright &#40;c&#41; 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+This software comes with ABSOLUTELY NO WARRANTY. This is free software,
+and you are welcome to modify and redistribute it under the GPL v2 license
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt; use zimbra;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; select * from config;
++---------------------+-------+-------------------+---------------------+
+| name                | value | description       | modified            |
++---------------------+-------+-------------------+---------------------+
+| db.version          | 65    | db schema version | 2011-07-14 17:42:47 |
+| index.version       | 2     | index version     | 2009-04-02 08:35:53 |
+| purge.lastMailboxId | 1645  | NULL              | 2011-07-01 11:15:25 |
+| redolog.version     | 1.31  | redolog version   | 2011-07-14 15:33:40 |
++---------------------+-------+-------------------+---------------------+
+4 rows in set &#40;0.00 sec&#41;
+
+mysql&gt;</pre>
+		</div>
+
+Không rõ thông tin về DB Version thằng zimbra load từ đâu nữa  :-S 
+
+Cũng đã post bài lên forum Zimbra nhưng gần tuần rồi mà vẫn chưa có phải hồi =(( 
+
+- Ky0 -]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243528</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#243528</link>
+				<pubDate><![CDATA[Thu, 14 Jul 2011 06:33:52]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ Sau gần một tháng thử nghiệm các cách khắc phục lỗi cuối cùng cũng tìm được nguyên nhân gây ra lỗi
+
+Nguyên nhân gây lỗi là do phiên bản zimbra 7.x Version MySQL được zimbra sử dụng hoàn toàn khác với MySQL trong bản 5.x. Ta cần chạy thêm đoạn script chuyển đổi 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# /opt/zimbra/libexec/scripts/migrate20100913-Mysql51.pl</pre>
+		</div>
+
+Chính vì vậy khi nâng cấp lên phiên bản zimbra 6.x hay 7.x thì zimbra sẽ load config trong file<b> /opt/zimbra/conf/localconfig.xml</b> (Có thể xem nội dung dạng text bằng lệnh <font color='orange'>su - zimbra -c "zmlocalconfig"</font>). 
+- Địa chỉ ip trên máy mình thử nghiệm là: 192.168.1.4
+- Địa chỉ ip mail server đang chạy là: 192.168.1.5
+Lệnh thực hiện trên con server thử nghiệm (192.168.1.4)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su - zimbra -c "zmlocalconfig"|grep mysql_bind_address
+logger_mysql_bind_address = localhost
+mysql_bind_address = 192.168.1.5</pre>
+		</div>
+
+<p></p>
+		<cite class="blockquote">Ky0 wrote:</cite><br>
+		<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su - zimbra
+zimbra@mail:~$ mysql -u zimbra
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 110
+Server version: 5.1.55-log Source distribution
+
+Copyright &#40;c&#41; 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+This software comes with ABSOLUTELY NO WARRANTY. This is free software,
+and you are welcome to modify and redistribute it under the GPL v2 license
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt; use zimbra;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; select * from config;
++---------------------+-------+-------------------+---------------------+
+| name                | value | description       | modified            |
++---------------------+-------+-------------------+---------------------+
+| db.version          | 65    | db schema version | 2011-07-14 17:42:47 |
+| index.version       | 2     | index version     | 2009-04-02 08:35:53 |
+| purge.lastMailboxId | 1645  | NULL              | 2011-07-01 11:15:25 |
+| redolog.version     | 1.31  | redolog version   | 2011-07-14 15:33:40 |
++---------------------+-------+-------------------+---------------------+
+4 rows in set &#40;0.00 sec&#41;
+
+mysql&gt;</pre>
+		</div>
+Không rõ thông tin về DB Version thằng zimbra load từ đâu nữa  :-S 
+&nbsp;
+		</blockquote>
+Câu trả lời là nó load thông về DB Version từ server 192.168.1.5 :D
+
+Để sửa lỗi chỉ cần sửa lại địa chỉ ip trong file /opt/zimbra/conf/localconfig.xml hoặc chạy lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su - zimbra -c "zmlocalconfig -e mysql_bind_address=192.168.1.4"</pre>
+		</div>
+Tiến hành khởi động lại zimbra 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# su - zimbra -c "zmcontrol restart"</pre>
+		</div>
+
+- Ky0 -]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246589</link>
+				<pubDate><![CDATA[Tue, 6 Sep 2011 22:41:40]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ con zimbra cua minh không hiểu sao chỉ gửi được mail cho các client trong mail zimbra , không tài nào gửi mai cho mail exchange hay gmail được.....mong bạn chỉ giúp
+
+
+với lại mình làm theo hướng dẫn trong 
+http://www.howtoforge.com/zimbra-collaboration-suite-5.0-on-debian-etch-p3
+thì chỉ hiện được với mail.vncert1.vn không tài nào hiện đựoc với chieuvd@vncert1.vn là sao nhỉ
+xin mọi ngưồi chỉ giúp]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246947</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246947</link>
+				<pubDate><![CDATA[Mon, 12 Sep 2011 08:39:20]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>con zimbra cua minh không hiểu sao chỉ gửi được mail cho các client trong mail zimbra , không tài nào gửi mai cho mail exchange hay gmail được.....mong bạn chỉ giúp
+
+
+với lại mình làm theo hướng dẫn trong <span class="link"> http://www.howtoforge.com/zimbra-collaboration-suite-5.0-on-debian-etch-p3</span>
+thì chỉ hiện được với mail.vncert1.vn không tài nào hiện đựoc với chieuvd@vncert1.vn là sao nhỉ
+xin mọi ngưồi chỉ giúp&nbsp;
+		</blockquote>
+
+Bạn cho xem các thông tin sau: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>su - zimbra -c 'zmcontrol - v'
+
+hostname
+cat /etc/hosts
+cat /etc/resolv.conf
+host mail
+host mail.vncert1.vn
+dig mail.vncert1.vn mx
+dig mail.vncert1.vn any
+
+su - zimbra -c 'zmlocalconfig'</pre>
+		</div>
+
+Nếu không gửi được email cho mail exchange hay gmail thì bạn kiểm tra lại xem firewall có chặn gì hay không. 
+
+- Ky0 -
+
+PS: Nếu bạn cài local làm lab thì phải cài luôn DNS trên server cài zimbra luôn và trỏ thẳng đến IP local của zimbra. Còn nếu cài DNS server riêng thì cần phải cấu hình và nat port chi tiết hơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246978</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246978</link>
+				<pubDate><![CDATA[Mon, 12 Sep 2011 20:57:30]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ day la hostname
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail:~# hostname</pre>
+		</div>
+mail.vncert1.vn
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail:~# cat /etc/resolv.conf</pre>
+		</div> 
+nameserver 172.18.0.12
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mail:~# su - zimbra -c 'zmcontrol -v'
+Release 7.1.2_GA_3268.DEBIAN5 DEBIAN6 FOSS edition.</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>zimbra@mail:~$ dig mail.vncert1.vn mx
+
+; &lt;&lt;&gt;&gt; DiG 9.7.3 &lt;&lt;&gt;&gt; mail.vncert1.vn mx
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 43650
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 2
+
+;; QUESTION SECTION:
+;mail.vncert1.vn.               IN      MX
+
+;; ANSWER SECTION:
+mail.vncert1.vn.        86400   IN      MX      20 mail.vncert1.vn.
+
+;; AUTHORITY SECTION:
+vncert1.vn.             86400   IN      NS      ns.vncert1.vn.
+
+;; ADDITIONAL SECTION:
+mail.vncert1.vn.        86400   IN      A       172.18.0.8
+ns.vncert1.vn.          86400   IN      A       172.18.0.12
+
+;; Query time: 37 msec
+;; SERVER: 172.18.0.12#53&#40;172.18.0.12&#41;
+;; WHEN: Mon Sep 12 18:21:15 2011
+;; MSG SIZE  rcvd: 98</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>zimbra@mail:~$ dig mail.vncert1.vn any
+
+; &lt;&lt;&gt;&gt; DiG 9.7.3 &lt;&lt;&gt;&gt; mail.vncert1.vn any
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 44622
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 1, ADDITIONAL: 2
+
+;; QUESTION SECTION:
+;mail.vncert1.vn.               IN      ANY
+
+;; ANSWER SECTION:
+mail.vncert1.vn.        86400   IN      MX      20 mail.vncert1.vn.
+mail.vncert1.vn.        86400   IN      A       172.18.0.8
+
+;; AUTHORITY SECTION:
+vncert1.vn.             86400   IN      NS      ns.vncert1.vn.
+
+;; ADDITIONAL SECTION:
+mail.vncert1.vn.        86400   IN      A       172.18.0.8
+ns.vncert1.vn.          86400   IN      A       172.18.0.12
+
+;; Query time: 166 msec
+;; SERVER: 172.18.0.12#53&#40;172.18.0.12&#41;
+;; WHEN: Mon Sep 12 18:22:04 2011
+;; MSG SIZE  rcvd: 114</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246985</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246985</link>
+				<pubDate><![CDATA[Mon, 12 Sep 2011 22:17:38]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ nên đưa các câu lệnh vào trong thẻ code cho dễ nhìn. Bổ sung thêm các thông tin trong post http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246978 ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246986</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246986</link>
+				<pubDate><![CDATA[Mon, 12 Sep 2011 22:31:28]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ lệnh mở cổng trong zimbra là gi nhỉ, mình muốn mở một số cổng trong debian thì dùng lệnh nào , xin chỉ giúp
+mình nghi con zimbra cua mình một số cổng chudduowwcj mở chăng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247049</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247049</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 20:47:22]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>lệnh mở cổng trong zimbra là gi nhỉ, mình muốn mở một số cổng trong debian thì dùng lệnh nào , xin chỉ giúp
+mình nghi con zimbra cua mình một số cổng chudduowwcj mở chăng.&nbsp;
+		</blockquote>
+Bạn muốn mở port để làm gì? 
+Bạn có thể xem các port đang mở trên hệ thống bằng lệnh <font color='orange'>netstat -lpn</font>
+Để sửa đổi port lắng nghe của zimbra bằng cách cấu hình lại khi cài đặt
+
+Bạn vẫn chưa cung cấp đầy đủ các thông tin mình yêu cầu! Muốn giải quyết vấn đề nhanh nhất thì phải biết cách trình bày và cung cấp đầy đủ thông tin! 
+
+- Ky0 - 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247056</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247056</link>
+				<pubDate><![CDATA[Tue, 13 Sep 2011 21:15:14]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/hosts</pre>
+		</div>
+127.0.0.1       localhost.localdomain localhost
+172.18.0.8    mail.vncert1.vn         mail
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247234</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247234</link>
+				<pubDate><![CDATA[Thu, 15 Sep 2011 23:10:09]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ Thông tin về hai lệnh sau: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>host mail
+host mail.vncert1.vn</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247236</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247236</link>
+				<pubDate><![CDATA[Thu, 15 Sep 2011 23:20:32]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>host mail</pre>
+		</div>
+mail has address 67.215.65.132
+Host mail not found: 3(NXDOMAIN)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>host mail.vncert1.vn</pre>
+		</div>
+mail.vncert1.vn has address 172.18.0.8
+mail.vncert1.vn mail is handled by 20 mail.vncert1.vn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247484</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247484</link>
+				<pubDate><![CDATA[Tue, 20 Sep 2011 21:52:26]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ Dựa trên các thông tin mà bạn cung cấp thì do bạn cấu hình DNS chưa đúng! 
+Bạn cài DNS server trên một host độc lập (172.18.0.12)? 
+Theo như các Guide từ trang zimbra thì bạn muốn cài DNS cho zimbra sử dụng thì phải cài đặt trực tiếp lên server cài đặt zimbra. Nếu bạn muốn sử dụng một DNS server riêng cần config lại cho phù hợp. 
+
+Nội dung file resolv.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~# cat /etc/resolv.conf
+search vncert1.vn
+nameserver 172.18.0.12</pre>
+		</div>
+hoặc Nếu cài DNS trên server cài đặt zimbra
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>search vncert1.vn
+nameserver 172.18.0.8</pre>
+		</div>
+
+Và hai lệnh sau cùng phải trỏ về một IP 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@mail:~#host mail
+ mail.vncert1.vn has address 172.18.0.8 
+
+ root@mail:~#host mail.vncert1.vn
+ mail.vncert1.vn has address 172.18.0.8</pre>
+		</div>
+
+Tóm lại lỗi của bạn là do cấu hình DNS chưa đúng nên mới bị lỗi như bạn miêu tả tại<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/39530.hva#246947</span> 
+Đọc lại hai<span class="link"> http://wiki.zimbra.com/wiki/Ubuntu_8.04_LTS_Server_%28Hardy_Heron%29_Install_Guide</span> để config DNS cho đúng
+
+- Ky0 - 
+
+PS: Lần sau nên đọc kỹ tài liệu từ trang chủ thay vì kiếm mấy cái tut "mỳ ăn liền" trên mạng. Cái bài viết bạn tham khảo thì nó thiếu mất phần cấu hình DNS. 
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247485</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247485</link>
+				<pubDate><![CDATA[Tue, 20 Sep 2011 22:23:31]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ ah mình nhầm phải post lệnh trên dns cho bạn xem. mình post nhầm cái cài zimbra. vi mình cài zimbra và dns riêng.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@DNSServer:~# host mail</pre>
+		</div>
+mail.vncert.vn has address 172.18.0.10
+mail.vncert.vn mail is handled by 40 mail.vncert.vn.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@DNSServer:~# host mail.vncert1.vn</pre>
+		</div>
+mail.vncert1.vn has address 172.18.0.8
+mail.vncert1.vn mail is handled by 20 mail.vncert1.vn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247528</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247528</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 04:27:06]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ mình muốn hỏi về phần spam mail, mình thử cho đia chi vd chieuvd@mail.vncert1.vn la spam mail khi gui toi dia chỉ thanhnh@mail.vncert1.vn no van gủi bình thường là sao nhỉ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247562</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247562</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 21:42:21]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>mình muốn hỏi về phần spam mail, mình thử <font color='orange'>cho đia chi vd chieuvd@mail.vncert1.vn la spam mail</font> khi gui toi dia chỉ thanhnh@mail.vncert1.vn no van gủi bình thường là sao nhỉ&nbsp;
+		</blockquote>
+
+<font color='orange'>=&gt;</font> Phần này nghĩa là sao? Trên zimbra nếu một email nó nghi ngờ spam nó sẽ chuyển vào Junk E-mail. 
+
+<p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>
+ root@DNSServer:~# host mail
+mail.<font color='red'>vncert.vn</font> has address <font color='red'>172.18.0.10</font>
+mail.vncert.vn mail is handled by 40 mail.vncert.vn.
+
+ root@DNSServer:~# host mail.vncert1.vn
+mail.<font color='red'>vncert1.vn</font> has address <font color='red'>172.18.0.8</font>
+mail.vncert1.vn mail is handled by 20 mail.vncert1.vn. 
+&nbsp;
+		</blockquote>
+
+<font color='red'>=&gt;</font> DNS của bạn cấu hình vẫn chưa đúng, kể cả trên zimbra lẫn DNS server]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247571</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247571</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 22:40:13]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mình muốn hỏi về phần spam mail, mình thử cho đia chi vd chieuvd@mail.vncert1.vn la spam mail khi gui toi dia chỉ thanhnh@mail.vncert1.vn no van gủi bình thường là sao nhỉ</pre>
+		</div>
+mình đang tìm hiểu về antispam mail. hiện con mail cua mình không hiểu sao mình kick vao spam mà nó vẫn cho gủi thu đó bình thuòng, mà nó không chặn mail đó lại mà cho vao mail spam]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247577</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247577</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 23:30:38]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ mình đã sửa lại dns và nó đã ok
+
+
+ok mình đã gủi được mail sang mail exchange nhưng mình gặp một lỗi ko biết lỗi gì là thàng mail server cua mình đăng nhập vào tài khoản rất chậm mat vài phút mói đăng nhập vào tài khoản được. mình ko hiểu đây là do vấn đề gi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247626</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247626</link>
+				<pubDate><![CDATA[Thu, 22 Sep 2011 23:02:51]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nature8x wrote:</cite><br>
+		<blockquote>mình đã sửa lại dns và nó đã ok
+
+
+ok mình đã gủi được mail sang mail exchange nhưng mình gặp một lỗi ko biết lỗi gì là thàng mail server cua mình đăng nhập vào tài khoản rất chậm mat vài phút mói đăng nhập vào tài khoản được. mình ko hiểu đây là do vấn đề gi&nbsp;
+		</blockquote>
+
+ ko ai trả lời giúp mình sao. nó chậm lắm khoảng mấy phút mới đăng nhập được vào có khi còn không đằng nhập được nữa ấy chứ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247777</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247777</link>
+				<pubDate><![CDATA[Mon, 26 Sep 2011 20:37:49]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+			<item>
+				<title>Gặp lỗi sau khi nâng cấp zimbra 5.0.14 lên phiên bản 7.1.1</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Host mail.vncert1.vn
+        Starting ldap...Done.
+        Starting zmconfigd...Done.
+        Starting logger...Done.
+        Starting mailbox...Done.
+        Starting memcached...Done.
+        Starting antispam...Done.
+        Starting antivirus...Failed.
+Starting amavisd...amavisd is already running.
+Starting freshclam...freshclam is already running.
+Starting clamd...failed.
+
+
+        Starting snmp...Done.
+        Starting spell...Done.
+        Starting mta...</pre>
+		</div>
+lỗi này là lỗi gi mọi người ơi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247793</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39530.hva#247793</link>
+				<pubDate><![CDATA[Mon, 26 Sep 2011 22:55:18]]> GMT</pubDate>
+				<author><![CDATA[ nature8x]]></author>
+			</item>
+	</channel>
+</rss>

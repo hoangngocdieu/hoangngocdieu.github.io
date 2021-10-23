@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ Note: bài viêt đã được edit vì tớ bị nhầm lẫn một cách cơ bản, thành thật xin lỗi mọi người.
+
+Chào mọi người,
+
+Tớ đang tập tành viết 1 cái service sử dụng C# .NET trong đó có chức năng browsing một file server đặt trong LAN (file server sử dụng Samba, về mặt nguyên lý thì giống như dùng Windows Explorer để browse files vậy). Hiện tại, nếu service được install để chạy trên administrative account thì ổn, nhưng khi switch sang "Local System" account thì không được vì tớ sử dụng kĩ thuật mapping (kể cả real và null local drive), mà mapping chỉ thực hiện được khi có logged in session, trong khi đó thì "Local System" không có khoản này. 
+
+Vậy cho tớ hỏi còn cách nào khác (dùng C#) để truy cập remote server mà service vẫn hoạt động trên account "Local System" và không dùng bất cứ một user nào khác được không?
+
+Rất cảm ơn mọi người đã đọc bài post, và cho ý kiến (nếu có thể) để giải quyết vấn đề này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131266</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131266</link>
+				<pubDate><![CDATA[Sun, 18 May 2008 20:17:26]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ Bồ có thể nói rõ hơn về kĩ thuật mapping đang dùng không?
+Tùy OS (XP, Vista)  mà có cơ chế về Windows session khác nhau, tuy nhiên có một cách thường được áp dụng khi hỗ trợ nhiều OS là thay vì thực hiện thao tác ở session mà service đang thực thi (session 0), từ service gọi thực thi một ứng dụng ẩn ở session khác (1, 2...), ứng dụng ẩn này sẽ thực hiện browsing. Trao đổi giữa service và application này sẽ thông qua IPC.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131612</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131612</link>
+				<pubDate><![CDATA[Tue, 20 May 2008 12:23:08]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ Chào <b>Z0rr0</b>, service của tớ chạy trên XP, tớ dùng C# .NET cho đơn giản và tiện, vì tớ không muốn đi sâu vào tìm hiểu Windows. Còn về cái mapping thì tớ sử dụng function WNetAddConnection2A trong mpr.dll, để map đến 1 drive bất kì, hoặc drive null, nhưng đều không sử dụng được trên Local System.
+
+Tớ thì không rành về lập trình Windows nên chỉ sử dụng những cách theo kiểu intuitive thôi. Tớ cũng đã nghĩ đến phương án của bồ, nhưng tớ "chỉ được" sử dụng Local System mà không phải bất cứ một account nào khác, nên cũng không rõ về chuyện session 1, 2, etc. 
+
+Hiện tại thì tớ đã impersonate được các đoạn code quan trọng, sử dụng function LogonUser để tạo login session đến remote server. Mọi việc nói chung hoạt động tốt, và code khá đơn giản, chỉ có điều hàm LogonUser không trả giá trị chính xác khi connect, ví dụ khi server unreachable thì nó vẫn trả giá true (no errors), vì có lẽ nó không thực sự tạo connection đến remote server. 
+
+Thực ra thì cũng không phải nghiêm trọng lắm, nhưng trong những trường hợp như thế, thì nhiều function như File.Copy sẽ tốn rất nhiều thời gian để tạo Exception (khoảng 20s gì đó), mà tớ thì không biết làm cách nào để giảm timeout của chúng, dẫn đến việc service tốn rất nhiều thời gian cho 1 queue nào đó.
+
+Cám ơn <b>Z0rr0</b> đã quan tâm.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131670</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131670</link>
+				<pubDate><![CDATA[Tue, 20 May 2008 17:25:36]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ LogonUser chỉ hoạt động đúng với chính máy đang gọi, ko dùng được cho máy từ xa. Do đó đương nhiên bồ gọi sẽ không thành công, hãy dùng LogonUser để login và có user session từ local, rồi từ session này mà connect đến remote.
+
+Tôi cũng ko chắc WNetAddConnection2 bị giới hạn ko được với LocalSystem account, bản thân tôi nghĩ là được khi mà connection này không cần interactive session (vì là remote) thì LocalSystem hoàn toàn có thể được, vả lại tài liệu API này cũng ko đề cập chuyện này.
+Nên bồ có thể kiểm tra chính xác lỗi trả về ở trường hợp với LocalSystem không?
+
+Cũng chưa hiểu vụ Exception 20s của bồ :)
+
+Tham khảo thêm:
+LogonUser: http://msdn.microsoft.com/en-us/library/aa378184(VS.85).aspx
+WNetAddConnection2: http://msdn.microsoft.com/en-us/library/aa385413(VS.85).aspx]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131837</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131837</link>
+				<pubDate><![CDATA[Wed, 21 May 2008 12:51:21]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Z0rr0 wrote:</cite><br>
+		<blockquote>LogonUser chỉ hoạt động đúng với chính máy đang gọi, ko dùng được cho máy từ xa. Do đó đương nhiên bồ gọi sẽ không thành công, hãy dùng LogonUser để login và có user session từ local, rồi từ session này mà connect đến remote.&nbsp;
+		</blockquote>
+Uhm, không phải là không thành công, mà là trong trường hợp không kết nối được thì nó vẫn báo là được dẫn đến các thi hành thừa sau đó. Còn trong trường hợp server reachable, và user+pass correct thì vẫn kết nối được (e.g., browse files, copy, write). Như tớ đã nói ở bài trước, tớ không thể login vào một user khác do một số giới hạn về security policy trong hệ thống, nên tớ không thể tạo một session.
+
+<p></p>
+		<cite class="blockquote">Z0rr0 wrote:</cite><br>
+		<blockquote>Tôi cũng ko chắc WNetAddConnection2 bị giới hạn ko được với LocalSystem account, bản thân tôi nghĩ là được khi mà connection này không cần interactive session (vì là remote) thì LocalSystem hoàn toàn có thể được, vả lại tài liệu API này cũng ko đề cập chuyện này.
+Nên bồ có thể kiểm tra chính xác lỗi trả về ở trường hợp với LocalSystem không?&nbsp;
+		</blockquote>
+Đúng là trong API doc của MS không đề cập đến chuyện này, nhưng trên thực tế nó trả về lỗi "A specified logon session does not exists. It may already have been terminated" cả khi tớ map vào một drive M: bất kì hoặc null drive. 
+
+<p></p>
+		<cite class="blockquote">Z0rr0 wrote:</cite><br>
+		<blockquote>
+Cũng chưa hiểu vụ Exception 20s của bồ :)&nbsp;
+		</blockquote>
+À, cái này là trong trường hợp mà không thể kết nối đến server thì tớ phải chờ hàm System.IO.File.Copy mất khoảng 20s gì đó nó mới throw exception, do đó giảm đáng kể performance của service. Khoảng thời gian này cũng tương tự nếu sử dụng WNetAddConnection2 để connect đến unreachable server.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131889</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#131889</link>
+				<pubDate><![CDATA[Wed, 21 May 2008 16:03:52]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Vấn đề về Network Access sử dụng Local System trên C# .NET</title>
+				<description><![CDATA[ Không biết bạn dùng lệnh 'net use' trong service của bạn để tạo mapping thì có được hông ...
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/22070.hva#132530</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/22070.hva#132530</link>
+				<pubDate><![CDATA[Sat, 24 May 2008 10:44:42]]> GMT</pubDate>
+				<author><![CDATA[ 4hfoo]]></author>
+			</item>
+	</channel>
+</rss>

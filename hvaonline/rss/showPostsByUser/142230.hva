@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "Chiponline"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/142230.hva</link>
+		<description><![CDATA[Messages posted by "Chiponline"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>cần chỉ giáo về DHCP cho máy ảo</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hungcaoxuan07 wrote:</cite><br>
+		<blockquote>hiện tại em đang cấu hình DHCP cho 1 máy ảo. Nhưng khi cấu hình xong thì làm sao 1 máy ảo khác của em có thể được DHCP mà em tạo ra cấp địa chỉ ip động. Mong mấy anh chỉ giùm. &nbsp;
+		</blockquote>
+
+Trước tiên máy ảo "khác" của bạn phải cùng card mạng đã.
+Ví dụ:
+DHCP server của bạn có Ethernet là custom 0 thì máy cần nhận IP phải có cùng Ethernet là custom 0.
+Sau đó thì cấu hình network cho máy cần nhận nhận IP từ DHCP là ok.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/31057/195859.hva#195859</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/31057/195859.hva#195859</link>
+				<pubDate><![CDATA[Fri, 16 Oct 2009 21:00:33]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>DIGEST-MD5 trong Openldap</title>
+				<description><![CDATA[ Các bạn, anh, chị có thể giúp mình cấu hình chứng thực bằng SASL DIGEST-MD5 trên Openldap được không? Đây là trường hợp của mình.
+
+Trong server Fedora 9 mình đã có cài đặt các gói Openldap và Cyrus-sasl
+
+Đây là một số file cấu hình của mình.
+
+File slapd.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+# See slapd.conf&#40;5&#41; for details on configuration options.
+# This file should NOT be world readable.
+#
+
+include		/etc/openldap/schema/corba.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/openldap/schema/cosine.schema
+include		/etc/openldap/schema/duaconf.schema
+include		/etc/openldap/schema/dyngroup.schema
+include		/etc/openldap/schema/inetorgperson.schema
+include		/etc/openldap/schema/java.schema
+include		/etc/openldap/schema/misc.schema
+include		/etc/openldap/schema/nis.schema
+include		/etc/openldap/schema/openldap.schema
+include		/etc/openldap/schema/ppolicy.schema
+include		/etc/openldap/schema/collective.schema
+
+# Allow LDAPv2 client connections.  This is NOT the default.
+allow bind_v2
+
+# Do not enable referrals until AFTER you have a working directory
+# service AND an understanding of referrals.
+#referral	ldap://root.openldap.org
+
+pidfile		/var/run/openldap/slapd.pid
+argsfile	/var/run/openldap/slapd.args
+
+# Load dynamic backend modules:
+# modulepath	/usr/lib/openldap # or /usr/lib64/openldap
+# moduleload accesslog.la
+# moduleload auditlog.la
+# moduleload back_sql.la
+# moduleload denyop.la
+# moduleload dyngroup.la
+# moduleload dynlist.la
+# moduleload lastmod.la
+# moduleload pcache.la
+# moduleload ppolicy.la
+# moduleload refint.la
+# moduleload retcode.la
+# moduleload rwm.la
+# moduleload syncprov.la
+# moduleload translucent.la
+# moduleload unique.la
+# moduleload valsort.la
+
+# The next three lines allow use of TLS for encrypting connections using a
+# dummy test certificate which you can generate by changing to
+# /etc/pki/tls/certs, running "make slapd.pem", and fixing permissions on
+# slapd.pem so that the ldap user or group can read it.  Your client software
+# may balk at self-signed certificates, however.
+# TLSCACertificateFile /etc/pki/tls/certs/ca-bundle.crt
+# TLSCertificateFile /etc/pki/tls/certs/slapd.pem
+# TLSCertificateKeyFile /etc/pki/tls/certs/slapd.pem
+
+# Sample security restrictions
+#	Require integrity protection &#40;prevent hijacking&#41;
+#	Require 112-bit &#40;3DES or better&#41; encryption for updates
+#	Require 63-bit encryption for simple bind
+# security ssf=1 update_ssf=112 simple_bind=64
+
+# Sample access control policy:
+#	Root DSE: allow anyone to read it
+#	Subschema &#40;sub&#41;entry DSE: allow anyone to read it
+#	Other DSEs:
+#		Allow self write access
+#		Allow authenticated users read access
+#		Allow anonymous users to authenticate
+#	Directives needed to implement policy:
+# access to dn.base="" by * read
+# access to dn.base="cn=Subschema" by * read
+# access to *
+#	by self write
+#	by users read
+#	by anonymous auth
+#
+# if no access controls are present, the default policy
+# allows anyone and everyone to read anything but restricts
+# updates to rootdn.  &#40;e.g., "access to * by * read"&#41;
+#
+# rootdn can always read and write EVERYTHING!
+
+#######################################################################
+# ldbm and/or bdb database definitions
+#######################################################################
+
+database	bdb
+suffix		"o=Ever"
+rootdn		"cn=Manager,o=Ever"
+# Cleartext passwords, especially for the rootdn, should
+# be avoided.  See slappasswd&#40;8&#41; and slapd.conf&#40;5&#41; for details.
+# Use of strong authentication encouraged.
+# rootpw		secret
+rootpw {MD5}Xr4ilOzQ4PCOq3aQ0qbuaQ==
+
+# The database directory MUST exist prior to running slapd AND 
+# should only be accessible by the slapd and slap tools.
+# Mode 700 recommended.
+directory	/var/lib/ldap
+
+# Indices to maintain for this database
+index objectClass                       eq,pres
+index ou,cn,mail,surname,givenname      eq,pres,sub
+index uidNumber,gidNumber,loginShell    eq,pres
+index uid,memberUid                     eq,pres,sub
+index nisMapName,nisMapEntry            eq,pres,sub
+
+# Replicas of this database
+#replogfile /var/lib/ldap/openldap-master-replog
+#replica host=ldap-1.example.com:389 starttls=critical
+#     bindmethod=sasl saslmech=GSSAPI
+#     authcId=host/ldap-master.example.com@EXAMPLE.COM
+
+
+# enable monitoring
+database monitor
+loglevel -1
+
+# allow onlu rootdn to read the monitor
+access to *
+        by dn.exact="cn=Manager,o=Ever" read
+        by * none
+
+#SASL
+password-hash {CLEARTEXT}
+sasl-regexp uid=&#40;.*&#41;,cn=DIGEST-MD5,cn=auth uid=$1,ou=People,o=Ever</pre>
+		</div>
+
+File ldap.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+# LDAP Defaults
+#
+
+# See ldap.conf&#40;5&#41; for details
+# This file should be world readable but not world writable.
+
+#BASE	dc=example,dc=com
+#URI	ldap://ldap.example.com<span class="link"> ldap://ldap-master.example.com:666</span>
+
+#sizeLIMIT	12
+#TIMELIMIT	15
+#DEREF		never
+URI<span class="link"> ldap://127.0.0.1/</span>
+BASE o=Ever
+TLS_CACERTDIR /etc/openldap/cacerts</pre>
+		</div>
+
+File ldif đã add trong backend bdb của openldap
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dn: o=Ever
+o: Ever
+description: Organization Root
+objectClass: top
+objectClass: organization
+
+dn: ou=Staff, o=Ever
+ou: Staff
+description: These are privileged users that can interact with Organization products
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=People, o=Ever
+ou: People
+objectClass: top
+objectClass: organizationalUnit
+
+dn: uid=admin, ou=Staff, o=Ever
+uid: admin
+cn: LDAP Adminstrator
+sn: admin
+userPassword: {MD5}Xr4ilOzQ4PCOq3aQ0qbuaQ==
+objectClass: Top
+objectClass: Person
+objectClass: Organizationalperson
+objectClass: Inetorgperson
+
+dn: uid=admin,ou=People,o=Ever
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+userPassword:{MD5}Xr4ilOzQ4PCOq3aQ0qbuaQ==
+displayName: admin
+mail: admin@eversystems.com.br
+uid: admin
+cn: Administrator
+sn: admin</pre>
+		</div>
+
+Mình đã tạo user trong sasl bằng lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>saslpasswd2 -c admin</pre>
+		</div>
+
+Theo tài liệu mình đọc trên mạng thì tới đây là hoàn thành bước cấu hình .
+Nhưng khi mình chạy lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ldapsearch -U admin -b 'o=Ever' '&#40;objectclass=*&#41;'</pre>
+		</div>
+thì nó lại báo lỗi là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ldap_sasl_interactive_bind_s:Invalid credentials &#40;49&#41;</pre>
+		</div>
+Mong mọi người giúp đỡ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/31500/194341.hva#194341</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/31500/194341.hva#194341</link>
+				<pubDate><![CDATA[Tue, 29 Sep 2009 02:13:56]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ À xin lỗi quanta,mình tìm ra vấn đề rồi.Do lúc trước quậy 2 file nsswitch.conf và lmhosts.Giờ thì đã thấy được FEDORA trong WORKGROUP.Cám ơn nhiều!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/180373.hva#180373</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/180373.hva#180373</link>
+				<pubDate><![CDATA[Tue, 12 May 2009 16:16:53]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ Mình đã sửa lại như vậy và khi thực hiện lệnh "ping FEDORA" có lỗi <font color='red'>Segmentation fault</font>. quanta có thể fix lỗi đó dùm mình được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/180278.hva#180278</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/180278.hva#180278</link>
+				<pubDate><![CDATA[Mon, 11 May 2009 17:15:22]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ OK.Thanks bạn nhưng trước đó mình đã share được rồi.Mình chỉ muốn hỏi làm sao để trong WORKGROUP của WinXP thấy được máy FEDORA mà thôi.Mình nghĩ là do cách cấu hình SAMBA làm WINS server.Có thể là do lỗi Segmentation fault mình đã gặp chăng??]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/180266.hva#180266</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/180266.hva#180266</link>
+				<pubDate><![CDATA[Mon, 11 May 2009 14:52:20]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ Bạn ơi mình đã tìm hiểu rồi mới lên diến đàn nhờ mọi người giúp đớ chứ.Nếu bạn không giúp được mình thì thôi vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/180122.hva#180122</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/180122.hva#180122</link>
+				<pubDate><![CDATA[Sat, 9 May 2009 23:37:53]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ À ý mình là mình cấu hình như vậy mà không thấy được máy FEDORA trong phần WORKGROUP của WinXP.Bạn có thể giúp mình vấn đề này được không?
+Thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/179967.hva#179967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/179967.hva#179967</link>
+				<pubDate><![CDATA[Fri, 8 May 2009 14:09:06]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>WORKGROUP trong SAMBA</title>
+				<description><![CDATA[ Các bạn có thể giúp mình về vấn đề WORKGROUP giữa SAMBA và WIN không?Mình đã thử làm nhưng không được.
+Đây là file /etc/samba/smb.conf của mình
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;global&#93;
+workgroup = WORK
+netbios name = FEDORA
+security = share
+wins support = yes
+
+&#91;Plans&#93;
+path = /plans
+browseable = yes
+writable = yes
+read only = no</pre>
+		</div>
+
+
+Trước đó mình đã thiết lập WORKGROUP trong WinXP là WORK.Mình đã vào WORKGROUP nhưng chỉ thấy máy XP.
+<font color='yellow'>Started nmb,smb</font>.
+File nsswitch:
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+host = files wins
+...</pre>
+		</div>
+
+
+File hosts:
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>127.0.0.1 localhost
+192.168.1.1 FEDORA</pre>
+		</div>
+
+Và khi mình sửa trong file nsswitch.conf thành 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+host:wins
+...</pre>
+		</div>
+ thì ping FEDORA nó báo lỗi Segmentation fault 
+Mong mọi người giúp đỡ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29193/179903.hva#179903</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29193/179903.hva#179903</link>
+				<pubDate><![CDATA[Fri, 8 May 2009 00:21:48]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Có vài cuốn sách muốn chia sẻ !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">napoleon_tq wrote:</cite><br>
+		<blockquote><b>Practical Linux</b>
+
+<br>
+			<div align="center" class="limitview"><img src='http://img524.imageshack.us/img524/7672/89161363ay0.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Practical Linux gears itself toward people who don't want to be burdened with technobabble, but just want to use Linux just as they would any other operating system. Most books in this category concentrate mostly on the installation and configuration process, while neglecting content that helps you use Linux for daily tasks. This book covers all the bases, making use of a systematic approach, while providing numerous cross-references. Topics include working with the KDE and Gnome desktops, using the command line, getting help and maintaining your system, connecting to the Web, using browsers, setting up e-mail, setting up printers and adding peripherals, using graphics and multimedia tools, and networking. 
+<span class="link"> http://rapidshare.com/files/80235755/_eB_Practical.Linux_Rilwis.tk.rar</span>
+
+&nbsp;
+		</blockquote>
+Bạn có thể up lại link cuốn sách này được không?
+Thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/17451/145915.hva#145915</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/17451/145915.hva#145915</link>
+				<pubDate><![CDATA[Sat, 9 Aug 2008 15:09:33]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về cơ chế hoạt động của switch sniffer và giao thức ARP</title>
+				<description><![CDATA[ Tiê'p tục chủ để tí
+Nếu có trường hợp host A chưa có MAC của host B trong ARP table thì sao hả bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/17118/103062.hva#103062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/17118/103062.hva#103062</link>
+				<pubDate><![CDATA[Sun, 9 Dec 2007 19:47:54]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: kỹ năng xác định sự cố</title>
+				<description><![CDATA[ Ở đây theo mình nghĩ 3 câu hỏi của Tuấn hỏi Tú nhằm tóm gọn lại vấn đề mà Tuấn đang gặp.Trong khoảng giữa ngày cuối tuần và ngày đầu tuần đã xãy ra sự cố gì thì Tú là quản lí hệ thống có thể sẽ biết rõ hơn Tuấn.Trong khi mấy ngày khác thì Tuấn đều có mặt ở công ty và khả năng xảy ra sự cố không giải quyết được là rất ít.Nếu vấn đề thu hẹp không giải quyết được vấn đề thì ta sẽ đi đến vấn đề tổng quát hơn(như là kinh nghiệm,kĩ thuật chẳng hạn)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/13314/101251.hva#101251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/13314/101251.hva#101251</link>
+				<pubDate><![CDATA[Fri, 30 Nov 2007 02:15:58]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về BIND.Xin mọi người giúp đỡ!!!</title>
+				<description><![CDATA[ Cám ơn anh tranvanminh.Bữa giờ em cứ thắc mắc mãi.Giờ mới hiểu ra.:)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16804/101142.hva#101142</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16804/101142.hva#101142</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2007 14:27:34]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: K0 dùng được chuột phải ?</title>
+				<description><![CDATA[ Bạn thử xem trong registry thử xem.Hôm bữa mình cũng có nghịch registry khóa chuột phải được mà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16249/100785.hva#100785</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16249/100785.hva#100785</link>
+				<pubDate><![CDATA[Wed, 28 Nov 2007 01:46:46]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Thắc mắc về BIND.Xin mọi người giúp đỡ!!!</title>
+				<description><![CDATA[ Xin lỗi anh tranvanminh.Lúc nãy vội quá nên em viết nhầm.ý em muốn hỏi là có cần thêm dòng 
+192.168.1.1 ns.domain.name. ns 
+vào file /etc/hosts không?
+Cám ơn anh trà lời bài viết của em.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16804/100779.hva#100779</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16804/100779.hva#100779</link>
+				<pubDate><![CDATA[Wed, 28 Nov 2007 01:36:56]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về BIND.Xin mọi người giúp đỡ!!!</title>
+				<description><![CDATA[ Mình thấy trong bài viết về BIND của anh tranvanminh phần 3 có đoạn:
+$TTL 86400
+$ORIGIN domain.name.
+<font color='orange'>@ IN SOA ns.domain.name. dnsmaster.domain.name.</font> ( 
+2003051100 ; tăng (ví dụ +1) khi thay đổi thông tin 
+3H ; update thông tin từ master server 
+3600 ; làm lại, nếu không connect được với master 
+1W ; thời hạn giữ thông tin của slave 
+1D ) ; thời hạn cache của client, giảm -1 mỗi giây 
+
+ IN A 192.168.1.1 
+ IN MX 10 mail.domain.name. 
+<font color='orange'>IN NS ns.domain.name. </font>
+localhost IN A 127.0.0.1 
+Theo mình hiểu thì 2 dòng màu cam ở trên:
+Dòng đầu khai báo authoriative server của domain.
+Dóng thứ 2 khai báo name server nào có trong domain domain.name.
+Vậy mình có cần thêm dòng 192.168.1.1 trong file /etc/named.conf không?
+IP của máy mình là 192.168.1.1
+Mong mọi người cho biết ý kiến.
+To anh commale:Hôm bữa em chưa đọc kĩ phần cài đặt qmail nên post bài lung tung.Sr anh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16804/100733.hva#100733</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16804/100733.hva#100733</link>
+				<pubDate><![CDATA[Tue, 27 Nov 2007 22:15:44]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Re: Help qmail !!!</title>
+				<description><![CDATA[ Xin lỗi mọi người.Mình chạy tới lệnh make setup check]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16462/98727.hva#98727</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16462/98727.hva#98727</link>
+				<pubDate><![CDATA[Mon, 19 Nov 2007 18:18:57]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Help qmail !!!</title>
+				<description><![CDATA[ Mình đã down qmail bản 1.03 về rồi.Chạy tới bước make nó báo lỗi tương tự như là trong file error.a có cái errno mà nó undertifine.Xin mọi người giúp dùm chỗ này.Với lại dòng lệnh ./config để chạy file config mà sao trong thư mục qmail mình không thấy file config ở đâu cả.Chỉ có config.sh thôi.Thử chạy file đó không được.Mìng đang dùng redhat enterprise linux 4.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/16462/98726.hva#98726</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/16462/98726.hva#98726</link>
+				<pubDate><![CDATA[Mon, 19 Nov 2007 18:09:54]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Định hướng căn bản</title>
+				<description><![CDATA[ Cái này mình không đòi hỏi phải chi tiết.Tất nhiên là phải biết 1(nhiều) ngôn ngữ lập trình và phải am hiểu về mạng rồi.Mình chỉ muốn biết tiến trình để làm 1 hacker thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/12132/70660.hva#70660</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/12132/70660.hva#70660</link>
+				<pubDate><![CDATA[Wed, 11 Jul 2007 18:53:18]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Định hướng căn bản</title>
+				<description><![CDATA[ Vậy theo em hiểu trước hết phải giỏi về OS =&gt; học cách tấn công trên LAN==&gt;WAN.Không biết vậy đúng không MOD]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/12132/70636.hva#70636</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/12132/70636.hva#70636</link>
+				<pubDate><![CDATA[Wed, 11 Jul 2007 16:53:41]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+			<item>
+				<title>Định hướng căn bản</title>
+				<description><![CDATA[ Mọi người có thể cho biết những bước  cơ bản và phức tạp để trở thành 1 hacker được không vậy? Chứ hiện nay mình thấy có nhiều tài liệu mà không biết đọc từ đâu nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/12132/70532.hva#70532</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/12132/70532.hva#70532</link>
+				<pubDate><![CDATA[Wed, 11 Jul 2007 12:22:39]]> GMT</pubDate>
+				<author><![CDATA[ Chiponline]]></author>
+			</item>
+	</channel>
+</rss>

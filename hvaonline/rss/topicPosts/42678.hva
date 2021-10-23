@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Không join được Windows client vào Linux DC Server"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Không join được Windows client vào Linux DC Server"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Không join được Windows client vào Linux DC Server</title>
+				<description><![CDATA[ Mình đang muốn đựng 1 Domain Controller trên CentOS 5 để cho các client Windows join vào, tiện
+cho việc quản lý.
+
+Đây là các file cấu hình của Server.
+<font color='orange'>/etc/openldap/slapd.conf</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>include /etc/openldap/schema/core.schema
+include /etc/openldap/schema/cosine.schema
+include /etc/openldap/schema/inetorgperson.schema
+include /etc/openldap/schema/nis.schema
+include /etc/openldap/schema/samba.schema
+
+allow bind_v2
+
+pidfile /var/run/openldap/slapd.pid
+argsfile /var/run/openldap/slapd.args
+
+database bdb
+suffix "dc=lab,dc=local"
+rootdn "cn=Manager,dc=lab,dc=local"
+rootpw secret
+rootpw {MD5}xMpCOKC5I4INzFCab3WEmw==
+
+directory /var/lib/ldap
+index objectClass
+eq,pres
+index ou,cn,mail,surname,givenname
+eq,pres,sub
+index uidNumber,gidNumber,loginShell eq,pres
+index uid,memberUid
+eq,pres,sub
+index nisMapName,nisMapEntry
+eq,pres,sub
+
+access to attrs=userPassword,sambaLMPassword,sambaNTPassword
+by self write
+by dn="cn=Manager,dc=lab,dc=local" write
+by anonymous auth
+by * none
+
+access to *
+by self write
+by dn="cn=Manager,dc=lab,dc=local" write
+by * read</pre>
+		</div>
+
+<font color='orange'>/etc/samba/smb.conf</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;global&#93;
+workgroup = lab.local
+netbios name = PDC-SRV
+security = user
+enable privileges = yes
+#interfaces = 192.168.5.11
+#username map = /etc/samba/smbusers
+server string = Samba Server %v
+#security = ads
+encrypt passwords = Yes
+#min passwd length = 3
+#pam password change = no
+#obey pam restrictions = No
+# method 1:
+#unix password sync = no
+#ldap passwd sync = yes
+# method 2:
+unix password sync = yes
+ldap passwd sync = yes
+passwd program = /usr/sbin/smbldap-passwd -u "%u"
+passwd chat = "Changing *\nNew password*" %n\n "*Retype new password*" %n\n"
+log level = 0
+syslog = 0
+log file = /var/log/samba/log.%U
+max log size = 100000
+time server = Yes
+socket options = TCP_NODELAY SO_RCVBUF=8192 SO_SNDBUF=8192
+mangling method = hash2
+Dos charset = CP932
+Unix charset = UTF-8
+logon script = logon.bat
+logon drive = H:
+logon home =
+logon path =
+domain logons = Yes
+domain master = Yes
+os level = 65
+preferred master = Yes
+wins support = yes
+# passdb backend = ldapsam:"ldap://ldap1.company.com<span class="link"> ldap://ldap2.company.com</span>"
+passdb backend = ldapsam:ldap://127.0.0.1/
+ldap admin dn = cn=Manager,dc=lab,dc=local
+#ldap admin dn = cn=samba,ou=DSA,dc=company,dc=com
+ldap suffix = dc=lab,dc=local
+ldap group suffix = ou=Group
+ldap user suffix = ou=People
+ldap machine suffix = ou=Hosts
+#ldap idmap suffix = ou=Idmap
+add user script = /usr/sbin/smbldap-useradd -m "%u"
+#ldap delete dn = Yes
+delete user script = /usr/sbin/smbldap-userdel "%u"
+add machine script = /usr/sbin/smbldap-useradd -t 0 -w "%u"
+add group script = /usr/sbin/smbldap-groupadd -p "%g"
+#delete group script = /usr/sbin/smbldap-groupdel "%g"
+add user to group script = /usr/sbin/smbldap-groupmod -m "%u" "%g"
+delete user from group script = /usr/sbin/smbldap-groupmod -x "%u" "%g"
+set primary group script = /usr/sbin/smbldap-usermod -g '%g' '%u'
+admin users = admin
+# printers configuration
+#printer admin = @"Print Operators"
+load printers = Yes
+create mask = 0640
+directory mask = 0750
+#force create mode = 0640
+#force directory mode = 0750
+nt acl support = No
+printing = cups
+printcap name = cups
+deadtime = 10
+guest account = nobody
+map to guest = Bad User
+dont descend = /proc,/dev,/etc,/lib,/lost+found,/initrd
+show add printer wizard = yes
+; to maintain capital letters in shortcuts in any of the profile folders:
+preserve case = yes
+short preserve case = yes
+case sensitive = no
+&#91;netlogon&#93;
+path = /home/samba/netlogon/
+browseable = No
+read only = yes
+&#91;profiles&#93;
+path = /home/samba/profiles
+read only = no
+create mask = 0600
+directory mask = 0700
+browseable = No
+guest ok = Yes
+profile acls = yes
+csc policy = disable
+# next line is a great way to secure the profiles
+#force user = %U
+# next line allows administrator to access all profiles
+#valid users = %U "Domain Admins"
+&#91;printers&#93;
+comment = Network Printers
+#printer admin = @"Print Operators"
+guest ok = yes
+printable = yes
+path = /home/spool/
+browseable = No
+read only = Yes
+printable = Yes
+print command = /usr/bin/lpr -P%p -r %s
+lpq command = /usr/bin/lpq -P%p
+lprm command = /usr/bin/lprm -P%p %j
+# print command = /usr/bin/lpr -U%U@%M -P%p -r %s
+# lpq command = /usr/bin/lpq -U%U@%M -P%p
+# lprm command = /usr/bin/lprm -U%U@%M -P%p %j
+&#91;print$&#93;
+path = /home/printers
+guest ok = No
+browseable = Yes
+read only = Yes
+valid users = @"Print Operators"
+write list = @"Print Operators"
+create mask = 0664
+directory mask = 0775
+&#91;public&#93;
+path = /tmp
+guest ok = yes
+browseable = Yes
+writable = yes</pre>
+		</div>
+
+Kiểm tra thông tin user
+<font color='orange'>#smbldap-usershow admin</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>dn: uid=admin,ou=People,dc=lab,dc=local
+objectClass:
+top,person,organizationalPerson,inetOrgPerson,posixAccount,shadowAccount,sambaSamAccount
+cn: admin
+sn: admin
+givenName: admin
+uid: admin
+uidNumber: 1002
+gidNumber: 1000
+homeDirectory: /home/admin
+loginShell: /bin/bash
+gecos: System User
+sambaLogonTime: 0
+sambaLogoffTime: 2147483647
+sambaKickoffTime: 2147483647
+sambaPwdCanChange: 0
+displayName: admin
+sambaSID: S-1-5-21-3318209565-1745193784-2994391004-3004
+sambaLMPassword: C2265B23734E0DACAAD3B435B51404EE
+sambaAcctFlags: &#91;U&#93;
+sambaNTPassword: 69943C5E63B4D2C104DBBCC15138B72B
+sambaPwdLastSet: 1340115378
+sambaPwdMustChange: 1344003378
+userPassword: {MD5}xMpCOKC5I4INzFCab3WEmw==
+shadowLastChange: 15510
+shadowMax: 45</pre>
+		</div>
+Nhưng trên máy client (Win XP và Win7) đều không thể join được. Sau khi điền thông tin về domain,
+nhập username và password thì hiện ra thông báo lỗi.
+<br>
+			<div align="center" class="limitview"><img src='http://nn4.upanh.com/b1.s26.d1/d90bd16f421497b126a37efd33a958f3_46342374.xp.png' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://nn6.upanh.com/b2.s1.d4/ab50b64deef77022d05501b0af34a94a_46342376.w7.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Cho mình hỏi làm thế nào khắc phục lỗi trên? Xin cám ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42678.hva#265293</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42678.hva#265293</link>
+				<pubDate><![CDATA[Tue, 19 Jun 2012 21:59:14]]> GMT</pubDate>
+				<author><![CDATA[ surfl0w]]></author>
+			</item>
+			<item>
+				<title>Không join được Windows client vào Linux DC Server</title>
+				<description><![CDATA[ DNS của client là gì? Bạn thử ping lab.local từ client chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42678.hva#265346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42678.hva#265346</link>
+				<pubDate><![CDATA[Wed, 20 Jun 2012 10:49:00]]> GMT</pubDate>
+				<author><![CDATA[ angel_of_devil]]></author>
+			</item>
+	</channel>
+</rss>

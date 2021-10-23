@@ -1,0 +1,1306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thảo luận: cross site request forgery (CSRF hay XSRF)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thảo luận: cross site request forgery (CSRF hay XSRF)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <b>Cross site request forgery</b> là gì? Nó là phương pháp mượn tay người để thực hiện một hành động không cho phép. Ví dụ, để có thể xóa một bài viết trên diễn đàn, một member có thể mượn tay của một moderator để làm việc đó vì member không đủ chủ quyền nhưng moderator lại đủ chủ quyền để thực hiện hành động này.
+
+Chi tiết về CSRF (hay XSRF) ở đây:
+<span class="link"> http://en.wikipedia.org/wiki/Cross-site_request_forgery</span>
+<span class="link"> http://www.tux.org/~peterw/csrf.txt</span>
+
+Gần đây (cách đây 2 tuần), <b>mrro</b> có post một chủ đề rất lý thú trong khu vực ban quản trị để đưa ra vấn đề này này với nội dung như sau:
+
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>Chào anh conmale,
+Hôm nay nhân dịp em tiến hành audit cái web-app của một khách hàng nên em cũng thử apply các technique đó vào HVA. Em thấy HVA mình bị cái lỗi cross site request forgery ở chức năng delete và hide một bài viết. Ví dụ như em muốn delete một bài có id là 12345, em chỉ cần GET cái URI như sau:
+ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://hvaonline.net/hvaonline/jforum.hva?module=posts&action=delete&post_id=12345&start=0</pre>
+		</div>
+
+Khi đó nếu như em, bằng một cách nào đó, dụ được anh conmale hay bất kì lão nào trong BQT HVA vào một cái site do em control, em sẽ dễ dàng delete được hết tất cả các post có trong forum mình. Tưởng tượng em post một bài lên HVA, có đường link đến cái site của em, trong site đó em để một vòng lặp lần lượt delete hết tất cả các post. &nbsp;
+		</blockquote>
+
+Thông tin này được <b>nbthanh</b> diễn giải thêm:
+<p></p>
+		<cite class="blockquote">nbthanh wrote:</cite><br>
+		<blockquote>
+Lỗi được diễn giải (reword) như sau :D (credit vẫn của Mr Thái ^_^)
+Một số action "nhạy cảm" của diễn đàn được thực hiện qua GET action, ví dụ (mà Thái đưa ra) là acn Delete bài viết. Hơn nữa cái action này không thông qua 1 cơ chế confirmation nào trước khi thực thi hết.
+Note: Cái javascript pop up lên hỏi "Có xóa hay không?" khi click vào link thì không được tính là "confirmation" trên phương diện bảo mật :D
+
+Như vậy, nếu có ai đó "dụ" được Admin/Mod/Whoever có quyền "click" vào cái link xóa bài, thế là bài viết sẽ đi tong! (với điều kiện là Admin/Mod đó đang login vào forum).
+Cách "dụ" thì quá dễ, và rất muôn hình vạn trạng. Và dụ Admin/Mod lại càng dễ nữa :D
+
+Đơn cử 1 cách "dụ":
+
+Tạo 1 topic, có title thật "hot" trong 1 box cũng "hot" luôn --&gt; 100% là sẽ có mod hoặc admin nào đó vào xem liền, và nếu người đó cố tình, có thể "canh me" lúc các Admin/Mod online, post 1 bài thật hot thì còn hiệu quả hơn nữa.
+
+Trong topic đó, tìm cách "execute" cái link delete bài viết (hay 1 action "nhạy cảm" nào đó), các execute thì cũng vô cùng đơn giản: dùng thẻ image của diễn đàn, "hook up" cái link vô - dĩ nhiên là image sẽ không hiển thị, nhưng...lúc này thì teo rồi :-)
+
+Cách "dụ" này nguy hại ở chỗ:
+- Vì là image nên cái link sẽ được execute ngay khi bài viết được đọc
+- Nếu không chú ý, rất khó phát hiện ra cái link "độc" trong cái image, và nhất là nếu dùng 1 số trình duyệt như FF, image không tồn tại nó không "la làng" lên như IE --&gt; còn chết bạo nữa.
+- Bài viết trên forum HVA, tag image cũng link tới 1 URL trên HVA --&gt; by pass được hoàn toàn referer và cookie/session check ở server side. &nbsp;
+		</blockquote>
+
+
+Tiếp theo đó, <b>mrro</b> khai triển thêm:
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Một tên gọi khác của cross site request forgery là session riding, nghĩa là em sẽ "mượn dao chém mướn", lấy session của anh để thực hiện hành động xóa hay ẩn bài. Tình huống nó như thế này:
+
+1. Anh đăng nhập vào HVA. Session của anh vẫn còn hiệu lực.
+
+2. Anh vào website của em.
+
+3. Trong website của em, em sử dụng &lt;img hay &lt;iframe (có rất nhiều cách khác nhau) theo kiểu như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;iframe name="myframe" src="http://hvaonline.net/hvaonline/jforum.hva?module=posts&action=hide&post_id=36994&by=conmale" style="width:0px;height:0px;border:0px"&gt;&lt;/iframe&gt;</pre>
+		</div>
+ 
+
+4. Lúc đó browser của anh sẽ tự động truy cập vào cái URI là giá trị của thuộc tính src trong cái iframe. Điều đặc biệt là lúc này, browser của anh vẫn sử dụng cái session cũ khi anh đăng nhập vào HVA. Do đó nó hoàn toàn có hiệu lực như thể anh thực hiện hành động đó.&nbsp;
+		</blockquote>
+
+
+Vậy.... thử bàn giải pháp khắc phục xem sao? :)).
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#38927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#38927</link>
+				<pubDate><![CDATA[Mon, 29 Jan 2007 13:23:32]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Xin góp ý vậy thôi:
+   1- Member không có quyền delete thì làm sao biết được cái URI như thế này (tuy nhiên cũng có thể có khả năng xảy ra) .
+   2- script 'confirm' nên đặt ở trang delete_result để chắc chắn mỗi record bị xóa đều có confirmation. 
+   Trình độ có hạn chỉ nghĩ được đến đó thôi mong đừng chê trách.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#38992</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#38992</link>
+				<pubDate><![CDATA[Mon, 29 Jan 2007 19:02:25]]> GMT</pubDate>
+				<author><![CDATA[ PHUCDOAN]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Yêu cầu truyền một chuỗi hash vào server script.
+Hash này có thể chính là session id truyền trực tiếp lên URI qua GET method.Mọi script sẽ check sự tồn tại của dòng Session này với session id load từ server.
+
+Nếu trùng tức là đang đúng người chủ của session còn không tức là kẻ đang tiến hành CSRF, vì kẻ dụng dao giết người không thể lấy được session ID của vị Moderator vì mỗi lần login vị này có một SessionID khác nhau.
+
+Đó là ý tưởng nảy ra trong đầu em chưa xác thực nên không biết có phù hợp không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39035</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39035</link>
+				<pubDate><![CDATA[Mon, 29 Jan 2007 23:42:32]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Em suggest 1 cách đơn giản, đó là submit request = method POST thay vì GET, như đang sử dụng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39059</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39059</link>
+				<pubDate><![CDATA[Tue, 30 Jan 2007 04:11:58]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Em suggest 1 cách đơn giản, đó là submit request = method POST thay vì GET, như đang sử dụng.&nbsp;
+		</blockquote>
+
+:)) nhưng POST vẫn có thể bị intercept như thường mà? Vấn đề ở chỗ xác thực được hành động xóa bài đó có đúng là moderator thực hiện có chủ định hay vô tình xóa vì dính CSRF. Nếu thay GET bằng POST nhưng không có cơ chế kiểm soát thì đâu có gì khác nhau đâu?
+
+Cả hai ý kiến của hackernohat và PHUCDOAN đều lý thú và có thể ứng dụng cả. Hãy thử phân tích xem, có cách nào lấy được sessionID hiện tại của một moderator nào đó không? :)).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39061</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39061</link>
+				<pubDate><![CDATA[Tue, 30 Jan 2007 05:20:21]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <blockquote>1- Member không có quyền delete thì làm sao biết được cái URI như thế này (tuy nhiên cũng có thể có khả năng xảy ra) . &nbsp;
+		</blockquote>Cái URL thì dễ thôi, install 1 cái forum y chang, tất nhiên là có quyền Admin sẵn rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39083</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39083</link>
+				<pubDate><![CDATA[Tue, 30 Jan 2007 14:49:25]]> GMT</pubDate>
+				<author><![CDATA[ watchd0g]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">watchd0g wrote:</cite><br>
+		<blockquote><blockquote>1- Member không có quyền delete thì làm sao biết được cái URI như thế này (tuy nhiên cũng có thể có khả năng xảy ra) . &nbsp;
+		</blockquote>Cái URL thì dễ thôi, install 1 cái forum y chang, tất nhiên là có quyền Admin sẵn rồi.&nbsp;
+		</blockquote>
+
+Đúng vậy. Nếu dùng các forum có sẵn mà không thêm bớt, điều chỉnh, code thêm... thì cài 1 con y hệt là ra ngay.
+
+Nếu không thì viết một cái script hay chương trình để "crawl" thì thế nào cũng ra thôi :)).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39134</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39134</link>
+				<pubDate><![CDATA[Tue, 30 Jan 2007 19:05:21]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Em có 1 thắc mắc hơi ngoài lề xíu, theo em biết khi submit 1 thông tin lên web server thì giao thức HTTP dùng phương pháp POST còn GET chỉ được dùng khi 1 user nào đó muốn "lấy" thông tin về browser của họ, trường hợp ở đây là user submit 1 URL :http://hvaonline.net/hvaonline/jforum.hva?module=posts&action=delete&post_id=12345&start=0
+
+Như vậy thì phải dùng POST mà sao forum hva lại dùng GET nhỉ ??]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39190</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 01:21:21]]> GMT</pubDate>
+				<author><![CDATA[ vietwow]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Gửi vietwow: Theo khoai được biết, POST chỉ dùng khi bạn cần đưa thật nhiều dữ liệu lên server. Cái đống dữ liệu đó sẽ không thể nằm trọn trong HTTP header, do đó mới dùng method POST và đặt cái dữ liệu vào HTTP payload. Khi đó thì không ngại việc giới hạn của HTTP header size nữa. Còn nếu chỉ muốn đưa một lượng thông tin nhỏ lên server thì có thể đặt trực tiếp trên URL. Như vậy, một method POST với URL như của bạn:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://hvaonline.net/hvaonline/jforum.hva?module=posts&action=delete&post_id=12345&start=0</pre>
+		</div>
+sẽ không cần thiết có payload.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39203</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39203</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 02:31:11]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Theo em nghĩ để chống CSRF kiểu này thì chuyển tiếp qua 1 trang để confirm trước khi thực thi là tốt nhất. Tuy nhiên phân tích tiếp em thấy có thể làm đơn giản hơn :
+
+1. Đối với kiểu "lừa" admin/mod sang trang khác rồi GET trở lại thì sẽ có Referer từ bên ngoài, như vậy chỉ cần check Referer là chặn được.
+
+2. Đối với kiểu tạo request từ các thành phần ngay trong diễn đàn, mà cụ thể là lợi dùng việc chèn ảnh thì có thể thắt chặt việc parse thẻ [img], chỉ cho phép URL thẳng đến các file jpg hay gif thôi ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39205</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39205</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 02:52:31]]> GMT</pubDate>
+				<author><![CDATA[ mudzot]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Em suggest 1 cách đơn giản, đó là submit request = method POST thay vì GET, như đang sử dụng.&nbsp;
+		</blockquote>
+
+:)) nhưng POST vẫn có thể bị intercept như thường mà? Vấn đề ở chỗ xác thực được hành động xóa bài đó có đúng là moderator thực hiện có chủ định hay vô tình xóa vì dính CSRF. Nếu thay GET bằng POST nhưng không có cơ chế kiểm soát thì đâu có gì khác nhau đâu?
+&nbsp;
+		</blockquote>
+
+^^  uhm, anh nói đúng ạ, nhưng với trường hợp riêng ở trên, thì thay POST  cho GET là đưa về tình trạng chung của hệ thống phải không ạ.
+
+Dẫu biết là attaker vẫn có thể trick user send request POST nhưng em nghĩ bước đầu tiên cần phải làm vẫn là hạn chế tối đa các request GET(không sử dụng càng tốt) 
+
+Về việc add thêm 1 trường đặc biệt vào trong request gửi đi, theo em vẫn có cách bypass nếu như attacker sử dụng được javascript (XSS ?)...
+ví dụ ta có thể xài getElementbyID hoặc document.form[x].field.value etc...
+
+
+
+
+
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39207</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39207</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 03:01:08]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ @mudzot:
+<blockquote> 1. Đối với kiểu "lừa" admin/mod sang trang khác rồi GET trở lại thì sẽ có Referer từ bên ngoài, như vậy chỉ cần check Referer là chặn được. &nbsp;
+		</blockquote>
+referer thì làm giả cái một  :mrgreen: 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39213</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39213</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 04:17:49]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Em suggest 1 cách đơn giản, đó là submit request = method POST thay vì GET, như đang sử dụng.&nbsp;
+		</blockquote>
+
+:)) nhưng POST vẫn có thể bị intercept như thường mà? Vấn đề ở chỗ xác thực được hành động xóa bài đó có đúng là moderator thực hiện có chủ định hay vô tình xóa vì dính CSRF. Nếu thay GET bằng POST nhưng không có cơ chế kiểm soát thì đâu có gì khác nhau đâu?
+
+Cả hai ý kiến của hackernohat và PHUCDOAN đều lý thú và có thể ứng dụng cả. Hãy thử phân tích xem, có cách nào lấy được sessionID hiện tại của một moderator nào đó không? :)).&nbsp;
+		</blockquote>
+
+Cám ơn câu hỏi "khó" của anh conmale
+
+Theo kiến thức hạn hẹp mà em có thì em chỉ nghĩ được 2 cách ( rất ư là vô lý ):
+
+1. Trang này phải dính thêm bug XSS.
+2. Tìm thuật giải mà phần mềm máy chủ  dùng để generate SessionID, rồi dựa vào các thông tin khách quan như IP hiện tai của Moderator .v.v. mà tái tạo SessionID.
+
+Em còn đang tìm hiểu xem có phương thức nào khác lấy SessionID. Hi vọng là tìm ra
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39263</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39263</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 15:47:48]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">watchd0g wrote:</cite><br>
+		<blockquote><blockquote>1- Member không có quyền delete thì làm sao biết được cái URI như thế này (tuy nhiên cũng có thể có khả năng xảy ra) . &nbsp;
+		</blockquote>Cái URL thì dễ thôi, install 1 cái forum y chang, tất nhiên là có quyền Admin sẵn rồi.&nbsp;
+		</blockquote>
+
+Đúng vậy. Nếu dùng các forum có sẵn mà không thêm bớt, điều chỉnh, code thêm... thì cài 1 con y hệt là ra ngay.
+
+Nếu không thì viết một cái script hay chương trình để "crawl" thì thế nào cũng ra thôi :)).&nbsp;
+		</blockquote>
+sặc..... lạy mấy anh. nếu OpenSource thì không bàn gì nữa. Giả dụ nó là 1 site bình thường xem sao nào?
+
+ý kiến pác nohathacker thú vị thật, tui thì chỉ lấy kinh nghiệm lập trình của mình thôi.
+Thanks & regards]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39267</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39267</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 16:06:02]]> GMT</pubDate>
+				<author><![CDATA[ PHUCDOAN]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>
+
+Cám ơn câu hỏi "khó" của anh conmale
+
+Theo kiến thức hạn hẹp mà em có thì em chỉ nghĩ được 2 cách ( rất ư là vô lý ):
+
+1. Trang này phải dính thêm bug XSS.
+&nbsp;
+		</blockquote>
+Ở đây mình chỉ bàn ở giới hạn xsrf thôi. Nếu nó còn dính xss nữa thì phải nói là cực kỳ nguy nan ;)).
+
+<p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>
+2. Tìm thuật giải mà phần mềm máy chủ  dùng để generate SessionID, rồi dựa vào các thông tin khách quan như IP hiện tai của Moderator .v.v. mà tái tạo SessionID.
+&nbsp;
+		</blockquote>
+Giải thuật tạo SESSIONID thì có đầy ra đó. Từ php sang asp, jsp.... đều có tài liệu khắp nơi. Có cả tool để làm việc phân tích và đoán SESSIONID nữa. Tuy nhiên, xác suất đoán ra SESSIONID khá thấp. Nếu giá trị hash đó không phải chỉ lấy ở SESSIONID mà còn một số dữ kiện đặc thù khác của từng người dùng thì sao mà đoán được? :)).
+
+<p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>
+Em còn đang tìm hiểu xem có phương thức nào khác lấy SessionID. Hi vọng là tìm ra
+
+&nbsp;
+		</blockquote>
+Thử nghĩ xem, phương tiện nào truyền tải những thứ như sessionid, hash... ? Thử nghĩ cái gì không ngăn chặn "biên giới" (hoặc không ngăn chặn đủ) những thông tin không liên quan giữa session của người đang duyệt và session của một người khác ở đâu đó?  :P) 
+
+<p></p>
+		<cite class="blockquote">PHUCDOAN wrote:</cite><br>
+		<blockquote>
+ sặc..... lạy mấy anh. nếu OpenSource thì không bàn gì nữa.
+&nbsp;
+		</blockquote>
+Hình như bồ ám chỉ open source không an toàn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39279</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 17:17:09]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thử nghĩ xem, phương tiện nào truyền tải những thứ như sessionid, hash... ? Thử nghĩ cái gì không ngăn chặn "biên giới" (hoặc không ngăn chặn đủ) những thông tin không liên quan giữa session của người đang duyệt và session của một người khác ở đâu đó?  :P) &nbsp;
+		</blockquote>
+Nể ông anh thiệt. Từ tư dẫn lối cho ae thấy nhé  :arrow: 
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">PHUCDOAN wrote:</cite><br>
+		<blockquote>
+ sặc..... lạy mấy anh. nếu OpenSource thì không bàn gì nữa.
+&nbsp;
+		</blockquote>
+Hình như bồ ám chỉ open source không an toàn?&nbsp;
+		</blockquote>
+tôi không ám chỉ opensource ko an toàn (đang sử dụng opensource muh). Vì tui đang nói đến cách getURL của 1 site bất kì chứ đâu có đề cập đến 1 OpenSource nào đâu, rõ khổ, OpenSource thì ai cũng có bàn làm gì??????]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39291</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39291</link>
+				<pubDate><![CDATA[Wed, 31 Jan 2007 18:49:18]]> GMT</pubDate>
+				<author><![CDATA[ PHUCDOAN]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ em cũng tìm kiếm nhiều, nghĩ ra mộ cách là hide sessionID này đi, nhưng hình như nó ko hiệu quả.
+Nếu anh "mở" thêm 1 chút nữa, chắc em cũng kiếm đc 1 vài cái nữa
+Waiting.........
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39453</link>
+				<pubDate><![CDATA[Thu, 1 Feb 2007 14:34:56]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Trích cả đoạn trong sách ra để tham khảo cho nó dễ, không biết cái này có giúp ích gì cho các bác 
+
+Session Hijacking
+The most common session attack is session hijacking . This refers to any method that an attacker can use to access another user's session. The first step for any attacker is to obtain a valid session identifier, and therefore the secrecy of the session identifier is paramount. The previous sections on exposure and fixation can help you to keep the session identifier a shared secret between the server and a legitimate user.
+
+The principle of Defense in Depth can be applied to sessions some minor safeguards can offer some protection in the unfortunate case that the session identifier is known by an attacker. As a security-conscious developer, your goal is to complicate impersonation. Every obstacle, however minor, offers some protection.
+
+The key to complicating impersonation is to strengthen identification. The session identifier is the primary means of identification, and you want to select other data that you can use to augment this. The only data you have available is the data within each HTTP request:
+
+    GET / HTTP/1.1
+    Host: example.org
+    User-Agent: Firefox/1.0
+    Accept: text/html, image/png, image/jpeg, image/gif, */*
+    Cookie: PHPSESSID=1234
+
+You want to recognize consistency in requests and treat any inconsistent behavior with suspicion. For example, while the User-Agent header is optional, clients that send it do not often alter its value. If the user with a session identifier of 1234 has been using Mozilla Firefox consistently since logging in, a sudden switch to Internet Explorer should be treated with suspicion. For example, prompting for the password is an effective way to mitigate the risk with minimal impact to your legitimate users in the case of a false alarm. You can check for User-Agent consistency as follows:
+
+    &lt;?php
+
+    session_start();
+
+    if (isset($_SESSION['HTTP_USER_AGENT']))
+    {
+      if ($_SESSION['HTTP_USER_AGENT'] != md5($_SERVER['HTTP_USER_AGENT']))
+      {
+        /* Prompt for password */
+        exit;
+      }
+    }
+    else
+    {
+      $_SESSION['HTTP_USER_AGENT'] = md5($_SERVER['HTTP_USER_AGENT']);
+    }
+
+    ?&gt;
+
+
+
+ I have observed that some versions of Internet Explorer send a different Accept header depending upon whether the user refreshes the browser, so Accept should not be relied upon for consistency.
+ 
+Requiring a consistent User-Agent helps, but if the session identifier is being propagated in a cookie (the recommended approach), it is reasonable to assume that, if an attacker can capture the session identifier, he can most likely capture the value of all other HTTP headers as well. Because cookie disclosure typically involves a browser vulnerability or cross-site scripting, the victim has most likely visited the attacker's web site, disclosing all headers. All an attacker must do is reproduce all of these to avoid any consistency check that uses HTTP headers.
+
+A better approach is to propagate a token in the URLsomething that can be considered a second (albeit much weaker) form of identification. This propagation takes some workthere is no feature of PHP that does it for you. For example, assuming the token is stored in $token, all internal links in your application need to include it:
+
+    &lt;?php
+
+    $url = array();
+    $html = array();
+
+    $url['token'] = rawurlencode($token);
+    $html['token'] = htmlentities($url['token'], ENT_QUOTES, 'UTF-8');
+
+    ?&gt;
+
+    &lt;a href="index.php?token=&lt;?php echo $html['token']; ?&gt;"&gt;Click Here&lt;/a&gt;
+
+ To make propagation a bit easier to manage, you might consider keeping the entire query string in a variable. You can append this variable to all of your links, which makes it easy to refactor your code later, even if you don't implement this technique initially.
+ 
+The token needs to be something that cannot be predicted, even under the condition that the attacker knows all of the HTTP headers that the victim's browser typically sends. One way to achieve this is to generate the token using a random string:
+
+    &lt;?php
+
+    $string = $_SERVER['HTTP_USER_AGENT'];
+    $string .= 'SHIFLETT';
+
+    $token = md5($string);
+    $_SESSION['token'] = $token;
+
+    ?&gt;
+
+When you use a random string (SHIFLETT in this example), prediction is impractical. In this case, capturing the token is easier than predicting it, and by propagating the token in the URL and the session identifier in a cookie, multiple attacks are needed to capture both. The exception is when the attacker can observe the victim's raw HTTP requests as they are sent to your application, because this discloses everything. This type of attack is more difficult (and therefore less likely), and it can be mitigated by using SSL.
+
+ Some experts warn against relying on the consistency of User-Agent. The concern is that an HTTP proxy in a cluster can modify User-Agent inconsistently with other proxies in the same cluster.
+ 
+If you do not want to depend on User-Agent consistency, you can generate a random token:
+
+    &lt;?php
+
+    $token = md5(uniqid(rand(), TRUE));
+    $_SESSION['token'] = $token;
+
+    ?&gt;
+
+This approach is slightly weaker, but it is much more reliable. Both methods provide a strong defense against session hijacking. The appropriate balance between security and reliability is up to you.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39546</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39546</link>
+				<pubDate><![CDATA[Fri, 2 Feb 2007 02:36:24]]> GMT</pubDate>
+				<author><![CDATA[ omega-toplist]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ cách của bro ko đc, HVA dùng JForum mà
+-----------------------------------------------
+Tối hôm qua vắt tay lên trán nghĩ tới nghĩ lui,keke, nghĩ thêm đc chút, post lên đây xem thế nào.
+Theo em cookies là trở ngại lớn trong vấn đề này. Cả 2 cái sessionID và hash đều lấy từ Cookies ra cả.
+VD thế này: 
+ Khi anh Conmale hay bác mod nào logon, thông tin logon đc lưu vào cookies, sau đó vào một topic có kèm link này
+
+   <blockquote>&lt;iframe name="myframe" src="http://hvaonline.net/hvaonline/jforum.hva?module=posts&action=hide&post_id=36994&by=conmale" style="width:0px;height:0px;border:0px"&gt;&lt;/iframe&gt;&nbsp;
+		</blockquote>
+   (link của bài đầu)
+
+Cái URL trong src=&quot;..&quot; bắt buộc phải truy xuất thằng Cookies để có đc quyền của anh, sau đó mới delete bài đc &lt;=phải ko a.?ko đúng thì bỏ quá cho em,hihi.
+Với suy nghĩ trên em nêu ra đc một cách, chẳng hạn như anh làm cách nào đó cho cookies ko tham gia vào quá trình này ( chắc mod phải đăng nhập liên tục quá) hoặc: xác định những URL có khả năng là CSRF, sau đó thiết lập một rule, giống dạng signature ko cho queue Cookies là có thể giải quyêt đc.
+Vài ý kiến.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39646</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39646</link>
+				<pubDate><![CDATA[Fri, 2 Feb 2007 17:05:23]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Theo Luke nghĩ thì việc giả POST cũng không khó
+có thể convert GET sang POST thông qua việc sửa lại request qua 1 file trên server mình.
+Victim -&gt; Malcious Site -&gt; IMG Tag -&gt; GET -&gt; Attacker php/asp/jsp.. -&gt; POST -&gt; Victim's Server
+Tuy nhiên cách này thì ko thể tận dụng được cái HTTP_REFERER
+Nhưng xét cho cùng thì chẳng có mấy ai check cái HTTP_REFERER và khi đưa về server mình xử lí thì việc tạo ra multi-broadcasting request càng dễ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39649</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39649</link>
+				<pubDate><![CDATA[Fri, 2 Feb 2007 17:31:08]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Re:Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Mình thấy Topic này của huynh Conmale rất thú vị, mình chưa bao giờ nghĩ tới vụ &quot;mượn dao&quot; này.
+Đọc qua phần<span class="link"> http://www.tux.org/~peterw/csrf.txt</span> thì thấy trên này họ cũng nêu cách khắc phục
+
+<blockquote>&gt; How can it be fixed? Well, there are a couple of ways to stop it, but the
+&gt; easiest (in PHP at least) seems to be to have most of the variables used by
+&gt; scripts be used through $HTTP_POST_VARS. So instead of checking for $action
+&gt; in a script, $HTTP_POST_VARS['action'] would be checked. This forces the
+&gt; user to use a POST request, not a GET. 
+
+which means the attacker reverts to using Javascript, or entices the victim
+to click on an image that's acting as a submit control in a &lt;form&gt;. 
+Requiring POST raises the bar, but doesn't really fix the problem.
+
+&gt; Alternatively, the sessionid could be
+&gt; required to come with the GET/POST request variables, rather than by cookie.
+
+...thereby exposing an important piece of authentication information to
+history files and proxy servers; I really don't like URL mangling for
+authentication purposes, especially in non-SSL systems. A combination of
+cookie + URL mangling might not be bad, though in the message board case, a
+CSRF attacker could use an intermediate wwwect (as described earlier) to
+get the URL mangling (from the Referer), and wwwect back to the
+messageboard with the proper mangling as well as all cookies that might be
+expected/needed. So in your example case, URL mangling would buy nothing. :-(
+
+&gt; Finally, in the specific case of [img] tags, the use of ? or & in the img
+&gt; URL can be disabled by some regexes.
+
+Not at all adequate. Browsers follow wwwects on IMG tags, so I wwwect
+you to<span class="link"> http://example.net/logo.gif</span> which in turn wwwects you to the final
+URL, as described earlier.
+
+&gt; If the software that you run is not secure, we recommend that you disable
+&gt; HTML and/or [img] tags, until the fixes have been implemented.
+
+It's much worse than that.
+
+Please see the following URLs for an introduction to the dangers of CSRF, 
+and some discussion of countermeasure strategies. 
+
+<span class="link"> http://www.astray.com/pipermail/acmemail/2001-June/000803.html</span>
+<span class="link"> http://www.astray.com/pipermail/acmemail/2001-June/000808.html</span>
+<span class="link"> http://www.astray.com/pipermail/acmemail/2001-June/000804.html&nbsp;</span>
+		</blockquote>
+
+Theo mình nghĩ ban quản trị dường như đã fix lỗi này, vì như vậy conmale mới công bố lên đây.
+vậy câu hỏi:
+Cách của ban quản trị là gì?
+Có phải topic này của huynh là để mọi người bàn luận và tìm ra cách tối ưu nhất hay để các members &quot;tập suy nghĩ&quot;?
+
+tóm lại topic rất hay, indeed
+
+ :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39720</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39720</link>
+				<pubDate><![CDATA[Sat, 3 Feb 2007 00:32:38]]> GMT</pubDate>
+				<author><![CDATA[ nora]]></author>
+			</item>
+			<item>
+				<title>Re:Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nora wrote:</cite><br>
+		<blockquote>
+
+Theo mình nghĩ ban quản trị dường như đã fix lỗi này, vì như vậy conmale mới công bố lên đây.
+vậy câu hỏi:
+Cách của ban quản trị là gì?
+&nbsp;
+		</blockquote>
+Cách của BQT có 2 phần:
+- phase 1: ứng dụng random token. Token này dựa trên giá trị valid session ID của thành viên có chủ quyền là moderator + một số thông tin cá biệt khác. Ví dụ, IP của session, user-agent của session và vị trí (đang ở trên diễn đàn).... Phase 1 đã ứng dụng.
+
+- phase 2: intermediate confirmation step. Bước này là bước đứng giữa để xác nhận moderator <b>quả thật</b> muốn thực thi hành động nào đó. Để bảo đảm hơn nữa, ứng dụng captchar có thể được đưa vào trong trường hợp này. Phase 2 đang viết, chưa ứng dụng :P)
+
+Dù hiện tại chỉ dùng phase 1, việc giả mạo một token nào đó <b>trùng với</b> giá trị token được server tạo ra là một việc hiếm hoi. Bởi thế, sẽ từ từ ứng dụng phase 2 (khi rảnh).
+
+<p></p>
+		<cite class="blockquote">nora wrote:</cite><br>
+		<blockquote>
+Có phải topic này của huynh là để mọi người bàn luận và tìm ra cách tối ưu nhất hay để các members &quot;tập suy nghĩ&quot;?
+&nbsp;
+		</blockquote>
+Có lẽ là cả hai. Thật ra về mặt nguyên tắc thì chỉ có bấy nhiêu hướng ứng dụng. Tuy nhiên, khai triển càng nhiều thì càng tốt vì member có dịp suy nghĩ và ứng dụng cho trường hợp cụ thể của mình.
+
+<p></p>
+		<cite class="blockquote">nora wrote:</cite><br>
+		<blockquote>
+tóm lại topic rất hay, indeed
+
+ :)) &nbsp;
+		</blockquote>
+Cám ơn :)).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39770</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39770</link>
+				<pubDate><![CDATA[Sat, 3 Feb 2007 11:43:01]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ bác conmale đã post topic này thú vị lém, tui thích lắm và theo dõi mỗi bài post của members. Anh Conmale ít nhất cũng cho chúng ta thấy được các hacker đã lợi dụng "đường biên" của ứng dụng để hack. 
+hehe, thanks so much!!!!!!!!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39800</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39800</link>
+				<pubDate><![CDATA[Sat, 3 Feb 2007 12:45:02]]> GMT</pubDate>
+				<author><![CDATA[ PHUCDOAN]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[  Em cũng nghe nói về lỗi này. Nhưng em nghĩ lỗi này ko nguy hiểm lắm hoặc tại em ko hiểu rõ về nó.
+ Ngoài việc có thể inject vào javascript, html để khai thác cookies, hay 1 vài thông tin "xung quanh" website thì nó có thể làm gì hơn thế không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39905</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39905</link>
+				<pubDate><![CDATA[Sat, 3 Feb 2007 22:58:18]]> GMT</pubDate>
+				<author><![CDATA[ HoS]]></author>
+			</item>
+			<item>
+				<title>Re:Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>-phase 1: ứng dụng random token. Token này dựa trên giá trị valid session ID của thành viên có chủ quyền là moderator + một số thông tin cá biệt khác. Ví dụ, IP của session, user-agent của session và vị trí (đang ở trên diễn đàn).... Phase 1 đã ứng dụng.&nbsp;
+		</blockquote>
+
+Thú vị thật  :mrgreen:  Phương pháp một này hơi quen quen.
+
+Hèn chi anh conmale cứ tìm cách dụ em tìm cách lấy session hash  :lol:) 
+
+Đáng nhẽ em trả lời tiếp câu hỏi &quot;khó&quot; đợt 2 của anh nhưng hình như nhiều anh em khác đã trả lời rồi.
+
+Vâng, Session Hash ( Chuỗi Băm Nhận Diện Phiên Làm Việc ) thường được lưu trong cookies ( đa phần trường hợp các administrator không cấu hình cho phép cache session hash trên server vì sợ bị flood ), mặt khác nó được lưu trong một trường ẩn của mã HTML ( hidden field ) để khi nó được POST hay GET lên server thì hash sẽ được truyền đi.
+
+Việc lấy hash trong 2 trường hợp này là có thể.
+
+Với version cũ của 1 số browse ( trình duyệt ) có lỗi có thể thực hiện Cross-Site-Cookies-Read.
+Việc đọc input hidden field còn dễ hơn qua các lệnh cơ bản của Javascript.
+
+Vậy -------------&gt; cách chống bằng Session Hash chưa đảm bảo được độ an toàn  :oops: .
+
+Em có sai chỗ nào mong anh conmale chỉ giúp để kịp chữa lỗ hổng.  :wink: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39925</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#39925</link>
+				<pubDate><![CDATA[Sun, 4 Feb 2007 00:30:27]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Em nghĩ để khắc phục khe hở trên thì nên tạo 1 hash riêng cho từng thành viên, khi đó trên mỗi URL có tác động đến những thông tin nhạy cảm thì sẽ có thêm đoạn "&mem_key=abc" trong URL, như vậy chỉ cần kiểm tra mem_key trên URL so sánh với mem_key của thành viên đó là ok :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40219</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40219</link>
+				<pubDate><![CDATA[Mon, 5 Feb 2007 21:39:46]]> GMT</pubDate>
+				<author><![CDATA[ lyhuuloi]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <blockquote> Việc lấy hash trong 2 trường hợp này là có thể.
+
+Với version cũ của 1 số browse ( trình duyệt ) có lỗi có thể thực hiện Cross-Site-Cookies-Read.
+<font color='orange'>Việc đọc input hidden field còn dễ hơn qua các hàm cơ bản của Javascript. </font>&nbsp;
+		</blockquote>
+bạn nohat nói cụ thể hơn được ko??  :D) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40224</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40224</link>
+				<pubDate><![CDATA[Mon, 5 Feb 2007 22:08:01]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote><blockquote> Việc lấy hash trong 2 trường hợp này là có thể.
+
+Với version cũ của 1 số browse ( trình duyệt ) có lỗi có thể thực hiện Cross-Site-Cookies-Read.
+<font color='orange'>Việc đọc input hidden field còn dễ hơn qua các lệnh cơ bản của Javascript. </font>&nbsp;
+		</blockquote>
+bạn nohat nói cụ thể hơn được ko??  :D) &nbsp;
+		</blockquote>
+
+Hì xin được giải thích thêm ( gamma95 biết rồi còn giả chưa biết  :mrgreen: )
+Đầu tiên là đọc cookie:
+vì dụ các phiên bản cũ của IE cho phép chạy activeX <font color='orange'>FileSystemObject</font> là một trong các activeX cho phép truy cập file, còn tiếp theo cậu hiểu ý tớ rồi chứ.
+
+Và đọc input hidden field:
+document.all.<font color='orange'>field</font>.value;
+
+
+Còn các lỗ hổng khác thì ..... nhìu nhìu.  :cry: 
+
+tái bút: không mượn kim anh conmale châm nhau nhá  :oops: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40240</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40240</link>
+				<pubDate><![CDATA[Tue, 6 Feb 2007 00:23:01]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <blockquote> Hì xin được giải thích thêm ( gamma95 biết rồi còn giả chưa biết  )
+Đầu tiên là đọc cookie:
+<font color='orange'>vì dụ các phiên bản cũ của IE cho phép chạy activeX FileSystemObject là một trong các activeX cho phép truy cập file, còn tiếp theo cậu hiểu ý tớ rồi chứ.</font>
+
+Và đọc input hidden field:
+document.all.field.value;
+
+
+Còn các lỗ hổng khác thì ..... nhìu nhìu. &nbsp;
+		</blockquote>
+dùng một vài bug của của IE thì mình có biết, nhưng ko muốn bàn ở đây (vì cái này ko mang tính tổng quát, phải phụ thuộc vào trình duyệt của victim)
+còn chuyện
+<blockquote>Và đọc input hidden field:
+document.all.field.value;&nbsp;
+		</blockquote>
+<font color='yellow'>cái này thì chỉ có victim đọc đc, cái quan trọng là nohat làm cách nào để lấy giá trị của hidden field của victim về ( lợi dụng CSRF) ??</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40663</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#40663</link>
+				<pubDate><![CDATA[Thu, 8 Feb 2007 00:59:31]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Theo em thì nên tạo 1 session gọi là <b>keyspecial</b> với nội dung là <b>username của mod + với 1 key</b>(có thể là key nhất định, hoặc ngẫu nhiên từ trong bảng user, để chắc hơn mình chơi cộng thêm cái pass đã mã hóa luôn)
+
+Khi muốn làm những việc của mod, chỉ việc check xem nó có trùng không và tạo 1 trang xác nhận rồi check referer từ trang đó nữa. Không biết cách của em vậy đã ổn chưa? Theo em thì chưa ổn, sửa cái này đúng là khó thật, lơ mơ thì toi như chơi. Kiểu này thì chỉ có mod xóa luận lý rồi admin vào CP xóa thật sau  :wink: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41297</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41297</link>
+				<pubDate><![CDATA[Mon, 12 Feb 2007 02:28:58]]> GMT</pubDate>
+				<author><![CDATA[ 114v]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ hic gamma95 à, CSRF là lợi dụng truy vấn GET và Session của Moderator để truyền lệnh phá dữ liệu ( mượn tay giết gà đó mà ), chứ nó có phải là XSS đâu mà lấy cắp cái session về cất tủ  8))  . Việc lấy cái Session thật ra là theo ý của anh conmale là bypass cái vụ check session mà chúng ta đã đề cập từ đầu bài thảo luận.
+Tôi đề cập tới hidden field ở đây là nó có thể chứa chuỗi hash nên tôi tìm cách lấy nó theo câu hỏi "khó" của anh conmale mừ :D) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41347</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41347</link>
+				<pubDate><![CDATA[Mon, 12 Feb 2007 12:11:41]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <blockquote>hic gamma95 à, CSRF là lợi dụng truy vấn GET và Session của Moderator để truyền lệnh phá dữ liệu ( mượn tay giết gà đó mà ), chứ nó có phải là XSS đâu mà lấy cắp cái session về cất tủ . Việc lấy cái Session thật ra là theo ý của anh conmale là bypass cái vụ check session mà chúng ta đã đề cập từ đầu bài thảo luận.
+<font color='orange'>Tôi đề cập tới hidden field ở đây là nó có thể chứa chuỗi hash nên tôi tìm cách lấy nó theo câu hỏi "khó" của anh conmale mừ</font>&nbsp;
+		</blockquote>
+Thì tui hỏi bạn là lấy là lấy như thế nào mà ?? đâu cần bạn định nghĩa lại CSRF là cái gì đâu ??  :wink: 
+ps: bạn demo 1 VD theo cách của bạn đi..và đọc kĩ lại câu hỏi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41371</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#41371</link>
+				<pubDate><![CDATA[Mon, 12 Feb 2007 15:06:37]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Vấn đề khắc phục thì cứ phải là confirm bằng server scripts thôi anh nhỉ.
+
+Nghĩ sâu hơn thì lỗi này vô cùng nguy hiểm, vì không chỉ xóa bài mà hacker có thể tự nâng quyền và làm nhiều trò khác nữa :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#43505</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#43505</link>
+				<pubDate><![CDATA[Tue, 27 Feb 2007 15:15:24]]> GMT</pubDate>
+				<author><![CDATA[ vtv_4]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Tự nhiên hôm nay đọc được vụ này trên Vnexpress
+http://vnexpress.net/Vietnam/Vi-tinh/Hacker-Virus/2007/03/3B9F3B21/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44473</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44473</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 00:45:28]]> GMT</pubDate>
+				<author><![CDATA[ thangdiablo]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://blog.360.yahoo.com/blog-d9EBpU45eqUjn8tRROYi4xpbcA--?d=NURg2a1gKg--</pre>
+		</div>
+
+Tớ thử rồi thangdiablo à, chơi đc là cả vấn đề
+
+Mỗi bài post nó ko nhận diện bằng số id mà nó dùng một cái hash
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>?d=NURg2a1gKg--</pre>
+		</div>
+
+và mỗi blog cũng có một hash riêng để nhận diện nó duy nhất
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>blog-d9EBpU45eqUjn8tRROYi4xpbcA--</pre>
+		</div>
+
+cái hash thứ 2 lấy đc dễ dàng do nó là link sẽ hiện ra khi mọi người xem blog
+Còn cái thứ 1 ko tìm ra được dễ đâu à nha ( ít ra tới thời điểm này )
+Đối với người ko có chủ quyền với trang blog (chủ nhân blog) thì ko dễ gì lấy đc cái link delete như tui lấy ( tui lôi trong blog thử nghiệm của tui ).
+
+Vậy nên có thể kết luận là người báo vul này có vẻ hơi vội vã vì nó thật sự khó khai thác ( theo ý kiến riêng của tui ).
+
+Nên chưa cần lo là bị del hết bài trên blog  :D) phẻ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44483</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44483</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 01:13:07]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Tôi đã kiểm tra rất kỹ trước khi công bố vul này.
+
+<b>Thứ nhất,</b>
+
+Y360 bị lỗi CSRF dẫn đến việc có thể xóa comment bằng đường dẫn sau:
+
+<font color='red'>http://blog.360.yahoo.com/blog-thAecTcofrMD7CKmJsgcIoMq</font>?p=9&dc=10
+
+Đoạn bôi đỏ thay đổi khác nhau với từng blog, nhưng có thể dễ dàng lấy được bằng cách nhấn chuột vào một entry bất kỳ. Đồng thời khi đó cũng lấy được tham số p=... (ID của entry)
+
+Tham số dc=... (ID của comment) có thể lấy được dựa trên cách... suy đoán gần đúng như sau: ID của comment sẽ bằng số thứ tự của comment trong entry + ID của entry.
+
+Tức là, giả sử bạn có một entry ID = 10 thì comment đầu tiên (bóc tem) entry đó sẽ là 11, comment tiếp theo là 12.... ect
+
+Tuy nhiên, con số ở đây chỉ là gần đúng bởi vì, nếu có người comment lệch entry (đang có người comment entry mới nhất lại có người comment vào entry cũ hơn) thì số thứ tự của các comment tiếp theo sẽ bị lệch đi.
+
+<b>Thứ hai,</b>
+
+Y360 không chỉ bị lỗi trong phần xóa comment mà còn bị cả ở trong phần xóa comment thông qua giao diện recent comment (trang này được liệt kê khi bạn bấm vào My Blog và bấm vào Blog Comments) như sau:
+<span class="link"> http://blog.360.yahoo.com/blog/recent_comments.html?d=10</span>
+
+Và ở link này thì việc xóa trở nên dễ dàng hơn rất nhiều.
+
+Mặt khác, qua phân tích ở phần trên, chúng ta cũng dễ dàng thấy rằng Y360 coi entry và comment đều là các bài post (tăng ID) nên đường link xóa recent comment ở trên có thể xóa cả entry lẫn comment. Tức là bạn chỉ cần biết được ID của entry hoặc comment mới nhất, sau đó chạy vòng lặp downto về 0 là... xóa toàn blog.
+
+Trước khi phát hiện ra lỗi ở Recent Comment tôi có thử xem link xóa entry thì đúng như bạn phân tích, nó đã có chuỗi hash để anti CSRF. Tương tự, link xóa quick comment ngoài top page cũng có chuỗi hash này. Nhưng Recent Comment thì KHÔNG!
+
+Có lẽ khi phóng viên "hỏi lại" bên BKIS để confirm thì bên BKIS chỉ nghĩ tới việc attack qua link delete entry nên đã phát biểu khúc cuối sai lệch hoàn toàn vấn đề (BKIS đã nói: <i>Tuy nhiên lỗi này không nguy hiểm vì phải chuẩn bị mỗi blog một link khác nhau etc...</i>)
+
+Câu nói đó đúng khi xem xét ở phần thứ nhất, nhưng nếu sử dụng cách thứ 2 thì chỉ cần 1 link "dùng chung" cho tất cả các blog của những blogger khác nhau.
+
+P/S: Thực ra, Y360 cũng đã có một bước anti CSRF ở link xóa comment và recent comment bằng việc check IP khi login và IP khi ra lệnh xóa. Có lẽ vì lý do đó nên khi tôi gửi msg thông báo lỗi cho Y360 Team chẳng thấy họ phản ứng gì. Có điều, cách anti như vậy không có tác dụng tốt lắm với blogger Việt Nam, vì IP là giống nhau do đi qua proxy. Điều đó cũng có nghĩa là nếu bạn sử dụng ADSL của FPT thì không thể attack được vào blog của người đang xài ADSL VDC hay Viettel.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44491</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44491</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 04:52:55]]> GMT</pubDate>
+				<author><![CDATA[ vtv_4]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Cái này có thể gọi là a.e đang brainstorming. 
+Một vài thứ chưa hiểu rõ lắm nên phải tìm hiểu kĩ rồi hỏi sau
+Đùng 1 cái mà hỏi thì bác "châm" chẳng bao giờ trả lời ... :0]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44497</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44497</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 10:25:25]]> GMT</pubDate>
+				<author><![CDATA[ ndahuy]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vtv_4 wrote:</cite><br>
+		<blockquote>Tôi đã kiểm tra rất kỹ trước khi công bố vul này.
+
+<b>Thứ nhất,</b>
+
+Y360 bị lỗi CSRF dẫn đến việc có thể xóa comment bằng đường dẫn sau:
+
+<font color='red'>http://blog.360.yahoo.com/blog-thAecTcofrMD7CKmJsgcIoMq</font>?p=9&dc=10
+
+Đoạn bôi đỏ thay đổi khác nhau với từng blog, nhưng có thể dễ dàng lấy được bằng cách nhấn chuột vào một entry bất kỳ. Đồng thời khi đó cũng lấy được tham số p=... (ID của entry)
+
+Tham số dc=... (ID của comment) có thể lấy được dựa trên cách... suy đoán gần đúng như sau: ID của comment sẽ bằng số thứ tự của comment trong entry + ID của entry.
+
+Tức là, giả sử bạn có một entry ID = 10 thì comment đầu tiên (bóc tem) entry đó sẽ là 11, comment tiếp theo là 12.... ect
+
+Tuy nhiên, con số ở đây chỉ là gần đúng bởi vì, nếu có người comment lệch entry (đang có người comment entry mới nhất lại có người comment vào entry cũ hơn) thì số thứ tự của các comment tiếp theo sẽ bị lệch đi.
+
+<b>Thứ hai,</b>
+
+Y360 không chỉ bị lỗi trong phần xóa comment mà còn bị cả ở trong phần xóa comment thông qua giao diện recent comment (trang này được liệt kê khi bạn bấm vào My Blog và bấm vào Blog Comments) như sau:
+<span class="link"> http://blog.360.yahoo.com/blog/recent_comments.html?d=10</span>
+
+Và ở link này thì việc xóa trở nên dễ dàng hơn rất nhiều.
+
+Mặt khác, qua phân tích ở phần trên, chúng ta cũng dễ dàng thấy rằng Y360 coi entry và comment đều là các bài post (tăng ID) nên đường link xóa recent comment ở trên có thể xóa cả entry lẫn comment. Tức là bạn chỉ cần biết được ID của entry hoặc comment mới nhất, sau đó chạy vòng lặp downto về 0 là... xóa toàn blog.
+
+Trước khi phát hiện ra lỗi ở Recent Comment tôi có thử xem link xóa entry thì đúng như bạn phân tích, nó đã có chuỗi hash để anti CSRF. Tương tự, link xóa quick comment ngoài top page cũng có chuỗi hash này. Nhưng Recent Comment thì KHÔNG!
+
+Có lẽ khi phóng viên "hỏi lại" bên BKIS để confirm thì bên BKIS chỉ nghĩ tới việc attack qua link delete entry nên đã phát biểu khúc cuối sai lệch hoàn toàn vấn đề (BKIS đã nói: <i>Tuy nhiên lỗi này không nguy hiểm vì phải chuẩn bị mỗi blog một link khác nhau etc...</i>)
+
+Câu nói đó đúng khi xem xét ở phần thứ nhất, nhưng nếu sử dụng cách thứ 2 thì chỉ cần 1 link "dùng chung" cho tất cả các blog của những blogger khác nhau.
+
+P/S: Thực ra, Y360 cũng đã có một bước anti CSRF ở link xóa comment và recent comment bằng việc check IP khi login và IP khi ra lệnh xóa. Có lẽ vì lý do đó nên khi tôi gửi msg thông báo lỗi cho Y360 Team chẳng thấy họ phản ứng gì. Có điều, cách anti như vậy không có tác dụng tốt lắm với blogger Việt Nam, vì IP là giống nhau do đi qua proxy. Điều đó cũng có nghĩa là nếu bạn sử dụng ADSL của FPT thì không thể attack được vào blog của người đang xài ADSL VDC hay Viettel.&nbsp;
+		</blockquote>
+
+Đúng như bạn phân tích, việc CSRF ở điểm yếu của yahoo 360 chỉ có thể thực hiện với việc delete comment mà thôi ( phần phân tích của tôi xoáy vào Entry ) vì comment được thể hiện bằng id ( rất dễ suy luận hoặc lấy theo cách của bạn phân tích ), trong khi đó phần quan trọng nhất của nội dung Blog là Entry của chủ nhân blog thì khó có thể bị khai thác do yahoo đã dùng phương pháp "hash" ( giống như cách chúng ta đã bàn luận ở đầu topic ).
+
+Đây là link sẽ chạy lệnh Delete
+
+<blockquote>http://blog.360.yahoo.com/blog/delete.html?<font color='red'>msgid=</font><font color='orange'>maYlD49p</font>&nbsp;
+		</blockquote>
+
+Tôi đã đánh dấu phần quan trọng trong link này, bạn thấy đó đoạn màu cam chính là id của entry ( một chuỗi hash )
+
+Vậy nên việc kết luận là vul này nghiệm trọng là hơi quá lời, theo tôi nó không quá nguy hiểm vì các comment cũng chỉ là các đoạn hội thoại nhỏ cho ý kiến về Entry của chủ nhân Blog.
+
+Còn bạn muốn tránh việc bị khai thác này thì cũng khá dễ chỉ cần bạn cẩn thận logout sau khi đã post Entry của mình thì kẻ tấn công không còn phương cách nào thực thi link CSRF nữa và blog của bạn được an toàn  ( chú ý: Tuyệt đối không nên vừa Post Entry vừa truy cập lung tung )
+
+Tái bút: vì dùng blog chưa lâu (chỉ mó máy quậy chơi) nên tôi e rằng các nhận định của tôi cũng chỉ là cảm quan cá nhân nên có gì không đúng mong bạn bỏ quá cho.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44507</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44507</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 11:50:37]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ hihi, newbie, mình biết 1 tí về web development nên góp ý tí xíu về mấy vấn đề ngoài lề :)
+
+<blockquote> 2. Đối với kiểu tạo request từ các thành phần ngay trong diễn đàn, mà cụ thể là lợi dùng việc chèn ảnh thì có thể thắt chặt việc parse thẻ [img], chỉ cho phép URL thẳng đến các file jpg hay gif thôi &nbsp;
+		</blockquote>
+--&gt; cái này thì cũng có thể dễ dàng rewrite url lại, giống như HVA rewrite đuôi thành .hva lại í, mình dùng cái link có đuôi là gif của mình nhưng cái link đó để chạy scrip vẫn được mà :). Với lại thắt chặt vậy có vẻ không thực sự hay, phải làm cho người dùng sử dụng thoải mái thì càng tốt, thử hỏi vào một trang giới hạn lung tung, và một trang kô giới hạn gì nhiều thì user thích cái nào hơn  (đứng trên phương diện development :) 
+
+<blockquote> Dẫu biết là attaker vẫn có thể trick user send request POST nhưng em nghĩ bước đầu tiên cần phải làm vẫn là hạn chế tối đa các request GET(không sử dụng càng tốt) &nbsp;
+		</blockquote>
+-&gt; mình thấy google hay yahoo ... nói chung mấy trang lớn lớn, người ta lại chuộng dùng GET, chắc tại vì vậy thì sẽ tiện cho người dùng hơn rất nhiều :) và cái này có phải là cực kỳ quan trọng kô? :). Cho dù làm gì đi nữa, làm sao người sử dụng sử dụng càng dể dàng và đơn giản càng tốt, mình nghĩ vậy :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44514</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44514</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 12:23:45]]> GMT</pubDate>
+				<author><![CDATA[ stupidmistakez]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Có vẻ như hackernohat chưa đọc kỹ bài của tôi. Tôi không delete blog bằng link của bạn mà delete bằng link http://blog.360.yahoo.com/blog/recent_comments.html?d=... ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44515</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44515</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 12:24:29]]> GMT</pubDate>
+				<author><![CDATA[ vtv_4]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Trong IPB thì để del 1 bài post thì ta dùng link sau :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://site.com/forum/index.php?act=Mod&CODE=04&f=a&t=b&p=c&st=0&auth_key=1_day_so</pre>
+		</div>
+
+Trong đó a = forumid
+              b = topicid
+              c = postid
+
+Nhũng cái này có thể dễ dàng tìm thấy , tuy nhiên làm sao để biết đc auth_key của admin hoặc mod]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44570</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44570</link>
+				<pubDate><![CDATA[Sun, 4 Mar 2007 17:37:26]]> GMT</pubDate>
+				<author><![CDATA[ mabubeo90]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vtv_4 wrote:</cite><br>
+		<blockquote>Có vẻ như hackernohat chưa đọc kỹ bài của tôi. Tôi không delete blog bằng link của bạn mà delete bằng link<span class="link"> http://blog.360.yahoo.com/blog/recent_comments.html?d=...</span> &nbsp;
+		</blockquote>
+
+Vấn đề còn lại là làm sao để lừa yahoo không bị chống flood :). Nếu mà dùng tag &lt;img thì chỉ xóa được &lt;100 entry :), còn dụ victim click link vào trang của mình thì có thể cho nó chạy iframe với mấy trang proxy nữa chắc cũng ổn ;;) , he he, em bị xóa gần 100 cái đang tức ói máu đây nhưng chỉ tội ngu ráng chịu :|]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44713</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44713</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 01:39:38]]> GMT</pubDate>
+				<author><![CDATA[ stupidmistakez]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Phát hiện của vtv_4 thật có ích. Tôi nghĩ nó sẽ làm cho các web-developer ở VN chú ý hơn đến lỗi này.
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44725</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44725</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 02:32:54]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mabubeo90 wrote:</cite><br>
+		<blockquote>Trong IPB thì để del 1 bài post thì ta dùng link sau :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://site.com/forum/index.php?act=Mod&CODE=04&f=a&t=b&p=c&st=0&auth_key=1_day_so</pre>
+		</div>
+
+Trong đó a = forumid
+              b = topicid
+              c = postid
+
+Nhũng cái này có thể dễ dàng tìm thấy , tuy nhiên làm sao để biết đc auth_key của admin hoặc mod&nbsp;
+		</blockquote>
+
+Việc dùng GET và pass những giá trị "nhạy cảm" như auth_key vào URI là việc cực kỳ nguy hiểm và nên tránh bằng mọi giá. auth_key chỉ nên được tạo ra một lần khi xác thực tài khoản và lưu trên memory của trình duyệt (và gắn liền + có giá trị với sessionid nào đó). Việc đưa những thông tin nhạy cảm này vào cookie và lưu trên máy của client cũng là việc nên tránh xa.
+
+Nếu dùng POST, các giá trị nhạy cảm được đưa vào hidden field của FORM và việc này cũng nên tránh bởi vì nếu bị xss, các giá trị của hidden field vẫn có thể bị đọc được. Bởi thế, những thông tin thuộc về chủ quyền của user (như mods, admins.... ) không nên đưa vào GET hoặc POST mỗi lần một request xảy mà gắn liền chúng với một sesion có giá trị và điều tối quan trọng là sessionid phải do web application server cung cấp và xác thực. Web application không bao giờ tiếp nhận một sessionid đã cũ (và được chèn vào bất cứ lúc nào trong request).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44749</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44749</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 09:04:24]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re:Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">nora wrote:</cite><br>
+		<blockquote>
+
+Theo mình nghĩ ban quản trị dường như đã fix lỗi này, vì như vậy conmale mới công bố lên đây.
+vậy câu hỏi:
+Cách của ban quản trị là gì?
+&nbsp;
+		</blockquote>
+Cách của BQT có 2 phần:
+- phase 1: ứng dụng random token. Token này dựa trên giá trị valid session ID của thành viên có chủ quyền là moderator + một số thông tin cá biệt khác. Ví dụ, IP của session, user-agent của session và vị trí (đang ở trên diễn đàn).... Phase 1 đã ứng dụng.
+&nbsp;
+		</blockquote>
+
+Cho em hỏi, 
+1)cái token này sẽ nằm trong đoạn URL để delete post (nói chung là mọi URL nhạy cảm), đúng ko? Vậy nếu như attacker dùng XSS để đọc cái token này, rồi dùng token để construct cái URL cho XSRF thì vẫn có khả năng thành công đúng ko? Vấn đề là HVA ko bị XSS nên tạm thời chưa sao? 
+2)Có phải vì token này không thể thay thế cho sessionid nên có thể đặt nó vào URL mà không sợ vi phạm cái nguyên tắc bảo mật đã nói ở trên?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44772</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44772</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 10:56:28]]> GMT</pubDate>
+				<author><![CDATA[ peo]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ @vtv4
+<blockquote>P/S: <font color='yellow'>Thực ra, Y360 cũng đã có một bước anti CSRF ở link xóa comment và recent comment bằng việc check IP khi login và IP khi ra lệnh xóa</font>. Có lẽ vì lý do đó nên khi tôi gửi msg thông báo lỗi cho Y360 Team chẳng thấy họ phản ứng gì. Có điều, cách anti như vậy không có tác dụng tốt lắm với blogger Việt Nam, vì IP là giống nhau do đi qua proxy. Điều đó cũng có nghĩa là nếu bạn sử dụng ADSL của FPT thì không thể attack được vào blog của người đang xài ADSL VDC hay Viettel.&nbsp;
+		</blockquote>
+ko hiểu khúc này ?? đã lợi dụng CSRF để chém mướn thì IP trước sau hoàn toàn là IP của victim chứ nhỉ ?? nên IP trước sau gì cũng đâu có thay đổi đâu ??  8)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44775</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44775</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 11:08:48]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re:Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">peo wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">nora wrote:</cite><br>
+		<blockquote>
+
+Theo mình nghĩ ban quản trị dường như đã fix lỗi này, vì như vậy conmale mới công bố lên đây.
+vậy câu hỏi:
+Cách của ban quản trị là gì?
+&nbsp;
+		</blockquote>
+Cách của BQT có 2 phần:
+- phase 1: ứng dụng random token. Token này dựa trên giá trị valid session ID của thành viên có chủ quyền là moderator + một số thông tin cá biệt khác. Ví dụ, IP của session, user-agent của session và vị trí (đang ở trên diễn đàn).... Phase 1 đã ứng dụng.
+&nbsp;
+		</blockquote>
+
+Cho em hỏi, 
+1)cái token này sẽ nằm trong đoạn URL để delete post (nói chung là mọi URL nhạy cảm), đúng ko? Vậy nếu như attacker dùng XSS để đọc cái token này, rồi dùng token để construct cái URL cho XSRF thì vẫn có khả năng thành công đúng ko? Vấn đề là HVA ko bị XSS nên tạm thời chưa sao? 
+&nbsp;
+		</blockquote>
+Cái token này là hash của những thành phần khác nhau và nó không phải là auth_key. Dùng nó "khơi khơi" không có tác dụng gì hết vì token này phải được so sánh với giá trị ngay thời điểm một request được xảy ra. Token này cũng có thể thay đổi liên tục tùy theo request được ai thực hiện và thực hiện ở đâu nữa. Ví dụ, token này chỉ dùng cho /abc/def.php?t=123&user=some_admin chẳng hạn, nếu token đó bị chôm và lúc ấy some_admin không ở trong t=123 thì nó hoàn toàn vô tác dụng. Đó là chưa kể đến khía cạnh token thay đổi khi sessionid thay đổi nữa. Ví dụ token đó bị chôm và admin hiện đang trong t=123 nhưng cái token đó được tạo ra khi admin login lần trước thì nó cũng không thể dùng để làm gì cả.
+
+<p></p>
+		<cite class="blockquote">peo wrote:</cite><br>
+		<blockquote>
+2)Có phải vì token này không thể thay thế cho sessionid nên có thể đặt nó vào URL mà không sợ vi phạm cái nguyên tắc bảo mật đã nói ở trên?
+&nbsp;
+		</blockquote>
+sessionid là sessionid, token là token. token là "sản phẩm" của nhiều yếu tố cộng lại và sessionid chỉ là 1 trong các yếu tố.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44776</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#44776</link>
+				<pubDate><![CDATA[Mon, 5 Mar 2007 11:11:37]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Có vài người "hỏi riêng" tôi cách tạo token trong trường hợp trên và ứng dụng như thế nào, sẵn topic này còn... nóng, tôi xin phép trả lời chung luôn.
+
+Tổng quát mà nói, khi nhấn trên một đường dẫn, trình duyệt sẽ gởi request đến web server và request này có thể là GET hoặc POST tùy ứng dụng.
+
+- với GET, các biến sẽ được đưa đến server xuyên qua "query string" (những gì nằm sau ? là query string, những gì nằm sau = là giá trị biến). Ví dụ:
+<b>/hvaonline/moderation.php?action=del&by=conmale&post=123&<font color='red'>token=7bbde36b2fg6d521b654ef2652593ab3</font></b>
+
+- với POST, các biến sẽ được đưa đến server xuyên qua các "hidden fields" trên HTML FORM. Ví dụ:
+
+&lt;input type="hidden" name="action" value="del" /&gt;
+&lt;input type="hidden" name="module" value="moderation" /&gt;
+&lt;input type="hidden" name="by" value="conmale" /&gt;
+&lt;input type="hidden" name="post" value="123" /&gt;
+<font color='red'>&lt;input type="hidden" name="token" value="7bbde36b2fg6d521b654ef2652593ab3" /&gt;</font>
+
+Giá trị của token ở đây là giá trị hash của một số dữ kiện nào đó tùy chọn và nó được gởi ngược từ server đến trình duyệt khi trình duyệt vào trang có chứa link để thực thi hành động <b>del</b>. Ví dụ, user đi vào trang moderate.php chẳng hạn, trình duyệt sẽ nhận được được chuỗi <b>token</b>. Chuỗi token này sẽ được dùng để xác thực quyền "del" khi nhấn nút "delete" một cái gì đó.
+
+Khi nhấn nút "delete", <b>token</b> trên được gởi đến server, cơ chế kiểm soát (một class, một function.. nào đó) sẽ lấy giá trị này đồng thời thực thi một bước tạo hash cũng dựa trên một số dữ kiện nào đó như trước. Sau đó nó so sánh 2 giá trị trước và sau xem chúng có trùng nhau hay không thì mới thực thi hành động cần thực thi.
+
+Riêng việc xây dựng như thế nào thì tùy vào tình huống, cấu trúc của web application và độ sáng tạo  :P) . Tuy nhiên, hash của token nên có 2 điều kiện quan trọng:
+- nó dùng dữ kiện <b>thuộc về</b> người có thẩm quyền thực thi chức năng. Ví dụ, tên người dùng, sessionid của người dùng, IP của người dùng....
+
+- nó phải thay đổi (dynamic) dựa trên những điều kiện liên quan đến việc thực thi chức năng. Ví dụ: người dùng ở trên mỗi URI thì có giá trị khác, người dùng bấm trên mỗi đường dẫn sẽ tạo ra một random value nào đó và random value này được đưa vào chuỗi thông tin để tạo hash...
+
+Lý do? Giả sử ai đó chôm được cái token của một moderator và xác định được moderator này đang ở đúng vị trí nào đó trên forum, "ai đó" có thể dùng nó để tạo 1 trang web nào đó và đồng thời chat + dụ moderator này xem. Lúc moderator này đồng ý vào trang web "độc địa" ấy thì random value đã thay đổi và bởi thế cái token bị chôm và bị dùng kia cũng không còn giá trị nữa --&gt; thực thi việc "mượn tay chém" không được nữa :)).
+
+Tất nhiên là token / hash / so sánh ... đều xảy ra trên memory mà không hề đụng đến database bởi vì chúng cần thực hiện nhanh chóng và an toàn.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45204</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45204</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 12:02:22]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">comale wrote:</cite><br>
+		<blockquote>
+ Việc dùng GET và pass những giá trị "nhạy cảm" như auth_key vào URI là việc cực kỳ nguy hiểm và nên tránh bằng mọi giá. auth_key chỉ nên được tạo ra một lần khi xác thực tài khoản và lưu trên memory của trình duyệt (và gắn liền + có giá trị với sessionid nào đó). Việc đưa những thông tin nhạy cảm này vào cookie và lưu trên máy của client cũng là việc nên tránh xa.
+
+Nếu dùng POST, các giá trị nhạy cảm được đưa vào hidden field của FORM và việc này cũng nên tránh bởi vì nếu bị xss, các giá trị của hidden field vẫn có thể bị đọc được. Bởi thế, những thông tin thuộc về chủ quyền của user (như mods, admins.... ) không nên đưa vào GET hoặc POST mỗi lần một request xảy mà gắn liền chúng với một sesion có giá trị và điều tối quan trọng là sessionid phải do web application server cung cấp và xác thực. Web application không bao giờ tiếp nhận một sessionid đã cũ (và được chèn vào bất cứ lúc nào trong request).
+&nbsp;
+		</blockquote>
+
+Anh conmale cho em hỏi: giá trị "nhạy cảm" lưu trên memory của trình duyệt là như thế nào ạ ?! em vẫn chỉ biết 1 cách lưu trên máy client là qua cookie/GET(url)/POST(form) thôi!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45241</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45241</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 16:27:45]]> GMT</pubDate>
+				<author><![CDATA[ namviet]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ Memory ý anh conmale nó là dùng chung cho các dạng thức mà Browser dùng để lưu các thông tin "nhạy cảm" theo cách mà bạn nói :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45302</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45302</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 21:26:45]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ @ sư phụ nohat: nhưng anh ấy (conmale) nói: 
+-"dùng GET... nên tránh bằng mọi giá"
+-"cookie ... cũng là việc nên tránh xa"
+-"POST ... cũng nên tránh"
+
+Vậy thì còn dùng phương thức gì nữa để truyền tham số giữa client và server ?!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45310</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45310</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 22:01:19]]> GMT</pubDate>
+				<author><![CDATA[ namviet]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">namviet wrote:</cite><br>
+		<blockquote>@ sư phụ nohat: nhưng anh ấy (conmale) nói: 
+-"dùng GET... nên tránh bằng mọi giá"
+-"cookie ... cũng là việc nên tránh xa"
+-"POST ... cũng nên tránh"
+
+Vậy thì còn dùng phương thức gì nữa để truyền tham số giữa client và server ?!&nbsp;
+		</blockquote>
+
+những thứ nhạy cảm sẽ được lưu tại session và được check bằng token mà ( session_id hash ), chứ nãy giờ bạn không theo giỏi àh? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45313</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45313</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 22:30:43]]> GMT</pubDate>
+				<author><![CDATA[ stupidmistakez]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">stupidmistakez wrote:</cite><br>
+		<blockquote>
+ những thứ nhạy cảm sẽ được lưu tại session và được check bằng token mà ( session_id hash ), chứ nãy giờ bạn không theo giỏi àh? 
+&nbsp;
+		</blockquote>
+
+Thực sự mình chưa rành về cái này , nhưng theo post của anh conmale:
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+ - với GET, các biến sẽ được đưa đến server xuyên qua "query string" (những gì nằm sau ? là query string, những gì nằm sau = là giá trị biến). Ví dụ:
+/hvaonline/moderation.php?action=del&by=conmale&post=123&token=7bbde36b2fg6d521b654ef2652593ab3
+
+- với POST, các biến sẽ được đưa đến server xuyên qua các "hidden fields" trên HTML FORM. Ví dụ:
+
+&lt;input type="hidden" name="action" value="del" /&gt;
+&lt;input type="hidden" name="module" value="moderation" /&gt;
+&lt;input type="hidden" name="by" value="conmale" /&gt;
+&lt;input type="hidden" name="post" value="123" /&gt;
+&lt;input type="hidden" name="token" value="7bbde36b2fg6d521b654ef2652593ab3" /&gt; 
+&nbsp;
+		</blockquote>
+
+Thì những thứ đó cũng chỉ là ở trong GET và POST thôi mà ?!
+
+Có gì ngớ ngẩn xin được thông cảm và chỉ rõ :D !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45318</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45318</link>
+				<pubDate><![CDATA[Wed, 7 Mar 2007 22:44:50]]> GMT</pubDate>
+				<author><![CDATA[ namviet]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">namviet wrote:</cite><br>
+		<blockquote>@ sư phụ nohat: nhưng anh ấy (conmale) nói: 
+-"dùng GET... nên tránh bằng mọi giá"
+-"cookie ... cũng là việc nên tránh xa"
+-"POST ... cũng nên tránh"
+
+Vậy thì còn dùng phương thức gì nữa để truyền tham số giữa client và server ?!&nbsp;
+		</blockquote>
+
+Những điểm nên tránh đã nêu trong bài trước là tránh "vận chuyển" những thứ nhạy cảm như auth_key, pasword hash... Tránh chứa những thứ trên trong cookie và cookie không thuộc dạng "transient" (có nghĩa là cookie lưu trên đĩa của máy chạy trình duyệt chớ không hủy bỏ sau mỗi xuất truy cập).
+
+Tất nhiên với giao thức HTTP, giữa client và server vẫn phải dùng những method thông thường như POST và GET để chuyển gởi thông tin. Tuy nhiên, cái khác biệt ở chỗ là những gì chuyển gởi và lưu chỉ có giá trị tạm thời hoặc không thể access từ một kẻ thứ ba.
+
+<blockquote>Anh conmale cho em hỏi: giá trị "nhạy cảm" lưu trên memory của trình duyệt là như thế nào ạ ?&nbsp;
+		</blockquote>
+
+Tạm thời hình dung thế này. Trên server, cứ mỗi lần một user đăng nhập, nó dành một mảng bộ nhớ để chứa trọn bộ các thông tin thuộc về user này, mỗi mảng được phân biệt bởi session id. Session id này do chính web application cung cấp và phải được xác thực mỗi khi client gởi request đến server để tránh tình trạng dùng session id không giá trị.
+
+Web server
+| session id 1 | session id 2 | session id 3| ... | session id n |
+
+Trên máy client, giá trị session id này được lưu trong cookie (thường gặp) hoặc phương pháp URLrewrite (ứng dụng nhiều trên jsp / servlet). Nếu dùng persistent cookie (cookie lưu trong đĩa của client và có giá trị dài hạn) thì cookie phải được cập nhật để cập nhật giá trị session id lần kế tiếp đăng nhập. Nếu dùng transient cookie (cookie không lưu trên đĩa mà chỉ có giá trị đến khi nào trình duyệt bị tắt bỏ, cookie này lưu trên memory của trình duyệt), cookie này sẽ được tạo ra cho mỗi xuất truy cập.
+
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/posts/downloadAttach/341.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nếu session chấm dứt, web application hủy và xóa trọn bộ thông tin thuộc về session đó trên memory của server. Bởi thế, nếu ai dùng giá trị session id cũ và truy cập đến server thì sẽ được cấp một session id hoàn toàn mới vì session id cũ hiện không có trên server.
+
+Giả sử một moderator vào trang abc.php chẳng hạn. Lúc đó, 
+
+- server sẽ kiểm tra và chấp nhận moderator đó hiện đang ở trong một session có giá trị (bằng cách kiểm tra giá trị cookie sessionid trong cookie khi trình duyệt gởi request đi). Trong khi xây dựng trang abc.php để trả lời cho request ở trên, server sẽ tạo một <b>token</b> có giá trị nào đó rồi kèm theo và gởi ngược lại cho client.
+
+- client nhận được trang abc.php và nó hiển thị trên trình duyệt. Trong nội dung trang này có chứa giá trị token (ở dạng giá trị biến trên query string nếu dùng GET, ở dạng hidden fields nếu dùng POST như đã dẫn giải ở bài trước).
+
+- trang abc.php này có đường dẫn để thực thi việc gì đó và việc thực thi có xảy ra hay không thì đã dẫn giải trước đây.
+
+Các bước trên có thể dùng GET hay POST giữa client và server. GET và POST chỉ là phương pháp chuyển gởi thông tin. Trong giai đoạn này, ngoài các thông tin tĩnh (như pic, css, js...) được ấn định là "tĩnh" theo sự trả lời của server sẽ có thể được cache (cache trên proxy, cache ngay chính trên trình duyệt), các thông tin "động" khác như chính trang abc.php và các giá trị thuộc trang này hoàn toàn nằm trên bộ nhớ của trình duyệt. Nếu tắt trình duyệt ngay lúc này và vào thư mục chứa cache của trình duyệt thì chỉ thấy dăm ba bức hình và vài cái css, js (nếu có dùng) mà thôi. Trang abc.php sẽ không có trong thư mục chứa cache này. Đây chính là cái gọi là <i>"lưu trên memory của trình duyệt"</i>.
+
+Hy vọng đã phần nào giải thích rõ hơn.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45387</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#45387</link>
+				<pubDate><![CDATA[Thu, 8 Mar 2007 11:16:45]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Giả sử một moderator vào trang abc.php chẳng hạn. Lúc đó, 
+
+- server sẽ kiểm tra và chấp nhận moderator đó hiện đang ở trong một session có giá trị (bằng cách kiểm tra giá trị cookie sessionid trong cookie khi trình duyệt gởi request đi). Trong khi xây dựng trang abc.php để trả lời cho request ở trên, server sẽ tạo một <b>token</b> có giá trị nào đó rồi kèm theo và gởi ngược lại cho client.
+
+- client nhận được trang abc.php và nó hiển thị trên trình duyệt. Trong nội dung trang này có chứa giá trị token (ở dạng giá trị biến trên query string nếu dùng GET, ở dạng hidden fields nếu dùng POST như đã dẫn giải ở bài trước).
+
+- trang abc.php này có đường dẫn để thực thi việc gì đó và việc thực thi có xảy ra hay không thì đã dẫn giải trước đây.
+
+Các bước trên có thể dùng GET hay POST giữa client và server. GET và POST chỉ là phương pháp chuyển gởi thông tin. Trong giai đoạn này, ngoài các thông tin tĩnh (như pic, css, js...) được ấn định là "tĩnh" theo sự trả lời của server sẽ có thể được cache (cache trên proxy, cache ngay chính trên trình duyệt), các thông tin "động" khác như chính trang abc.php và các giá trị thuộc trang này hoàn toàn nằm trên bộ nhớ của trình duyệt. Nếu tắt trình duyệt ngay lúc này và vào thư mục chứa cache của trình duyệt thì chỉ thấy dăm ba bức hình và vài cái css, js (nếu có dùng) mà thôi. Trang abc.php sẽ không có trong thư mục chứa cache này. Đây chính là cái gọi là <i>"lưu trên memory của trình duyệt"</i>.
+
+Thân mến.&nbsp;
+		</blockquote>
+<i>Xin lỗi vì đã đào bài này lên, nhưng đây đúng là vấn đề em đang thắc mắc, mong các anh giúp đỡ  :) </i>
+Theo như anh conmale thì server sẽ tạo token và gửi trả lại client dưới dạng Hidden fields. Nhưng liệu token này có thể bị đọc bởi một trang thứ 3 như sau không?
+(Giả sử người dùng bị lừa vào một trang nào đó, và dính Javascript thực hiện như sau)
+- Dùng AJAX gửi một yêu cầu đến trang abc.php. Khi đó (như trên), server sẽ trả về mã HTML, trong đó có chứa token nằm trong Hidden Field.
+- Dùng Javascript lấy token trong mớ HTML này, rồi cứ thế dùng AJAX gửi các yêu cầu POST đến trang abc.php để xoá các thứ.
+Liệu kịch bản này có xảy ra không ạ ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#236763</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#236763</link>
+				<pubDate><![CDATA[Fri, 6 May 2011 07:59:38]]> GMT</pubDate>
+				<author><![CDATA[ dazzlingvit]]></author>
+			</item>
+			<item>
+				<title>Thảo luận: cross site request forgery (CSRF hay XSRF)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dazzlingvit wrote:</cite><br>
+		<blockquote>
+Theo như anh conmale thì server sẽ tạo token và gửi trả lại client dưới dạng Hidden fields. Nhưng liệu token này có thể bị đọc bởi một trang thứ 3 như sau không? 
+(Giả sử người dùng bị lừa vào một trang nào đó, và dính Javascript thực hiện như sau) 
+- Dùng AJAX gửi một yêu cầu đến trang abc.php. Khi đó (như trên), server sẽ trả về mã HTML, trong đó có chứa token nằm trong Hidden Field. 
+- Dùng Javascript lấy token trong mớ HTML này, rồi cứ thế dùng AJAX gửi các yêu cầu POST đến trang abc.php để xoá các thứ. 
+Liệu kịch bản này có xảy ra không ạ ?
+&nbsp;
+		</blockquote>
+
+Có thể xảy ra nếu như <b>trang thứ ba</b> mà bạn nói có cùng origin [1] với abc.php. Nói cách khác, nếu mà đã bị XSS rồi thì kẻ tấn công có thể dễ dàng vượt qua các cơ chế phòng thủ CSRF.
+
+[1]<span class="link"> http://code.google.com/p/browsersec/wiki/Part2#Same-origin_policy.</span> 
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/6720.hva#236770</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/6720.hva#236770</link>
+				<pubDate><![CDATA[Fri, 6 May 2011 11:30:26]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+	</channel>
+</rss>

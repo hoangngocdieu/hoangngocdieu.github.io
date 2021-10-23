@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Sưu tầm: các thuật toán sắp xếp thường dùng (bổ sung tiếp)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Sưu tầm: các thuật toán sắp xếp thường dùng (bổ sung tiếp)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Sưu tầm: các thuật toán sắp xếp thường dùng (bổ sung tiếp)</title>
+				<description><![CDATA[ <font color='yellow'>3. thuật toán sắp xếp cơ số (exchange radix sort):</font>
+
+ý tưởng của thuật toán này cũng tương tự như quick sort. trong trường hợp đặc biệt mảng cần sắp xếp là các số nguyên, ta biểu diễn các phần tử của mảng ở dạng nhị phân rồi tiến hành chia mảng thành 2 phần dựa trên các bít nhị phân của nó: phần đầu gồm những số có bit cao nhất băng 0, phần còn lại có bít cao nhất bằng 1 (ta gọi bit này là bit z). dễ nhận thấy rằng tất cả các phần tử của phần đầu sẽ nhỏ hơn các phần tử ở phần cuối.
+sau đó quá trình lại được tiếp tục (đệ quy) bằng cách sắp xếp tương tự đối với từng phần, tất nhiên bit để căn cứ so sánh lúc này sẽ là bit z-1 (z là bit cao nhất). cứ như vậy đến khi sắp xếp căn cứ vào bit 0 thì quá trình sắp xếp hoàn tất và ta có mảng được sắp xếp.
+
+chương trình mô phỏng giải thuật trên như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void *radixsort&#40;int l, int r, int b&#41;{ /* sắp xếp đoạn &#91;l,r&#93; dựa theo bit b */
+  int i, j;
+  if &#40;l &gt;= r&#41; return;
+  i = l; j = r;
+  do {
+    while &#40;&#40;&#40;i &lt; j&#41; && &#40;&#40;a&#91;i&#93;&gt;&gt;b&#41; & 1&#41;&#41; == 0&#41; ++i; /* tìm phần tử có bit b = 1 từ đầu đoạn */
+    while &#40;&#40;&#40;i &lt; j&#41; && &#40;&#40;a&#91;j&#93;&gt;&gt;b&#41; & 1&#41;&#41; == 1&#41; --j;  /* tìm phần tử có bit b = 0 từ cuối đoạn */
+    temp = a&#91;i&#93;; /* đổi chỗ chúng */
+    a&#91;i&#93; = a&#91;j&#93;;
+    a&#91;j&#93; = temp;
+  } while &#40;i != j&#41;; /* đến khi phân đoạn xong */
+  if &#40;&#40;&#40;a&#91;j&#93; &gt;&gt; b&#41; & 1&#41; == 0&#41; ++j; /* j là điểm bắt đầu đoạn có bit b = 1 */
+  if &#40;b &gt; 0&#41; { /* chưa xét tới bit cuối cùng */
+    radixsort&#40;l, j-1, b-1&#41;;
+    radixsort&#40;j, r, b-1&#41;;
+  }</pre>
+		</div>
+và trong chương trình muốn sắp xếp chỉ cần gọi radixsort(1, n, z) với n là số phần tử và z là số bit nhiều nhất của các phần tử.
+
+có thể nhận thấy là code của thuật toán này có nhiều nét tương đồng với code của thuật toán quicksort.
+
+thuật toán trên có thể mở rộng cho sắp xếp theo cơ số r bất kỳ, chứ không chỉ riêng cơ số 2. khi đó các phần tử sẽ được biểu diễn trong hệ cơ số r, và việc so sánh sẽ căn cứ theo các chữ số (tình từ cao xuống thấp) trong hệ cơ số r đó. tất nhiên lúc đó chúng ta sẽ không phân ra làm 2 đoạn như trên, mà sẽ có tất cả r đoạn: đoạn đầu tiên chứa chữ số 0 ở đầu, đoạn tiếp chứa chữ số 1 ở đầu, ..., đoạn cuối cùng chứa chữ số r-1.
+
+thuật toán trên làm việc rất tốt với các hệ thống (ngôn ngữ lập trình) sử dụng các thao tác cấp thấp ở mức độ bit. khi đó thuật toán này nhanh hơn hẳn quicksort. tuy nhiên hiện nay hầu hết các hệ thống đều thao tác đến mức độ byte, word nên cũng hạn chế đi tốc độ của thuật toán này.
+
+độ phức tạp của thuật toán này là O(n.min(z,log2(n))), trong đó n là số phần tử cần được sắp xếp và z là số bit cần được so sánh.
+
+<font color='yellow'>4. thuật toán sắp xếp cơ số trực tiếp (straight radix sort):</font>
+
+ý tưởng của thuật toán này cũng gần giống như thuật toán sắp xếp cơ số ở trên.
+giả sử ta có 1 mảng các số nguyên dương. đầu tiên ta sẽ sắp xếp các phần tử căn cứ theo chữ số đơn vị bằng 1 thuật toán sắp xếp ổn định. sau đó, ta lại sắp xếp tiếp các phần tử theo chữ số hàng chục cũng bằng 1 thuật toán sắp xếp ổn định (thuật toán sắp xếp ổn định là gì, chút nữa mình giải thích kỹ hơn). vì là thuật toán sắp xếp ổn định nên nêu 2 phần tử có chữ số hàng chục giống nhau thì phần tử nào có chữ số hàng đơn vị nhỏ hơn sẽ đứng trước.
+quá trình lại được tiếp tục bằng cách sắp xếp theo hàng trăm, nghìn, ... đến khi kết thúc. do tính ổn định của thuật toán sắp xếp tại từng bước nên đảm bảo kết quả cuối cùng của ta sẽ thu được mảng sắp xếp tăng dần.
+
+thuật toán này có thể mở rộng ra bằng cách ở mỗi bước ta không lấy 1 chữ số ra để so sánh mà lấy 1 cụm chữ số để tiết kiệm thời gian. 1 cụm chữ số có thể bao gồm 2, 3, ... chữ số liên tiếp nhau, để cho tiện ta vẫn gọi cụm chữ số đó là 1 &quot;chữ số&quot;. khi đó tại mỗi bước, thời gian sắp xếp sẽ giảm đi từ 2, 3 ... lần do không phải lặp lại.
+
+thông thường, để sắp xếp các phần tử theo 1 chữ số thì thuật toán tốt nhất mà ta nên dùng ở đây là thuật toán đếm phân phối. lý do là vì các chữ số nằm trong khoảng nào ta đã biết, và việc đếm trên chúng hoàn toàn dễ dàng.
+
+khi viết chương trình phải chú ý các điểm sau:
+- phải thiết kế các cụm &quot;chữ số&quot; thích hợp sao cho việc tách các &quot;chữ số&quot; đó ra từ 1 phần tử của mảng là đơn giản.
+- sử dụng ít lần nhất phép đếm phân phối.
+- phép đếm phân phối phải được thực hiện nhanh.
+
+bây giờ chúng ta nói đến tính ổn định của thuật toán sắp xếp:
+
+<font color='yellow'>tính ổn định của thuật toán sắp xếp:</font>
+
+một thuật toán được gọi là ổn định nếu nó bảo toàn thứ tự ban đầu của các phần tử bằng nhau trong mảng.
+điều này có nghĩa là nếu trong mảng có 2 phần tử a[i] và a[j], a[i] đứng trước a[j].
+nếu 2 phần tử này có giá trị bằng nhau a[i] = a[j] thì sau khi sắp xếp, 1 thuật toán ổn định sẽ đặt a[i] lên trước a[j] để đảm bảo thứ tự ban đầu của chúng trong mảng.
+
+điều này là không cần thiết lắm nếu chúng ta chỉ tiến hành sắp xếp đối với mảng 1 chiều các số thực. nhưng vấn đế sẽ nảy sinh khi sắp xếp những mảng mà mỗi phần tử của nó là 1 cấu trúc, trong đó chúng ta cần phải sắp xếp dựa theo 1 trường khoá nào đó. ví dụ như có 1 danh sách lớp, và cần phải sắp xếp danh sách này theo trình tự tăng dần của ngày sinh chẳng hạn. khi đó nếu 2 người cùng ngày sinh thì sao? vấn đề này được giải quyết nhờ vào tính ổn định trong 1 thuật toán, tức là nếu 2 người cùng ngày sinh thì thứ tự trong danh sách ban đầu sẽ được bảo toàn.
+
+trong những thuật toán đã trình bày ở trên thì thuật toán sắp xếp nổi bọt, chọn, đếm phân phối là những thuật toán ổn định, còn những thuật toán sắp xếp khác (nói chung là đòi hỏi phải đổi giá trị của 2 phần tử bất kỳ trong mảng) là không ổn định.
+
+trên nguyên tắc có thể biến bất cứ thuật toán không ổn định nào thành thuật toán ổn định bằng phương pháp sau:
+giả sử ta cần sắp xếp 1 mảng, ta sẽ thêm cho mỗi phần tử 1 khoá index là thứ tự ban đầu của chúng trong mảng cũ. trong thuật toán sắp xếp được áp dụng, khi cần đổi chỗ 2 phần tử giống nhau A và B thì ta sẽ so sánh khoá index của chúng, phần tử nào có khoá nhỏ hơn thì đứng trước.
+
+chúc các bạn áp dụng được những thuật toán này theo ý muốn.
+(tham khảo tài liệu Bài giảng chuyên đề của Lê Minh Hoàng)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3824.hva#22342</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3824.hva#22342</link>
+				<pubDate><![CDATA[Sun, 10 Sep 2006 19:48:24]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+	</channel>
+</rss>

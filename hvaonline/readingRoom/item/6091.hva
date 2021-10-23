@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Làm mail server với Postfix - Phần 1  <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/1294.hva#6091" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: James Nguyen  - Translator:  - Entry Date: 24/02/2009 15:42:18" title="Author: James Nguyen  - Translator:  - Entry Date: 24/02/2009 15:42:18"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody">Nguồn :<span class="link"> http://james.dyndns.ws/index.php</span><br/> Tác giả : James Nguyen<br/> <br/> <b>Nội dung</b><br/> <br/>    1. Giới thiệu<br/>    2. Cài đặt, cấu hình cơ bản<br/>    3. Mở rộng, nâng cao<br/>    4. Tham khảo<br/> <br/> <b>Giới thiệu</b><br/> <br/> Postfix là một MTA (Mail Transport Agent), được viết bởi Wietse Venema khi ông đang làm việc ở trung tâm nghiên cứu T. J. Watson của IBM. Đặc điểm của Postfix: dễ quản lý, nhanh, an toàn. Chỉ cần một server với hardware thông thường, Postfix có thể chuyển giao hàng triệu email một ngày (đọc ở đâu quên rồi, sẽ tìm URL bổ sung sau).<br/> Bài viết này giới thiệu cách dùng Postfix để dựng một mail server trong Linux.<br/> <br/> Bắt đầu viết: tháng 5 năm 2003.<br/> Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.<br/> <br/> <b>Cài đặt và cấu hình</b><br/> <br/> Nhiều distro đóng gói kèm theo Postfix. Nói chung việc cài đặt Postfix khá đơn giản và nhanh chóng. Ở đây chỉ giới thiệu cách cài đặt từ gói RPM.<br/> <br/> 	// tải postfix RPM từ<span class="link"> http://rpmfind.net,</span> sau đó cài đặt bằng lệnh<br/> 	<b># rpm -ivh postfix-***.i386.rpm</b><br/> <br/> 	// trong Fedora, có thể cài đặt bằng yum<br/> 	<b># yum install postfix</b><br/> <br/> 	// cách cài đặt trong Trustix<br/> 	<b># swup --install postfix</b><br/> <br/> Những file cấu hình của Postfix nằm trong thư mục <b>/etc/postfix</b>. Để cấu hình một mail server cơ bản, chỉ cần vài thay đổi nhỏ trong những file sau đây<br/> <br/> 	<b>/etc/postfix/aliases</b>: thông tin về user<br/> 	<b>/etc/postfix/main.cf</b>: cấu hình cơ bản<br/> <br/> Trước hết, chỉ định người nhận mail cho account root. Tìm trong file aliases dòng bắt đầu bằng "root" và chuyển mail đến người nhận thích hợp (giả sử chuyển cho james)<br/> <br/> 	// chuyển tất cả mail đến root cho james<br/> 	<b>root:	james</b><br/> <br/> 	// update thông tin của aliases database, gõ lệnh<br/> 	<b># /usr/bin/newaliases</b><br/> <br/> Tiếp đến, ghi những thông tin về mail server vào file main.cf<br/> <br/> 	// tên máy chủ, thay đổi cho thích hợp<br/> 	<b>myhostname = mail.domain.name</b><br/> <br/> 	// nếu máy chủ gửi nhận mail cho cả domain<br/> 	<b>mydomain = domain.name</b><br/> <br/> 	// nhận mail đến interface nào?<br/> 	<b>inet_interfaces = all</b><br/> <br/> 	// chỉ nhận mail đến domain của tôi<br/> 	<b>mydestination = $myhostname, localhost.$mydomain, $mydomain</b><br/> <br/> 	// địa chỉ mạng riêng<br/> 	<b>mynetworks = 127.0.0.0, 172.16.0.0/12</b><br/> <br/> 	// máy này không phải là OPEN RELAY SERVER!!!<br/> 	<b>relay_domains = $mydestination	</b><br/> <br/> Đến lúc này, Postfix đã sẵn sàng hoạt động một cách an toàn. Tiếp theo hãy chuẩn bị khởi động Postfix với những thao tác sau đây.<br/> <br/> Kiểm tra xem máy chủ có MTA nào khác đang hoạt động hay không, nếu có hãy tắt MTA đó.<br/> <br/> <b>Khởi động Postfix</b><br/> <br/> 	<b># /etc/init.d/postfix start</b><br/> <br/> 	// để postfix tự khởi động mỗi lần bật máy<br/> 	<b># chkconfig --level 3 postfix on</b><br/> <br/> Bây giờ đến lúc kiểm tra lại<br/> <br/> 	<b>$ telnet localhost 25</b><br/> 	<blockquote>// sẽ thấy những dòng sau đây<br/> 	Trying 127.0.0.1...<br/> 	Connected to localhost.<br/> 	Escape character is '^]'.<br/> 	220 mail.domain.name ESMTP Postfix<br/> <br/> 	// Xong rồi, logout thôi, gõ<br/> 	quit<br/> <br/> 	// sẽ thấy<br/> 	221 Bye<br/> 	Connection closed by foreign host.&nbsp;<br/> 		</blockquote><br/> <br/> <b>Gửi thử một cái mail</b><br/> <br/> 	// tạo một file testmail.txt với nội dung tùy ý<br/> 	<b>$ touch testmail.txt<br/> 	$ vi testmail.txt, gõ vào "Hello, World"</b><br/> <br/> 	// dùng chương trình mailx gửi mail cho root<br/> 	// chú ý: mail này sẽ được chuyển đến user james (xem phần aliases)<br/> 	<b>$ mail root &lt; testmail.txt</b><br/> <br/> 	// xong kiểm tra log (file /var/log/maillog)<br/> 	// và kiểm tra hộp mail của james<br/> <br/> <b>Chú ý</b>: theo mặc định, Postfix chuyển mail đến <b>Mailbox</b>. Mailbox là kiểu lưu giữ tất cả các mail trong một file (thường ở thư mục <b>/var/spool/mail</b>). Khác với Mailbox, Maildir là kiểu lưu giữ mỗi mail thành một file riêng (tất cả đặt trong thư mục /home/user/Maildir). Bạn cần biết đặc điểm (ưu, khuyết điểm) của mỗi cách và chọn cho mình cách thích hợp. Sẽ có bài viết về vấn đề này.<br/> <br/> Cấu hình để Postfix chuyển mail đến Maildir: tìm dòng home_mailbox trong file main.cf, sửa lại như sau<br/> <br/> 	# không dùng kiểu mặc định<br/> 	# home_mailbox = Mailbox<br/> 	# thích kiểu Maildir hơn<br/> 	<b>home_mailbox = Maildir/</b><br/> <br/> Sau đó tạo hộp thư<br/> <br/> 	// chỉ tạo hộp thư cho user james<br/> 	<b>$ mkdir $HOME/Maildir<br/> 	$ mkdir $HOME/Maildir/cur<br/> 	$ mkdir $HOME/Maildir/new<br/> 	$ mkdir $HOME/Maildir/tmp<br/> 	$ chmod -R 700 $HOME/Maildir</b><br/> <br/> 	// tạo hộp thư cho tất cả user: ghi vào /etc/skel<br/> 	<b>$ su -<br/> 	# mkdir /etc/skel/Maildir<br/> 	# mkdir /etc/skel/Maildir/cur<br/> 	# mkdir /etc/skel/Maildir/new<br/> 	# mkdir /etc/skel/Maildir/tmp<br/> 	# chmod -R 700 /etc/skel/Maildir</b><br/> <br/> Đến đây có thể dùng Postfix được rồi. Tuy nhiên, để có được một mail server như ý muốn, hãy còn rất nhiều công việc phía trước. Xem thêm phần "Mở rộng và thông tin thêm".<br/> <br/> <b>Mở rộng, thông tin thêm</b><br/> <br/>    1. Cho phép gửi mail từ những máy không thuộc relay_domains: SMTP AUTH, POP BEFORE SMTP<br/>    2. Nên dùng Mailbox hay Maildir?<br/>      <span class="link"> http://www.courier-mta.org/mbox-vs-maildir/</span><br/>    3. Ngăn chặn, lọc thư rác (spam)<br/>    4. Quét virus kèm theo mail<br/>    5. Mã hóa: giải pháp TLS (Transport Layer Security)<br/>    6. Làm mailing list<br/>    7. Những thay đổi khác: tất cả những cấu hình của Postfix và giá trị mặc định (default) được ghi trong file /etc/postfix/main.cf.default. Tùy theo yêu cầu trong mỗi trường hợp, hãy thay đổi những giá trị mặc định đó.<br/>       Chú ý: mọi thay đổi phải được ghi vào file main.cf, không sửa trực tiếp lên file main.cf.default!<br/> <br/>  <blockquote>         * gửi toàn bộ lỗi, cảnh báo cho postmaster<br/>             notify_classes = delay, policy, protocol, resource, software<br/>           * yêu cầu client phải gửi lệnh HELO (EHLO)<br/>             smtpd_helo_required = yes<br/>             smtpd_helo_restrictions = permit_mynetworks, reject_invalid_hostname<br/>           * không muốn bị scan bằng VRFY<br/>             disable_vrfy_command = yes<br/>           * giới hạn kích cỡ mỗi e-mail là 2 MiB<br/>             message_size_limit = 2048000<br/>           * muốn tất cả địa chỉ e-mail đều được chuyển thành dạng @domain.name trước khi gửi đi<br/>             masquerade_domains = domain.name&nbsp;<br/> 		</blockquote><br/> <br/> <b>Tham khảo</b><br/> <br/>    1.<span class="link"> http://www.postfix.org</span><br/>    2. /usr/share/doc/postfix-version/*<br/>    3. hỏi Google <img src="/hvaonline/images/smilies/b5e9b4f86ce43ca65bd79c894c4a924c.gif" border="0" alt="smilie" align="absbottom"><br/> <br/> <br/> <br/> -------------------<br/> <br/> <span class="link"> http://vnhacker.org/hvaonline/posts/list/2550.hva</span>  <br/> <span class="link"> http://vnhacker.org/hvaonline/posts/list/2551.hva</span>  <br/> <span class="link"> http://vnhacker.org/hvaonline/posts/list/2552.hva</span>  <br/> <span class="link"> http://vnhacker.org/hvaonline/posts/list/2553.hva</span>  <br/> <span class="link"> http://vnhacker.org/hvaonline/posts/list/2554.hva</span>  </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/6091.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13868.hva">Làm mail server với Postfix - Phần 6</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13867.hva">Làm mail server với Postfix - Phần 5</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13866.hva">Làm mail server với Postfix - Phần 4</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13864.hva">Làm mail server với Postfix - Phần 3</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/13863.hva">Làm mail server với Postfix - Phần 2</a></div>
+									<div class="gen"><b>Làm mail server với Postfix - Phần 1 </b></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/1294.hva#6091" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

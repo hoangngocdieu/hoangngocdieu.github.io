@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cho mình hỏi về vấn đề Load Balancer 2 web với Apache"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cho mình hỏi về vấn đề Load Balancer 2 web với Apache"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ Xin chào, mình có vấn đề về Load Balancer Apache mod_jk, mong mọi người giúp đỡ.
+Mình có setup 2 web Tomcat, sử dụng Apache mod_jk để load balancer, tuy nhiên mình gặp vấn đề về thời gian chuyển qua lại giữa 2 server.
+
+File cấu hình như hình dưới:
+
+worker.list=worker1,worker2,loadbalancer
+worker.worker1.port=8009
+worker.worker1.host=192.168.2.60
+worker.worker1.type=ajp13
+worker.worker1.lbfactor=1
+
+worker.worker2.port=8209
+worker.worker2.host=192.168.2.61
+worker.worker2.type=ajp13
+worker.worker2.lbfactor=1
+
+#setup the load-balancer
+worker.loadbalancer.type=lb
+worker.loadbalancer.balance_workers=worker1,worker2
+worker.loadbalancer.sticky_session=True
+#worker.loadbalancer.sticky_session_force=True
+
+
+Ở đây mình chưa rõ nó Lb theo kiểu gì, nhưng mình nghĩ là theo kiểu round robin vì phiên làm việc của app mình nó cứ chạy qua chạy lại giữa 2 server, dữ liệu sync không kịp làm cho app bị lỗi.
+
+Nên cho mình hỏi làm thế nào để cố định 1 phiên làm việc trên 1 server thôi, hoặc tăng thời gian chuyển qua chuyển lại giữa 2 server ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278993</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278993</link>
+				<pubDate><![CDATA[Tue, 12 Nov 2013 02:47:51]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ 1. Nó không làm việc theo roundrobin . Trừ khi bạn sử dụng DNS để làm việc này. Trong trường hợp của bạn, bạn đang sử dụng mod_proxy để làm việc này. 
+
+- Dễ nhận thấy là 2 instance Tomcat đang chạy ở port 8009 & 8209
+- Người dùng truy cập vào Port 80 sau đó được Forward (Forward Proxy) vào 2 port trong của Tomcat. Ngược lại Tomcat coi Apache như 1 Reverse Proxy để communicate với client bên ngoài thông qua Port 80
+
+2. Bạn thử truy cập domain/balancer-manager xem có ra cái page nào không ? 
+Nếu ra thì đó là page quản lí để bạn có thể điều chỉnh việc cách làm việc  cho từng node. 
+
+Về cách chia thời gian và quản lí phiên làm việc thông qua mod_proxy bạn tham khảo ở đây
+
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+
+Chú í phần router & loadfactor 
+
+Cheers]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278994</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278994</link>
+				<pubDate><![CDATA[Tue, 12 Nov 2013 06:13:17]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">http://tomcat.apache.org/connectors-doc/reference/workers.html wrote:</cite><br>
+		<blockquote>
+If you want to use session stickiness, you must set different jvmRoute attributes in the Engine element in Tomcat's server.xml. Furthermore the names of the workers which are managed by the balancer have to be equal to the jvmRoute of the Tomcat instance they connect with.
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278995</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278995</link>
+				<pubDate><![CDATA[Tue, 12 Nov 2013 08:52:18]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">http://tomcat.apache.org/connectors-doc/reference/workers.html wrote:</cite><br>
+		<blockquote>
+If you want to use session stickiness, you must set different jvmRoute attributes in the Engine element in Tomcat's server.xml. Furthermore the names of the workers which are managed by the balancer have to be equal to the jvmRoute of the Tomcat instance they connect with.
+&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+
+Dạ có anh, em có khai báo như sau
+&lt;Engine name="Catalina" defaultHost="localhost" jvmRoute="worker1"&gt;
+với worker1 trên server 1 và worker2 trên server2.
+
+Hệ thống load balancer bình thường, chỉ là phiên làm việc nó cứ tự nhảy qua nhảy lại giữa 2 server (test trên ứng dụng mobile).
+
+Em thử truy cập domain/balancer-manager nhưng không hiện ra gì hết. Tài liệu của anh Ikut3 em vẫn chưa làm được, mong anh chỉ thêm ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278999</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#278999</link>
+				<pubDate><![CDATA[Wed, 13 Nov 2013 01:57:55]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ 1. Bạn dùng cookies view trên browser để xem cái JSESSIONID của bạn có đính kèm worker1 hoặc worker2 không?
+2. Bạn có load module mod_proxy_ajp không?
+3. Balancer-manager chỉ chạy được nếu apache bạn load module mod_status và mod_proxy, mod_proxy_balancer?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279008</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279008</link>
+				<pubDate><![CDATA[Thu, 14 Nov 2013 21:17:41]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>1. Bạn dùng cookies view trên browser để xem cái JSESSIONID của bạn có đính kèm worker1 hoặc worker2 không?
+2. Bạn có load module mod_proxy_ajp không?
+3. Balancer-manager chỉ chạy được nếu apache bạn load module mod_status và mod_proxy, mod_proxy_balancer?
+&nbsp;
+		</blockquote>
+
+Thank bạn đã reply:
+1. Mình chắc chắn trên web vẫn giúp session trên 1 server, vấn đề ở đây là trên App (app trên Iphone + Android) không biết nó có giữ session hay không mà nó chạy quanh quanh.
+
+2. Mình không load module, trong /etc/apache2/mods-enabled/jk.load, mình chỉ load LoadModule jk_module /usr/lib/apache2/modules/mod_jk.so
+
+3. Mình không sử dụng mod_proxy_balancer. Mình đơn giản chỉ khai báo worker trong server.xml, xong config trong file workers.properties như sau
+
+worker.list=worker1,worker2,loadbalancer
+worker.worker1.port=8009
+worker.worker1.host=192.168.2.53
+worker.worker1.type=ajp13
+worker.worker1.lbfactor=1
+
+worker.worker2.port=8009
+worker.worker2.host=192.168.2.50
+worker.worker2.type=ajp13
+worker.worker2.lbfactor=1
+
+#setup the load-balancer
+worker.loadbalancer.type=lb
+worker.loadbalancer.balance_workers=worker1,worker2
+worker.loadbalancer.sticky_session=False
+#worker.loadbalancer.sticky_session_force=True
+
+
+Chỉ đơn giản vậy thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279009</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279009</link>
+				<pubDate><![CDATA[Thu, 14 Nov 2013 21:49:03]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ @ngtrongtri:
+
+Bạn không sử dụng sticky session (worker.loadbalancer.sticky_session=False) vì thế nên request đến mod_jk sẽ được phân tải về các tomcat worker &quot;ngẫu nhiên&quot;
+
+Bạn sử dụng sticky session thì request/response từ worker nào sẽ được gửi về lại worker đó -&gt; không bị tình trạng mất session hoặc không đồng bộ.
+
+Chỉ khi nào mở session mới thì mod_jk mới phân tài về worker &quot;ngẫu nhiên&quot;.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279026</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45293.hva#279026</link>
+				<pubDate><![CDATA[Sun, 17 Nov 2013 21:58:35]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

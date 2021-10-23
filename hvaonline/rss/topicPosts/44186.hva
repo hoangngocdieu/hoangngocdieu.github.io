@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Restart một dịch vụ trên Linux với php code"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Restart một dịch vụ trên Linux với php code"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">emdinoiay wrote:</cite><br>
+		<blockquote>
+Em có thử một số hàm như sau nhưng không được :
+<font color='red'>shell_exec(&quot;service mysqld stop&quot;);
+exec(&quot;service mysqld stop&quot;);
+system(&quot;service mysqld stop&quot;);</font>
+&nbsp;
+		</blockquote>
+Bạn thiếu `sudo` rồi. PHP chạy trên một web server nào đó. Web server này chạy dưới quyền của user apache, nginx, ... Đoạn code trên của bạn sẽ tương đương với:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>su - apache -s /bin/bash -c '/sbin/service mysqld stop'</pre>
+		</div>
+Thử chạy từ command line xem, nó sẽ ý kiến ngay.
+
+Cách đơn giản là thêm `sudo` vào và nhớ sửa lại `/etc/sudoers` để cho phép apache user restart những dịch vụ đó:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apache  ALL=&#40;ALL:ALL&#41; NOPASSWD:/etc/init.d/mysqld</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">emdinoiay wrote:</cite><br>
+		<blockquote>Theo em được biết các Web control cho linux chủ yếu dựa trên php, ví dụ như Kloxo, plesk, Webuzo (mới)...
+Thế nên em muốn hỏi làm sao họ viết được control restart (php-fpm, nginx, apache...) bằng php và việc này hoàn toàn thao tác trên web mà không dùng quyền root trong terminal (php code.php).
+&nbsp;
+		</blockquote>
+Thú thật là mình chưa dùng mấy cái đó bao giờ. Hôm qua rảnh ngồi vọc Vagrant rồi cài Kloxo lên xem thử. 
+
+OK. Cài xong, chỉnh sang bridged network, start lên, ssh vào.
+
+Đầu tiên, kiểm tra xem process đang listen trên port 7778 chạy dưới quyền của user nào:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># fuser -v 7778/tcp
+                     USER        PID ACCESS COMMAND
+7778/tcp:            lxlabs    14188 F.... kloxo.httpd</pre>
+		</div>
+`lxlabs` user có trong `/etc/sudoers` hay thuộc `wheel` group không nhỉ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep lxlabs /etc/sudoers 
+# groups lxlabs
+lxlabs : lxlabs</pre>
+		</div>
+Giờ `strace` thử theo PID này xem nó làm gì khi mình thao tác một lệnh trên web interface:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># strace -e trace=open,stat -p 14188</pre>
+		</div>
+Sau đó, trên giao diện web, vào Server --&gt; Command Center, gõ `id` rồi Execute bạn được Output là:
+<blockquote>uid=0(root) gid=0(root)&nbsp;
+		</blockquote>
+Quay lại Terminal:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Process 14188 attached - interrupt to quit
+stat&#40;&quot;/usr/local/lxlabs/kloxo/httpdocs/display.php&quot;, {st_mode=S_IFREG|0644, st_size=464, ...}&#41; = 0
+open&#40;&quot;/usr/local/lxlabs/kloxo/httpdocs/display.php&quot;, O_RDONLY&#41; = 9
+stat&#40;&quot;/usr/local/lxlabs/kloxo/file/phpsuexec.sh&quot;, {st_mode=S_IFREG|0755, st_size=156, ...}&#41; = 0
+stat&#40;&quot;/etc/localtime&quot;, {st_mode=S_IFREG|0644, st_size=118, ...}&#41; = 0
+--- SIGCHLD &#40;Child exited&#41; @ 0 &#40;0&#41; ---
+stat&#40;&quot;/etc/localtime&quot;, {st_mode=S_IFREG|0644, st_size=118, ...}&#41; = 0
+Process 14188 detached</pre>
+		</div>
+
+À, nó gọi đến `/usr/local/lxlabs/kloxo/file/phpsuexec.sh`. Mở file này ra xem có gì:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+export MUID=0
+export GID=0
+export TARGET=/usr/local/lxlabs/ext/php/bin/php_cgi
+export NON_RESIDENT=1
+exec /usr/local/lxlabs/kloxo/cexe/lxphpsu $*</pre>
+		</div>
+
+Kiểm tra permission của `/usr/local/lxlabs/kloxo/cexe/lxphpsu` xem nào:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ls -l /usr/local/lxlabs/kloxo/cexe/lxphpsu
+-rwsr-sr-x 1 root root 8068 Mar  4  2012 /usr/local/lxlabs/kloxo/cexe/lxphpsu</pre>
+		</div>
+2 chữ &quot;s&quot; ở đây có nghĩa gì nhỉ ;)?
+<p></p>
+		<cite class="blockquote">emdinoiay wrote:</cite><br>
+		<blockquote>Anh nào giải thích hộ em hoặc có tài liệu nào liên quan thì gúp em nhé.&nbsp;
+		</blockquote>
+Google: Kloxo security model.
+
+PS: không hiểu tại sao topic kia biến mất:<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/44177.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44186.hva#272989</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44186.hva#272989</link>
+				<pubDate><![CDATA[Thu, 24 Jan 2013 00:18:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ Lâu rồi mới vào lại topic này. Cám ơn anh quanta nhiều:D về những command cũng như hướng dẫn chi tiết.
+
+[root@new ~]# su - apache -s /bin/bash -c '/sbin/service mysqld stop'
+Stopping mysqld:                                           [  <font color='green'>OK</font>  ]
+<font color='red'>2 chữ "s" ở đây có nghĩa gì nhỉ</font>
+anh quanta ám chỉ đến special permissions thì phải :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273251</link>
+				<pubDate><![CDATA[Thu, 31 Jan 2013 21:49:07]]> GMT</pubDate>
+				<author><![CDATA[ emdinoiay]]></author>
+			</item>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ -s ở đây là "shell" mà bạn :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273256</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273256</link>
+				<pubDate><![CDATA[Fri, 1 Feb 2013 01:24:01]]> GMT</pubDate>
+				<author><![CDATA[ Nguyen Canh Toan]]></author>
+			</item>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ setuid và setgid]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273259</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273259</link>
+				<pubDate><![CDATA[Fri, 1 Feb 2013 04:35:06]]> GMT</pubDate>
+				<author><![CDATA[ phuongnvt]]></author>
+			</item>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ ANh quân ơi, hôm nào viết 1 bài về cách sử dụng strace & trace cho hiệu quả đi anh.
+Nhìn cách anh dùng strace mà thèm ghê :-D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273280</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44186.hva#273280</link>
+				<pubDate><![CDATA[Sat, 2 Feb 2013 10:45:48]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ký sự các vụ DDoS đến HVA - Phần 23"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ký sự các vụ DDoS đến HVA - Phần 23"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <b>Tối 28/8/2008</b>
+Cả ngày hôm trước và hôm nay tôi phải đi công tác bên ngoài và lu bù công việc nên không có chút thời gian để mó vào hệ thống HVA. Trong hai ngày này, tôi nhận được một số e-mail từ JAL cho biết tình trạng HVA bị "tê" vào ban đêm vẫn tiếp diễn. JAL vẫn tiếp tục sniff các gói tin vào lúc tình trạng "tê" này xảy ra. Mãi đến buổi tối, khi về đến nhà, tôi mới có thể log vào HVA để tải các gói tin được sniff này về để phân tích.
+
+Mở mấy gói tin này ra xem, tôi chẳng thấy có dấu hiệu gì chứng tỏ HVA bị DDoS cả. Kéo thanh trượt lên, kéo thanh trượt xuống, sắp xếp theo Protocol, sắp xếp theo Info, lọc lựa (trên WireShark)... tôi chẳng thấy có gì khả nghi. Vậy HVA bị cái gì? Tôi thoáng nghĩ: <b>"hay là chẳng có ai 'chơi' HVA cả mà có thể là một công tác tự động chạy theo định kỳ nào đó trên web server bị sự cố?"</b>. Tôi log vào máy chủ HVA và rà soát từng giá trị trong cái crontab <font color='orange'>-68-</font>. Chẳng thấy có gì đáng ngờ. Tôi quyết định tạm thời tắt bỏ một số "cron job" không quan trọng trên crontab và gán thêm thông tin logging để bảo đảm các "cron job" này không phải là nguyên nhân khiến cho HVA bị.... "tê".
+
+Tôi xếp máy đi ngủ vì quá mệt. Trằn trọc một tí, trong đầu tôi chợt loé ra một điểm quan trọng: mớ packets mà JAL sniff hoàn toàn chỉ có thông tin về các TCP packets chớ không có tí gì đụng đến UDP. Tôi thiếp đi.
+
+<b>Tối 29/8/2008</b>
+Cả ngày 29/8 tôi lại bận rộn. Chiều 29 tháng 8 2008, tôi login firewall của HVA và đồng thời kiểm tra mail xem có gì cần giải quyết ngay không. Tôi nhận được một loạt mail của JAL thông báo tình hình diễn đàn bị "đơ" mỗi tối mặc dù hệ thống phòng thủ (ngay thời điểm ấy) đâu vào đấy. Vào diễn đàn, trong mớ PM tôi nhận được, có một PM (private message) rất lý thú. Đại loại chủ nhân của PM đó đề nghị tôi 'add' Yahoo nick của anh chàng ấy để chúng tôi tiện thảo luận và "thử nghiệm" về DDoS. Anh ta còn cho biết rằng, chính anh ta là chủ nhân của mấy trận DDoS vài hôm vừa qua. Tôi trả lời, cho anh chàng ấy nick của tôi và hẹn sau vài giờ nữa tôi sẽ vào YIM (Yahoo instant messenger) <font color='orange'>-69-</font>.
+
+Tôi xếp máy, lên tàu lửa về nhà.
+
+Trên tàu, tôi mở laptop ra và xem lại những đoạn packets tôi sniff được và một số JAL sniff rồi gởi cho tôi để phân tích và tìm xem có chi tiết nào cần chú ý hơn không. Như bức hình minh hoạ của bài trước, tôi nhận ra ngay một loạt UDP packets không hề có source port và destination port <font color='orange'>-70-</font>. Hơn nữa, chúng lại cực kỳ dồn dập (chỉ trong vòng 1 giây có đến trên 200 UDP packets như thế đi đến từ một IP cá biệt). Tiếc thay, đoạn packet sniff kia không dài hơn, có lẽ JAL đã gián đoạn nó vì sợ kích thước quá lớn để tôi tải về. Với hai đặc điểm trên, tôi ghi chú xuống một mảnh "notepad" để lưu ý về sau. Trong đầu tôi nghĩ ngay đến biện pháp dùng netfilter để drop các packets bất hợp lệ như thế (ai lại không nghĩ như thế nhỉ?).
+
+Tối hôm ấy, sau bữa cơm tối, tôi lại login firewall của HVA, đồng thời mở "pidgin" lên để vào "thảo luận và thử nghiệm DDoS" với chủ nhân của cái PM hồi chiều. Thú thật, trong lòng tôi hết sức chủ quan và không mấy lo ngại bởi vì phương án "drop các packets bất hợp lệ" xem như là giải pháp tốt nhất. 
+
+Vào firewall, tôi hình dung ngay một dòng luật có tác dụng đại khái: <i>"những gói tin UDP nào có source port là null và destination port là null thì drop nó"</i>, đơn giản! Tôi hăm hở mở ngay hồ sơ cấu hình của firewall và bắt đầu gõ.... nhưng, ngay lúc đó, tôi khựng lại, vò đầu và lẩm nhẩm:
+<i>"Chết mồ rồi! Netfilter làm gì có chuyện null source port và null destination port trời?"</i>
+
+Tôi tin tưởng trí nhớ mình không tồi và mình đã "vọc" mấy cái netfilter / iptables này nhẵn ra rồi thì làm sao mà nhớ sai được. Tuy nhiên, tôi vẫn kiểm nghiệm lại:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# iptables -p udp -h</pre>
+		</div>
+
+Đoạn cuối bảng "help" hiện ra mồn một:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>UDP v1.4.0 options:
+ --source-port &#91;!&#93; port&#91;:port&#93;
+ --sport ...
+				match source port&#40;s&#41;
+ --destination-port &#91;!&#93; port&#91;:port&#93;
+ --dport ...
+				match destination port&#40;s&#41;</pre>
+		</div>
+
+Tôi gãi đầu, thừ người ra. Giá trị "port" phải hiện hữu! Chẳng lẽ bây giờ phải 'hack' cả đống netfilter code để thoả mãn nhu cầu của mình? Vả lại còn bao nhiêu thứ liên quan nữa. Lỡ bị sự cố tùm lum thì càng thê thảm. Thời gian đâu mà test cho hết và fix cho hết? Tôi quyết định mở mới source code của netfilter và iptables ra ngâm cứu. Càng xem, càng thấy phương án 'hack code' này không khả thi vì có quá nhiều modules liên quan và phụ thuộc vào cái "core" của netfilter cho phần source port và destination port. Nghĩ cũng phải, làm sao một gói TCP hay UDP mang tính hợp lệ mà không có giá trị "port"? Thôi vậy! Thử nghĩ cách nào khác xem sao.
+
+Vào lúc ấy, anh chàng "chủ nhân" cái PM xuất hiện. Anh chàng chào hỏi rất nhã nhặn và tỏ vẻ nôn nóng muốn "thử nghiệm" ngay. Tôi triển hạn, bảo anh chàng đợi tôi thêm một tí. Ngồi chống cằm, tôi suy nghĩ thêm về giải pháp lọc UDP mặc dù ngay lúc đó tôi không chắc có phải anh chàng dùng UDP để "chơi" hay thứ gì khác. Tôi tự nhủ: <i>"ngay cả firewall không drop mấy packets bất hợp lệ này thì chúng cũng tự động bị triệt tiêu vì chúng chẳng đi về đâu cả. Thôi, cứ thử nghiệm để xem thêm thế nào."</i> Thế là tôi gởi thông điệp bảo anh chàng bắt đầu "gõ" HVA đi. Tôi nhanh chóng mở ra thêm một console và trên mỗi console tôi phóng một cái tcpdump như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# tcpdump -i eth0 tcp port 80</pre>
+		</div>
+và:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# tcpdump -i eth0 udp</pre>
+		</div>
+
+Cái ở trên là để theo dõi các gói tin TCP đi ra / vào cổng 80 (web) và cái ở dưới là để theo dõi trọn bộ các gói tin UDP ra / vào bất cứ cổng nào.
+
+Trong nháy mắt, hàng loạt các gói tin có vẻ hợp lệ ra vào liên tục trên console theo dõi TCP nhưng vẫn chưa thấy có động tĩnh gì trên console theo dõi UDP. Trong khi chờ đợi anh chàng khởi động, tôi mở tiếp console thứ ba ra và xem lại nội dung cấu hình của firewall. Tôi chợt nghĩ, nếu mình 'ra lệnh' cho netfilter drop hết các UDP packets thay vì để kernel tự động xử lý (triệt tiêu chúng vì chúng chẳng đi về đâu) thì sao? Có một điểm lợi với phương pháp này là mình có thể log (lưu tường trình) <font color='orange'>-71-</font> để nắm tổng quát biên độ, trường độ và cường độ của dạng tấn công này. Thế nên, tôi tiến hành áp dụng luật này: <i>"hễ có gói tin UDP nào đến firewall, drop nó"</i>.
+
+Khi tôi chưa kịp hoàn thành dòng lệnh thì đột nhiên trên console thứ nhì dùng để theo dõi UDP packets hiện ra những dòng thông tin vi vút, cực nhanh và cực mạnh. Mỗi gói tin có chiều dài 4000 bytes, gởi đến cổng http (80) bằng giao thức UDP (?) như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>10:04:56.067408 IP 83.142.226.77.4233 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.067542 IP 78.129.227.6.2123 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.067895 IP 83.142.226.78.4650 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.068036 IP 78.129.227.6.2117 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.069218 IP 83.142.226.78.4661 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.069350 IP 83.142.226.77.4231 &gt; www.hvaonline.net.http: UDP, length 4000
+10:04:56.069740 IP 78.129.227.6.2125 &gt; www.hvaonline.net.http: UDP, length 4000</pre>
+		</div>
+
+Thoạt đầu, chỉ có chừng một chục IP cá biệt "dội" vào HVA nhưng chưa đến một phút sau, có đến khoảng 100 IP cùng tấn công. Mỗi IP này "dội" khoảng trên dưới 100 gói UDP trong một giây. Tôi chỉ kịp lưu nội dung cấu hình firewall và restart nó để ứng hiệu mẩu luật "drop UDP" như đã hình thành ở trên. Ở giai đoạn này, truy cập vào HVA firewall (xuyên qua SSH) bắt đầu trì trệ. Tôi phóng một cái <b>tail</b> để theo dõi firewall log:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# tail -f /var/logs/fw.log</pre>
+		</div>
+và thấy netfilter / iptables đã ứng hiệu. Các UDP packets kia đã bị drop và được lưu trong hồ sơ log.
+
+Điều kỳ lạ là tình hình trì trệ không hề thuyên giảm mà gia tăng từ từ. Trong khi đó server load rất thấp với chỉ số dưới 1 <font color='orange'>-72-</font>. Ngay lập tức, tôi hình dung tình hình khá phức tạp bởi vì đây chính là lối đánh nhằm "saturate" băng thông chớ không phải đánh để gia tăng server load và làm tê liệt hệ thống máy chủ.
+
+Vài phút tiếp theo, vận tốc truy cập càng lúc càng tệ. Theo anh chàng chủ bots cho biết thì chỉ có mấy chục con "bots" đang tấn công nhưng theo thống kê trên máy chủ mà tôi nhanh chóng thu thập thì lúc này số IP cá biệt dùng để dội các gói UDP với kích thước 4000 bytes kia lên tới xấp xỉ 200 IP. Đa số, chúng là những IP ở nước ngoài, đặc biệt ở từ Âu châu. Có những IP gởi các gói tin cực nhanh (khoảng 200 UDP packets trong 1 giây); những IP có lẽ có băng thông rất lớn và gần "xa lộ thông tin" nên chúng ập vào cực kỳ dồn dập. Tôi thử tính toán phỏng chừng:
+
+4 (k) x 200 (ip) x 200 (udp) ~ 160Mb
+10 (minutes) x 160Mb = 1.6Gb
+
+Thử xem: iptables -L -v -n | grep udpdrop
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Chain udpdrop&#40;1 references&#41;
+ pkts bytes target     prot opt in     out     source               destination
+   700156   2.8G LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 0 level 4 prefix `UDPDROP: '</pre>
+		</div>
+
+Tôi rú lên: "mẹ ơi!" Mới chưa đầy 15 phút (kể từ lúc tôi tái khởi động firewall) mà đã có đến 2.8Gb data đi vào. Tôi gởi thông điệp cho anh chàng chủ nhân "bots" và bảo tạm ngưng để tôi nghiên cứu thêm. Anh chàng đồng ý ngưng nhưng vì lý do gì đó, các gói UDP vẫn hối hả kéo vào.
+
+Tôi gởi JAL một e-mail và nói JAL đề nghị đám ISP filter các gói UDP ở router bìa vì không có lý do gì mà UDP lại đến cổng 80 cả. Vài tiếng sau, JAL hồi báo và cho tôi biết rằng đám ISP rất lừng khừng vụ này vì họ ngại cản như thế sẽ ảnh hưởng đến những dịch vụ có thể có những người dùng khác cần. JAL còn bảo rằng, đám ISP doạ họ sẽ.... "nghỉ chơi" nếu tình trạng này kéo dài vì nó tạo ảnh hưởng nặng nề đến những người dùng khác :(.
+
+Tôi bóp trán suy nghĩ, cố tìm một giải pháp nào đó cho ổn thoả. Rõ ràng firewall đã drop các UDP packets kia nhưng... drop xong, chúng đi đâu? chúng cần bao lâu để triệt tiêu? chúng còn tồn tại ở chỗ nào khiến cho tình hình cực kỳ trì trệ như thế? UDP là "stateless" protocol, có nghĩa là chúng được gởi đi xong là xong. Gói tin có đến được đích hay không, người gởi không cần biết. Bởi thế, dẫu có cản các gói tin UDP kia, dẫu có block luôn các IP kia, những gói tin vẫn đi vào, xuyên qua router bìa của ISP và đi thẳng đến firewall của HVA mặc dù không đi vào sâu hơn nữa. Ở vị trí này, tình trạng các gói tin UDP thế nào chưa rõ nhưng một chuyện rất rõ là chúng làm trọn bộ đường dẫn bị bão hoà gần như tuyệt đối. Xuất SSH từ máy của tôi với băng thông 10Mbit đến firewall của HVA có băng thông trên 50Mbit (upload) nhưng bị drop liên tục. Ngay cả điều chỉnh QoS <font color='orange'>-73-</font> trên firewall của HVA cũng không tác dụng mấy.
+
+Lúc này, JAL đã SSH vào firewall của HVA và chúng tôi "chat" xuyên qua talk daemon <font color='orange'>-74-</font>. Tôi bảo JAL rằng tình hình xem ra căng thẳng chớ chẳng đơn giản. Hai anh em trao đổi khá nhiều về tình trạng ứ nghẽn do dạng UDP DDoS mới mẻ này. JAL buộc miệng hỏi:
+<i>"Sao mình không thử cho chúng vào 'black hole' anh?"</i>
+
+Tôi lẩm bẩm: <i>"Black hole, black hole, /dev/null..... "</i> và chợt nhớ ra tôi đã từng thiết lập một cơ chế "/dev/null" này cho firewall của HVA trước đây <font color='orange'>-75-</font>. 
+
+Tôi bảo JAL: "Được rồi, để anh. Bây giờ anh đi ngủ, anh quá mệt rồi."
+
+<b>Chú thích:</b>
+<font color='orange'>-68-</font>: crontab là phương tiện sắp xếp các công tác tự động thực thi theo định kỳ trên *nix. Bản thân crontab là một phương tiện rất tiện lợi nhưng đây cũng là cái "nôi" phát sinh cho sự cố của máy chủ nếu như các giá trị trong crontab không được thiết lập hợp lý (ví dụ có quá nhiều công tác nặng nề cùng xảy ra một lúc, có lỗi trong các scripts thực thi các công tác này nhưng không được tường trình và điều chỉnh đúng mức....).
+
+<font color='orange'>-69-</font>: YIM có lẽ là chat client thông dụng nhất ở VN mặc dù nó có rất nhiều lỗi bảo mật và đã từng làm điêu đứng cộng đồng chatters vì viruses và những "tai nạn" bị mất password... Cá nhân tôi dùng "Pidgin" chạy trên Linux.
+
+<font color='orange'>-70-</font>: source port và destination port là hai giá trị không thể thiếu cho một TCP hoặc UDP packet. Nên tìm đọc cuốn TCP/IP Illustrated để nắm rõ hơn lý do.
+
+<font color='orange'>-71-</font>: cơ chế logging của netfilter / iptables rất chi tiết; nó có thể 'match' bất cứ packet nào mình muốn cản và đồng thời ghi nhận sự xuất hiện của packet ấy với chi tiết thời gian và tính chất của packet. Đây là một tính năng rất quan trọng của netfilter / iptables. Tuy nhiên, nếu sử dụng cơ chế log không hợp lý (log quá nhiều, log quá chi tiết, log quá nhanh....) thì sẽ có khả năng tự tạo "denial of service" cho chính mình.
+
+<font color='orange'>-72-</font>: chỉ số server load đã được đề cập vài lần trong loạt ký sự này. Trên *nix, bạn có thể xem chỉ số tức thời với lệnh <b>w</b> hoặc chỉ số biến đổi bằng <b>top</b> (hoặc <b>topas</b> trên một số hệ điều hành UNIX).
+
+<font color='orange'>-73-</font>: QoS là chữ viết tắt của Quality of Service. Firewall của HVA có ứng dụng một phần cơ chế QoS dựa trên tài liệu "Advanced Linux Routing" ở<span class="link"> http://lartc.org/.</span> QoS chủ yếu ấn định ưu tiên cho các loại packets ra vào. Trong đó, SSH được ưu tiên cao nhất.
+
+<font color='orange'>-74-</font>: dịch vụ "talk" trên *nix là một dịch vụ chat xuyên qua console (command line). Nó gọn nhẹ và tiện dụng cho những ai cũng vào một máy chủ và muốn liên lạc với nhau để trao đổi. Dịch vụ này ngày nay hiếm thấy trên các máy chủ.
+
+<font color='orange'>-75-</font>: Bài viết số 4 trong "Ký sự các vụ DDoS vào HVA", tôi đã đề cập đến /dev/null.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155387</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155387</link>
+				<pubDate><![CDATA[Wed, 15 Oct 2008 18:08:44]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Lúc này, JAL đã SSH vào firewall của HVA và chúng tôi "chat" xuyên qua talk daemon <font color='orange'>-74-</font>. Tôi bảo JAL rằng tình hình xem ra căng thẳng chớ chẳng đơn giản. Hai anh em trao đổi khá nhiều về tình trạng ứ nghẽn do dạng UDP DDoS mới mẻ này. JAL buộc miệng hỏi:
+<i>"Sao mình không thử cho chúng vào 'black hole' anh?"</i>
+
+Tôi lẩm bẩm: <i>"Black hole, black hole, /dev/null..... "</i> và chợt nhớ ra tôi đã từng thiết lập một cơ chế "/dev/null" này cho firewall của HVA trước đây <font color='orange'>-75-</font>. 
+
+Tôi bảo JAL: "Được rồi, để anh. Bây giờ anh đi ngủ, anh quá mệt rồi."
+&nbsp;
+		</blockquote>
+Thế này được không anh?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iptables -A INPUT -p udp -j DROP &gt; /dev/null 2&gt;&1</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155391</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155391</link>
+				<pubDate><![CDATA[Wed, 15 Oct 2008 18:58:01]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Lúc này, JAL đã SSH vào firewall của HVA và chúng tôi "chat" xuyên qua talk daemon <font color='orange'>-74-</font>. Tôi bảo JAL rằng tình hình xem ra căng thẳng chớ chẳng đơn giản. Hai anh em trao đổi khá nhiều về tình trạng ứ nghẽn do dạng UDP DDoS mới mẻ này. JAL buộc miệng hỏi:
+<i>"Sao mình không thử cho chúng vào 'black hole' anh?"</i>
+
+Tôi lẩm bẩm: <i>"Black hole, black hole, /dev/null..... "</i> và chợt nhớ ra tôi đã từng thiết lập một cơ chế "/dev/null" này cho firewall của HVA trước đây <font color='orange'>-75-</font>. 
+
+Tôi bảo JAL: "Được rồi, để anh. Bây giờ anh đi ngủ, anh quá mệt rồi."
+&nbsp;
+		</blockquote>
+Thế này được không anh?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iptables -A INPUT -p udp -j DROP &gt; /dev/null 2&gt;&1</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Hì hì, em nghĩ sao? Được không? 
+
+Cái &gt; đó sẽ đưa cái gì vào /dev/null? :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155395</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155395</link>
+				<pubDate><![CDATA[Wed, 15 Oct 2008 19:18:38]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ em có vài điều băn khoăn ở đây
+
+với thiết kế của HVA mình phần firewall, sao lại thực hiện cản lọc chi tiết vậy anh. Điều này có gì đó trái với suy nghĩ của anh về việc thiết kế firewall chỉ cho phép các ứng dụng hợp lệ và loại trừ mọi phần còn lại.
+
+vd với UDP, ngoại trừ cho phép kếi nối UDP đến một IP dns nào đó mà ta tin cậy, mọi udp khác cần bị drop. Suy nghĩ của anh về một rule drop null port sẽ mang tính là ứng dụng với tình huống hiện tại chứ chưa phải là cho phép loại trừ tổng quát &lt;sry vì hơi khó diễn đạt &gt;
+
+Em có check thử thấy hva open 3 port là 80 25 và 5555,em nghĩ với các cổng này, chỉ giao thức TCP là được phép truy cập với trạng thái thông thường nhất &lt;đủ port, đủ IP, state hợp lý và rate trong hạn&gt;, mọi giao thức khác cần xóa bỏ.
+
+More: với một server thường, bảo mật được như HVA là tốt rồi, tuy nhiên em băn khoăn về khả năng HVA chống chịu tấn công phá hoại. Với ví dụ trên ,sao HVA chưa tích hợp thêm firewall phần cứng hoạt động chế độ tranfarent lọc cản các gói tin không hợp lệ trước khi đi vào HVA server với firewall iptables. Cụ thể anh đã phải nhờ vào can thiệp của ISP để cản lọc ở phần router và hầu hết các tác vụ cản loại thực hiện ở OS &lt;và cho dù như vậy, hva vẫn hoạt động thật tuyệt vời.&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155403</link>
+				<pubDate><![CDATA[Wed, 15 Oct 2008 19:55:01]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Hình như là HVA có firewall riêng mà (theo mình đọc trong các phần kí sự trước của anh conmale). 
+Mình đang thắc mắc một số điểm:
+ -Một gói UDP không có port đi kèm chẳng lẽ sẽ được firewall bỏ qua? Nếu vậy chắc chắn gói UDP phải có gì đó rất đặc biệt ví dụ như là có một flag fragmented được bật chẳng hạn. Firewall bỏ qua nó vì "tưởng" nó đi kèm với một kết nối hợp lệ đã được cho phép trước đó (hay nói chính xác hơn là firewall chả biết làm gì với nó nên cho qua). Mình nhớ đã có đọc qua bài viết nói về cách tấn công này ở đâu đó nhưng không tìm lại được (bài viết cũng nói rõ là các firewall hiện nay đã xử lý được nó). Đọc RFC thì không nói gì đến vấn đề này. Có ai có thể xác nhận cho mình được không?
+ -Anh conmale nói đến black hole nhưng như bình thường BW mà những gói UDP này đã chiếm dụng lớn đến như vậy thì liệu việc hướng nó đến black hole đó có tác dụng gì? Vậy ở đây là BW của server đã bị nuốt hết hay firewall còn tử tế hồi đáp lại cho những con bót kia hoặc tiếp tục làm gì với những gói UDP đó, khiến cho vấn đề không phải thuộc về BW mà thuộc về tài nguyên của firewall bị tiêu tốn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155413</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155413</link>
+				<pubDate><![CDATA[Wed, 15 Oct 2008 22:09:56]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Cho phép em hỏi một tẹo. Một socket được khởi tạo thì nó cần có tham số là source hay destination port kèm với tham số giao thức cũng như IP, vậy anh bạn kia hẳn phải viết lại cả socket library của trình biên dịch (compiler) thì mới có thể thực hiện một kết nối và gửi một packet đi khi mà không hề tồn tại tham số port đích ( packet đó không biết nó sẽ chạm tới đâu ,tới port nào ).
+
+P/s: Nếu có sai chỗ nào thì mọi người góp ý dùm vì mình lâu rồi không còn nguyên cứu chuyên sâu về kĩ thuật nữa, kiến thức cũng rớt dần.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155421</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155421</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 00:39:29]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <blockquote>-73-: QoS là chữ viết tắc của Quality of Service. Firewall của HVA có ứng dụng một phần cơ chế QoS dựa trên tài liệu &quot;Advanced Linux Routing&quot; ở<span class="link"> http://lartc.org/.</span> QoS chủ yếu ấn định ưu tiên cho các loại packets ra vào. Trong đó, SSH được ưu tiên cao nhất.
+&nbsp;
+		</blockquote>
+Vậy trong trường hợp áp dụng cơ chế QoS, và Server đang trong tình trạng không thể kết nối, hoặc kết nối chậm chạp bằng http, SSH được ưu tiên cao nhất thì ta có thể ssh đến server được không anh? Vì nếu đường dẫn đã bị bão hòa thì ưu tiên hay không có còn là quan trọng nữa không?
+
+
+<blockquote>Hì hì, em nghĩ sao? Được không?
+
+Cái &gt; đó sẽ đưa cái gì vào /dev/null?&nbsp;
+		</blockquote>
+
+Nó đưa logs vào /dev/null :D, nó sẽ không đưa các UDP packets vào blackhole nữa vì các packets này đã bị drop rồi, tuy bị drop nhưng vẫn làm đường dẫn bị bão hòa, nó không đến được server HVA do bị chặn, nhưng các packets khác vẫn ào ạt đi tới và chờ tới lượt firewall chém mình  :D 
+
+Em đoán giải pháp của anh là không Drop mà cho nó đi thẳng vào, nhưng như thế khác nào mở cổng đón địch? Ngoài ra em cũng giống anh <font color='green'>Xnohat</font> thắc mắc làm cách nào mà cu cậu tạo ra được các gói UDP không đầu không đuôi đó, và gởi chúng đi bằng cách nào?
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155422</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155422</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 01:15:58]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>Cho phép em hỏi một tẹo. Một socket được khởi tạo thì nó cần có tham số là source hay destination port kèm với tham số giao thức cũng như IP, vậy anh bạn kia hẳn phải viết lại cả socket library của trình biên dịch (compiler) thì mới có thể thực hiện một kết nối và gửi một packet đi khi mà không hề tồn tại tham số port đích ( packet đó không biết nó sẽ chạm tới đâu ,tới port nào ).
+
+P/s: Nếu có sai chỗ nào thì mọi người góp ý dùm vì mình lâu rồi không còn nguyên cứu chuyên sâu về kĩ thuật nữa, kiến thức cũng rớt dần.&nbsp;
+		</blockquote>
+SOCK_RAW thì chẳng có gì sất.
+
+Điều khó hiểu ở đây là tại sao ISP lại có thái độ như vậy về vấn nạn DDoS khi mà lỗi không phải ở phía HVA server? Nói chung nếu mục tiêu của attacker là saturate bandwidth thì khó có thể làm gì nhiều từ phía server, vì ngay cả load ở server có thể cũng không cao nếu drop hết UDP.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155423</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155423</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 01:39:58]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ @xnohat: thế thì tớ khuyên hoặc là bạn đừng nói hoặc là bạn tìm hiểu kỹ rồi hãy nói. bạn nói một đoạn ngắn mà sai đến mấy chỗ căn bản, chứng tỏ kiến thức của bạn đã hỏng lắm rồi đấy.
+
+<p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>
+Cho phép em hỏi một tẹo. Một socket được khởi tạo thì nó cần có tham số là source hay destination port kèm với tham số giao thức cũng như IP, vậy anh bạn kia hẳn phải viết lại cả socket library của trình biên dịch (compiler) thì mới có thể thực hiện một kết nối và gửi một packet đi khi mà không hề tồn tại tham số port đích ( packet đó không biết nó sẽ chạm tới đâu ,tới port nào ). 
+&nbsp;
+		</blockquote>
+
+1. Một socket được khởi tạo không cần phải có dst port, src port hay địa chỉ IP.
+
+2. Để gửi raw socket thì không cần phải viết lại gì cả. Tất cả hệ điều hành đều hỗ trợ khả năng này, miễn là bạn có đủ quyền.
+
+3. Các hàm liên quan đến socket không nằm trong trình biên dịch. Nó là một phần của hệ điều hành, có thể ở dạng các syscall hay nằm trong các library đi kèm với hệ điều hành.
+
+4. ICMP là một dạng packet không hề có các tham số port đích.
+
+5. Nếu gửi packet trong cùng một broadcast domain, thì chỉ cần có đúng địa chỉ dst MAC là có thể gửi packet đi đến nơi. Nếu vượt qua ngoài phạm vi broadcast domain, thì cần thêm dst IP là có thể gửi packet đến nơi. Những thông tin khác đều là optional.
+
+Trong trường hợp này, kẻ DDoS HVA do chỉ muốn làm ngập lụt đường truyền, nên hắn chỉ cần đưa đúng thông tin dst IP của HVA là xong, chẳng cần quan tâm gì nữa.
+
+--m
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155427</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155427</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 01:56:31]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>em có vài điều băn khoăn ở đây
+
+với thiết kế của HVA mình phần firewall, sao lại thực hiện cản lọc chi tiết vậy anh. Điều này có gì đó trái với suy nghĩ của anh về việc thiết kế firewall chỉ cho phép các ứng dụng hợp lệ và loại trừ mọi phần còn lại.
+
+vd với UDP, ngoại trừ cho phép kếi nối UDP đến một IP dns nào đó mà ta tin cậy, mọi udp khác cần bị drop. Suy nghĩ của anh về một rule drop null port sẽ mang tính là ứng dụng với tình huống hiện tại chứ chưa phải là cho phép loại trừ tổng quát &lt;sry vì hơi khó diễn đạt &gt;
+&nbsp;
+		</blockquote>
+ANh nghĩ em đọc bài viết trên chưa kỹ rồi :P . Đây, anh viết:
+
+<blockquote>Tôi tự nhủ: "ngay cả firewall không drop mấy packets bất hợp lệ này thì chúng cũng tự động bị triệt tiêu vì chúng chẳng đi về đâu cả. Thôi, cứ thử nghiệm để xem thêm thế nào."&nbsp;
+		</blockquote>
+
+và:
+
+<blockquote>Có một điểm lợi với phương pháp này là mình có thể log (lưu tường trình) -71- để nắm tổng quát biên độ, trường độ và cường độ của dạng tấn công này&nbsp;
+		</blockquote>
+
+Thực tế, FW của HVA drop hết tất cả theo mặc định và sau đó mới cho phép packets vào nếu chúng thỏa mãn những điều kiện ấn định sẵn. Phương pháp loại trừ tổng quát vẫn hiện hữu. Trong tình huống bị DDoS bằng các UDP packets ở đây, nó không còn đơn thuần nằm ở chỗ cản lọc các gói tin nữa. Cũng như anh đã đề cập trong bài viết, phản ứng đầu tiên là nghĩ đến chuyện cản lọc (anh cũng đã nghĩ thế) nhưng điểm lý thú nằm ở đây là việc cản lọc trong trường hợp này không còn tác dụng nữa :).
+
+<p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>
+Em có check thử thấy hva open 3 port là 80 25 và 5555,em nghĩ với các cổng này, chỉ giao thức TCP là được phép truy cập với trạng thái thông thường nhất &lt;đủ port, đủ IP, state hợp lý và rate trong hạn&gt;, mọi giao thức khác cần xóa bỏ.
+&nbsp;
+		</blockquote>
+Đúng vậy.
+
+<p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>
+More: với một server thường, bảo mật được như HVA là tốt rồi, tuy nhiên em băn khoăn về khả năng HVA chống chịu tấn công phá hoại. Với ví dụ trên ,sao HVA chưa tích hợp thêm firewall phần cứng hoạt động chế độ tranfarent lọc cản các gói tin không hợp lệ trước khi đi vào HVA server với firewall iptables. Cụ thể anh đã phải nhờ vào can thiệp của ISP để cản lọc ở phần router và hầu hết các tác vụ cản loại thực hiện ở OS &lt;và cho dù như vậy, hva vẫn hoạt động thật tuyệt vời.&gt;&nbsp;
+		</blockquote> 
+Firewall phần cứng đã từng được thử nhưng chịu không thấu khi bị DDoS nên đã bỏ ra.
+
+Anh phải nhờ vào sự can thiệp của ISP để lọc các gói UDP trên router bìa của họ nhưng thực tế, chuyện này không xảy ra vì họ không muốn làm như thế. Giả sử mình có thêm 1 firewall nằm bên ngoài nữa, liệu mình có khắc phục được tình trạng bị DDoS như trên, thuần túy do cản lọc hay không? Em đọc lại bài viết thật kỹ để tìm thấy cái hướng anh đang khai triển ra cho bài kế tiếp. Nhắc lại: cản lọc không có hiệu quả gì cả trong trường hợp này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155437</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155437</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 06:09:35]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+2. Để gửi raw socket thì không cần phải viết lại gì cả. Tất cả hệ điều hành đều hỗ trợ khả năng này, miễn là bạn có đủ quyền.
+&nbsp;
+		</blockquote>
+Có lẽ bác cần xem lại điểm này. Windows XP SP2 và các hệ điều hành mới hơn của MS không còn cho phép tạo và gửi raw socket nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155443</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 11:15:51]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ giobuon: hehehe bồ nói đúng, tớ không hiểu sao bọn Microsoft lại làm trò đó :-p. sợ virus/worm lợi dụng chăng?
+Tớ có coi, XP SP2 không cho nhưng Windows 2003 cho đó bạn. Thực ra trên XP SP2, raw socket bị giới hạn, chứ không hẳn là bị cấm tiệt. Nếu muốn thêm tính năng cho việc gửi raw socket này thì đúng là phải viết thêm rồi, nhưng chắc chắn không phải là chỉnh sửa <b>trình biên dịch</b>. tớ biết ở đây có vài bạn đã viết hẳn một device driver cho Windows để tự gửi raw socket mà không cần thông qua các hàm mà hệ điều hành cung cấp.
+
+-m 
+
+PS: tớ chưa sử dụng nên chưa biết nhưng có vẻ WinPCAP có thể gửi raw socket mà không bị giới hạn gì cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155446</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155446</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 11:54:08]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Giả sử mình có thêm 1 firewall nằm bên ngoài nữa, liệu mình có khắc phục được tình trạng bị DDoS như trên, thuần túy do cản lọc hay không? Em đọc lại bài viết thật kỹ để tìm thấy cái hướng anh đang khai triển ra cho bài kế tiếp. Nhắc lại: cản lọc không có hiệu quả gì cả trong trường hợp này.&nbsp;
+		</blockquote>
+Thật lý thú. Nếu vấn đề không phải do cản lọc thì có thêm firewall nữa cũng vô ích. Đang tò mò giải pháp /dev/null của bác conmale. Nếu chủ đích của kẻ tấn công là làm bão hòa đường truyền của bác conmale thì giải pháp này có được hiệu quả gì vì dầu sao packet cũng phải đến được server rồi mới bị xử lý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155463</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155463</link>
+				<pubDate><![CDATA[Thu, 16 Oct 2008 13:14:55]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Anh conmale,
+
+Vẫn đang tò mò chờ xem anh implement cái blackhole bằng iptables như thế nào. Em chưa có dịp thử, nhưng đoán là anh dùng PREROUTE để đưa các gói không hợp lệ vào localhost port nào đó có /dev/null ?
+
+Em nghĩ giải pháp cho tình trạng này là thay vì filter traffic thì nên để mấy gói tin <b>bất hợp lệ</b> đi vào, và đi qua thật nhanh. Các gói UDP đó không có ảnh hưởng gì cho hệ thống mà mình lại phải tốn thời gian filter -&gt; input queue có thể bị đầy. Nếu có thể (sử dụng blackhole như anh nói) đưa các gói tin bất hợp lệ đi qua thật nhanh mà không cần process nó thì có thể free một chút băng thông làm việc khác.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155552</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155552</link>
+				<pubDate><![CDATA[Fri, 17 Oct 2008 00:35:51]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Anh conmale,
+
+Vẫn đang tò mò chờ xem anh implement cái blackhole bằng iptables như thế nào. Em chưa có dịp thử, nhưng đoán là anh dùng PREROUTE để đưa các gói không hợp lệ vào localhost port nào đó có /dev/null ?
+
+Em nghĩ giải pháp cho tình trạng này là thay vì filter traffic thì nên để mấy gói tin <b>bất hợp lệ</b> đi vào, và đi qua thật nhanh. Các gói UDP đó không có ảnh hưởng gì cho hệ thống mà mình lại phải tốn thời gian filter -&gt; input queue có thể bị đầy. Nếu có thể (sử dụng blackhole như anh nói) đưa các gói tin bất hợp lệ đi qua thật nhanh mà không cần process nó thì có thể free một chút băng thông làm việc khác.
+
+khoai&nbsp;
+		</blockquote>
+
+Hì hì, em đoán đúng đó. Em có thể phân tích thêm lý do tại sao em nghĩ rằng mình phải <i>"đưa các gói không hợp lệ vào localhost port nào đó"</i> mà không phải là /dev/null (như một device bình thường)?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155580</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155580</link>
+				<pubDate><![CDATA[Fri, 17 Oct 2008 10:35:07]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Em có đọc qua tài liệu về route null, cụ thể có link minh họa ở đây
+
+<b>The difference between iptables DROP and null-routing </b>
+<u>http://www.tummy.com/journals/entries/jafo_20060727_140652</u>
+
+Trong bài viết, tác giả cũng viết khá rõ ràng, rằng nếu sử dụng iptables thì hệ thống ít nhất cần so sánh các tham số như ip gói tin, loại gói tin, port ,.... trong khi nếu sử dụng route null thì chỉ cần thông số duy nhất là IP mà thôi. 
+
+Nhưng có 2 vấn đề trở ngại là :
+- phải biết đích xách IP nguồn gửi, vấn đề này tưởng dễ mà không dễ nếu như chúng ta bị 1000 host tấn công một lúc
+- gói tin cần qua iptables trước khi được route, phải chăng cần stop iptables để xuống thẳng firewall ??  hoặc tệ hơn chút là iptables chỉ check ip và accept ngay khi có IP nguồn hợp lệ &lt;trùng với ip block&gt; để cho nó xuống thẳng route và nhét vô route null.  Cho dù vậy, xét thấy nó vẫn cứ thế nào ấy, ít nhất vẫn cần iptables check IP nguồn rồi route lại check tiếp ip nguồn, 2 lần check.
+
+Thực ra kỹ thuật này không có cái gọi là /dev/null để redict gói tin đâu.  ;) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155691</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155691</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 12:58:36]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>Em có đọc qua tài liệu về route null, cụ thể có link minh họa ở đây
+
+<b>The difference between iptables DROP and null-routing </b>
+<u>http://www.tummy.com/journals/entries/jafo_20060727_140652</u>
+
+Trong bài viết, tác giả cũng viết khá rõ ràng, rằng nếu sử dụng iptables thì hệ thống ít nhất cần so sánh các tham số như ip gói tin, loại gói tin, port ,.... trong khi nếu sử dụng route null thì chỉ cần thông số duy nhất là IP mà thôi. 
+
+Nhưng có 2 vấn đề trở ngại là :
+- phải biết đích xách IP nguồn gửi, vấn đề này tưởng dễ mà không dễ nếu như chúng ta bị 1000 host tấn công một lúc
+- gói tin cần qua iptables trước khi được route, phải chăng cần stop iptables để xuống thẳng firewall ??  hoặc tệ hơn chút là iptables chỉ check ip và accept ngay khi có IP nguồn hợp lệ &lt;trùng với ip block&gt; để cho nó xuống thẳng route và nhét vô route null.  Cho dù vậy, xét thấy nó vẫn cứ thế nào ấy, ít nhất vẫn cần iptables check IP nguồn rồi route lại check tiếp ip nguồn, 2 lần check.
+
+Thực ra kỹ thuật này không có cái gọi là /dev/null để redict gói tin đâu.  ;) &nbsp;
+		</blockquote>
+
+:). Tài liệu em cho ở trên có vài điểm khá lý thú. Nó có điểm tương đồng với cách khai triển của mình ở đây là ở chỗ: nó nhận ra được "over head" quá lớn cho iptables / netfilters phải đối diện với hoàn cảnh đang bị DDoS nên phải dùng một giải pháp nào đó để đưa đến việc triệt tiêu các packets ở mức hiệu suất nhất và giảm nhẹ gánh nặng của hệ thống phòng thủ nhất (kể cả firewall, routing, IDS....). Tuy nhiên có một điểm tối quan trọng  trong giải pháp trên ở:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ip route add $REMOTEADDRESS via 127.0.0.1</pre>
+		</div>
+
+nó không thật sự gởi gói tin vào "black hole" mà nó chỉ định tuyến gói tin đi vào loopback. Bởi vì các gói tin trong bài viết trên là TCP chớ không phải UDP nên nó có thể vô hiệu hóa được một phần dung hại bằng cách định tuyến gói tin vào loopback và không trả lời gì cả cho nên TCP connection không thể hình thành (3-way handshake thông thường). Tuy nhiên, đối với UDP, cách này không giải quyết được vấn nạn bởi vì các gói UDP có kích thước lớn cứ tiếp tục ào ạt đi vào, chúng sẽ về đâu? :).
+
+Chưa kể là đòi hỏi khá "tricky" là phải biết source IP đang tấn công thì mới thực thi được ip route. Hơn nữa, 4000, 5000 IP tấn công liên tục thì làm sao theo dõi mà thêm, bớt trong routing table? và routing table có đến mấy ngàn route thì.... chết giấc  :P 
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155695</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155695</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 13:18:19]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Hì hì, em đoán đúng đó. Em có thể phân tích thêm lý do tại sao em nghĩ rằng mình phải <i>"đưa các gói không hợp lệ vào localhost port nào đó"</i> mà không phải là /dev/null (như một device bình thường)?&nbsp;
+		</blockquote>
+
+Em chỉ không nghĩ ra cách gì wwwect dữ liệu đi vào network device sang một device khác (ở đây là /dev/null). Nhưng iptables <b>có thể</b> wwwect traffic sang một interface khác nhờ cơ chế NAT. Do đó em nghĩ mình có thể tạo một process nào đó, lắng nghe trên localhost port 12345 udp. Sau đó dùng iptables rules, match các udp rules hợp lệ. Còn các gói udp khác thì cứ đưa nó vào localhost:12345. Cái process đang LISTEN trên localhost:12345 có thể đưa dữ liệu vào /dev/null. Ví dụ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ nc -l -p 12345 -u -e /dev/null</pre>
+		</div>
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155707</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 14:23:42]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Hì hì, em đoán đúng đó. Em có thể phân tích thêm lý do tại sao em nghĩ rằng mình phải <i>"đưa các gói không hợp lệ vào localhost port nào đó"</i> mà không phải là /dev/null (như một device bình thường)?&nbsp;
+		</blockquote>
+
+Em chỉ không nghĩ ra cách gì wwwect dữ liệu đi vào network device sang một device khác (ở đây là /dev/null). Nhưng iptables <b>có thể</b> wwwect traffic sang một interface khác nhờ cơ chế NAT. Do đó em nghĩ mình có thể tọa một process nào đó, lắng nghe trên localhost port 12345 udp. Sau đó dùng iptables rules, match các udp rules hợp lệ. Còn các gói udp khác thì cứ đưa nó vào localhost:12345. Cái process đang LISTEN trên localhost:12345 có thể đưa dữ liệu vào /dev/null. Ví dụ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ nc -l -p 12345 -u -e /dev/null</pre>
+		</div>
+
+khoai&nbsp;
+		</blockquote>
+
+Hay lắm. Dùng netcat để tạo một listening service và cho nội dung (netcat nhận) vào /dev/null cũng là một cách rất hay :).
+
+Dùng netfilter / iptables để wwwect packets đến một socket (mà netcat tạo ra) để rồi packet đó đi vào /dev/null là hoàn toàn khả thi.
+
+Cách anh làm gần giống nhưng... more resilient (bền hơn) ở chỗ, anh dùng một service có sẵn và nó được xinet daemon điều tác  :P 
+
+Hì hì, bàn một hồi sẽ lộ ra những điều có trong bài viết tới mất :P 
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155710</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155710</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 14:41:26]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ hi hi
+
+Xem ra Mr Khoai gần tìm được ra đáp án rồi. Rõ ràng các làm này tối ưu hơn nhiều so với route null rồi. Em chỉ còn chút thắc mắc về việc xử lý với 1000 IP 1 lúc, rõ ràng để lập nên list các ip là một việc khó,lưu lại và kiểm tra list IP này với delay nhỏ nhất chắc còn nhiều việc để phải suy nghĩ sâu nữa.Không biết anh commale có thể gợi ý chút xíu gì không
+
+
+
+Em đề nghị dừng thảo luận về giải pháp ở đây, để có anh commale còn vốn viết tiếp hồi sau nhỉ  :P  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155711</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155711</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 14:47:44]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>hi hi
+
+Xem ra Mr Khoai gần tìm được ra đáp án rồi. Rõ ràng các làm này tối ưu hơn nhiều so với route null rồi. Em chỉ còn chút thắc mắc về việc xử lý với 1000 IP 1 lúc, rõ ràng để lập nên list các ip là một việc khó,lưu lại và kiểm tra list IP này với delay nhỏ nhất chắc còn nhiều việc để phải suy nghĩ sâu nữa.Không biết anh commale có thể gợi ý chút xíu gì không
+
+
+
+Em đề nghị dừng thảo luận về giải pháp ở đây, để có anh commale còn vốn viết tiếp hồi sau nhỉ  :P  :P &nbsp;
+		</blockquote>
+
+Điều lý thú (và hy vọng ích lợi) nằm ở chỗ suy gẫm, phân tích và thảo luận sau khi đọc một bài viết nào đó :). Bởi thế, càng thảo luận nhiều (sau khi suy gẫm và phân tích) càng tốt.
+
+Mr. Khoai "đẩy" đến chỗ dùng netcat để đưa packet vào /dev/null theo dạng đã đưa ra ở trên là một gặt hái rất lớn trong việc thảo luận. Tiếc là Mr. Khoai chưa giải thích tại sao một packet đi vào xuyên qua một socket không thể wwwect vào một device như /dev/null  :P . Khai triển ngọn ngành điểm này thì mức độ lãnh hội về internet socket, unix socket, devices và filesystem sẽ đi đến chỗ chín mùi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155722</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155722</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 17:10:32]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ vụ này vui, có nhiều điều để tham khảo và học hỏi, lão conmale chắc khoải lắm hì hì]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155748</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155748</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 22:58:18]]> GMT</pubDate>
+				<author><![CDATA[ JAL]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Có một điều làm em thắc mắc: tại sao bác admin lại mang vấn đề này ra thảo luận và lại mong muốn mọi người hiểu rõ bản chất của vấn đề nhỉ? Có lợi gì và có hại gì cho chính bác và cho actker?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155752</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155752</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 23:11:31]]> GMT</pubDate>
+				<author><![CDATA[ Ky0shir0]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Ky0shir0 wrote:</cite><br>
+		<blockquote>Có một điều làm em thắc mắc: tại sao bác admin lại mang vấn đề này ra thảo luận và lại mong muốn mọi người hiểu rõ bản chất của vấn đề nhỉ? Có lợi gì và có hại gì cho chính bác và cho actker?&nbsp;
+		</blockquote>
+
+Nhiều chứ. Mọi người có kiến thức, bác conmale viết lại để về sau có gì "lú lẫn" còn có cái case study mà nhớ chứ. :D. Cái này gọi là win-win mà :P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155754</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155754</link>
+				<pubDate><![CDATA[Sat, 18 Oct 2008 23:37:34]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">anh conmale wrote:</cite><br>
+		<blockquote> Mr. Khoai "đẩy" đến chỗ dùng netcat để đưa packet vào /dev/null theo dạng đã đưa ra ở trên là một gặt hái rất lớn trong việc thảo luận. Tiếc là Mr. Khoai chưa giải thích tại sao một packet đi vào xuyên qua một socket không thể wwwect vào một device như /dev/null smilie . Khai triển ngọn ngành điểm này thì mức độ lãnh hội về internet socket, unix socket, devices và filesystem sẽ đi đến chỗ chín mùi.&nbsp;
+		</blockquote>
+Hix, khổ ghê, lần nào thảo luận gì đó với anh đều tìm ra cả đống thứ phải học. Em vẫn không thể giải thích tại sao không thể wwwect network traffic vào /dev/null, mà phải wwwect đến một socket. Theo em nghĩ, netfilter được iptables điều khiển. Tuy nhiên iptables và netfilter không cung cấp một công cụ nào đó để mình wwwect dữ liệu sang một device khác. Netfilter có thể wwwect network traffic sang một socket khác (một IP : PORT khác) nên em nghĩ đến cách đó.
+
+Hy vọng trong bài tiếp theo, hoặc một bài nào đó, anh sẽ giới thiệu hoặc giải thích phần trên một cách rõ ràng.
+
+Ky0shir0,
+
+Điểm quan trọng ở đây khoai nghĩ là anh conmale muốn phổ biến kiến thức và tạo môi trường thảo luận trên diễn đàn. Không thể dựa vào điểm các attacker không biết mình implement cơ chế bảo mật thế nào để rồi nghĩ là mình sẽ không bị tấn công.
+
+Đọc mấy bài này y như coi phim/đọc truyện kiếm hiệp :D
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155796</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155796</link>
+				<pubDate><![CDATA[Sun, 19 Oct 2008 10:38:53]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Hix, khổ ghê, lần nào thảo luận gì đó với anh đều tìm ra cả đống thứ phải học. Em vẫn không thể giải thích tại sao không thể wwwect network traffic vào /dev/null, mà phải wwwect đến một socket. Theo em nghĩ, netfilter được iptables điều khiển. Tuy nhiên iptables và netfilter không cung cấp một công cụ nào đó để mình wwwect dữ liệu sang một device khác. Netfilter có thể wwwect network traffic sang một socket khác (một IP : PORT khác) nên em nghĩ đến cách đó.
+
+Hy vọng trong bài tiếp theo, hoặc một bài nào đó, anh sẽ giới thiệu hoặc giải thích phần trên một cách rõ ràng.
+&nbsp;
+		</blockquote>
+Khỏi cần đợi bài nào khác, tán thêm một tí về internet socket, unix domain socket và /dev/null ở đây luôn cho tiện :P.
+
+- /dev/null là gì? nó là một thứ "device" trên *nix. "Device" này đặc biệt ở chỗ những thông tin nào ra vào từ stdin và stdout đều có thể được wwwect đến nó và sẽ.... ra đi vĩnh viễn. Data từ stdin và stdout là các chuỗi (stream) thông tin gởi và chuyển từ một hoặc nhiều process (tiến trình) đi vào /dev/null này sẽ chấm dứt tại đây.
+
+Ví dụ, lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ls -a &gt; /dev/null</pre>
+		</div>
+
+cho ta:
+
+ls -a: là stdin (được gõ trên console), sau khi nhấn "enter", stdin này được tiến trình "ls" xử lý và liệt kê tất cả những gì có trên thự mục hiện tại. Những gì được hiển thị là những thứ thuộc về stdout.
+
+&gt;: là "wwwection" hoặc "chuyển đến".
+
+/dev/null: là device đặc biệt trên.
+
+Bởi thế những gì xảy ra trên console giữa các tiến trình đều có thể được &gt; vào /dev/null.
+
+
+- internet socket là gì? nó là một thứ "ổ cắm" trên hầu hết các hệ điều hành hiện đại có ứng dụng TCP/IP. Nó hình thành bởi vì việc gởi và chuyển data từ stdin và stdout xuyên qua các tiến trình giữa các máy ở xa nhau (không phải là máy cục bộ) là việc không thể thực hiện được. Internet socket được tạo ra để chuyên chở thông tin từ điểm này sang điểm kia, xuyên qua những cái ống (socket connections). Khi data đi đến đầu nhận được, tiến trình chịu trách nhiệm tạo ống (socket) mới nhận dữ liệu và chuyển chúng đến các tiến trình khác hoặc các tiến trình con để... làm gì thì làm. 
+
+Ví dụ, data của một UDP packet đi từ host A đến host B được "gói" lại ở dạng:
+<font color='red'>Host A -- &gt; stdin --&gt; tiến trình --&gt; stdout --&gt; gói tin --&gt; socket --&gt; Host B --&gt; socket --&gt; gói tin --&gt; stdin --&gt; tiến trình --&gt; stdout.</font>
+
+Bởi thế, thông tin đi từ host A đến host B không thể ở dạng thuần túy "chuỗi data" như giữa các stdin và stdout mà được "encapsulated" thành các "gói" rồi mới gởi xuyên qua socket. Đầu nhận phải "mở gói" ra, phải lấy cái gì trong gói ra thì mới có được data.
+
+
+- unix domain socket là gì? là một thứ "ổ cắm" ảo chỉ xảy ra trên máy cục bộ. Các chuỗi data được gởi nhận xuyên qua bộ phận memory của kernel. Chúng là data ở dạng chuỗi có thể được đưa vào /dev/null như data trên stdin và stdout.
+
+Tương tự như trên nhưng nó không "encapsulated" gói và không đi xuyên qua internet socket và chỉ xảy xa trên máy cục bộ.
+
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Ky0shir0,
+
+Điểm quan trọng ở đây khoai nghĩ là anh conmale muốn phổ biến kiến thức và tạo môi trường thảo luận trên diễn đàn. Không thể dựa vào điểm các attacker không biết mình implement cơ chế bảo mật thế nào để rồi nghĩ là mình sẽ không bị tấn công.
+
+Đọc mấy bài này y như coi phim/đọc truyện kiếm hiệp :D
+
+khoai&nbsp;
+		</blockquote>
+Những kiến thức căn bản về stdin, stdout, /dev/null, internet socket, unix domain socket..... nếu đọc sách một lần không nắm thì đọc vài lần cũng nắm. Tuy nhiên, điểm quan trọng nhất là ứng dụng chúng như thế nào cho ích lợi.
+
+Trong trường hợp HVA đang bị UDP flood và được biết rằng cản lọc chúng theo dạng -j DROP trên iptables không đủ để giải tỏa tình trạng trì trệ nên mới dẫn đến suy nghĩ làm sao giải tỏa chúng nhanh hơn và ít tốn tài nguyên hơn. Từ đó mới nảy ra chuyện cho chúng vào /dev/null. Ích lợi của sự ứng dụng ở đây đi từ suy luận và vận dụng kiến thức căn bản ở trên. Ví dụ:
+
+1. UDP packet đi vào quá nhiều, quá nhanh, làm trì trệ đường truyền.
+1.1 Cản --&gt; không hiệu quả vì vẫn trì trệ.
+1.2 Cho vào /dev/null?
+
+2. Cho vào /dev/null thế nào?
+2.1 Một UDP packet đi vào sẽ có diễn tiến như phần <font color='red'>màu đỏ</font> ở trên, vậy, /dev/null nó ở đâu?
+2.2 Cần một tiến trình để "mở gói" UDP này thành data như stdout trước khi cho vào /dev/null? Tại sao? Tại sao không?
+2.3 Không cần một tiến trình để "mở gói" UDP này nữa mà cho nó vào một cái gì đó tương tự như /dev/null? Tại sao? Tại sao không?
+
+3. Ứng dụng thế nào trong hoàn cảnh đang chạy trên Linux, đang dùng netfilter, đang có thể sử dụng iproute, đang có thể sử dụng netcat, đang có thể sử dụng vài network sockets khác để thực hiện ý muốn?
+
+Mỗi điểm trên cần suy xét và cân nhắc để đưa đến quyết định cuối, quyết đinh này có thể chưa hẳn là quyết định tốt nhất trong mọi tình huống nhưng có thể tốt nhất với tình huống hiện tại.
+
+
+Nói về mặt "mở rộng" thảo luận khiến cho attacker lợi dụng tiếp tục tấn công thì việc này đã và đang xảy ra với HVA. Cái khó nằm ở chỗ không giấu, vẫn chia sẻ, vẫn mở rộng, vẫn ứng dụng được mà kẻ tấn công không thể lợi dụng để làm gì khác. Đây cũng là một trong những điểm phải... "hy sinh" để rộng đường thảo luận vậy  :P .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155908</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155908</link>
+				<pubDate><![CDATA[Mon, 20 Oct 2008 11:14:16]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Đọc mấy bài này y như coi phim/đọc truyện kiếm hiệp :D
+khoai&nbsp;
+		</blockquote>
+
+Nói mà cứ như là đúng rồi đấy -:|- .
+
+Bản thân em thì cũng rất thích 'Truyện' của anh commale.
+
+<p></p>
+		<cite class="blockquote">commale wrote:</cite><br>
+		<blockquote>
+Nói về mặt "mở rộng" thảo luận khiến cho attacker lợi dụng tiếp tục tấn công thì việc này đã và đang xảy ra với HVA. Cái khó nằm ở chỗ không giấu, vẫn chia sẻ, vẫn mở rộng, vẫn ứng dụng được mà kẻ tấn công không thể lợi dụng để làm gì khác. Đây cũng là một trong những điểm phải... "hy sinh" để rộng đường thảo luận vậy  :P .&nbsp;
+		</blockquote>
+
+Câu này hay quá  ;) .
+
+Mỗi dòng của anh là một 'cục' tài liệu em chưa biết :-( .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155924</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155924</link>
+				<pubDate><![CDATA[Mon, 20 Oct 2008 15:11:18]]> GMT</pubDate>
+				<author><![CDATA[ cvhainb]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Trong các ký sự của đại ca con ma le lé (đừng lấy dép chọi u đầu em) :D nếu anh trai cho đám nhỏ, đàn em như em file <b>tcpdump</b> khi bị tấn công đem về nhà phân tích thì quá tốt  :)  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155985</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155985</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 00:30:54]]> GMT</pubDate>
+				<author><![CDATA[ Giang Hồ Mạng]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Giang Hồ Mạng wrote:</cite><br>
+		<blockquote>Trong các ký sự của đại ca con ma le lé (đừng lấy dép chọi u đầu em) :D nếu anh trai cho đám nhỏ, đàn em như em file <b>tcpdump</b> khi bị tấn công đem về nhà phân tích thì quá tốt  :)  &nbsp;
+		</blockquote>
+
+Hi
+
+nếu như có file đó rùi, cần chi nữa không ? file config firewall nha ?
+
+Thực ra mình kô nghĩ  điều đó là cần thiết, vì Mr Commale cũng miêu tả rõ ràng rồi mà. Hơn nữa, sao bạn không thử chơi cờ tưởng nhỉ, hacker là mình thì sẽ DDOS nè, rồi mình sẽ chống thế này nè  -:-)  -:-) 
+
+
+Ask for more hay Deep thinking 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155999</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#155999</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 01:56:26]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <b>Giang Hồ Mạng,</b>
+
+Dump file chắc là không cho được đâu. Những thông tin trong dump file quá nhiều, filter ra hết các thông tin quan trọng và cá nhân là rất mất thời gian.
+
+<b>Anh conmale,</b>
+
+Xin phép nói thêm để phân biệt unix và internet socket. Chúng giống nhau ở điểm đều thuộc vào loại socket. Nghĩa là dữ liệu đi vào/ra không phải dạng raw, mà đã qua các công đoạn chế biến (encapsulation). Unix socket được ứng dụng để các process khác nhau trên cùng một máy có thể nói chuyện với nhau--tương tự như khi hai process nằm trên hai máy khác nhau vậy.
+
+Khi process nhận dữ liệu từ các sockets, nó không hề quan tâm việc làm sao chuyển raw bits/bytes từ đầu này qua đầu kia socket. Lợi dụng điểm đó, Unix socket giúp cho việc implement Inter-Process Communication được thuận tiện hơn--y chang như khi đọc hoặc ghi dữ liệu vào một socket thông thường.
+
+<b>Về việc vì sao iptables không thể trực tiếp wwwect input stream vào /dev/null, em hiểu như sau:</b>
+
+Bình thường, khi ta dùng issue một "lệnh" trong shell (ví dụ là bash) thì chính bash sẽ làm việc quản lý process đó. Việc quản lý đó bào gồm open các file chính: stdin, stdout và stderr cho process đó. Với stdin, bash sẽ open device là keyboard, stdout và stderr là màn hình chẳn hạn. <b>Bản thân process đó không trực tiếp động đến các device này mà chỉ tương tác với chúng thông qua các discriptors 0, 1, 2 mà thôi.</b> Việc open device và "gắn" device vào file discriptors của process xảy ra trước khi process con được tạo và được chạy.
+
+Khi ta có wwwection, chính bash không open monitor, mà lại open /dev/null rồi mới wwwect dữ liệu vào đây. Điều này xảy ra tương tự như khi wwwect vào file, hay vào một process khác. 
+
+Vì sao iptables không thể "wwwect" input stream vào /dev/null bằng các cách như &gt;, hoặc pipe vân vân? Lý do là iptables không cung cấp cho mình một interface để tương tác với /dev/null, và, input stream không thể ra vào trực tiếp trên các file stdin, stdout và stderr. Mình có thể chạy iptables bằng bash (script), và khi sử dụng các ký tự đặc biệt này thì chính bash sẽ open stdin, stdout, và stderr, rồi chính bash sẽ lo vụ wwwect. iptables khi nhận một gói tin sẽ open các files khác (socket, cho wwwect, hoặc /dev/eth1 nếu đang làm gateway chẳng hạn) và "wwwect" gói tin đến file đó.
+
+Giả sử iptables có một target là -j NULL, ta có thể wwwect input stream trực tiếp từ socket vào /dev/null. Lúc này, chính iptables sẽ open /dev/null và tiến hành write dữ liệu vào đó. Việc hack netfilter và iptables để làm việc này thì không phải không làm được. Nhưng mình có thể sử dụng một cách khác để đạt kết quả tương tự.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156003</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156003</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 02:13:13]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>Hi
+
+nếu như có file đó rùi, cần chi nữa không ? file config firewall nha ?
+
+Thực ra mình kô nghĩ  điều đó là cần thiết, vì Mr Commale cũng miêu tả rõ ràng rồi mà. Hơn nữa, sao bạn không thử chơi cờ tưởng nhỉ, hacker là mình thì sẽ DDOS nè, rồi mình sẽ chống thế này nè  -:-)  -:-) 
+
+
+Ask for more hay Deep thinking 
+
+&nbsp;
+		</blockquote>
+
+Giang hồ có nói 1 câu thế này <b>“Biết thì nói , không biết thì dựa cột mà nghe đừng phát biểu linh tinh” </b> :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156004</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156004</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 02:13:15]]> GMT</pubDate>
+				<author><![CDATA[ Giang Hồ Mạng]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>...
+Vì sao iptables không thể "wwwect" input stream vào /dev/null bằng các cách như &gt;, hoặc pipe vân vân? Lý do là iptables không cung cấp cho mình một interface để tương tác với /dev/null, và, input stream không thể ra vào trực tiếp trên các file stdin, stdout và stderr. Mình có thể chạy iptables bằng bash (script), và khi sử dụng các ký tự đặc biệt này thì chính bash sẽ open stdin, stdout, và stderr, rồi chính bash sẽ lo vụ wwwect. iptables khi nhận một gói tin sẽ open các files khác (socket, cho wwwect, hoặc /dev/eth1 nếu đang làm gateway chẳng hạn) và "wwwect" gói tin đến file đó.
+&nbsp;
+		</blockquote>
+Đúng vậy. Hay nói một cách khác, iptables / netfilter chỉ làm việc với IP (internet socket) và cho đến lúc này, hoàn toàn không có cách gì để đưa một packet mà iptables có thể kiểm soát từ socket sang một unix device được.
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Giả sử iptables có một target là -j NULL, ta có thể wwwect input stream trực tiếp từ socket vào /dev/null. Lúc này, chính iptables sẽ open /dev/null và tiến hành write dữ liệu vào đó. Việc hack netfilter và iptables để làm việc này thì không phải không làm được. Nhưng mình có thể sử dụng một cách khác để đạt kết quả tương tự.
+
+khoai&nbsp;
+		</blockquote>
+Lúc trước có một tay đã thử viết NULL module cho netfilter nhưng đám netfilter chính thức không tiếp nhận vì lý do gì đó nên vụ này chìm luôn. Nếu anh nhớ không lầm, cách ứng dụng NULL module đó không wwwect vào /dev/null mà nó chỉ đơn giản tiếp nhận và xóa packet đó cũng tương tự như /dev/null nhưng thuần túy xử lý ngay trên netfilter. Có một số bàn cãi về sự giống và khác nhau giữa -j DROP và -j NULL trước đây nhưng chưa ngã ngũ. Có lẽ trọng tâm của netfilter hoàn toàn xoáy vào IP chớ không đi ra ngoài khuôn khổ ấy. Không biết về sau sẽ như thế nào.
+
+to <b>Giang Hồ Mạng</b>: những thông tin cần thiết và trọng tâm nhất thì anh đã trình bày rồi nên nếu có mấy cái dump file đó cũng không để làm gì đâu em. Vả lại, những dump file này có thể có những thông tin nhạy cảm nên anh không thể "share" một cách rộng rãi được.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156022</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#156022</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 06:12:36]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Cho em chen ngang chút :
+ Trong router cisco có phải dủng câu lệnh này phải kô ạ:
+                 <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ip route x.x.x.x x.x.x.x null0</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157352</link>
+				<pubDate><![CDATA[Sun, 2 Nov 2008 02:55:12]]> GMT</pubDate>
+				<author><![CDATA[ dabu]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dabu wrote:</cite><br>
+		<blockquote>Cho em chen ngang chút :
+ Trong router cisco có phải dủng câu lệnh này phải kô ạ:
+                 <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ip route x.x.x.x x.x.x.x null0</pre>
+		</div>&nbsp;
+		</blockquote>
+
+
+Để làm chi em?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157370</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157370</link>
+				<pubDate><![CDATA[Sun, 2 Nov 2008 08:24:45]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">dabu wrote:</cite><br>
+		<blockquote>Cho em chen ngang chút :
+ Trong router cisco có phải dủng câu lệnh này phải kô ạ:
+                 <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ip route x.x.x.x x.x.x.x null0</pre>
+		</div>&nbsp;
+		</blockquote>
+
+
+Để làm chi em?&nbsp;
+		</blockquote>
+
+Để chuyển tất cả traffic từ một IP nào đó hoặc một range ip nào đó [range ip này hoặc ip này đang DoS đến HVA bằng những gói UDP], vào một interface ảo null để làm giảm độ xử lý[performance] của router đến mức tối đa.
+
+p/s : Còn vấn đề anh đang bàn với Mr.Khoai là để wwwect vào "device" /dev/null dựa trên tầng mấy của mô hỉnh OSI, iptables làm việc ở  tầng nào ? dạng dữ liệu stream/ socket khác nhau thế nào? tiếp nhận dòng dữ liệu stream này phải làm gì?  :) 
+
+Đó là mớ "kiến thức" em lụm được qua topic này.  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157375</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157375</link>
+				<pubDate><![CDATA[Sun, 2 Nov 2008 09:53:11]]> GMT</pubDate>
+				<author><![CDATA[ dabu]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Dabu,
+
+khoai nghĩ cái lệnh trên tương tự như khái niệm null routing mà BachDuongTM đã đề cập ở trang 1. Nhưng, khoai nghĩ nó không giúp ích gì trong trường hợp này. Lý do:
+
+1. Tương tự như anh conmale đã nói, bạn phải filter tất cả source network/address và route vào device là null0. Như vậy không khả thi
+
+2. Routing engine vẫn phải process ip headers, performance hit khoai nghĩ vẫn rất cao, cho dù không có cái Cisco router nào kế bên để test :D
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157625</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157625</link>
+				<pubDate><![CDATA[Tue, 4 Nov 2008 13:17:06]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ hi anh conmale,
+ngoài việc bị flood đường truyền, hình như công đoạn log của iptables cũng làm cho server load cao. Phải vậy ko anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157690</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157690</link>
+				<pubDate><![CDATA[Tue, 4 Nov 2008 18:46:59]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lQ wrote:</cite><br>
+		<blockquote>hi anh conmale,
+ngoài việc bị flood đường truyền, hình như công đoạn log của iptables cũng làm cho server load cao. Phải vậy ko anh?&nbsp;
+		</blockquote>
+
+Đúng vậy em. Log càng chi tiết, càng nhanh thì càng "mệt" cho server. Đây là tình trạng còn gọi là "tự từ chối dịch vụ" (self denial of service). Chẳng những thế, nếu kích thước gia tăng quá nhanh và quá nhiều thì có thể dẫn đến tình trạng hết chỗ chứa (hầu hết các *nix server được tạo mount point / chung cho mọi thứ) và dẫn đến chỗ server tê liệt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157741</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157741</link>
+				<pubDate><![CDATA[Wed, 5 Nov 2008 10:53:03]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ Em đọc được đến dòng này, em suy nghĩ HVA phòng thủ logs hướng như thế này  :) 
+Logs cho ta cái nhìn tổng quan về thiết bị , nhờ vào logs ta có thể truy tìm được thủ phạm, khắc phục sự cố,... log chia ra làm 2 loại : log được sản sinh từ phần mềm, log được sản sinh từ kernel và logs được sản sinh từ iptabales, webserver hay database không ngoại lệ trong 2 loại logs trên. 
+
+Theo em đoán HVA dùng 1 script , tác dụng của script này cứ qua 1 ngày các log sẽ được nén thành 1 tập tin nào đó được lưu trên một đường dẫn đã được ấn định trước, tự động kiểm tra tiến trình đang hoạt động trên server, loại bỏ những log không cần thiết và có thể nó chính là 1 công cụ theo dõi log hữu hiệu nhất (logtail) đơn cữ anh dùng LogCheck hoặc OSSEC  .  
+
+Em "bắt bệnh" như thế có đúng mạch không anh :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157953</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#157953</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 15:14:39]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ hi conmale,
+
+vậy thì gần như nguyên nhân làm cho server chập chờn chính là việc ghi logs của iptables làm tốn quá nhiều resources, ở đây có lẽ là lưu lương đĩa và tốc độ ghi đĩa. Theo em, cách tốt nhất đó là iptables chỉ nên ghi những cái gì quan trọng nhất. Với logs denied, em nghĩ ko cần phải ghi, vì cùng lắm, chúng chỉ giúp HVA xác định nguồn tấn công DDOS, chưa kể nguồn tấn công có thể thay đổi thường xuyên.
+
+Nói về cách thức chuyển các UDP packets vào trong cho 01 ứng dụng nào đó tiếp nhận và loại bỏ. Em nghĩ cách nào cũng không ổn lắm, vì nếu như kẻ tấn công thay bằng một dạng packets khác thì hình như iptables phải được điều chỉnh. Mà nếu không kịp điều chỉnh thì lại bị 'tự tấn công từ chối dịch vụ' vì iptables logs drop / denied.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#158144</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#158144</link>
+				<pubDate><![CDATA[Sat, 8 Nov 2008 12:32:58]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ <b>tranhuuphuoc:</b> Logs trên HVA hoàn toàn dùng cơ chế logrotation. Có lẽ em sẽ không tin rằng việc "process logs / check logs" hoàn toàn làm bằng... tay  :P . Mỗi tuần anh kiểm tra logs 3 lần và ghi chú những điểm cần quan tâm. Công cụ chỉ là sed, awk, cat, grep  :P .
+
+<b>lQ:</b> HVA đã trải qua một.. "kinh nghiệm đau thương" hồi 2006. Khi đó, do bị DDoS liên tục và do cần phải logs đầy đủ để theo dõi và khắc phục, HVA bị lâm vào tình trạng... hết chỗ chứa vì logs quá nhiều và quá nhanh. Điều này gây nên một hậu hoạn kinh khủng đó là không còn chỗ để backup DB. Khi đó anh mắc dọn nhà nên không thể truy cập HVA mấy ngày, còn ku JAL thì về VN làm đám hỏi, đám dạm gì đó. Các backup cũ của DB bị xóa theo tuần tự (cũ hơn thì xóa), trong khi đó các backup mới tự động tạo ra thì không tạo được vì không còn chỗ trên disk. Rút kinh nghiệm, backup của DB giờ đây nằm trên một disk hoàn toàn riêng biệt và được copy offline theo định kỳ.
+
+Riêng chuyện điều chỉnh FW để chống cự với DDoS là chuyện không thể tránh khỏi được. Mỗi dạng DDoS đặc biệt đều cần phải phân tích và tìm giải pháp thích hợp; không hề có chuyện "set and forget" cho bảo mật, đặc biệt đối với DDoS :).
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#158601</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#158601</link>
+				<pubDate><![CDATA[Wed, 12 Nov 2008 11:38:57]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 23</title>
+				<description><![CDATA[ hóa ra công việc của các anh Quản trị vất vả thật, em cũng đang học CNTT nhưng bây giờ em chỉ mới là rưồi muỗi thôi.không biết khi nào được như các anh đây.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25623.hva#160106</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25623.hva#160106</link>
+				<pubDate><![CDATA[Mon, 24 Nov 2008 16:14:25]]> GMT</pubDate>
+				<author><![CDATA[ dvtam]]></author>
+			</item>
+	</channel>
+</rss>

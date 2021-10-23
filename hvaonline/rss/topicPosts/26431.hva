@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ký sự các vụ DDoS đến HVA - Phần 24"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ký sự các vụ DDoS đến HVA - Phần 24"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <b>Chiều 30/8/2008</b>
+Chiều hôm ấy rảnh rang, tôi đăng nhập vào firewall của HVA và tiếp tục táy máy. 
+
+Cả ngày hôm ấy, vừa làm việc linh tinh tôi vừa suy nghĩ về giải pháp "/dev/null".
+
+Một gói UDP đi vào, nếu muốn đưa nó vào /dev/null cần phải hội đủ những điều kiện nào? Phải làm gì? Thực hiện chi tiết thế nào? Tôi không được cái tiện nghi để ngồi xuống bàn với mảnh giấy và cây bút để hí hoáy nên đành phải nghĩ ngợi và sắp xếp trong đầu ở mức độ cho phép. Những câu hỏi và trả lời tôi tự đặt ra như sau:
+
+- Để cho gói UDP vào /dev/null, điều đầu tiên phải làm gì với nó? Nếu không DROP (-j DROP) <font color='orange'>-77-</font> trên netfilter thì tất nhiên là phải cho vào (-j ACCEPT) <font color='orange'>-77-</font>.
+- Nếu cho vào (-j ACCEPT) thì nó đi đâu? Nó vào thẳng IP : DESTINATION_PORT (ở đây là IP của HVA và HTTP port 80 nhưng qua UDP).
+- Nếu vậy, ở điểm nào nó bị tóm và đưa vào /dev/null <font color='orange'>-76-</font>? Chưa rõ.
+- /dev/null là một device đặc biệt dùng để wwwect stdout, stderr đến để huỷ bỏ. Vậy một gói UDP làm sao trở thành stdout để có thể vào /dev/null? Phải cần một công đoạn để thực hiện.
+- Nếu tạo một công đoạn thực hiện, liệu nó có gia tăng khối lượng công việc cho firewall và tạo thêm trì trệ ở tình trạng 20 ngàn gói 1 giây? Chắc chắn là vậy rồi?
+- Nếu thế, so sánh mức độ trì trệ khi dùng -j DROP như cũ và mức độ trì trệ khi đi xuyên qua một công đoạn nào đó để cho nó vào /dev/null thì cái nào trì trệ hơn? Chưa rõ.
+- Có cách nào khác hơn là cách ứng dụng một công đoạn biến packet thành stdout để vào /dev/null? Tại sao phải luộm thuộm như thế? Chắc là có, trên *nix có discard <font color='orange'>-78-</font> service. Ngoài ra còn có thể tạo một dịch vụ "giả" bằng netcat <font color='orange'>-79-</font> rồi chuyển nó vào /dev/null.
+- Nếu dùng netcat, liệu nó có bền chăng? Hay nó sẽ chết sau vài trăm ngàn cú dội và xử lý không kịp? Chưa biết.
+- Nếu dùng discard service có sẵn liệu nó có bền chăng? Hay nó sẽ chết sau vài trăm ngàn cú dội và xử lý không kịp? Chưa biết.
+- So sánh giữa netcat và discard, cái nào tốt hơn? Có lẽ discard tốt hơn vì nó gọn và có sẵn. Vả lại nó được xinetd điều tác.
+- Nếu thử ứng dụng discard, cần phải làm những gì? Tất nhiên là phải sắp xếp và khởi tạo dịch vụ discard (chuyện nhỏ).
+- Đã có discard rồi, cần làm gì trên iptables? Nếu gói tin đi vào thì tất nhiên hành động wwwect phải ở POSTROUTING table <font color='orange'>-77-</font>.
+..v...v......
+
+Đã đến giờ phải kèm thằng bé môn toán nên tôi đành xếp máy lại vả lại anh chàng chủ nhân UDP kia sẵn sàng chờ đợi cơ mà. Thôi thì tạm ngưng.
+
+<b>Chiều 1/9/2008</b>
+Hôm nay thứ Hai, công việc lại hết sức dồn dập. Loay hoay đủ thứ việc nên mãi đến tối mới có thể ngồi vào bàn, giở laptop ra và tiếp tục... táy máy.
+
+Tôi nhớ trước đây tôi đã tạo dịch vụ discard trên firewall của HVA và đã thử nghiệm qua khoản này nhưng chưa đi sâu bởi vì nạn DDoS x-flash ngày ấy (cuối 2005, đầu 2006) không nhằm mục đích saturate đường dẫn như dạng UDP DDoS lần này. Dịch vụ "discard" chỉ có thể access từ trên chính firewall nên không có gì phải ngại. Hơn nữa, nó được chính firewall bảo vệ. Bởi thế, có lẽ nó vẫn còn đó vì tôi nhớ mình chưa hề tắt bỏ nó.
+
+Đăng nhập vào firewall của HVA, tôi thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# netstat -nau | grep 9
+udp        0      0 0.0.0.0:9                   0.0.0.0:*</pre>
+		</div>
+Quả thật "discard" vẫn còn đó. Tôi kiểm tra lại config của dịch vụ này cho bảo đảm:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# cat /etc/xinetd.d/discard-udp
+# default: off
+# description: An xinetd internal service which discard any UDP packet sent to it. \
+# This is the udp version.
+service discard
+{
+        disable         = no
+        type            = INTERNAL
+        id              = discard-dgram
+        socket_type     = dgram
+        protocol        = udp
+        user            = root
+        wait            = yes
+}</pre>
+		</div>
+
+Restart lại một phát cho chắc ăn. Ngon lành! Tôi bắt tay vào "ngâm" công đoạn làm sao để các UDP packets đi vào sẽ được "match" và được chuyển đến cổng dịch vụ của discard.
+
+Thử nghĩ xem, một packet đi đến firewall, nếu điểm đích của nó chính là firewall thì nó sẽ được "route" đến bảng (table) INPUT sau khi đi xuyên qua một loạt các bước trong kernel <font color='orange'>-80-</font>. Trong trường hợp các gói UDP đang tấn công HVA, chắc chắn điểm đích tôi không muốn (hoặc sẽ không cho phép nó đến) là firewall bởi vì tình trạng trì trệ nó tạo ra. Tôi muốn "đẩy" chúng đi đến nơi khác rồi "xử" chúng sau. Ở đây, tôi đang có ý định "đẩy" chúng đến một dịch vụ gọi là discard. Bởi thế, ngay khi gói tin này đi đến firewall, nó phải được "PREROUTE" để chuyển đến "discard".
+
+Một luật như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -A INPUT -i $IF -p udp -s 0/0 -d $IP -j DROP</pre>
+		</div>
+sẽ ấn định rằng một gói UDP từ bất cứ nơi nào mà đi xuyên qua "interface" IF (trong trường hợp này là eth0) và có điểm đích là $IP (trong trường hợp này chính là pubic IP của HVA firewall) thì DROP nó. Điều này có nghĩa, công đoạn PREROUTING trước đó đã xong và gói tin này quả thật có điểm đích chính là HVA firewall. Tất nhiên, các gói UDP dùng để tấn công kia sẽ bị DROP nhưng tình trạng trì trệ không được giải quyết.
+
+Trong khi đó, một luật như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 -j REDIRECT --to-ports 9</pre>
+		</div>
+sẽ ấn định rằng một gói UDP từ bất cứ nơi nào mà đi xuyên qua "interface" IF thì sẽ được chuyển (REDIRECT) đến cổng 9. Với netfilter / iptables, "REDIRECT" có một vai trò hết sức cụ thể, nó dùng để direct gói tin đến một cổng dịch vụ khác cũng ở <b>ngay cùng</b> một host (trong trường hợp này, nó wwwect bất cứ gói UDP nào đi vào đến cổng 9 cũng ở ngay trên firewall).
+
+Nhìn vào dòng luật trên, tôi nhận ra nó quá rộng và có thể tạo "false negative", hoặc nói một cách khác, nó sẽ cản luôn những gói UDP cần thiết. Ví dụ như ngay chính firewall cần liên hệ với một DNS server nào đó bên ngoài để lấy thông tin, DNS server ấy trả lời bằng một gói UDP; gói UDP ấy cũng sẽ có cùng.... số phận là biến mất trong '/dev/null' (vào discard service).
+
+Nếu bạn đã dùng qua netfilter / iptables, có lẽ bạn sẽ thắc mắc tại sao tôi không dùng "state machine" (--m state) để ấn định rằng nếu chính firewall gởi một gói UDP ra ngoài thì hãy cho phép gói trả lời đi vào? Trên mặt nguyên tắc, đây là cách thông thường cho hoàn cảnh bình thường. Tuy nhiên, thử hình dùng cái "state machine" sẽ như thế nào nếu cứ mỗi giây có khoảng 20 ngàn packets dội vào? Bởi thế, tôi điều chỉnh dòng luật ở trên thành:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --sport 53 -j REDIRECT --to-ports 9</pre>
+		</div>
+
+Dòng luật trên tạo một ngoại lệ mới, đó là chọn lựa <b>! --sport 53</b>. Dấu ! biểu thị cho "negation", sự ngược lại. Dòng luật này có thể hiểu nôm na rằng, một gói UDP từ bất cứ nơi nào mà đi xuyên qua "interface" IF nhưng không có source port là 53 thì sẽ được chuyển (REDIRECT) đến cổng 9. Điều này có nghĩa nếu trong đám 20 ngàn packets trong mỗi giây kia có vài UDP packets với cổng nguồn (source port) là 53 thì có lẽ chúng là những gói tin trả lời từ DNS nào đó, không "wwwect" chúng vào '/dev/null'.
+
+Vậy, bạn có thể tiếp tục thắc mắc rằng, nếu chủ nhân UDP DDoS kia có thể tạo hoàn toàn các UDP packets đều có cổng nguồn (source port) là 53 thì sao? Câu trả lời là: nếu thế thì tất nhiên dòng luật ở trên vô dụng vì chúng sẽ không đi vào '/dev/null' mà sẽ đi đến INPUT chain và đi thẳng vào trong. Tuy nhiên, xét theo nội dung của các gói tin sniff được thì thấy rằng, cá zombies dùng để tấn công đều tạo cổng nguồn là các cổng &gt; 1024. Điều này dễ hiểu vì chương trình nào đó "ra lệnh" cho các zombies tạo UDP packets để gởi đi không thể ấn định packets phải có cổng nguồn là 53 mà hoàn toàn dựa vào quyết định của kernel trên mỗi máy con (của zombie) quyết định cổng nguồn sẽ là gì. Bởi thế, cơ hội gói tin dùng để tấn công có cổng nguồn (source port) là 53 là cơ hội cực kỳ hiếm hoi.
+
+Việc điều chỉnh firewall và chuẩn bị "sẵn sàng tư thế" là chuyện đơn giản sau khi đã hoàn thành quá trình phân tích ở trên. Để bảo đảm, tôi restart lại firewall và quyết định... tự DoS vào firewall của HVA xem sao. Trên laptop, tôi chuẩn bị một cái script đơn giản để tạo UDP packets gởi đến địa chỉ IP của HVA. Trên firewall của HVA, tôi tạo ra 2 consoles, một để theo dõi logs do netfilter tường trình, một để theo dõi packets đi vào. Tôi chạy cái script và bắt đầu quan sát. Quả thật hàng loạt UDP packets do tôi tạo ra lũ lượt đi vào. tcpdump cho thấy:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>18:12:23.527862 IP conmale-laptop.33125 &gt; www1.hvaonline.net.1018: UDP, length 79
+18:12:23.529068 IP conmale-laptop.33131 &gt; www1.hvaonline.net.2785: UDP, length 1070
+18:12:23.533279 IP conmale-laptop.33134 &gt; www1.hvaonline.net.2819: UDP, length 73
+18:12:23.536421 IP conmale-laptop.33135 &gt; www1.hvaonline.net.3227: UDP, length 88
+18:12:23.538983 IP conmale-laptop.33154 &gt; www1.hvaonline.net.3749: UDP, length 2315
+18:12:23.543338 IP conmale-laptop.33162 &gt; www1.hvaonline.net.4412: UDP, length 1890
+18:12:23.545516 IP conmale-laptop.33166 &gt; www1.hvaonline.net.4531: UDP, length 1763
+18:12:23.546163 IP conmale-laptop.33172 &gt; www1.hvaonline.net.4678: UDP, length 2217
+18:12:23.549723 IP conmale-laptop.33173 &gt; www1.hvaonline.net.5125: UDP, length 127</pre>
+		</div>
+
+và chúng.... biến mất ở đâu đó. tcpdump không thể sniff giai đoạn các packets trên đuợc wwwect đến cổng discard (9) nên tôi đoán rằng chúng đi đến cổng ấy. Tôi xoa tay thoả mãn và log vào Pidgin để xem có anh chàng chủ nhân UDP DDoS ở đó hay không để thử một phát xem sao.
+
+Vào Pidgin, nick của anh chàng ấy xám xịt nên tôi đành gởi một cái offline message để nhắn khi nào tiện thì cho tôi biết để mình thử nghiệm tiếp. Không ngờ anh chàng "ẩn" trên YIM nên tôi nghĩ anh chàng offline mà thật ra anh chàng đang online. Chúng tôi trao đổi vài thông điệp và anh chàng cho biết đã sẵn sàng. Thế là chúng tôi bắt đầu. 
+
+Chẳng mấy chốc, trên console của tcpdump hiện ra hàng loạt gói tin UDP. Chúng lũ lượt đi vào với vận tốc hết sức dồn dập. Tôi phóng ngay một console tiếp theo để theo dõi tình hình tài nguyên (memory, CPU, disk...) trên server. Không như tôi dự đoán rằng anh chàng sẽ vận dụng y hệt phương thức mấy hôm trước, lần này các gói tin có độ ngẫu nhiên cao hơn rất xa:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>18:26:17.636521 IP 195-97-201-234.onyx.net.64735 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.639083 IP 195-97-201-234.onyx.net.64744 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.643438 IP 195-97-201-234.onyx.net.64752 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.645616 IP 195-97-201-234.onyx.net.64736 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.647163 IP 195-97-201-234.onyx.net.64732 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.649823 IP 195-97-201-234.onyx.net.64733 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.664263 IP 196.0.11.70.2232 &gt; www1.hvaonline.net.http: UDP, length 1540
+18:26:17.667220 IP 209.88.89.114.1852 &gt; www1.hvaonline.net.http: UDP, length 655
+18:26:17.693101 IP 196.0.11.70.2224 &gt; www1.hvaonline.net.http: UDP, length 1530
+18:26:17.717768 IP 196.0.11.70.2230 &gt; www1.hvaonline.net.http: UDP, length 1605
+18:26:17.750330 IP 196.0.11.70.2233 &gt; www1.hvaonline.net.http: UDP, length 1535
+18:26:17.790318 IP modemcable112.18-130-66.mc.videotron.ca.63099 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.820790 IP 196.0.11.70.2228 &gt; www1.hvaonline.net.http: UDP, length 1560
+18:26:17.853920 IP 196.0.11.70.2236 &gt; www1.hvaonline.net.http: UDP, length 1615
+18:26:17.875106 IP 195-97-201-234.onyx.net.64743 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.877136 IP 196.0.11.70.2230 &gt; www1.hvaonline.net.http: UDP, length 1610
+18:26:17.880909 IP 195-97-201-234.onyx.net.64748 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.886715 IP 195-97-201-234.onyx.net.64750 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.888505 IP 195-97-201-234.onyx.net.64742 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.889472 IP 195-97-201-234.onyx.net.64756 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.893003 IP 195-97-201-234.onyx.net.64757 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.900113 IP 195-97-201-234.onyx.net.64761 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.903401 IP 195-97-201-234.onyx.net.64762 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.906156 IP 195-97-201-234.onyx.net.64763 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.907154 IP 195-97-201-234.onyx.net.64749 &gt; www1.hvaonline.net.http: UDP, length 50
+18:26:17.908575 IP 196.0.11.70.2234 &gt; www1.hvaonline.net.http: UDP, length 1560</pre>
+		</div>
+
+Vẫn như trước, các gói tin UDP đi vào IP của HVA ở cổng 80 nhưng lần này chúng thay đổi kích thước chiều dài ngẫu nhiên. Dường như có một số zombies bị gắn chặt với "length" nhất định, các zombies khác lại thay đổi.
+
+Qua lần trao đổi trước, tôi có đề cập đến khía cạnh lợi và hại của việc gởi gói tin kích thước lớn và gói tin kích thước nhỏ. Dường như anh chàng nghĩ rằng gói tin kích thước nhỏ lợi hại hơn vì chúng được gởi đi nhanh hơn và có lẽ anh chàng nghĩ rằng tôi sẽ cản các gói tin có kích thước nhất định nên mới hình thành các gói tin có kích thước lớn bé khác nhau.
+
+Tôi thử truy cập vào diễn đàn HVA: vẫn bình thường! Vậy là có vẻ ổn rồi.
+
+Thử xem: iptables -t nat -L -v -n | grep PREROUTING
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Chain PREROUTING &#40;policy ACCEPT 35074 packets, 71831552 bytes&#41;
+ pkts bytes target     prot opt in     out     source               destination 
+ 35074  71831552  REDIRECT   udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:!53 www ports 9</pre>
+		</div>
+
+Tôi định gởi cho anh chàng một thông điệp để thông báo tình hình thì đã nhận được một dòng gởi đến: "Anh ơi, hình như mấy con bots của em không có tác dụng gì hay sao đó. Để em coi còn được mấy con."
+
+Tôi đáp: "Còn nhiều lắm, anh tính khoảng trên 200 con nhưng tình hình có vẻ không mấy tác dụng vì anh đã thay đổi một số điểm trong cơ chế chống UDP DDoS này rồi."
+
+Cậu ta đáp: "À ra vậy. Để em coi lại thử xem sao."
+
+Tôi ngồi đó, tiếp tục quan sát. Càng lúc càng có nhiều UDP đi vào nhưng tình hình có vẻ không thay đổi. Hồi lâu, chẳng thấy anh chàng lên tiếng, tôi bèn gởi một thông điệp báo rằng tôi phải logoff để đi ngủ và tôi logoff, không quên kiểm tra mọi thứ một lần nữa trước khi tắt máy.
+
+<b>Chiều 2/9/2008</b>
+Hôm nay tôi được nghỉ bù nên làm loanh quanh vài việc lặt vặt rồi vào bàn ngồi. Tôi login Pidgin để kiểm tra offline messages đồng thời xem thử anh chàng chủ nhân UDP DDoS có online hay không để tiếp tục. Thật may là anh chàng đang online. Cu cậu cho biết là hắn đã thử đổi chiến thuật vài lần và gia tăng một số bots nhưng có vẻ tình hình không khả quan nhưng đã có sáng kiến mới. Tôi hăm hở hồi đáp rằng tôi sẵn sàng thử nghiệm.
+
+Cũng như lần trước, tôi phóng ra mấy cái console và ngồi chờ. Không lâu, hàng loạt UDP packets tuôn vào và lạ thật, chúng malform (bất hợp lệ) đến mức kỳ quái nhưng không hiểu sao vẫn vượt qua bao nhiêu là routers trước khi đụng đến firewall của HVA. Chúng có dạng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>14:01:31.201097 IP 83.142.226.76 &gt; www1.hvaonline.net: udp
+14:01:31.201219 IP 83.142.226.76 &gt; www1.hvaonline.net: udp
+14:01:31.201221 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201350 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201436 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201438 IP 83.142.226.76 &gt; www1.hvaonline.net: udp
+14:01:31.201455 IP 83.142.226.78.2543 &gt; www1.hvaonline.net.http: UDP, length 4000
+14:01:31.201457 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201594 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201681 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201683 IP 83.142.226.78.2547 &gt; www1.hvaonline.net.http: UDP, length 4000
+14:01:31.201836 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201837 IP 83.142.226.78 &gt; www1.hvaonline.net: udp
+14:01:31.201932 IP 83.142.226.78 &gt; www1.hvaonline.net: udp</pre>
+		</div>
+
+Ngoài mấy dòng có "length 4000", các dòng còn lại (biểu thị cho các packets) hoàn toàn bất hợp lệ. Thật tình trước giờ tôi chưa bao giờ mục kích gói tin UDP kỳ quái đến thế. Bạn có nhận ra chúng kỳ quái thế nào không?
+
+Chúng vào nhanh như vũ bão và kỳ lạ thay, cơ chế phòng thủ '/dev/null' lúc này không còn mấy tác dụng. Thống kê các packets xuyên qua tcpdump và xuyên qua số lượng 'match' mà netfilter đã cho vào 'discard' service thì thấy chúng chênh lệch khá xa. Điều này khiến tôi tin rằng vì lý do nào đó, netfilter không 'thấy' được các gói tin UDP không có cổng nguồn (source port) và cổng đích (destination port) nên chúng không chuyển chúng đến 'discard' service. Bởi thế, tình trạng trì trệ lại xảy ra như trước.
+
+Anh chàng chủ nhân UDP gởi tôi một thông điệp báo rằng hình như tấn công kỳ này có kết quả. Tôi báo rằng đúng là HVA đang bị trì trệ. Tôi còn bảo: <i>"Em dùng packet gì mà lộ liễu thế? Gói tin gì mà chẳng có source port, destination port gì hết. Mấy cái này nhận diện chúng quá sức là dễ dàng!"</i>
+
+Anh chàng chỉ trả lời vỏn vẹn một biểu tượng mặt cười: " :D"
+
+Tôi vò đầu ngồi suy nghĩ.  Có lẽ anh chàng nhận định về điểm yếu và điểm mạnh của packets có kích thước lớn và bé mà tôi trình bày với anh chàng vào ngày trước nên chàng ta quyết định lột bỏ luôn kích thước. Tiện tay, lột bỏ luôn source port và destination port để tôi có filter port cụ thể thì toi. Chẳng lẽ netfilter bị bug? Hay kernel có quy định nào đó về các packets thiếu hợp lệ như thế và đã lặng lẽ 'xử' chúng? Hãy thử xét lại vấn đề trên phương diện IP routing xem sao.
+
+Rõ ràng, gói tin như:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>14:01:31.201097 IP 83.142.226.76 &gt; www1.hvaonline.net: udp</pre>
+		</div>
+được định tuyến qua nhiều routers, đi từ địa chỉ 83.142.226.76 đến www1.hvaonline.net. Trên phương diện IP routing, router chỉ có biết IP address và cứ việc forward datagram đến hop kế tiếp cho đến khi packet này đến đích. Khi host www1.hvaonline.net (là đích) nhận được IP này, nó tiếp nhận và bắt đầu thực thi demultiplexing <font color='orange'>-81-</font> từ network layer (IP) lên transport layer (UDP). Ở giai đoạn depmultiplexing này, kernel nhận thấy datagram không có thông tin ấn định gói tin này sẽ đi vào cổng dịch vụ nào nên nó tự động hủy bỏ. Đây là thái độ xử lý bình thường và hoàn toàn đúng quy cách. Tuy nhiên, việc xử lý này trở nên bị trì trệ vì có quá nhiều "vụ" để "xử". Nếu kernel tự động xử lý chúng thay vì chuyển chúng đến một chỗ nào đó (như discard service) và không còn phí tài nguyên + thời gian để lo thì chắc chắn tình trạng trì trệ này sẽ giảm.
+
+Tôi lục lại mớ packet dumps mấy ngày trước và xem lại thật kỹ. Rà từng dòng cho đến khi đụng đến các gói tin không có source port mà tôi bắt được mấy ngày trước đây, tôi tự vỗ vào đầu mình một phát và lẩm nhẩm: "đúng là lú lẫn". Quả thật, tôi bị cuốn vào mớ UDP có tính chất mới (biến thiên từ dạng có chiều dài 4000 bytes và đi vào HTTP UDP port đến dạng có chiều dài ngẫu nhiên) mà quên mất rằng ngay từ đầu mình đã bị "chơi" bằng các gói UDP không có source port và desination port. Rõ ràng netfilter không có ấn định cụ thể nào cho việc "match" các gói tin không có source port hoặc destination port hoặc cả hai. Bởi thế, tôi đành thử thêm một rule mới đi theo sau rule trước:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --m length 47:0xffff ! --dport 65431 -j REDIRECT --to-ports 9</pre>
+		</div>
+
+Rule này ấn định rằng bất cứ gói UDP nào đi vào mà không có kích thước từ 47 đến 65535 bytes và không đi đến cổng đích là 65431 thì đưa nó đến cổng số 9 (discard). 
+
+Tại sao phải ấn định luật như thế này? Bởi vì, tất cả các gói UDP dùng để tấn công không có kích thước thì chúng nằm bên ngoài biên độ cho phép ở trên, chúng bị wwwect. Nếu chúng có kèm kích thước nhưng không kèm cổng đích cũng không nằm trong biên độ cho phép nên cũng bị wwwect. 
+
+Tại sao chọn 65431? Bởi vì đó chỉ là một port ngẫu nhiên (làm sao anh chàng tấn công có thể đoán ra rằng nếu gói UDP đi vào mà không đến cổng đích thì bị wwwect?).
+
+Tại sao chọn kích thước từ 47 đến 65535 bytes? Bởi vì 1 gói IP hợp lệ hiếm khi nào nhỏ hơn 47 bytes.
+
+Tôi restart lại fireall có thêm dòng luật trên và tiếp tục theo dõi thông tin trên tcpdump và matched log của netfilter. Voila! lần này chúng có số lượng tương tự nhau. Tôi mỉm cười, gởi cho anh chàng một thông điệp và báo rằng sáng kiến mới đã bị chế ngự.
+
+Tình trạng truy cập đến HVA dần dần trở lại bình thường. Sau đó tôi thấy anh chàng chuyển packets sang dạng có cổng nguồn, cổng đích và có kích thước ngẫu nhiên rồi lại tạo hỗn hợp UDP khác nhau để tấn công nhưng đều bị hai rules trên thấy được và cho vào "discard". Sau gần một giờ, anh chàng gởi đến tôi một thông điệp và bảo rằng lối "đánh" UDP đã bị thất bại. Tôi cười và đáp: <i>"Cám ơn em đã giành thời gian cho một cuộc thử nghiệm hết sức lý thú. Có lẽ lần này đáng để đi vào loạt bài Ký sự DDoS HVA rồi đó."</i>
+
+Chúng tôi chào tạm biệt và logoff.
+
+PS: cho đến lúc này, tôi vẫn chưa tìm ra lý do tại sao netfilter không match các gói UDP không có cổng nguồn và cổng đích.
+
+
+<b>Chú thích:</b>
+<font color='orange'>-76-</font>: /dev/null
+
+<font color='orange'>-77-</font>: -j DROP, -j ACCEPT, POSTROUTING là những target và table trên iptables. Đọc thêm ở<span class="link"> http://www.iptables.org</span> để nắm chi tiết.
+
+<font color='orange'>-78-</font>: discard là dịch vụ ứng dụng tiêu hủy bất cứ gói tin nào đi vào cổng dịch vụ ấy. Nó tương tự như /dev/null cho stdin, stdout và stderr nhưng đặc biệt dành cho internet protocols (TCP và UDP). Dịch vụ này có sẵn trên hầu hết các hệ điều hành Unix và Linux.
+
+<font color='orange'>-79-</font>: netcat, một ứng dụng mạng nổi tiếng, được mệnh danh là "Swiss army knife for networking" (dao đa dụng quân đội của Áo dành cho mạng). netcat có trang chủ ở:<span class="link"> http://netcat.sourceforge.net/</span>
+
+<font color='orange'>-80-</font>: netfilter packet traversal. Một bức minh hoạ được "chôm một cách trắng trợn" từ tài liệu "Iptables Tutorial" của Oskar Andreasson
+
+<br>
+			<div align="center" class="limitview"><img src='/images/tables_traverse.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+<font color='orange'>-81-</font>: ở mỗi layer của TCP/IP model, packets được "đóng gói" (encapsulating) trước khi gói tin <b>đi ra</b> và được "mở gói" (multideplexing) trong khi gói tin <b>đi vào</b>. 
+
+Hình dung một gói tin trước khi đi ra ngoài, nó được đóng gói từ tầng cao nhất (application layer) đến tầng thấp nhất (link layer) như thể một hộp nhỏ được cho vào một hộp lớn hơn cho mỗi tầng:
+Application layer -- <font color='red'>[hộp A] </font>---&gt; transport layer -- <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font> ---&gt; network layer -- <font color='green'>[hộp C</font> <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font><font color='green'>]</font> ---&gt; link layer --<font color='violet'> [hộp D</font> <font color='green'>[hộp C</font> <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font><font color='green'>]</font><font color='violet'>]</font>
+
+Và khi gói tin đi vào một host, nó được mở gói từ tầng thấp nhất (link layer) đến tầng cao nhất như thể mở hộp lớn nhất có chứa hộp bé hơn và như thế cho đến khi mở hộp cuối cùng:
+Link layer -- <font color='violet'> [hộp D</font> <font color='green'>[hộp C</font> <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font><font color='green'>]</font><font color='violet'>]</font> ---&gt; network layer -- <font color='green'>[hộp C</font> <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font><font color='green'>]</font> ---&gt; transport layer -- <font color='orange'>[hộp B</font> <font color='red'>[hộp A]</font><font color='orange'>]</font> ----&gt; application layer -- <font color='red'>[hộp A] </font> 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160596</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160596</link>
+				<pubDate><![CDATA[Fri, 28 Nov 2008 12:38:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ Ký sự lần này hay quá anh ạ :), ngắn gọn và súc tích, có lẽ là do phần 23 đã dẫn dắt và được bàn khá nhiều rồi :). Thanks anh Diêu "dất" nhiều :P
+
+Tuy có vài vấn đề thật tình là em cũng chưa đoán ra được là "làm sao để tạo ra nó" nhưng quan trọng nhất là nhiều điều đã sáng tỏ.
+
+
+Em có vài câu hỏi nhỏ nhỏ và ngây ngô thế này:
+
++ Vậy là sau ký sự lần này, '/dev/null' là một "phát kiến" mới để "discard" tất cả các packets mình muốn loại bỏ để "dồn sức" cho server xử lý những packets hợp lệ thay vì DROP? Có nên sử dụng "phát kiến" này nếu ta biết chắc mình có một bộ rules cho firewall "chuẩn"? (ý là ta biết chắc chắn ta cần/cho phép những packets nào đi vào để server xử lý)
+
++ Hmm, thế hóa ra 'có ai đó' đã biết là kernel của Linux xử lý mớ packets 'vô hại' kia không được tốt nên mới "đẻ" ra cái discard kia (ngay cả bọn làm netfilter và (em có cảm giác là) anh conmale cũng không nghĩ đến/tường tận khả năng nay/cách xử lý này)
+
++ Anh Diêu chau chuốt là thế mà viết hơi bị nhiều lỗi chính tả tiếng Việt ?:D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160606</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160606</link>
+				<pubDate><![CDATA[Fri, 28 Nov 2008 13:28:31]]> GMT</pubDate>
+				<author><![CDATA[ Abe]]></author>
+			</item>
+			<item>
+				<title>Re:Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ Cảm ơn bài viết của anh, em có thắc mắc dịch vụ discard xử lý packet như thế nào mà không bị trì truệ như firewall? Nếu attacker tăng gấp đôi cường độ tấn công liệu giải pháp này còn hiệu quả?
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160624</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160624</link>
+				<pubDate><![CDATA[Fri, 28 Nov 2008 16:47:35]]> GMT</pubDate>
+				<author><![CDATA[ rs]]></author>
+			</item>
+			<item>
+				<title>Re:Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rs wrote:</cite><br>
+		<blockquote>Cảm ơn bài viết của anh, em có thắc mắc dịch vụ discard xử lý packet như thế nào mà không bị trì truệ như firewall? Nếu attacker tăng gấp đôi cường độ tấn công liệu giải pháp này còn hiệu quả?
+
+
+&nbsp;
+		</blockquote>
+Tớ nghĩ các thắc mắc của cậu đều nằm trên bài viết của chú commale rồi :) .
+Bài viết rất hay, cám ơn chú nhiều ;) .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160656</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160656</link>
+				<pubDate><![CDATA[Fri, 28 Nov 2008 23:42:24]]> GMT</pubDate>
+				<author><![CDATA[ cvhainb]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ Một ký sự mới, chà, vẫn hồi hộp dù được dẫn dắt một phần.
+
+Sry trước vì em đã từng bị mắng là không biết thì dựa cột mà nghe, mừ nghe mà không chịu nói thì dốt vẫn hoàn dốt. Trong loạt bài ký sự này của anh, em vẫn thấy một cái gì đó không ổn ổn trong suy nghĩ của Mr Commale. Để diễn giải rõ ràng thi hơi khó, HVA bị tấn công, anh đưa ra luật chống lại sự tấn công đó, kẻ thù thay đổi, anh cũng thay đổi, điều đó thật tuyệt vời ngoài việc anh bị động khi cố gắng tìm ra dấu hiệu của kẻ tấn công và nhận diện dấu hiệu đó để phòng thủ.
+
+Dấu hiệu trên không rõ ràng, để em cố diễn giải xem được không.
+
+ <blockquote>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --sport 53 -j REDIRECT --to-ports 9&nbsp;
+		</blockquote>
+
+Luật này khá rõ ràng, nhưng sẽ không hữu dụng khi gói tin đó bị lột mất thông tin về port
+
+ <blockquote>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --m length 47:0xffff ! --dport 65431 -j REDIRECT --to-ports 9&nbsp;
+		</blockquote>
+
+ Luật này sửa đổi của luật trên, cụ thể hơn, chi tiết hơn nhưng nặng nề hơn, sẽ cần bao nhiêu CPU xử lý cho một luật này ? Và nếu kẻ tấn công thay đổi một trong số các giá trị trên, giả sử  không phải giao thức UDP, anh sẽ xử lý thế nào ?TCP, ICMP, hay etc nào đó.
+
+Em thử đề xuất xem sao :
+
+- nếu ip nguồn=ip dns server ==&gt; accept
+- mọi thứ còn lại ==&gt; null
+
+Luật trên chỉ xử lý so sánh IP, bỏ qua các công đoạn so sánh về giao diện mạng vào, về loại gói tin,về cổng,về chiều dài về tính phân mảnh, liệu có khả quan hơn, tổng quát hơn, và quan trọng là thời gian xứ lý nhanh hơn chăng?Nếu lo ngại về việc giả mạo IP nguồn, liệu có thể lựa chọn IP dns từ một nơi xa xăm nào đó trên www hoặc đặt thêm tham số limit với IP này, 3 p/s chẳng hạn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160685</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160685</link>
+				<pubDate><![CDATA[Sat, 29 Nov 2008 12:09:38]]> GMT</pubDate>
+				<author><![CDATA[ BachDuongTM]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
++ Vậy là sau ký sự lần này, '/dev/null' là một "phát kiến" mới để "discard" tất cả các packets mình muốn loại bỏ để "dồn sức" cho server xử lý những packets hợp lệ thay vì DROP? Có nên sử dụng "phát kiến" này nếu ta biết chắc mình có một bộ rules cho firewall "chuẩn"? (ý là ta biết chắc chắn ta cần/cho phép những packets nào đi vào để server xử lý)
+&nbsp;
+		</blockquote>
+Chưa hẳn :P . Cái gì cũng có cái lợi và hại cả. Một rule khi đưa ra mà không cẩn thận thì chính mình tự "deny" mình bởi vì các legitimate packets sẽ bị drop hoặc đi vào '/dev/null' mà mình không biết. Hơn nữa, PREROUTING dùng cho nat table chớ không phải filter table. Điều này có nghĩa, nó xử lý packets có đích không phải là chính firewall mà là packets có đích là các hosts khác do netfilter đảm trách nat. Có những modules trên netfilter không dùng được với nat table mà chỉ có thể dùng trên filter table. Bởi thế, tùy trường hợp và tùy dạng packets mà ứng dụng. Ví dụ, có những dịch vụ dự phỏng nhận được reject (with icmp nào đó) không thì dịch vụ ấy "treo" vì chờ nhận được trả lời. Nếu mình quy chung hết và cho vào '/dev/null' hết thì có thể ok cho mình nhưng những kẻ 'vô tội' thì mệt. Cái khó là nhận ra được tính chất đặc thù của các packets tấn công và các packets hợp lệ không thì mình tự tạo "từ chối" cho chính mình.
+
+<p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
++ Hmm, thế hóa ra 'có ai đó' đã biết là kernel của Linux xử lý mớ packets 'vô hại' kia không được tốt nên mới "đẻ" ra cái discard kia (ngay cả bọn làm netfilter và (em có cảm giác là) anh conmale cũng không nghĩ đến/tường tận khả năng nay/cách xử lý này)
+&nbsp;
+		</blockquote>
+Anh không nghĩ thế. Có lẽ đây là trường hợp ngẫu nhiên mà thôi.
+
+Đối với tính resilient của netfilter / iptables và linux kernel thì phải nói là nó "bền" hơn Windows rất nhiều. Ngay trong kernel cũng đã có ứng dụng syn-cookies và một loạt phương tiện để tune tcp/ip stack. Tuy nhiên, UDP là một stateless packet. Bởi thế, việc track nó để triệt tiêu nó là việc rất khó. Đối với hoàn cảnh bình thường, kernel linux làm việc hoàn hảo với việc điều tác packets. Ngay cả trong hoàn cảnh traffic nặng (nhưng không phải DDoS dồn dập) thì kernel tự động triệt tiêu các packets một cách rất hiệu quả nhưng nếu đặt để nó trong hoàn cảnh bị DDoS thì khác. Mình không thể phó mặc cho kernel làm gì thì làm được.
+
+Thật ra discard service là một trong những service thuộc dạng... tiền sử trên *nix. Nó đã có nhằm mục đích thử nghiệm. RFC của giao thức discard đã có từ 1983 và trước đó nó đã có trên nhiều *nix flavour ở chế độ mặc định. Thời đó chưa có khái niệm "DoS" cho nên việc discard được hình thành không phải để chế ngự DoS cũng chẳng vì lý do kernel linux không xử lý tốt  :P . Hơn nữa, thời đó Linux chưa hề có cơ mà.
+
+Quả thật đây là lần đầu tiên anh đụng phải dạng UDP DDoS như thế này và theo anh thấy, nó không phải là thứ đơn giản. Ngày trước, UDP Flood xảy ra nhắm vào cổng dịch vụ UDP nào đó một cách cụ thể. Ngày nay, khi băng thông càng lúc càng rộng thì việc tạo "denial of service" không còn nằm ở giới hạn triệt tiêu một dịch vụ mà đi đến chỗ saturate đường dẫn của nạn nhân. Nếu các border routers giữa các mạng không chặt chẽ thì tình trạng này sẽ là hiểm họa.
+
+<p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
++ Anh Diêu chau chuốt là thế mà viết hơi bị nhiều lỗi chính tả tiếng Việt ?:D&nbsp;
+		</blockquote>  
+Hì hì, em bắt lỗi chính tả của anh làm chi tội nghiệp anh :P. Thôi để anh bắt lại em 1 phát: trau chuốt chớ không phải chau chuốt nhá em  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160687</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160687</link>
+				<pubDate><![CDATA[Sat, 29 Nov 2008 12:17:59]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>Một ký sự mới, chà, vẫn hồi hộp dù được dẫn dắt một phần.
+
+Sry trước vì em đã từng bị mắng là không biết thì dựa cột mà nghe, mừ nghe mà không chịu nói thì dốt vẫn hoàn dốt. Trong loạt bài ký sự này của anh, em vẫn thấy một cái gì đó không ổn ổn trong suy nghĩ của Mr Commale. Để diễn giải rõ ràng thi hơi khó, <font color='red'>HVA bị tấn công, anh đưa ra luật chống lại sự tấn công đó, kẻ thù thay đổi, anh cũng thay đổi, điều đó thật tuyệt vời ngoài việc anh bị động khi cố gắng tìm ra dấu hiệu của kẻ tấn công và nhận diện dấu hiệu đó để phòng thủ</font>.
+&nbsp;
+		</blockquote>
+Vậy ý em "cái gì đó không ổn" là gì? Phải chăng không ổn ở chỗ màu đỏ ở trên?
+
+Nếu đúng là như vậy thì em nên hiểu rằng, bảo mật hoàn toàn không có khái niệm: <b>"one size fits all"</b> và càng không có khái niệm <b>"set and forget"</b>. Bảo mật là một cuộc đuổi bắt vô tận. Kẻ tấn công tìm cách này hoặc cách khác để tấn công, người phòng thủ dùng cách này hoặc cách kia để phòng thủ. Những kẻ chịu trách nhiệm bảo mật luôn luôn tìm những "pattern" để hình thành và xếp loại các dạng tương tự nhằm mục đích kiện toàn càng nhiều càng tốt những tấn công thuộc dạng này, cái này theo thuật ngữ chuyên ngành gọ là "attack vectors".
+
+Đối với DDoS, nguyên nhân sâu xa của tình trạng DDoS là vì những yếu điểm của chính IPv4. Khi IPv4 được thiết kế, những chuyên gia này không nghĩ đến cái gọi là "denial of service" cho đến khi nó được dùng và bị exploit. DoS cũng như trò ném đá của con nít. Bọn con nít có thể dùng mảnh sành, mảnh sứ, gạch vụn, sỏi, đá, thậm chí kim loại, gỗ.... bất cứ thứ gì chúng tìm được và khi ném, bọn chúng có thể ném trước nhà, sau nhà, bên hông nhà, ném ban ngày, ban đêm, sáng, trưa, chiều, tối, khi ném nhiều, khi ném ít.... khi một bầy thật đông cùng ném, khi lác đác vài đứa. Tùy cách ném, tùy vật liệu dùng để ném và tùy mục tiêu chúng ném vào là ở đâu thì chủ nhà mới tìm biện pháp mà đối phó (ngoại trừ xây cái nhà bằng thép, không cửa sổ, không cho ai vào thì không kể).
+
+Không nên có suy nghĩ rằng: có một giải pháp nào đó dùng để triệt tiêu mọi dạng tấn công. Việc này không bao giờ có được.
+
+<p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>
+Dấu hiệu trên không rõ ràng, để em cố diễn giải xem được không.
+
+ <blockquote>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --sport 53 -j REDIRECT --to-ports 9&nbsp;
+		</blockquote>
+
+Luật này khá rõ ràng, nhưng sẽ không hữu dụng khi gói tin đó bị lột mất thông tin về port
+
+ <blockquote>iptables -t nat -A PREROUTING -i $IF -p udp -s 0/0 ! --m length 47:0xffff ! --dport 65431 -j REDIRECT --to-ports 9&nbsp;
+		</blockquote>
+
+ Luật này sửa đổi của luật trên, cụ thể hơn, chi tiết hơn nhưng nặng nề hơn, sẽ cần bao nhiêu CPU xử lý cho một luật này ? Và nếu kẻ tấn công thay đổi một trong số các giá trị trên, giả sử  không phải giao thức UDP, anh sẽ xử lý thế nào ?TCP, ICMP, hay etc nào đó.
+&nbsp;
+		</blockquote>
+Em hiểu sai rồi. Dòng luật tiếp theo không sửa đổi dòng luật đi trước mà nó chỉ trợ giúp thêm vào.
+
+ICMP hay TCP sẽ có behaviour hoàn toàn khác và phải có giải pháp khác để đối phó. Không bao giờ có một dòng luật nào có thể dùng cho mọi trường hợp cả.
+
+<p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>
+Em thử đề xuất xem sao :
+
+- nếu ip nguồn=ip dns server ==&gt; accept
+- mọi thứ còn lại ==&gt; null
+&nbsp;
+		</blockquote>
+Vậy hai dòng luật trên không làm điều em đề xuất sao? :)
+
+<p></p>
+		<cite class="blockquote">BachDuongTM wrote:</cite><br>
+		<blockquote>
+Luật trên chỉ xử lý so sánh IP, bỏ qua các công đoạn so sánh về giao diện mạng vào, về loại gói tin,về cổng,về chiều dài về tính phân mảnh, liệu có khả quan hơn, tổng quát hơn, và quan trọng là thời gian xứ lý nhanh hơn chăng?Nếu lo ngại về việc giả mạo IP nguồn, liệu có thể lựa chọn IP dns từ một nơi xa xăm nào đó trên www hoặc đặt thêm tham số limit với IP này, 3 p/s chẳng hạn.
+&nbsp;
+		</blockquote>
+Hì hì, Có lẽ em chưa hiểu rõ nội dung bài trên nên mới suy nghĩ như trên. Hơn nữa, traffic đi vào và đi ra từ HVA đâu phải chỉ có DNS traffic?
+
+Anh chỉ có thể lặp lại, nếu nghĩ rằng có 1, 2 dòng luật nào đó có thể kiện toàn và chống DDoS (chỉ giới hạn DDoS ở đây) thì đó là điều không bao giờ được. Đừng nghĩ rằng 2 dòng luật ở trên trong bài viết là chìa khóa vàng giải quyết mọi thứ. Nghĩ vậy là sai rồi. Ngoài 2 dòng đó ra, còn có bao nhiêu là thứ trên hệ thống (băng thông, tcp/ip stack params, kernel params, các luật khác của firewall, các ấn định về mem, cpu, các ấn định cho những dịch vụ..... ). Bởi thế, anh cho rằng giả định của em đòi hỏi biện pháp rộng nhưng lại thu hẹp trong phạm vi nhỏ và điều này... impossible.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160706</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#160706</link>
+				<pubDate><![CDATA[Sat, 29 Nov 2008 14:58:30]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ Xin BQT để các bài này lên stick
+Mỗi khi mình bị ddos là lại vô nghiên cứu, thấy rất hay 
+Cái web nhỏ của mình cứ liên tục bị bots, vừa rồi lại bị tất cả clien của Gbviet bots vào , thực sự thấy đau đầu vì ddos ^^!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#161967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#161967</link>
+				<pubDate><![CDATA[Wed, 10 Dec 2008 20:37:37]]> GMT</pubDate>
+				<author><![CDATA[ Anima]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Quả thật "discard" vẫn còn đó. Tôi kiểm tra lại config của dịch vụ này cho bảo đảm:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# cat /etc/xinetd.d/discard-udp
+# default: off
+# description: An xinetd internal service which discard any UDP packet sent to it. \
+# This is the udp version.
+service echo
+{
+        disable         = no
+        type            = INTERNAL
+        id              = discard-dgram
+        socket_type     = dgram
+        protocol        = udp
+        user            = root
+        wait            = yes
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Đoạn này có gì nhầm không anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#164752</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#164752</link>
+				<pubDate><![CDATA[Wed, 31 Dec 2008 20:33:58]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 24</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Quả thật "discard" vẫn còn đó. Tôi kiểm tra lại config của dịch vụ này cho bảo đảm:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;conmale@hva&#93;# cat /etc/xinetd.d/discard-udp
+# default: off
+# description: An xinetd internal service which discard any UDP packet sent to it. \
+# This is the udp version.
+service echo
+{
+        disable         = no
+        type            = INTERNAL
+        id              = discard-dgram
+        socket_type     = dgram
+        protocol        = udp
+        user            = root
+        wait            = yes
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Đoạn này có gì nhầm không anh?&nbsp;
+		</blockquote>
+
+Hì hì, có nhầm. Anh gõ sai. Đã chỉnh. Cám ơn em đã "théc méc" ;).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26431.hva#164921</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26431.hva#164921</link>
+				<pubDate><![CDATA[Fri, 2 Jan 2009 11:15:23]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

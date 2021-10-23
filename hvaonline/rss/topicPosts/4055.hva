@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Sưu tầm: Viết plugin cho Yahoo! Messenger 8"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Sưu tầm: Viết plugin cho Yahoo! Messenger 8"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Sưu tầm: Viết plugin cho Yahoo! Messenger 8</title>
+				<description><![CDATA[ Bài viết từ Updatesoft, tác giả : identical - Link:<span class="link"> http://www.updatesofts.com/forums/showthread.php?p=317199#post317199</span>
+
+Viết plugin cho Yahoo! Messenger 8
+
+Như tất cả mọi người đã biết (ai ko biết thì giờ biết), Yahoo! Messenger 8 có một tính năng rất thú vị - đó là hỗ trợ plugin. Với khả năng này, về lý thuyết YM có thể được sử dụng để làm rất nhiều việc khác ngoài việc chat. Xem thời tiết, chơi game, xem bản đồ,... Impossible is nothing :-S
+
+<b>Tut này được viết ra coi như hướng dẫn bước đầu cho những ai quan tâm và muốn viết plugin cho YM.</b>
+
+Điều kiện để theo được tut bao gồm 4 "chút":
+
+1. Chút kỹ năng lập trình
+2. Chút hiểu biết về HTML và Javascript
+3. Chút kiên nhẫn
+4. Quan trọng nhất, chút thời gian.
+
+Giờ hãy bắt tay vào phần chính:
+
+<b>1. Đồ dùng cần chuẩn bị</b>
+
+Để bắt tay vào viết plugin cho YM, bạn cần có:
+
+1. YM bản mới nhất - 8.bao_nhiêu_đấy. Hãy coi như bạn cài nó vào thư mục C:\Program Files\Yahoo!\Messenger
+2. YM Plugin SDK bản mới nhất - 1.1 . Down về tại <span class="link"> http://developer.yahoo.com</span>, mục Messenger.
+
+<b>2. Những điều cần biết về plugin của YM</b>
+
+Plugin của YM thực chất là 1 thư mục. Thư mục đó chứa code viết bằng Javascript hoặc C++. Plugin có thể làm rất nhiều việc và tất cả những hàm phục vụ cho các việc đó đều có thể được tra cứu trong SDK đã down về.
+
+Về cơ bản có 2 loại plugin cho YM: Tab và Conversation. Loại Tab hiển thị ngay tại giao diện chính của chương trình, giống như plugin Y! 360, Y! Answer... Loại Conversation hiển thị trong cửa sổ chat, ví dụ như Y! Emote (hay cái tên nào đại loại thế - tớ ko nhớ rõ lắm). Loại Tab chỉ có 1 user trong khi Conversation hỗ trợ tối đa 2 user.
+
+Giờ hãy nói về thư mục plugin của YM: Thư mục của chúng ta sẽ bao gồm thư mục con <b>MANIFEST</b> chứa file <b>plugin.properties</b>. File này sẽ chứa mọi thông tin về plugin như tác giả, mục đích, đường dẫn tới file mã nguồn... Cùng cấp với file MANIFEST có thể là mã nguồn của plugin, tuy vậy mã nguồn hoàn toàn có thể đặt trên một server nào đó - chỉ cần sửa đường dẫn trong plugin.properties cho thích hợp.
+
+<b>3. Ý tưởng về plugin</b>
+
+Plugin của chúng ta sẽ là một *từ điển bỏ túi* cho YM, hỗ trợ tra cứu Anh - Việt và Việt - Anh. Nghĩa của từ sẽ được "chôm" từ Vdict.com. Giao diện đại loại sẽ như sau:
+
+<br>
+			<div align="center" class="limitview"><img src='http://img149.imageshack.us/img149/4364/screenshot0909200612959chje7.png' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://img291.imageshack.us/img291/3821/screenshot0909200613047chbd5.png' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://img291.imageshack.us/img291/9095/screenshot0909200613020chws5.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Khi nhập từ vào ô Từ cần tra và chọn loại từ điển xong, ta bấm nút Tra từ. Status bar - tạm gọi là thế - sẽ chuyển từ "Trạng thái: Sẵn sàng" sang "Đang tra từ..." chẳng hạn. Khi có nghĩa của từ, kết quả sẽ được hiển thị trong cửa sổ khác.
+
+[SIZE="3"]<b>CHÚ Ý: Plugin sau đây do identical viết, tuy chưa submit cho Yahoo! nhưng ko có nghĩa là ko submit. Mong mọi người tôn trọng bản quyền và ko "submit hộ" dưới danh nghĩa tác giả. Cảm ơn.</b>[/SIZE]
+
+<b>4. Thực hiện plugin</b>
+
+<b>4.1. Tạo thư mục và file cần thiết</b>
+
+Bạn hãy vào thư mục C:\Program Files\Yahoo!\Messenger\Plugin\Test, sau đó tạo thư mục MANIFEST với file plugin.properties bên trong. Nhớ là thư mục này nằm TRONG thư mục Test.
+
+Giờ hãy mở file plugin.properties và thêm vào các giá trị tương tự như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Name=Vdict Integration
+Description=Integrate Vdict into Yahoo! Messenger. Looking up Vietnamese and English words within seconds. Unikey or Vietkey is not needed, as ViettypingPlus is also integrated.
+Id={79F8BB14-7F12-48d6-826F-22AFF465303C}
+Version=1.0.0
+Author=Quang Anh Do
+Homepage=http://qad.donationcoders.com/
+Timestamp=2006-07-14T00:00::00+7:00
+Contracts=com.yahoo.messenger.contenttab
+Category=4
+Plugin-type=4
+Module-type=1
+Locale=vi-VN
+Location=../vdict.html
+Icon=http://www.yahoo.com/plug-in/test.png
+Email=quanganhdo@gmail.com
+Company=Quang Anh Do
+Prefer-height=168
+Prefer-width=284
+Min-height=168
+Min-width=284
+Prefer-expanded-height=168
+Prefer-expanded-width=284
+Users=1
+Activex=false
+Sendfile=false
+Sendim=false
+Voice=false
+Addressbook=false</pre>
+		</div>
+
+Một số giá trị có lẽ ko phải giải thích làm gì. Name, Description, Version, Author, Homepage, Icon, Users, Email, Company là những thông tin về plugin và tác giả.
+
+Các thông tin còn lại như sau:
+
+- Id : Với plugin TEST, luôn đặt như ví dụ.
+- Timestamp: Thời điểm làm plugin
+- Category: 1, 2, 3, 4 tùy mục đích plugin. Tương ứng với mục đích Games, Fun, Info-Share, Generic
+- Plugin-type: 1 với loại Conversation plugin, 4 với loại Tab plugin.
+- Module-type: Giá trị luôn là 1 - HTML
+- Locale: Để localize plugin. Ở đây là tiếng Việt.
+- Location: Đường dẫn tới mã nguồn plugin. Đây là file vdict.html nằm ở thư mục TEST.
+- Các giá trị liên quan đến Height, Width: Chiều dài chiều rộng của khu vực chứa plugin nằm trên tab.
+- Các giá trị như Sendfile, Sendim, Voice, Addressbook: Đặt là true thì plugin sẽ có quyền can thiệp vào quá trình gửi file, IM,... Cần chú ý: Càng mạnh và can thiệp sâu thì thời gian đợi Yahoo! kiểm duyệt sẽ càng lâu. :-S
+
+<b>4.2. Bắt tay vào làm *thật*</b>
+
+<b>4.2.1. Thiết kế giao diện (nghe oai ác liệt :"&gt;)</b>
+
+Bạn hãy nhảy khỏi thư mục MANIFEST để lên thư mục TEST. Tại đây, bạn tạo file vdict.html. Đây là file HTML nên bạn hãy thoải mái tự do mà thiết kế giao diện cho plugin.
+
+Để cho đơn giản và nhanh chóng, ta sẽ làm nhanh 1 input field, 1 drop-down box, 1 button và 1 *status bar*.
+
+Đây là code:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="vi"&gt;
+	&lt;head&gt;
+		&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8" /&gt;
+		&lt;title&gt;Vdict Integration&lt;/title&gt;
+	&lt;/head&gt;
+	&lt;body&gt;
+		Từ cần tra &lt;input type="text" id="what" value="Nhập vào đây..." /&gt;&lt;br /&gt;
+		Loại từ điển 
+		&lt;select id="which"&gt;
+			&lt;option value="1"&gt;
+				Từ điển Anh - Việt
+			&lt;/option&gt;
+			&lt;option value="2"&gt;
+				Từ điển Việt - Anh
+			&lt;/option&gt;
+		&lt;/select&gt;
+		&lt;br /&gt;
+		&lt;img src="lookup.gif" /&gt;&lt;br /&gt;
+		&lt;div id="qad_status"&gt;Trạng thái: Sẵn sàng&lt;/div&gt;
+	&lt;/body&gt;
+&lt;/html&gt;</pre>
+		</div>
+
+Chẳng có j` khó hiểu ở trên cả, nhỉ? Chỉ cần chú ý button của chúng ta là một ảnh gif (lookup.gif) - đặt cùng thư mục với file vdict.html. Cái *status bar* của chúng ta chính là một cái <b>div</b> có chỉ rõ id để dễ cập nhật và thay đổi nội dung.
+
+<b>4.2.2. Dive into YM Plugin (hay giai đoạn viết javascript)</b>
+
+Hãy bổ sung một đoạn script js vào trong phần header của file vdict.html:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;script type="text/javascript"&gt;
+	function onLoad&#40;&#41; {
+		// Blah blah blah
+	}
+&lt;/script&gt;</pre>
+		</div>
+
+Hãy nhớ, onLoad() là hàm PHẢI có trong mọi plugin cho YM.
+
+Bạn cần sửa thẻ &lt;body&gt; thành &lt;body onload="onLoad();"&gt; để hàm onLoad() được thực thi ngay khi plugin được load.
+
+Tiếp theo, vì chúng ta sẽ phải *sờ mó* đến các element trong plugin bằng cách dùng id nên tốt nhất nên khai báo một hàm để làm shortcut:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Shortcut for document.getElementById&#40;id&#41;
+	function $&#40;id&#41; {
+		return document.getElementById&#40;id&#41;;
+	}</pre>
+		</div>
+
+Tiện tay tạo luôn một hàm Hiển thị trạng thái Loading...:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Display a Loading indicator
+	function showLoading&#40;id, msg&#41; {
+		$&#40;id&#41;.innerHTML = "&lt;img src=\"indicator.gif\" /&gt;&nbsp; " + msg;
+	}</pre>
+		</div>
+
+Hàm showLoading() nhận id của status bar và hiển thị ảnh indicator.gif kèm với một message được truyền qua tham số msg. Như bạn có thể đoán được, file indicator.gif được đặt cùng chỗ với lookup.gif.
+
+Xong các phần linh tinh. Ta chuyển vào trong hàm onLoad() giờ đang rỗng như túi của identical:
+
+Để truy cập vào YM plugin SDK, ta cần 1 đối tượng window.external. Để gõ nhanh, ta chọn tên object là y.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>y = window.external;</pre>
+		</div>
+
+Ta lần lượt đặt các handler bằng phương thức SetEventHandler để đón bắt các trạng thái và thông điệp liên quan đến plugin:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Set all event handlers here
+	y.SetEventHandler&#40;"HTTPRequestCompleted", onHTTPRequestCompleted&#41;;
+	y.SetEventHandler&#40;"HTTPRequestError", onHTTPRequestError&#41;;
+	y.SetEventHandler&#40;"SecondaryWindowReady", onSecondaryWindowDeployment&#41;;
+	y.SetEventHandler&#40;"SecondaryWindowClosed", onSecondaryWindowClosing&#41;;</pre>
+		</div>
+
+Nhìn vào bạn có thể đoán được, hai lệnh đầu để đón bắt các thông điệp liên quan đến request gửi lên server Vdict, 2 lệnh sau liên quan đến việc mở cửa sổ thứ hai (hic, nghe như mở con mắt thứ 3) để hiển thị kết quả tra được :)
+
+Việc tiếp theo là viết các hàm sẽ thực hiện khi nhận được các thông điệp trên:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>function onHTTPRequestCompleted&#40;id, responseText&#41; {
+		// To be done
+	}
+
+	function onHTTPRequestError&#40;id, errorType&#41; {
+		$&#40;'qad_status'&#41;.innerHTML = "Ặc... Không thể kết nối tới máy chủ. Đã có lỗi xảy ra!";
+	}
+
+	// function to handle the Meaning window's READY event
+	function onSecondaryWindowDeployment&#40;&#41; {
+		y.SendMessageToSecondaryWindow&#40;output&#41;;
+	}
+	
+	// function to handle the Meaning window's CLOSE event
+	function onSecondaryWindowClosing&#40;&#41; {
+		// Do nothing
+	}</pre>
+		</div>
+
+Trong đoạn code trên, khi request gửi lên server gặp lỗi khó hỉu, nội dung status bar sẽ chuyển thành "Ặc... blah blah blah". Khi cửa sổ thứ 2 được mở ra, giao diện chính của plugin sẽ gửi output tới cửa sổ này. Còn khi cửa sổ thứ 2 bị đóng lại, chẳng có quái j` diễn ra cả. 
+
+Hàm onHTTPRequestCompleted() sẽ được viết sau, cứ từ từ ko đi đâu mà vội.
+
+Giờ báo cho YM biết đồ nghề đã được chuẩn bị xong. Chỉ còn đợi "chiến":
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>y.LocalReady&#40;&#41;;</pre>
+		</div>
+
+Ta edit lại cái button Tra từ để thực hiện việc... tra từ:
+
+[HTML]&lt;img src="lookup.gif" onclick="lookup($('what').value);" /&gt;[/HTML]
+
+Hàm lookup() được viết như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// Send a string to Vdict
+	function lookup&#40;textstring&#41; {
+		// Make sure we have a word, not the default value
+		if &#40; textstring == "Nhập vào đây..." &#41; {
+			$&#40;'qad_status'&#41;.innerHTML = "Bạn chưa nhập từ cần tra. Hãy thử lại.";
+		} else {
+			var dict = $&#40;"which"&#41;.value;
+			// Indicator
+			showLoading&#40;"qad_status", "Đang tra từ..."&#41;;
+			// Request 
+			var URL = "http://vdict.com/?dictionary=" + dict + "&word=" + encodeURIComponent&#40;textstring&#41;;
+			y.SendHTTPRequest&#40;"lookup", URL&#41;;	
+		}
+	}</pre>
+		</div>
+
+Đoạn code trên sẽ check xem giá trị nhập vào có phải là từ ko, nếu có thì gửi request lên Vdict, ko thì lăn đùng ra báo lỗi. Request được gửi lên nhờ phương thức SendHTTPRequest. Phương thức này nhận 2 tham số: 1 là id, 2 là URL.
+
+Đâu đã vào đấy... Chỉ còn đợi server trả về kết quả. Ta làm nốt cái hàm còn đang bỏ trống: onHTTPRequestCompleted():
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>function onHTTPRequestCompleted&#40;id, responseText&#41; {
+	var match = responseText.match&#40;/&lt;font face=Arial size=2&gt;&lt;font size=6 color=#990000&gt;&#91;\s\S&#93;*&lt;\/td&gt;&lt;\/tr&gt;&lt;\/table&gt;\s*&lt;\/td&gt;/ig&#41;;
+	if &#40;match == null&#41; {
+		// Word not found
+		output = "&lt;font face=Arial size=2&gt;&lt;font size=6 color=#990000&gt;&lt;center&gt;&lt;strong&gt;WORD NOT FOUND&lt;/strong&gt;&lt;/center&gt;&lt;/font&gt;";
+		$&#40;'qad_status'&#41;.innerHTML = "Từ bạn vừa nhập không tồn tại. Hãy thử lại.";
+		reset&#40;&#41;;	
+	} else {
+		// Found
+		output = match&#91;0&#93;.replace&#40;/&lt;object&#91;\s\S&#93;*object&gt;/ig, ""&#41;;
+		$&#40;'qad_status'&#41;.innerHTML = "Trạng thái: Sẵn sàng";
+		y.SecondaryWindowOpen&#40;"meaning.html", ''&#41;;
+		reset&#40;&#41;;
+	}
+}</pre>
+		</div>
+
+Hàm trên sẽ nhận responseText, sau đó *đè* ra và dùng regular expression để tìm kiếm phần nghĩa của từ. Nếu thấy Word Not Found thì kêu ầm lên là Ko có từ ý - mày nhập bố láo, nếu từ đó có nghĩa thì tiếp tục dùng regex để loại bỏ tiết mục Âm thanh đặt trong thẻ object (như đã nói - càng xịn thì càng đợi duyệt lâu --&gt; chi bằng bỏ bớt cái âm thanh đi cho nhẹ người), cuối cùng mở cửa sổ thứ 2 và reset() lại input field.
+
+Hàm reset() giản dị kinh hoàng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>function reset&#40;&#41; {
+	$&#40;'what'&#41;.value = "Nhập vào đây...";
+}</pre>
+		</div>
+
+Những j` còn lại là tạo file meaning.html (cửa sổ thứ 2) và nhồi vào đó ít code xử lý output được gửi đến:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="vi"&gt;
+	&lt;head&gt;
+		&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8" /&gt;
+		&lt;title&gt;Vdict Integration&lt;/title&gt;
+		&lt;script type="text/javascript"&gt;
+			// A mandatory function
+			function onLoad&#40;&#41; {
+				// Access to the Y! M Plugin SDK using an object named "y" 
+				y = window.external;
+				
+				// Set all event handlers here
+				y.SetEventHandler&#40;"MainPluginWindowMessage", onMainPluginWindowMessage&#41;;
+				
+				function onMainPluginWindowMessage&#40;msg&#41; {
+					$&#40;'qad_result'&#41;.innerHTML = msg;
+				}
+				
+				// Everything is ready now 
+				y.LocalReady&#40;&#41;;
+			}	
+			
+			// Shortcut for document.getElementById&#40;id&#41;
+			function $&#40;id&#41; {
+				return document.getElementById&#40;id&#41;;
+			}			
+		&lt;/script&gt;
+	&lt;/head&gt;
+	&lt;body onload="onLoad&#40;&#41;;"&gt;
+		&lt;div id="qad_result"&gt;&lt;/div&gt;
+		&lt;center&gt;Powered by &lt;a href="http://vdict.com" target="_blank"&gt;&lt;strong&gt;Vietnamese English French Online Dictionary&lt;/strong&gt;&lt;/a&gt;&lt;/center&gt;
+	&lt;/body&gt;
+&lt;/html&gt;</pre>
+		</div>
+
+Code đơn giản có lẽ ko cần giải thích :|
+
+<b>4.2.3. Thưởng thức tác phẩm nghệ thuật</b>
+
+Save tất cả các file lại. Ra giao diện chính của YM. Bấm Actions &gt; Load Test plugin &gt; Ok, sir. Vậy là xong.
+
+Phù. Mỏi hết cả tay.
+
+<b>4.2.4. Những thứ có thể bổ sung vào plugin</b>
+
+Một tính năng khác... Như tự động kích hoạt bộ gõ tiếng Việt khi chọn từ điển Việt - Anh và tự tắt đi khi chuyển qua Anh - Việt. Trong code đính kèm bài viết này tớ đã xử lý như vậy.
+
+<b>4.3. Xong plugin ta làm gì???</b>
+
+Có 2 hướng: Submit lên bọn Yahoo! hoặc Tự mình dùng - cây nhà lá vườn.
+
+Với plugin có nội dung okie thì ko sao, việc submit lên khá dễ - vào gallery.yahoo.com, fill in 1 cái form dài gần chết, submit và rung đùi ngồi đợi. Khoảng 1 tuần là có reply. Accept hoặc reject. Nếu trong plugin.properties có sờ đến Sendim, ActiveX,... thì xác định là phải chờ các bố trên ý test lâu hơn.
+
+Với plugin có nội dung nhạy cảm, hay ko muốn share, thì đơn giản là mọi người tự dùng lấy. Cái ấy có một nhược điểm chết người: Đó là mỗi lần login vào YM lại phải Actions &gt; Load Test Plugin &gt; Ok, sir.
+
+Có 1 cách để xử lý hạn chế ấy, đó là cài 1 plugin trời ơi đất hỡi nào đấy của YM vào, ví dụ Yahoo! Weather, sau đó browse đến thư mục C:\Documents and Settings\All Users\Application Data\Yahoo\{một_cái_mã_củ_chuối_j`_đấy_dẫn_đến_plugin_vừa_cài}\, cóp đè plugin TEST của ta vào. Ko được phép thay đổi 1 tik tak gì trong file plugin.properties, vì đơn giản là nếu change thì plugin sẽ ko làm việc.
+
+Cuối cùng ta bấm nút Plugins của YM và Start cái plugin "hồn của ta, da của nó" lên. XONG!
+
+Và xong tut!
+
+P/S: Vào đọc thấy bài viết khá hay, sẵn tay đem về cho anh em đọc luôn vậy !! Xin anh em tôn trọng quyền tác giả nhé !!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/4055.hva#23890</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/4055.hva#23890</link>
+				<pubDate><![CDATA[Sun, 17 Sep 2006 03:15:17]]> GMT</pubDate>
+				<author><![CDATA[ hoahongtim]]></author>
+			</item>
+			<item>
+				<title>Sưu tầm: Viết plugin cho Yahoo! Messenger 8</title>
+				<description><![CDATA[ Vâng, cám ơn anh, em sẽ thực nghiệm làm thử cái vdict cho Yahoo xem :D)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/4055.hva#79021</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/4055.hva#79021</link>
+				<pubDate><![CDATA[Wed, 15 Aug 2007 02:30:12]]> GMT</pubDate>
+				<author><![CDATA[ nlfb]]></author>
+			</item>
+	</channel>
+</rss>

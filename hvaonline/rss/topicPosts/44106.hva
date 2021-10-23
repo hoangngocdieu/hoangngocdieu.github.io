@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Build kernel with NFS enable không được "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Build kernel with NFS enable không được "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Build kernel with NFS enable không được </title>
+				<description><![CDATA[ Chào anh chị,
+
+Em có chút vấn đề mà không biết xử lý làm sao mong anh chị giúp với. 
+ 
+Mấy bữa nay em đang cần compile lại kernel để cho biết. Mong muốn là từ source code của kernel có thể build để tạo ra 1 bản images. hiện tại đang sử dụng  linux-2.6.27.21,
+
+vọc vọc 1 hồi, tạo make file, compile và đã boot được hệ điều hành từ compiled image đó. tuy nhiên trong hệ điều hành lại không có NFS  service nên em muốn enable thêm cái NFS services lên ( bao gồm NFS server and NFS client)
+
+Ttheo như hướng dẫn README trong thư mục souce, em sử dụng make menuconfig để enable chức năng NFS lên. sau khi dùng menuconfig xong, nó tạo ra 1 file .config có nội dung với NFS đã enable như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>CONFIG_NETWORK_FILESYSTEMS=y
+CONFIG_NFS_FS=y
+CONFIG_NFS_V3=y
+CONFIG_NFS_V3_ACL=y
+CONFIG_NFS_V4=y
+CONFIG_ROOT_NFS=y
+CONFIG_NFSD=m
+CONFIG_NFSD_V2_ACL=y
+CONFIG_NFSD_V3=y
+CONFIG_NFSD_V3_ACL=y
+CONFIG_NFSD_V4=y
+CONFIG_LOCKD=y
+CONFIG_LOCKD_V4=y
+CONFIG_EXPORTFS=m
+CONFIG_NFS_ACL_SUPPORT=y
+CONFIG_NFS_COMMON=y</pre>
+		</div>
+Tuy nhiên, sau khi compile tạo image lần nữa, boot image lên thì lại hình như không có NFS. check cái file :
++/etc/init.d/nfs: không có
++/usr/sbin/rpc.nfsd: không có
++/usr/sbin/rpc.mountd : không có
++/usr/sbin/exportfs: không có
+
+tóm lại là: sau khi enable NFS mà không thấy nó đâu cả. xin hỏi: em có thiếu hay sai gì không? hay anh chị có bài nào về enable NFS cho kernel thì mong chia sẻ cho em với.
+
+cảm ơn rất nhiều.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272552</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272552</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2013 17:49:16]]> GMT</pubDate>
+				<author><![CDATA[ suxanero]]></author>
+			</item>
+			<item>
+				<title>Build kernel with NFS enable</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>Chào anh chị,
+
+Em có chút vấn đề mà không biết xử lý làm sao mong anh chị giúp với. 
+ 
+Mấy bữa nay em đang cần compile lại kernel để cho biết. Mong muốn là từ source code của kernel có thể build để tạo ra 1 bản images. hiện tại đang sử dụng  linux-2.6.27.21,
+
+vọc vọc 1 hồi, tạo make file, compile và đã boot được hệ điều hành từ compiled image đó. tuy nhiên trong hệ điều hành lại không có NFS  service nên em muốn enable thêm cái NFS services lên ( bao gồm NFS server and NFS client)
+
+Ttheo như hướng dẫn README trong thư mục souce, em sử dụng make menuconfig để enable chức năng NFS lên. sau khi dùng menuconfig xong, nó tạo ra 1 file .config có nội dung với NFS đã enable như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>CONFIG_NETWORK_FILESYSTEMS=y
+CONFIG_NFS_FS=y
+CONFIG_NFS_V3=y
+CONFIG_NFS_V3_ACL=y
+CONFIG_NFS_V4=y
+CONFIG_ROOT_NFS=y
+CONFIG_NFSD=m
+CONFIG_NFSD_V2_ACL=y
+CONFIG_NFSD_V3=y
+CONFIG_NFSD_V3_ACL=y
+CONFIG_NFSD_V4=y
+CONFIG_LOCKD=y
+CONFIG_LOCKD_V4=y
+CONFIG_EXPORTFS=m
+CONFIG_NFS_ACL_SUPPORT=y
+CONFIG_NFS_COMMON=y</pre>
+		</div>
+Tuy nhiên, sau khi compile tạo image lần nữa, boot image lên thì lại hình như không có NFS. check cái file :
++/etc/init.d/nfs: không có
++/usr/sbin/rpc.nfsd: không có
++/usr/sbin/rpc.mountd : không có
++/usr/sbin/exportfs: không có
+
+tóm lại là: sau khi enable NFS mà không thấy nó đâu cả. xin hỏi: em có thiếu hay sai gì không? hay anh chị có bài nào về enable NFS cho kernel thì mong chia sẻ cho em với.
+
+cảm ơn rất nhiều.
+&nbsp;
+		</blockquote>
+
+
+Mấy cái 
+
++<font color='red'>/etc/init.d/nfs</font>: không có
++<font color='red'>/usr/sbin/rpc.nfsd</font>: không có
++<font color='red'>/usr/sbin/rpc.mountd</font> : không có
++<font color='red'>/usr/sbin/exportfs</font>: không có
+
+là mấy cái thuộc "<font color='red'>user space</font>". Còn mấy cái 
+
+<font color='orange'>CONFIG_NETWORK_FILESYSTEMS=y
+CONFIG_NFS_FS=y
+CONFIG_NFS_V3=y
+CONFIG_NFS_V3_ACL=y
+CONFIG_NFS_V4=y
+CONFIG_ROOT_NFS=y
+CONFIG_NFSD=m
+CONFIG_NFSD_V2_ACL=y
+CONFIG_NFSD_V3=y
+CONFIG_NFSD_V3_ACL=y
+CONFIG_NFSD_V4=y
+CONFIG_LOCKD=y
+CONFIG_LOCKD_V4=y
+CONFIG_EXPORTFS=m
+CONFIG_NFS_ACL_SUPPORT=y
+CONFIG_NFS_COMMON=y</font>
+
+là mấy cái thuộc "<font color='orange'>kernel space</font>".
+
+Muốn có mấy cái thuộc "<font color='red'>user space</font>" thì install chúng từ packages (RPM, DEB...v...v) hoặc download source về mà compile rồi install. Đừng lẫn lộn giữa "user space" và "kernel space".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272553</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272553</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2013 17:56:04]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Build kernel with NFS enable không được </title>
+				<description><![CDATA[ ủa, anh ơi, tại em thấy trong source của linux-2.6.27.21 có thư mục fs, trong đó có source code của nfs,nfsd... vậy nhưng cái đó là dùng để quản lý file trong kernel thôi hả anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272555</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272555</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2013 18:07:32]]> GMT</pubDate>
+				<author><![CDATA[ suxanero]]></author>
+			</item>
+			<item>
+				<title>Build kernel with NFS enable không được </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>ủa, anh ơi, tại em thấy trong source của linux-2.6.27.21 có thư mục fs, trong đó có source code của nfs,nfsd... vậy nhưng cái đó là dùng để quản lý file trong kernel thôi hả anh?&nbsp;
+		</blockquote>
+
+Đọc kỹ lại bài ở trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272557</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272557</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2013 20:14:12]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Build kernel with NFS enable không được </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>
+tóm lại là: sau khi enable NFS mà không thấy nó đâu cả. 
+&nbsp;
+		</blockquote>
+Nó nằm ở đây này: 
+- /lib/modules/`uname -r`/kernel/fs/nfsd/nfsd.ko
+- /lib/modules/`uname -r`/kernel/fs/exportfs/exportfs.ko
+<p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>
+xin hỏi: em có thiếu hay sai gì không? 
+&nbsp;
+		</blockquote>
+Có. Sai cách kiểm tra.
+<p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>
+hay anh chị có bài nào về enable NFS cho kernel thì mong chia sẻ cho em với.
+&nbsp;
+		</blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>modprobe nfsd
+modprobe exportfs</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">suxanero wrote:</cite><br>
+		<blockquote>
+...
+Tuy nhiên, sau khi compile tạo image lần nữa, boot image lên thì lại hình như không có NFS. check cái file :
++/etc/init.d/nfs: không có
++/usr/sbin/rpc.nfsd: không có
++/usr/sbin/rpc.mountd : không có
++/usr/sbin/exportfs: không có
+&nbsp;
+		</blockquote>
+`yum provides /usr/sbin/rpc.nfsd` sẽ cho biết là bạn cần phải cài thêm package gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272577</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272577</link>
+				<pubDate><![CDATA[Wed, 9 Jan 2013 03:51:46]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Build kernel with NFS enable không được </title>
+				<description><![CDATA[ Hì, em cảm ơn anh commale và quanta nhiều. sau khi vọc cả 2 ngày trời liên tiếp thì NFS cũng đã chạy được,
+
+Nói về cách làm chi tiết thì hơi khó vì quá nhiều bước, tuy nhiên đại ý là như sau:
++down gói portmap 6 ,Quota 4 và nfs-utils 1.2.7 
++thay đổi chút  Makefile để compile và cấu hình khi bỏ vào images file luôn &gt;&quot;&lt;
+Giờ bật boot images là chạy được NFS luôn. 
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272621</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44106.hva#272621</link>
+				<pubDate><![CDATA[Thu, 10 Jan 2013 22:02:14]]> GMT</pubDate>
+				<author><![CDATA[ suxanero]]></author>
+			</item>
+	</channel>
+</rss>

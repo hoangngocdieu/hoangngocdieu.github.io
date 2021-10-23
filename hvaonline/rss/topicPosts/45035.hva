@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "rcheck và update trong module recent của iptables?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "rcheck và update trong module recent của iptables?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>rcheck và update trong module recent của iptables?</title>
+				<description><![CDATA[ Chào các bạn,
+
+Hiện nay khi làm việc với module recent của iptables mình có gặp 2 thông số là --rcheck và --update. Theo thông tin trong document thì :
+
+--rcheck : trả về kết quả true nếu source ip có trong list
+--update : trả về kết quả true nếu source ip có trong list, đồng thời update timestamp
+
+Tuy nhiên mình không hiểu việc update timestamp này có tác dụng như thế nào nhỉ ? Và trường hợp nào dùng rcheck và trường hợp nào dùng update. Nếu có rules tham khảo thì tốt quá, :D
+
+Cám ơn các bạn đã xem topic. :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45035.hva#277971</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45035.hva#277971</link>
+				<pubDate><![CDATA[Mon, 5 Aug 2013 05:47:36]]> GMT</pubDate>
+				<author><![CDATA[ congnghevps.net]]></author>
+			</item>
+			<item>
+				<title>rcheck và update trong module recent của iptables?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">congnghevps.net wrote:</cite><br>
+		<blockquote>Chào các bạn,
+
+Hiện nay khi làm việc với module recent của iptables mình có gặp 2 thông số là --rcheck và --update. Theo thông tin trong document thì :
+
+--rcheck : trả về kết quả true nếu source ip có trong list
+--update : trả về kết quả true nếu source ip có trong list, đồng thời update timestamp
+&nbsp;
+		</blockquote>
+Thật ra mình thấy man page có thể làm mọi người hiểu nhầm:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;!&#93; --rcheck
+       Check if the source address of the packet is currently in the list.
+
+&#91;!&#93; --update
+       Like --rcheck, except it will update the "last seen" timestamp if it matches.</pre>
+		</div>
+Bằng chứng là với rules như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-A INPUT -i eth0 -p tcp -m tcp --dport 22 -m state --state NEW -j SSHCHECK
+-A SSHCHECK -m recent --set --name SSH --rsource 
+-A SSHCHECK -m recent --rcheck --seconds 60 --hitcount 4 --name SSH --rsource -j DROP</pre>
+		</div> 
+Nếu bạn mở một cái terminal rồi chia làm hai: 
+- nửa trên (server) chạy: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>watch 'cat /proc/net/xt_recent/SSH'</pre>
+		</div>
+- nửa dưới (client) thử ssh vào server xem. Mỗi lần mở một kết nối thì thấy `last_seen` cũng vẫn thay đổi giống như khi dùng `--update`.
+<p></p>
+		<cite class="blockquote">congnghevps.net wrote:</cite><br>
+		<blockquote>
+Tuy nhiên mình không hiểu việc update timestamp này có tác dụng như thế nào nhỉ? 
+&nbsp;
+		</blockquote>
+Bạn tự thử nghiệm và chú ý đến thông số `--seconds` xem.
+<p></p>
+		<cite class="blockquote">congnghevps.net wrote:</cite><br>
+		<blockquote>
+Và trường hợp nào dùng rcheck và trường hợp nào dùng update. 
+&nbsp;
+		</blockquote>
+Nếu attacker tấn công liên tục từ một IP thì bạn muốn khoảng thời gian hắn bị block (`--seconds`) sẽ tính từ thời điểm hắn gửi packet đầu tiên hay packet cuối cùng.
+<p></p>
+		<cite class="blockquote">congnghevps.net wrote:</cite><br>
+		<blockquote>
+Nếu có rules tham khảo thì tốt quá, :D
+&nbsp;
+		</blockquote>
+Thử rules như trên, sau đó thay `--rcheck` thành `--update` rồi quan sát và so sánh xem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45035.hva#277980</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45035.hva#277980</link>
+				<pubDate><![CDATA[Tue, 6 Aug 2013 00:03:43]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>rcheck và update trong module recent của iptables?</title>
+				<description><![CDATA[ Thanks quanta đã reply, sau vài ngày vật vã cuối cùng cũng hiểu được hơn về module recent và thuật toán được áp dụng trong module này :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45035.hva#278015</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45035.hva#278015</link>
+				<pubDate><![CDATA[Wed, 7 Aug 2013 12:56:01]]> GMT</pubDate>
+				<author><![CDATA[ congnghevps.net]]></author>
+			</item>
+			<item>
+				<title>rcheck và update trong module recent của iptables?</title>
+				<description><![CDATA[ @congnghevps.net . Bạn "hiểu hơn về module recent và thuật toán được áp dụng trong module này" như nào. bạn chia sẻ một số ý mà bạn đã giác ngộ ra, được không
+
+thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45035.hva#278024</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45035.hva#278024</link>
+				<pubDate><![CDATA[Thu, 8 Aug 2013 05:27:48]]> GMT</pubDate>
+				<author><![CDATA[ vungnhanh]]></author>
+			</item>
+	</channel>
+</rss>

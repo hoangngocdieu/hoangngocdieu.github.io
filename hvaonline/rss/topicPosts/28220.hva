@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Openswan] Gặp vấn đề khi cấu hình VPN giữa Linux và Fortigate?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Openswan] Gặp vấn đề khi cấu hình VPN giữa Linux và Fortigate?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Openswan] Gặp vấn đề khi cấu hình VPN giữa Linux và Fortigate?</title>
+				<description><![CDATA[ Chào mọi người,
+
+Mình gặp chút vấn đề khi cấu hình Openswan để VPN từ Linux đến Fortigate.
+
+Sơ đồ kết nối của mình như sau:
+<blockquote>Linux box &lt;----&gt; ADSL Modem &lt;---&gt; Internet &lt;---&gt; Fortigate Firewall&nbsp;
+		</blockquote>
+
+Mình cài Openswan với apt-get nên <font color='yellow'>IPsec Stack mặc định là NETKEY</font>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ipsec version
+Linux Openswan U2.4.12/K2.6.27-7-generic &#40;netkey&#41;
+See `ipsec --copyright' for copyright information.</pre>
+		</div>
+
+File cấu hình <b><i>ipsec.conf</i></b> mình thêm vào một dòng:
+<blockquote>include /etc/ipsec.d/*.conf&nbsp;
+		</blockquote>
+
+File cấu hình định nghĩa kết nối đến Fortigate <b><i>/etc/ipsec.d/forti.conf</i></b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>conn forti
+        leftxauthclient=yes
+        rightxauthserver=yes
+        left=%defaultroute
+        leftsourceip=192.168.1.7
+        leftnexthop=192.168.1.1
+        leftsubnet=192.168.1.0/24
+        right=x.x.x.x
+        ike=3des-sha1
+        ikelifetime=28800s
+        esp=3des-md5
+        keylife=3600s
+        keyexchange=ike
+        authby=secret
+        compress=yes
+        auto=add</pre>
+		</div>
+
+Mình sử dụng preshared keys để xác thực. File /etc/ipsec.secrets mình thêm vào dòng sau:
+<blockquote>include /etc/ipsec.d/forti.secrets&nbsp;
+		</blockquote>
+File lưu preshared keys <b><i>/etc/ipsec.d/forti.secrets</i></b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>192.168.1.7 x.x.x.x : PSK "&lt;preshared_keys&gt;"</pre>
+		</div>
+
+Kiểm tra lại trước khi start VPN:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo ipsec verify
+Checking your system to see if IPsec got installed and started correctly:
+Version check and ipsec on-path                                 &#91;OK&#93;
+Linux Openswan U2.4.12/K2.6.27-7-generic &#40;netkey&#41;
+Checking for IPsec support in kernel                            &#91;OK&#93;
+NETKEY detected, testing for disabled ICMP send_wwwects       &#91;OK&#93;
+NETKEY detected, testing for disabled ICMP accept_wwwects     &#91;OK&#93;
+Checking for RSA private key &#40;/etc/ipsec.d/hostkey.secrets&#41;     &#91;OK&#93;
+Checking that pluto is running                                  &#91;OK&#93;
+Two or more interfaces found, checking IP forwarding            &#91;OK&#93;
+Checking NAT and MASQUERADEing                                  &#91;N/A&#93;
+Checking for 'ip' command                                       &#91;OK&#93;
+Checking for 'iptables' command                                 &#91;OK&#93;
+Opportunistic Encryption Support                                &#91;DISABLED&#93;</pre>
+		</div>
+Mình start thử VPN:
+<blockquote>
+$ sudo ipsec auto --up forti
+[sudo] password for quanta:
+Name enter:   quan.ta
+Enter secret:
+104 "forti" #3: STATE_MAIN_I1: initiate
+003 "forti" #3: received Vendor ID payload [RFC 3947] method set to=109
+003 "forti" #3: received Vendor ID payload [Dead Peer Detection]
+003 "forti" #3: received Vendor ID payload [XAUTH]
+106 "forti" #3: STATE_MAIN_I2: sent MI2, expecting MR2
+003 "forti" #3: NAT-Traversal: Result using RFC 3947 (NAT-Traversal): i am NATed
+108 "forti" #3: STATE_MAIN_I3: sent MI3, expecting MR3
+004 "forti" #3: STATE_MAIN_I4: ISAKMP SA established {auth=OAKLEY_PRESHARED_KEY cipher=oakley_3des_cbc_192 prf=oakley_sha group=modp1536}
+041 "forti" #3: forti prompt for Username:
+040 "forti" #3: forti prompt for Password:
+004 "forti" #3: STATE_XAUTH_I1: XAUTH client - awaiting CFG_set
+004 "forti" #3: STATE_XAUTH_I1: XAUTH client - awaiting CFG_set
+117 "forti" #4: STATE_QUICK_I1: initiate
+003 "forti" #4: ignoring informational payload, type IPSEC_RESPONDER_LIFETIME
+004 "forti" #4: STATE_QUICK_I2: sent QI2, <font color='yellow'>IPsec SA established</font> {ESP=&gt;0xa81e9489 &lt;0x958a0e67 xfrm=3DES_0-HMAC_MD5 NATD=xxxx:4500 DPD=none}
+&nbsp;
+		</blockquote>
+
+Log file <b><i>/var/log/auth.log</i></b> hiển thị thế này:
+<blockquote>
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: initiating Main Mode
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: received Vendor ID payload [RFC 3947] method set to=109
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: received Vendor ID payload [Dead Peer Detection]
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: received Vendor ID payload [XAUTH]
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: enabling possible NAT-traversal with method RFC 3947 (NAT-Traversal)
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: transition from state STATE_MAIN_I1 to state STATE_MAIN_I2
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: STATE_MAIN_I2: sent MI2, expecting MR2
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: I did not send a certificate because I do not have one.
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: NAT-Traversal: Result using RFC 3947 (NAT-Traversal): i am NATed
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: transition from state STATE_MAIN_I2 to state STATE_MAIN_I3
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: STATE_MAIN_I3: sent MI3, expecting MR3
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: Main mode peer ID is ID_IPV4_ADDR: 'xxxx'
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: transition from state STATE_MAIN_I3 to state STATE_MAIN_I4
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: STATE_MAIN_I4: ISAKMP SA established {auth=OAKLEY_PRESHARED_KEY cipher=oakley_3des_cbc_192 prf=oakley_sha group=modp1536}
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: <font color='orange'>XAUTH username requested, but no file descriptor available for prompt</font>
+Mar 16 16:22:54 quanta-laptop pluto[7629]: "forti" #3: sending encrypted notification CERTIFICATE_UNAVAILABLE to xxxx:4500
+Mar 16 16:23:04 quanta-laptop pluto[7629]: "forti" #2: <font color='orange'>IPsec SA expired (LATEST!)</font>
+&nbsp;
+		</blockquote>
+
+Kiểm tra tình trạng kết nối:
+<blockquote>
+$ sudo ipsec auto --status
+000 interface lo/lo ::1
+000 interface lo/lo 127.0.0.1
+000 interface lo/lo 127.0.0.1
+000 interface eth0/eth0 192.168.1.7
+000 interface eth0/eth0 192.168.1.7
+000 %myid = (none)
+000 debug none
+000
+000 algorithm ESP encrypt: id=2, name=ESP_DES, ivlen=8, keysizemin=64, keysizemax=64
+000 algorithm ESP encrypt: id=3, name=ESP_3DES, ivlen=8, keysizemin=192, keysizemax=192
+000 algorithm ESP encrypt: id=7, name=ESP_BLOWFISH, ivlen=8, keysizemin=40, keysizemax=448
+000 algorithm ESP encrypt: id=11, name=ESP_NULL, ivlen=0, keysizemin=0, keysizemax=0
+000 algorithm ESP encrypt: id=12, name=ESP_AES, ivlen=8, keysizemin=128, keysizemax=256
+000 algorithm ESP encrypt: id=13, name=(null), ivlen=8, keysizemin=128, keysizemax=256
+000 algorithm ESP encrypt: id=22, name=(null), ivlen=8, keysizemin=128, keysizemax=256
+000 algorithm ESP encrypt: id=252, name=ESP_SERPENT, ivlen=8, keysizemin=128, keysizemax=256
+000 algorithm ESP encrypt: id=253, name=ESP_TWOFISH, ivlen=8, keysizemin=128, keysizemax=256
+000 algorithm ESP auth attr: id=1, name=AUTH_ALGORITHM_HMAC_MD5, keysizemin=128, keysizemax=128
+000 algorithm ESP auth attr: id=2, name=AUTH_ALGORITHM_HMAC_SHA1, keysizemin=160, keysizemax=160
+000 algorithm ESP auth attr: id=5, name=AUTH_ALGORITHM_HMAC_SHA2_256, keysizemin=256, keysizemax=256
+000 algorithm ESP auth attr: id=8, name=AUTH_ALGORITHM_HMAC_RIPEMD, keysizemin=160, keysizemax=160
+000 algorithm ESP auth attr: id=9, name=AUTH_ALGORITHM_AES_CBC, keysizemin=128, keysizemax=128
+000 algorithm ESP auth attr: id=251, name=(null), keysizemin=0, keysizemax=0
+000
+000 algorithm IKE encrypt: id=5, name=OAKLEY_3DES_CBC, blocksize=8, keydeflen=192
+000 algorithm IKE encrypt: id=7, name=OAKLEY_AES_CBC, blocksize=16, keydeflen=128
+000 algorithm IKE hash: id=1, name=OAKLEY_MD5, hashsize=16
+000 algorithm IKE hash: id=2, name=OAKLEY_SHA1, hashsize=20
+000 algorithm IKE dh group: id=2, name=OAKLEY_GROUP_MODP1024, bits=1024
+000 algorithm IKE dh group: id=5, name=OAKLEY_GROUP_MODP1536, bits=1536
+000 algorithm IKE dh group: id=14, name=OAKLEY_GROUP_MODP2048, bits=2048
+000 algorithm IKE dh group: id=15, name=OAKLEY_GROUP_MODP3072, bits=3072
+000 algorithm IKE dh group: id=16, name=OAKLEY_GROUP_MODP4096, bits=4096
+000 algorithm IKE dh group: id=17, name=OAKLEY_GROUP_MODP6144, bits=6144
+000 algorithm IKE dh group: id=18, name=OAKLEY_GROUP_MODP8192, bits=8192
+000
+000 stats db_ops.c: {curr_cnt, total_cnt, maxsz} :context={0,4,36} trans={0,4,648} attrs={0,4,432}
+000
+000 "forti": 192.168.1.0/24===192.168.1.7[XC+S=C]---192.168.1.1...xxxx[XS+S=C]; erouted; eroute owner: #4
+000 "forti":     srcip=192.168.1.7; dstip=unset; srcup=ipsec _updown; dstup=ipsec _updown;
+000 "forti":   ike_life: 28800s; ipsec_life: 3600s; rekey_margin: 540s; rekey_fuzz: 100%; keyingtries: 0
+000 "forti":   policy: PSK+ENCRYPT+COMPRESS+TUNNEL+PFS+UP; prio: 24,32; interface: eth0; encap: esp;
+000 "forti":   newest ISAKMP SA: #3; newest IPsec SA: #4;
+000 "forti":   IKE algorithms wanted: 3DES_CBC(5)_000-SHA1(2)-MODP1536(5), 3DES_CBC(5)_000-SHA1(2)-MODP1024(2); flags=strict
+000 "forti":   IKE algorithms found: 3DES_CBC(5)_192-SHA1(2)_160-MODP1536(5), 3DES_CBC(5)_192-SHA1(2)_160-MODP1024(2)
+000 "forti":   IKE algorithm newest: 3DES_CBC_192-SHA1-MODP1536
+000 "forti":   ESP algorithms wanted: 3DES(3)_000-MD5(1); flags=strict
+000 "forti":   ESP algorithms loaded: 3DES(3)_000-MD5(1); flags=strict
+000 "forti":   ESP algorithm newest: 3DES_0-HMAC_MD5; pfsgroup=&lt;Phase1&gt;
+000
+000 #4: "forti":4500 STATE_QUICK_I2 (sent QI2, IPsec SA established); EVENT_SA_REPLACE in 1740s; newest IPSEC; eroute owner
+000 #4: "forti" esp.a81e9489@xxxx esp.958a0e67@192.168.1.7 tun.0@xxxx tun.0@192.168.1.7
+000 #3: "forti":4500 STATE_XAUTH_I1 (XAUTH client - awaiting CFG_set); EVENT_SA_REPLACE in 2297s; newest ISAKMP; lastdpd=1s(seq in:0 out:0)
+000
+&nbsp;
+		</blockquote>
+
+Thử traceroute nhưng không có kết quả:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ traceroute xxxx
+traceroute to xxxx, 30 hops max, 40 byte packets
+ 1  * * *
+ 2  * * *
+ 3  * * *
+ 4  * * *
+ 5  * * *
+ 6  * * *
+ 7  * * *
+ 8  * * *
+ 9  * * *
+10  * * *
+11  * * *
+12  * * *
+13  * * *
+14  * * *
+15  * * *
+16  * * *
+17  * * *
+18  * * *
+19  * * *
+20  * * *
+21  * * *
+22  * * *
+23  * * *
+24  * * *
+25  * * *
+26  * * *
+27  * * *
+28  * * *
+29  * * *
+30  * * *</pre>
+		</div>
+
+Sniff vài packet trên eth0 thì được:
+<blockquote>
+$ sudo tcpdump -vv -n -i eth0 host xxxx
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), capture size 96 bytes
+16:44:49.559172 IP (tos 0x0, ttl 54, id 34931, offset 0, flags [none], proto UDP (17), length 124) xxxx.4500 &gt; 192.168.1.7.4500: NONESP-encap: isakmp 1.0 msgid  cookie -&gt;: phase 2/others ? inf[E]: [encrypted hash]
+16:44:49.560333 IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto UDP (17), length 116) 192.168.1.7.4500 &gt; xxxx.4500: NONESP-encap: isakmp 1.0 msgid  cookie -&gt;: phase 2/others ? inf[E]: [encrypted hash]
+&nbsp;
+		</blockquote>
+
+Tóm lại là mình chưa VPN được. Bạn nào giúp mình với. Cần thông tin gì thêm mình sẽ cung cấp.
+
+Cảm ơn mọi người.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173440</link>
+				<pubDate><![CDATA[Mon, 16 Mar 2009 19:06:46]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [Openswan] Gặp vấn đề khi cấu hình VPN giữa Linux và Fortigate?</title>
+				<description><![CDATA[ Không thấy an quanta đề cập gì đến cấu hình Fortigate firewall hết, bên em cũng đang sài một thằng firewall Fortigate nhưng khi dùng IPset để kết nối đến Vigor V3300v thì tất cả request từ bên ngoài vào hệ thống mạng của Fortigate đều không được. 
+
+Nên em nghĩ chưa hẳn là bị từ phía bên Trixbox, anh sử dụng VPN khác kết nối đến Fortigate xem sao]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173455</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173455</link>
+				<pubDate><![CDATA[Mon, 16 Mar 2009 20:49:57]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+			<item>
+				<title>Re: [Openswan] Gặp vấn đề khi cấu hình VPN giữa Linux và Fortigate?</title>
+				<description><![CDATA[ @centos: FortiClient trên Windows vẫn chạy bình thường.
+
+Loay hoay với NETKEY không được, mình chuyển sang dùng KLIPS. Nhưng ngay bước đầu tiên patch NAT-T mình đã lại gặp vấn đề rồi. 
+Mình đang dùng <font color='yellow'>openswan-2.6.20.tar.gz</font> và <font color='yellow'>linux-source-2.6.27.tar.bz2</font> (có sẵn trong /usr/src của Ubuntu).
+
+Giải nén và tạo soft link:
+<b>cd /usr/src
+tar zxvf openswan-2.6.20.tar.gz
+tar jxvf linux-source-2.6.27.tar.bz2
+ln -s linux-source-2.6.27 linux</b>
+
+Gán biến môi trường KERNELSRC:
+<b>export KERNELSRC=/usr/src/linux</b>
+
+Tạo patch file với:
+<b>cd openswan-2.6.20
+make nattpatch &gt; ../nat-t.patch</b>
+
+Nội dung file này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat nat-t.patch 
+if &#91; -f /usr/src/linux/Makefile &#93;; then \
+		make nattpatch2.6; \
+	else	echo "Cannot determine Linux kernel version. Perhaps you need to set KERNELSRC? &#40;eg: export KERNELSRC=/usr/src/linux-`uname -r`/&#41;"; exit 1; \
+	fi;
+make&#91;1&#93;: Entering directory `/usr/src/openswan-2.6.20'
+packaging/utils/nattpatch 2.6
+--- /dev/null   Tue Mar 11 13:02:56 2003
++++ nat-t/include/net/xfrmudp.h     Mon Feb  9 13:51:03 2004
+@@ -0,0 +1,11 @@
++/*
++ * pointer to function for type that xfrm4_input wants, to permit
++ * decoupling of XFRM from udp.c
++ */
++#define HAVE_XFRM4_UDP_REGISTER
++
++typedef int &#40;*xfrm4_rcv_encap_t&#41;&#40;struct sk_buff *skb, __u16 encap_type&#41;;
++extern int udp4_register_esp_rcvencap&#40;xfrm4_rcv_encap_t func
++				      , xfrm4_rcv_encap_t *oldfunc&#41;;
++extern int udp4_unregister_esp_rcvencap&#40;xfrm4_rcv_encap_t func
++				      , xfrm4_rcv_encap_t oldfunc&#41;;
+--- /distros/kernel/linux-2.6.11.2/net/ipv4/Kconfig	2005-03-09 03:12:33.000000000 -0500
++++ swan26/net/ipv4/Kconfig	2005-04-04 18:46:13.000000000 -0400
+@@ -351,2 +351,8 @@
+ 
++config IPSEC_NAT_TRAVERSAL
++	bool "IPSEC NAT-Traversal &#40;KLIPS compatible&#41;"
++	depends on INET
++	---help---
++          Includes support for RFC3947/RFC3948 NAT-Traversal of ESP over UDP.
++
+ config IP_TCPDIAG
+--- plain26/net/ipv4/udp.c.orig	2006-12-28 20:53:17.000000000 -0500
++++ plain26/net/ipv4/udp.c	2007-05-11 10:22:50.000000000 -0400
+@@ -108,6 +108,7 @@
+ #include &lt;net/inet_common.h&gt;
+ #include &lt;net/checksum.h&gt;
+ #include &lt;net/xfrm.h&gt;
++#include &lt;net/xfrmudp.h&gt;
+ 
+ /*
+  *	Snmp MIB for the UDP layer
+@@ -881,6 +882,31 @@
+ 	sk_common_release&#40;sk&#41;;
+ }
+ 
++#if defined&#40;CONFIG_XFRM&#41; || defined&#40;CONFIG_IPSEC_NAT_TRAVERSAL&#41;
++
++static xfrm4_rcv_encap_t xfrm4_rcv_encap_func = NULL;
++int udp4_register_esp_rcvencap&#40;xfrm4_rcv_encap_t func
++			       , xfrm4_rcv_encap_t *oldfunc&#41;
++{
++  if&#40;oldfunc != NULL&#41; {
++    *oldfunc = xfrm4_rcv_encap_func;
++  }
++
++  xfrm4_rcv_encap_func = func;
++  return 0;
++}
++
++int udp4_unregister_esp_rcvencap&#40;xfrm4_rcv_encap_t func, xfrm4_rcv_encap_t old&#41;
++{
++  if&#40;xfrm4_rcv_encap_func != func&#41;
++    return -1;
++
++  xfrm4_rcv_encap_func = old;
++  return 0;
++}
++#endif /* CONFIG_XFRM_MODULE || CONFIG_IPSEC_NAT_TRAVERSAL */
++
++
+ /* return:
+  * 	1  if the the UDP system should process it
+  *	0  if we should drop this packet
+@@ -888,9 +914,9 @@
+  */
+ static int udp_encap_rcv&#40;struct sock * sk, struct sk_buff *skb&#41;
+ {
+-#ifndef CONFIG_XFRM
++#if !defined&#40;CONFIG_XFRM&#41; && !defined&#40;CONFIG_IPSEC_NAT_TRAVERSAL&#41;
+ 	return 1; 
+-#else
++#else /* either CONFIG_XFRM or CONFIG_IPSEC_NAT_TRAVERSAL */
+ 	struct udp_sock *up = udp_sk&#40;sk&#41;;
+   	struct udphdr *uh;
+ 	struct iphdr *iph;
+@@ -1018,10 +1044,27 @@
+ 			return 0;
+ 		}
+ 		if &#40;ret &lt; 0&#41; {
+-			/* process the ESP packet */
+-			ret = xfrm4_rcv_encap&#40;skb, up-&gt;encap_type&#41;;
+-			UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
+-			return -ret;
++ 			if&#40;xfrm4_rcv_encap_func != NULL&#41;
++				ret = &#40;*xfrm4_rcv_encap_func&#41;&#40;skb, up-&gt;encap_type&#41;;
++	
++			switch&#40;ret&#41; {
++			case 1:
++				/* FALLTHROUGH to send-up */;
++				break;
++				
++			case 0:
++                                /* PROCESSED, free it */
++				UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
++				return 0;
++				
++			case -1:
++				/* PACKET wasn't for _func, or no func, pass it
++				 * to stock function
++				 */
++				ret = xfrm4_rcv_encap&#40;skb, up-&gt;encap_type&#41;;
++				UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
++				return -ret;
++			}
+ 		}
+ 		/* FALLTHROUGH -- it's a UDP Packet */
+ 	}
+@@ -1110,7 +1153,6 @@
+ /*
+  *	All we need to do is get the socket, and then do a checksum. 
+  */
+- 
+ int udp_rcv&#40;struct sk_buff *skb&#41;
+ {
+   	struct sock *sk;
+@@ -1599,3 +1641,9 @@
+ EXPORT_SYMBOL&#40;udp_proc_register&#41;;
+ EXPORT_SYMBOL&#40;udp_proc_unregister&#41;;
+ #endif
++
++#if defined&#40;CONFIG_IPSEC_NAT_TRAVERSAL&#41;
++EXPORT_SYMBOL&#40;udp4_register_esp_rcvencap&#41;;
++EXPORT_SYMBOL&#40;udp4_unregister_esp_rcvencap&#41;;
++#endif
++
+make&#91;1&#93;: Leaving directory `/usr/src/openswan-2.6.20'</pre>
+		</div>
+
+Apply patch:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd ../linux
+cat ../nat-t.patch | patch -p1
+patching file include/net/xfrmudp.h
+patching file net/ipv4/Kconfig
+Hunk #1 succeeded at 351 with fuzz 1.
+patching file net/ipv4/udp.c
+Hunk #1 FAILED at 108.
+Hunk #2 FAILED at 882.
+Hunk #3 FAILED at 914.
+Hunk #4 FAILED at 1044.
+Hunk #5 FAILED at 1153.
+Hunk #6 succeeded at 1789 &#40;offset 148 lines&#41;.
+5 out of 6 hunks FAILED -- saving rejects to file net/ipv4/udp.c.rej</pre>
+		</div>
+
+File <b>udp.c.rej</b> của mình thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>***************
+*** 108,113 ****
+  #include &lt;net/inet_common.h&gt;
+  #include &lt;net/checksum.h&gt;
+  #include &lt;net/xfrm.h&gt;
+  
+  /*
+   *	Snmp MIB for the UDP layer
+--- 108,114 ----
+  #include &lt;net/inet_common.h&gt;
+  #include &lt;net/checksum.h&gt;
+  #include &lt;net/xfrm.h&gt;
++ #include &lt;net/xfrmudp.h&gt;
+  
+  /*
+   *	Snmp MIB for the UDP layer
+***************
+*** 881,886 ****
+  	sk_common_release&#40;sk&#41;;
+  }
+  
+  /* return:
+   * 	1  if the the UDP system should process it
+   *	0  if we should drop this packet
+--- 882,912 ----
+  	sk_common_release&#40;sk&#41;;
+  }
+  
++ #if defined&#40;CONFIG_XFRM&#41; || defined&#40;CONFIG_IPSEC_NAT_TRAVERSAL&#41;
++ 
++ static xfrm4_rcv_encap_t xfrm4_rcv_encap_func = NULL;
++ int udp4_register_esp_rcvencap&#40;xfrm4_rcv_encap_t func
++ 			       , xfrm4_rcv_encap_t *oldfunc&#41;
++ {
++   if&#40;oldfunc != NULL&#41; {
++     *oldfunc = xfrm4_rcv_encap_func;
++   }
++ 
++   xfrm4_rcv_encap_func = func;
++   return 0;
++ }
++ 
++ int udp4_unregister_esp_rcvencap&#40;xfrm4_rcv_encap_t func, xfrm4_rcv_encap_t old&#41;
++ {
++   if&#40;xfrm4_rcv_encap_func != func&#41;
++     return -1;
++ 
++   xfrm4_rcv_encap_func = old;
++   return 0;
++ }
++ #endif /* CONFIG_XFRM_MODULE || CONFIG_IPSEC_NAT_TRAVERSAL */
++ 
++ 
+  /* return:
+   * 	1  if the the UDP system should process it
+   *	0  if we should drop this packet
+***************
+*** 888,896 ****
+   */
+  static int udp_encap_rcv&#40;struct sock * sk, struct sk_buff *skb&#41;
+  {
+- #ifndef CONFIG_XFRM
+  	return 1; 
+- #else
+  	struct udp_sock *up = udp_sk&#40;sk&#41;;
+    	struct udphdr *uh;
+  	struct iphdr *iph;
+--- 914,922 ----
+   */
+  static int udp_encap_rcv&#40;struct sock * sk, struct sk_buff *skb&#41;
+  {
++ #if !defined&#40;CONFIG_XFRM&#41; && !defined&#40;CONFIG_IPSEC_NAT_TRAVERSAL&#41;
+  	return 1; 
++ #else /* either CONFIG_XFRM or CONFIG_IPSEC_NAT_TRAVERSAL */
+  	struct udp_sock *up = udp_sk&#40;sk&#41;;
+    	struct udphdr *uh;
+  	struct iphdr *iph;
+***************
+*** 1018,1027 ****
+  			return 0;
+  		}
+  		if &#40;ret &lt; 0&#41; {
+- 			/* process the ESP packet */
+- 			ret = xfrm4_rcv_encap&#40;skb, up-&gt;encap_type&#41;;
+- 			UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
+- 			return -ret;
+  		}
+  		/* FALLTHROUGH -- it's a UDP Packet */
+  	}
+--- 1044,1070 ----
+  			return 0;
+  		}
+  		if &#40;ret &lt; 0&#41; {
++  			if&#40;xfrm4_rcv_encap_func != NULL&#41;
++ 				ret = &#40;*xfrm4_rcv_encap_func&#41;&#40;skb, up-&gt;encap_type&#41;;
++ 	
++ 			switch&#40;ret&#41; {
++ 			case 1:
++ 				/* FALLTHROUGH to send-up */;
++ 				break;
++ 				
++ 			case 0:
++                                 /* PROCESSED, free it */
++ 				UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
++ 				return 0;
++ 				
++ 			case -1:
++ 				/* PACKET wasn't for _func, or no func, pass it
++ 				 * to stock function
++ 				 */
++ 				ret = xfrm4_rcv_encap&#40;skb, up-&gt;encap_type&#41;;
++ 				UDP_INC_STATS_BH&#40;UDP_MIB_INDATAGRAMS&#41;;
++ 				return -ret;
++ 			}
+  		}
+  		/* FALLTHROUGH -- it's a UDP Packet */
+  	}
+***************
+*** 1110,1116 ****
+  /*
+   *	All we need to do is get the socket, and then do a checksum. 
+   */
+-  
+  int udp_rcv&#40;struct sk_buff *skb&#41;
+  {
+    	struct sock *sk;
+--- 1153,1158 ----
+  /*
+   *	All we need to do is get the socket, and then do a checksum. 
+   */
+  int udp_rcv&#40;struct sk_buff *skb&#41;
+  {
+    	struct sock *sk;</pre>
+		</div>
+
+Ở <span class="link"> http://lists.virus.org/users-openswan-0806/msg00104.html</span> cũng có người gặp lỗi giống mình. Bạn Paul bạn ấy bảo thử "apply bằng tay" xem. Nhưng thú thật là mình học dốt C nên không biết làm thế nào cả. Ai chỉ cho mình với.
+
+Kiểu gì thì kiểu cũng phải patch được NAT-T thì mới đi tiếp được.
+
+P/S: Mình đã thử với kernel mới nhất 2.6.28.8, cũng vẫn bị lỗi như trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173668</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/28220.hva#173668</link>
+				<pubDate><![CDATA[Wed, 18 Mar 2009 14:01:39]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

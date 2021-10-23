@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xác định sai địa chỉ cấu trúc Export Directory của file PE"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xác định sai địa chỉ cấu trúc Export Directory của file PE"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xác định sai địa chỉ cấu trúc Export Directory của file PE</title>
+				<description><![CDATA[ Tui đang tìm hiểu cấu trúc file PE và có thử viết một cái demo để phân tích nó và xác định địa chỉ vài chỗ để coi như là thực hành cho cái lý thuyết. Đối tượng làm thí nghiệm của tui là file Garena.exe và bỏ vào ổ C. Đây là đoạn code của
+tui:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;iostream&gt;
+#include &lt;fstream&gt;
+#include &lt;string&gt;
+#include &lt;windows.h&gt;
+using namespace std;
+
+#define Print_Directory_Entry&#40;name&#41; \
+		cout&lt;&lt;#name&lt;&lt;endl; \
+		cout&gt;&lt;&lt; iNh-&gt;OptionalHeader.DataDirectory&#91;name&#93;.size &lt;&lt; endl; \
+		cout&lt;&lt;iNh-&gt;OptionalHeader.DataDirectory&#91;name&#93;.VirtualAddress&lt;&lt;endl;
+
+#define NewCharArray&#40;n&#41; \
+		cPtr = new char&#91;sizeof&#40;n&#41;&#93;; \
+		file.read&#40;cPtr, sizeof&#40;n&#41;&#41;;
+
+
+int main&#40;void&#41;
+{
+
+	
+	IMAGE_DOS_HEADER* iDh = 0;
+	IMAGE_NT_HEADERS* iNh = 0;
+
+	ifstream file&#40;"C:\\Garena.exe", ios::in | ios::binary&#41;;
+	char* cPtr = NULL;
+	
+	NewCharArray&#40;IMAGE_DOS_HEADER&#41;;
+	
+	
+	iDh = &#40;IMAGE_DOS_HEADER*&#41;cPtr;
+
+	file.seekg&#40;iDh-&gt;e_lfanew, ios::beg&#41;;
+
+	
+	/***************************************/
+	/**************NT HEADER****************/
+	/***************************************/
+
+	
+	NewCharArray&#40;IMAGE_NT_HEADERS&#41;;
+	
+	iNh = &#40;IMAGE_NT_HEADERS*&#41;cPtr;
+
+	cout&lt;&lt;&quot;Number of section: &quot; &lt;&lt; iNh-&gt;FileHeader.NumberOfSections&lt;&lt;endl;
+	cout&gt;&lt;&lt;&quot;Entry Point &quot; &lt;&lt; iNh-&gt;OptionalHeader.AddressOfEntryPoint&lt;&lt;endl;
+	
+	cout&gt;&lt;&lt; iNh-&gt;OptionalHeader.NumberOfRvaAndsizes&lt;&lt;endl;
+	
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_EXPORT&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_IMPORT&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_RESOURCE&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_EXCEPTION&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_SECURITY&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_BASERELOC&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_DEBUG&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_ARCHITECTURE&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_GLOBALPTR&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_TLS&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_IAT&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT&#41;;
+	Print_Directory_Entry&#40;IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR&#41;;
+
+	
+	IMAGE_SECTION_HEADER* iSh;
+
+	cPtr = new char&#91;sizeof&#40;IMAGE_SECTION_HEADER&#41;*iNh-&gt;FileHeader.NumberOfSections&#93;;
+	file.read&#40;cPtr, sizeof&#40;IMAGE_SECTION_HEADER&#41;*iNh-&gt;FileHeader.NumberOfSections&#41;;
+
+	iSh = &#40;IMAGE_SECTION_HEADER*&#41;cPtr;
+	
+	for&#40;int i = 0; i &lt; iNh-&gt;FileHeader.NumberOfSections; i++&#41;
+	{
+		cout&lt;&lt;iSh&#91;i&#93;.Name&gt;&lt;&lt;endl;
+		cout&lt;&lt;hex&gt;&lt;&lt;iSh&#91;i&#93;.VirtualAddress&lt;&lt;endl;
+
+	}
+	
+	cout&gt;&lt;&lt;&quot;Virtual Offset: &quot; &lt;&lt; hex&lt;&lt;iSh&#91;1&#93;.VirtualAddress&gt;&lt;&lt;endl;
+	cout&lt;&lt;&quot;Raw Offset: &quot; &lt;&lt;hex&gt;&lt;&lt;iSh&#91;1&#93;.PointerToRawData&lt;&lt;endl;
+
+	
+	unsigned long delta = iSh&#91;1&#93;.VirtualAddress - iSh&#91;1&#93;.PointerToRawData;
+        unsigned long x = iNh-&gt;OptionalHeader.DataDirectory&#91;0&#93;.VirtualAddress;
+	unsigned long y = iNh-&gt;OptionalHeader.DataDirectory&#91;0&#93;.size;
+
+	file.seekg&#40;x - delta, ios::beg&#41;;
+	cPtr = new char&#91;y&#93;;
+	file.read&#40;cPtr, y&#41;;
+
+	
+
+	IMAGE_EXPORT_DIRECTORY* iEd = &#40;IMAGE_EXPORT_DIRECTORY*&#41;cPtr;
+	cout&lt;&lt;&quot;Address of Name: &quot;&lt;&lt;hex&gt;&lt;&lt;iEd-&gt;Name&lt;&lt;endl;
+
+	cout&gt;&lt;&lt;iEd-&gt;AddressOfNames - delta&lt;&lt;endl;
+	file.close&#40;&#41;;
+	
+	return 0;
+}</pre>
+		</div>
+
+Có vẻ mọi thứ đều tốt nhưng cái lệnh cout cuối cùng thì tui nghĩ là gặp vấn đề. Vì nó xuất ra là 1EDC48, trong khi nếu coi dưới dạng Hex bằng một chương trình khác, như WinHex, TotalCommander, (ở đây tui xài FreeCommander) thì cái chỗ đúng phải là 1EDCFB. Tui có gởi hình, anh em có thể coi để hiểu ý tui.
+
+<br>
+			<div align="center" class="limitview"><img src='http://i227.photobucket.com/albums/dd28/hoang_su_tk/garena.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+File Garena.exe (anh em nhớ dán vào ổ C hoặc thay đổi đường dẫn cho phù hợp nhé)<span class="link"> http://www.mediafire.com/?5mtzyz2jfo4</span>
+
+Vậy là, có thể có hai điều lưu ý:
+
+1 - Tui ko hiểu về trường AddressOfNames, về ý nghĩa cũng như giá trị của nó.
+2 - Có thể tui mần sai ở đâu đó khi tính. Nhưng tui đã check với LordPE và thấy chẳng có gì sai cả :|
+
+Mong đc hồi âm sớm :) Thanks nhiều :)&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32531.hva#200470</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32531.hva#200470</link>
+				<pubDate><![CDATA[Sat, 12 Dec 2009 04:19:11]]> GMT</pubDate>
+				<author><![CDATA[ HoangTuanSu]]></author>
+			</item>
+	</channel>
+</rss>

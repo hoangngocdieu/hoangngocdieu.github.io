@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình máy chủ với IIS6, PHP5, MySQL4 trên WinServer 2003"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình máy chủ với IIS6, PHP5, MySQL4 trên WinServer 2003"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình máy chủ với IIS6, PHP5, MySQL4 trên WinServer 2003</title>
+				<description><![CDATA[ <b><i>Written and tested completely by thangdiablo &nguyenthanhcong (toantin.org) ^_&</i></b>
+
+Hello các bạn, vừa thi học kì xong,tớ đang xả hơi vài ngày cho thư giãn  , nhân lúc có thời gian cũng muốn viết 1 bài để hỗ trợ pà con nào lần đầu set up home server trên Windows Server 2003 hỗ trợ PHP và MySQL.
+Các bạn có thể tham khảo thêm bài viết cấu hình HomeServer bằng Dynamic DNS có rất nhiều trên Forum HVA hoặc vào www.vnnic.net.vn để tham khảo chi tiết cách làm
+Trở lại bài viết của chúng ta, hiện nay như các bạn đã biết thì cái IIS5 có lỗi khá nghiêm trọng (điển hình là hàng loạt Web Site và Domain bị bay trong vài tháng gần đây) cho nên Công muốn khuyên các bạn nên cài cái IIS6 (trên WinServer2003, các bạn add thêm vào từ đĩa Setup) 
+Các phần mềm sẽ sử dụng trong bài này:
+php 5.0.4 các bạn tải luôn 2 bản: bản installer để cài đặt cho dễ và bản .zip để về sau ta sẽ dùng tới các file.dll trong đó www.php.net
+MySQL 4.1.11 win32 www.mysql.com
+Các bạn lên websites download về đầy đủ nguyên liệu nấu nướng chưa ạ....
+Nào bây giờ chúng ta bắt đầu cooking thôi ^_&:&nbsp;
+		</blockquote>
+
+Tớ giả sử rằng các bạn đã add thêm component IIS6 vào Windows Server 2003 một cách ngon lành.Và bây giờ chúng ta muốn website của ta được được viết bằng ngôn ngữ PHP và có Phpmyadmin để quản trị CSDL.
+Let go --->
+B1: cài đặt PHP 
+chạy file php-5.0.4-íntaller.exe 
+chú ý file php.ini được tạo ra trong thư mục Windows 
+B2: test thử xem cái PHP này chạy không để còn tính tiếp ^_: 
+bạn tạo file phpinfo.php với nội dung như sau: 
+
+QUOTE
+Code: 
+<? phpinfo(); ?> 
+
+
+Chép vào thư mục chứa Web trên máy của bạn, 
+okie, bật trình duyệt lên wính vào:<span class="link"> http://localhost/phpinfo.php</span> 
+-----> không như ý muốn rồi , có vẻ như IIS không hiểu file.php là cái giống gì 
+Khi đó mục tiêu của chúng ta là config IIS6 để nó hiểu PHP5 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/99.hva#402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/99.hva#402</link>
+				<pubDate><![CDATA[Fri, 16 Jun 2006 09:01:08]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình máy chủ với IIS6, PHP5, MySQL4 trên WinServer 2003</title>
+				<description><![CDATA[ Rồi Giờ Mục tiêu kế tiếp: Cấu hình IIS hỗ trợ PHP 
+
+Chúng ta đã cùng nhau cài cái IIS6 và sau đó là PHP5 vào Windows Server 2003
+Sau đó ta chạy hàm phpinfo trong file phpinfo.php thì thấy rằng báo rằng "page can not display" hay thậm chí sẽ không cho down load luôn file phpinfo.php về, vì sao IIS lại " đối xử " như thế đối với file .php khi mà rõ ràng ta đã cài đặt trình thông dịch PHP vào rồi.
+Để hiểu được điều này chúng ta sẽ xem wa một chút cơ chế làm việc của IIS .
+Khi nhận được request từ client đến 1 file nào đó (có phần mở rộng xác định, vd:.php,.asp,...) , IIS không thể tự ý xử lý một cách tùy tiện mà nó sẽ phải xem coi mình đã được chỉ đạo như thế nào.
+Trong trường hợp này, chúng ta hoàn toàn chưa cho IIS biết nó sẽ phải làm gì khi đụng phải "thằng" file có đuôi là 
+.php ----->"không ra lệnh thì tui ngồi chơi xơi nước cho khỏe"  
+Để ngăn anh chàng nhân viên này trốn việc ta quy định cụ thể luôn cho hắn như sau: "Khi nhận được yêu cầu file *.php, anh bạn hãy chuyễn ngay file ấy cho đồng nghiệp là Trình thông dịch (TTD) PHP xử lý, sau khi nhận được kết quả trả về dưới dạng html thì hãy trả về cho client đả gửi request!
+"
+Và sau đây là các bước cụ thể để ra lệnh cho IIS: 
+Các bạn chỉnh sửa các thông số như trong hình nhé:
+B1:Home Directory (chú ý thư mục c:\Web là thư mục gốc trên Web Server)
+
+<br>
+			<div align="center" class="limitview"><img src='http://toantin.org/uploads/imgposts/b1.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+B2:Permission cho thư mục Web 
+<br>
+			<div align="center" class="limitview"><img src='http://toantin.org/uploads/imgposts/b2.gif' border="0" onload="maxImg(this, 500px);" /></div>
+B3:Chọn Application Extension
+<br>
+			<div align="center" class="limitview"><img src='http://toantin.org/uploads/imgposts/b3.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+B4:Web Service Extensions
+
+<br>
+			<div align="center" class="limitview"><img src='http://toantin.org/uploads/imgposts/b4.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Okie, sau khi làm xong các bước trên các bạn hãy view lại file phpinfo.php để xem các thông tin trên Web Server.Được rồi đó...
+^-^
+Bây giờ bạn search thử chữ mysql trên trình duyệt đang hiển thị phpinfo.php.
+Kết quả: không tìm thấy
+Okie
+TIếp theo chúng ta sẽ tiếp tục công việc install MySql4 lên Home Server của mình ^-&
+
+CÒN TIẾP...... Cài đặt Cơ sở dữ liệu (CSDL) MySQL4 cho PHP5 
+
+Cụ thể trong bài này, tớ đã test với mysql-essential-4.1.11-win32.msi
+Các bạn Download về sau đó cài đặt bình thường.
+(nếu muốn cấu hình lại trong các lần chạy sau thì chạy file MySQL\bin\MySQLInstanceConfig.exe , giả sử cài cài đặt MySQL vào thư mục MySQL)
+Xong xuôi, bây giờ ta ung dung view lại cái trang phpinfo.php lúc trước, search thử Table của mysql trên trình duyệt đang hiển thị phpinfo.php
+Lạ wa', vẫn không thấy gì
+Điều đó chứng tỏ PHP vẫn không biết đến sự có mặt của MySQL .
+Đối với các phiên bản PHP trước đây (4,3,..) thì sau khi làm xong các bước trên chắn chắn sẽ search ra nguyên table của mysql.
+Vậy vấn đề nằm ở đâu?  
+Thì ra, kể từ các phiên bản PHP 5 trở đi các nhà lập trình sáng tạo ra ngôn ngữ PHP đã quyết định không mặc định cho PHP xài CSDL MySQL như trước.
+Vậy ta phải làm sao đây?  
+Bạn con nhớ file php.ini được tạo ra trong thư mục Windows, và php bản .zip mà tớ nói bạn tải về chứ, đã đến lúc mò đến nó
+Sau đây là các bước cụ thể để nói cho PHP biết :có "anh bạn" CSDL MySQL trên đời và "anh" hãy "hợp tác" với "anh ấy" để "làm ăn" ^-^ :
+B1: Giải nén bản PHP .zip , copy file libmySQL.dll vào thư mục WINDOWS
+B2:copy file php_mysql.dll vào thư mục cài đặt PHP (giả sử "D:\Program\PHP\")
+B3: Mở file php.ini :
+_sửa lại extension_dir ="D:\Program\PHP\"
+_Bỏ dấu ; trước dòng extension=php_mysql.dll
+Ok
+Lập lại thao tác view cái trang phpinfo.php, rồi search thử chữ mysql trên trình duyệt bạn sẽ thấy 1 table được dành riêng cho MySQL đang hiển thị 
+
+Đến đây mọi thao tác cài đặt và cấu hình WebServer hỗ trợ PHP đã xong.
+Các lần cài đặt lại (nếu có) về sau ta chỉ cần nhớ 3 bước:
+B1: cài đặt IIS
+B2: cài đặt PHP và cấu hình cho IIS nhận biết PHP
+B3: cài đặt MySQL và cấu hình cho PHP nhận biết MySQL
+enjoy !
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/99.hva#403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/99.hva#403</link>
+				<pubDate><![CDATA[Fri, 16 Jun 2006 09:01:30]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+	</channel>
+</rss>

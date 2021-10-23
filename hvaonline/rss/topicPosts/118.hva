@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Bảo mật hệ thống *nix với PAM (linet)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Bảo mật hệ thống *nix với PAM (linet)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Bảo mật hệ thống *nix với PAM (linet)</title>
+				<description><![CDATA[ <b>1. Đặt vấn đề</b>
+
+Chắc hẳn bạn đã từng tự hỏi tại sao các chương trình ftp, su, login, passwd, sshd, rlogin … lại có thể hiểu và làm việc với shadow password; hay tại sao các chương trình su, rlogin lại đòi hòi password; tại sao một số hệ thống chỉ cho một nhóm nào đó có quyền su, hay sudo, hay hệ thống chỉ cho phép một số người dùng, nhóm người dùng đến từ các host xác định và các thiết lập giới hạn cho những người dùng đó, …Tất cả đều có thể lý giải với PAM. Ứng dụng của PAM còn nhiều hơn những gì tôi vừa nêu nhiều, và nó bao gồm các module để tiện cho người quản trị lựa chọn.
+
+<b>2. Cấu trúc PAM</b>
+
+- Các ứng dụng PAM được thiết lập trong thư mục /etc/pam.d hay trong file /etc/pam.conf ( login, passwd, sshd, vsftp, …)
+- Thư viện các module được lưu trong /lib/security ( pam_chroot.so, pam_access.so, pam_rootok.so, pam_deny.so, … )
+- Các file cấu hình được lưu trong /etc/security ( access.conf, chroot.conf, group.conf ,… )
++ access.conf – Điều khiển quyền truy cập, được sử dụng cho thư viện pam_access.so.
++ group.conf – Điểu khiển nhóm người dùng, sử dụng bởi pam_group.so
++ limits.conf – thiết lập các giới hạn tài nguyên hệ thống, được sử dụng bởi pam_limits.so.
++ pam_env – Điểu khiển khả năng thay đổi các biến môi trường, sử dụng cho thư viện pam_env.so .
++ time – Thiết lập hạn chế thời gian cho dịch vụ và quyền người dùng, sử dụng cho thư viện pam_time.so.
+
+<b>3. Cách hoạt động của PAM</b>
+
+Thuật ngữ
+- Các chương trình login, pass, su, sudo, … trên được gọi là privilege-granting application ( chương trình trao đặc quyền ).
+
+- PAM-aware application: là chương trình giúp các privile-granting application làm việc với thư viện PAM.
+
+<i>Các bước hoạt động:</i>
+
+1. Người dùng chạy một ứng dụng để truy cập vào dịch vụ mong muốn, vd login.
+2. PAM-aware application gọi thư viện PAM để thực hiện nhiệm vụ xác thực.
+3. PAM library sẽ dựa vào file cấu hình của chương trình đó trong /etc/pam.d ( vd ở đây là login -> file cấu hình /etc/pam.d/login ) xác định loại xác thực nào được yêu cầu cho chương trình trên. Trong trường hợp không có file cấu hình, thì file /etc/pam.d/other sẽ được sử dụng.
+4. PAM library sẽ load các module yêu cầu cho xác thực trên.
+5. Các modules này sẽ tạo một liên kết tới các hàm chuyển đổi ( conversation functions ) trên chương trình.
+6. Các hàm này dựa vào các modules mà đưa ra các yêu cầu với người dùng, vd chúng yêu cầu người dùng nhập password.
+7. Người dùng nhập thông tin vào theo yêu cầu.
+8. Sau khi quá trình xác thực kết thúc, chương trình này sẽ dựa vào kết quả mà đáp ứng yêu cầu người dùng ( vd cho phép login vào hệ thống ) hay thông báo thất bại với người dùng.
+
+<b>4. Bây giờ chúng ta sẽ nghiên cứu file config</b>
+
+The /etc/pam.d/rlogin file
+<blockquote>
+#%PAM-1.0
+auth required /lib/security/pam_securetty.so
+auth sufficient /lib/security/pam_rhosts_auth.so
+auth required /lib/security/pam_stack.so service=system-auth
+auth required /lib/security/pam_nologin.so
+account required /lib/security/pam_stack.so service=system-auth
+password required /lib/security/pam_stack.so service=system-auth
+session required /lib/security/pam_stack.so service=system-auth
+&nbsp;
+		</blockquote>
+
+
+Các dòng trong file config có dạng sau:
+
+module-type control-flag module-path module-args
+
+----MODULE TYPE
+
+auth: thực hiện xác thực. Thông thường, một auth module sẽ yêu cầu password để kiểm tra, hay thiết lập các định danh như nhóm người dùng, hay thẻ kerberos.
+
+Account điều khiển sự kiểm tra “bề mặt” với yêu cầu xác thực. Ví dụ, nó có thể kiểm tra người dùng truy cập dịch vụ từ một host và trong thời gian cho phép hay không. 
+
+Password: thiết lập password. Thông thường, nó luôn có sự tương ứng giữa một module auth và một module password..
+
+Session: điều khiển các nhiệm vụ quản lý session. Được sử dụng để đảm bảo rằng người dùng sử dụng tài khoản của họ khi đã được xác thực..
+
+----PAM MODULE CONTROL FLAGS
+
+Require: cờ điều khiển này nói với PAM library yêu cầu sự thành công của modules tương ứng, vd “auth required /lib/security/pam_securetty.so” à module pam_securetty.so phải thành công. Nếu module đó không được thực hiện thành công thì quá trình xác thực thất bại. Nhưng lúc đó, PAM vẫn tiếp tục với các module khác, tuy nhiên nó chỉ có tác dụng nhằm tránh khỏi việc người dùng có thể đoán được quá trình này đã bị thất bại ở giai đoạn nào.
+
+Sufficient: cờ này khác với cờ trên ở chỗ, khi có một module thực hiện thành công nó sẽ thông báo hoàn thành ngay quá trình xác thực, mà không duyệt các module khác nữa.
+
+Requisite: cờ này có ý nói PAM library loại bỏ ngay quá trình xác thực khi gặp bất kỳ thông báo thất bại của module nào.
+
+Optional: cờ này ít khi được sử dụng, nó có ý nghĩa là module này được thực hiện thành công hay thất bại cũng không quan trọng, không ảnh hưởng quá trình xác thực.
+
+----MODULE-PATH – Đường dẫn đên thư viện PAM.
+
+
+----ARGUMENTS – Các biến tùy chọn cho các module.
+
+Các module ( auth, account, password, session ) được thực hiện trong stack và chúng được thực hiện theo thứ tự xuất hiện trong file config.
+
+Các chương trình yêu cầu xác thực đều có thể sử dụng PAM.
+
+
+<b>5. Sau đây tôi xin giới thiệu chức năng của một số module</b>
+
+* pam_access.so:
+- Support module type : account
+- Module này sử dụng file thiết lập trong etc/security/access.conf .
+File cấu hình này có dạng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt; + or - &gt; : : + : grant permission
+- : deny permission</pre>
+		</div>
+
+Với username list là người dùng hay nhóm người dùng, tty list là login qua console, host list xác định các host hay domain. Chúng ta có thể sử dụng các từ khóa ALL=tất cả, EXCEPT=trừ,LOCAL=cục bộ.
+
+Ví dụ: sau cho cấm osg login từ tất cả, và cho phép linet login từ xa.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>account required pam_access.so
+-:osg:ALL
++:linet:ALL EXCEPT LOCAL</pre>
+		</div>
+
+* pam_chroot.so:
+Support module type :account; session; authentication
+Dùng để chroot cho các user thiết lập trong /etc/security/chroot.conf
+Ví dụ, tôi thực hiện chroot cho sshd để người dùng linet chỉ có quyền truy cập trong /home/osg mà không có quyền truy cập đến các thư mục home của người dùng khác
+Thêm dòng sau trong /etc/pam.d/sshd ( lưu ý trong /etc/sshd/sshd_config phải thiết lập UsePAM = yes )
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>session required pam_chroot.so</pre>
+		</div>
+
+* pam_deny.so:
+
+Support module type: account; authentication; password; session
+Module này luôn trả về giá trị false. Vd nó được dùng trong /etc/pam.d/other để từ chối mọi truy cập của người dùng khi truy cập vào các PAM-aware program mà không có file cấu hình PAM
+
+- Acount module type: Từ chối người dùng quyền truy cập vào hệ thống
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#add this line to your other login entries to disable all accounts
+login account required pam_deny.so</pre>
+		</div>
+
+- Authentication module type: từ chối truy cập, thiết lập giá trị mặc định. vd trong /etc/pam.d/other. Khi người dùng login vào hệ thống, đầu tiên sẽ gọi các module trong /etc/pam.d/login ra và yêu cầu người dùng nhập thông tin tương ứng ( username, password ), nếu các thông tin này không đáp ứng thì PAM sẽ gọi /etc/pam.d/other ra để deny quyền truy cập.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#/etc/pam.d/other
+auth required /lib/security/$ISA/pam_deny.so
+account required /lib/security/$ISA/pam_deny.so
+password required /lib/security/$ISA/pam_deny.so
+session required /lib/security/$ISA/pam_deny.so</pre>
+		</div>
+
+- Password module type: Không cho phép change password
+
+ví dụ không cho phép người dùng đổi passwd
+Thêm dòng sau vào /etc/pam.d/passwd
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>password required pam_deny.so</pre>
+		</div>
+
+* pam_limits.so
+- Support module type: session
+Thiết lập các giới hạn tài nguyên trong /etc/security/limit
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>username|@groupname type resource limit.</pre>
+		</div>
+
+A resource can be one of these keywords:
+· core - Limits the size of a core file (KB).
+· data - Maximum data size (KB).
+· fsize - Maximum file size (KB).
+· memlock - Maximum locked-in memory address space (KB).
+· nofile - Maximum number of open files.
+· rss - Maximum resident set size (KB).
+· stack - Maximum stack size (KB).
+· cpu - Maximum CPU time in minutes.
+· nproc - Maximum number of processes.
+· as - Address space limit.
+· maxlogins - Maximum number of logins allowed for this user.
+
+Thông tin chi tiết ở trong /etc/security/limits.conf
+
+Vd dưới đây, tất cả user giới hạn 10 MB mỗi session và cho phép max là 4 logins đồng thời. ftp được cho phép 10 login đồng thời ( hứu ích cho anonymous ftp ); thành viên của nhóm manager giới hạn 40 process, nhóm developers giới hạn 64MB bộ nhớ, và các user thuộc wwwusers không thể tạo files lớn hơn 50 MB = 500000 KB.
+
+Setting quotas and limits
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>* hard rss 10000
+* hard maxlogins 4
+* hard core 0
+bin -
+ftp hard maxlogins 10
+@managers hard nproc 40
+@developers hard memlock 64000
+@wwwusers hard fsize 50000</pre>
+		</div>
+
+Để active các limits này, bạn cần thêm dòng sau vào cuối /etc/pam.d/login:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>session required /lib/security/pam_limits.so.</pre>
+		</div>
+
+
+* pam_listfile.so
+
+Module này đọc thông tin trong file và thực hiện hành động được thiết lập ( như cho phép hay không cho phép truy cập ) dựa vào sự tồn tại hay không của các nhân tố như username, host, groups, …
+
+Ví dụ trong vsftpd
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>auth required /lib/security/pam_listfile.so item=user \
+sense=deny file=/etc/ftpusers onerr=succeed</pre>
+		</div>
+
+
+Yêu cầu PAM load pam_listfile module và đọc trong /etc/ftpusers, nếu /etc/ftpusers chứa các dòng username, thì PAM sẽ sử dụng sense=deny để quyết định ngăn cản các user này truy cập vào. Vậy các user trong /etc/ftpusers sẽ ko có quyền truy cập vào ftp.
+
+* pam_rootok.so
+
+Sử dụng module này để yêu cầu root không cần nhập password khi thực hiện chương trình, vd nó được gán vào su để chi rằng root không cần gõ passwd khi đánh lệnh su
+
+* pam_wheel.so
+Chỉ cho phép quyền truy cập root với group wheel. Ví dụ chỉ cho phép những người thuộc nhóm wheel có quyền su lên root.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#
+# root gains access by default &#40;rootok&#41;, only wheel members can
+# become root &#40;wheel&#41; but Unix authenticate non-root applicants.
+#
+auth sufficient pam_rootok.so
+auth required pam_wheel.so
+auth required pam_unix_auth.so</pre>
+		</div>
+
+
+----------------------  Tham khảo -----------------------------------
+Document:<span class="link"> http://www.kernel.org/pub/linux/libs/pam/pre/doc/</span>
+Mã nguồn module:<span class="link"> http://cvs.sourceforge.net/viewcvs.py/pam/Linux-PAM/modules/</span>
+
+Trên đây là một số thông tin tôi cung cấp về PAM. Hy vọng sẽ giúp ích phần nào cho các bạn trong security linux. Mọi chi tiết xin liên hệ kiennd@gmail.com. Thanks!!!
+
+
+Tác giả <b>linet</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/118.hva#448</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/118.hva#448</link>
+				<pubDate><![CDATA[Sun, 18 Jun 2006 05:00:12]]> GMT</pubDate>
+				<author><![CDATA[ hakuso]]></author>
+			</item>
+	</channel>
+</rss>

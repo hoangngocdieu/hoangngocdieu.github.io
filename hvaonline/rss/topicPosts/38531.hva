@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ruby-FFI: `ffi_libraries': no library specified (LoadError)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ruby-FFI: `ffi_libraries': no library specified (LoadError)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ruby-FFI: `ffi_libraries': no library specified (LoadError)</title>
+				<description><![CDATA[ Chào cả nhà,
+
+Mình đang định cài tyrantmanager:<span class="link"> http://copiousfreetime.rubyforge.org/tyrantmanager/</span>
+
+Các bước cài đặt đều OK:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># gem list
+
+*** LOCAL GEMS ***
+
+arrayfields &#40;4.7.4&#41;
+fattr &#40;2.2.0&#41;
+ffi &#40;0.6.3&#41;
+little-plugger &#40;1.1.2&#41;
+logging &#40;1.4.3&#41;
+loquacious &#40;1.6.4&#41;
+main &#40;4.4.0, 4.2.0&#41;
+rake &#40;0.8.7&#41;
+rufus-tokyo &#40;1.0.7&#41;
+tyrantmanager &#40;1.6.0&#41;</pre>
+		</div>
+Tuy nhiên, khi mình chạy tyrantmanager thì gặp lỗi sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># tyrantmanager setup /data/tyrant
+/usr/lib64/ruby/gems/1.8/gems/loquacious-1.6.4/lib/loquacious/undefined.rb:87: warning: parenthesize argument&#40;s&#41; for future version
+/usr/lib64/ruby/gems/1.8/gems/ffi-0.6.3/lib/ffi/library.rb:79:in `ffi_libraries': no library specified &#40;LoadError&#41;
+	from /usr/lib64/ruby/gems/1.8/gems/ffi-0.6.3/lib/ffi/library.rb:106:in `attfunc'
+	from /usr/lib64/ruby/gems/1.8/gems/rufus-tokyo-1.0.7/lib/rufus/tokyo/tyrant/lib.rb:59
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `gem_original_require'
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `require'
+	from /usr/lib64/ruby/gems/1.8/gems/rufus-tokyo-1.0.7/lib/rufus/tokyo/tyrant.rb:32
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `gem_original_require'
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `require'
+	from /usr/lib64/ruby/gems/1.8/gems/tyrantmanager-1.6.0/lib/tyrant_manager/tyrant_instance.rb:2
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `gem_original_require'
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `require'
+	from /usr/lib64/ruby/gems/1.8/gems/tyrantmanager-1.6.0/lib/tyrant_manager.rb:249
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `gem_original_require'
+	from /usr/lib/ruby/site_ruby/1.8/rubygems/custom_require.rb:31:in `require'
+	from /usr/lib64/ruby/gems/1.8/gems/tyrantmanager-1.6.0/bin/tyrantmanager:9
+	from /usr/bin/tyrantmanager:19:in `load'
+	from /usr/bin/tyrantmanager:19</pre>
+		</div>
+
+Nội dung file library.rb:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>30	module FFI
+    31	  CURRENT_PROCESS = USE_THIS_PROCESS_AS_LIBRARY = Object.new
+    32	
+    33	  module Library
+    34	    CURRENT_PROCESS = FFI::CURRENT_PROCESS
+    35	    LIBC = FFI::Platform::LIBC
+    36	
+    37	    def self.extended&#40;mod&#41;
+    38	      raise RuntimeError.new&#40;&quot;must only be extended by module&quot;&#41; unless mod.kind_of?&#40;Module&#41;
+    39	    end
+    40	
+    41	    def ffi_lib&#40;*names&#41;
+    42	
+    43	      ffi_libs = names.map do |name|
+    44	        if name == FFI::CURRENT_PROCESS
+    45	          FFI::DynamicLibrary.open&#40;nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL&#41;
+    46	        else
+    47	          libnames = &#40;name.is_a?&#40;::Array&#41; ? name : &#91; name &#93;&#41;.map { |n| &#91; n, FFI.map_library_name&#40;n&#41; &#93;.uniq }.flatten.compact
+    48	          lib = nil
+    49	          errors = {}
+    50	
+    51	          libnames.each do |libname|
+    52	            begin
+    53	              lib = FFI::DynamicLibrary.open&#40;libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL&#41;
+    54	              break if lib
+    55	            rescue Exception =&gt; ex
+    56	              errors&#91;libname&#93; = ex
+    57	            end
+    58	          end
+    59	
+    60	          if lib.nil?
+    61	            raise LoadError.new&#40;errors.values.join&#40;'. '&#41;&#41;
+    62	          end
+    63	
+    64	          # return the found lib
+    65	          lib
+    66	        end
+    67	      end
+    68	
+    69	      @ffi_libs = ffi_libs
+    70	    end
+    71	
+    72	
+    73	    def ffi_convention&#40;convention&#41;
+    74	      @ffi_convention = convention
+    75	    end
+    76	
+    77	
+    78	    def ffi_libraries
+    79	      raise LoadError.new&#40;&quot;no library specified&quot;&#41; if !defined?&#40;@ffi_libs&#41; || @ffi_libs.empty?
+    80	      @ffi_libs
+    81	    end</pre>
+		</div>
+
+Bạn nào rành Ruby giúp mình với. Cảm ơn mọi người.
+
+PS: disable mấy cái &quot;: P&quot;, &quot;: D&quot;, ... bị biến thành icons trong [ code] tag đi anh conmale ơi. Cái này bị lâu lắm rồi mà mãi không thấy anh sửa. Preview code mà nó cứ thè lưỡi ra cười làm em thấy khó chịu quá.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38531.hva#236409</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38531.hva#236409</link>
+				<pubDate><![CDATA[Fri, 29 Apr 2011 00:44:07]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

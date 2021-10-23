@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Mở thêm chức năng cho Unikey"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Mở thêm chức năng cho Unikey"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Tình hình là từ lâu mình có cái mong muốn Unikey trên Windows có tính năng rất hay như ibus trên Linux là nó phân biệt được enable/disable cho mỗi cửa sổ input thay vì global tất tật như bây giờ. Mình thường xuyên input trên nhiều loại cửa sổ nên hơi ngại switch, kể cả đã dùng phím tắt rồi.
+
+Bắt tay vào nghiên cứu, Unikey thì không opensource rồi nên mình tính đi theo hướng hack một tí. Xem sourcecode Unikey bản cũ thấy có một chỗ tác giả lấy ClassName của cửa sổ đang typing vào, nếu ClassName là <i>ConsoleWindowClass</i> thì không để gõ tiếng Việt, chắc là tác giả cũng thấy việc gõ tiếng Việt trên cửa sổ console là không thường xuyên nên quyết định cho tắt luôn :D, mở Unikey40.dll trên IDA:
+
+<br>
+			<div align="center" class="limitview"><img src='http://s18.postimg.org/9ox2llaih/image.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+1. ở chỗ này, mình có thể patch toàn bộ đoạn push param và gọi strcmp đến một hàm khác thực hiện việc kiểm tra xem có nên bỏ qua gõ tiếng Việt trên cửa sổ input hiện thời hay không. Hàm kiểm tra này được triển khai trên một DLL khác do mình viết. Sau khi có DLL chứa hàm kiểm tra customize rồi thì tiến hành Patch UniKey40.dll, thêm vào một import entry trong bảng IAT sử dụng Stub_PE hoặc LordPE, save lại.
+
+2. Mở lại UniKey40.dll trong IDA sẽ thấy entry import mới:
+
+<br>
+			<div align="center" class="limitview"><img src='http://s14.postimg.org/4jrbdw2ox/image.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+3. tiến hành patch phần gọi strmp để gọi hàm kiểm tra mới:
+
+<br>
+			<div align="center" class="limitview"><img src='http://s24.postimg.org/i0543wt6d/image.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Code của DLL chứa hàm kiểm tra mới mình có post lên github tại<span class="link"> https://github.com/secmaskoss/unihami</span> , mới chỉ dạng concept thôi. Vấn đề đang gặp phải là khi chạy bản đã patch này xong thì có hiện tượng lạ là chỉ gõ được tiếng Việt được ở lần đầu tiên bật Unikey lên, sau đó thì hoàn toàn không gõ được tiếng Việt nữa sau khi chuyển sang một cửa sổ input khác. Mình kiểm tra process thấy Unikey vẫn chạy bình thường, chỉ trừ đúng việc là không gõ được tiếng Việt. Mình đưa lên đây để nếu bạn nào có hứng thú thì cùng ngâm cứu xem vấn đề nằm ở đâu nhé :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278287</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278287</link>
+				<pubDate><![CDATA[Tue, 27 Aug 2013 03:56:09]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Ý tưởng của em (chỉ là ý tưởng thôi nhé :-p )
+
+ 
+Sau khi path hàm strcmp đến code của anh thì anh có thể GetActiveWindow, FindWindow, GetWindowText và so sánh với tên anh đã định sẵn muốn Enable hay disable -&gt; kết quả trả về đúng sai gán vào EAX để điều khiển lệnh nhảy qua hàm hookey.
+
+Anh có thể ví dụ cụ thể hai input windows nào không ?, để có thể demo.
+
+Nói nghe có vẻ dễ ăn quá!
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278294</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278294</link>
+				<pubDate><![CDATA[Tue, 27 Aug 2013 11:19:03]]> GMT</pubDate>
+				<author><![CDATA[ quygia128]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quygia128 wrote:</cite><br>
+		<blockquote>
+Sau khi path hàm strcmp đến code của anh thì anh có thể GetActiveWindow, FindWindow, GetWindowText và so sánh với tên anh đã định sẵn muốn Enable hay disable -&gt; kết quả trả về đúng sai gán vào EAX để điều khiển lệnh nhảy qua hàm hookey.
+&nbsp;
+		</blockquote>
+
+Nhất trí, cái hàm kiểm tra khi nào enable/disable Unikey thì sẽ tinh chỉnh sau để có kết quả tốt. Vấn đề là giờ hành vi của Unikey sau khi mình patch nó không ổn định, mặc dụ hàm <i>doSkip</i> kia mình thử để return true từ đầu hàm luôn để luôn cho gõ tiếng Viêt, mình đang vòng quanh một tí, có vẻ là việc reload DLL có cài Hook function ở trong không được sạch lắm, mình toàn phải logout hoặc restart máy mới có  kết quả chính xác(sau khi build lại unihami.dll).
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278301</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278301</link>
+				<pubDate><![CDATA[Tue, 27 Aug 2013 22:34:38]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ cá nhân mình lại khoái kiểu global như trên Windows, mình chỉ làm việc với 1 loại ngôn ngữ trong cùng 1 thời điểm nên cách đơn giản là phím tắt (alt+Z both Windows and Linux).
+
+Khi chuyển qua Linux, nhiều khi đá hình thấy nó &quot;En&quot;rồi nhưng khi chuyển qua cửa khác nó lại thành &quot;Vi&quot;, rất bất tiện.
+
+Xu hướng của mình là chuyển qua kiểu như bên Windows, bằng cách iBus&gt;preferences&gt;advanced tab &gt; tick chọn &quot;Share the same input method among all applications&quot;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278303</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278303</link>
+				<pubDate><![CDATA[Wed, 28 Aug 2013 00:13:21]]> GMT</pubDate>
+				<author><![CDATA[ no1roses]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Mền thắc mắc là Unikey vốn là opensource với source code được public tại đây
+
+http://unikey.org/source.php
+
+Tại sao phải reverse rồi patch chi cho mất công nhẩy :D
+
+Trên mạng internet cũng còn lưu trữ một số thảo luận tại unikeyspell, có hồi đáp của tác giả Phạm Kim Long. Nếu các bồ thực sự thích và muốn phát triển Unikey mở rộng tiếp thì có thể liên lạc với bác ấy, tôi có thể làm cầu nối :)
+
+https://groups.google.com/forum/#!topic/unikeyspell/p3LrUKm72XA
+
+Lời bàn: Unikey thực sự được viết rất tốt, suốt từ năm 2009 tới giờ thực tế là không cần bản vá lỗi nào mà sản phẩm này vẫn hoạt động bền bỉ trên mọi phiên bản hệ điều hành Windows. Điển hình của một phần mềm rất tốt :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278307</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278307</link>
+				<pubDate><![CDATA[Wed, 28 Aug 2013 12:32:31]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>Mền thắc mắc là Unikey vốn là opensource với source code được public tại đây<span class="link"> http://unikey.org/source.php</span>
+Tại sao phải reverse rồi patch chi cho mất công nhẩy :D
+&nbsp;
+		</blockquote>
+Bác ấy opensource bản trước đó thôi, còn bản mới nhất không có source vì lý do nào đó.
+
+<p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>
+ Nếu các bồ thực sự thích và muốn phát triển Unikey mở rộng tiếp thì có thể liên lạc với bác ấy, tôi có thể làm cầu nối :)
+&nbsp;
+		</blockquote>
+Hi, thx bác. Cái này mình làm theo nhu cầu cá nhân, và cũng để cho vui thôi, khi nào mình có ý định làm nghiêm túc hơn thì chắc phải liên hệ với bác Long thì mới ra hồn được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278319</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278319</link>
+				<pubDate><![CDATA[Thu, 29 Aug 2013 08:12:14]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Unikey dạo này thấy chạy trên mấy cái máy của mình cũng hay gây ra lỗi, có thể do mình cài tá lả bùng binh các phần mềm
+- Không gõ được tiếng việt dù Icon vẫn hiện lù lù trên taskbar;
+- Chạy xong, hoặc Minimize mất hút luôn, dù kiểm tra vẫn thấy Unikey hiện trong danh sách Process. 
+- Một số bản cài không chỉnh sửa được cấu hình (bị Read Only)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278440</link>
+				<pubDate><![CDATA[Thu, 12 Sep 2013 20:48:19]]> GMT</pubDate>
+				<author><![CDATA[ maithangbs]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Em nghĩ chắc máy bác bị dính virus rồi! :| ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278455</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278455</link>
+				<pubDate><![CDATA[Sat, 14 Sep 2013 06:01:44]]> GMT</pubDate>
+				<author><![CDATA[ degeawapsh]]></author>
+			</item>
+			<item>
+				<title>Mở thêm chức năng cho Unikey</title>
+				<description><![CDATA[ Em nghĩ chắc máy bác bị dính virus rồi! :| ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278456</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45120.hva#278456</link>
+				<pubDate><![CDATA[Sat, 14 Sep 2013 06:01:55]]> GMT</pubDate>
+				<author><![CDATA[ degeawapsh]]></author>
+			</item>
+	</channel>
+</rss>

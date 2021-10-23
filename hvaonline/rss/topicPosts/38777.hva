@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Single Sign-On with CAS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Single Sign-On with CAS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Single Sign-On with CAS</title>
+				<description><![CDATA[ Nhân đọc topic này:<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/38273.hva,</span> mình cũng muốn tìm hiểu về CAS để làm Single Sign-On cho mấy sites nội bộ.
+
+Xin ghi lại các bước như sau:
+
+<font color='orange'><font size='+1'>1. Tích hợp CAS với LDAP theo hướng dẫn này:<span class="link"> https://wiki.jasig.org/display/CASUM/LDAP</span></font></font>
+
+<font color='#6699CC'>/usr/local/src/cas-server-3.4.7/cas-server-webapp/pom.xml</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+        &lt;artifactId&gt;cas-server-support-ldap&lt;/artifactId&gt;
+        &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    ...
+&lt;/dependencies&gt;</pre>
+		</div>
+
+<font color='#6699CC'>/usr/local/src/cas-server-3.4.7/cas-server-webapp/src/main/webapp/WEB-INF/deployerConfigContext.xml:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+       &lt;bean class="org.jasig.cas.adaptors.ldap.BindLdapAuthenticationHandler"&gt;
+	                &lt;property name="filter" value="cn=%u" /&gt;
+	                &lt;property name="searchBase" value="ou=IT,dc=domain,dc=vn" /&gt;
+	                &lt;property name="contextSource" ref="contextSource" /&gt;
+	            &lt;/bean&gt;
+	        &lt;/list&gt;
+	    &lt;/property&gt;
+	&lt;/bean&gt;
+	&lt;bean id="contextSource" class="org.springframework.ldap.core.support.LdapContextSource"&gt;
+        &lt;property name="pooled" value="true" /&gt;
+        &lt;property name="urls"&gt;
+        	&lt;list&gt;
+            	&lt;value&gt;ldap://localhost/&lt;/value&gt;
+            &lt;/list&gt;
+        &lt;/property&gt;
+		&lt;property name="userDn" value="cn=anonymous,ou=IT,dc=domain,dc=vn" /&gt;	
+		&lt;property name="password" value="changeit" /&gt;	
+        &lt;property name="baseEnvironmentProperties"&gt;
+            &lt;map&gt;
+                &lt;entry&gt;
+                    &lt;key&gt;&lt;value&gt;java.naming.security.authentication&lt;/value&gt;&lt;/key&gt;
+                    &lt;value&gt;simple&lt;/value&gt;
+                &lt;/entry&gt;
+            &lt;/map&gt;
+        &lt;/property&gt;
+	&lt;/bean&gt;</pre>
+		</div>
+
+Build WAR file with Maven:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mvn -Dmaven.test.skip=true package install</pre>
+		</div>
+
+Install bằng cách copy cas.war vào thư mục webapps của Tomcat:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cp target/cas.war /usr/share/tomcat6/webapps/</pre>
+		</div>
+
+Mở browser lên, truy cập:<span class="link"> http://&lt;cas_server_ip&gt;:8080/cas/login</span> và login thử với LDAP account sẽ thấy <i>"Log In Successful"</i>.
+
+<font color='orange'><font size='+1'>2. Cấu hình SSL cho Tomcat theo hướng dẫn này:<span class="link"> http://tomcat.apache.org/tomcat-6.0-doc/ssl-howto.html</span></font></font>
+
+<font color='#6699CC'>server.xml:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;Connector port="8444" protocol="HTTP/1.1" SSLEnabled="true"
+               maxThreads="150" scheme="https" secure="true"
+	        keystoreFile="/usr/share/tomcat6/.keystore" keystorePass="changeit
+               clientAuth="false" sslProtocol="TLS" /&gt;</pre>
+		</div>
+Thử lại với<span class="link"> https://&lt;cas_server_ip&gt;:8444/cas/login.</span>
+
+<font color='orange'><font size='+1'>3. Nối Apache vào Tomcat với mod_jk</font></font>
+
+<font color='#6699CC'>workers.properties:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>worker.list=worker1
+
+#
+# Defining a worker named ajp13w and of type ajp13
+# Note that the name and the type do not have to match.
+#
+worker.worker1.type=ajp13
+worker.worker1.host=localhost
+worker.worker1.port=8009</pre>
+		</div>
+
+<font color='#6699CC'>mod_jk.conf:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LoadModule 		jk_module modules/mod_jk.so
+
+JkWorkersFile 		/etc/httpd/conf/workers.properties
+JkShmFile     		/var/log/httpd/jk.shm
+
+JkLogFile     		/var/log/httpd/mod_jk.log
+JkLogLevel    		info
+JkLogStampFormat 	"&#91;%a %b %d %H:%M:%S %Y&#93; "
+
+&lt;VirtualHost *:80&gt;
+	ServerName	monitoring.domain.vn
+
+	JkMount         /cas/* worker1
+&lt;/VirtualHost&gt;</pre>
+		</div>
+
+Virtual host cho Tomcat:
+<font color='#6699CC'>server.xml:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;Host name="monitoring.domain.vn"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false"&gt;
+		&lt;Context path="/cas" docBase="cas"/&gt;</pre>
+		</div>
+<b>Các bạn chú ý cái "context" nhé.</b>
+
+Test bằng cách gõ:<span class="link"> http://monitoring.domain.vn/cas/login</span> trên trình duyệt sẽ thấy nhảy đến trang đăng nhập của CAS.
+
+<font color='orange'><font size='+1'>4. Tích hợp Apache với CAS bằng mod_auth_cas module</font></font> 
+<i>(download version mới nhất 1.0.9.1. Mình cài từ yum version 1.0.8.1-2 và đã gặp một số vấn đề)</i>
+
+<font color='#6699CC'>auth_cas.conf:</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LoadModule auth_cas_module modules/mod_auth_cas.so
+CASLoginURL<span class="link"> http://monitoring.domain.vn/cas/login</span>
+CASValidateURL<span class="link"> http://monitoring.domain.vn/cas/serviceValidate</span>
+CASValidateServer Off
+CASCertificatePath /etc/pki/tls/certs/exported-pem.crt
+CASCookiePath /var/cache/httpd/mod_auth_cas_cookies/
+CASDebug on
+&lt;Location /ganglia&gt;
+	AuthType CAS
+	AuthName "CAS"
+	require valid-user
+&lt;/Location&gt;</pre>
+		</div>
+
+Nếu để <b>CASValidateServer On</b> thì mình gặp lỗi <font color='red'>"MOD_AUTH_CAS: Could not perform SSL handshake with monitoring.domain.vn (check CASCertificatePath)"</font>, hiện vẫn chưa khắc phục được.
+
+Cuối cùng là truy cập<span class="link"> http://monitoring.domain.vn/ganglia</span> xem có được đưa đến trang đăng nhập của CAS không, và sau khi login với LDAP account có được quay lại không.
+
+CAS hỗ trợ: Java, PHP, .NET, Python, Ruby,... đủ cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38777.hva#237408</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38777.hva#237408</link>
+				<pubDate><![CDATA[Thu, 19 May 2011 02:48:16]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Single Sign-On with CAS</title>
+				<description><![CDATA[ Bài viết Quanta rất hay,mình cũng đang làm đồ án về SSO sử dụng CAS,đã tích hợp được CAS với Zimbra,liferay,joomla,drupal và phpBB nhưng đang gặp vấn đề trong việc tích hợp với các sản phẩm HRM như vtiger,oranghrm và mới chỉ giải quyết Single Sign On chứ chưa Single Sign Out.không biết anh quanta đã giải quyết được chưa vì mình thấy có một nơi ứng dụng CAS vào rất hay là VDC https://id.vnn.vn nhưng họ cũng chưa Single Sign Out cho tất cả các dịch vụ được.
+Một khó khăn mình đang gặp nữa là do sử dụng LDAP của Zimbra chung cho tất cả các dịch vụ(Người dùng có thể vào zimbra quản lí việc đổi mật khẩu) nhưng lại chưa viết được ứng dụng móc vào cho phép người dùng tự đăng kí thành viên.Nếu sử dụng với OpenLDAP thì mình cũng chỉ có thể cho người dùng có thể tự thay đổi mật khẩu được còn tự create user vẫn chịu thua.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238041</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238041</link>
+				<pubDate><![CDATA[Fri, 27 May 2011 10:04:24]]> GMT</pubDate>
+				<author><![CDATA[ tanvn192]]></author>
+			</item>
+			<item>
+				<title>Single Sign-On with CAS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tanvn192 wrote:</cite><br>
+		<blockquote>Bài viết Quanta rất hay,mình cũng đang làm đồ án về SSO sử dụng CAS,đã tích hợp được CAS với Zimbra,liferay,joomla,drupal và phpBB nhưng đang gặp vấn đề trong việc tích hợp với các sản phẩm HRM như vtiger,oranghrm 
+&nbsp;
+		</blockquote>
+Cụ thể là vấn đề gì vậy bạn?
+<p></p>
+		<cite class="blockquote">tanvn192 wrote:</cite><br>
+		<blockquote>
+và mới chỉ giải quyết Single Sign On chứ chưa Single Sign Out.không biết anh quanta đã giải quyết được chưa vì mình thấy có một nơi ứng dụng CAS vào rất hay là VDC<span class="link"> https://id.vnn.vn</span> nhưng họ cũng chưa Single Sign Out cho tất cả các dịch vụ được.
+&nbsp;
+		</blockquote><span class="link"> https://wiki.jasig.org/display/CASUM/Single+Sign+Out</span>
+<p></p>
+		<cite class="blockquote">tanvn192 wrote:</cite><br>
+		<blockquote>
+Một khó khăn mình đang gặp nữa là do sử dụng LDAP của Zimbra chung cho tất cả các dịch vụ(Người dùng có thể vào zimbra quản lí việc đổi mật khẩu) nhưng lại chưa viết được ứng dụng móc vào cho phép người dùng tự đăng kí thành viên.Nếu sử dụng với OpenLDAP thì mình cũng chỉ có thể cho người dùng có thể tự thay đổi mật khẩu được còn tự create user vẫn chịu thua.&nbsp;
+		</blockquote>
+Bạn tham khảo cái này xem:<span class="link"> https://studio.plugins.atlassian.com/wiki/display/JLDAPLOGIN/Jira+LDAP+user+auto-registration+on+login</span>
+
+PS: Sau chấm, phảy, ... thì cách ra một khoảng trắng cho dễ đọc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238043</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238043</link>
+				<pubDate><![CDATA[Fri, 27 May 2011 10:37:52]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Single Sign-On with CAS</title>
+				<description><![CDATA[ Khó khăn khi kết hợp CAS với vtigercrm của em là việc xử lí đăng nhập, cho phép Vtigercrm sử dụng các tài khoản từ CAS,  Em đã có thể kết nối vtigercrm  và sử dụng được  ldap Zimbra để đăng nhập. Em làm theo tài liệu hướng dẫn <font color='yellow'>How to install Vtiger and integrate with Cas Server</font> 
+
+	
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Prequirement :
+CAS server
+Php, Apache
+Liferay integrate with Cas &#40;If use VTiger in Liferay as Iframe method&#41;
+
+2. Install & Configure Php:
+Reference to<span class="link"> http://www.php.net</span>
+
+3. Install & Configure Apache<span class="link"> http://httpd.apache.org/docs/2.0/install.html</span>
+
+4. Download and Install Vtiger 5.0.2
+Reference to<span class="link"> http://vtiger.com/index.php</span>
+
+5. Download and build phpCas client
+Reference to<span class="link"> http://esup-phpcas.sourceforge.net/download.html</span>
+Download version : esup-phpcas-0.5.1-1
+Build phpCas client &#40;use Ant build on Window or Linux, or Eclipse ant&#41;
+Unzip esup-phpcas-0.5.1-1 to your hard disk ex : c:\phpCas.
+Create project  phpCas with eclipse &#40;with source at c:\phpCas&#41;.
+Edit build.properties in folder 'properties'
+deploy.home=C:/phpCas/target
+Using eclipse ant build to deploy phpCas
+If successful you can see CAS folder in C:/phpCas/target
+
+6. Configure Vtiger with CAS server
+Add Cas model into vtiger
+Copy CAS &#40;C:/phpCas/target&#41; to $Document_Web_Root/vtiger502/modules/CAS
+Overwrite 2 new files : Authenticate, Users &#40;vtiger502/modules/Users&#41;
+&#91;color=yellow&#93;Users file: Add new function load_user_cas&#40;$user_password&#41;&#91;/color&#93;
+Authenticate file: Add and modifies something
+/* Inserts by Dtha on 05/04/2007 start */
+		   	// import phpCAS lib
+			require_once&#40;'modules/CAS/CAS.php'&#41;;
+
+			phpCAS::setDebug&#40;&#41;;
+
+			// initialize phpCAS						
+                        phpCAS::client&#40;CAS_VERSION_2_0,'casserver.ntis.myvnc.com',8443,'cas'&#41;;
+
+			// force CAS authentication
+			phpCAS::forceAuthentication&#40;&#41;;
+			/* Inserts by Dtha on 05/04/2007 end */
+
+
+			global $mod_strings;
+
+			$focus = new Users&#40;&#41;;
+
+			// Add in defensive code here.
+			/* Modifies by Dtha on 05/04/2007 start */
+		//$focus-&gt;column_fields&#91;&quot;user_name&quot;&#93; =to_html&#40;$_REQUEST&#91;'user_name'&#93;&#41;;
+			//$user_password = $_REQUEST&#91;'user_password'&#93;;
+			//$focus-&gt;load_user&#40;$user_password&#41;;
+
+			$focus-&gt;column_fields&#91;&quot;user_name&quot;&#93; = phpCAS::getUser&#40;&#41;;
+			$user_password = &quot;no_use&quot;;
+			$focus-&gt;load_user_cas&#40;$user_password&#41;;
+			/* Modifies by Dtha on 05/04/2007 end */
+/* Inserts by Dtha on 05/04/2007 start */
+You must modifies tree params with your CAS server 's information
+			'casserver.ntis.myvnc.com',8443,'cas'
+
+Install somes lib for phpCas client required
+&#91;root@vtiger#&#93; export http_proxy=http://your_proxy:port
+Install DomXml
+php 4  : &#91;root@vtiger#&#93; yum install php-domxml
+php 5  : &#91;root@vtiger#&#93; yum install php-dom
+Install pear-DB
+yum install php-pear-DB
+Install pear-Log
+yum install php-pear-Log
+Install pear-HTTP Request
+yum install php-pear-HTTP-Request-1.4.0
+
+7. Start Apache and test now :-&#41;
+Open IE and run vtiger login, then you see it wwwect to Cas server login
+Then after login, return to Vtiger with user login
+8. Using with Liferay portal &#40;using Iframe method&#41;
+Login to liferay and add Vtiger info iframe with url :<span class="link"> http://vtiger.ntis.myvnc.com/vtiger502/index.php?action=Authenticate&module=Users</span>
+Logout and login again to Liferay, then go to Vtiger Iframe, you see vtiger page with user login.
+Note : Vtiger, Liferay using same username of account &#40;exited in Cas Server-LDAP&#41;</pre>
+		</div>
+
+Sau khi làm theo khi vài vtiger đã chuyển hướng sang trang đăng nhập của CAS , đăng nhập thành công xong nó lại chuyển hướng về cái trang login ban đầu của vtigercrm làm thành một vòng lặp. Em đoán do thằng vtigercrm chưa xử lí được thông tin của CAS chuyển sang.  Trong hướng dẫn có nói thay đổi 2 file Authenticate, Users (vtiger502/modules/Users), có lẽ do dòng này Add new function load_user_cas($user_password) . Anh xem thử có cách nào giúp em được không vì lập trình em không biết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38777.hva#238186</link>
+				<pubDate><![CDATA[Sun, 29 May 2011 20:44:03]]> GMT</pubDate>
+				<author><![CDATA[ tanvn192]]></author>
+			</item>
+			<item>
+				<title>Single Sign-On with CAS</title>
+				<description><![CDATA[ Bạn Quanta ơi, rất cảm ơn bạn vì hướng dẫn trên. 
+Mình gặp một lỗi khi dùng lên Build Maven là: Unable to find resource 'org.springframework.flex:spring-flex-parent om...
+Không chỉ file trên mà còn rất nhiều file khác cũng báo như vậy. Mình chạy trên nền Ubuntu.
+Mong nhận được sự giúp đỡ của bạn. Mình đang làm Luận văn nên rất cần thông tin này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/38777.hva#245983</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/38777.hva#245983</link>
+				<pubDate><![CDATA[Fri, 26 Aug 2011 10:35:12]]> GMT</pubDate>
+				<author><![CDATA[ dungnguyen1254]]></author>
+			</item>
+	</channel>
+</rss>

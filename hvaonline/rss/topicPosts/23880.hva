@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ Hi anh em, 
+Hôm nay tớ nhận được một cái mail của thằng em gửi cho như sau:
+<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;iostream&gt;
+using namespace std;
+int main&#40;&#41;
+{
+        char xau1&#91;&#93;="Tran huy hoang";
+        char *xau2="huy";
+        char *xau;
+        xau= strstr&#40;xau1,xau2&#41;;
+        strncpy&#40;xau,"han",3&#41;;
+        cout&lt;&lt;xau1&lt;&lt;endl;
+        system&#40;"pause"&#41;;
+        return 0;
+}</pre>
+		</div>
+Anh ơi, sao khi khai báo: char xau1[]="Tran Huy Hoang" thì chương trình chạy được nhưng khai báo char *xau1="Tran Huy Hoang";
+thì chương trình không chạy được. Em thấy hai khai báo này có gì khác nhau đâu ạ?
+&nbsp;
+		</blockquote>
+
+Thực sự là khi chạy chương trình, debug một hồi, không hiểu tại sao lỗi (dùng gcc và Code::Blocks để debug). Chỉ phát hiện lỗi nằm tại hàm strncpy. Lúc đầu là cứ nghĩ nguyên nhân là do việc thằng em này không cấp phát bộ nhớ cho con trỏ (đội mới học lập trình C/C++ rất hay bị lỗi đó) với lại để con trỏ chạy lung tung nên sinh lỗi. Sau đó, chuyển sang dùng VS C++ để debug thì mới phát hiện ra là lỗi Access Violation (tớ không nhớ lắm) đại khái là lỗi ghi vào vùng nhớ ko cho phép.
+
+Đọc tài liệu một lúc (ở <span class="link"> http://www.gotw.ca/gotw/009.htm</span> và <span class="link"> http://www.cs.bu.edu/teaching/cpp/string/array-vs-ptr/</span>) thì tớ dự đoán nguyên nhân gây lỗi là thế này:
+- Khi khai báo là con trỏ thì toàn bộ cái xâu "Tran huy hoang" sẽ được quẳng trong cái vùng Const Data và con trỏ xau1 sẽ chỉ thẳng đến vùng nhớ đó. Đáng tiếc là vùng nhớ này là chỉ đọc (read-only) nên cái hàm strncpy khi được gọi sẽ cố gắng thay đổi dữ liệu trên vùng nhớ này (thay xâu "huy" = "hân") nên gây lỗi.
+- Khi khai báo là mảng, thì biến mảng xau1[] và dữ liệu được vứt vào Stack, vùng nhớ này có thể thay đổi được dữ liệu được nên khi gọi hàm strncpy sẽ ổn thỏa.
+
+Tớ muốn mạn phép hỏi là tớ dự đoán có gì không chính xác không, xin các bác chỉ giáo. Nếu sai toét, thì mong anh em cho biết rõ hơn về nguyên nhân gây lỗi.
+
+Tớ xin cảm ơn trước :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143878</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143878</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2008 18:31:46]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>[Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">K4i wrote:</cite><br>
+		<blockquote>Hi anh em, 
+Hôm nay tớ nhận được một cái mail của thằng em gửi cho như sau:
+<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;iostream&gt;
+using namespace std;
+int main&#40;&#41;
+{
+        char xau1&#91;&#93;="Tran huy hoang";
+        char *xau2="huy";
+        char *xau;
+        xau= strstr&#40;xau1,xau2&#41;;
+        strncpy&#40;xau,"han",3&#41;;
+        cout&lt;&lt;xau1&lt;&lt;endl;
+        system&#40;"pause"&#41;;
+        return 0;
+}</pre>
+		</div>
+Anh ơi, sao khi khai báo: char xau1[]="Tran Huy Hoang" thì chương trình chạy được nhưng khai báo char *xau1="Tran Huy Hoang";
+thì chương trình không chạy được. Em thấy hai khai báo này có gì khác nhau đâu ạ?
+&nbsp;
+		</blockquote>
+
+Thực sự là khi chạy chương trình, debug một hồi, không hiểu tại sao lỗi (dùng gcc và Code::Blocks để debug). Chỉ phát hiện lỗi nằm tại hàm strncpy. Lúc đầu là cứ nghĩ nguyên nhân là do việc thằng em này không cấp phát bộ nhớ cho con trỏ (đội mới học lập trình C/C++ rất hay bị lỗi đó) với lại để con trỏ chạy lung tung nên sinh lỗi. Sau đó, chuyển sang dùng VS C++ để debug thì mới phát hiện ra là lỗi Access Violation (tớ không nhớ lắm) đại khái là lỗi ghi vào vùng nhớ ko cho phép.
+
+Đọc tài liệu một lúc (ở <span class="link"> http://www.gotw.ca/gotw/009.htm</span> và <span class="link"> http://www.cs.bu.edu/teaching/cpp/string/array-vs-ptr/</span>) thì tớ dự đoán nguyên nhân gây lỗi là thế này:
+- Khi khai báo là con trỏ thì toàn bộ cái xâu "Tran huy hoang" sẽ được quẳng trong cái vùng Const Data và con trỏ xau1 sẽ chỉ thẳng đến vùng nhớ đó. Đáng tiếc là vùng nhớ này là chỉ đọc (read-only) nên cái hàm strncpy khi được gọi sẽ cố gắng thay đổi dữ liệu trên vùng nhớ này (thay xâu "huy" = "hân") nên gây lỗi.
+- Khi khai báo là mảng, thì biến mảng xau1[] và dữ liệu được vứt vào Stack, vùng nhớ này có thể thay đổi được dữ liệu được nên khi gọi hàm strncpy sẽ ổn thỏa.
+
+Tớ muốn mạn phép hỏi là tớ dự đoán có gì không chính xác không, xin các bác chỉ giáo. Nếu sai toét, thì mong anh em cho biết rõ hơn về nguyên nhân gây lỗi.&nbsp;
+		</blockquote>
+
+Bác đã dự đoán chính xác. Bác có thể viết một hàm rất đơn giản chỉ chứa mỗi lệnh char xau1[]="Tran huy hoang"; hay char *xau1 = "Tran huy hoang"; compile rồi decompile nếu muốn thấy tận mắt sự khác nhau này.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143884</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143884</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2008 18:41:17]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+			<item>
+				<title>Re: [Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ đồng ý với bác :).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143885</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143885</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2008 18:43:21]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ @facialz: không cần phải làm thế, tớ đã test thử
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>char *xau1 = "Tran huy hoang";
+    xau1&#91;0&#93; = 't';</pre>
+		</div>
+cũng báo lỗi nên mới phán thế :D. Cơ bản là lâu không code lại C/C++ với lại chỉ biết mỗi Stack với Heap nên không chắc chắn lắm. Phải nhờ các bác có kinh nghiệm chỉ giúp]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143886</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143886</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2008 18:46:22]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: [Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ Compile = compiler nào, version mấy ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143946</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143946</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 00:16:58]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Compile = compiler nào, version mấy ?&nbsp;
+		</blockquote>
+
+Đầu tiên là MinGW v4.1, sau đó em vác sang Visual Studio C++ 2008 Express Edition dịch. Có chuyện gì ko bác :-?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143951</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 00:40:54]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: [Question] Về vấn đề quản lý bộ nhớ với con trỏ trong C/C++</title>
+				<description><![CDATA[ http://www.hvaonline.net/hvaonline/posts/list/16346.hva
+Lấy vd của cậu, build = command line, VC++ compiler của VS 2005, command line là cl.exe /DEBUG /Zi /W4 /EHsc test.cpp, run thấy không có lỗi gì cả. Quái.
+Kết luận: phụ thuộc vào compiler và option.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143997</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23880.hva#143997</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 10:56:13]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+	</channel>
+</rss>

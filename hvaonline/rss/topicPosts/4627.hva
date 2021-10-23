@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Firewall - Attack and defense"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Firewall - Attack and defense"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Firewall - Attack and defense</title>
+				<description><![CDATA[ Tài liệu cũ nhưng khá hay post len cho các bác reference :D)
+==============================================
+Suốt từ khi Cheswick và Bellovin viết cuốn anh hùng ca về cách xây dựng các bức tường lửa và theo dõi một hacker quỷ quyệt tên Berferd, ý tưởng thiết đặt một serverweb trên Internet mà không triển khai một bức tường lửa đã được xem là tự sát. Cũng bằng như tự sát nếu quyết định phó mặc các nhiệm vụ về bức tường lửa vào tay các kỹ sư mạng. Tuy giới này có thể tìm hiểu các quan hệ mật thiết về kỹ thuật của một bức tường lửa, song lại không hòa chung nhịp thở với hệ bảo mật và tìm hiểu não trạng cũng như các kỹ thuật của các tay hacker quỷ quyệt. Kết quả là, các bức tường lửa có thể bị chọc thủng do cấu hình sai, cho phép attacker nhảy bổ vào mạng và gây ra đại họa.
+
+<b>I. Tổng quan bức tường lửa</b>
+
+Hai kiểu bức tường lửa đang thống lĩnh thị trường hỉện nay: hệ giám quản ứng dụng (application proxies) và cổng lọc gói tin (packet filtering gateway). Tuy các hệ giám quản ứng dụng được xem là an ninh hơn cổng lọc gói tin, song bản chất hạn hẹp và các hạn chế khả năng vận hành của chúng đã giới hạn chúng vào luồng lưu thông đi ra công ty thay vì luồng lưu thông đi vào serverweb của công ty . mặt khác, trong nhiều tổ chức lớn có các yêu cầu khả năng vận hành cao.
+Nhiều người tin rằng hiện chưa xuất hiện bức tường lửa hoàn hảo , nhưng tương lai đầy sán lạng. Một số hăng kinh doanh nh Network Associates Inc. (NAI), AXENT, Internet Dynamics, và Microsoft đã phát triển công nghệ cung cấp tính năng bảo mật ủy nhiệm với khả năng vận hành của công nghệ lọc gói tin (một dạng lai ghép giữa hai công nghệ),song vẫn chưa hoàn thiện .
+Suốt từ khi bức tường lửa đầu tiên được cài đặt, các bức tường lửa đã bảo vệ vô số mạng tránh được những cặp mắt tò mò và bọn phá hoại nhưng còn lâu chúng mới trở thành phương thuốc trị bách bệnh bảo mật. Các chỗ yếu bảo mật đều được phát hiện hàng năm với hầu như mọi kiểu bức tường lửa trên thị trường.Tệ hại hơn, hầu hết các bức tường lửa thường bị cấu hình sai, không bảo trì, và không giám sát, ngưỡng cửa mở toang.
+
+Nếu không phạm sai lầm, một bức tường lửa được thiết kế, cấu hình, và bảo trì kỹ lưỡng hầu như không thể đột nhập. Thực tế, hầu hết các kẻ tấn công có tay nghề cao đều biết điều này và sẽ đơn giản tránh vòng qua bức tường lửa bằng cách khai thác các mối quan hệ tin tưởng (trust relationships) và các chỗ yếu bảo mật nối kết lỏng lẻo nhất, hoặc tránh nó hoàn toàn bằng cách tấn công qua một tài khoản quay số.
+
+Ðiểm căn bản: hầu hết attacker dồn mọi nỗ lực để vòng qua một bức tường lửa mạnh - mục tiêu ở đây là tạo một bức tường lửa mạnh.
+Với tư cách là điều hành viên bức tường lửa, ta biết rõ tầm quan trọng của việc tìm hiểu kẻ địch. Nắm được các bước đầu tiên mà một attacker thực hiện để bỏ qua các bức tường lửa sẽ giúp bạn rất nhiều trong việc phát hiện và phản ứng lại một cuộc tấn công. Chương này sẽ hướng dẫn bạn qua các kỹ thuật thường dùng hiện nay để phát hiện và điểm danh các bức tường lửa, đồng thời mô tả vài cách mà attacker gắng bỏ qua chúng. Với từng kỹ thuật, ta sẽ tìm hiểu cách phát hiện và ngăn chặn các cuộc tấn công.
+
+<b>II. Ðịnh danh các bức tường lửa</b>
+
+Hầu hết mọi bức tường lửa đều mang một "mùi hơng" điện tử duy nhất. Nghĩa là, với một tiến trình quét cổng, lập cầu lửa, và nắm giữ biểu ngữ đơn giản, bọn tấn cô ng có thể hiệu quả xác định kiểu, phiên bản, và các quy tắc của hầu hết mọi bức tường lửa trên mạng. Tại sao việc định danh này lại quan trọng? Bởi vì một khi đã ánh xạ được các bức tường lửa, chúng có thể bắt đầu tìm hìểu các điểm yếu và gắng khai thác chúng.
+
+<b>1. Quét trực tiếp : Kỹ thuật Noisy</b>
+
+Cách dễ nhất để tìm kiếm các bức tường lửa đó là quét các cổng ngầm định cụ thể. Một số bức tường lửa trên thị trường sẽ tự định danh duy nhất bằng các đợt quét cổng đơn giản bạn chỉ cần biết nội dung tìm kiếm.
+Ví dụ, Firewall-1 của Check point lắng chờ trên các cổng TCP 256, 257, 258, và Proxy Server của Microsoft thường lắng chờ trên các cổng TCP 1080 và 1745. Với sự hiểu biết này, quá trình tìm kiếm các kiểu bức tường lửa này chẳng có gì khó với một bộ quét cổng như nmap:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># nmap -n -vv -P0 -p256,1080,1745 192.168.50.1 - 60.254</pre>
+		</div>
+
+Dùng khóa chuyển -PO để vô hiệu hóa tính năng ping ICMP trước khi quét. Ðiều này quan trọng bởi hầu hết bức tường lửa không đáp ứng các yêu cầu dội ICMP.
+Cả attacker nhút nhát lẫn hung bạo đều tiến hành quét rộng rãi mạng của bạn theo cách này, tìm kiếm các bức tường lửa này và tìm kiếm mọi khe hở trong két sắt vành đai của bạn. Nhưng attacker nguy hiểm hơn sẽ lùng sục vành đai của bạn càng lén lút càng tốt. Có nhiều kỹ thuật mà attacker có thể sử dụng để hạ sập radar của bạn, bao gồm ngẫu nhiên hóa các ping, các cổng đích, các địa chỉ đích, và các cổng nguồn;dùng các server cò mồi; và thực hiện các đợt quét nguồn có phân phối.
+Nếu cho rằng hệ thống phát hiện xâm nhập (IDS) của bạn như RealSecure của Internet Security Systems hoặc SessionWall-3 của Abirnet sẽ phát hiện attacker nguy hiểm này, bạn nên suy nghĩ lại.
+Hầu hết các IDS đều ngầm định cấu hình để chỉ nghe các đợt quét cổng ngu đần và ồn ào nhất. Trừ phi bạn sử dụng IDS nhanh nhạy và tinh chỉnh các ký danh phát hiện, hầu hết các cuộc tấn công sẽ hoàn toàn làm ngơ. Bạn có thể tạo một đợt quét ngẫu nhiên hóa nh vậy bằng cách dùng các ký mã Perl cung cấp trên chuyên khu web www.osborne.com/hacking .
+
+<b>Các biện pháp phòng chống</b>
+
+Bạn cần phong tỏa các kiểu quét này tại các bộ định tuyến biên hoặc dùng một kiểu công cụ phát hiện đột nhập nào đó miễn phí hoặc thương mại. Mặc dù thế, các đợt quét cổng đơn lẻ sẽ không đợc thu nhặt theo ngầm định trong hầu hết các IDS do đó bạn phải tinh chỉnh độ nhạy cảm của nó trước khi có thể dựa vào tính năng phát hiện.
+
+<b>Phát Hiện</b>
+
+Ðể chính xác phát hiện các đợt quét cổng bằng tính năng ngẫu nhiên hóa và các server cò mồi, bạn cần tinh chỉnh từng lý danh phát hiện quét cổng. Tham khảo tài liệu hướng dẫn sử dụng của hãng kinh doanh IDS để biết thêm chi tiết.
+Nêu muốn dùng RealSecure 3.0 để phát hiện tiến trình quét trên đây, bạn ắt phải nâng cao độ nhạy cảm của nó theo các đợt quét cổng đơn lẻ bàng cách sửa đổi các tham số của ký danh quét cổng. Bạn nên thay đổi các nội dung dới đây để tạo độ nhạy cảm cho quét này:
+
+<blockquote>
+1. Lựa và tùy biến (Customize) Network Engine Policy.
+2. Tìm "Port Scan" và lựa tùy chọn Options.
+3. Thay đổi ports thành 5 cổng.
+4. Thay đổi Delta thành 60 giây.&nbsp;
+		</blockquote>
+
+Nếu đang dùng Firewall-l với UNIX, bạn có thể dùng trình tiện ích của Lance Spitzner để phát hiện các đợt quét cổng Firewall-1 www.enteract.com/~lspitz/intrusion.html. Ký mã alert.sh của ng sẽ cấu hình Check point để phát hiện và giám sát các đợt quét cổng và chạy một User Defined Alert khi đợc ứng tác.
+
+<b>Phòng Chống</b>
+
+Ðể ngăn cản các đợt quét cổng bức tường lửa từ Internet, bạn cần phong tỏa các cổng này trên các bộ định tuyến đứng trước các bức tường lửa. Nếu các thiết bị này do ISP quản lý, bạn cần liên hệ với họ để tiến hành phong tỏa. Nếu tự bạn quản lý chúng, bạn có thể dùng các Cisco ACL dớí đây để phong tỏa rõ rệt các đợt quét đã nêu trên đây:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>access - list 101 deny tcp any any eq 256 log ! Block Firewall-l scans
+access - list 101 deny tcp any any eq 257 log ! Block Firewall-l scans
+access - list 101 deny tcp any any eq 258 log ! Block Firewall-l scans
+access - list 101 deny tcp any any eq 1080 log ! Block Socks scans
+access - list 101 deny tcp any any eq 1745 log ! Block Winsock scans</pre>
+		</div>
+
+<b>Ghi chú</b> : Nếu phong tỏa các cổng của Check Point (256-258) tại các bộ dịnh tuyến biên, bạn sẽ không thể quản lửa bừc từờng lửa từ lnternet. Ngoài ra, tất cả các bộ định tuyến phải có một quy tắc dọn dẹp (nếu không khước từ các gói tìn
+theo ngầm định), sẽ có cùng hiệu ứng nh khi chỉ định các tác vụ khước từ:
+
+access - list 101 deny ip any any log ! Deny and log any packet that got through our ACLs above
+
+<b>2. Rà Tuyến Ðường</b>
+
+Một cách thinh lặng và tinh tế hơn để tìm các bức tường lửa trên một mạng đó là dùng traceroute . Bạn có thể dùng traceroute của UNIX hoặc tracert.exe của NT để tìm từng chặng dọc trên trên đường truyền đến đích và tiến hành suy diễn. Traceroute của Linux có tùy chọn -I, thực hiện rà đường bằng cách gửi các gói tin ICMP, trái với kỹ thuật gói tin UDP ngầm định.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ traceroute - I www.yourcompany.com
+traceroute to www.yourcompany.com &#40; 172.17.100.2 &#41; , 30 hops max, 140 byte packets
+1 attack-gw &#40; 192.168.50.21&#41; 5.801 ms 5.105 ms 5.445 ms
+2 gw1.smallisp.net &#40; 192.168.51.l&#41;
+3 gw2.smallisp.net &#40; 192.168.52.2&#41;
+.....
+13 hssi.bigisp.net &#40; 10.55.201.2 &#41;
+14 seriall.bigisp.net &#40; 10.55.202.l&#41;
+15 www.yourcompany.com &#40; 172.29.11.2&#41;</pre>
+		</div>
+
+Có cơ may chặng đứng ngay trước đích ( 10.55.202.1) là bức tường lửa, nhưng ta cha biết chắc. Cần phải đào sâu thêm một chút.
+
+Ví dụ trên đây là tuyệt vời nếu các bộ định tuyến giữa bạn và các serverđích đáp ứng các gói tin có TTL hết hạn. Nhưng một số bộ định tuyến và bức tường lửa đợc xác lập để không trả về các gói tin ICMP có TTL hết hạn (từ các gói tin ICMP lẫn UDP). Trong trờng hợp này, sự suy diễn ít khoa học hơn. Tất cả những gì bạn có thể thực hiện đó là chạy traceroute và xem chặng nào đáp ứng cuối cùng, và suy ra đây là một bức tường lửa hoặc chí ít là bộ định tuyến đầu tiên trong đường truyền bắt đầu phong tỏa tính năng tracerouting. Ví dụ, ở đây ICMP đang bị phong tỏa đến đích của nó, và không có đáp ứng nào từ các bộ định tuyến vợt quá client - gw.smallisp.net :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1 stoneface &#40;192.168.10.33&#41; 12.640 ms 8.367 ms
+2 gw1.localisp.net &#40;172.31.10.1&#41; 214.582 ms 197.992 ms
+3 gw2.localisp.net &#40;172.31.10.2&#41; 206.627 ms 38.931 ms
+4 dsl.localisp.net &#40;172.31.12.254&#41; 47.167 ms 52.640 ms
+........
+14 ATM6.LAX2.BIGISP.NET &#40;10.50.2.1&#41; 250.030 ms 391.716 ms
+15 ATM7.SDG.BIGISP.NET &#40;10.50.2.5&#41; 234.668 ms 384.525 ms
+16 client-gw.smallisp.net &#40;10.50.3.250&#41; 244.065 ms ! X * *
+17 * * *
+18 * * *</pre>
+		</div>
+
+<b>Các Biện Pháp Phòng Chống</b>
+
+Việc chỉnh sửa sự rò rỉ thông tin traceroute đó là hạn chế tối đa các bức tường lửa và bộ định tuyến đáp ứng các gói tin có TTL hết hạn. Tuy nhiên, điều này không phải lúc nào cũng n m dới sự kiểm soát của bạn vì nhiều bộ định tuyến có thể n m dới s điều khiển cúa ISP.
+Phát Hiện
+Ðể phát hiện các traceroute chuẩn trên biên, bạn cần giám sát các gói tin UDP và ICMP có giá trị TTL là 1. Ðể thực hiện điều này với RealSecure 3.0, bạn bảo đảm đánh dấu TRACE_ROUTE decode name trong Security Events của Network Engine Policy.
+Phòng chống
+Ðể ngăn cản các traceroute chạy trên biên, bạn có thể cấu hình các bộ định tuyến không đáp ứng các thông điệp TTL EXPI#800000 khi nó nhận một gói tin có TTL là 0 hoặc 1. ACL dới đây sẽ làm việc với các bộ định tuyến Cisco:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>access - list 101 deny ip any any 11 0 ! ttl-exceeded</pre>
+		</div>
+Hoặc theo lý tởng, bạn nên phong tỏa toàn bộ luồng lu thông UDP không cần thiết tại các bộ định tuyến biên.
+
+<b>3. Nắm Giữ Biểu Ngữ</b>
+
+Kỹ thuật quét tìm các cổng bức tường lừa là hữu ích trong việc định vị các bức tường lửa, nhưng hầu hết các bức tường lửa không lắng chờ trên các cổng ngầm định như Check point và Microsoft, do đó việc phát hiện phải đợc suy diễn. Nhiều bức tường lứa phổ dụng sẽ công bố sự hiện diện của chúng bằng cách đơn giản nối với chúng. Ví dụ , nhiều bức tường lửa giám quản sẽ công bố chức năng cúa chúng với cách một bức tường lửa, và một số sẽ quảng cáo kiểu và phiên bản của chúng. Ví dụ, khi ta nối với một máy được tin là một bức tường lửa bằng netcat trên cổng 21 (FTP ), ta sẽ thấy một số thông tin thú vị :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\TEMP&gt;nc -v -n 192.168.51.129 2 l
+&#91;UNKNOWN&#93; &#91; 192.168.5l.129 &#93; 2 l &#40; ? &#41; open
+220 Secure Gateway FTP server ready .</pre>
+		</div>
+Biểu ngữ "Secure Gateway server FTP ready" là một dấu hiệu lộ tẩy của một hộp Eagle Raptor cũ. Việc nối thêm với cổng 23 (telnet) sẽ xác nhận tên bức tường lửa là "Eagle."
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\TEMP&gt;nc -v -n 192.168.51.129 23
+&#91;UNKNOWN&#93; &#91; 192.168.5l.129 &#93; 23 &#40; ? &#41; open
+Eagle Secure Gateway . Hostname :</pre>
+		</div>
+
+Và cuối cùng. nếu vẫn chưa bị thuyết phục server của bạn là một bức tường lửa. bạn có thể netcat với cổng 25 ( SMTP ), và nó sê báo cho ban biết nó là gì:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\TEMP&gt;nc -v -n 192.168.51.129 25
+&#91;UNKNOWN&#93; &#91; 192.168.5l.129 &#93; 25 &#40; ? &#41; open
+421 fw3.acme.com Sorry, the firewall does not provide mail service to you.</pre>
+		</div>
+Như đã thấy trong các ví dụ trên đây, thông tin biều ngữ có thể cung cấp các thông tin quý giá cho attacker trong khi định danh các bức tường lửa. Dùng thông tin này, chúng có thể khai thác các chỗ yếu phổ biến hoặc các cấu hình sai chung.
+
+<b>Biện Pháp Phòng Chống</b>
+
+Ðể chỉnh sửa chỗ yếu rò rỉ thông tin này, bạn giới hạn thông tin biểu ngữ quảng cáo. Một biểuu ngữ tốt có thể kèm theo một mục cảnh giác mang tính pháp lý và tất cả mọi nỗ lực giao kết sẽ đợc ghi sổ. Các chi tiết thay đổi cụ thể của các biểu ngữ ngầm định sẽ tùy thuộc nhiều vào bức tường lửa cụ thể, do đó bạn cần liên hệ hãng kinh doanh bức tường lửa.
+
+<b>Phòng Chống</b>
+
+Ðể ngăn cản attacker giành được quá nhiều thông tin về các bức tường lửa từ các biểu ngữ quảng cáo, bạn có thể thay đổi các tập tin cấu hình biểu ngữ. Các khuyến nghị cụ thể thờng tùy thuộc vào hãng kinh doanh bức tường lửa. Trên các bức tường lửa Eagle Raptor, bạn có thể thay đổi các biểu ngữ ftp và telnet bằng cách sửa đổi các tập tin thông báo trong ngày: tập tin ftp.motd và telnet.motd.
+
+<b>4. Kỹ Thuật Phát Hiện Bức tường Lửa Cao Cấp</b>
+
+Nếu tiến trình quét cổng tìm các bức tường lửa trực tiếp, dò theo đường truyền, và nắm giữ biểu ngữ không mang lại hiệu quả, attacker sẽ áp dụng kỹ thuật điểm danh bức tường lửa theo cấp kế tiếp. Có thể suy diễn các bức tường lửa và các quy tắc ACL của chúng bằng cách dò tìm các đích và lu ý các lộ trình phải theo (hoặc không theo) để đến đó.
+
+<b>Suy Diễn Ðơn Giản với nmap</b>
+
+Nmap là một công cụ tuyệt vời để phát hiện thông tin bức tường lửa và chúng t i liên tục dùng nó. Khi nmap quét một hệ chủ, nó không chỉ báo cho bạn biết các cổng nào đang mở hoặc đóng, mà còn cho biết các cổng nào đang bị phong tỏa. Lợng (hoặc thiếu) thông tin nhận đợc từ một đợt quét cổng có thể cho biết khá nhiều về cấu hình của bức tường lửa. Một cổng đã lọc trong nmap biểu hiện cho một trong ba nội dung sau:
+<blockquote>
+• không nhận gói tin SYN/ACK nào.
+• không nhận gói tin RST/ACK nào.
+• Ðã nhận một thông báo ICMP type 3 (Destination Unreachable ) có một mã 13 (Communication Administratively Prohibited - [RFC1812])
+&nbsp;
+		</blockquote>
+
+Nmap gom chung cả ba điều kiện này và báo cáo nó dới dạng một cổng "đã lọc." Ví dụ, khi quét www.mycompany.com ta nhận hai gói tin ICMP cho biết bức tường lửa đã phong tỏa các cổng 23 và 111 từ hệ thống cụ thể của chúng ta.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># nmap -p20, 21, 23, 53, 80, 111 - P0 -vv
+www.mycompany.com
+Starting nmap V. 2.08 by Fyodor &#40; fyodor@dhp.com &lt;mailto:fyodor@dhp.com&gt;, www.insecure.org/nmap/ &#41;
+Initiating TCP connect &#40; &#41; scan agains t &#40; 172.32.12.4 &#41;
+Adding TCP port 53 &#40;state Open&#41;
+Adding TCP port 111 &#40; state Firewalled &#41;
+Adding TCP port 80 &#40; state Open&#41;
+Adding TCP port 23 &#40; state Firewalled&#41; .
+Interesting ports on &#40; 172.17.12.4 &#41; :
+port State Protocol Service
+23 filtered tcp telnet
+53 open tcp domain
+80 open tcp http
+111 filtered tcp sunrpc</pre>
+		</div>
+Trạng thái "Firewalled", trong kết quả trên đây, là kết quả của việc nhận một ICMP type 3, mã 13 (Admin Prohibited Filter), như đã gặp trong kết xuất tcpdump:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>23 : 14 : 01.229743 10.55.2.1 &gt; 172.29.11.207 : icmp : host 172.32.12.4
+nreachable - admin prohibited filter
+23 : 14 : 01.97 9743 10.55.2.l &gt; 172.29.11.207 : icmp : host 172.32.12.4
+nreachable - admin prohibited filter</pre>
+		</div>
+
+Làm sao để nmap kết hợp các gói tin này với các gói tin ban đầu, nhất là khi chúng chỉ là một vài trong biển cả các gói tin đang ríu rít trên mạng? Vâng, gói tin ICMP đợc gửi trở lại cho máy quét sẽ chứa đựng tất cả các dữ liệu cần thiết để tìm hiều nội dung đang xảy ra. Cổng đang bị phong tỏa là phần một byte trong phần đầu ICMP tại byte 0x41 ( 1 byte), và bức tường lửa lọc gửi thông điệp sẽ n m trong phần IP của gói tin tại byte
+0x1b (4 byte).
+Cuối cùng, một cổng cha lọc nmap chỉ xuất hiện khi bạn quét một số cổng và nhận trở lại một gói tin RST/ACK. Trong trạng thái "unfiltered", đợt quét của chúng ta hoặc đang đi qua bức tường lửa và hệ đích của chúng ta đang báo cho biết nó không lắng chờ trên cổng đó, hoặc bức tường lửa đang đáp ứng đích và đánh lừa địa chỉ IP của nó với cờ RST/ACK đợc ấn định. Ví dụ, đợt quét một hệ thống cục bộ cho ta hai cổng cha lọc khi nó nhận hai gói tin RST/ACK từ cùng hệ chủ. Sự kiện này cũng có thể xảy ra với một số bức tường lửa nh Check point (với quy tắc REJECT) khi nó đáp ứng đích đang gửi trả một gói tin RST/ACK và đánh lừa địa chỉ IP nguồn của đích. .
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># nmap - sS -p1 -300 172.18.20.55
+Starting nmap V . 2.08 by Fyodor &#40; fyodor@dhp.com &lt;mailto:fyodor@dhp.com&gt;, www.insecure.org/nmap/ &#41;
+Interesting ports on &#40; 172.18.20.55 &#41; :
+&#40;Not showing ports in state : filtered&#41;
+Port State Protocol Service
+7 unfiltered tcp echo
+53 unfilteres tcp domain
+256 open tcp rap
+257 open tcp set
+258 open tcp yak-chat
+Nmap run completed - 1 IP address &#40; 1 host up &#41; scanned in 15 seconds
+Ðợt rà gói tin tcpdump kết hợp nêu các gói tin RST/ACK đã nhận.
+21 :26 :22.742482 172.18.20.55.258 &gt; 172.29.11.207.39667 : S
+415920470 : 1415920470 &#40; 0 &#41; ack 3963453111 win 9112 &lt;mss 536&gt; &#40;DF &#41;
+&#40;ttl 254, id 50438 &#41;
+21 :26 :23.282482 172.18.20.55.53 &gt; 172.29.11.207.39667 :
+R 0 : 0 &#40; 0 &#41; ack 3963453111 win 0 &#40;DF &#41; &#40; ttl 44, id 50439 &#41;
+21 :2 6: 24.362482 172.18.20.55.257 &gt; 172.29.111.207.39667 : S
+1416174328 : 1416174328 &#40; 0 &#41; ack 396345311 win X112
+&lt;mss 5 3 6 &gt;
+&#40; DF &#41; &#40; ttl 254, id 504 0 &#41;
+21: 26: 26.282482 172.18.20.55.7 &gt; 17.2.29.11.207.39667 :
+R 0 : 0 &#40; 0 &#41; ack 3963453111 win 0 &#40; DF &#41; &#40; ttl 44, id 50441&#41;</pre>
+		</div>
+
+<b>Các Biện Pháp Phòng Chống</b>
+
+Ðể ngăn cản attacker điểm danh các ACL bộ định tuyến và bức tường lửa thông qua kỹ thuật admin prohibited filter", bạn có thể v hiệu hóa khả năng đáp ứng với gói tin ICMP type 13 của bộ định tuyến. Trên Cisco, bạn có thể thực hiện điều này bàng cách phong tỏa thiết bị đáp ứng các thông điệp IP không thể đụng đến no ip unreachables
+
+<b>5. Ðịnh Danh Cổng</b>
+
+Một số bức tường lửa có một dấu ấn duy nhất xuất híện dới dạng một sêri con số phân biệt với các bức tường lửa khác. Ví dụ, Check Point sẽ hiển thì một sêri các con số khi bạn nối với cổng quản lý SNMP của chúng, TCP 257. Tuy sự hiện diện đơn thuần của các cổng 256-259 trên một hệ thống thờng cũng đủ là một dấu chỉ báo về sự hiện diện của Firewall-1 của Check Point song trắcônghiệm sau đây sẽ xác nhận nó :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91; root@bldg_043&#93;# nc -v -n 192.168.51.1 257
+&#40; UNKNOWN&#41; &#91; 192.168.51.1&#93; 257 &#40; ? &#41; open
+30000003
+&#91; root@bldg_043 # nc -v -n 172.29.11.19l 257
+&#40;UNKNOWN &#41; &#91; 172.29.11.191&#93; 257 &#40; ? &#41; open
+31000000</pre>
+		</div>
+
+<b>Các Biện Pháp Phòng Chống</b>
+
+<b>Phát Hiện</b>
+Ðể phát hiện tuyến nối của một kẻ tấn công với các cổng của bạn. bạn bố sung một sự kiện tuyến nối trong RealSecure. Theo các bớc sau:
+1. Hiệu chỉnh nội quy
+2. Lựa tab Connection Events.
+3. Lựa nut Add Connection, và điền một mục cho Check Point.
+4. Lựa đích kéo xuống và lựa nút Add.
+5. Ðiền dịch vụ và cổng, nhắp OK.
+6. Lựa cổng mới, và nhắp lại OK.
+7. Giờ đây lựa OK và áp dụng lại nội quy cho động cơ.
+
+<b>Phòng Chống</b>
+
+Ðể ngăn cản các tuyến nối với cổng TCP 257, bạn phong tỏa chúng tại các bộ định tuyến thượng nguồn. Một Cisco ACL đơn giản nh dới đây có thể khước từ rõ rệt một nỗ lực của bọn tấn công:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>access -list 101 deny tcp any any eq 257 log ! Block Firewall- l scans</pre>
+		</div>
+
+<b>III. Quét qua các bức tường lửa</b>
+
+Ðừng lo, đoạn này không có ý cung cấp cho bọn nhóc ký mã một số kỹ thuật ma thuật để vô hiệu hóa các bức tường lửa. Thay vì thế, ta sẽ tìm hiểu một số kỹ thuật để nhảy múa quanh các bức tường lửa và thu thập một số thông tin quan trọng về các lộ trình khác nhau xuyên qua và vòng quanh chúng.
+
+<b>1. hping</b>
+
+hping của Salvatore Sanfilippo, làm việc bằng cách gửi các gói tin TCP đến một cổng đích và báo cáo các gói tin mà nó nhận trở lại. hping trả về nhiều đáp ứng khác nhau tùy theo v số điều kiện. Mỗi gói tin từng phần và toàn thể có thể cung cấp một bức tranh khá rõ về các kiểu kiểm soát truy cập của bức tường lửa. Ví dụ, khi dùng hping ta có thể phát hlện các gói tin mở, bị phong tỏa, thả, và loại bỏ.
+
+Trong ví dụ sau đây, hping báo cáo cổng 80 đang mở và sẵn sàng nhận một tuyến nối. Ta biết điều này bởi nó đã nhận một gói tin với cờ SA đợc ấn định (một gói tin SYN/ACK).
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># hping www.yourcompany.com -c2 – S -p80 -n
+HPING www.yourcomapany.com &#40; eth0 172.30.1.2 0 &#41; : S set, 40 data bytes 60 bytes from 172.30.1.20 : flags=SA seq=0 ttl=242 id= 65121 win= 64240 time=144.4 ms</pre>
+		</div>
+
+Giờ đây ta biết có một cống mở thông đến đích, nhưng chưa biết nơi của bức tường lửa. Trong ví dụ kế tiếp, hping báo cáo nhận một ICMP unreachable type 13 từ 192.168.70.2. Một ICMP type 13 là một gói tin lọc bị ICMP admin ngăn cấm, thờng đợc gửi từ một bộ định tuyến lọc gói tin.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># hping www.yourcompany.com -c2 –S -p23 -n
+HPING www.yourcompany.com &#40; eth0 172.30.1.20 &#41; : S set, 40 data bytes ICMP Unreachable type 13 f rom 192.168.70.2</pre>
+		</div>
+
+Giờ đây nó đợc xác nhận, 192.168.70.2 ắt hẳn là bức tường lửa, và ta biết nó đang phong tỏa cổng 23 đến đích của chúng ta. Nói cách khác, nếu hệ thống là một bộ định tuyến Cisco nó ắt có một dòng như dưới đây trong tập tin config:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>access -list 101 deny tcp any any 23 ! telnet</pre>
+		</div>
+
+Trong ví dụ kế tiếp, ta nhận đợc một gói tin RST/ACK trả lại báo hiệu một trong hai viêc:
+<blockquote>(1) gói tin lọt qua bức tường lửa và server không lắng chờ cổng đó
+(2) bức tường lửa thải bỏ gói tin (như trường hợp của quy tắc reject của Check Point).&nbsp;
+		</blockquote>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># hping 192.168.50.3 -c2 -S -p22 -n
+HPING 192.168.50.3 &#40; eth0 192.168.50.3 &#41; : S set, 40 data bytes 60 bytes from 192.168.50.3 : flags=RA seq= 0 ttl= 59 id= 0 win= 0 time=0.3 ms</pre>
+		</div>
+
+Do đã nhận gói tin ICMP type 13 trên đây, nên ta có thể suy ra bức tường lửa ( 192.168.70.2) đang cho phép gói tin đi qua bức tường lửa, nhưng server không lắng chờ trên cổng đó. Nếu bức tường lửa mà bạn đang quét qua là Check point, hping sẽ báo cáo địa chỉ IP nguồn của đích, nhưng gói tin thực sự đang đợc gửi từ NIC bên ngoài của bức tường lửa Check Point. Ðiểm rắc rối về Check Point đó là nó sẽ đáp ứng các hệ thống bên trong của nó , gửi một đáp ứng và lừa bịp địa chỉ của đích. Tuy nhiên, khi attacker đụng một trong các điều kiện này trên Internet, chúng không hề
+biết sự khác biệt bởi địa chỉ MAC sẽ không bao giờ chạm máy của chúng. Cuối cùng, khi một bức tường lửa đang phong toả các gói tin đến một cổng, bạn thờng không nhận đợc gì trở lại.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91; root@bldg_04 3 /opt &#93; # hping 192.168.50.3 -c2 -S -p2 2 -n</pre>
+		</div>
+HPING 192.168.50.3 ( eth0 192.168.50.3 ) : S set, 40 data
+Kỹ thuật hping này có thể có hai ý nghĩa: (1) gói tin không thể đạt đến đích và đã bị mất trên đường truyền, hoặc (2) có nhiều khả năng hơn, một thiết bị (ắt là bức tường lửa của chúng ta 192.168.70.2 ) đã bỏ gói tin trên sàn dới dạng một phần các quy tắc ACL của nó.
+
+<b>Biện Pháp Phòng Chống</b>
+
+Ngăn ngừa một cuộc tấn công hping không phải là dễ . Tốt nhất, ta chỉ việc phong tỏa các thông điệp ICMP type 13 ( nh m tả trong đoạn phòng chống tiến trình quét nmap trên đây ).
+
+<b>2. Firewalk</b>
+
+Firewalk là một công cụ nhỏ tiện dụng, nh một bộ quét cổng, đợc dùng để phát hiện các cổng mở đàng sau một bức tường lửa. Ðợc viết bởi Mike Schiffnlan, còn gọi là Route và Dave Goldsmith, trình tiện ích này sẽ quét một server xua dòng từ một bức tường lửa và báo cáo trở lại các quy tắc đợc phép đến server đó mà không phải thực tế chạm đến hệ đích. Firewalk làm việc bằng cách kiến tạo các gói tin với một IP TTL đợc tính toán để kết thúc một chãng vợt quá bức tường lửa. Về lý thuyết, nếu gói tin đợc bức tường lửa cho phép, nó sẽ đợc phép đi qua và sẽ kết thúc nh dự kiến, suy ra một thông điệp "ICMP TTL expired in transit." Mặt khác, nếu gói tin bị ACL của bức tường lửa phong tỏa, nó sẽ bị thả, và hoặc không có đáp ứng nào sẽ đợc gửi, hoặc một gói tin lọc bị ICMP type 13 admin ngăn cấm sẽ đợc gửi.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># firewalk -pTCP -S135 -140 10.22.3.1 192.168.1.1
+Ramping up hopcounts to binding host . . .
+probe : 1 TTL : 1 port 33434 : expired from &#91;exposed.acme.com&#93;
+probe : 2 TTL : 2 port 33434 : expired from &#91;rtr.isp.net&#93;
+probe : 3 TTL : 3 port 33434 : Bound scan at 3 hops &#91;rtr.isp.net&#93;
+port open
+port 136 : open
+port 137 : open
+port 138 : open
+port 139 : *
+port 140 : open</pre>
+		</div>
+Sự cố duy nhất mà chúng ta gặp khi dùng Firewalk đó là nó có thể ít hơn dự đoán, vì một số bức tường lửa sẽ phát hiện gói tin hết hạn trước khi kiểm tra các ACL của nó và cứ thế gửi trả một gói tin ICMP TTL EXPI#800000. Kết quả là, Firewalk mặc nhận tất cả các cổng đều mở.
+
+<b>Biện Pháp Phòng Chống</b>
+
+Bạn có thể phong tỏa các gói tin ICMP TTL EXPI#800000 tại cấp giao diện bên ngoài, nhưng điều này có thể tác động tiêu cực đến khả năng vận hành của nó, vì các clien hợp pháp đang nối sẽ không bao giờ biết điều gì đã xảy ra với tuyến nối của chúng.
+
+<b>IV. Lọc gói tin</b>
+
+Các bức tường lửa lọc gói tin nh Firewall-1 của Check Point, Cisco PIX, và IOS của Cisco (vâng, Cisco IOS có thể đợc xác lập dới dạng một bức tường lửa) tùy thuộc vào các ACL (danh sách kiểm soát truy cập) hoặc các quy tắc để xác định xem luồng traffic có đợc cấp quyền để truyền vào/ra mạng bên trong. Ða phần, các ACL này đợc sắp đặt kỹ và khó khắc phục. Nhưng thông thờng, bạn tình cờ gặp một bức tường lửa có các ACL tự do, cho phép vài gói tin đi qua ở tình trạng mở. .
+Các ACL Tự Do
+Các danh sách kiểm soát truy cập (ACL) tự do thờng gặp trên các bức tường lửa nhiều hơn ta tưởng. Hãy xét trờng hợp ở đó có thể một tổ chức phải cho phép ISP thực hiện các đợt chuyển giao miền. Một ACL tự do nh "Cho phép tất cả mọi hoạt động từ cổng nguồn 53" có thể đợc sử dụng thay vì cho phép hoạt động từ serverDNS của ISP với cổng nguồn 53 và cổng đích 53." Nguy cơ tồn tại các cấu hình sai này có thể gây tàn phá thực sự, cho phép một hắc cơ quét nguyên cả mạng từ bên ngoài. Hầu hết các cuộc tấn công này đều bắt đầu bằng một kẻ tấn công tiến hành quét một server đằng sau bức tường lửa và đánh lừa nguồn của nó dới dạng cống 53 (DNS).
+
+<b>Biện Pháp Phòng Chống</b>
+
+Bảo đảm các quy tắc bức tường lửa giới hạn ai có thể nối ở đâu. Ví dụ, nếu ISP yêu cầu khả năng chuyển giao miền, thì bạn phải rõ ràng về các quy tắc của mình. Hãy yêu cầu một địa chỉ IP nguồn và mã hóa cứng địa chỉ IP đích (serverDNS bên trong của bạn) theo quy tắc mà bạn nghĩ ra. Nếu đang dùng một bức tường lửa Checkpoint, bạn có thể dùng quy tắc sau đây để hạn chế một cổng nguồn 53 (DNS) chỉ đến DNS của ISP. Ví dụ, nếu DNS của ISP là 192.168.66.2 và DNS bên trong của bạn là 172.30.140.1, bạn có thể dùng quy tắc dới đây:
+Nguồn gốc Ðích Dịch vụ Hành động Dấu vết
+192.168.66.2 172.30. 140.1 domain-tcp Accept Short
+
+<b>V. Tunneling ICMP và UDP</b>
+
+Tunneling ICMP là khả năng đóng khung dữ liệu thực trong một phần đầu ICMP.
+Nhiều bộ định tuyến và bức tường lửa cho phép ICMP ECHO, ICMP ECHO REPLY, và các gói tin UDP mù quáng đi qua, và như vậy sẽ dễ bị tổn thơng trước kiểu tấn công này. Cũng như chỗ yếu Checkpoint DNS, cuộc tấn công Tunneling ICMP và UDP dựa trên một hệ thống đã bị xâm phạm đứng sau bức tường lửa.
+Jeremy Rauch và Mike D. Shiffman áp dụng khái niệm Tunneling vào thực tế và đã tạo các công cụ để khai thác nó : loki và lokid (clien và server) -xem<span class="link"> http://www.phrack.com/search.phtml?view&article=p49-6.</span>
+Nếu chạy công cụ serverlokid trên một hệ thống đứng sau bức tường lửa cho phép ICMP ECHO và ECHO REPLY, bạn cho phép attacker chạy công cụ clien (loki), đóng khung mọi lệnh gửi đi trong các gói tin ICMP ECHO đến server(lokid). công cụ lokid sẽ tháo các lệnh, chạy các lệnh cục bộ , và đóng khung kết xuất của các lệnh trong các gói tin ICMP ECHO REPLY trả lại cho bọn tấn công. Dùng kỹ thuật này, attacker có thể hoàn toàn bỏ qua bức tường lửa.
+
+<b>Biện Pháp Phòng Chống</b>
+
+Ðể ngăn cản kiểu tấn công này, bạn v hiệu hóa khả năng truy cập ICMP thông qua bức tường lừa hoặc cung cấp khả năng truy cập kiểm soát chi tiết trên luồng lu thông ICMP. Ví dụ, Cisco ACL dới đây sẽ v hiệu hóa toàn bộ luồng lu thông ICMP phía ngoài mạng con 172.29.10.0 (DMZ) vì các mục tiêu điều hành:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>access - list 101 permit icmp any 172.29.10.0 0.255.255.255 8 ! echo
+access - list 101 permit icmp any 172.29.10.0 0.255.255.255 0 ! echo- reply
+access - list 102 deny ip any any log ! deny and log all else</pre>
+		</div>
+
+Cảnh giác: nếu ISP theo dõí thời gian hoạt động của hệ thống bạn đằng sau bức tường lửa của bạn với các ping ICMP (hoàn toàn không nên!), thì các ACL này sẽ phá vỡ chức năng trọng yếu của chúng. Hãy liên hệ với ISP để khám phá xem họ có dùng các ping ICMP để kiểm chứng trên các hệ thống của bạn hay không.
+
+<b>Tóm Tắt</b>
+
+Trong thực tế một bức tường lửa đợc cấu hình kỹ có thể cũng khó vợt qua. Nhưng dùng các công cụ thu thập thông tin như traceroute, hping, và nmap, attacker có thể phát hiện (hoặc chí ít suy ra) các lộ trình truy cập thông qua bộ định tuyến và bức tường lửa cũng như kiểu bức tường lửa mà bạn đang dùng. Nhiều chỗ yếu hiện hành là do cấu hình sai trong bức tường lửa hoặc thiếu sự giám sát cấp điều hành, nhưng dẫu thế nào, kết quả có thể dẫn đến một cuộc tấn công đại họa nếu được khai thác. Một số điểm yếu cụ thể tồn tại trong các hệ uỷ nhiệm lẫn các bức tường lửa lọc gói tin, bao gồm các kiểu đăng nhập web, telnet, và localhost không thẩm định quyền. Ða phần, có thể áp dụng các biện pháp phòng chống cụ thể để ngăn cấm khai thác chỗ yếu này, và trong vài trờng hợp chỉ có thể đúng kỹ thuật phát hiện. Nhiều người tin rằng tương lai tất yếu của các bức tường lửa sẽ là một dạng lai ghép giữa uỷ nhiệm ứng dụng và công nghệ lọc gói tin hữu trạng [stateful] sẽ cung cấp vài kỹ thuật để hạn chế khả năng cấu hình sai. Các tính năng phản ứng cũng sẽ là một phần của bức tường lửa thế hệ kế tiếp. NAI đã thực thi một dạng như vậy với kiến trúc Active Security. Nhờ đó, ngay khi phát hiện cuộc xâm phạm, các thay đổi đã đợc thiết kế sẵn sẽ tự động khởi phát và áp dụng cho bức tường lửa bị ảnh hưởng. Ví dụ, nếu một IDS có thể phát hiện tiến trình Tunneling ICMP, sản phẩm có thể hướng bức tường lửa đóng các yêu cầu ICMP ECHO vào trong bức tường lửa. Bối cảnh như vậy luân là cơ hội cho một cuộc tấn công DDoS; đó là lý do tại sao luân cần có mặt các nhân viên bảo mật kinh nghiệm.
+-------------------------------------------------------------------------------------------------------------------
+Theo: Hacking exposed
+Sửa/Xóa nội dung]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/4627.hva#27406</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/4627.hva#27406</link>
+				<pubDate><![CDATA[Fri, 1 Dec 2006 17:29:57]]> GMT</pubDate>
+				<author><![CDATA[ zeno]]></author>
+			</item>
+	</channel>
+</rss>

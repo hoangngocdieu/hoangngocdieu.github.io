@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "New bug of Mobifone SMS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "New bug of Mobifone SMS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ //----------------------------------
+Site: <span class="link"> http://www.mobifone.com.vn/</span>
+Bug: Free SMS
+Found by: KDOT
+//----------------------------------
+
+<b><font color='orange'>Sơ lược:</font></b>
+-Khai thác dịch vụ gửi tin nhắn miến phí qua mạng của Mobifone để gửi tin nhắn với số lượng không hạn chế, không mất tiền, thậm chí gửi nhiều tin cùng một lúc tới một số máy (SPAM SMS -BOMB SMS)
+
+<b><font color='orange'>Đánh giá:</font></b>
+-Tương đối nguy hiểm
+-Có thể bị lợi dụng để gây thiệt hại cho nhà cung cấp (là Mobifone - do hoàn toàn miễn phí)
+-Gây thiệt hại cho người sử dụng (nếu bị khai thác tính năng SPAM SMS - BOMB SMS)
+
+<b><font color='orange'>Chi tiết:</font></b>
+Tôi nói luôn, có thể nhiều người sẽ nghi ngờ khi nghe nói đến gửi tin nhắn miễn phí qua mạng. Bản thân tôi cũng không tin khi mới phát hiện ra lỗi này, tuy nhiên, sau hơn một tháng, kiên trì với khoảng hơn 1000 tin nhắn, tôi đã tin chắc là site của Mobifone bị lỗi.
+
+Vấn đề nằm ở giao thức POST và GET trong site của Mobifone, chỉ bằng vài công cụ đơn giản tôi đã GET được toàn bộ tham số để gửi một tin nhắn đến một thuê bao khác khi sử dụng dịch vụ nhắn tin miễn phí của Mobi.
+
+Nó có dạng như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.mobifone.com.vn/vietnamese/sms/result.jsp?smsTplId=&mSelect=&pbList=&CCode=84&phonenum=84904xxxxxx&message=abc%0D%0AMobiFone+them+468+tram+phat+song+moi&advFlg=ON&chargeFlg=1</pre>
+		</div>
+
+<font color='red'>Ngạc nhiên là khi gõ nguyên dòng lệnh như trên vào (tức là sử dụng giao thức GET,đưa toàn bộ các tham số lên địa chỉ) người dùng vẫn có thể gửi tin nhắn bình thường như khi sử dụng form gửi tin nhắn trong site của Mobifone (dùng giao thức POST).</font> Đây là lỗi quan trọng nhất, từ nó dẫn đến việc khai thác các lỗi tiếp theo.
+
+<b>Chúng ta quan tâm đến 4 tham số:</b>
+1.phonenum: chính là số máy nhận tin nhắn.
+2. Message: đây chính là nội dung tin nhắn. 
+3. advFlg: cờ hiệu, cho biết đây là loại tin có sử dụng quảng cáo hay không. Cờ này sẽ quyết định thuê bao có bị trừ tiền hay không.
+4. chargeFlg: lượng tin miễn phí bị trừ đi trong ngày của thuê bao hiện tại. 
+
+Thông thường, khi người sử dụng gửi tin nhắn miễn phí qua mạng thì:
+1. phonenum sẽ là số của Mobi có dạng 8490xxxxxxx hoặc 8493xxxxxxx
+2. Trong phần cuối của Message sẽ là nội dung quảng cáo do Mobifone thêm vào. Chẳng hạn: "Mobifone thêm 468 trạm thu phát sóng"....
+3.advFlag = ON
+4. chargeFlg = 1
+
+<b><font color='orange'>Cách khai thác:</font></b>
+1. thay phonenum bằng bất kỳ số máy di dộng nào tùy bạn, không cớ gì là Mobi, Vina hay Viettel...
+2. Chỉ cần xóa đoạn text quảng cáo trên trong đoạn địa chỉ trên là người dùng có thể gửi tin nhắn miễn phí một cách đường hoàng mà không hề có quảng cáo.
+3. giữ nguyên advFlg = ON để đảm bảo khi gửi tin nhắn sẽ không bị trừ tiền.
+4.chargeFlg = 0 để đảm bảo số tin nhắn miễn phí còn lại trong ngày không bị trừ đi, luôn luôn giữ ở mức là 5 (như ban đầu), tức là có thể gửi tin nhắn theo cách trên với số lượng không hạn chế!
+
+Vậy đoạn địa chỉ sau hoàn toàn có thể được sử dụng để gửi tin nhắn đến một thuê bao khác mà không mất phí, không QC, không bị hạn chế số lượng.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://www.mobifone.com.vn/vietnamese/sms/result.jsp?smsTplId=&mSelect=&pbList=&CCode=84&phonenum=849xxxxxxxx&message=abc&advFlg=ON&chargeFlg=0</pre>
+		</div>
+
+<b><font color='orange'>Vấn đề là ở chỗ:</font></b>
+1. Mobifone đã sơ hở khi không kiểm soát 2 giao thức là POST và GET mà đánh đồng chúng với nhau.
+2. Việc chèn nội dung quảng cáo không nên thực hiện ở phía web browser (một đoạn Javascript) mà nên thực hiện ở phía server.
+3. Việc ra quyết định thực hiện các hành động kông nên chỉ dựa vào một tham số (như trên đã nói) mà nên cùng lúc kiểm tra đồng thời nhiều tham số, nếu cùng thỏa mãn thì mới ra quyết định hành động tương ứng. (Chẳng hạn như cặp biến advFlag và chargeFlg phải là (ON,1) mới đảm bảo người dùng được phép gửi tin miễn phí, ngoài ra, tất cả đều phải Deny).
+4. Khi đã biết được chuỗi GET để gửi tin nhắn như trên, kẻ xấu hoàn toàn có thể lợi dụng để viết một trang web đơn giản sử dụng JS, tạo một vòng lặp, liên tục gửi tin đến một số thuê bao =&gt; đấy là SPAM SMS.
+
+Trên đây là một số tìm hiểu và nhận định của tôi. Mong các bạn ủng hộ và cho ý kiến để cùng đưa ra giải pháp khắc phục.
+
+
+By: KDOT]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58558</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58558</link>
+				<pubDate><![CDATA[Fri, 11 May 2007 18:54:21]]> GMT</pubDate>
+				<author><![CDATA[ kdot]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Mình cũng đã từng tìm hiểu về vấn đề gửi SMS này, và mình thấy không có gì là lỗi bảo mật ở đây cả, sau đây là một số ý kiến của mình:
+1. Nếu bạn dùng GET thì cũng chả sao cả, vẫn gửi được tin nhắn nhưng các tham số bị giới hạn. Ví dụ: nếu có một texteare để nhập vào nội dung tin nhắn thì bạn bắt buộc phải gõ liền, ko có dấu cách (hoặc thay bằng bất cứ kí tự gì để dễ đọc như _,...)
+2. Việc quảng cáo hay không thì chả ảnh hưởng gì, vì nếu có quảng cáo thì server sẽ kiểm tra và không trừ tiền, ngược lại thì có.
+3. Mình chưa thử với mobiphone nhưng với viettel thì cho dù có để số tin nhắn miễn phí còn lại là bao nhiêu đi nữa cũng vô ích vì ở server sẽ lại kiểm tra lại lần nữa.
+4. Trước khi gửi có thể server sẽ kiểm tra cookie do đó bạn cần phải đăng nhập rồi mới có thể thực hiện được việc gửi tin nhắn.
+
+Ngoài ra có thể dùng Http Live header để biết được gói tin gửi đi như thế nào ;)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58585</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58585</link>
+				<pubDate><![CDATA[Fri, 11 May 2007 21:38:23]]> GMT</pubDate>
+				<author><![CDATA[ ntvinhie47]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ Nó vẫn cho phép có dấu cách đấy chứ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58586</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58586</link>
+				<pubDate><![CDATA[Fri, 11 May 2007 21:57:07]]> GMT</pubDate>
+				<author><![CDATA[ darthtuan]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Cách này Hoàng thử lâu rồi, MobiFone không trừ ngay mà đợi 1 khoảng thời gian khá lâu (vài ngày ?) mới trừ 1 lần :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58606</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58606</link>
+				<pubDate><![CDATA[Fri, 11 May 2007 23:36:00]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">darthtuan wrote:</cite><br>
+		<blockquote>Nó vẫn cho phép có dấu cách đấy chứ.
+&nbsp;
+		</blockquote>
+
+Đã là gửi theo GET thì khi bạn cho dấu cách vào thì thông tin sẽ bị mất mát, bạn thử xem  :P) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58656</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58656</link>
+				<pubDate><![CDATA[Sat, 12 May 2007 06:21:10]]> GMT</pubDate>
+				<author><![CDATA[ ntvinhie47]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ntvinhie47 wrote:</cite><br>
+		<blockquote>Mình cũng đã từng tìm hiểu về vấn đề gửi SMS này, và mình thấy không có gì là lỗi bảo mật ở đây cả, sau đây là một số ý kiến của mình:
+1. Nếu bạn dùng GET thì cũng chả sao cả, vẫn gửi được tin nhắn nhưng các tham số bị giới hạn. Ví dụ: nếu có một texteare để nhập vào nội dung tin nhắn thì bạn bắt buộc phải gõ liền, ko có dấu cách (hoặc thay bằng bất cứ kí tự gì để dễ đọc như _,...)
+2. Việc quảng cáo hay không thì chả ảnh hưởng gì, vì nếu có quảng cáo thì server sẽ kiểm tra và không trừ tiền, ngược lại thì có.
+3. Mình chưa thử với mobiphone nhưng với viettel thì cho dù có để số tin nhắn miễn phí còn lại là bao nhiêu đi nữa cũng vô ích vì ở server sẽ lại kiểm tra lại lần nữa.
+4. Trước khi gửi có thể server sẽ kiểm tra cookie do đó bạn cần phải đăng nhập rồi mới có thể thực hiện được việc gửi tin nhắn.
+
+Ngoài ra có thể dùng Http Live header để biết được gói tin gửi đi như thế nào ;)
+&nbsp;
+		</blockquote>
+
+1. Cái này bạn darthtuan đã trả lời bạn rồi. Trình duyệt sẽ tự động thay dấu cách bằng %20, và khi máy di động nhận được tin nhắn trên, nó sẽ hiển thị lại dấu cách như bình thường. Không có chuyện "mất mát" gì như bạn nói đâu.
+
+2&3. Đấy là vấn đề tôi đang nói đến. <b>Nếu như Mobifone làm như bạn nói thì tôi đã chẳng viết bài này ở đây làm gì. Tôi cũng đã thử check Viettel và Vina, họ không mắc lỗi tương tự.</b>
+
+4. Tôi có bảo là không phải đăng nhập đâu. Người dùng vẫn sử dụng TK số mobile như bình thường như khi họ sử dụng dịch vụ trong trang của mobifone mà. Vấn đề ở đây là họ sẽ không bị trừ tiền.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58684</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58684</link>
+				<pubDate><![CDATA[Sat, 12 May 2007 11:20:30]]> GMT</pubDate>
+				<author><![CDATA[ kdot]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Cách này Hoàng thử lâu rồi, MobiFone không trừ ngay mà đợi 1 khoảng thời gian khá lâu (vài ngày ?) mới trừ 1 lần :)&nbsp;
+		</blockquote>
+
+Bạn nói đúng, Mobifone trừ tiền rất chậm, khoảng 1-2 ngày. Do đó, tôi đã phải dành ra một khỏang thời gian khá dài (hơn 1 tháng) để test thật kỹ bug trên. Và sau hơn một tháng đấy, với khoảng hơn 1000 tin nhắn, TK vẫn không hề bị trừ tiền mà giữ nguyên mức ban đầu.
+
+Các bạn có thể tin tưởng rằng, trước khi nêu ra bug này, tôi đã test rất kỹ, chứ không chỉ là "nhận định xuông" đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58688</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58688</link>
+				<pubDate><![CDATA[Sat, 12 May 2007 11:27:35]]> GMT</pubDate>
+				<author><![CDATA[ kdot]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ Hì, cái này post  hay get cũng dc ráo mà, chỉ có điều quan trọng nhất là 2 cái này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;input type=hidden name=chargeFlg value=1&gt;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>checkdata&#40;'MobiFone giam 10% cuoc noi mang tu 1/5'&#41;;</pre>
+		</div>
+Có sửa code lại chút, là vầy, phải thỏa cả 2 thì miễn phí, trừ 1 tin mỗi lần nt, thiếu 1 trong 2 (đổi số <font color='red'>value=1</font> thành số khác 1 cũng thuộc trường hợp này) cũng bị trừ như thường, chả bít phải vậy hông  :mrgreen: 
+Đã check, trên trang ds các bản tin đã gửi thấy nó ghi có tính cước (nếu ko thỏa), còn có trừ hay ko thì chưa bít, mới ngồi có nửa giờ chưa thấy trừ  :P) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58744</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58744</link>
+				<pubDate><![CDATA[Sat, 12 May 2007 15:42:13]]> GMT</pubDate>
+				<author><![CDATA[ hackermientay]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">kdot wrote:</cite><br>
+		<blockquote>Các bạn có thể tin tưởng rằng, trước khi nêu ra bug này, tôi đã test rất kỹ, chứ không chỉ là "nhận định xuông" đâu.&nbsp;
+		</blockquote>
+Hoàng không rõ, nhưng theo test của Hoàng cách đây vài tháng thì sau 1 thời gian sẽ không dùng được nữa (hoặc có thể do SIM của Hoàng hết tiền ?) :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58848</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58848</link>
+				<pubDate><![CDATA[Sun, 13 May 2007 03:27:06]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Mình vừa thử, gửi xong một GET request thì trả về thông báo bắt đăng nhập.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58941</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58941</link>
+				<pubDate><![CDATA[Sun, 13 May 2007 16:53:03]]> GMT</pubDate>
+				<author><![CDATA[ ntvinhie47]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ntvinhie47 wrote:</cite><br>
+		<blockquote>Mình vừa thử, gửi xong một GET request thì trả về thông báo bắt đăng nhập.&nbsp;
+		</blockquote>
+Đăng nhập vô trước đã, vô trang nhắn tin rồi copy đường link dán vô
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58976</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58976</link>
+				<pubDate><![CDATA[Sun, 13 May 2007 20:41:39]]> GMT</pubDate>
+				<author><![CDATA[ hackermientay]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Mình cũng đã test thử rồi nhưng nhận được thông báo : tin nhắn không được gửi, các tham số không đủ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58982</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#58982</link>
+				<pubDate><![CDATA[Sun, 13 May 2007 21:22:16]]> GMT</pubDate>
+				<author><![CDATA[ loveone]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Có vẻ như Mobifone đã fix lỗi này rồi.
+Fix rồi mà cứ im im thế này, quá tệ. :roll: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#60476</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#60476</link>
+				<pubDate><![CDATA[Sun, 20 May 2007 11:13:42]]> GMT</pubDate>
+				<author><![CDATA[ kdot]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Nghe có vẻ hay wa ... ?!
+Nhưng Fix mất rồi , ak ak, ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#64720</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#64720</link>
+				<pubDate><![CDATA[Thu, 14 Jun 2007 18:14:46]]> GMT</pubDate>
+				<author><![CDATA[ dafvph]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ gần đây mobile fone có nhiều hiện tượng rất.........rất củ chưối.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#64774</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#64774</link>
+				<pubDate><![CDATA[Thu, 14 Jun 2007 23:02:55]]> GMT</pubDate>
+				<author><![CDATA[ lonely_Xorhandsome]]></author>
+			</item>
+			<item>
+				<title>New bug of Mobifone SMS</title>
+				<description><![CDATA[ Mobifone hỗ trợ free mỗi ngày 5 free SMS từ 1 số của mobi đấy mấy bồ.
+Thử tìm cách gửi từ 1 số không phải mobi xem? 
+Ngoài ra thử gửi free quá 5 SMS.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#65201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#65201</link>
+				<pubDate><![CDATA[Sun, 17 Jun 2007 00:25:40]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ có 1 lỗi của mobifone mà mình vô tình phát hiện ra, đó là trừ tiền rất chậm cho nên mình có 1 mánh khóe bomb SMS rất tốt đó là cứ nạp Mobi Easy 10k/1SIM thui, rồi sử dụng dịch vụ SMS của mobifone.com.vn, cứ gửi bằng cách gửi tính tiền, nhưng mỗi lần gửi mình gửi cho 50 số di động và gửi liên tục, mình đã test rất hữu ích, mobifone sẽ cho 1 SIM được gửi tối đa 300SMS mỗi ngày như vậy với 10k mình gửi được SMS với số tiền đến khoảng 100K (nếu tính trung bình 1 SMS là 350 đồng)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#92226</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#92226</link>
+				<pubDate><![CDATA[Mon, 22 Oct 2007 15:00:38]]> GMT</pubDate>
+				<author><![CDATA[ rocker28]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ Cái này tôi nghĩ mobifone fix rồi, thường các nhà cung cấp bây giờ để thời gian trừ tiền trong khoảng 10 phút, do vậy ko áp dụng cách này được nữa]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#96236</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#96236</link>
+				<pubDate><![CDATA[Thu, 8 Nov 2007 12:48:06]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Smith]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ Dù sao đây vẫn là một 'sơ suất' thú vị ^^ và hơn nữa là người viết trình bày khá rõ ràng. gud job! ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#96393</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#96393</link>
+				<pubDate><![CDATA[Fri, 9 Nov 2007 00:20:22]]> GMT</pubDate>
+				<author><![CDATA[ blueocean89]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ post hay get thì khác quái gì nhau đâu. :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#116090</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#116090</link>
+				<pubDate><![CDATA[Fri, 22 Feb 2008 12:50:44]]> GMT</pubDate>
+				<author><![CDATA[ CK]]></author>
+			</item>
+			<item>
+				<title>Re: New bug of Mobifone SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">CK wrote:</cite><br>
+		<blockquote>post hay get thì khác quái gì nhau đâu. :(&nbsp;
+		</blockquote>
+
+Nếu không khác thì người ta tạo ra làm gì 2 cái chứ :)
+Bồ chịu khó coi kĩ lại HTTP method và HTML spec<span class="link"> http://www.w3.org/MarkUp/html-spec/html-spec_toc.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10217.hva#116137</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10217.hva#116137</link>
+				<pubDate><![CDATA[Fri, 22 Feb 2008 14:31:53]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+	</channel>
+</rss>

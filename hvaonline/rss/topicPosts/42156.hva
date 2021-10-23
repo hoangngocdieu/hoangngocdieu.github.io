@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Certificate Validation với CRL và OCSP – PKI (3)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Certificate Validation với CRL và OCSP – PKI (3)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Certificate Validation với CRL và OCSP – PKI (3)</title>
+				<description><![CDATA[ <b>Xem lại:</b>
+
+<b>Giới thiệu về hạ tầng khóa công khai – PKI (1)</b><span class="link"> http://www.hvaonline.net/hvaonline/posts/list/41925.hva</span>
+
+<b>Các mô hình hạ tầng khóa công khai – PKI (2)</b><span class="link"> http://www.hvaonline.net/hvaonline/posts/list/41926.hva</span>
+
+——————————-
+
+<font color='orange'><font size='+1'><b>Certificate Validation với CRL và OCSP – PKI (3)</b></font></font>
+
+<b><font color='yellow'>Certificate Revocation</font></b>
+
+Mỗi một certificate được tạo ra đều có một khoảng thời gian hiệu lực (validity period) nhất định và thường từ 1 hoặc 2 năm. Khi vượt ra khỏi khoảng thời gian này thì nó bị hết hạn và không còn giá trị nữa. Thông tin này được chứa trong bản thân certificate (giá trị valid from và valid to) và cần được kiểm tra trước khi quyết định có nên tin dùng nó hay không.
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/05/certificate-details.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Tuy nhiên, có những trường hợp mà một certificate cũng cần bị thu hồi (revoke) dù rằng thời gian hiệu lực vẫn còn như:
+
+-- Người sở hữu certificate không còn làm trong tổ chức nữa.
+-- CA phát hiện ra là đã cấp phát sai certificate. Sự cố liên quan tới các CA Comodo, DigiNotar xảy ra gần đây là một ví dụ.
+-- Private key bị lộ hoặc thiết bị chứa private key bị mất hoặc bị đánh cắp.
+
+Công việc thu hồi certificate này được gọi là certificate revocation và do CA thực hiện.
+
+Có 2 trạng thái revocation được quy định trong RFC 3280 là:
+
+<b>Revoked:</b> một khi certificate đã bị thu hồi thì không thể khôi phục lại và sử dụng tiếp được nữa.
+
+<b>Hold:</b> certificate chỉ tạm thời bị mất hiệu lực. Ví dụ, nếu người dùng không chắc là private key đã bị mất hay chưa thì CA có thể đưa certificate vào trạng thái hold. Nếu sau đó tìm thấy private key và chắc rằng không ai đã đọc được nó thì trạng thái hold được gỡ bỏ và certificate có hiệu lực trở lại.
+
+Theo RFC 5280 thì khi thu hồi một certificate phải chỉ định một trong 11 lý do sau:
+
+unspecified (0)
+keyCompromise (1)
+cACompromise (2)
+affiliationChanged (3)
+superseded (4)
+cessationOfOperation (5)
+certificateHold (6)
+(value 7 is not used)
+removeFromCRL (8)
+privilegeWithdrawn (9)
+aACompromise (10)
+
+<b><font color='yellow'>Certificate Revocation List (CRL)</font></b>
+
+Là danh sách các certificate bị thu hồi và không còn được tin dùng nữa. Mỗi một mục (entry) trong CRL tương ứng với một certificate và thường gồm 3 thông tin sau:
+
+-- Serial number của certificate
+-- Thời điểm bị thu hồi
+-- Lý do thu hồi (là 1 trong 11 lý do kể trên)
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/05/revocation-list.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Một CRL được tạo và phát hành (publish) định kỳ sau 1 khoảng thời gian nào đó do người quản trị CA chỉ định, ví dụ: 1 giờ, 1 ngày, 1 tuần, v.v. Một CRL cũng có thể được cập nhật và phát hành ngay sau khi một certificate nào đó bị thu hồi. Các CA sẽ đẩy CRL chứa các certificate do nó cấp phát và quản lý tới kho chứa là LDAP server hoặc Web server.
+
+Để ngăn chặn nguy cơ CRL có thể bị làm giả dẫn đến certificate nào đó bị cố ý đưa vào hoặc bị loại bỏ khỏi CRL, các CRL đều có một chữ ký số được ký bởi CA đã phát hành nó. Và để xác thực chữ ký này trước khi có thể tin dùng CRL thì cần đến certificate của CA đã thực hiện việc ký trên. Thông thường certificate của các CA phổ biến đều được nạp sẵn bên trong các ứng dụng có hỗ trợ PKI như các trình duyệt web, đọc email hay hệ điều hành.
+
+Khi ứng dụng PKI nhận được một certificate, thì bản thân certificate không chứa nội dung của CRL mà nó có một extension là CRL Distribution Points (CDP), cho biết địa chỉ URL của CRL (là file có đuôi .crl) mà nó cần tải về. Sau đó ứng dụng PKI phải phân tích (parse) file .crl này để xác định xem certificate đã bị thu hồi hay chưa, nói cách khác nếu serial number không có trong CRL thì certificate đó có thể được tin dùng.
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/05/crl-distribution-points.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Có thể thấy, CRL mắc phải một số hạn chế sau:
+
+-- Nếu nhiều client cùng để tải về CRL từ kho chứa thì có nguy cơ làm tắc nghẽn, giảm hiệu suất mạng. Và nếu không thể kết nối tới kho chứa CRL do thì client không thể kiểm tra tính hiệu lực của certificate, dẫn đến certificate không được tin dùng.
+
+-- Qua thời gian, khi số lượng các certificate được cấp phát cũng như thu hồi ngày một tăng dần, thì kích thước của file .crl cũng tăng theo (thường từ 200KB đến 20MB). Ứng dụng PKI phải tốn thời gian tải về và phân tích file .crl thường chứa một lượng rất lớn các certificate bị thu hồi, trong khi nó chỉ cần xác định trạng thái revocation của một (vài) certificate mà thôi.
+
+-- Nếu certificate mà client cần kiểm tra đã bị thu hồi nhưng chưa được cập nhật vào CRL thì khi phân tích file .crl xong client vẫn chấp nhận certificate không còn hiệu lực đó!
+
+-- Mặc định, các máy Windows có timeout là 15 giây khi cố gắng tải về CRL.
+
+Ngoài ra, còn có các delta CRL chứa thông tin revocation cho các certificate bị thu hồi kể từ khi base CRL mới nhất được phát hành. Nhưng để kiểm tra trạng thái revocation, ứng dụng PKI vẫn cần phải có đủ cả base CRL và các delta CRL gần đây nhất. Dẫu vậy, cách này cũng sẽ giúp tiết kiệm thời gian và băng thông mạng vì nếu client đã có sẵn base CRL rồi thì nó chỉ cần tải thêm các delta CRL thôi.
+
+Vậy có phương thức nào hiệu quả hơn CRL trong việc kiểm tra xem certificate có bị thu hồi chưa không? Câu trả lời đến từ OCSP.
+
+<b><font color='yellow'>Online Certificate Status Protocol (OCSP)</font></b>
+
+Như được mô tả trong RFC 2560, OCSP là một giao thức được sử dụng để nhận về trạng thái revocation của một certificate có chuẩn định dạng là X.509. Hoạt động theo mô hình client/server, các thông điệp OCSP (request, response) được mã hóa theo chuẩn ANS.1 và được truyền qua giao thức HTTP. Server cũng thường được gọi là OCSP responder. Cơ bản nó làm việc như sau:
+
+<br>
+			<div align="center" class="limitview"><img src='http://manthang.files.wordpress.com/2012/05/ocsp.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+<font color='yellow'><b>1.</b></font> Client gửi một request chứa serial number của certificate mà nó cần kiểm tra tới server.
+
+<b><font color='yellow'>2.</font></b> Nếu có sẵn một response được cache cho request trên thì server sẽ gửi ngay cho client. Còn không thì server sẽ kiểm tra xem có sẵn một CRL được cache chưa, nếu có thì nó sẽ dò tìm trong CRL cho serial number của certifcate rồi trả về kết quả cho client. Nếu chưa có file CRL, server sẽ tải về từ các vị trí CDP đã được cấu hình trước.
+
+<b><font color='yellow'>3.</font></b> Response trả về cho client cho biết 1 trong 3 trạng thái có thể của certificate là:
+
+-- “good”: không có trong CRL
+-- “revoked”: bị thu hồi vĩnh viễn hoặc tạm thời (hold)
+-- “unknown”: server không biết tới serial number có trong request
+
+Response cũng được ký số bởi server sử dụng private key của một trong các thành phần:
+
+-- CA đã cấp phát certificate có trong request.
+-- Trusted Responder mà public key của nó đã được client tin tưởng
+-- CA Designated Responder (Authorized Responder) có certificate được cấp bởi CA mà OCSP server đang phục vụ cho nó.
+
+<b><font color='yellow'>4.</font></b> Client nhận được kết quả và cache lại để lần sau không cần gửi request lên server để kiểm tra certificate đó nữa.
+
+<b><font color='yellow'>5.</font></b> Nếu server không thể xử lý request, client sẽ nhận được response không được ký, chứa thông báo lỗi.
+
+Rõ ràng, OCSP đã giải quyết được các vấn đề gặp phải với CRL là:
+
+-- Tiết kiệm băng thông do các request và response có kích thước nhỏ hơn nhiều (thường chỉ 4KB) so với file .crl.
+
+-- Tiết kiệm thời gian vì chỉ phải kiểm tra trạng thái của 1 certificate thay vì phải phân tích file .crl.
+Nếu thông tin revocation có sẵn trong cache tại client và server thì tiết kiệm được được cả thời gian lẫn băng thông.
+
+-- Hệ thống certificate validation với OCSP có thể dễ dàng được mở rộng, độ sẵn sàng cao khi cần xử lý một lượng lớn các request.
+
+-- OCSP responder đảm bảo luôn sử dụng các phiên bản CRL mới nhất làm cơ sở cho việc kiểm tra tính hiệu lực của certificate cũng như là khả năng phản hồi gần như lập tức (real-time) khi nó nhận được yêu cầu từ client.
+Một OCSP server có thể phục vụ công tác certificate validation cho nhiều CA. Điều này giúp client tránh phải lưu nhiều CRL.
+
+Tuy nhiên, trong an toàn thông tin thì không có một giải pháp nào giải quyết được mọi khía cạnh rủi ro cả. OCSP không nằm ngoài quy luật đó, nó không phải là “viên đạn bạc” cho vấn đề certificate validation, bản thân nó cũng phải đối mặt với các nguy cơ khác nhau như:
+
+-- <b>Availability</b>: Nếu vì lý do nào đó mà client không thể liên lạc với OCSP server thì quá trình validation bị đổ vỡ, khi đó client có thể được cấu hình để quay lại cơ chế CRL.
+
+-- <b>Replay attack</b>: kẻ tấn công chụp lại các good response, chờ đến khi certificate bị thu hồi nhưng validity period vẫn còn hiệu lực thì hắn gửi lại response đó cho client.
+
+-- <b>DoS/DDoS attack</b>:  kẻ tấn công cố gắng làm đầy khả năng xử lý của OCSP server tần suất các request rất lớn và liên tục. Việc server phải mất thời gian và năng lực để ký số cho mỗi response cũng khiến tình huống này thêm trầm trọng. Ngoài ra, việc các thông báo lỗi không được ký số cũng bị lợi dụng, kẻ tấn công sẽ gửi các thông báo lỗi giả này cho client và ngăn chặn các good response đến từ server khiến cho client không thể dùng được certificate này.
+
+-- <b>Privacy</b>: các thông điệp OCSP đều không được mã hóa nên việc phải gửi request tới OCSP server để kiểm tra certificate cho một domain nào đó khiến bộc lộ địa chỉ IP của client cũng như website mà client muốn ghé thăm.
+
+-- <b>Compatibility</b>: Một số ứng dụng và hệ điều hành cũ như Windows XP không hỗ trợ giao thức OCSP.
+
+<b><font color='yellow'>Kết luận</font></b>
+
+Việc cần sử dụng các certificate còn hiệu lực để đảm bảo an toàn, tin cậy cho truyền thông luôn là yêu cầu căn bản và cần thiết. Và chìa khóa cho sự thành công của một hệ thống PKI nằm ở chỗ việc cấp phát, thu hồi, kiểm tra hiệu lực certificate phải được tiến hành một cách chính xác và nhanh chóng.
+
+CRL có thể phục vụ cho một môi trường nhỏ dưới 1000 certificate nhưng nếu số lượng certificate bị thu hồi lên tới hàng chục ngàn thì việc triển khai OCSP với độ sẵn sàng và tin cậy cao là điều nên làm. Xem thêm các tính năng cần có cho một hệ thống OCSP ở đây:
+<span class="link"> http://www.ascertia.com/blogs/OCSP_Responder_-_the_must_have_features.aspx</span>
+
+CRL và OCSP đều là các phương thức kiểm tra certificate qua mạng (online certificate check), Google đang có ý định thực hiện việc này một cách offline bằng cách cho phép trình duyệt Chrome tải về và cập nhật các CRL từ các CA khác nhau mà không cần tới OCSP hay dựa vào CDP trong certificate. Xem thêm ở đây:
+<span class="link"> http://www.imperialviolet.org/2012/02/05/crlsets.html</span>
+
+<font color='yellow'><b>Tham khảo</b></font>
+
+[1]<span class="link"> http://tools.ietf.org/html/rfc5280</span>
+
+[2]<span class="link"> http://tools.ietf.org/html/rfc2560</span>
+
+[3]<span class="link"> http://blogs.technet.com/b/askds/archive/2009/06/24/implementing-an-ocsp-responder-part-i-introducing-ocsp.aspx</span>
+
+[4]<span class="link"> http://technet.microsoft.com/en-us/library/ee619754(v=ws.10</span>).aspx
+
+[5]<span class="link"> http://en.wikipedia.org/wiki/Revocation_list</span>
+
+[6]<span class="link"> http://en.wikipedia.org/wiki/Online_Certificate_Status_Protocol</span>
+
+[7]<span class="link"> http://www.chosensecurity.com/online-certificate-status-protocol</span>
+
+<b>–manthang.</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42156.hva#262474</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42156.hva#262474</link>
+				<pubDate><![CDATA[Fri, 4 May 2012 12:30:41]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Certificate Validation với CRL và OCSP – PKI (3)</title>
+				<description><![CDATA[ Có 2 trong 11 reason code cho việc thu hồi certificate là
+
+	<b>privilegeWithdrawn (9)</b>: 
+	<b>aACompromise (10)</b>:
+
+là em vẫn chưa tìm thấy ý nghĩa của nó, ngay cả tìm trong RFC 5280 cũng không thấy đề cập. nhờ mọi người ai biết mách nước hộ :p]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42156.hva#267273</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42156.hva#267273</link>
+				<pubDate><![CDATA[Sat, 21 Jul 2012 21:19:55]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+	</channel>
+</rss>

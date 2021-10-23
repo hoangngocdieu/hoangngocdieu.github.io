@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Chạy nodejs như 1 service trong Centos 5.8"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Chạy nodejs như 1 service trong Centos 5.8"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ Chào các bạn,
+
+Mình đang cố găng cài đặt nodejs cho server chạy CentOS 5.8. việc cài đặt và chạy nodejs cũng đã thành công, nhưng mình gặp 1 vấn đề là khi chạy nodejs thì chương trình chiếm luôn màn hình. Nếu thoát khỏi màn hình của nodejs thì đồng nghĩa với việc stop nodejs. Mình cũng đã cố gắng viết 1 script để cho nodejs chạy như 1 service chạy ngầm nhưng đang gặp vấn đề là: service đã chạy nhưng vẫn bị nodejs chiếm màn hình như trên. Nhờ các bạn xem giúp mình script và khắc phục lỗi giúp mình, do là newbie trong việc viết script nên còn nhiều hạn chế mà tự bản thân mình không sao tìm được đường ra. 
+
+Chân thành cám ơn các bạn
+
+đoạn code này mình lấy từ internet về rồi sửa lại các tham số và lệnh trong centos.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+#
+# nodejs - this script starts and stops the nodejs
+# chkconfig:   - 85 15 
+# description:  node /usr/local/lib/node_modules/testserver.js
+#               
+# processname: node
+# config:      
+# pidfile:     
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+&#91; &quot;$NETWORKING&quot; = &quot;no&quot; &#93; && exit 0
+
+nodejs=&quot;/usr/local/bin/node&quot;
+prog=$&#40;basename $nodejs&#41;
+
+NODEJS_CONF_FILE=&quot;/usr/local/lib/node_modules/testserver.js&quot;
+
+lockfile=/var/lock/subsys/nodejs
+
+start&#40;&#41; {
+    &#91; -x $nodejs &#93; || exit 5
+    &#91; -f $NODEJS_CONF_FILE &#93; || exit 6
+    echo -n $&quot;Starting $prog: &quot;
+    supervisor $nodejs $NODEJS_CONF_FILE  # hoac node $NODEJS_CONF_FILE
+    retval=$?
+    echo
+    &#91; $retval -eq 0 &#93; && touch $lockfile
+    return $retval
+}
+
+stop&#40;&#41; {
+    echo -n $&quot;Stopping $prog: &quot;
+    killall -9 $prog
+    killall -9 nodejs
+    retval=$?
+    echo
+    &#91; $retval -eq 0 &#93; && rm -f $lockfile
+    return $retval
+}
+
+restart&#40;&#41; {
+    configtest || return $?
+    stop
+    start
+}
+
+reload&#40;&#41; {
+    configtest || return $?
+    echo -n $&quot;Reloading $prog: &quot;
+    killall -9 $nodejs
+    killall -9 nodejs
+    RETVAL=$?
+    echo
+}
+
+force_reload&#40;&#41; {
+    restart
+}
+
+configtest&#40;&#41; {
+  $nodejs $NODEJS_CONF_FILE
+}
+
+rh_status&#40;&#41; {
+    status $prog
+}
+
+rh_status_q&#40;&#41; {
+    rh_status &gt;/dev/null 2&gt;&1
+}
+
+case &quot;$1&quot; in
+    start&#41;
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop&#41;
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart|configtest&#41;
+        $1
+        ;;
+    reload&#41;
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload&#41;
+        force_reload
+        ;;
+    status&#41;
+        rh_status
+        ;;
+    condrestart|try-restart&#41;
+        rh_status_q || exit 0
+            ;;
+    *&#41;
+        echo $&quot;Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|configtest}&quot;
+        exit 2
+esac</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273137</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273137</link>
+				<pubDate><![CDATA[Mon, 28 Jan 2013 21:54:50]]> GMT</pubDate>
+				<author><![CDATA[ Yuno]]></author>
+			</item>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ <blockquote>Chạy nodejs như 1 service trong Centos 5.8&nbsp;
+		</blockquote>
+Có nhiều cách lắm: từ cách đơn giản như thêm & ở cuối lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>runuser -l nodejs -s /bin/bash -c &quot;nodejs testserver.js &gt;&gt; /var/log/nodejs.log &&quot; && echo_success || echo_failure</pre>
+		</div>
+<i>(`echo_success` và `echo_failure` là 2 functions trong `/etc/init.d/functions` để in ra [ OK ] hoặc [ FAILED ] mà bạn thường thấy khi start/stop những init scripts)</i>
+
+đến cách dùng những công cụ như: supervisor, Forever, nodemon, ...
+
+Ở đây, bạn định dùng `supervisor`. Sau khi cài, mình nghĩ nên:
+- đọc tài liệu:<span class="link"> http://supervisord.org/.</span> 
+- mở `/etc/supervisord.conf` ra đọc
+- thử thêm một section cho nodejs
+
+Bạn thử chạy `supervisor /usr/local/bin/node testserver.js` từ command line xem, làm sao mà được nhỉ, chưa nói gì đến việc biến thành daemon.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273141</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273141</link>
+				<pubDate><![CDATA[Tue, 29 Jan 2013 00:49:01]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ Cám ơn Quanta, tôi sẽ làm theo hướng dẫn của anh. nếu gặp khó khăn gì nhờ anh hỗ trợ  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273162</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273162</link>
+				<pubDate><![CDATA[Tue, 29 Jan 2013 19:28:43]]> GMT</pubDate>
+				<author><![CDATA[ Yuno]]></author>
+			</item>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ Chào anh quanta,
+
+Nhờ anh support giúp trường hợp này.
+
+Tôi đã cài đặt và chỉnh sửa lại file /etc/supervisord.conf và trong /etc/init.d đã có file supervisord.
+
+Với 2 file này thì hiện tại tôi đã làm được như sau :
+
+TH 1. Chạy lệnh #supervisord
+thì mọi thứ đều như ý, nghĩa là chuơng trình supervisord và node đều chạy.
+ 
+TH 2. Chạy lệnh # service supervisord start
+Lúc này thì chỉ có một mình supervisord chạy thôi, node không chạy. Do đó tôi bỏ file supervisord vào init.d thì khi restart máy thì chỉ có chương trình supervisord chạy được.
+
+Nhờ anh xem giúp là tôi sai và thiếu ở đâu , hiện tại tôi vẫn đang mài mò thêm bớt một vài câu lệnh vào supervisord mà vẫn fail. 
+
+supervisord.conf như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;supervisord&#93;
+http_port=/var/tmp/supervisor.sock ; &#40;default is to run a UNIX domain socket server&#41;
+;http_port=127.0.0.1:9001  ; &#40;alternately, ip_address:port specifies AF_INET&#41;
+;sockchmod=0700              ; AF_UNIX socketmode &#40;AF_INET ignore, default 0700&#41;
+;sockchown=nobody.nogroup     ; AF_UNIX socket uid.gid owner &#40;AF_INET ignores&#41;
+;umask=022                   ; &#40;process file creation umask;default 022&#41;
+logfile=/var/log/supervisor/supervisord.log ; &#40;main log file;default $CWD/supervisord.log&#41;
+logfile_maxbytes=50MB       ; &#40;max main logfile bytes b4 rotation;default 50MB&#41;
+logfile_backups=10          ; &#40;num of main logfile rotation backups;default 10&#41;
+loglevel=info               ; &#40;logging level;default info; others: debug,warn&#41;
+pidfile=/var/run/supervisord.pid ; &#40;supervisord pidfile;default supervisord.pid&#41;
+nodaemon=false              ; &#40;start in foreground if true;default false&#41;
+minfds=1024                 ; &#40;min. avail startup file descriptors;default 1024&#41;
+minprocs=200                ; &#40;min. avail process descriptors;default 200&#41;
+
+;nocleanup=true              ; &#40;don't clean up tempfiles at start;default false&#41;
+;http_username=user          ; &#40;default is no username &#40;open system&#41;&#41;
+;http_password=123           ; &#40;default is no password &#40;open system&#41;&#41;
+;childlogdir=/tmp            ; &#40;'AUTO' child log dir, default $TEMP&#41;
+;user=chrism                 ; &#40;default is current user, required if root&#41;
+;directory=/tmp              ; &#40;default is not to cd during start&#41;
+;environment=KEY=value       ; &#40;key value pairs to add to environment&#41;
+
+&#91;supervisorctl&#93;
+serverurl=unix:///var/tmp/supervisor.sock ; use a<span class="link"> unix://</span> URL  for a unix socket
+;serverurl=http://127.0.0.1:9001 ; use an<span class="link"> http://</span> url to specify an inet socket
+;username=chris              ; should be same as http_username if set
+;password=123                ; should be same as http_password if set
+;prompt=mysupervisor         ; cmd line prompt &#40;default "supervisor"&#41;
+
+; The below sample program section shows all possible program subsection values,
+; create one or more 'real' program: sections to be able to control them under
+; supervisor.
+
+&#91;program:nodejs&#93;
+command=node /usr/local/lib/node_modules/testserver.js  ; the program &#40;relative uses PATH, can take args&#41;
+process_name=%node
+;priority=999                ; the relative start priority &#40;default 999&#41;
+autostart=true              ; start at supervisord start &#40;default: true&#41;
+autorestart=true            ; retstart at unexpected quit &#40;default: true&#41;
+;startsecs=10                ; number of secs prog must stay running &#40;def. 10&#41;
+;startretries=3              ; max # of serial start failures &#40;default 3&#41;
+;exitcodes=0,2               ; 'expected' exit codes for process &#40;default 0,2&#41;
+;stopsignal=QUIT             ; signal used to kill process &#40;default TERM&#41;
+;stopwaitsecs=10             ; max num secs to wait before SIGKILL &#40;default 10&#41;
+;user=chrism                 ; setuid to this UNIX account to run the program
+log_stdout=true             ; if true, log program stdout &#40;default true&#41;
+log_stderr=true             ; if true, log program stderr &#40;def false&#41;
+logfile=/var/log/node.log    ; child log path, use NONE for none; default AUTO
+logfile_maxbytes=1MB        ; max # logfile bytes b4 rotation &#40;default 50MB&#41;
+;logfile_backups=10          ; # of logfile backups &#40;default 10&#41;</pre>
+		</div>
+
+supervisord trong init.d
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#
+# supervisord   This scripts turns supervisord on
+#
+# Author:       Mike McGrath &lt;mmcgrath@redhat.com&gt; &#40;based off yumupdatesd&#41;
+#
+# chkconfig:    - 95 04
+#
+# description:  supervisor is a process control utility.  It has a web based
+#               xmlrpc interface as well as a few other nifty features.
+# processname:  supervisord
+# config: /etc/supervisord.conf
+# pidfile: /var/run/supervisord.pid
+#
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+RETVAL=0
+
+start&#40;&#41; {
+        echo -n $"Starting supervisord: "
+        daemon supervisord
+        RETVAL=$?
+        echo
+        &#91; $RETVAL -eq 0 &#93; && touch /var/lock/subsys/supervisord
+}
+
+stop&#40;&#41; {
+        echo -n $"Stopping supervisord: "
+        killproc supervisord
+        echo
+        &#91; $RETVAL -eq 0 &#93; && rm -f /var/lock/subsys/supervisord
+}
+
+restart&#40;&#41; {
+        stop
+        start
+}
+
+case "$1" in
+  start&#41;
+        start
+        ;;
+  stop&#41; 
+        stop
+        ;;
+  restart|force-reload|reload&#41;
+        restart
+        ;;
+  condrestart&#41;
+        &#91; -f /var/lock/subsys/supervisord &#93; && restart
+        ;;
+  status&#41;
+        status supervisord
+        RETVAL=$?
+        ;;
+  *&#41;
+        echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+        exit 1
+esac
+
+exit $RETVAL</pre>
+		</div>
+
+Chân thành cám ơn !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273222</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273222</link>
+				<pubDate><![CDATA[Wed, 30 Jan 2013 22:26:35]]> GMT</pubDate>
+				<author><![CDATA[ Yuno]]></author>
+			</item>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ Làm việc trên Linux, mỗi khi chương trình hoạt động không như mong muốn, việc đầu tiên bạn nên làm là mở log ra xem có gì.
+
+Giờ bạn chia Terminal làm 2: cái trên chạy `tail -f /var/log/supervisor/supervisord.log`, cái dưới gõ `sudo /etc/init.d/supervisord` (re)start` rồi nhìn lên trên xem có gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273225</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273225</link>
+				<pubDate><![CDATA[Thu, 31 Jan 2013 01:06:05]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Chạy nodejs như 1 service trong Centos 5.8</title>
+				<description><![CDATA[ Cám ơn anh quanta đã hướng dẫn và giúp tôi thực hiện điều mình cần, tôi đã chỉnh lại được rồi, và giờ mọi thứ đã chạy như ý.
+
+Do tôi đọc không kỹ các link mà anh quanta đưa nên không nắm rõ cách thức hoạt động và truyền biến cho các lệnh. mài mò mãi mới phát hiện ra gắn tham số cho lệnh command trong supervisord.conf sai. hix. :D 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>command=/usr/local/bin/node /usr/local/lib/node_modules/testserver.js</pre>
+		</div>
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273249</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44217.hva#273249</link>
+				<pubDate><![CDATA[Thu, 31 Jan 2013 21:12:35]]> GMT</pubDate>
+				<author><![CDATA[ Yuno]]></author>
+			</item>
+	</channel>
+</rss>

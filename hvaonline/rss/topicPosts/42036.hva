@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "hỏi về mySQL (phần routine - access control)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "hỏi về mySQL (phần routine - access control)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>hỏi về mySQL (phần routine - access control)</title>
+				<description><![CDATA[ Xin chào mọi người.
+Mình đang làm bài tập lớn về mySQL, áp dụng các biện pháp bảo mật vào ứng dụng.
+Khi làm việc với phần routines - điều khiển truy nhập:  
+     mình đang bị vướng phần phân quyền khi người dùng truy cập vào server của mình. Tức là, với mỗi phiên làm      việc (khi người dùng đăng nhập) mình sẽ phải cấp quyền cho họ thao tác được với những vùng nào của CSDL. 
+Ví dụ, họ không được phép xoá bảng dữ liệu không liên quan, 
+Không được phép xem thông tin người dùng khác...
+
+Rất mong mọi người giúp đỡ (có một đoạn code ví dụ càng tốt ạ).
+Cảm ơn mọi người]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42036.hva#261936</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42036.hva#261936</link>
+				<pubDate><![CDATA[Mon, 23 Apr 2012 10:04:33]]> GMT</pubDate>
+				<author><![CDATA[ vnpt2324]]></author>
+			</item>
+			<item>
+				<title>hỏi về mySQL (phần routine - access control)</title>
+				<description><![CDATA[ CODE: 
+1 . Tạo Login, phân quyền login
+Create Login &lt;name&gt; with password = '  ' 
+Exec sp_addsrvrolemember @loginame ='name' @rolename= ' quyền cấp'      //Cấp quyền cho login
+
+2. Tạo User, phân quyền user thao tác trên bảng
+User &lt;Database&gt;
+Create user &lt;user name&gt;
+for Login &lt;Login name&gt;
+Grant / revoke/ deny/ select
+On database_dbo.tablename          // Bảng cần thao tác
+to &lt;User name&gt;
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42036.hva#262005</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42036.hva#262005</link>
+				<pubDate><![CDATA[Tue, 24 Apr 2012 08:54:03]]> GMT</pubDate>
+				<author><![CDATA[ Mask__]]></author>
+			</item>
+			<item>
+				<title>hỏi về mySQL (phần routine - access control)</title>
+				<description><![CDATA[ Cảm ơn bạn!
+
+Mình sử dụng mySQL workbend, và gặp một số vấn đề:
+     - Không thể sử dụng câu lệnh create login
+     - Khi mình tạo một stored program
+
+<b>DELIMITER $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `temp`()
+BEGIN
+    declare user varchar(45);
+    set userName = 'vnpt';
+    
+    USE mydata;
+    CREATE user userName@'localhost';
+    
+    grant select   
+    on mydata.products
+    to userName@'localhost';
+END</b>
+
+thì nó báo lỗi biến userName.
+
+- Khi mình có tạo một PROCEDURE
+
+<b><font color='cyan'>CREATE DEFINER=`root`@`localhost` PROCEDURE `User_checkLogin`(
+    in userName varchar(45),
+    in passWord varchar(500)
+)
+BEGIN
+    declare userID INTEGER;
+    declare acount varchar(100);
+    SET userID =0;
+    SELECT User_ID into userID 
+    FROM mydata.users
+    WHERE (User_Name = userName) and (User_Password = passWord);
+    
+     IF (userID != 0) THEN
+        GRANT SELECT
+        ON mydata.products
+        to userName@localhost;       
+           
+        SELECT * FROM users
+        WHERE (User_ID = userID);
+    ELSE
+         SELECT null;
+    END IF;    
+END
+</font></b>
+
+Chuơng trình chạy với 2 tham số đầu vào userName = 'vnpt' và pass = '2' không báo lỗi gì, đăng nhập thành công.
+Tuy nhiên, khi mình tác động (action 1):
+
+    <b><font color='cyan'>define(&quot;DB_DSN&quot;,&quot;mysql:host=localhost; dbname=mydata;charset=UTF-8&quot; );
+    define(&quot;DB_USERNAME&quot;, &quot;vnpt&quot; );
+    define(&quot;DB_PASSWORD&quot;, &quot;&quot; );
+    $conn = new PDO(DB_DSN, DB_USERNAME, DB_PASSWORD, array(PDO::MYSQL_ATTR_INIT_COMMAND =&gt; &quot;SET NAMES utf8&quot; ));
+    $sql = &quot;Select * From products&quot;;
+    $st = $conn-&gt;prepare($sql);
+    $st-&gt;execute();</font></b>
+
+Thì  nó thông báo lỗi 
+<b><font color='red'>Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[42000] [1044] Access denied for user 'vnpt'@'localhost' to database 'mydata''</font></b>
+
+Mình nghĩ, có phải lúc mình<b> <font color='orange'>TO userName@'localhost'</font></b> sẽ khác với việc ta thực hiện<b> <font color='green'>'vnpt'@'localhost' </font></b>(mà mình dùng lệnh này thì lại thành công với action 1)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42036.hva#262169</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42036.hva#262169</link>
+				<pubDate><![CDATA[Sat, 28 Apr 2012 20:27:53]]> GMT</pubDate>
+				<author><![CDATA[ vnpt2324]]></author>
+			</item>
+	</channel>
+</rss>

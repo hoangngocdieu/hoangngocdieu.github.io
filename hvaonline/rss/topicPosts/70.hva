@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "ROUTER CONFIG"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "ROUTER CONFIG"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>ROUTER CONFIG</title>
+				<description><![CDATA[ Tác giả: aTa100 ???
+
+Router dùng chế độ dòng lệnh để tương tác với người quản trị. Chế độ dòng lệnh này được cung cấp bởi IOS, một dạng hệ điều hành dành riêng cho router (giống như DOS). IOS của router cung cấp các mode khác nhau để config. Có 3 mode chính là:
+- User EXEC mode
+- Privileged EXEC mode
+- Global configuration mode ( trong mode này còn có những mode nhỏ khác)
+
+Xem hình để biết chi tiết các mode và các dấu nhắc hiển thị ở các mode
+ 
+
+Để config router chúng ta phải vào router và vào mode Global configuration. 
+
+Để có thể dễ dàng cho các bạn theo dõi, tôi sẽ đưa ra Lab để các bạn có thể thực hành luôn như. Ở trong Window chọn Start --> Run gõ vào cmd (đối với Win NT/XP) hoặc command (win 9x/ME) và gõ enter. Sau đó gõ tiếp vào telnet r1r2.com và nhập vào r1r2ser , tiếp theo nhập tiếp vào cisco cho user và pass. Chúng ta đã có 2 router nối với trực tiếp thực sự để thực hành. Tuy nhiên cái này do là free nên khá chậm, các sẽ phải kiên nhẫn. Ngoài ra các bạn có thể dùng phần mềm của hãng Boson để thực hành cũng rất tốt
+
+Sau khi đăng nhập xong bạn sẽ vào mode đầu tiên trong router là mode User EXEC mode. Tiếp tục vào mode Privilegde bằng lệnh enable
+Router>enable
+Router# 
+Sau đó vào mode Global để bắt đầu config
+Router#configure terminal
+Router(config)# 
+Vào đến mode Global rồi thì chúng ta có thể config mọi thứ. Tôi sẽ giới thiệu từ những lệnh cơ bản.
+
+- Đầu tiên là tên của Router: một router nên được đặt tên (đây là một trong những điều đầu tiên phải làm khi config router). Để đặt tên cho router bạn gõ lệnh sau:
+Router(config)#hostname Tokyo
+Tokyo(config)# 
+Sau khi bạn gõ lệnh đó thì router sẽ chuyển dấu nhắc như dòng thứ 2. Đặt tên cho router giúp bạn có thể định vị được router nằm ở vị trí nào trong mạng của bạn, gợi cho bạn biết về vai trò của nó trong mạng.
+Lệnh hostname cú pháp đơn giản là: hostname <ten Router> . Xem chi tiết về các lệnh cơ bản ở đây: http://www.cisco.com/en/US/products/sw/ios...48.html#1018259
+
+- Đặt password cho router: Password được đặt nhằm mục đích ngăn cản những truy cập không đúng quyền hạn vào router. Password thường được đặt cho những đường terminal ảo (virtual terminal lines) và đường console. Password cũng cho phép truy cập vào mode privileged EXEC để có thể thay đổi những cấu hình của router.
+Những lệnh để sau để đặt pass cho đường console: (có thể tùy chọn nhưng đề nghị nên đặt)
+
+Router(config)#line console 0
+Router(config-line)#password <password>
+Router(config-line)#login 
+
+Password cũng nên đặt cho một hoặc nhiều đường terminal ảo (VTY) cho nhiều người sử dụng để họ có thể truy cập vào router bằng Telnet. Router của Cisco hỗ trợ 5 đường VTY được đánh số từ 0 đến 4. Lệnh sau để đặt pass cho VTY:
+
+Router(config)#line vty 0 4
+Router(config-line)#password <password>
+Router(config-line)#login 
+
+Ngoài ra để vào mode privileged EXEC cần phải đặt enable pass. Enable pass có thể đặt với tùy chọn secret, với tùy chọn này thì pass sẽ được mã hóa. xem Lệnh sau:
+
+Router(config)#enable password <password>
+Router(config)#enable secret <password> 
+
+Đôi khi pass có thể nhìn thấy ở dạng text khi xem cấu hình bằng lệnh show running-config và show startup-config . Để mở dịch vụ mã hóa pass không hiển thị dạng text khi gõ các lệnh trên dùng lệnh sau:
+
+Router(config)#service password-encryption 
+
+Lệnh service password-encryption này sẽ mã hóa toàn bộ những pass được nhập vào khi bạn config router. Và lệnh enable secret <password> sử dụng thuật toán MD5 để mã hóa. Trong router thường default chế độ này là on.
+ 
+
+
+- Lệnh Show: Có rất nhiều lệnh show có thể sử dụng để xem xét các thông tin trong router và để troubleshooting. Ở trong cả hai mode privileged EXEC và user EXEC mode lệnh show ? cung cấp danh sách các lệnh show có thể sử dụng. Dưới đây là một số lệnh show thường hay sử dụng:
+• show interfaces ? Hiển thị toàn bộ thông số trạng thái của interface (những interface này có thể là serial, ethernet...). Để xem một interface cụ thể thì gõ thêm các tên thiết bị đi kèm. Ví dụ: để xem thông số cổng serial của router gõ như sau
+Router#show interfaces serial 0/1
+• show controllers serial ? Hiển thị những thông số về phần cứng của cổng serial, dùng lệnh này ta có thể biết được cáp có được nối ở cổng này hay không, cáp là loại nào (DTE hay DCE) ...
+• show clock ? Xem thời gian đặt bởi router 
+• show hosts ? Hiển thị danh sách tên host được đặt và địa chỉ của nó 
+• show users ? Hiển thị toàn bộ những người đã kết nối tới router 
+• show history ? Hiển thị những lệnh đã sử dụng 
+• show flash ? Hiển thị thông tin về bộ nhới flash và những file của IOS được lưu ở đâu 
+• show version ? Hiển thị thông tin về router và IOS đang chạy trong RAM 
+• show ARP ? Xem bảng ARP của router 
+• show protocol ? Xem trạng thái giao thức lớp 3 (up/down) của các interface
+• show startup-configuration ? Xem file cấu hình đã được lưu lại ở NVRAM 
+• show running-configuration ? Xem file cấu hình đang chạy trong RAM 
+
+- Cấu hình cổng serial: Cổng serial có thể cấu hình từ console hoặc từ đường terminal ảo. Để cấu hình cổng serial hãy theo các bước sau:
+
+- Vào mode global configuration
+- Vào tiếp mode interface
+- Đặt địa chỉ và subnet mask cho cổng
+- Thiết lập tốc độ clock (clock rate) nếu cống nối bằng cáp DCE. Bỏ qua bước này nếu cáp là loại cáp DTE. 
+- Bật cổng lên
+
+Mỗi một cổng serial phải có một địa chỉ IP và subnet mask cụ thể, đặt địa chỉ IP bằng lệnh sau:
+
+Router(config)#interface serial 0/0
+Router(config-if)#ip address <ip address> <netmask>
+
+Cổng serial đòi hỏi phải có tín hiệu clock để điều khiển thời gian để truyền thông tin. Trong mọi môi trường, thiết bị DCE như CSU sẽ cung cấp clock. Ở chế độ mặc định, router của cisco là thiết bị DTE nhưng chúng có thể cấu hình thành thiết bị DCE.
+
+Ở kết nối trực tiếp trên cổng serial như trong môi trường lab, có từ hai router trở lên thì một router phải đóng vai trò là DCE và cung cấp tín hiệu clock cho router còn lại. Tín hiệu clock được thiết lập ở những tốc độ định sẵn bằng lệnh clock rate. Những tốc độ clock có thể thiết lập (tính theo bit/giây) là: 1200, 2400, 9600, 19200, 38400, 56000, 64000, 72000, 125000, 148000, 500000, 800000, 1000000, 1300000, 2000000, or 4000000. Tuy nhiên, một số tốc độ bit có thể không thiết lập được vì phụ thuộc vào khả năng của cổng serial.
+
+Chế độ mặc định, những cổng serial ở trạng thái tắt hoặc bị cấm. Để bật hoặc cho phép những cổng này, phải dùng lệnh shutdown. Nếu cần tắt cổng đi để troubleshooting hoặc bảo dưỡng (maintenance) thì dùng lệnh shutdown.
+
+Trong môi trường lab, clockrate sẽ được sử dụng là 56000. Xem ví dụ:
+
+Router(config)#interface serial 0/0
+Router(config-if)#clock rate 56000
+Router(config-if)#no shutdown
+
+Minh họa:
+ 
+
+Các bạn có thể tham khảo thêm ở đây: http://www.cisco.com/en/US/products/hw/mod...502.shtml#fifth
+
+- Sửa đổi cấu hình: Nếu cấu hình cần phải được sửa đổi, hãy vào mode cần thiết và nhập những lệnh cần cho sự sửa đổi này. Ví dụ, nếu cần cho phép một interface: vào mode global configuration, vào mode interface, và gõ lệnh no shutdown. 
+
+Để kiểm tra những sự thay đổi này, dùng lệnh show running-config. Lệnh này hiển thị những cấu hình đang chạy trên router. Nếu những thông số cấu hình không chính xác, bạn có thể chỉnh lại theo các bước dưới đây:
+• Sử dụng lệnh no trước mỗi lệnh config. 
+• Nạp lại hệ thống với file cấu hình từ NVRAM. 
+• Copy file cấu hình từ TFTP server. 
+• Xóa bỏ file cấu hình ban đầu với lệnh erase startup-config, sau đó khởi động lại router và vào chế độ setup. 
+
+Để lưu lại những thông số cấu hình vào file cấu hình ban đầu trong NVRAM, dùng lệnh sau ở chế độ privileged EXEC:
+
+Router#copy running-config startup-config
+
+Minh họa các bước khi sửa đổi cấu hình router:
+ 
+
+- Cấu hình cổng Ethernet: Cổng Ethernet có thể cấu hình từ cổng console hoặc từ kênh điểu khiển ảo. Cổng Ethernet yêu cầu phải có một địa chỉ IP và subnet cụ thể thì mới có thể gửi và nhận các gói tin trên mạng được. Để cấu hình cổng Ethernet bạn làm theo các bước sau:
+
+1. Vào mode global configuration
+2. Vào tiếp mode interface
+3. Đặt địa chỉ và subnet mask cho cổng
+4. Bật cổng lên (ở chế độ mặc định cổng luôn ở trạng thái tắt hoặc bị cấm)
+
+Các bạn có thể xem chi tiết các lệnh trong chế độ config cổng ethernet ở đây: 
+http://www.cisco.com/en/US/products/sw/ iosswrel/ps1835/products_command_reference_ chapter09186a00800874b0.html#1017394
+
+- Thêm ghi chú cho một cấu hình: Khi cấu hình một cổng (serial hoặc ethernet) của router bạn nên thêm phần chú thích vào để có thể dễ dàng troubleshooting mạng sau này. Cái này có vẻ như mất thời gian nhưng lúc mạng bị rối thì sẽ giúp ích cho bạn rất nhiều. Để thêm ghi chú cho một cổng các bạn vào mode config của cổng và sử dụng lệnh description. Các bước cụ thể như sau:
+1. Vào mode global bằng lệnh configure terminal. 
+2. Vào tiếp mode config cổng (ví dụ là cổng Ethernet số 0) interface ethernet 0. 
+3. Dùng lệnh description để thêm ghi chú vào cổng đó 
+4. Thoái khỏi mode config cổng và trở về mode privileged EXEC bằng tổ hợp phím ctrl-Z. 
+5. Lưu những thay đổi cấu hình vào NVRAM (bộ nhớ của router) bằng lệnh sau copy running-config startup-config. 
+
+Đây là ví dụ ghi chú cho cổng Ethernet và Serial
+
+interface Ethernet 0
+description LAN Engineering, Bldg.2
+interface serial 0
+description ABC network 1, Circuit 1
+
+Xem chi tiết về lệnh description ở link sau:
+http://www.cisco.com/en/US/products/sw/ iosswrel/ps1835/products_command_reference_ chapter09186a008008000e.html#1017386
+
+- Đặt banner - MOTD: Banner là một thông điệp hiển thị lúc bạn đăng nhập vào thông báo cho người sử dụng biết một số thông tin ví dụ như khi nào hệ thống sẽ tạm dừng. MOTD là viết tắt của chữ message-of-the-day, mọi kết nối từ xa đến router đều sẽ nhìn thấy motd. Đặt MOTD bạn phải vào mode config và dùng lệnh banner motd và sau đó là thông báo bạn muốn gửi nằm trong 2 kí tự #. Cụ thể các bước như sau:
+
+1. Vào mode global configuration với lệnh configure terminal. 
+2. Dùng lệnh banner motd # thông điệp của bạn #. để đặt motd
+Lưu lại cấu hình vừa đặt bằng lệnh copy running-config startup-config.
+
+- Đặt host name – tên tắt: Trong trường hợp ở router bạn muốn kiểm tra một địa chỉ ip bằng ping hoặc muốn telnet đến một địa nào đó trong mạng, bạn phải gõ đủ địa chỉ ip bằng các con số vào. Điều đó có thể dễ bị nhầm lẫn khi gõ, IOS cung cấp một lệnh cho phép bạn gán một ip với một tên bằng chữ giống như cơ chế DNS trên mạng internet – chuyển ip thành domain name.
+
+Để đặt tên host bạn dùng lệnh ip host tênhost địachỉip xem ví dụ dưới
+ 
+
+Lệnh đầu tiên sẽ gán cho tên Auckland ip là 172.16.32.1, thay vì bạn gõ ping 172.16.32.1 thì bạn chỉ phải gõ ping Auckland
+
+Có thể đặt nhiều tên cùng một ip trên một router, những tên này chỉ có tác dụng trên router đó. Bạn có thể danh sách các host được đặt bằng lệnh ip host bằng lệnh show hosts
+
+Ở trên là một số lệnh cơ bản để có thể cấu hình một router. Hy vọng sẽ có phần nào giúp các bạn hiểu được cách cơ bản để cấu hình router.
+
+Tài liệu dựa vào phần lớn Chương 12 – Giáo trình CCNA của Cisco press.
+
+30/04/2004 nndzung – thân tặng các member của HVA 
+Được chỉnh sửa bởi aTa100 ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/70.hva#343</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/70.hva#343</link>
+				<pubDate><![CDATA[Thu, 15 Jun 2006 07:29:43]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+			<item>
+				<title>ROUTER CONFIG (Phần 2)</title>
+				<description><![CDATA[ Tôi đang bận, không chi ra chỗ chưa được của nó cho huynh ! Tuy nhiên, dưới đây là cấu hình tôi lập cách đây 2 năm, đến bây giờ vẫn chạy tốt. Của tôi là con Router 2620, tôi có 16 đường line cho các dơn vị khác truy cập, sử dụng một số trượt duy nhất. Hiện tại tôi không dùng Radius, mà cấu hình về phần này là tôi thử nghiệm, tuy nhiên no cũng vẫn chạy ngon lành. 
+
+
+
+
+version 12.1
+service timestamps debug uptime
+service timestamps log uptime
+service password-encryption
+!
+hostname nhuson_ras
+!
+logging buffered 4096 debugging
+no logging console
+aaa new-model
+aaa authentication login default local
+aaa authentication login no_radius local
+aaa authentication login no_authen none
+aaa authentication ppp default local
+aaa authorization network default none
+enable secret 5 478$1$9qtE$PY23478q3T768dp8I434y78KG4uO1.v71
+!
+username nhuson password 127 045FJKHD2581E08082F42
+username User1 password 7 131402UHDK1231305001D3A02F34
+username User2 password 7 03075sfCB1234d30603FGD012D59410A081110
+!
+!
+!
+!
+ip subnet-zero
+no ip finger
+!
+chat-script modemreset "" AT OK "AT&F1S0=1S1=1" OK
+chat-script tattiengmodem "" AT OK " ATm0" OK
+chat-script tatieng "" AT OK "ATs22=0" OK
+!
+!
+!
+interface FastEthernet0/0
+ip address 10.22.1.250 255.255.0.0
+duplex auto
+speed auto
+!
+!
+interface Group-Async1
+ip unnumbered FastEthernet0/0
+encapsulation ppp
+ip tcp header-compression passive
+no ip mroute-cache
+async default routing
+async mode interactive
+peer default ip address pool MPIPool
+no cdp enable
+ppp authentication pap
+group-range 33 48
+!
+ip local pool NhusonPool 10.22.1.201 10.22.1.216
+ip default-gateway 10.22.1.1
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.22.1.1
+ip http server
+!
+radius-server host 10.22.1.12 auth-port 1645 acct-port 1646
+radius-server key nhusonmpi
+!
+line con 0
+exec-timeout 0 0
+login authentication no_authen
+transport input none
+line 33 40
+autoselect during-login
+autoselect ppp
+script startup modemreset
+script reset modemreset
+modem InOut
+modem autoconfigure type usr_courier
+transport input all
+stopbits 1
+speed 19200
+flowcontrol hardware
+line 41 48
+autoselect during-login
+autoselect ppp
+script startup modemreset
+script reset modemreset
+modem InOut
+modem autoconfigure type default
+transport input all
+stopbits 1
+speed 38400
+flowcontrol hardware
+line aux 0
+line vty 0 4
+exec-timeout 0 0
+password 7 111A1A16461F1B5D172F28367B27
+!
+no scheduler allocate
+end=================================
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/70.hva#344</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/70.hva#344</link>
+				<pubDate><![CDATA[Thu, 15 Jun 2006 07:30:20]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+	</channel>
+</rss>

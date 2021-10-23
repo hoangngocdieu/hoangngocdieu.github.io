@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Mã hóa root file system với FreeBSD geli"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Mã hóa root file system với FreeBSD geli"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ Chào các bạn hâm mộ *nix.
+
+Kể từ lúc tôi đọc được bài viết của mrro "Nếu tôi là Huyremy" tại blog bảo mật thông tin, tôi thực sự ngỡ ngàng. Đó là kể từ lúc tôi biết sử dụng máy tính đến nay tôi chưa áp dụng bất kỳ 1 biện pháp nào để bảo vệ dữ liệu của mình. Điều này cũng giống như việc bạn cài đặt 1 phiên bản windows lên máy tính của mình mà không cài thêm cho nó 1 chương trình chống virus. Kết cục là điều dễ thấy. Tuy việc so sánh này có hơi khập khiễng nhưng nó có cùng 1 lý lẽ: Nếu bạn không biết tự bảo vệ mình thì ai khác sẽ làm điều đó đây? Nếu bạn không có biện pháp nào để bảo vệ dữ liệu thì bất kỳ ai cũng có thể đọc được nó. Thật chẳng có ý nghĩa gì khi bạn tạo ra 1 hệ thống được bảo mật chặt chẽ với mật khẩu root dài tới hàng trăm ký tự :D) thế nhưng bất kỳ ai với 1 livecd đều có thể mount nó lên với quyền root mà không gặp phải 1 sự kháng cự nào. Hãy nghĩ đến viễn cảnh chiếc máy laptop yêu dấu hoặc ổ đĩa usb chứa toàn dữ liệu nhạy cảm mà bạn vô tình đánh rơi ở đâu đó.
+Tuy rằng trong bài viết đó mrro có mạnh mẽ khuyên rằng đừng có làm theo  :D)  nhưng tôi nghĩ rằng bảo vệ dữ liệu của mình là 1 việc nên làm. Bài viết của mrro có giới thiệu công cụ <span class="link"> http://luks.endorphin.org/</span> dành cho linux. Tuy nhiên tôi đang dùng FreeBSD và tôi tự hỏi không biết hệ điều hành này có công cụ nào tương tự. Thật ngạc nhiên là nó có tới 2 công cụ <span class="link"> http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/disks-encrypting.html</span>. Tuy nhiên trong bài này tôi sử dụng geli vì khả năng mã hóa cả root file system. Ưu điểm của việc mã hóa cả root file system là bạn không thể đọc được bất kỳ 1 thông tin nào nếu bạn không cung cấp được 1 keyfile và 1 passphrase.
+
+<font color='red'>Cảnh báo quan trọng:</font> Nếu bạn thích thú với tính năng này và có ý định làm theo thì hãy backup tất cả dữ liệu.
+
+Mẹo: Trước khi thực hiện trên máy thật bạn có thể dùng máy ảo :D)
+
+Ưu điểm thì đã thấy, tuy nhiên cũng nên nói thêm rằng bảo mật và tiện dụng là 2 khái niệm mâu thuẫn nhau. Nếu bạn sử dụng tính năng này thì phải hết sức cẩn thận, nếu bạn làm mất keyfile, hoặc đĩa cứng của bạn gặp vấn đề thì dữ liệu của bạn sẽ ra đi không phải xa mà là... rất xa :D)
+
+Bây giờ chúng ta bắt đầu thực hiện. Yêu cầu cần có là 1 ổ CDRW, 1 cdrom <span class="link"> ftp://ftp.freebsd.org/pub/FreeBSD</span> phiên bản 6.1 hoặc 6.2 và 1 đĩa usb để lưu keyfile, <span class="link"> http://www.frenzy.org.ua</span> để tạo đĩa khởi động.
+
+1. Boot máy với đĩa FreeBSD và chọn FixIt -&gt; CD/DVD -&gt; có shell
+2. Gõ lệnh sau ở shell:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ln -s /dist/boot/kernel /boot/kernel
+#ln -s /dist/lib /lib
+#geli load</pre>
+		</div>
+3. Gắn usb disk vào và tạo keyfile:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#mkdir /mnt/umass
+#mount_msdosfs /dev/da0s1 /mnt/umass
+#dd if=/dev/random of=/mnt/umass/ad0.key bs=128k count=1
+#geli init -b -l 256 -K /mnt/umass/ad0.key /dev/ad0
+Enter new passphrase: &lt;-- Nhập vào passphare
+Reenter new passphrase: &lt;-- Xác nhận passphare
+#geli attach -k /mnt/umass/ad0.key /dev/ad0
+Enter new passphrase: &lt;-- Nhập vào passphare</pre>
+		</div>
+Sau bước này đĩa cứng của bạn đã ở chế độ mã hóa.
+4. Phân vùng đĩa cứng và cài hệ điều hành:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#bsdlabel -w /dev/ad0.eli
+#EDITOR=/mnt2/usr/bin/ee; export EDITOR &lt;-- thay đổi text editor sang ee
+#bsdlabel -e /dev/ad0.eli</pre>
+		</div>
+Bạn sẽ nhận được 1 màn hình có dạng như sau:
+<blockquote>
+# /dev/ad0.eli
+8 partitions:
+#      size   offset   fstype  [fsize bsize bps/cpg]
+a: 78200413        16   unused       0     0
+c: 78200431        0   unused       0     0 # "raw" part, don't edit
+&nbsp;
+		</blockquote>
+Tùy theo dung lượng ổ cứng mà bạn có mà điều chỉnh cho hợp lý, ở đây tôi có ổ cứng 40GB. Tôi sẽ điều chỉnh như sau:
+<blockquote>
+# /dev/ad0.eli
+8 partitions:
+#      size   offset   fstype  [fsize bsize bps/cpg]
+a: 256M        0   4.2BSD       0     0
+b: 934M        *     swap
+c: 78200431        0   unused       0     0 # "raw" part, don't edit
+d: 4096M        *   4.2BSD       0     0
+e: 8192M        *   4.2BSD       0     0
+f: 512M           *   4.2BSD       0      0
+g: *                *   4.2BSD       0     0
+&nbsp;
+		</blockquote>
+5. Format file system:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#newfs /dev/ad0.elia
+#newfs /dev/ad0.elid
+#newfs /dev/ad0.elie
+#newfs /dev/ad0.elif
+#newfs /dev/ad0.elig</pre>
+		</div>
+6. Mount file system và cài đặt:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#mkdir /mnt/root; mount /dev/ad0.elia /mnt/root
+#cd /mnt/root; mkdir tmp home var usr
+#mount /dev/ad0.elid /mnt/root/var
+#mount /dev/ad0.elie /mnt/root/usr
+#mount /dev/ad0.elif /mnt/root/tmp
+#mount /dev/ad0.elig /mnt/root/home
+#DESTDIR=/mnt/root; export DESTDIR &lt;-- thay đổi biến môi trường cài đặt
+#cd /dist/6.1-RELEASE/base &#40;Nếu dùng phiên bản 6.2 thì đổi là 6.2-RELEASE
+#./install.sh
+#cd ../kernels
+#./install.sh generic &#40;đổi lại là ./install.sh smp nếu bạn may mắn có 1 hệ thống đa xử lý&#41;
+#cd ../manpages
+#./install.sh
+#cd ../ports
+#./install.sh
+#cd ../src
+#./install.sh all
+#rmdir /mnt/root/boot/kernel
+#mv /mnt/root/boot/GENERIC /mnt/root/boot/kernel &#40;nếu SMP thì đổi lại là mv /mnt/root/boot/SMP /mnt/root/boot/kernel&#41;</pre>
+		</div>
+7. Tạo fstab:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ee /mnt/root/etc/fstab
+
+# Device       Mountpoint  FStype Options   Dump Pass#
+/dev/ad0.elib  none        swap   sw        0    0
+/dev/ad0.elia  /           ufs    rw        1    1
+/dev/ad0.elif  /tmp        ufs    rw        2    2
+/dev/ad0.elie  /usr        ufs    rw        2    2
+/dev/ad0.elid  /var        ufs    rw        2    2
+/dev/ad0.elig  /home     ufs    rw        2    2
+/dev/acd0      /cdrom      cd9660 ro,noauto 0    0</pre>
+		</div>
+8. Tạo đĩa khởi động. Đây là bước khó khăn và quan trọng. Bởi vì ổ đĩa cứng của bạn đã mã hóa hết nên máy tính không thể đọc được bất kỳ 1 thông tin nào, vì vậy bạn phải tạo 1 đĩa khởi động chưa mã hóa, trong đó có chứa keyfile để khởi động vào ổ cứng mã hóa.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#mkdir /mnt/umass/cdboot
+#cp -Rpv /mnt/root/boot /mnt/umass/cdboot
+#mkdir /mnt/umass/cdboot/boot/keys
+#cp /mnt/umass/ad0.key /mnt/umass/cdboot/boot/keys</pre>
+		</div>
+Tạo fstab cho cdboot:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#mkdir /mnt/umass/cdboot/etc
+#ee /mnt/umass/cdboot/etc/fstab
+
+# Device       Mountpoint  FStype Options   Dump Pass#
+/dev/ad0.elia  /           ufs    rw        1    1</pre>
+		</div>
+Tạo loader.conf để nạp module geli vào kernel lúc khởi động và cấu hình keyfile:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ee /mnt/cdboot/boot/loader.conf
+
+geom_eli_load="YES"
+geli_ad0_keyfile0_load="YES"
+geli_ad0_keyfile0_type="ad0:geli_keyfile0"
+geli_ad0_keyfile0_name="/boot/keys/ad0.key"</pre>
+		</div>
+Nếu bạn dùng phiên bản 6.1 thì có 1 bug với kdbmux. Bug này làm cho lúc khởi động bạn không thể nhập passpharse. Hãy điều chỉnh như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#ee /mnt/umass/cdboot/device.hints
+...
+hint.kdbmux.0.disabled="1"</pre>
+		</div>
+Kế tiếp chúng ta boot Frenzy và tạo đĩa khởi động:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#mkdir /mnt/umass
+#mount_msdosfs /dev/da0s1 /mnt/umass
+#cd /mnt/umass
+#mkisofs -R -U -V "Boot Encrypted" -no-emul-boot -b boot/cdboot -o be.iso /mnt/umass/cdboot</pre>
+		</div>
+Bạn đã tạo được iso boot rồi, hãy burn nó và khởi động. Chúc may mắn :D)
+
+Tài liệu tham khảo:
+<span class="link"> http://www.proportion.ch/index.php?page=31</span>
+<span class="link"> http://events.ccc.de/congress/2005/fahrplan/attachments/586-paper_Complete_Hard_Disk_Encryption.pdf</span>
+<span class="link"> http://www.bsdforums.org/forums</span>
+
+
+---------------------------------------
+copyright by me, copyleft by you.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43679</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43679</link>
+				<pubDate><![CDATA[Wed, 28 Feb 2007 11:54:40]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ Bổ sung: Bất kỳ lúc nào bạn cập nhật lại kernel thì bạn cũng phải cập nhật lại cdboot, nếu không bạn sẽ không thể boot vào ổ cứng của mình được nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43777</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43777</link>
+				<pubDate><![CDATA[Wed, 28 Feb 2007 18:58:15]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Re: Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ Excellent article :)).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43879</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43879</link>
+				<pubDate><![CDATA[Thu, 1 Mar 2007 09:00:54]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ Hi bro pnco !
+
+Mình mới làm theo hướng dẩn của bạn trên FreeBSD 6.2-RELEASE, tất cả đều tốt nhưng mình đọc đến dòng này .  
+
+<p></p>
+		<cite class="blockquote">pnco wrote:</cite><br>
+		<blockquote>Bổ sung: Bất kỳ lúc nào bạn cập nhật lại kernel thì bạn cũng phải cập nhật lại cdboot, nếu không bạn sẽ không thể boot vào ổ cứng của mình được nữa.&nbsp;
+		</blockquote>
+
+Như vậy thì hơi bất tiện một chút :)) hiện tại có cách nào khắc phục điều này <b>lúc nào bạn cập nhật lại kernel thì bạn cũng phải cập nhật lại cdboot</b> hay không vậy bạn . 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43887</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43887</link>
+				<pubDate><![CDATA[Thu, 1 Mar 2007 10:40:29]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ hehe, bro GA này keo kiệt quá, chỉ tốn có 1 cái cd thôi mà. Câu trả lời là không. Như tớ đã nói <p></p>
+		<cite class="blockquote">pnco wrote:</cite><br>
+		<blockquote> Ưu điểm thì đã thấy, tuy nhiên cũng nên nói thêm rằng bảo mật và tiện dụng là 2 khái niệm mâu thuẫn nhau. Nếu bạn sử dụng tính năng này thì phải hết sức cẩn thận, nếu bạn làm mất keyfile, hoặc đĩa cứng của bạn gặp vấn đề thì dữ liệu của bạn sẽ ra đi không phải xa mà là... rất xa&nbsp;
+		</blockquote> Bro nói bất tiện chứ theo tớ là... rất bất tiện :D) Bởi vậy mã hóa root file system chỉ nên áp dụng cho máy chủ và máy laptop thôi, nơi mà thường chứa nhiều dữ liệu nhạy cảm :D) và ổn định, ít có sự thay đổi chứ dùng cho desktop thì không hợp lý lắm. Thay vì thế bro chỉ nên mã hóa swap và home partition thôi.
+Về geli tớ vẫn chưa hiểu rõ cơ chế làm việc của nó nhiều bởi vì tài liệu cho nó quá ít, chỉ có mỗi man page. Nếu bro để ý thì sẽ thấy lúc tạo keyfile geli ghi 1 mớ thông tin metadata lên ổ cứng. Khi biên dịch lại kernel thì geli không thể check được dữ liệu này dẫn đến không thể xác thực. Tớ chỉ test với trường hợp nâng cấp kernel từ 6.1 lên 6.2 thôi, còn không rõ là nếu biên dịch lại 6.1 không thì sao. Nếu vẫn xác thực được thì đơn thuần là do mã nguồn geli thay đổi thôi, còn nếu không thì nó có 1 cơ chế nào đó kiểu checksum làm cho sai lạc.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43981</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#43981</link>
+				<pubDate><![CDATA[Thu, 1 Mar 2007 16:48:56]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ Đâu có hà tiện đâu pnco, mình sử dụng phần mềm tạo hệ điều hành ảo, sau đó cài đặt FreeBSD vào chớ có hà tiện đâu :)
+
+Cám ơn bro nhiều
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#44107</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#44107</link>
+				<pubDate><![CDATA[Fri, 2 Mar 2007 01:59:59]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Mã hóa root file system với FreeBSD geli</title>
+				<description><![CDATA[ MOVED ;) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/7525.hva#56536</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/7525.hva#56536</link>
+				<pubDate><![CDATA[Mon, 30 Apr 2007 19:43:19]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Exploit::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Hướng dẫn viết một chương trình Sniffer <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/5557.hva#32690" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: seamoun - Translator:  - Entry Date: 13/02/2009 06:54:13" title="Author: seamoun - Translator:  - Entry Date: 13/02/2009 06:54:13"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody">Bài này mình hướng dẫn các bạn viết một sniffer (nghe lén) packet đơn giản trên Windows. Để lập trình được thì cần các bạn hiểu rõ cách lập trình socket trong ngôn ngữ C.<br/> Với cách lập trình socket thông thường chúng ta sử dụng SOCK_STREAM, SOCK_DGRAM tức lập trình ở mức Application của mạng mà thôi, để lập trình ở mức IP (tức tầng Network trong 4 tầng của Internet: Tầng vật lý --&gt; Tầng Ip--&gt; Tầng TCP --&gt; Tầng ứng dụng) sử dụng SOCK_RAW là một dạng socket "thô"<br/> Điều đầu tiên bao giờ chúng ta cũng phải khởi tạo thư viện Winsocket<br/> Hàm khởi tạo thư viện như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>void InitWinSock&#40;&#41;<br/> {<br/> 	WSADATA wsaData;<br/> 	if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return;<br/> }</pre><br/> 		</div><br/> Chi tiết hàm WSAStartup có thể xem trợ giúp của MSDN ...<br/> <br/> Cách tạo một Raw Socket như sau:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>int	CreateRawSocket&#40;&#41;<br/> {<br/> 	int	sock;<br/> 	if &#40;&#40;sock=WSASocket&#40;AF_INET,SOCK_RAW,0,NULL,NULL,WSA_FLAG_OVERLAPPED&#41;&#41;==INVALID_SOCKET&#41; return 0;<br/> 	return sock;<br/> }</pre><br/> 		</div><br/> Hàm trên trả về một sock mới nếu như không gặp lỗi<br/> <br/> Như chúng ta đã biết mô hình mạng Internet được phân chia thành 4 tầng (Tầng vật lý &lt;--&gt; Tầng Ip&lt;--&gt; Tầng TCP &lt;--&gt; Tầng ứng dụng) tương ứng với 7 tầng của mô hình OSI (Tầng vật lý &lt;--&gt; Tầng liên kết &lt;--&gt; Tầng mạng &lt;--&gt; Tầng vận chuyển &lt;--&gt; Tầng phiên &lt;---&gt; Tầng trình diễn &lt;--&gt; Tầng ứng dụng). Mình khỏi phải nhắc lại mô hình OSI như thế nào vì có rất nhiều bài viết trong diễn đàn đã nói đến OSI<br/> Giới thiệu cấu trúc của gói IP, TCP, ICMP<br/> a. Gói IP (ở tầng IP)<br/> Định nghĩa một struct mô tả gói IP<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>struct ip_hdr{<br/> 	unsigned	char	ver_ihl;	//&lt;-- Version &#40;4 bits&#41; + Internet Header Length &#40;4 bits&#41;<br/> 	unsigned	char	tos;	//&lt;-- Type Of Service<br/> 	unsigned short	tol_len	//&lt;-- Total Length &#40;Ip Header + TCP Header + Data&#41;<br/> 	unsigned	short	id	//&lt;-- Identification<br/> 	unsigned	short	offset	//&lt;-- Frame Offset trong đó 8 bits cho flags<br/> 	unsigned	char	ttl	//&lt;-- Time to Live<br/> 	unsigned char	protocol	//&lt;-- Protocol<br/> 	unsigned short	checksum//&lt;-- Header Checksum<br/> 	unsigned int	saddr	//&lt;-- Source Address<br/> 	unsigned	int	daddr	//&lt;-- Destination Address<br/> };</pre><br/> 		</div><br/> b. Gói TCP<br/> Định nghĩa một struct mô tả gói TCP<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>struct tcp_hdr{<br/> 	unsigned	short	sport	//&lt;-- Source Port<br/> 	unsigned short	dport	//&lt;-- Destiantion Port<br/> 	unsigned int	seq_num	//&lt;-- Sequence Number<br/> 	unsigned	int	ack_num	//&lt;-- Acknowledgment Number<br/> 	unsigned char	dataoffset//&lt;--Data Offset<br/> 	unsigned char	flags	//Flags: SYN, ACK, FIN, RST, PUSH, URG &#40;2 bits&#41; + 6 bits Reserve<br/> 	unsigned short	window	//Windows<br/> 	unsigned short	checksum //Checksum<br/> 	unsigned short	urgpointer //Urgent Pointer<br/> }</pre><br/> 		</div><br/> c. Gói ICMP<br/> Định nghĩa một struct mô tả gói ICMP<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>struct icmp_hdr{<br/> 	unsigned char	type	//Type<br/> 	unsigned char	code	//Code<br/> 	unsigned short	checksum<br/> 	unsigned short	id	//Identification<br/> 	unsigned short	sequence<br/> 	unsigned short	timestamp<br/> }</pre><br/> 		</div><br/> Ở trên là toàn bộ định nghĩa về các gói IP, ICMP, TCP. Trong bài này mình chỉ hướng dẫn bắt các gói TCP và ICMP mà thôi, còn các gói khác thì có thể làm tương tự<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#include &lt;winsock2.h&gt;<br/> #include &lt;stdio.h&gt;<br/> #define SIO_RCVALL _WSAIOW&#40;IOC_VENDOR,1&#41;<br/> #pragma comment &#40;lib,"ws2_32.lib"&#41;<br/> void	InitWinSock&#40;&#41;;<br/> int		CreateRawSocket&#40;&#41;;<br/> int		Sniffer&#40;int	sock&#41;;<br/> int		packetcapture&#40;char *packet&#41;;<br/> int		tcp_display&#40;struct ip_hdr	*ip,struct tcp_hdr *tcp&#41;;<br/> int		icmp_display&#40;struct ip_hdr *ip,struct icmp_hdr *icmp&#41;;<br/> struct ip_hdr<br/> {<br/> 	unsigned char	ver_ihl;//VER va IHL &#40;Internet Header Length&#41;<br/> 	unsigned char	tos;	//Type of Server<br/> 	unsigned short	tol_len;//Total Length=IpHeader + TCP Header + Data<br/> 	unsigned short	id;		//Identification<br/> 	unsigned short	offset;	//Frame offset<br/> 	unsigned char	ttl;	//Time To Live<br/> 	unsigned char	protocol;<br/> 	unsigned short	checksum;<br/> 	unsigned int	saddr;	//Source Address<br/> 	unsigned int	daddr;	//Destination Address<br/> };<br/> <br/> struct tcp_hdr<br/> {<br/> 	unsigned short	sport;	//Source Port<br/> 	unsigned short	dport;	//Detinations Port	<br/> 	unsigned int	seqnum;	//Sequence;<br/> 	unsigned int	acknum;	//Acknowlege<br/> 	unsigned char	dataoffset;	//Data Offset<br/> 	unsigned char	flags;	//SYN, URG, FIN, ACK, RST, PUSH + Preserve<br/> 	unsigned short  windows;<br/> 	unsigned short	checksum;<br/> 	unsigned short	urgpointer;<br/> };<br/> struct icmp_hdr<br/> {<br/> 	unsigned char	type;<br/> 	unsigned char	code;<br/> 	unsigned short	checksum;<br/> 	unsigned short	id;<br/> 	unsigned short	sequence;<br/> 	unsigned short	timestamp;<br/> };<br/> int	socksniffer;<br/> int	main&#40;&#41;<br/> {<br/> 	InitWinSock&#40;&#41;;<br/> 	socksniffer=CreateRawSocket&#40;&#41;;<br/> 	printf&#40;"Seamoun &#40;http://nhomvicki.net&#41;\n"&#41;;<br/> 	printf&#40;"Sniffer TCP, ICMP v1.0\n\n"&#41;;<br/> 	printf&#40;"          Packet Capture ...\n"&#41;;<br/> 	Sniffer&#40;socksniffer&#41;;<br/> 	return 0;<br/> }<br/> //Ham khoi tao thu vien WinSock<br/> void InitWinSock&#40;&#41;<br/> {<br/> 	WSADATA wsaData;<br/> 	if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return;<br/> }<br/> //Ham tao RawSocket<br/> int	CreateRawSocket&#40;&#41;<br/> {<br/> 	int	sock;<br/> 	if &#40;&#40;sock=WSASocket&#40;AF_INET,SOCK_RAW,0,NULL,NULL,WSA_FLAG_OVERLAPPED&#41;&#41;==INVALID_SOCKET&#41; return 0;<br/> 	return sock;<br/> }<br/> //Ham thuc hien Sniffer<br/> int	Sniffer&#40;int sock&#41;<br/> {<br/> 	DWORD dwBufferLen&#91;10&#93;, dwBufferInLen = 1, dwBytesReturned = 0;<br/> <br/> 	char *HostName=new char &#91;32&#93;;<br/> 	unsigned long	nSize=32;<br/> 	struct	hostent	*hp;<br/> 	sockaddr_in	from,dest;<br/> 	int	sread,fromlen=sizeof&#40;from&#41;;<br/> 	<br/> 	char *packet=new char &#91;2048&#93;;<br/> 	if &#40;GetComputerName&#40;HostName,&nSize&#41;==0&#41; return -1;<br/> 	if &#40;&#40;hp=gethostbyname&#40;HostName&#41;&#41;==0&#41; return -1;<br/> 	delete&#40;HostName&#41;;<br/> 	<br/> 	int	i=0;<br/> 	while &#40;&#40;hp-&gt;h_addr_list&#91;i+1&#93;&#41;!=NULL&#41;<br/> 	{<br/> 		i++;<br/> 	}<br/> 	memcpy&#40;&from.sin_addr.s_addr,hp-&gt;h_addr_list&#91;i&#93;,hp-&gt;h_length&#41;;<br/> 	if &#40;&#40;hp=gethostbyname&#40;inet_ntoa&#40;from.sin_addr&#41;&#41;&#41;==NULL&#41; return -1;<br/> <br/> 	memset&#40;&dest,0,sizeof&#40;dest&#41;&#41;;<br/> 	memcpy&#40;&dest.sin_addr.s_addr,hp-&gt;h_addr_list&#91;0&#93;,hp-&gt;h_length&#41;;<br/> 	dest.sin_family=AF_INET;<br/> 	dest.sin_port=htons&#40;8000&#41;;<br/> 	if &#40;bind&#40;sock,&#40;struct sockaddr *&#41;&dest,sizeof&#40;dest&#41;&#41;==SOCKET_ERROR&#41; return -1;<br/> 	<br/> 	//WSAIoctl : dieu khien vao ra socket<br/> 	if&#40;WSAIoctl&#40;sock, SIO_RCVALL, &dwBufferInLen, sizeof&#40;dwBufferInLen&#41;, &dwBufferLen, sizeof&#40;dwBufferLen&#41;,&dwBytesReturned , NULL , NULL&#41; == SOCKET_ERROR&#41;		return&#40;-1&#41;;<br/> 	<br/> 	//Don nhan va su ly goi du lieu<br/> 	while &#40;1&#41;<br/> 	{<br/> 		sread=recvfrom&#40;sock,packet,8191,0,&#40;struct sockaddr *&#41;&from.sin_addr,&fromlen&#41;;<br/> 		if &#40;&#40;sread==SOCKET_ERROR&#41;||sread&lt;0&#41; continue ;<br/> 		packetcapture&#40;packet&#41;;<br/> 	}<br/> 	delete&#40;packet&#41;;<br/> <br/> 	return 0;<br/> }<br/> //Ham thuc hien phan tich goi du lieu<br/> int	packetcapture&#40;char *packet&#41;<br/> {<br/> 	struct ip_hdr	*ip;<br/> 	struct tcp_hdr	*tcp;<br/> 	struct icmp_hdr	*icmp;<br/> 	ip=&#40;struct ip_hdr *&#41;packet;<br/> 	tcp=&#40;struct tcp_hdr *&#41;&#40;packet+sizeof&#40;struct ip_hdr&#41;&#41;;<br/> 	icmp=&#40;struct icmp_hdr *&#41;&#40;packet+sizeof&#40;struct ip_hdr&#41;&#41;;<br/> 	switch&#40;ip-&gt;protocol&#41;<br/> 	{<br/> 	case 6:<br/> 		tcp_display&#40;ip,tcp&#41;;<br/> 		break;<br/> 	case 1:<br/> 		icmp_display&#40;ip,icmp&#41;;<br/> 		break;<br/> 	default:<br/> 		break;<br/> 	}<br/> 	return 0;<br/> }<br/> //Ham hien thi goi TCP<br/> int	tcp_display&#40;ip_hdr *ip,tcp_hdr *tcp&#41;<br/> {<br/> 	printf&#40;"TCP: &#91;%d&#93; %s:%d", ntohs&#40;ip-&gt;tol_len&#41;, inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;saddr&#41;, ntohs&#40;tcp-&gt;sport&#41;&#41;;<br/> 	printf&#40;" &gt; %s:%d|ttl = %d|win = %d|checksum = %d|flag = %d\n\n", inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;daddr&#41;, <br/> 	ntohs&#40;tcp-&gt;dport&#41;, ip-&gt;ttl, ntohs&#40;tcp-&gt;windows&#41;, tcp-&gt;checksum, tcp-&gt;flags&#41;;<br/> 	return 0;<br/> }<br/> //Ham hien thi goi ICMP<br/> int icmp_display&#40;struct ip_hdr *ip, struct icmp_hdr *icmp&#41;<br/> {  	<br/> <br/> 	printf&#40;"ICMP: &#91;%d&#93; %s", ntohs&#40;ip-&gt;tol_len&#41;, inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;saddr&#41;&#41;;<br/> 	printf&#40;" &gt; %s type = %d|code = %d|ttl = %d|seq = %x\n", inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;daddr&#41;, icmp-&gt;type, icmp-&gt;code, ip-&gt;ttl, ntohs&#40;icmp-&gt;sequence&#41;&#41;;<br/> 	return 0;<br/> }</pre><br/> 		</div><br/> <br/> Kết quả khi chạy chương trình<br/> + Thực hiện gửi gói ICMP bằng cách dùng lệnh PING<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>C:\&gt;ping 10.0.0.2<br/> Reply from 10.0.0.2: bytes=32 time&lt;10ms TTL=64<br/> Reply from 10.0.0.2: bytes=32 time=15ms TTL=64<br/> Reply from 10.0.0.2: bytes=32 time=15ms TTL=64<br/> Reply from 10.0.0.2: bytes=32 time=15ms TTL=64<br/> <br/> Ping statistics for 10.0.0.2:<br/>     Packets: Sent = 4, Received = 4, Lost = 0 &#40;0% loss&#41;,<br/> Approximate round trip times in milli-seconds:<br/>     Minimum = 0ms, Maximum =  15ms, Average =  11ms<br/> <br/> Chương trình Sniffer:<br/> Seamoun &#40;http://nhomvicki.net&#41;<br/> Sniffer TCP, ICMP v1.0<br/> <br/>           Packet Capture ...<br/> ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3d00<br/> ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3d00<br/> ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3e00<br/> ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3e00<br/> ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3f00<br/> ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3f00<br/> ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 4000<br/> ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 4000</pre><br/> 		</div><br/> <br/> +Thực hiện gửi gói TCP bằng netcat<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>C:\&gt;nx -vv -n 10.0.0.1<br/> <br/> Chương trình Sniffer:<br/> Seamoun &#40;http://nhomvicki.net&#41;<br/> Sniffer TCP, ICMP v1.0<br/> <br/>           Packet Capture ...<br/> TCP: &#91;64&#93; 10.0.0.1:80 &gt; 10.0.0.2:1033|ttl = 128|win = 64240|checksum = 55340|flag = 18<br/> TCP: &#91;60&#93; 10.0.0.2:1033 &gt; 10.0.0.1:80|ttl = 64|win = 5840|checksum = 5942|flag = 2<br/> TCP: &#91;52&#93; 10.0.0.2:1033 &gt; 10.0.0.1:80|ttl = 64|win = 5840|checksum = 23589|flag = 16</pre><br/> 		</div><br/> <br/> Mình post lại bài này vì không thấy còn trên HVA . Chắc do mất DB đợt trước  <img src="/hvaonline/images/smilies/5e3ee5fb831b15dfe0bb63a8d0c6a93e.gif" border="0" alt="smilie" align="absbottom"> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32690.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/5557.hva#32690" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

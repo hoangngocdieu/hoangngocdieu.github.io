@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin giúp đỡ vấn đề về high load avg"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin giúp đỡ vấn đề về high load avg"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Hi mọi người, hiện tại e đang gặp khó khăn về vấn đề troubleshoot high load avg, mong mọi người giúp em.
+Mô hình phát thảo của e như sau:
+LVS -&gt; Webserver(Apache) -&gt; NFS storage
+Web server: - Ram 32G, CPU 2.40GHz,  8 core, HDD raid 1 (nhưng đang chạy 1 ổ do 1 ổ hỏng đã rút ra)
+                   - OS: Centos 6.5, Apache chạy mod worker, suexec, php handler: php-cgi
+                   - Đã rebuild kernel giảm time_wait còn 15s
+                   - Source code đặt tại NFS (mount nfs v3) 
+load avg sau 2 phút cho http traffic đi vào server này: <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>load average: 44.91, 25.12, 10.04</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>top - 09:47:36 up 3 days, 11:21,  2 users,  load average: 44.91, 25.12, 10.04
+Tasks: 261 total,   1 running, 259 sleeping,   0 stopped,   0 zombie
+Cpu&#40;s&#41;: 14.9%us,  4.8%sy,  0.0%ni, 14.5%id, 65.1%wa,  0.0%hi,  0.5%si,  0.0%st
+Mem:  32869904k total,  2728816k used, 30141088k free,    11176k buffers
+Swap: 16777208k total,        0k used, 16777208k free,   951004k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+18985 17674     20   0  396m  51m  25m D 14.6  0.2   0:00.81 php-cgi
+19296 19037     20   0  448m  89m  11m D 13.0  0.3   0:00.39 php-cgi
+19259 10944     20   0  389m  38m  19m D  6.0  0.1   0:00.18 php-cgi
+19112 18034     20   0  398m  56m  27m D  5.0  0.2   0:00.64 php-cgi
+19244 10944     20   0  395m  50m  25m D  4.7  0.2   0:00.25 php-cgi
+19245 10944     20   0  395m  51m  26m D  4.7  0.2   0:00.25 php-cgi
+19252 10944     20   0  391m  43m  22m D  4.7  0.1   0:00.21 php-cgi
+19256 19389     20   0  382m  27m  14m D  4.3  0.1   0:00.13 php-cgi
+19246 12969     20   0  387m  34m  17m D  4.0  0.1   0:00.27 php-cgi
+19239 13264     20   0  394m  49m  24m D  3.7  0.2   0:00.24 php-cgi
+19241 12969     20   0  387m  34m  17m D  3.7  0.1   0:00.27 php-cgi
+19291 18253     20   0  378m  19m  10m D  3.3  0.1   0:00.10 php-cgi
+19255 17569     20   0  380m  22m  12m D  3.0  0.1   0:00.09 php-cgi
+19290 15184     20   0  378m  19m  10m D  3.0  0.1   0:00.09 php-cgi
+19211 10944     20   0  401m  62m  31m D  2.7  0.2   0:00.33 php-cgi
+19258 17691     20   0  378m  19m  10m D  2.7  0.1   0:00.08 php-cgi
+19292 10544     20   0  379m  19m  10m D  2.7  0.1   0:00.08 php-cgi
+19294 18371     20   0  378m  18m  10m D  2.7  0.1   0:00.08 php-cgi
+19295 18371     20   0  378m  18m  10m D  2.7  0.1   0:00.08 php-cgi
+19311 15905     20   0  379m  20m  11m D  2.7  0.1   0:00.08 php-cgi
+19224 19047     20   0  382m  27m  14m D  2.3  0.1   0:00.20 php-cgi
+19310 18371     20   0  378m  18m  10m D  2.3  0.1   0:00.07 php-cgi
+19313 16031     20   0  378m  18m  10m D  2.3  0.1   0:00.07 php-cgi
+19215 15905     20   0  398m  56m  28m D  2.0  0.2   0:00.31 php-cgi
+19216 15905     20   0  398m  56m  28m D  2.0  0.2   0:00.30 php-cgi
+19217 15530     20   0  386m  34m  17m D  2.0  0.1   0:00.18 php-cgi</pre>
+		</div>
+io wait lên rất cao dẫn đến các process chờ lâu nên sinh ra rất nhiều process php-cgi
+kết quả e test read/write lên HDD khi không chạy apache;
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># hdparm -I /dev/sda | grep speed
+           *    Gen1 signaling speed &#40;1.5Gb/s&#41;
+           *    Gen2 signaling speed &#40;3.0Gb/s&#41;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># hdparm -tT /dev/sda
+/dev/sda:
+ Timing cached reads:   15424 MB in  2.00 seconds = 7724.50 MB/sec
+ Timing buffered disk reads: 402 MB in  3.01 seconds = 133.72 MB/sec</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># dd if=/dev/zero of=/tmp/test.bin bs=8k count=256k
+262144+0 records in
+262144+0 records out
+2147483648 bytes &#40;2.1 GB&#41; copied, 1.84109 s, 1.2 GB/s</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># dd of=/dev/null if=/tmp/test.bin bs=8k count=256k
+262144+0 records in
+262144+0 records out
+2147483648 bytes &#40;2.1 GB&#41; copied, 0.485696 s, 4.4 GB/s</pre>
+		</div>
+Mong mọi người giúp đỡ e vấn đề này để có thể detect đc do đâu, e xin cảm ơn.
+PS: Với cấu hình tương tự ở một server khác hoạt động rất bình thường nên nghi ngờ vấn đề từ hardware ^^
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281273</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281273</link>
+				<pubDate><![CDATA[Mon, 11 Aug 2014 23:10:37]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Vấn đề ở đây cần focus thì bạn cũng đã nói được là do IO disk.
+
+Theo mình bạn nên focus 1 số điểm như 
+
+1. Kết nối mạng giữa NFS storage & Server Web Application 
+
+NFS Storage đang chạy raid mấy, có SSD ? kết nối mạng giữa NFS & Server đạt tốc độ bao nhiêu ? 
+
+NFS Storage của bạn có đang chạy 1 bản bundle giống như ( gluster , ZFS,  openfiler) ? 
+
+
+2. Với mô hình của bạn, mình hiểu bạn đang muốn làm 1 hệ thống clustering với nhiều node app, tất cả đều tập trung source lưu trữ tại NFS. Tuy nhiên sao bạn không sử dụng 1 số sản phẩm cluster có tích hợp Sync ví dụ Corosync, DRBD
+
+Mình nghĩ việc SYNC dựa trên các cơ chế đồng bộ của các sản phẩm HA có thể đáp ứng được những nhu cầu khắt khe nhất trong các mô hình Web - Application, thậm chí là Database :) 
+
+T]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281275</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281275</link>
+				<pubDate><![CDATA[Mon, 11 Aug 2014 23:43:51]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Trước tiên mình xin cảm ơn Ikut3 đã tư vấn cho mình, các vấn đề bạn đặt ra mình xin trả lời:
+1. Kết nối giữa NFS storage & Web server: 1000Mbps, bw dùng iperf để đo (Đo lúc web server chưa có http traffic): 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># iperf -c 10.0.x.y -P 1 -i 1
+&#91; ID&#93; Interval       Transfer     Bandwidth
+&#91;  3&#93;  0.0- 1.0 sec   111 MBytes   932 Mbits/sec
+&#91;  3&#93;  1.0- 2.0 sec  87.9 MBytes   737 Mbits/sec
+&#91;  3&#93;  2.0- 3.0 sec   110 MBytes   925 Mbits/sec
+&#91;  3&#93;  3.0- 4.0 sec   110 MBytes   926 Mbits/sec
+&#91;  3&#93;  4.0- 5.0 sec   111 MBytes   929 Mbits/sec
+&#91;  3&#93;  5.0- 6.0 sec   109 MBytes   916 Mbits/sec
+&#91;  3&#93;  6.0- 7.0 sec   110 MBytes   923 Mbits/sec
+&#91;  3&#93;  7.0- 8.0 sec   111 MBytes   930 Mbits/sec
+&#91;  3&#93;  8.0- 9.0 sec   111 MBytes   930 Mbits/sec
+&#91;  3&#93;  9.0-10.0 sec   108 MBytes   909 Mbits/sec
+&#91;  3&#93;  0.0-10.0 sec  1.05 GBytes   906 Mbits/sec</pre>
+		</div>
+iostat tại NFS server (đang có io từ 3 web server):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># zpool iostat -v
+               capacity     operations    bandwidth
+pool        alloc   free   read  write   read  write
+
+rpool       23.1G   905G      0     12  5.25K   115K
+  c2t0d0s0  23.1G   905G      0     12  5.25K   115K
+
+zpool1      1003G  1.74T    288    119  2.29M  1.25M
+  c2t1d0     334G   594G     96     18   781K   240K
+  c2t2d0     334G   594G     96     18   782K   240K
+  c2t3d0     334G   594G     96     18   780K   240K
+logs            
+  c2t75d0   13.9M   111G      0     64      0   556K</pre>
+		</div>
+- NFS đang chạy trên bundle ZFS (OS: Unix - Openindiana), chạy raid 1, sử dụng Zil SSD cho logs pool
+2. Mình có test qua performance giữa apache, php, local storage(1) vs apache, php, nfs storage(2) thì thấy performance (1) &gt; (2), sử dụng strace php-cgi để count syscall khi chạy trên nfs thì thấy các syscall access, open có % lớn hơn khi chạy local storage (ở local storage thì syscall munmap lớn). Sử dụng cachefs & nhưng cũng không ăn thua. Nên có nghĩ đến việc đổi mô hình, nhưng mắc phải vấn đề sync, dữ liệu hosting rất nhiều. với lại đang là mô hình production, thay đổi thì chắc rất cực.
+Mình tập trung vấn đề load avg tại web server do chỉ có 1 con server ấy bị, các con khác còn lại chạy bình thường]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281284</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281284</link>
+				<pubDate><![CDATA[Tue, 12 Aug 2014 23:31:50]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Hello Tuan (sorry vì mình reply trễ) 
+
+Nếu theo các thông số bạn đưa ra trên Webserver này, thì tuyệt nhiên mình không thấy có gì bất thường. Thậm chí là còn nhanh nữa là đằng khác. Đoán già đoán non thôi thì bạn thử gather lại với các thông tin tương tự trên các server khác để so sánh xem có sự chênh lệch ở điểm nào không ? Mình nghĩ nên chạy cho các server ở thời điểm có lượng người truy cập. 
+
+Mình chỉ hơi confuse ở 2 điểm này, nếu bạn tiếp tục được cùng mình thì tốt
+
+1. Bạn có hệ thống monitoring nào để lấy các thông tin của các server không ? Mình nghĩ sử dụng graph trong các trường hợp này sẽ thấy được nhiều mối tương quan hơn là chỉ dựa vào các thông số 
+
+2. Bạn có đảm bảo rằng Server chậm đang cài giống 100% cấu hình cả mềm lẫn cứng đối với các server khác ? 
+
+Kinh nghiệm của mình trong những case mà tất cả mọi thứ đều có sự logic như thế này là "so sánh & so sánh". Có thể 1 vài thông số  tunning của application dựa vào phần cứng đã bị sai lệch đi khi chạy trên những hardware profile khác nhau ?
+
+Mình có dùng thử 1 công cụ mới được giới thiệu ở Hacker News là <span class="link"> <span class="link"> http://www.sysdig.org/</span></span>. Mình thấy có sự khác biệt rất nhiều so với việc tự gather từ những thông số rời rạc như disk - ram - cpu thông qua các câu lệnh thường dùng. Với sysdig mình nắm được rõ mọi hành vi của bất kì request nào thông suốt từ application đến kernel, tiêu tốn bao nhiêu phần trăm tài nguyên hệ thống.  Biết đâu sự bình thường trong những tình huống bất thường diễn ra từ đó.
+
+Thân 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281331</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281331</link>
+				<pubDate><![CDATA[Sun, 17 Aug 2014 07:21:53]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+- Source code đặt tại NFS (mount nfs v3) 
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+2. Mình có test qua performance giữa apache, php, local storage(1) vs apache, php, nfs storage(2) thì thấy performance (1) &gt; (2), sử dụng strace php-cgi để count syscall khi chạy trên nfs thì thấy các <b>syscall access, open có % lớn hơn</b> khi chạy local storage (<b>ở local storage thì syscall munmap lớn</b>). Sử dụng cachefs & nhưng cũng không ăn thua. Nên có nghĩ đến việc đổi mô hình, nhưng mắc phải vấn đề sync, dữ liệu hosting rất nhiều. với lại đang là mô hình production, thay đổi thì chắc rất cực.
+Mình tập trung vấn đề load avg tại web server do chỉ có 1 con server ấy bị, các con khác còn lại chạy bình thường&nbsp;
+		</blockquote>
+
+Có vẻ như 2 phần bôi đậm kia, kết hợp thông tin NFS v3 là vấn đề của bạn.
+Ứng dụng của bạn khi chạy local storage nó sử dụng IO kiểu mmap/munmap, một kiểu IO có tốc độ cao và trễ thấp.
+
+Khi mount với NFS v3, thì mmap không được hỗ trợ, phải fail-back về kiểu open/read bình thường (nên syscall 2 cái này nhiều hơn). Có vài thảo luận về vấn đề NFS liên quan đến mmap này.
+
+Kể cả khi dùng open/read thì cũng có vấn đề. Do NFS là 1 share file system nên yếu tố concurrency được đảm bảo, chính nó gây nhiều overhead xử lý các IO, nhất là trong trường hợp read+write IO. Đó chính là nguyên nhân dẫn tới IO wait cao hơn local storage.
+
+Bạn không nói rõ ngoài source code ra thì còn content nào khác (ví dụ images, css...) phải lấy ra từ disk không, ứng dụng chỉ source code/content read only hay cả read/write.
+
+Vì thế, giải pháp là
+1. bạn phải từ bỏ NFS, phải dùng local storage + sync.
+2. bạn phải tuning/sửa lại ứng dụng PHP hoặc cách dùng module, sao cho phân rõ kiểu IO với từng module (read hay read/write) để dùng NFS cache được, (kiểm tra lại ứng dụng mount NFS dạng read-only và tùy chọn nolock, bật cache nữa).
+3. Ứng dụng phải sửa hoặc NFS mount option phải chỉnh lại để truy cập IO tối ưu cho open/read, tránh locking hoặc cache-sync giữa các node mount lên NFS server.
+
+Ref: Google 1 lúc thì ra khá nhiều thông tin liên quan đến NFS mmap. Ví dụ có 1 thảo luận:<span class="link"> http://stackoverflow.com/questions/10367577/mmap-file-shared-via-nfs</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281352</link>
+				<pubDate><![CDATA[Wed, 20 Aug 2014 06:48:58]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Ikut3 wrote:</cite><br>
+		<blockquote>Hello Tuan (sorry vì mình reply trễ) 
+
+Nếu theo các thông số bạn đưa ra trên Webserver này, thì tuyệt nhiên mình không thấy có gì bất thường. Thậm chí là còn nhanh nữa là đằng khác. Đoán già đoán non thôi thì bạn thử gather lại với các thông tin tương tự trên các server khác để so sánh xem có sự chênh lệch ở điểm nào không ? Mình nghĩ nên chạy cho các server ở thời điểm có lượng người truy cập. 
+
+Mình chỉ hơi confuse ở 2 điểm này, nếu bạn tiếp tục được cùng mình thì tốt
+
+1. Bạn có hệ thống monitoring nào để lấy các thông tin của các server không ? Mình nghĩ sử dụng graph trong các trường hợp này sẽ thấy được nhiều mối tương quan hơn là chỉ dựa vào các thông số 
+
+2. Bạn có đảm bảo rằng Server chậm đang cài giống 100% cấu hình cả mềm lẫn cứng đối với các server khác ? 
+
+Kinh nghiệm của mình trong những case mà tất cả mọi thứ đều có sự logic như thế này là "so sánh & so sánh". Có thể 1 vài thông số  tunning của application dựa vào phần cứng đã bị sai lệch đi khi chạy trên những hardware profile khác nhau ?
+
+Mình có dùng thử 1 công cụ mới được giới thiệu ở Hacker News là <span class="link"> <span class="link"> http://www.sysdig.org/</span></span>. Mình thấy có sự khác biệt rất nhiều so với việc tự gather từ những thông số rời rạc như disk - ram - cpu thông qua các câu lệnh thường dùng. Với sysdig mình nắm được rõ mọi hành vi của bất kì request nào thông suốt từ application đến kernel, tiêu tốn bao nhiêu phần trăm tài nguyên hệ thống.  Biết đâu sự bình thường trong những tình huống bất thường diễn ra từ đó.
+
+Thân 
+
+&nbsp;
+		</blockquote>
+Hi Ikut3,
+thanks đã reply
+1. Hệ thống sử dụng nagios & nagios grapth để thu thập các thông tin của server. Nhưng khi dựng server lên và chạy đã xảy ra sự cố như trên, k thể để chạy lâu dài mà mình phải ngắt ra khỏi hệ thống.
+2. Mình không đảm bảo 100% là phần cứng giống nhau nhưng tương đương nhau về lượng (CPU, mem, Disk, ....), 100% về config giống nhau.
+Hiện tại đã thay thế 1 con server khác, cũng với những config như vậy nhưng lại chạy bình thường, k vấn đề gì xảy ra. Nên nghĩ chắc vấn đề là ở phần cứng nhưng k biết troubleshoot như thế nào cho chính xác mà thôi :)
+Thanks Ikut3 về cái tool sysdig (biết thêm 1 món :D)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281357</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281357</link>
+				<pubDate><![CDATA[Wed, 20 Aug 2014 22:11:16]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+- Source code đặt tại NFS (mount nfs v3) 
+&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+2. Mình có test qua performance giữa apache, php, local storage(1) vs apache, php, nfs storage(2) thì thấy performance (1) &gt; (2), sử dụng strace php-cgi để count syscall khi chạy trên nfs thì thấy các <b>syscall access, open có % lớn hơn</b> khi chạy local storage (<b>ở local storage thì syscall munmap lớn</b>). Sử dụng cachefs & nhưng cũng không ăn thua. Nên có nghĩ đến việc đổi mô hình, nhưng mắc phải vấn đề sync, dữ liệu hosting rất nhiều. với lại đang là mô hình production, thay đổi thì chắc rất cực.
+Mình tập trung vấn đề load avg tại web server do chỉ có 1 con server ấy bị, các con khác còn lại chạy bình thường&nbsp;
+		</blockquote>
+
+Có vẻ như 2 phần bôi đậm kia, kết hợp thông tin NFS v3 là vấn đề của bạn.
+Ứng dụng của bạn khi chạy local storage nó sử dụng IO kiểu mmap/munmap, một kiểu IO có tốc độ cao và trễ thấp.
+
+Khi mount với NFS v3, thì mmap không được hỗ trợ, phải fail-back về kiểu open/read bình thường (nên syscall 2 cái này nhiều hơn). Có vài thảo luận về vấn đề NFS liên quan đến mmap này.
+
+Kể cả khi dùng open/read thì cũng có vấn đề. Do NFS là 1 share file system nên yếu tố concurrency được đảm bảo, chính nó gây nhiều overhead xử lý các IO, nhất là trong trường hợp read+write IO. Đó chính là nguyên nhân dẫn tới IO wait cao hơn local storage.
+
+Bạn không nói rõ ngoài source code ra thì còn content nào khác (ví dụ images, css...) phải lấy ra từ disk không, ứng dụng chỉ source code/content read only hay cả read/write.
+
+Vì thế, giải pháp là
+1. bạn phải từ bỏ NFS, phải dùng local storage + sync.
+2. bạn phải tuning/sửa lại ứng dụng PHP hoặc cách dùng module, sao cho phân rõ kiểu IO với từng module (read hay read/write) để dùng NFS cache được, (kiểm tra lại ứng dụng mount NFS dạng read-only và tùy chọn nolock, bật cache nữa).
+3. Ứng dụng phải sửa hoặc NFS mount option phải chỉnh lại để truy cập IO tối ưu cho open/read, tránh locking hoặc cache-sync giữa các node mount lên NFS server.
+
+Ref: Google 1 lúc thì ra khá nhiều thông tin liên quan đến NFS mmap. Ví dụ có 1 thảo luận:<span class="link"> http://stackoverflow.com/questions/10367577/mmap-file-shared-via-nfs</span>
+&nbsp;
+		</blockquote>
+Cảm ơn myquartz đã tư vấn,
+Về source code và tất cả content đều đặt tại 1 folder trên nfs mount, read lẫn write
+1. Vì hiện nó đang vận hành, mô hình xuyên xuốt từ phía khách hàng đến cả phần quản lý, nên việc thay đổi như vậy mình thấy rất khó mặc dù là muốn thế
+2,3. Đây là option mount nfs hiện tại đang sử dụng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>rw,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.0.0.x,mountvers=3,mountport=43882,mountproto=udp,local_lock=none,addr=10.0.0.x 0 0</pre>
+		</div>
+trước có dùng option fsc và chạy cachefs nhưng mình bỏ do mình test đi test lại thấy vẫn như nhau k có tác dụng gì lắm.
+<blockquote> bạn phải tuning/sửa lại ứng dụng PHP hoặc cách dùng module, sao cho phân rõ kiểu IO với từng module (read hay read/write) để dùng NFS cache được&nbsp;
+		</blockquote>
+mình k rõ ý này lắm, myquartz có thể tư vấn thêm ở cái đoạn này ko :D ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281358</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281358</link>
+				<pubDate><![CDATA[Wed, 20 Aug 2014 22:29:28]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuanksor wrote:</cite><br>
+		<blockquote>
+Cảm ơn myquartz đã tư vấn,
+Về source code và tất cả content đều đặt tại 1 folder trên nfs mount, read lẫn write
+1. Vì hiện nó đang vận hành, mô hình xuyên xuốt từ phía khách hàng đến cả phần quản lý, nên việc thay đổi như vậy mình thấy rất khó mặc dù là muốn thế
+2,3. Đây là option mount nfs hiện tại đang sử dụng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>rw,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.0.0.x,mountvers=3,mountport=43882,mountproto=udp,local_lock=none,addr=10.0.0.x 0 0</pre>
+		</div>
+trước có dùng option fsc và chạy cachefs nhưng mình bỏ do mình test đi test lại thấy vẫn như nhau k có tác dụng gì lắm.
+<blockquote> bạn phải tuning/sửa lại ứng dụng PHP hoặc cách dùng module, sao cho phân rõ kiểu IO với từng module (read hay read/write) để dùng NFS cache được&nbsp;
+		</blockquote>
+mình k rõ ý này lắm, myquartz có thể tư vấn thêm ở cái đoạn này ko :D ?
+&nbsp;
+		</blockquote>
+
+Về mount options, không có gì nhiều để góp ý, trừ việc thay relatime thành noatime, nó sẽ giúp tiết kiệm 1 chút IO cho việc read-only.
+
+Về ý mà bạn chưa rõ, thì nó đơn giản là phân rõ mục nào là read-only (ví dụ source code), mục nào lả read/write. Để có ứng phó và dùng các mount-point thích hợp cho từng dạng truy cập, không để chung code + static content + upload content vào chung 1 chỗ như cái nồi lẩu, sẽ rất khó. Một số dạng static content như ảnh, hay css ít bị thay đổi, thì nên read-only, nó sẽ tận dụng thế mạnh của nfs cache ở phía client.
+Còn một số thư mục dành cho upload, thì việc tạo 1 thư mục chuyên cho upload (tạo riêng 1 mount point read-only để client tải từ web server cũng là nội dung upload đó) sẽ giúp tối ưu hóa IO hơn một chút.
+Nếu content upload nhiều thì tốt nhất là quá trình upload sẽ write file vào 1 temp dir (ở local storage) rồi sau khi upload xong 100% content, thì làm lệnh move sang NFS, nó sẽ nhanh hơn nhiều là open và write trực tiếp file vào nfs share.
+
+Việc sửa ứng dụng là mệt nhất. Nhưng nó sẽ mang lại hiệu quả tuyệt đối. Tóm lại tuân thủ nguyên tắc lập trình rõ ràng: file nào chỉ cần read thì open read-only trên mount point read-only. file nào cần write thì open write-only trên mount point read/write. Tránh tối đa mở file vừa read, vừa write, lẫn lộn.
+
+Làm việc với NFS thì có mấy cái chú ý vậy thôi. Mấy bài toán web cỡ lớn đòi hỏi nhiều đầu tư về kiến trúc, mô hình hoạt động và ứng dụng thay đổi nhiều, nó không phải cái app nhỏ cho vào cái máy lớn để chạy đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281360</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281360</link>
+				<pubDate><![CDATA[Thu, 21 Aug 2014 05:20:07]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ cảm ơn myquartz đã giải thích rõ ràng cho mình hiểu vấn đề,
+như myquartz nói việc phân rõ ràng mount point nào cho  dạng truy cập nào thì mình thấy nó thích hợp nếu ứng dụng web là của mình, mình điều chỉnh thế nào cũng đc. Nhưng do hiện tại nó là mô hình shared host, việc điều chỉnh cho từng host tương ứng chắc là k khả thi, :).  nó đúng như là cái nồi lẩu thật :D 
+Không biết là có ứng dụng nào có thể cache lại php file lên trên web server để nó có thể đọc từ local cho lần thứ 2 thay vì phải truy xuất vào nfs k nhỉ
+mình có dùng cachefs nhưng thấy nó cache tùm lum hết, mà hiệu năng cũng k cải thiện đc mấy
+xin cảm ơn  mọi ng đã xem và tư vấn giúp mình]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45758.hva#281403</link>
+				<pubDate><![CDATA[Sun, 24 Aug 2014 09:55:40]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+	</channel>
+</rss>

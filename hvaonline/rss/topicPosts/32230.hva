@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Theo bài viết tại <span class="link"> http://www.cyberciti.biz/tips/how-do-i-set-permissions-to-samba-shares.html</span>, mình đã thực hiện tạo 1 thư mục /home/test, sau đó <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chmod 700 /home/test</pre>
+		</div> và <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chown root:root /home/test</pre>
+		</div>. Sau đó mình tạo 1 thư mục chia sẻ bằng samba (dưới đây là file cấu hình samba):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#======================= Global Settings =======================
+
+&#91;global&#93;
+
+   dns proxy = no
+   log file = /var/log/samba/log.%m
+   max log size = 1000
+   syslog = 0
+   panic action = /usr/share/samba/panic-action %d
+   security = user
+   encrypt passwords = true
+   passdb backend = tdbsam
+   obey pam restrictions = yes
+   unix password sync = yes
+   passwd program = /usr/bin/passwd %u
+   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+   pam password change = yes
+   map to guest = bad user
+
+# ======== Bat Dau Test ======
+&#91;test&#93;
+	comment = test xem the nao
+	writeable = yes
+	path = /home/test
+	read list = test</pre>
+		</div>
+Sau đó, mình thực hiện việc khởi động lại samba và thêm user test:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>smbpasswd -a test</pre>
+		</div>
+Công việc cuối cùng là mình browse thư mục chia sẻ test đó. 
+Kết quả là không truy cập được vì không có quyền ( theo mình nó tương ứng với chmod 700 mà mình đã làm), vấn đề mình muốn hỏi là tham số <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>read list = test</pre>
+		</div> trong file cấu hình samba có tác dụng gì trong trường hợp này không.
+
+1 vấn đề nữa mình cần hỏi các bạn như sau: giả sử có 1 nhóm A có quyền đọc với thư mục test, 1 nhóm B có Full quyền với thư mục test đó thì mình cần cấu hình như thế nào trong files smb.conf.
+
+Mình cũng mới tập tành với samba nên mong các bạn có thể giải đáp giúp mình, mình chân thành cảm ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198782</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198782</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 19:31:39]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Bạn cho user test vào read list, tức là có quyền đọc, nhưng mà bạn đã chmod cho thư mục đó thuộc quyền của user root (700), nghĩa là user test hoàn toàn ko có quyền gì trên thư mục đó. Cũng trong link bạn đưa ở trên, có 1 phần rất quan trọng ghi rõ là quyền được cấp bởi Samba sẽ không ghi đè lên quyền của hệ thống *nix, nghĩa là trong trường hợp này của bạn, dù Samba cho user test quyền được đọc, nhưng hệ thống không cho nó quyền gì thì nó cũng không làm được gì cả.
+
+Để khắc phục, bạn thử chmod lại quyền cho user test tại thư mục đó coi sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198803</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198803</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 00:38:49]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vncybernet wrote:</cite><br>
+		<blockquote>
+1 vấn đề nữa mình cần hỏi các bạn như sau: giả sử có 1 nhóm A có quyền đọc với thư mục test, 1 nhóm B có Full quyền với thư mục test đó thì mình cần cấu hình như thế nào trong files smb.conf.
+&nbsp;
+		</blockquote>
+<b>chgrp -R B test
+chmod -R 770 test</b>
+
+và:
+<b>read list = @A</b>
+
+Ngoài ra, bạn có thể tham khảo thêm về ACLs (Access Control list) cả trên File System và Samba.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198813</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198813</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 02:14:12]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Xin cảm ơn 2 bạn đã trả lời mình, mình xin hỏi thêm 1 vấn đề nữa còn thắc mắc:
+
+Đối với Samba: 
+read list = @A 
+--&gt; Nhóm A có quyền đọc đối với thư mục test.
+
+Đối với File System: 
+chgrp -R B test
+chmod 770 -R test
+
+--&gt; vậy ở đây theo mình hiểu nhóm A sẽ thuộc other, mà permissions cho other = 0, khi đó quyền giữa Samba và File System vẫn chưa tương đồng, vì vậy vẫn chưa thể thực hiện được việc thiết lập Group A read only, Group B Full Access.
+
+Mình hiểu như vậy có đúng không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198827</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198827</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 11:29:47]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Mình nghĩ là bạn hiểu đúng rồi, nên chmod 775 cho thư mục test đó thay vì 770.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198846</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 19:48:03]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Hì, tuy mình hiểu đúng nhưng mình vẫn chưa làm thế nào để chỉ cho phép Group A read only với test, Group B Full Access với test. Nếu chmod 775 thì ngoài Group A, vẫn có khả năng các Group khác như C, D ... nào đó vẫn có quyền read với test. Mong các bạn chỉ giáo!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198853</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198853</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 21:37:21]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vncybernet wrote:</cite><br>
+		<blockquote>Hì, tuy mình hiểu đúng nhưng mình vẫn chưa làm thế nào để chỉ cho phép Group A read only với test, Group B Full Access với test. Nếu chmod 775 thì ngoài Group A, vẫn có khả năng các Group khác như C, D ... nào đó vẫn có quyền read với test. Mong các bạn chỉ giáo!&nbsp;
+		</blockquote>
+Ở trên đúng là mình nhầm thật. Thôi thì bạn đọc rồi thử với ACL đi (cả trên File system và Samba nhé).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198863</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198863</link>
+				<pubDate><![CDATA[Sat, 21 Nov 2009 22:19:45]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ @vncybernet: Hình như bạn rối lên ở việc phân quyền cho linux và samba rồi. Ở bài toán của bạn là chỉ phân quyền cho nhóm A được đọc, nhóm B đọc và ghi <b>khi dùng samba</b>. Vì thế, nếu trong file cấu hình của samba không đưa quyền của các nhóm khác vào thì các nhóm đó chẳng thể làm gì được trên thư mục đó cả (mặc dù <b>đối với hệ thống linux</b> thì các nhóm khác vẫn đọc được).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198941</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198941</link>
+				<pubDate><![CDATA[Sun, 22 Nov 2009 20:26:44]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Xin hướng dẫn về phân quyền chia sẻ tài nguyên trong Ubuntu</title>
+				<description><![CDATA[ Đúng là mình bị rối nên không nhìn ra điều hiển nhiên đó, bị ám ảnh suy nghĩ về Files System Permission nên cũng áp luôn cho Samba, quả lả cẩu thả. Xin cảm ơn 2 bạn đã giúp mình xoá mù Samba!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198978</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32230.hva#198978</link>
+				<pubDate><![CDATA[Mon, 23 Nov 2009 12:11:10]]> GMT</pubDate>
+				<author><![CDATA[ vncybernet]]></author>
+			</item>
+	</channel>
+</rss>

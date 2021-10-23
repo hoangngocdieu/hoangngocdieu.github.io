@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tăng cường an ninh cho hệ thống Linux (Phần 2) "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tăng cường an ninh cho hệ thống Linux (Phần 2) "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tăng cường an ninh cho hệ thống Linux (Phần 2) </title>
+				<description><![CDATA[ <b>Tăng cường an ninh cho hệ thống Linux (Phần 2) </b>
+
+
+Tiếp theo phần 1
+
+
+<b>
+AN TOÀN CHO CÁC GIAO DỊCH TRÊN MẠNG</b>
+
+Có rất nhiều dịch vụ mạng truyền thống giao tiếp thông qua giao thức văn bản không mã hoá, như TELNET, FTP, RLOGIN, HTTP, POP3. Trong các giao dịch giữa người dùng với máy chủ, tất cả các thông tin dạng gói được truyền qua mạng dưới hình thức văn bản không được mã hoá. Các gói tin này có thể dễ dàng bị chặn và sao chép ở một điểm nào đó trên đường đi. Việc giải mã các gói tin này rất dễ dàng, cho phép lấy được các thông tin như tên người dùng, mật khẩu và các thông tin quan trọng khác. Việc sử dụng các giao dịch mạng được mã hoá khiến cho việc giải mã thông tin trở nên khó hơn và giúp bạn giữ an toàn các thông tin quan trọng. Các kỹ thuật thông dụng hiện nay là IPSec, SSL, TLS, SASL và PKI.
+
+Quản trị từ xa là một tính năng hấp dẫn của các hệ thống UNIX. Người quản trị mạng có thể dễ dàng truy nhập vào hệ thống từ bất kỳ nơi nào trên mạng thông qua các giao thức thông dụng như telnet, rlogin. Một số công cụ quản trị từ xa được sử dụng rộng rãi như linuxconf, webmin cũng dùng giao thức không mã hoá. Việc thay thế tất cả các dịch vụ mạng dùng giao thức không mã hoá bằng giao thức có mã hoá là rất khó. Tuy nhiên, bạn nên cung cấp việc truy cập các dịch vụ truyền thống như HTTP/POP3 thông qua SSL, cũng như thay thế các dịch vụ telnet, rlogin bằng SSH.
+
+<b>LINUX FIREWALL</b>
+
+An toàn hệ thống luôn luôn là một vấn đề sống còn của mạng máy tính và firewall là một thành phần cốt yếu cho việc đảm bảo an ninh.
+
+Một firewall là một tập hợp các qui tắc, ứng dụng và chính sách đảm bảo cho người dùng truy cập các dịch vụ mạng trong khi mạng bên trong vẫn an toàn đối với các kẻ tấn công từ Internet hay từ các mạng khác. Có hai loại kiến trúc firewall cơ bản là : Proxy/Application firewall và filtering gateway firewall. Hầu hết các hệ thống firewall hiện đại là loại lai (hybrid) của cả hai loại trên.
+
+Nhiều công ty và nhà cung cấp dịch vụ Internet sử dụng máy chủ Linux như một Internet gateway. Những máy chủ này thường phục vụ như máy chủ mail, web, ftp, hay dialup. Hơn nữa, chúng cũng thường hoạt động như các firewall, thi hành các chính sách kiểm soát giữa Internet và mạng của công ty. Khả năng uyển chuyển khiến cho Linux thu hút như là một thay thế cho những hệ điều hành thương mại.
+
+Tính năng firewall chuẩn được cung cấp sẵn trong kernel của Linux được xây dựng từ hai thành phần : ipchains và IP Masquerading.
+
+Linux IP Firewalling Chains là một cơ chế lọc gói tin IP. Những tính năng của IP Chains cho phép cấu hình máy chủ Linux như một filtering gateway/firewall dễ dàng. Một thành phần quan trọng khác của nó trong kernel là IP Masquerading, một tính năng chuyển đổi địa chỉ mạng (network address translation- NAT) mà có thể che giấu các địa chỉ IP thực của mạng bên trong.
+
+Để sử dụng ipchains, bạn cần thiết lập một tập các luật mà qui định các kết nối được cho phép hay bị cấm. Ví dụ:
+
+# Cho phép các kết nối web tới Web Server của bạn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/sbin/ipchains -A your_chains_rules -s 0.0.0.0/0 www -d 192.16.0.100 1024: -j ACCEPT</pre>
+		</div>
+
+# Cho phép các kết nối từ bên trong tới các Web Server bên ngoài
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/sbin/ipchains -A your_chains_rules -s 192.168.0.0/24 1024: -d 0.0.0.0/0 www -j ACCEPT</pre>
+		</div>
+
+# Từ chối truy cập tất cả các dịch vu khác
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/sbin/ipchains -P your_chains_rules input DENY</pre>
+		</div>
+
+Ngoài ra, bạn có thể dùng các sản phẩm firewall thương mại như Check Point FireWall-1, Phoenix Adaptive Firewall, Gateway Guardian, XSentry Firewall, Raptor, ... hay rất nhiều các phiên bản miễn phí, mã nguồn mở cho Linux như T.Rex Firewall, Dante, SINUS, TIS Firewall Toolkit, ...
+<b>
+DÙNG CÔNG CỤ DÒ TÌM ĐỂ KHẢO SÁT HỆ THỐNG</b>
+
+Thâm nhập vào một hệ thống bất kỳ nào cũng cần có sự chuẩn bị. Hacker phải xác định ra máy đích và tìm xem những port nào đang mở trước khi hệ thống có thể bị xâm phạm. Quá trình này thường được thực hiện bởi các công cụ dò tìm (scanning tool), kỹ thuật chính để tìm ra máy đích và các port đang mở trên đó. Dò tìm là bước đầu tiên hacker sẽ sử dụng trước khi thực hiện tấn công. Bằng cách sử dụng các công cụ dò tìm như Nmap, hacker có thể rà khắp các mạng để tìm ra các máy đích có thể bị tấn công. Một khi xác định được các máy này, kẻ xâm nhập có thể dò tìm các port đang lắng nghe. Nmap cũng sử dụng một số kỹ thuật cho phép xác định khá chính xác loại máy đang kiểm tra.
+
+Bằng cách sử dụng những công cụ của chính các hacker thường dùng, người qun trị hệ thống có thể nhìn vào hệ thống của mình từ góc độ của các hacker và giúp tăng cường tính an toàn của hệ thống. Có rất nhiều công cụ dò tìm có thể sử dụng như: Nmap, strobe, sscan, SATAN, ...
+
+<b>Dưới đây là một ví dụ sử dụng Nmap:</b>
+<blockquote>
+# nmap -sS -O 192.168.1.200
+Starting nmap V. 2.54 by Fyodor (fyodor@dhp.com, www.insecure.org/nmap/)
+Interesting ports on comet (192.168.1.200):
+Port State Protocol Service
+7 open tcp echo
+19 open tcp chargen
+21 open tcp ftp
+...
+TCP Sequence Prediction: Class=random positive increments
+Difficulty=17818 (Worthy challenge)
+Remote operating system guess: Linux 2.2.13
+Nmap run completed -- 1 IP address (1 host up) scanned in 5 seconds
+&nbsp;
+		</blockquote>
+Tuy nhiên, sử dụng các công cụ này không thể thay thế cho một người quản trị có kiến thức. Bởi vì việc dò tìm thường dự báo một cuộc tấn công, các site nên ưu tiên cho việc theo dõi chúng. Với các công cụ dò tìm, các nhà quản trị hệ thống mạng có thể phát hiện ra những gì mà các hacker có thể thấy khi dò trên hệ thống của mình.
+
+
+<b>PHÁT HIỆN SỰ XÂM NHẬP QUA MẠNG</b>
+
+Nếu hệ thống của bạn có kết nối vào internet, bạn có thể trở thành một mục tiêu bị dò tìm các lỗ hổng về bảo mật. Mặc dù hệ thống của bạn có ghi nhận điều này hay không thì vẫn không đủ để xác định và phát hiện việc dò tìm này. Một vấn đề cần quan tâm khác là các cuộc tấn công gây ngừng dịch vụ (Denial of Services - DoS), làm thế nào để ngăn ngừa, phát hiện và đối phó với chúng nếu bạn không muốn hệ thống của bạn ngưng trệ.
+
+Hệ thống phát hiện xâm nhập qua mạng (Network Intrusion Detection System - NIDS) theo dõi các thông tin truyền trên mạng và phát hiện nếu có hacker đang cố xâm nhập vào hệ thống (hoặc gây gây ra một vụ tấn công DoS). Một ví dụ điển hình là hệ thống theo dõi số lượng lớn các yêu cầu kết nối TCP đến nhiều port trên một máy nào đó, do vậy có thể phát hiện ra nếu có ai đó đang thử một tác vụ dò tìm TCP port. Một NIDS có thể chạy trên máy cần theo dõi hoặc trên một máy độc lập theo dõi toàn bộ thông tin trên mạng.
+
+Các công cụ có thể được kết hợp để tạo một hệ thống phát hiện xâm nhập qua mạng. Chẳng hạn dùng tcpwrapper để điều khiển, ghi nhận các dịch vụ đã được đăng ký. Các chương trình phân tích nhật ký hệ thống, như swatch, có thể dùng để xác định các tác vụ dò tìm trên hệ thống. Và điều quan trọng nhất là các công cụ có thể phân tích các thông tin trên mạng để phát hiện các tấn công DoS hoặc đánh cắp thông tin như tcpdump, ethereal, ngrep, NFR (Network Flight Recorder), PortSentry, Sentinel, Snort, ...
+
+Khi hiện thực một hệ thống phát hiện xâm nhập qua mạng bạn cần phải lưu tâm đến hiệu suất của hệ thống cũng như các chính sách bảo đảm sự riêng tư.
+
+<b>KIỂM TRA KHẢ NĂNG BỊ XÂM NHẬP</b>
+
+Kiểm tra khả năng bị xâm nhập liên quan đến việc xác định và sắp xếp các lỗ hổng an ninh trong hệ thống bằng cách dùng một số công cụ kiểm tra. Nhiều công cụ kiểm tra cũng có khả năng khai thác một số lỗ hổng tìm thấy để làm rõ quá trình thâm nhập trái phép sẽ được thực hiện như thế nào. Ví dụ, một lỗi tràn bộ đệm của chương trình phục vụ dịch vụ FTP có thể dẫn đến việc thâm nhập vào hệ thống với quyền ‘root’. Nếu người quản trị mạng có kiến thức về kiểm tra khả năng bị xâm nhập trước khi nó xảy ra, họ có thể tiến hành các tác vụ để nâng cao mức độ an ninh của hệ thống mạng.
+
+Có rất nhiều các công cụ mạng mà bạn có thể sử dụng trong việc kiểm tra khả năng bị xâm nhập. Hầu hết các quá trình kiểm tra đều dùng ít nhất một công cụ tự động phân tích các lỗ hổng an ninh. Các công cụ này thăm dò hệ thống để xác định các dịch vụ hiện có. Thông tin lấy từ các dịch vụ này sẽ được so sánh với cơ sở dữ liệu các lỗ hổng an ninh đã được tìm thấy trước đó.
+
+Các công cụ thường được sử dụng để thực hiện các kiểm tra loại này là ISS Scanner, Cybercop, Retina, Nessus, cgiscan, CIS, ...
+
+Kiểm tra khả năng bị xâm nhập cần được thực hiện bởi những người có trách nhiệm một cách cẩn thận. Sự thiếu kiến thức và sử dụng sai cách có thể sẽ dẫn đến hậu quả nghiêm trọng không thể lường trước được.
+
+<b>ĐỐI PHÓ KHI HỆ THỐNG CỦA BẠN BỊ TẤN CÔNG</b>
+
+Gần đây, một loạt các vụ tấn công nhắm vào các site của những công ty lớn như Yahoo!, Buy.com, E-Bay, Amazon và CNN Interactive gây ra những thiệt hại vô cùng nghiêm trọng. Những tấn công này là dạng tấn công gây ngừng dịch vụ "Denial-Of-Service" mà được thiết kế để làm ngưng hoạt động của một mạng máy tính hay một website bằng cách gửi liên tục với số lượng lớn các dữ liệu tới mục tiêu tấn công khiến cho hệ thống bị tấn công bị ngừng hoạt động, điều này tương tự như hàng trăm người cùng gọi không ngừng tới 1 số điện thoại khiến nó liên tục bị bận.
+
+Trong khi không thể nào tránh được mọi nguy hiểm từ các cuộc tấn công, chúng tôi khuyên bạn một số bước mà bạn nên theo khi bạn phát hiện ra rằng hệ thống của bạn bị tấn công. Chúng tôi cũng đưa ra một số cách để giúp bạn bảo đảm tính hiệu qủa của hệ thống an ninh và những bước bạn nên làm để giảm rủi ro và có thể đối phó với những cuộc tấn công.
+
+Nếu phát hiện ra rằng hệ thống của bạn đang bị tấn công, hãy bình tĩnh. Sau đây là những bước bạn nên làm:
+
+Tập hợp 1 nhóm để đối phó với sự tấn công:
+- Nhóm này phải bao gồm những nhân viên kinh nghiệm, những người mà có thể giúp hình thành một kế hoạch hành động đối phó với sự tấn công.
+
+Dựa theo chính sách và các quy trình thực hiện về an ninh của công ty, sử dụng các bước thích hợp khi thông báo cho mọi người hay tổ chức về cuộc tấn công.
+Tìm sự giúp đỡ từ nhà cung cấp dịch vụ Internet và cơ quan phụ trách về an ninh máy tính:
+- Liên hệ nhà cung cấp dịch vụ Internet của bạn để thông báo về cuộc tấn công. Có thể nhà cung cấp dịch vụ Internet của bạn sẽ chặn đứng được cuộc tấn công.
+
+- Liên hệ cơ quan phụ trách về an ninh máy tính để thông báo về cuộc tấn công
+
+Tạm thời dùng phương thức truyền thông khác (chẳng hạn như qua điện thoại) khi trao đổi thông tin để đảm bo rằng kẻ xâm nhập không thể chặn và lấy được thông tin.
+Ghi lại tất cả các hoạt động của bạn (chẳng hạn như gọi điện thoại, thay đổi file, ...)
+Theo dõi các hệ thống quan trọng trong qúa trình bị tấn công bằng các phần mềm hay dịch vụ phát hiện sự xâm nhập (intrusion detection software/services). Điều này có thể giúp làm giảm nhẹ sự tấn công cũng như phát hiện những dấu hiệu của sự tấn công thực sự hay chỉ là sự quấy rối nhằm đánh lạc hướng sự chú ý của bạn(chẳng hạn một tấn công DoS với dụng ý làm sao lãng sự chú ý của bạn trong khi thực sự đây là một cuộc tấn công nhằm xâm nhập vào hệ thống của bạn).
+- Sao chép lại tất cả các files mà kẻ xâm nhập để lại hay thay đổi (như những đoạn mã chương trình, log file, ...)
+
+Liên hệ nhà chức trách để báo cáo về vụ tấn công.
+
+
+Những bước bạn nên làm để giảm rủi ro và đối phó với sự tấn công trong tương lai :
+
+Xây dựng và trao quyền cho nhóm đối phó với sự tấn công
+Thi hành kiểm tra an ninh và đánh giá mức độ rủi ro của hệ thống
+Cài đặt các phần mềm an toàn hệ thống phù hợp để giảm bớt rủi ro
+Nâng cao khả năng của mình về an toàn máy tính
+Các bước kiểm tra để giúp bạn bảo đảm tính hiệu quả của hệ thống an ninh
+
+Kiểm tra hệ thống an ninh mới cài đặt : chắc chắn tính đúng đắn của chính sách an ninh hiện có và cấu hình chuẩn của hệ thống.
+Kiểm tra tự động thường xuyên : để khám phá sự “viếng thăm” của những hacker hay những hành động sai trái của nhân viên trong công ty.
+Kiểm tra ngẫu nhiên: để kiểm tra chính sách an ninh và những tiêu chuẩn, hoặc kiểm tra sự hiện hữu của những lỗ hổng đã được phát hiện (chẳng hạn những lỗi được thông báo từ nhà cung cấp phần mềm)
+Kiểm tra hằng đêm những file quan trọng: để đánh giá sự toàn vẹn của những file và cơ sở dữ liệu quan trọng
+Kiểm tra các tài khoản người dùng: để phát hiện các tài khoản không sử dụng, không tồn tại, ...
+Kiểm tra định kỳ để xác định trạng thái hiện tại của hệ thống an ninh của bạn
+
+
+<b>BẠN CÓ THỂ XEM THÊM THÔNG TIN TẠI</b>
+
+Các trung tâm giúp đối phó tai nạn trên Internet
+<span class="link"> http://www.cert.org</span><span class="link"> http://www.first.org</span><span class="link"> http://ciac.llnl.gov/</span><span class="link"> http://www.cert.dfn.de/eng/csir/europe/certs.html</span>
+Một số website về an toàn máy tính
+<span class="link"> http://www.cs.purdue.edu/coast/</span><span class="link"> http://www.linuxsecurity.com</span><span class="link"> http://www.securityportal.com</span><span class="link"> http://www.tno.nl/instit/fel/intern/wkinfsec.html</span><span class="link"> http://www.icsa.net</span><span class="link"> http://www.sans.org</span><span class="link"> http://www.iss.com</span><span class="link"> http://www.securityfocus.com</span>
+Thông tin về an toàn từ nhà cung cấp
+<span class="link"> http://www.calderasystems.com/news/security/</span><span class="link"> http://www.debian.org/security/</span><span class="link"> http://www.redhat.com/cgi-bin/support/</span>
+Một số sách về an toàn máy tính
+
+Actually Useful Internet Security Techniques by Larry J. Hughes Jr.
+Applied Cryptography: Protocols, Algorithms and Source Code in C by Bruce Schneier
+Building Internet Firewall by Brent Chapman & Elizabeth D. Zwicky
+Cisco IOS Network Security by Mike Kaeo
+Firewalls and Internet Security by Bill Cheswick & Steve Bellovin
+Halting the Hacker: A practical Guide To Computer Security by Donal L. Pipkin
+Intrusion Detection: An Introduction to Internet Surveillance, Correlation, Traps, Trace Back and Response by Edward G. Amoroso
+Intrusion Detection: Network Security Beyond the Firewall by Terry Escamilla
+Linux Security by Jonh S. Flowers
+
+
+prof - hvaonline]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1546.hva#7364</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1546.hva#7364</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 01:13:37]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

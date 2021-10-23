@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tại sao sửa đổi tcp_tw_reuse không có hiệu lực"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tại sao sửa đổi tcp_tw_reuse không có hiệu lực"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Em được biết sửa đổi tcp_tw_reuse có thể cho phép hệ điều hành sử dụng được các port đang trong trạng thái time wait để listen các connect mới. Lý thuyết thì như thế mà khi kiểm tra thử thì lại không chạy được như ý
+
+Thử nghiệm của em như sau:
+1. Em dùng chương trình sock để tạo một server lắng nghe trên 9999/tcp
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sock -v -s 9999</pre>
+		</div>
+
+2. Sau đó em telnet thẳng vào server này
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>telnet 127.0.0.1 9999</pre>
+		</div>
+
+3. Capture trên loopback interface thấy có đã có gói tin đến, kết nối đã hình thành rồi
+
+4. Bước cuối em terminate server đi. Kiếm tra trạng thái port 9999:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -aon | grep 9999</pre>
+		</div>
+thì thấy port đang trong trạng thái time wait nghĩa là lúc này nếu em chạy sock tạo server trên 9999 sẽ bất thành: "Address already in use". Kiểm tra thử thì thấy đúng là bị "Address already in use" thật
+
+5. Em bèn điều chỉnh giá trị /proc/sys/net/ipv4/tcp_tw_reuse sang 1
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sysctl -w net.ipv4.tcp_tw_reuse=1
+sysctl -p</pre>
+		</div>
+Xem lại giá trị đó qua sysctl và cả file /proc/sys/net/ipv4/tcp_tw_reuse kết quả đều là 1. Yên tâm là giá trị mới đã nhận, em bèn lặp lại thử nghiệm nhưng khi chạy lại sock tạo server lắng nghe trên 9999 vẫn bị "Address already in use". Sao không giống lý thuyết gì cả ? :(
+
+Toàn bộ các tác động của em là như thế đấy ạ. Mong mọi người giúp đỡ em ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275478</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275478</link>
+				<pubDate><![CDATA[Sun, 5 May 2013 13:10:58]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ explorer88,
+
+Thật ra lý thuyết vẫn đúng, mà bạn cũng đúng. Lý do là bạn đang đòi "reuse" hai thứ khác nhau. Nếu bạn có vỉtualbox hay vmware player thì hãy thử như sau:
+
+1. Máy thật là máy A, dùng để chạy server. Máy ảo là máy B, dùng để chạy client.
+2. Không thay đổi cấu hình gì hết, thử chạy server trên máy A.
+3. Dùng client từ máy B connect vào máy A, phải đảm bảo là connect được.
+4. Ngắt kết nổi. Chạy netstat trên máy B để thấy TIME_WAIT
+5. Kill server, chạy netstat trên máy A.  Bạn có thấy status gì lạ không?
+6. Thử restart server coi được không?
+
+Túm lại, mình thử nghĩ TIME_WAIT là status gì, tại sao phải có TIME_WAIT status. Nếu mình muốn server của mình stop rồi start liền thì làm sao?
+
+khoai
+PS: Câu hỏi khá hay mà không ai thèm trả lời :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275681</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275681</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 12:02:45]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Tại vì độ trễ của Network nên tcp không thể đóng kết nối ngay lập tức để chờ những gói tin còn lại nếu có, nó phải chờ một khoảng thời gian time-out để đống kết nối hoàn toàn (CLOSED) sau khi connection đã ở tình trạng close (TIME_WAIT). 
+
+Theo như tài liệu thì net.ipv4.tcp_tw_reuse=1 sử dụng connection ở trạng thái TIME_WAIT để phục vụ new connection. Nếu vậy, 
+- B1: telnet đến một con server port 80. ===&gt;&gt;&gt; 1 connection ESTABLISHED
+- B2: ngắt kết nối. ===&gt;&gt;&gt; TIME_WAIT
+- B3: connect lại tới server port 80. ===&gt;&gt;&gt; tạo 1 connection ESTABLISHED mới và connection cũ vẫn ở trong tình trạng TIME_WAIT
+Đáng lẽ tại B3, connection TIME_WAIT phải đc sử dụng để phục vụ connection mới chứ nhỉ.
+
+:(
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275684</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275684</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 12:48:58]]> GMT</pubDate>
+				<author><![CDATA[ consoko]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>explorer88,
+
+Thật ra lý thuyết vẫn đúng, mà bạn cũng đúng. Lý do là bạn đang đòi "reuse" hai thứ khác nhau. Nếu bạn có vỉtualbox hay vmware player thì hãy thử như sau:
+
+1. Máy thật là máy A, dùng để chạy server. Máy ảo là máy B, dùng để chạy client.
+2. Không thay đổi cấu hình gì hết, thử chạy server trên máy A.
+3. Dùng client từ máy B connect vào máy A, phải đảm bảo là connect được.
+4. Ngắt kết nổi. Chạy netstat trên máy B để thấy TIME_WAIT
+5. Kill server, chạy netstat trên máy A.  Bạn có thấy status gì lạ không?
+6. Thử restart server coi được không?
+
+Túm lại, mình thử nghĩ TIME_WAIT là status gì, tại sao phải có TIME_WAIT status. Nếu mình muốn server của mình stop rồi start liền thì làm sao?
+
+khoai
+PS: Câu hỏi khá hay mà không ai thèm trả lời :(&nbsp;
+		</blockquote>
+
+Chào anh Khoai. Em lập topic đã lâu cứ tưởng không còn ai trả lời nữa. Hôm qua đi dạo thấy chủ đề này có reply thì quay lại thử nghiệm tiếp :D
+
+TIME_WAIT status là trạng thái chỉ có ở  endpoint thực hiện active close trên cơ sở hai đầu đã phải thực hiện bắt tay ba bước thành công. Tóm tắt sơ qua quá trình thì như sau: Endpoint (client hoặc server) muốn đóng kết nối. Nó gửi FIN. Lúc này endpoint rơi vào trạng thái FIN_WAIT_1 có nghĩa là đã gửi yêu cầu đóng nhưng đang đợi xác nhận từ đầu còn lại. Nếu nhận được ack từ đầu còn lại thì endpoint này sẽ chuyển tiếp sang trạng thái FIN_WAIT_2 có nghĩa là kết nối đang ở trạng thái half close. Endpoint này chắc chắn sẽ không còn gửi dữ liệu ra nữa, nó chỉ còn có nhiệm vụ nhận dữ liệu từ đầu kia và xác nhận bằng cách trả lời ack cho đầu kia. Đầu kia vẫn có thể tiếp tục nói chuyện. Khi nào đầu còn lại gửi FIN để yêu cầu đóng kết nối hoàn toàn thì endpoint này sẽ ack cho gói FIN đó  rồi chuyển sang trạng thái TIME_WAIT. 
+
+Lý do phải có TIME_WAIT vì cần đảm bảo ack gửi đi đến được đầu còn lại. Trạng thái TIME_WAIT mang nghĩa là endpoint đã gửi ack rồi và nó sẽ có nhiệm vụ đợi để đảm bảo gói ack nó gửi không bị thất lạc. Để chắc chắn được điều này, endpoint sẽ phải chờ một khoảng thời gian là 2MSL = 2*Maximum Segment Length. Quãng thời gian này kéo dài khoảng 2-4 phút. Trong quãng thời gian này nếu gói ack bị thất lạc thì đầu kia sẽ phải truyền lại FIN. Nếu không có trạng thái TIME_WAIT, endpoint này gửi ack xong rồi CLOSED luôn thì đầu kia có thể không nhận được ack sẽ gửi lại FIN đến. Tình huống lúc này sẽ diễn ra là đầu kia gửi FIN đến một socket không tồn tại (do bị đóng trước đó) hoặc endpoint này không biết FIN này thuộc về connection nào. Trong cả hai trường hợp thì endpoint đều trả lời bằng RST làm đóng luôn kết nối từ đầu kia. Như phân tích thì nếu không có trạng thái TIME_WAIT, một hành vi đóng kết nối thông thường có thể dẫn đến phát sinh gói RST.
+
+Bình thường, TCP không cho phép các hành vi sử dụng các port đang nằm trong TIME_WAIT. Để thực hiện điều này thì em tìm thấy có hai cách là: điều chỉnh giá trị tcp_tw_reuse hoặc tcp_tw_recycle. Theo đánh giá từ tài liệu thì tcp_tw_cycle gặp vấn đề trong môi trường NAT và load balancing nên tcp_tw_reuse là lựa chọn an toàn hơn. Em thử nghiệm điều chỉnh tcp_tw_recycle thì thấy có hiệu lực nhưng riêng với tcp_tw_reuse thì vẫn chưa được. Em tìm hiểu mãi rồi mà vẫn không thấy mình làm sai ở đâu :(
+
+Còn chuyện anh hỏi stop và start server thì em chưa trả lời được vì em có kiểm tra thì thấy khá ngộ là:
+Em thử chạy một telnet server trên máy thật, cho một con client kết nối từ máy ảo. Kết nối đã hình thành rồi.
+Em thử stop dịch vụ telnet thì em kiểm tra trên wireshark thì thấy server chẳng gửi ra gì cả. Kiêm tra netstat thì thấy server port 23 cũng chẳng còn
+Từ client trên máy ảo em vẫn truyền dữ liệu đi, bắt trên wireshark thấy server vẫn trả lời 
+Em thử đóng client thì thấy quá trình đóng kết nối 4 bước vẫn đầy đủ.
+Server muốn start stop bao nhiêu lần cũng được, kết nối từ client vẫn không bị mất.
+Em không hiểu được điều gì diễn ra ở cuộc kiểm tra trên nên chưa trả lời anh được ạ.
+
+Giờ đến thí nghiệm mà anh đề nghị:
+Tại bước 3, khi tắt client thì client sẽ gửi FIN, nhận ack, server cũng gửi FIN lại, client trả lời bằng ack rồi rơi vào trạng thái TIME_WAIT.
+Tại bước 4, kill server, server chết luôn, server không có phục vụ client nào từ trước khi kill nên em chẳng thấy có trạng thái gì cả.
+Tại bước 5, chạy server lại được luôn.
+
+Nhưng anh ơi, server lúc này có rơi vào trạng thái TIME_WAIT nên chạy được luôn mà. Hiện tại em vẫn chưa thể thấy được hiệu lực của tcp_tw_reuse anh ạ :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275810</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275810</link>
+				<pubDate><![CDATA[Sat, 18 May 2013 13:04:48]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">consoko wrote:</cite><br>
+		<blockquote>Tại vì độ trễ của Network nên tcp không thể đóng kết nối ngay lập tức để chờ những gói tin còn lại nếu có, nó phải chờ một khoảng thời gian time-out để đống kết nối hoàn toàn (CLOSED) sau khi connection đã ở tình trạng close (TIME_WAIT). 
+
+Theo như tài liệu thì net.ipv4.tcp_tw_reuse=1 sử dụng connection ở trạng thái TIME_WAIT để phục vụ new connection. Nếu vậy, 
+- B1: telnet đến một con server port 80. ===&gt;&gt;&gt; 1 connection ESTABLISHED
+- B2: ngắt kết nối. ===&gt;&gt;&gt; TIME_WAIT
+- B3: connect lại tới server port 80. ===&gt;&gt;&gt; tạo 1 connection ESTABLISHED mới và connection cũ vẫn ở trong tình trạng TIME_WAIT
+Đáng lẽ tại B3, connection TIME_WAIT phải đc sử dụng để phục vụ connection mới chứ nhỉ.
+
+:(
+ &nbsp;
+		</blockquote>
+
+Tại bước 3, bạn từ client lại request đến server thì OS phía client cấp cho bạn một ephemeral port ngẫu nhiên khác với port đang trong trạng thái TIME_WAIT nên bạn thấy có một connection ESTABLISHED còn connection cũ vẫn ở trong tình trạng TIME_WAIT. Bạn có thể dùng sock để ép client sử dụng một port xác định mà bạn muốn:
+sock -b&lt;client port&gt; &lt;server ip&gt; &lt;server port&gt;
+
+Download: <span class="link"> http://www.icir.org/christian/sock.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275811</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275811</link>
+				<pubDate><![CDATA[Sat, 18 May 2013 13:10:34]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Hì, ăn gian quá. Lúc đặt câu hỏi dùng chương trình "sock" còn lúc test thì dùng "telnet", vậy làm sao test được :) Nhưng mà vậy cũng được, mình dùng thực nghiệm của bạn:
+
+<p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 3, khi tắt client thì client sẽ gửi FIN, nhận ack, server cũng gửi FIN lại, client trả lời bằng ack rồi rơi vào trạng thái TIME_WAIT. &nbsp;
+		</blockquote>
+Vậy nghĩ là trạng thái TIME_WAIT là của client.
+
+<p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 4, kill server, server chết luôn, server không có phục vụ client nào từ trước khi kill nên em chẳng thấy có trạng thái gì cả. &nbsp;
+		</blockquote>
+Vậy nghĩa là server sẽ không thấy trạng thái TIME_WAIT. Mình thử start/stop nhiều lần coi server của mình có trạng thái gì không? Sau đó, mình thử dùng lại chương trình sock rồi start/stop nhiều lần coi sao.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275850</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275850</link>
+				<pubDate><![CDATA[Mon, 20 May 2013 13:19:50]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ Em tiến hành thực nghiệm trong hai trường hợp: đều set tcp_tw_reuse=1 trước khi tiến hành
+telnet server - telnet client [1] 
+sock server - sock client [2] 
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 3, khi tắt client thì client sẽ gửi FIN, nhận ack, server cũng gửi FIN lại, client trả lời bằng ack rồi rơi vào trạng thái TIME_WAIT. &nbsp;
+		</blockquote>
+Vậy nghĩ là trạng thái TIME_WAIT là của client.&nbsp;
+		</blockquote>
+[1]: telnet client không gửi FIN, ^C được gửi đi và FIN sau đó gửi bởi server, client không có TIME_WAIT
+[2]: sock client gửi FIN, client có trạng thái TIME_WAIT
+
+<p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">explorer88 wrote:</cite><br>
+		<blockquote>Tại bước 4, kill server, server chết luôn, server không có phục vụ client nào từ trước khi kill nên em chẳng thấy có trạng thái gì cả. &nbsp;
+		</blockquote>
+Vậy nghĩa là server sẽ không thấy trạng thái TIME_WAIT. Mình thử start/stop nhiều lần coi server của mình có trạng thái gì không? Sau đó, mình thử dùng lại chương trình sock rồi start/stop nhiều lần coi sao.&nbsp;
+		</blockquote>
+[1]: Vì gửi FIN nên server có trạng thái TIME_WAIT, nhưng server đồng thời vẫn LISTEN, kill server, không còn trạng thái LISTEN nhưng vẫn còn TIME_WAIT (Ở trạng thái TIME_WAIT, socket đó không có gắn với một process  nào cả nên không kill được), start server, server lại LISTEN, TIME_WAIT của socket cũ vẫn còn đó, stop server thì mất LISTEN, còn TIME_WAIT thì cứ hết 2MSL thì biến mất. Lúc đầu em cứ tưởng đây là tác động của tcp_tw_reuse nhưng kiểm tra nữa thì tcp_tw_reuse=0 hay =1 thì case này vẫn thế. 
+
+[2]: Vì không gửi FIN nên server không có trạng thái TIME_WAIT, kill sock server, không có trạng thái gì hết, start sock server, server lại LISTEN, stop không có trạng thái gì. 
+
+Riêng với sock server em thử chạy với tham số -A (SO_REUSEADDR) thì tính năng reuse được thể hiện (cũng bất kể tcp_tw_reuse =0 hay =1). Khi ấy kiểm tra thì em thấy sock server vừa LISTEN vừa có socket cũ ở trạng thái TIME_WAIT như trong case với telnet server.
+
+Sau cuộc kiểm tra, em thấy cư xử của telnet server hơi lạ, cần xem xét thêm, còn hiệu lực của tcp_tw_reuse em vẫn chẳng thấy đâu cả :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275912</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275912</link>
+				<pubDate><![CDATA[Wed, 22 May 2013 06:27:00]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Tại sao sửa đổi tcp_tw_reuse không có hiệu lực</title>
+				<description><![CDATA[ explorer88,
+
+Đến đây thì khá rõ rồi:
+
+1. Chạy sock sever với -A (SO_REUSEADDR) thì có thể bind lại tại port cũ. Nếu không có thì không bind được. Đó là một feature của hệ điều hành. SO_REUSEADDR sẽ cho phép socket có thể được bind bởi nhiều process. Mình có thể mở rộng thêm coi cách hoạt động của nó như thế nào (hai ba process cùng binh một port được không? Cái nào nhận được dữ liệu, vân vân)
+
+2. tcp_tw_reuse là cho phép <b>client</b> có thể sử dụng lại một port (thường là high-port). tcp_tw_reuse khác với SO_REUSEADDR. Thường thì mình không nên để tcp_tw_reuse=1 trừ trường hợp chắc chắn cần thiết. Khi nào thì cần: Nếu máy của mình liên tục tạo và ngắt kết nối, đến nổi hết port để dùng thì có thể sử dụng tcp_tw_reuse.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44689.hva#275951</link>
+				<pubDate><![CDATA[Thu, 23 May 2013 12:31:48]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+	</channel>
+</rss>

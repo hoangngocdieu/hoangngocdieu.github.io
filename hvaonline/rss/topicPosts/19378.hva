@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cẩn thận khi chỉnh sửa file sudoers"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cẩn thận khi chỉnh sửa file sudoers"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ Trước tiên các bạn hãy đọc bài này của anh conmale để biết về sudo <span class="link"> http://hvaonline.net/hvaonline/posts/list/17027.hva</span>
+Bài viết này tôi sẽ nói về điểm thứ 2 mà anh conmale đã đề cập đến đó là  ấn định cụ thể từng lệnh được quyền chạy sudo và điều tra kỹ lưỡng nội dung của chúng.Trước hết để 1 user có thể chạy lệnh sudo thì phải đưa user đó vào file sudoers.Để mở file sudoers dùng lệnh
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>visudo -f /etc/sudoers</pre>
+		</div> Bạn nên dùng visudo để chỉnh sửa vì khi chỉnh sửa chúng ta save lại nếu có lỗi cú pháp xảy ra trong sudoers nó sẽ thông báo .Nếu xảy ra lỗi cú pháp trong sudoers thì lệnh sudo sẽ không dùng được
+Nếu ta đưa user  pearl vào với lệnh này
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pearl ALL=&#40;ALL&#41; ALL</pre>
+		</div>
+pearl có thể chạy tất cả các lệnh như là root hoặc user khác.Điều này rất nguy hiểm vì pearl có thể trở thành root bắng cách
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo su root</pre>
+		</div> Nó sẽ yêu cầu đánh password nhưng password ở đây là password của user pearl.Suýt quên,khi bạn chạy lệnh sudo lần đầu nó sẽ hỏi bạn password của bạn và sau 1 khoảng thời gian nhất định nó sẽ hỏi lại
+Bây giờ muốn user pearl chỉ được quyền chạy 1 lệnh chẳng hạn như kill thì
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pearl ALL=/bin/kill</pre>
+		</div> 
+Trong file sudoers bạn sẽ thấy cmd_ailas,Đây là các biệt danh lệnh nó chứa tập hợp các lệnh.VD:Cmd_alias DELEGATING=/bin/chmod,bin/chown,/bin/chgrp 
+Muốn user pearl chỉ có quyền chạy chạy các lệnh như /bin/chmod,/bin/chown./bin/chgrp thì
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pearl ALL=DELEGATING</pre>
+		</div>
+Muốn user pearl được chạy tất cả  các lệnh nhưng không được chạy lệnh su thì có 2 cách:
+cách 1:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pearl ALL=ALL, !/bin/su</pre>
+		</div>
+nhưng cách với cách này user pearl bằng cách copy lệnh su sang 1 nơi khác
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp /bin/su /</pre>
+		</div>
+Sau đó<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo /su</pre>
+		</div>
+vậy là user pearl đã trở thành root
+Cách 2: Dùng NOEXEC.
+Máy tôi không hỗ trợ NOEXEC nên chưa có dịp thử nghiệm thằng này.Các bạn có thể vào trang man sudoers để đọc về nó
+ Khi đưa 1 user vào trong file sudoers thì không nên cho user đó chạy các lệnh mà chỉ có root mới chạy được như chmod,chgrp,chown,kill,...và đặc biệt là lệnh su
+                                                                                                         Tác giả:pearltran
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#115493</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#115493</link>
+				<pubDate><![CDATA[Tue, 19 Feb 2008 12:57:19]]> GMT</pubDate>
+				<author><![CDATA[ pearltran]]></author>
+			</item>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">pearltran wrote:</cite><br>
+		<blockquote>
+...
+Cách 2: Dùng NOEXEC.
+Máy tôi không hỗ trợ NOEXEC nên chưa có dịp thử nghiệm thằng này.Các bạn có thể vào trang man sudo để đọc về nó
+...
+&nbsp;
+		</blockquote>
+Trong <b>man sudoers</b> có đoạn này:
+<blockquote>
+If sudo has been compiled with noexec support and the underlying operating system supports it, the NOEXEC tag can be used to prevent a dynamically-linked executable from running further commands itself.
+
+       In the following example, user aaron may run /usr/bin/more and /usr/bin/vi but shell escapes will be disabled.
+
+        aaron  shanty = NOEXEC: /usr/bin/more, /usr/bin/vi
+&nbsp;
+		</blockquote>
+<i><u>Tạm dịch:</u></i>
+Nếu sudo được biên dịch hỗ trợ noexec và hệ điều hành cũng support nó, NOEXEC có thể được dùng để ngăn cản thi hành một liên kết động ngoài bản thân những lệnh đang chạy.
+
+Giả sử trong <i>/etc/sudoers</i> tớ để thế này:
+<blockquote>
+quanta ALL=(ALL) ALL, NOEXEC: /bin/su, &lt;other_command&gt;
+&nbsp;
+		</blockquote>
+tức là user <b>quanta</b> vẫn có thể dùng <font color='orange'>$ su</font> bình thường nhưng nếu thử <font color='orange'>$ sudo su root</font> thì sẽ "bị" báo cáo ngay:
+<blockquote>su: /bin/bash: Permission denied&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#115624</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#115624</link>
+				<pubDate><![CDATA[Wed, 20 Feb 2008 00:19:39]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ Nếu đã cấp cho user đó quyền chạy mọi cái thì việc chuyển sang root có ích gì nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116486</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116486</link>
+				<pubDate><![CDATA[Sun, 24 Feb 2008 17:39:42]]> GMT</pubDate>
+				<author><![CDATA[ lihavim]]></author>
+			</item>
+			<item>
+				<title>Re: Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ Thực ra nếu dùng sudo thì tui thấy trước 01 ưu điểm: sudo sẽ lưu lại tất cả các command đi kèm theo nó (dĩ nhiên là ko chơi với sudo su root).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116584</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116584</link>
+				<pubDate><![CDATA[Mon, 25 Feb 2008 12:58:56]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">pearltran wrote:</cite><br>
+		<blockquote>
+...
+Cách 2: Dùng NOEXEC.
+Máy tôi không hỗ trợ NOEXEC nên chưa có dịp thử nghiệm thằng này.Các bạn có thể vào trang man sudo để đọc về nó
+...
+&nbsp;
+		</blockquote>
+Trong <b>man sudoers</b> có đoạn này:
+<blockquote>
+If sudo has been compiled with noexec support and the underlying operating system supports it, the NOEXEC tag can be used to prevent a dynamically-linked executable from running further commands itself.
+
+       In the following example, user aaron may run /usr/bin/more and /usr/bin/vi but shell escapes will be disabled.
+
+        aaron  shanty = NOEXEC: /usr/bin/more, /usr/bin/vi
+&nbsp;
+		</blockquote>
+<i><u>Tạm dịch:</u></i>
+Nếu sudo được biên dịch hỗ trợ noexec và hệ điều hành cũng support nó, NOEXEC có thể được dùng để ngăn cản thi hành một liên kết động ngoài bản thân những lệnh đang chạy.
+
+Giả sử trong <i>/etc/sudoers</i> tớ để thế này:
+<blockquote>
+quanta ALL=(ALL) ALL, NOEXEC: /bin/su, &lt;other_command&gt;
+&nbsp;
+		</blockquote>
+tức là user <b>quanta</b> vẫn có thể dùng <font color='orange'>$ su</font> bình thường nhưng nếu thử <font color='orange'>$ sudo su root</font> thì sẽ "bị" báo cáo ngay:
+<blockquote>su: /bin/bash: Permission denied&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Anh quanta  thử nghiệm trên distro nào vậy?em vừa dùng cách trên Fedora 6 thì user vẫn có thể chạy các lệnh không cho chạy bằng cách
+
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp /bin/su ./Desktop</pre>
+		</div>
+Sau đó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo ./Desktop/su root</pre>
+		</div>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116736</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116736</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2008 11:31:14]]> GMT</pubDate>
+				<author><![CDATA[ pearltran]]></author>
+			</item>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">pearltran wrote:</cite><br>
+		<blockquote>
+Anh quanta  thử nghiệm trên distro nào vậy?em vừa dùng cách trên Fedora 6 thì user vẫn có thể chạy các lệnh không cho chạy bằng cách
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp /bin/su ./Desktop</pre>
+		</div>
+Sau đó
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo ./Desktop/su root</pre>
+		</div>
+&nbsp;
+		</blockquote>
+Ừ nhỉ, cũng giống cách 1 của bạn, vẫn chạy được khi copy lệnh đó sang chỗ khác. Có lẽ cần đọc lại <b>man sudoers</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116738</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#116738</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2008 11:45:11]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ Liên quan đến vấn đề này, xin mời mọi người cùng thảo luận về <b>wheel</b> group. 
+Khi muốn cho phép 1 user có thể thực hiện lệnh với quyền root, bạn sẽ:
++ Thêm user đó vào <b>wheel</b> group và uncomment dòng  <b># %wheel ALL=(ALL)      ALL</b>?
++ Hay là thêm <b>&lt;user_name&gt; ALL=(ALL) ALL</b> vào <b>/etc/sudoers</b>?
+
+Cuối cùng, bạn làm thế nào để ngăn cản người dùng thực hiện: <b>$ sudo su - root</b>?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#129152</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#129152</link>
+				<pubDate><![CDATA[Mon, 5 May 2008 23:53:54]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ Anh quanta,
+
+Anh cản  sudo su - (sử dụng NOEXEC) thì user chỉ việc copy su thành một file khác rồi execute mà thôi. Tốt nhất là chỉ nên liệt kê <b>một số</b> lệnh mà user được phép sudo, và tất nhiên là phải sử dụng absolute path.
+
+Sử dụng group wheel có lợi sau:
+
+- Anh không cần chỉnh sudoers, mà chỉ cần add user vào group wheel là được.
+- Group wheel có thể chứa một nhóm super-user (hoặc admin) mà anh tin tưởng, và quản lý theo cả nhóm
+
+Bất lợi khi sử dụng group wheel là mình không thể chỉnh cụ thể một user có thể làm gì, trong khi các user khác trong group không thể. Tùy theo nhu cầu em nghĩ ứng dụng group wheel sẽ có điểm lợi/hại khác nhau.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#129192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#129192</link>
+				<pubDate><![CDATA[Tue, 6 May 2008 07:30:54]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ xin hỏi đối với ubuntu thì phần wheel group hoặc tính năng như wheel group đươc thực hiện như thế nào. Mới tìm hiểu về cái này mong mọi người giúp. thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#195707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#195707</link>
+				<pubDate><![CDATA[Thu, 15 Oct 2009 18:47:11]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Cẩn thận khi chỉnh sửa file sudoers</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>xin hỏi đối với ubuntu thì phần wheel group hoặc tính năng như wheel group đươc thực hiện như thế nào. Mới tìm hiểu về cái này mong mọi người giúp. thân&nbsp;
+		</blockquote>
+Bác tham khảo cái <span class="link"> http://www.kernel-panic.org/wiki/GroupWheel</span>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/19378.hva#195710</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/19378.hva#195710</link>
+				<pubDate><![CDATA[Thu, 15 Oct 2009 19:18:05]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

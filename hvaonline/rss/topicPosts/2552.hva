@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm mail server với Postfix - Phần 4"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm mail server với Postfix - Phần 4"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm mail server với Postfix - Phần 4</title>
+				<description><![CDATA[ <b>Postfix + amavisd-new + ClamAV</b>
+
+
+<b>Nội dung
+</b>
+   1. Giới thiệu
+   2. Cài đặt, cấu hình
+   3. Tham khảo
+
+<b>Giới thiệu</b>
+
+<b>ClamAV</b>:<span class="link"> http://www.clamav.net/</span>
+<b>amavisd-new</b>:<span class="link"> http://www.ijs.si/software/amavisd/</span>
+<b>Postfix</b>:<span class="link"> http://www.postfix.org/</span>
+
+Bắt đầu viết: tháng 5 năm 2003.
+Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.
+
+<b>Cài đặt và cấu hình
+</b>
+   1. Phần 1: Cài đặt, cấu hình Clam AntiVirus
+          * tải rpm và cài đặt
+
+            // tải rpm cho FC2
+            // rpm cho FC phiên bản khác: tìm ở<span class="link"> http://crash.fce.vutbr.cz/crash-hat/</span>
+           <b> $ wget </b>http://crash.fce.vutbr.cz/crash-hat/2/clamav/clamav-version.i386.rpm
+
+            // cài đặt
+            <b># rpm -ivh clamav-version.i386.rpm</b>
+
+          * Cấu hình: sửa đổi 2 file /etc/freshclam.conf và /etc/clamav.conf
+            Chú ý: phiên bản trước 0.80 : clamd.conf, từ 0.80: clamav.conf
+
+            file <b>/etc/freshclam.conf</b> (tự động cập nhật thông tin virus)
+
+  <blockquote>              ##
+                ## ví dụ về freshclam.conf
+                ## đọc clamd.conf(5) manual để biết cách cấu hình
+                ##
+
+                # nơi giữ thông tin virus
+                DatabaseDirectory /var/lib/clamav
+
+                # vị trí log
+                UpdateLogFile /var/log/clamav/freshclam.log
+
+                # thông tin pid
+                PidFile /var/run/clamav/freshclam.pid
+
+                # chạy freshclam bằng tài khoản sau đây
+                DatabaseOwner clamav
+
+                # dùng DNS TXT record để xác định phiên bản
+                DNSDatabaseInfo current.cvd.clamav.net
+
+                # địa chỉ cập nhật thông tin virus (round-robin DNS)
+                # XY là mã quốc gia, xem<span class="link"> http://www.iana.org/cctld/cctld-whois.htm</span>
+                DatabaseMirror db.XY.clamav.net
+                #DatabaseMirror database.clamav.net
+
+                # thử làm lại, trường hợp không kết nối được
+                MaxAttempts 3
+
+                # cập nhật thông tin virus, 12 lần/ngày (every 2 hour)
+                Checks 12
+
+                # Nếu dùng proxy
+                #HTTPProxyServer myproxy.com
+                #HTTPProxyPort 1234
+                #HTTPProxyUsername myusername
+                #HTTPProxyPassword mypass
+
+                # RELOAD clamd nếu có thông tin virus mới
+                NotifyClamd /etc/clamd.conf&nbsp;
+		</blockquote>
+                
+
+            file /etc/clamav.conf (chương trình chính)
+
+   <blockquote>         ##
+            ## ví dụ về clamav.conf
+            ## đọc clamd.conf(5) manual để biết cách cấu hình
+            ##
+
+            # vị trí log
+            LogFile /var/log/clamav/clamd.log
+
+            # giới hạn cỡ log file, mặc định là 1 MB.
+            # 0: không giới hạn
+            LogFileMaxSize 0
+
+            # dùng system logger
+            LogSyslog
+
+            # thông tin pid
+            PidFile /var/run/clamav/clamd.pid
+
+            # vùng tạm
+            TemporaryDirectory /tmp
+
+            # nơi giữ thông tin virus
+            DatabaseDirectory /var/lib/clamav
+
+            # chỉ nhận yêu cầu từ cổng 3310 của localhost
+            TCPSocket 3310
+            TCPAddr 127.0.0.1&nbsp;
+		</blockquote>
+
+            # những option khác: có thể dùng giá trị mặc định
+                
+
+<b>          * khởi động ClamAV</b>
+
+  <b>              # chkconfig --level 3 freshclam on
+                # chkconfig --level 3 clamd on
+
+                # /etc/init.d/freshclam start
+                # /etc/init.d/clamd start
+                </b>
+
+   2. Phần 2: Cài đặt, cấu hình amavisd-new
+   3. Phần 3: Cấu hình Postfix
+   4. Phần 4: Kiểm tra hoạt động
+
+<b>Tham khảo</b>
+
+   1. /usr/share/doc/postfix-version/README_FILES/FILTER_README
+   2.<span class="link"> http://www.ijs.si/software/amavisd/README.postfix</span>
+   3.<span class="link"> http://www.eicar.org/anti_virus_test_file.htm</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2552.hva#13866</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2552.hva#13866</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 15:28:45]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 4</title>
+				<description><![CDATA[ Hi anh, ta đã có  spamassassin vậy cài chi cái amavisd-new nay nữa.
+Không biết chức năng chính của cái amavisd-new này để làm gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2552.hva#219854</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2552.hva#219854</link>
+				<pubDate><![CDATA[Sun, 5 Sep 2010 04:40:08]]> GMT</pubDate>
+				<author><![CDATA[ hmtaccess]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Một Số Phương Pháp Phòng Chống Tấn Công"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Một Số Phương Pháp Phòng Chống Tấn Công"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Một Số Phương Pháp Phòng Chống Tấn Công</title>
+				<description><![CDATA[ <b>1. Vấn đề Eavesdropping và Session Replay:</b>
+Khi bạn truyền dữ liệu giữa 2 máy tính trên Internet thì có thể bị nghe trộm (Eavesdropping), và bị kẻ xấu đổi nội dung packet rồi gởi lại (Session Replay). Cách phòng chống hiệu quả nhất là sử dụng IPSec VPN. Ngoài ra trước đây giải pháp được sử dụng nhiều là SSL.
+
+<b>2. Chống lại Unauthorized Access, Data Manipulation:</b>
+Những trường hợp sau các bạn cần filter ở interface kết nối với Internet:
+- Packet đi vào có source IP address là Private address
+- Packet đi vào có source IP address là Internal address
+- Packet đi vào có destination IP address không thuộc vùng DMZ
+- Packet đi vào có IP thuộc dãy loopback
+- Packet đi vào thuộc loại BOOTP, DHCP, TFTP, Traceroute
+
+Ví dụ sau đây cấm Internal (trường hợp này cũng là private) address đi vào:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>NTCRouter&#40;config&#41;#access-list 110 deny ip 172.16.1.0 0.0.0.255 any
+NTCRouter&#40;config&#41;#interface s0/0
+NTCRouter&#40;config-if&#41;#access-group 110 in</pre>
+		</div>
+
+Ví dụ sau đây không cho phép 1 kết nối được tạo từ bên ngoài:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Lab_B&#40;config&#41;#access-list 110 deny tcp any any established
+Lab_B&#40;config&#41;#access-list 110 permit tcp any any
+Lab_B&#40;config&#41;#interface s0/0
+Lab_B&#40;config-if&#41;#access-group 110 in</pre>
+		</div>
+
+3. Chống lại Fighting Rerouting Attacks:Đây là trường hợp có 1 router lạ gởi routing update với thông tin không chính xác nhằm mục tiêu làm router của bạn học các con đường sai. Router này có thể nằm bên trong mạng, cũng có thể nằm bên ngoài mạng, hoặc là 1 máy tính chạy giao thức định tuyến.
+Cách phòng chống là tắt các giao thức định tuyến trên các interface không cần thiết (ví dụ interface quay ra ngoài Internet) và cấu hình chứng thực routing protocol cho các Interface khác. Các giao thức hỗ trợ chứng thực:
+CODERIPv2 (Routing Information Protocol version 2)
+OSPF (Open Shortest Path First)
+BGP (Border Gateway Protocol)
+EIGRP (Enhanced Internet Gateway Routing Protocol)
+
+Ví dụ về chứng thực EIGRP:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>NTCRouter#conf t
+NTCRouter&#40;config&#41;#router eigrp 200
+NTCRouter&#40;config-router&#41;#network 10.0.0.0
+NTCRouter&#40;config-router&#41;#network 172.16.0.0
+NTCRouter&#40;config&#41;#exit
+NTCRouter&#40;config&#41;#int s0/0
+NTCRouter&#40;config-if&#41;#ip authentication mode eigrp 100 md5
+NTCRouter&#40;config-if&#41;#ip authentication key-chain eigrp 100 ntc
+NTCRouter&#40;config-if&#41;#exit
+NTCRouter&#40;config&#41;#key chain ntc
+NTCRouter&#40;config-key&#41;#key 1
+NTCRouter&#40;config-key&#41;#key-string 123456789
+NTCRouter&#40;config-key&#41;#^Z
+NTCRouter#</pre>
+		</div>
+
+<b>4. Chống lại Denial of Service Attacks</b>
+Phần này đề cập đến kiểu tấn công SYN
+- Attacker gởi packet SYN để tạo kết nối
+- Máy bên trong mạng (Victim) gởi SYN-ACK và tạo buffer để chờ Attacker gởi dữ liệu
+- Attacker không trả lời nữa, mà mở 1 kết nối SYN
+Cứ như vậy Attacker sẽ mở rất nhiều kết nối với chỉ 1 packet SYN, làm cho Victim hết bộ nhớ và treo.
+
+Các bạn sử dụng chức năng TCP Intercept để tránh tình trạng này. TCP Intercept có 2 mode:
+- Intercept mode: nếu Attacker gởi packet SYN thì router rìa sẽ giữ packet này lại trả lời hộ. Nếu Attacker trả lời thì đây không phải là attacker, lúc này router gởi packet SYN cho máy bên trong vẫn chưa muộn, và dĩ nhiên cần giữ lại packet đầu tiên mà bên trong trả lời.
+Còn ngược, Attacker không nói kô rằng thì rõ ràng không nên tiếp tục chơi với nó nữa, ghi nhớ IP này để deny nó.
+
+- Monitor mode: nếu Attacker gởi packet SYN thì router rìa vẫn chuyển cho Victim, nhưng theo dõi kết nối này. Nếu nhận thấy Attacker không trả lời mà lại có nhiều kết nối khác được mở giống như vậy nữa thì router biết rằng máy bên trong đang bị tấn công DoS SYN Attack, nó sẽ ngừng ngay các packet tiếp theo.
+
+Sau đây là ví dụ về việc bảo vệ server 172.16.10.25 khỏi SYN Attack
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>NTCRouter#config t
+NTCRouter&#40;config&#41;#access-list 151 permit tcp any host 172.16.10.25
+NTCRouter&#40;config&#41;#ip tcp intercept list 151
+NTCRouter&#40;config&#41;#ip tcp intercept mode intercept
+NTCRouter&#40;config&#41;#^Z
+NTCRouter#</pre>
+		</div>(Nguồn : www.avnonline.org)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/990.hva#3972</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/990.hva#3972</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 20:04:27]]> GMT</pubDate>
+				<author><![CDATA[ hung1910]]></author>
+			</item>
+	</channel>
+</rss>

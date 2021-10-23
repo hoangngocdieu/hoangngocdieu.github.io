@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tìm lỗi và khai thác"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tìm lỗi và khai thác"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tìm lỗi và khai thác</title>
+				<description><![CDATA[ Hello các bạn,
+
+Topic này tập trung vào việc tìm lỗi và khai thác lỗi trong số chương trình hay đoạn mã mà tớ tạo ra hay là góp nhặt được. Mở hàng là một cái chương trình sau:
+
+<blockquote>
+Exploitme1: one null byte to rulez them all! 
+
+- Yêu cầu: chỉ ra lỗi, crash chương trình, viết mã khai thác để trả về một shell, viết phân tích đầy đủ cách làm.
+
+- Mức độ: không dễ xơi :-p
+
+- Thông tin: gcc &lt; 4, không có ASLR, executable stack. Bạn nào khai thác được ngay cả khi có ASLR thì quá tốt.
+
+&nbsp;
+		</blockquote>
+
+--m
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155938</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155938</link>
+				<pubDate><![CDATA[Mon, 20 Oct 2008 16:43:49]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ Hình như bản thân executable bị lỗi segfault thì phải.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155967</link>
+				<pubDate><![CDATA[Mon, 20 Oct 2008 21:12:49]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ @StarGhost: yup :-p. giờ làm sao tận dụng nó để ra cái shell?
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155968</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#155968</link>
+				<pubDate><![CDATA[Mon, 20 Oct 2008 21:20:34]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ Tớ là newbie nên còn đang mày mò nghịch ngợm. Có phải source đại khái là thế này không?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int doit&#40;char *str&#41;
+{
+	strcpy&#40;&#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;, str&#41;;
+	printf&#40;"%s\n", &#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;&#41;;
+	return 0;
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+	if &#40;strlen&#40;argv&#91;1&#93;&#41; &gt; 8&#41;
+		*&#40;argv&#91;1&#93; + 8&#41; = 0;
+	doit&#40;argv&#91;1&#93;&#41;;
+	return 0;
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156009</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156009</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 03:11:09]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>Tớ là newbie nên còn đang mày mò nghịch ngợm. Có phải source đại khái là thế này không?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int doit&#40;char *str&#41;
+{
+	strcpy&#40;&#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;, str&#41;;
+	printf&#40;"%s\n", &#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;&#41;;
+	return 0;
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+	if &#40;strlen&#40;argv&#91;1&#93;&#41; &gt; 8&#41;
+		*&#40;argv&#91;1&#93; + 8&#41; = 0;
+	doit&#40;argv&#91;1&#93;&#41;;
+	return 0;
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+@StarGhost: Cậu reverse tương đối chuẩn, tuy nhiên theo mình thì ko có return 0 ở hàm doit.
+Anyway, cậu đã reverse code được rồi thì chạy dùm tớ cái này và giải thích hộ tớ
+Máy tớ là
+<blockquote>$ gdb ./exploitme1 
+GNU gdb 6.6-debian
+Copyright (C) 2006 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "i486-linux-gnu"...
+Using host libthread_db library "/lib/tls/i686/cmov/libthread_db.so.1".
+(gdb) <font color='orange'>run `python -c 'print "AAAA" + "BBBB" + "C"*497'`</font>
+Starting program: /home/Cognac/exploitme1 `python -c 'print "AAAA" + "BBBB" + "C"*497'`
+AAAABBBB
+
+Program received signal SIGSEGV, Segmentation fault.
+<font color='red'>0x42424242</font> in ?? ()&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156019</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156019</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 04:28:15]]> GMT</pubDate>
+				<author><![CDATA[ Cognac]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ @SG: tớ kô biết, tớ kô có source code. Tớ nghĩ không cần source code làm gì.
+
+@Cognac: vậy là gần tới rồi đó. Nhờ bạn giải thích sao mà nó lại như thế?
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156052</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156052</link>
+				<pubDate><![CDATA[Tue, 21 Oct 2008 11:49:37]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>Tớ là newbie nên còn đang mày mò nghịch ngợm. Có phải source đại khái là thế này không?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int doit&#40;char *str&#41;
+{
+	strcpy&#40;&#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;, str&#41;;
+	printf&#40;"%s\n", &#40;char *&#41;&#40;&#40;int&#41;&str - 16&#41;&#41;;
+	return 0;
+}
+
+int main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+	if &#40;strlen&#40;argv&#91;1&#93;&#41; &gt; 8&#41;
+		*&#40;argv&#91;1&#93; + 8&#41; = 0;
+	doit&#40;argv&#91;1&#93;&#41;;
+	return 0;
+}</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Hi bác StarGhost, không biết bác có thể trình bày lại toàn bộ tiến trình mà bác đã reverse được code trên & 1 chút giải thích tại sao bác lại nhận biết được "bản thân executable bị lỗi segfault" không ? Em là newbie nhưng cũng rất hứng thú với topic này mặc dù trình độ còn rất kém  ;) 
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156190</link>
+				<pubDate><![CDATA[Wed, 22 Oct 2008 15:07:51]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ StarGhost,
+
+Cái strcpy trong doit() nhìn...ghê quá. Làm sao truy cập được địa chỉ của str - 16 được? Mà giống như Cognac nói, cái doit không có return 0 đâu. Còn cái main có return 0 không? 
+
+Anh mrro,
+
+thanks anh, cái này hay lắm. Đêm nay mới rãnh chút để xem sơ qua. Đúng là exploit không phải dễ.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156298</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156298</link>
+				<pubDate><![CDATA[Thu, 23 Oct 2008 12:37:22]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ @Mr.Khoai: cái này nói chính xác là exploit thì dễ nhưng hiểu được lý do tại sao exploit được thì không đơn giản. như Cognac làm đó, chỉ cần nhắm mắt quăng dữ liệu vào, thấy chừng nào mà kiểm soát được EIP thì coi như xong. nhưng nếu muốn trả lời câu hỏi "tại sao dữ liệu nhập vào như thế thì lại kiểm soát được EIP" thì phải hiểu rõ stack memory layout. 
+
+đương nhiên trong *thực hành*, nhiều lúc chẳng cần hiểu tại sao lại exploit được, miễn cứ chạy được shellcode là ngon rồi. dẫu vậy cá nhân tớ, và tớ nghĩ là nhiều bạn ở đây cũng đồng tình, luôn muốn hiểu rõ chuyện gì đã xảy ra.
+
+tớ đưa ra cái exploitme1 này để các bạn có dịp rà soát lại xem mình có thực sự hiểu rõ stack memory layout của một process trên linux/x86 hay không (điều mà tớ nghĩ rằng là tối cần thiết nếu muốn đào sâu vào mảng đề tài tìm lỗi và khai thác lỗi). 
+
+lúc đầu tớ cũng nghĩ là tớ hiểu rồi, nhưng khi đụng phải cái exploitme1 này, tớ mới thấy là có nhiều chỗ tớ chưa rõ.
+
+--m
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156315</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156315</link>
+				<pubDate><![CDATA[Thu, 23 Oct 2008 13:56:39]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ à à, cái return 0 của doit thì là do tớ quen tay nên cho vào thôi, chứ đúng ra là không có. Nhưng cái này cũng hơi bất bình thường, không biết tác giả viết cái executable này có inline asm vào không nhỉ?
+
+@rickb: tớ là newbie nên có biết gì đâu là tiến trình này nọ, sẵn dissamble được asm rồi thì từ đó mà ra thôi. Còn tại sao bị lỗi segfault thì như bạn thấy cách dùng strcpy trong doit() là quá rõ rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156352</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156352</link>
+				<pubDate><![CDATA[Thu, 23 Oct 2008 17:54:20]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ Hờ hờ, theo phân tích "mò" của khoai thì thấy như sau:
+
+1. main() đã "cắt" bỏ phần input string, đặt argv[1][8]=NULL. Vậy mình không thể overflow nhiều đến mức có thể overwrite return address trong doit,  hoặc trong main.
+
+2. Lỗi tạo ra seqfault chính là do argv[1] có thể có tối đa 8 chars (bằng cách kiểm tra, và chop đi phần thừa). Nhưng khi strcpy copy 8 bytes này, strcpy luôn tiện "terminate" cái buffer trong doit() bằng một cái NULL byte nữa. Thành ra saved EBP bị overflow một byte.
+
+3. Overflow cái saved EBP của doit thì sau khi doit() xong rồi, main vẫn tiếp tục được. Nhưng register ebp của main đã bị thay đổi. Chính điểm này giúp mình có thể thay đổi return address của main() khi main() return.
+
+4. EBP chỉ bị overwrite một byte cuối thành 0x00, nghĩa là nếu saved EBP của doit() có dạng 0xbffffcxx, sau khi doit() return, EBP của main() sẽ là 0xbffffc00. Mình phải input một string thiệt dài để cái address ngay trên 0xbffffc00 là 0xbffffc04 chứa address của shellcode.
+
+Uh...trên lý thuyết khoai hiểu là thế, nhưng chưa có exploit được. 
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156439</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156439</link>
+				<pubDate><![CDATA[Fri, 24 Oct 2008 12:17:59]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ @Mr.Khoai: vậy là gần ra rồi đó :-p. $EBP của main sẽ bị lệch tối đa là 255 byte. Điểm mấu chốt thì Khoai đã chỉ ra, $EBP mới phải trỏ đến chỗ nào của stack mà trên đó một slot có address của shellcode. Giờ chỉ cần nhìn lại stack, xem những slot nào mình kiểm soát được giá trị của nó, và cố gắng làm sao cho $EBP trỏ về đó là xong.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156452</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#156452</link>
+				<pubDate><![CDATA[Fri, 24 Oct 2008 14:54:09]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ ơ hai tuần rồi vẫn chưa bạn nào làm xong àh? nhanh nhanh lên đi, để tớ còn ra exploitme2 nữa chứ :-p.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#157547</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#157547</link>
+				<pubDate><![CDATA[Mon, 3 Nov 2008 20:40:04]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ hi all,
+challenge này của mrro khá thú vị. Nói thiệt là trước giờ exploit bof rất ngại khi đụng vào "<font color='orange'>off-by-one</font>" hay đại loại là "<font color='orange'>frame pointer overfow</font>" gì đấy. Vẽ minh họa stack để exploit thì dễ, nhưng làm sao cho cái input để khớp vào esp khi RET lại là cả một vấn đề (hay tại tui chuối :D).
+Vế nguyên tắc như bạn mrkhoai giải thích, overflow đc byte cuối của EBP trong function doit, nó sẽ ảnh hưởng đến main khi epilog của main thực thi. Bản thân EBP trong doit được gọi là <font color='orange'>save old frame pointer</font> (<font color='orange'>frame pointer của main</font>).
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>epilog của main:
+0x0804840c &lt;main+78&gt;:   leave  
+0x0804840d &lt;main+79&gt;:   ret</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>leave = 
+mov %ebp&#40;overwrite 1 byte&#41;, %esp
+pop ebp
+//--&gt;%esp = %esp + 4
+ret=
+pop %esp
+jmp &#91;%esp&#93;</pre>
+		</div>
+Vì vậy việc cần làm là tính toán sau cho cái địa chỉ destination của 
+<font color='orange'>strcpy((char *)((int)&str - 16), str)</font> trong doit trỏ đúng vào cái <font color='orange'>%esp </font>của main khi RET.
+
+Tui lười quá, code tạm một đoạn tạm gọi là off-by-one fuzzing
+
+<blockquote>$cat off-by-one.sh
+#!/bin/bash
+ LIMIT=600
+ TEST1="run \`python -c 'print \"A\"*"
+ TEST2="'\`"
+
+ for ((i=9; i&lt;=LIMIT; i++))
+  do
+   echo $TEST1$i$TEST2 &gt;&gt;list
+   echo "if \$eip == 0x41414141" &gt;&gt;list
+   echo " echo AHHHHHHHHHHHHHHHHHHH! Goodjob! Magic input="$i &gt;&gt;list
+   echo " quit" &gt;&gt;list
+   echo "end" &gt;&gt;list
+ done
+ exit
+&nbsp;
+		</blockquote>
+
+đoạn script trên tạo ra một file "<font color='orange'>list</font>" có nội dung đại loại như sau:
+<blockquote>
+..........snip snip.........
+run `python -c 'print "A"*9'`
+if $eip == 0x41414141
+ echo AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH! goodjob! Magic input=9
+end
+run `python -c 'print "A"*10'`
+if $eip == 0x41414141
+ echo AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH! goodjob! Magic input=10
+end
+...........snip snip........
+&nbsp;
+		</blockquote>
+
+
+Sau đó vào gdb chạy
+<blockquote>gdb ./exploitme 1
+source list
+............
+Program received signal SIGILL, Illegal instruction.
+0xbffff61a in ?? ()
+AAAAAAAA
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 in ?? ()
+AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH! goodjob! Magic input=236
+The program is running.  Exit anyway? (y or n) [answered Y; input not from terminal]
+meg4tr0n@h4x0r:~/test$
+
+&nbsp;
+		</blockquote>
+cho đến khi thấy nó hiện ra dòng goodjob thì dừng lại.
+Máy tui input là <font color='orange'>236 </font>byte sẽ overwrite đc EIP, ko biết máy các bác sao (đã disable ASLR)
+Tạm thời là thế.
+/megatron
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#158795</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#158795</link>
+				<pubDate><![CDATA[Thu, 13 Nov 2008 18:12:25]]> GMT</pubDate>
+				<author><![CDATA[ megatron]]></author>
+			</item>
+			<item>
+				<title>Re: Tìm lỗi và khai thác</title>
+				<description><![CDATA[ Khó quá, mấy bác siêu thật]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25730.hva#161434</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25730.hva#161434</link>
+				<pubDate><![CDATA[Fri, 5 Dec 2008 11:32:56]]> GMT</pubDate>
+				<author><![CDATA[ beatboxvn]]></author>
+			</item>
+	</channel>
+</rss>

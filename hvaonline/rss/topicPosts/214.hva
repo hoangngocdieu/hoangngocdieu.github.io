@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Bảo vệ máy chủ an toàn với phần mềm tự do (mrro)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Bảo vệ máy chủ an toàn với phần mềm tự do (mrro)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Bảo vệ máy chủ an toàn với phần mềm tự do (mrro)</title>
+				<description><![CDATA[ <font color='yellow'><b>1. Phòng thủ có chiều sâu (Defense in Depth)</b></font>
+
+<b>1.1 Giới thiệu</b>
+
+Khi thiết kế một hệ thống phòng thủ, chúng ta phải thiết kế sao cho hệ thống đó có cấu trúc tương tự như...củ hành tây. Kẻ tấn công lột một lớp vỏ bên ngoài, sẽ còn rất nhiều lớp vỏ bên trong bảo vệ cho phần lõi của củ hành, đây chính là khái niệm phòng thủ có chiều sâu, một trong những khái niệm quan trọng nhất khi thảo luận về bảo mật mạng máy tính. Phòng thủ có chiều sâu giúp chúng ta bảo vệ hệ thống mạng của mình bất chấp một hoặc nhiều *lớp* bảo vệ bên ngoài bị xâm hại. Một hệ thống phòng thủ chỉ an toàn khi nào càng đi sâu vào bên trong, kẻ tấn công càng gặp phải nhiều khó khăn, tốn nhiều công sức và dễ bị phát hiện hơn. Một chi tiết cần phải lưu ý là không có bất kì lớp bảo vệ nào đủ sức chống lại mọi loại tấn công, sức mạnh của hệ thống phòng thủ là sự kết hợp sức mạnh của từng lớp bảo vệ, mỗi lớp thực thi nhiệm vụ của riêng mình, nghĩa là ngăn cản và phòng ngừa một loại tấn công cụ thể nhất định.
+
+Có ba yếu tố tạo thành một hệ thống phòng thủ có chiều sâu: network perimeter, internal network, và nhân tố con người. Do loạt bài này là *ăn theo* loạt bài "Kí sự các vụ DDoS vào HVA* -1- vì vậy tôi chỉ trình bày về network perimeter, về hai yếu tố còn lại, nếu có cơ hội thì tôi sẽ trình bày nó ở phần mở rộng của loạt bài này.
+
+<b>1.2 Network perimeter</b>
+
+Perimeter, dịch ra tiếng Việt có nghĩa là "vành đai", tuy nhiên từ perimeter dùng ở đây có nghĩa khác khái niệm "vành đai" một tí, bởi perimeter của một network có những thiết bị nằm ở *vòng ngoài* và cũng có những thiết bị nằm ở *vòng trong* của network đó. Các thiết bị này bao gồm:
+- Static packet filter
+- Stateful firewall
+- Proxy firewall
+- IDS
+- VPN device
+
+Trong trường hợp này, chúng ta cũng không tìm hiểu hết các thiết bị này, mà chỉ gói gọn trong 3 thiết bị là static packet filter, stateful firewall và IDS.
+
+Static packet filter, thường là các router, là thiết bị đầu tiên trong bộ perimeter mà tất cả các luồng traffic đi vào hệ thống của chúng ta phải đi qua và cũng là thiết bị sau cùng trong bộ perimeter mà tất cả các traffic xuất phát từ hệ thống của chúng ta phải đi qua.
+
+Các static packet filter chỉ có thể lọc các packet dựa vào các thông tin cơ bản như địa chỉ IP, port number và protocol -2-. Chúng có thể là router (Cisco router với standard access list từ 1-99) hoặc firewall (IPchains). Do chỉ lọc các packet dựa vào các thông tin cơ bạn nên static packet filter làm việc rất nhanh, nhanh hơn rất nhiều so với các loại stateful firewall. Static packet filter đặc biệt hữu dụng trong trường hợp bồ đang bị tấn công hoặc firewall của bồ đang phải chịu tải quá nhiều. Ví dụ như bồ phát hiện ra có một kẻ từ địa chỉ IP 100.100.100.100 đang cố gắng login vào máy chủ của bồ ở cổng 22 (SSH), với IPchains, bồ có thể dễ dàng chặn đứng đợt tấn công này với lệnh sau đây:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ipchains -A input -i eth0 -p tcp -s 100.100.100.100/32 -d 192.168.1.1/32 22 -l -j DENY</pre>
+		</div>
+
+Do loạt bài viết này không tập trung vào ipchains nói riêng và static packet filter nói chung do đó tôi sẽ không giải thích câu lệnh trên có nghĩa là gì, bồ nào muốn tìm hiểu thì xin lên Internet tìm tài liệu về ipchains -3-.
+
+Ưu điểm về tốc độ của static packet filter không thể che dấu hết những khuyết điểm rất nghiêm trọng trong hoạt động của nó. Một lớp các vụ tấn công mà static packet filter hoàn toàn *bó tay* đó là các loại tấn công mà trong đó kẻ tấn công cố tình thay đổi các thông số và tùy chọn trong những packet gửi đến máy chủ của chúng ta -4-. Ví dụ điển hình là kĩ thuật ACK Scan của Nmap. Thông thường, các static packet filter đều được cấu hình để chặn hết tất cả các ICMP Echo Request (tạo ra bởi công cụ ping) để tránh bị tấn công DDoS hoặc bị thăm dò thông tin. Một câu lệnh ipchains cụ thể để làm chuyện này như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ipchains -A input -i eth0 -p icmp -s 0.0.0.0/0 -d 0.0.0.0/0 -l -j DENY</pre>
+		</div>
+Thật ra câu lệnh trên cũng không chính xác với yêu cầu, bồ có biết không chính xác ở chỗ nào không?
+
+Câu lệnh trên sẽ block hết tất cả các ICMP Echo Request tạo ra từ công cụ ping, tuy nhiên nó hoàn toàn vô dụng với kĩ thuật ACK Scan của Nmap. Tại sao? Với kĩ thuật ACK Scan, thay vì gửi một ICMP packet bình thường đến hệ thống của chúng ta, Nmap sẽ tạo ra một packet với flag ACK được active (được gọi là TCP ping packet) rồi gửi đi đến port 80 của máy chủ chúng ta. Các static packet filter thấy flag ACK được active sẽ nghĩ rằng đây là packet trả lời cho một SYN packet gửi ra từ máy chủ trước đó, vì vậy sẽ cho packet này đi qua -5-.
+
+Với ví dụ trên, rõ ràng chúng ta cần một thiết bị khác (nằm ngoài sau static packet filter) để có thể hứng và ngăn chặn được những dạng tấn công như Nmap ACK scan, thiết bị đó chính là stateful firewall. Stateful Firewall, như tên gọi, là loại firewall có thể nhận dạng, theo dõi được *state* -6- của một connection bằng cách lưu trữ tất cả các thông tin của connection đó, từ lúc khởi tạo cho đến lúc kết thúc, vào trong một table, mà trong Netfilter/Iptables người ta gọi là connection tracking table. Đối với Netfilter/iptables, thông tin này có thể đọc được trong /proc/net/ip_conntrack, ví dụ như:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;mrro@smsec ~&#93;$ sudo tail -f /proc/net/ip_conntrack
+udp      17 157 src=127.0.0.1 dst=127.0.0.1 sport=32881 dport=53 packets=6 bytes=384 src=127.0.0.1 dst=127.0.0.1 sport=53 dport=32881 packets=6 bytes=534 &#91;ASSURED&#93; use=1
+tcp      6 98 TIME_WAIT src=192.168.1.2 dst=63.208.196.94 sport=33404 dport=80 packets=5 bytes=518 src=63.208.196.94 dst=192.168.1.2 sport=80 dport=33404 packets=4 bytes=459 &#91;ASSURED&#93; use=1</pre>
+		</div>
+
+Nhìn vào hai entry này, ta có thể thấy được entry đầu tiên là một UDP datagram, entry thứ hai là một TCP segment, do đó cần phải lưu ý là Netfilter/iptables hoặc bất kì stateful firewall nào đều có khả năng theo dõi các *stateless* protocol như UDP, ICMP...Chúng ta sẽ đi sâu vào Netfilter/iptables cùng cơ chế cản lọc dựa theo state của connection khi tìm hiểu về Netfilter/iptables ở phần kế tiếp của bài viết này.
+
+IDS, hệ thống phát hiện và báo động xâm nhập, tương tự như thiết bị phát hiện và báo trộm trong một tòa nhà. Nhiệm vụ của IDS trong một hệ thống phòng thủ là theo dõi tất cả hoạt động xảy ra trên hệ thống thông qua các sensor (tương tự như máy camera), phát hiện các dấu hiệu khả nghi và báo động cho những bên có liên quan để có thể ứng xử kịp thời. Mặc dù IDS cũng có thể kết hợp với firewall để làm thành một IPS, hệ thống phòng chống xâm nhập, một cách tự động, tuy nhiên, tương tự như hệ thống báo trộm, IDS muốn hoạt động hiệu quả thì đòi hỏi phải có người điều khiển và xử lí các báo động của IDS. IDS có thể là phần mềm, ví dụ như Snort, có thể là thiết bị phần cứng, ví dụ như Cisco Secure IDS (dĩ nhiên có firmware điều khiển bên trong). IDS có thể là Host IDS hoặc Network IDS -7-, và tí xíu nữa bồ còn sẽ thấy một loại IDS khác nữa. Trong loạt bài viết này, chúng ta sẽ tập trung vào Snort<span class="link"> www.snort.org</span>), một Network IDS nguồn mở, miễn phí.
+
+Như vậy, một câu hỏi phát sinh là ModSecurity mà conmale sử dụng được xếp vào loại thiết bị gì? Trích dẫn từ website www.modsecurity.org cho biết:
+
+<blockquote>ModSecurity is an open source intrusion detection and prevention engine for web applications. Operating as an Apache Web server module, the purpose of ModSecurity is to increase web application security, protecting web applications from known and unknown attacks.
+&nbsp;
+		</blockquote>
+Tạm dịch ra là:
+
+<blockquote>ModSecurity là một bộ máy phát hiện và phòng chống xâm nhập dành cho các ứng dụng web. Hoạt động như một module của máy chủ web Apache, mục đích của ModSecurity là tăng cường bảo mật cho các ứng dụng web, bảo vệ chúng khỏi các loại tấn công đã biết và chưa biết.
+&nbsp;
+		</blockquote>
+
+Như vậy, có thể xem ModSecurity là một IDS dành riêng cho web-application, Web IDS chăng?.
+
+-1-: Xem tại<span class="link"> http://www.hvaonline.net/forum/index.php?showtopic=38514.</span>
+
+-2-: Static packet filter thường được dùng để làm nhiệm vụ egress và ingress filtering. Ingress filtering là thuật ngữ dùng để chỉ cách thức lọc dữ liệu sao cho chỉ cho phép những dữ liệu hợp lệ từ Internet được phép đi vào hệ thống nội mạng của chúng ta. Ví dụ như những packet mà có source address là các dãy địa chỉ RFC 1918 (10.0.0.0-10.255.255.255, 172.16.0.0-172.31.255.255,192.168.0.0-192.168.255.255,127.0.0.0) đi từ ngoài Internet vào nội mạng của chúng ta thì chắc chắn là những packet có vấn đề.
+
+Egress filtering là thuật ngữ dùng để chỉ cách thức lọc dữ liệu sao cho chỉ cho phép những dữ liệu hợp lệ đi từ nội mạng của chúng ta ra ngoài Internet. Ví dụ những packet đi từ nội mạng của chúng ta mà lại có source address không nằm trong các subnet qui định thì chắc chắn là những packet có vấn đề. Egress filtering cho đúng cũng là một cách sống...có văn hóa và trách nhiệm với cộng đồng ;).
+
+-3-: Ipchains kể từ Linux 2.4 đã được thay thế bằng Iptables, toàn bộ tài liệu về Iptables nằm tại www.netfilter.org.
+
+-4-: Một trong những điểm yếu nhất của static packet filter là để cung cấp một dịch vụ, bồ buộc phải mở một port, có nghĩa là bất kì lúc nào sẽ có một *hole* trong hệ thống, và dữ liệu đi qua *hole* này sẽ không bị kiểm soát gì hết.
+
+-5-: Những gì diễn ra tiếp theo là TCP ping packet này sẽ đi đến các host nằm trong nội mạng, host nào đang chạy thì sẽ reply lại cho Nmap một cái RST packet, do đó Nmap sẽ biết được host nào đang up, host nào đang down. Nếu đây là một stateful firewall thì ACK Scan của Nmap sẽ không có tác dụng bởi vì stateful firewall khi nhận được một ACK packet, nó sẽ nhìn vào connection tracking table của nó để tìm một SYN packet cùng một cặp với ACK packet mà nó vừa nhận, và do tìm không thấy nên nó sẽ ngay lập tức drop cái packet. Lưu ý điều này, ta có thể sử dụng ACK Scan của Nmap để xác định một firewall là stateful firewall hay chỉ đơn giản là một static packet filter. Xem thêm manpage của nmap.
+
+-6-: Xem thêm<span class="link"> http://www.hvaonline.net/forum/index.php?s...ic=38514&st=20#</span>
+
+-7-: Host IDS điển hình mà mọi người thường dùng là ZoneAlarm, bên *nix thì là Tripwire(?). Theo nhận xét của riêng tôi, Network IDS có thể làm Host IDS nhưng ngược lại thì không.
+
+ Tác giả: mrro - HVAOnline ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/214.hva#640</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/214.hva#640</link>
+				<pubDate><![CDATA[Thu, 22 Jun 2006 03:43:37]]> GMT</pubDate>
+				<author><![CDATA[ Z0rr0]]></author>
+			</item>
+	</channel>
+</rss>

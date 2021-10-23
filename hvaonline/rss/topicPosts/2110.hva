@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Snort với ACID+MySQL"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Snort với ACID+MySQL"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Snort với ACID+MySQL</title>
+				<description><![CDATA[ <b>Snort với ACID+MySQL</b>
+
+<b>Intro</b>
+
+ Snort đối với một số người thì nó chỉ là “mất bò mới lo làm chuồng.” Đối vơi tôi thì nó là một cái dụng cụ có ích cho việc làm của mình. Ý tôi là nói khong phải chỉ nhất thiết dành cho việc tìm kiếm, ngăn ngừa hackers, mà nó có thể dành cho việc tìm kiếm những nguyên nhân đang gây ra một chuyện rắc rối nào đó dễ dàng hơn.
+
+ 
+Ví dụ như ngày hôm qua cái server có thay đổi một chút làm cho nó không chạy tốt. Tôi có thể nhìn vô Snort log mà biết ai đã xử dụng VNC, telnet, ssh, Terminal Services, PCAnywhere, vv… vô máy đó. Mặc dù không nhất thiết là người này đã làm gì sai, nhưng mình có thể rút ngắn được thời gian tìm ra nguyên nhân bằng cách này.
+
+ 
+Hoặc là một hôm tôi tìm thấy có người sử dụng formmail.cgi (version cũ) để gửi spam emails. Snort phát hiện ra IP nào đang bị tấn công và máy đó được chỉnh lại ngay lập tức.
+ 
+
+Cho dù firewall có thể ngăn chặn đuoc một số tấn công từ ngòai vào. Tôi vẫn chạy Snort ở trong LAN. Virus/trojans có thể vô bằng nhiều cách khác như emails, web sites, downloads. Snort có thể phát hiện một số lớn.
+
+ 
+<b>Installing </b>
+
+ 
+Tôi sẽ không đi sâu vào chuyện cài đặt này. Tôi chỉ trình bày qua sơ trên Debian thôi. Nhưng bạn cần nhớ là khi cài Snort từ source thì cần phải có –with-mysql. Trong đây, tôi cho rằng MySQL đã đuoc cài sẵn.
+
+ 
+<b>MySQL:</b>
+
+1.  Cần database cho Snort.
+
+mysql> create database snort;
+<b>
+SNORT:</b>
+ 
+
+Cài đặt Snort trên Debian:
+
+
+<blockquote>            apt-get install snort-mysql&nbsp;
+		</blockquote>
+ 
+            Bạn phải trả lời một số câu hỏi sau:
+
+1.      Do you want to continue? [Y/n] Y
+
+2.      When should snort be started? boot
+
+3.      On which interface should Snort listen? Eth0
+
+4.      Please enter the address range that Snort will listen on? blank
+
+5.      Should I disable the promiscous mode? No
+
+6.      Should snort's rules testing order be changed to Pass|Alert|Log? No
+
+7.      If you want to specify custom options to 'snort', please specify them here:  blank
+
+8.      Who should receive the daily statistics mails? root
+
+9.      An alert needs to appear more than this times to go to the stats. 1
+
+ Cài đặt Snort trên Fedora hoặc Mandrake:
+
+           <span class="link"> http://www.snort.org/dl/binaries/linux/</span>
+
+<b>ACID</b>: Acid cần có Apache+PHP đã được cài sẵn.
+
+ 
+
+Cài đặt Acid trên Debian:
+
+            apt-get install acidlab
+
+Which web server would you like to reconfigure automatically? apache
+
+Which database would you like to use? mysql
+
+Alert database name: snort
+
+Alert database hostname: localhost
+
+Alert database user: root
+
+Alert database password: <password>
+
+Archive database hostname: localhost
+
+Archive database user: root
+
+Archive database password: <password>
+
+Cài đặt Acid trên Fedora hoặc Mandrake:
+<span class="link"> http://dag.wieers.com/packages/php-acid/</span>
+
+<b>
+Configuration</b>
+
+
+Tìm cái snort.conf. Trong Debian thì bạn sẽ thấy nó ở trong <b>/etc/snort/snort.con</b>f. Trong đó bạn sẽ tìm thấy dòng chữ này:
+
+
+<blockquote>output database: log, mysql, user=username password=ilikelinux dbname=snort host=localhost&nbsp;
+		</blockquote>
+
+
+Nếu có ‘#’ ở đằng trước thì xóa nó đi.
+
+
+<b>Running Snort</b>
+
+ 
+Truoc khi chạy Snort, MySQL cần được chạy trước.
+
+ 
+<b>/etc/init.d/mysql start</b>
+ 
+
+Sau đó chạy Snort
+ 
+
+<b>/etc/init.d/snort start</b>
+ 
+
+Nếu bạn muốn nhìn alerts trong console thì tìm trong /var/log/snort/alert
+
+<blockquote>tail –f /var/log/snort/alert&nbsp;
+		</blockquote>
+
+ Còn nếu bạn muốn nhìn trong browser thì vô<span class="link"> http://yourdomain.com/acid</span>
+
+
+Bạn sẽ thấy những thông báo của Snort trên browser.
+
+ 
+<b>Conclusion</b>
+
+ Những thông báo này sẽ có thể làm bạn giật mình. Đừng quá lo lắng. Snort thông báo khá chi tiết và đôi khi có thông báo sai lầm (false alarm).  Vì vậy, bạn phải cần hiểu rõ là những thông báo nào mình nên nhìn sâu thêm và lọai bỏ đi cái không cần chú ý đến.  Tất cả những gì bạn cần sửa đổi sau khi cài đặt là hòan tòan ở trong /etc/snort. Bạn có thể xóa bỏ những rules bạn không muốn thông báo bằng cách edit   <b>/etc/snort/*rules</b>
+
+
+Questions/Comments
+
+foobar@infinipress.com]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2110.hva#10752</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2110.hva#10752</link>
+				<pubDate><![CDATA[Fri, 28 Jul 2006 17:46:35]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

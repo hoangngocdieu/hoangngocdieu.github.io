@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cần giúp đở Nginx và FastCGI trên Ubuntu 14 + No input file specifi"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cần giúp đở Nginx và FastCGI trên Ubuntu 14 + No input file specifi"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cần giúp đở Nginx và FastCGI trên Ubuntu 14 + No input file specifi</title>
+				<description><![CDATA[ Chào các anh chị em,
+Hiện tại mình đang triển khai 1 server cho test gồm :
+Nginx , MariaDB, Php-fpm, Memcached,APC, Phalcon.
+
+Cấu hình đã hoàn tất và khá đầy đủ tuy nhiên khi chạy thử web thị bị lỗi <font color='red'>No input file specified.</font>
+
+Cụ thể :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2014/09/21 15:11:48 &#91;error&#93; 12849#0: *4 FastCGI sent in stderr: "PHP message: PHP Warning:  Unknown: failed to open stream: Success in Unknown on line 0
+Unable to open primary script: /usr/share/nginx/html/xxx/ &#40;Success&#41;" while reading response header from upstream, client: 111.111.111.111, server: xxx.com.vn, request: "GET / HTTP/1.1", upstream: "fastcgi://unix:/var/run/php5-fpm.sock:", host: "xxx.com.vn"</pre>
+		</div>
+
+Em đã tham khảo nhưng<span class="link"> http://nginxlibrary.com/resolving-no-input-file-specified-error/</span>  nhưng vẫn thấy mình không thuộc trường hợp nào cả :
+
+Nginx version :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>nginx version: nginx/1.4.6 &#40;Ubuntu&#41;</pre>
+		</div>
+
+Additional .ini files parsed
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/php5/fpm/conf.d/05-opcache.ini, /etc/php5/fpm/conf.d/10-pdo.ini, /etc/php5/fpm/conf.d/20-apcu.ini, /etc/php5/fpm/conf.d/20-curl.ini, /etc/php5/fpm/conf.d/20-gd.ini, /etc/php5/fpm/conf.d/20-json.ini, /etc/php5/fpm/conf.d/20-mcrypt.ini, /etc/php5/fpm/conf.d/20-memcached.ini, /etc/php5/fpm/conf.d/20-mysql.ini, /etc/php5/fpm/conf.d/20-mysqli.ini, /etc/php5/fpm/conf.d/20-pdo_mysql.ini, /etc/php5/fpm/conf.d/20-readline.ini, /etc/php5/fpm/conf.d/30-phalcon.ini</pre>
+		</div>
+
+
+Nginx config :
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>user www-data;
+worker_processes 8;
+pid /run/nginx.pid;
+
+events {
+        worker_connections 4000;
+        multi_accept on;
+        use epoll;
+}
+
+http {
+        ##
+        # Tuning  Settings
+        ##
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 30;
+        keepalive_requests 100000;
+        reset_timedout_connection on;
+        client_body_timeout 10;
+        send_timeout 2;
+
+        types_hash_max_size 2048;
+        server_tokens off;
+        error_log /var/log/nginx/error.log crit;
+
+        open_file_cache max=200000 inactive=20s; 
+        open_file_cache_valid 30s; 
+        open_file_cache_min_uses 2;
+        open_file_cache_errors on;
+        access_log off;
+
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+
+        gzip on;
+        #gzip_disable "msie6";
+        gzip_min_length 10240;
+        gzip_proxied expired no-cache no-store private auth;
+        gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml;
+        gzip_disable "MSIE &#91;1-6&#93;\.";
+        # gzip_vary on;
+        # gzip_proxied any;
+        # gzip_comp_level 6;
+        # gzip_buffers 16 8k;
+        # gzip_http_version 1.1;
+        # gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}</pre>
+		</div>
+Host config in site-enables :
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+        listen 80;
+        root /usr/share/nginx/html/xxx/home;
+        index index.php index.html index.htm;
+        charset utf-8;
+        server_name xxx.com.vn;
+
+
+    gzip on;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        text/xml
+        image/x-icon
+        image/png
+        image/gif
+        image/jpeg
+        image/jpg 
+        image/svg+xml
+        application/x-javascript
+        application/xml
+        application/xml+rss
+        application/x-font-ttf
+        application/x-font-truetype
+        application/x-font-opentype
+        application/font-woff
+        application/vnd.ms-fontobject
+        application/octet-stream; 
+    
+    server_tokens off;
+    access_log off;
+    add_header Access-Control-Allow-Origin *;
+
+
+        try_files $uri $uri/ @rewrite;
+
+            location @rewrite {
+                rewrite ^/&#40;.*&#41;$ /index.php?_url=/$1;
+                }
+
+                location ~* ^.+\.&#40;jpg|jpeg|gif|png|ico|css|js|xml|svg|eot|ttf|woff&#41;$ {
+                 log_not_found off;
+                expires max;
+                }
+
+
+
+
+
+        location ~ \.php$ {
+                try_files  $uri =404;
+                fastcgi_split_path_info ^&#40;.+\.php&#41;&#40;/.+&#41;$;
+                fastcgi_pass unix:/var/run/php5-fpm.sock;
+                fastcgi_index index.php;
+                include fastcgi_params;
+                fastcgi_param PATH_INFO $fastcgi_path_info;
+                        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
+                        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                        fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+
+        }
+
+          location ~ /\.ht {
+                log_not_found off;
+                deny all;
+        }
+
+}</pre>
+		</div>
+
+
+Em cũng đã chmod -R 755 và chown www-data:www-data thư mục home.
+
+Rất mong nhận được sự giúp đỡ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45835.hva#281715</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45835.hva#281715</link>
+				<pubDate><![CDATA[Sun, 21 Sep 2014 04:12:47]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở Nginx và FastCGI trên Ubuntu 14 + No input file specifi</title>
+				<description><![CDATA[ Bồ kiểm tra lại user, group, userlisten và group listen trong file config của php-fpm nhé ...
+Nói đúng hơn là kiểm tra toàn bộ, bao gồm các thông số session, thư mục lưu session v.v.v.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45835.hva#281725</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45835.hva#281725</link>
+				<pubDate><![CDATA[Sun, 21 Sep 2014 23:24:56]]> GMT</pubDate>
+				<author><![CDATA[ kakarottbatdong]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin tư vấn cách chống ddos hiệu quả hơn"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin tư vấn cách chống ddos hiệu quả hơn"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Chào các anh chị
+Em xin nói trước là e là tay ngang nên trình độ của e còn hạn chế. Secure server thì toàn học lóm là chính. 
+E xin trình bày tình trạng hiện tại:
+
+1. Server
+<blockquote>
+Processor Name	Intel(R) Xeon(TM) CPU 2.80GHz (x4)
+Vendor ID	GenuineIntel
+Processor Speed (MHz)	2787.471
+
+Total Memory	4025548 kB
+
+Service đang chạy:
+Apache 2.4.7
+DirectAdmin
+Exim 
+MySQL
+dovecot 
+pure-ftpd 
+Php
+&nbsp;
+		</blockquote>
+
+Server e chủ yếu là share hosting tầm khoảng 25 websites
+Hiện tại 1 có 1 trang nhận hàng loạt request như sau:
+<blockquote>
+175.139.162.92 - - [25/Apr/2014:20:06:24 +0700] &quot;GET / HTTP/1.1&quot; 200 17789 &quot;x513o3eq9cbe58.com&quot; &quot;Mozilla/3.0 (Slurp/si; slurp@inktomi.com;<span class="link"> http://www.kst3ps699631.com/slurp.html</span>)&quot;
+186.208.74.24 - - [25/Apr/2014:20:06:26 +0700] &quot;GET / HTTP/1.1&quot; 200 17788 &quot;sf2c0ksxe5c.info&quot; &quot;Mozilla/4.0 (compatible; MSIE 5.5; AOL 4.0; Windows 98; GoBeez<span class="link"> www.293252za9p1chx.com</span>))&quot;
+175.139.162.92 - - [25/Apr/2014:20:06:28 +0700] &quot;GET / HTTP/1.1&quot; 200 17789 &quot;29u05lmb4.biz&quot; &quot;Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.0.7) Gecko/20060909 Firefox/1.5.0.7 SnapPreviewBot&quot;
+92.226.121.140 - - [25/Apr/2014:20:06:31 +0700] &quot;GET / HTTP/1.1&quot; 200 17789 &quot;528t9ehy2.net&quot; &quot;Mozilla/5.0 (compatible; Konqueror/2.0.1; X11); Supports MD5-Digest; Supports gzip encoding&quot;
+175.139.162.92 - - [25/Apr/2014:20:06:33 +0700] &quot;GET /gui-thong-tin-tu-van-phap-luat/view/form.html HTTP/1.1&quot; 200 16734 &quot;z885369a7.biz&quot; &quot;Mozilla/4.76 [en] (X11; U; FreeBSD 4.4-STABLE i386)&quot;
+&nbsp;
+		</blockquote>
+
+E cố search 1 số thông tin về công cụ ddos này thì không ra, e chỉ đoán là 1 dạng botnet nào đó.
+Hiện tại thì tầm khoảng &gt; 300 ip đánh vào hằng ngày.
+Trước đây thì e build <b>Apache ở dạng prefork </b>và<b> PHP chạy ở mod_suphp</b> nên bị đánh vào là server chết đứ đừ.
+
+E có học theo cách a conmale dựng mod_security và dử dụng file 1 file block.sh để lọc IP và chặn bằng iptables như sau:
+<blockquote>
+SecAction &quot;phase:1,t:none,pass,nolog,initcol:global=global,initcol:ip=%{remote_addr}&quot;
+SecRule REQUEST_URI &quot;^/$&quot; &quot;nolog,phase:1,setvar:ip.ddos=+1,deprecatevar:ip.ddos=30/60,expirevar:ip.ddos=120&quot;
+SecRule IP:DDOS &quot;@gt 5&quot; &quot;phase:1,log,msg:'DDoS_from_%{REMOTE_ADDR}',exec:/path/to/blocker.sh&quot;
+&nbsp;
+		</blockquote>
+Ngoài ra e còn chuyển apache về chế độ event, php về fastcgi
+
+Cách này thì tạm thời hiệu quả
+<blockquote>
+Số pkg vào ở port 80: 2046K
+Số pkg chặn lại ở ipt_recent: 27M 
+&nbsp;
+		</blockquote>
+Server load time ở mức 1~5%
+Nhưng lỡ e mà restart lại cái iptables thì số record lưu trong ipt_recent mất sạch. Một lượng package lại tràn vào, lúc này apache & php sẽ return error 500.
+Điều đó có nghĩa là mod_security không thể thực thi tiếp được.  #:S 
+
+Vậy e xin các anh chỉ bảo cách để chặn hiệu quả hơn.
+Cảm ơn mọi người.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280448</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280448</link>
+				<pubDate><![CDATA[Fri, 25 Apr 2014 09:19:08]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Nếu bạn không ngại thay đổi cấu trúc website thì cách đơn giản và khá phổ biến sau đây có thể xử lý được:
+B1: Chuyển toàn bộ source code vào thư mục mới (new_folder) nằm dưới thư mục cũ.
+B2: Tại thư mục cũ tạo một file index.html có nhiệm vụ khi người dùng click vào đường link thì sẽ wwwect vào thư mục mới.
+Cách này hơi bất tiện cho người truy cập web nhưng khá đơn giản. Apache sẽ chỉ trả ra 1 file html do đó tải sever sẽ không tăng đáng kể. Trong trường hợp của bạn thì sẽ có hiệu quả.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280456</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280456</link>
+				<pubDate><![CDATA[Fri, 25 Apr 2014 22:27:16]]> GMT</pubDate>
+				<author><![CDATA[ somenuchi]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">somenuchi wrote:</cite><br>
+		<blockquote>Nếu bạn không ngại thay đổi cấu trúc website thì cách đơn giản và khá phổ biến sau đây có thể xử lý được:
+B1: Chuyển toàn bộ source code vào thư mục mới (new_folder) nằm dưới thư mục cũ.
+B2: Tại thư mục cũ tạo một file index.html có nhiệm vụ khi người dùng click vào đường link thì sẽ wwwect vào thư mục mới.
+Cách này hơi bất tiện cho người truy cập web nhưng khá đơn giản. Apache sẽ chỉ trả ra 1 file html do đó tải sever sẽ không tăng đáng kể. Trong trường hợp của bạn thì sẽ có hiệu quả.
+
+&nbsp;
+		</blockquote>
+
+Cảm ơn cách của bạn nhưng cách này không ổn.
+Chuyển folder đồng nghĩa với việc SEO của site bị mất hết.
+Với lại e muốn tìm cách chặn ngày từ tầng ngoài trước khi vào đến apache... :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280461</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280461</link>
+				<pubDate><![CDATA[Sat, 26 Apr 2014 02:23:37]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Hic, dạo này diễn đàn sao ít người tư vấn dùm quá...  #:S 
+
+Hôm nay tiếp tục cài wireshark vào capture http header của mấy cái request đó thì thấy như sau:
+
+<blockquote>
+Request Method: GET
+Request URI: /tin-tuc/luat-nha-dat/2296-lam-sao-hoan-cong-nha-xay-dung-sai-phep.html
+Request Version: HTTP/1.0
+Host: www.xxxxxxxxxxx.com\r\n
+<font color='red'>Keep-Alive: 300\r\n</font>
+Connection: keep-alive\r\n
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1;<span class="link"> http://www.changedetection.com/bot.html</span> ) \r\n
+Referer: 4ytxb96c.net\r\n
+&nbsp;
+		</blockquote>
+
+Dựng ngay varnish và thêm 1 cái rule
+<blockquote>
+if (req.http.Keep-Alive) {
+return (error);
+}
+&nbsp;
+		</blockquote>
+
+Vậy cho e hỏi hầu hết các browser đều không gửi kèm đoạn header này phải không ạ, lỡ giết nhầm thì khổ...  :-S ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280485</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280485</link>
+				<pubDate><![CDATA[Sun, 27 Apr 2014 11:48:21]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ hiện mình cũng đang làm 1 trang count tính lượt click chuột từ 1 ip khi nào xong úp cái demo anh em xem giúp
+
+bị kiểm tra lỗi sql injection nhiều quá]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280496</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280496</link>
+				<pubDate><![CDATA[Mon, 28 Apr 2014 01:05:40]]> GMT</pubDate>
+				<author><![CDATA[ hoang_philong]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Nếu cứ có keep-alive mà chặn thì bạn sẽ chặn nhầm rất nhiều trường hợp.
+Chỉ keep-alive không thôi thì không đủ để coi đó là dấu hiệu DDoS.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280501</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280501</link>
+				<pubDate><![CDATA[Mon, 28 Apr 2014 23:44:15]]> GMT</pubDate>
+				<author><![CDATA[ somenuchi]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">somenuchi wrote:</cite><br>
+		<blockquote>Nếu cứ có keep-alive mà chặn thì bạn sẽ chặn nhầm rất nhiều trường hợp.
+Chỉ keep-alive không thôi thì không đủ để coi đó là dấu hiệu DDoS.&nbsp;
+		</blockquote>
+
+Đó là cách tạm thời để chặn mấy cái packets cố tình phá hoại...  :-S 
+Cho nó chạy đến tầng apache là server không chịu nổi.
+Nhưng với cách này thì packet tạm thời nó chạy ào ào vào và bị chặn bởi proxy mà không cách nào chặn được ngoài iptables.
+Tìm cách thực thi script trên varnish thì không thấy có tài liệu nào đề cập.
+Vẫn đang tìm kiếm...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280502</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280502</link>
+				<pubDate><![CDATA[Mon, 28 Apr 2014 23:55:59]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Mấy cái request dạng này đều có điểm chung nhât định. Theo như log bạn gửi lên thì nó đều chứa referer từ một site không có thực nào đó. Bạn có thể dựa vào điểm này để loại bỏ các request bất hợp lệ. VD như chỉ cho những request nào có referer được phép thì mới được truy cập, tất cả các dạng khác thì deny.
+Ngoài ra bạn có thể tìm thêm một số đặc điểm nhận dạng khác để kết hợp, giảm thiểu tình trạng chặn nhầm.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280567</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280567</link>
+				<pubDate><![CDATA[Wed, 7 May 2014 04:34:34]]> GMT</pubDate>
+				<author><![CDATA[ somenuchi]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">somenuchi wrote:</cite><br>
+		<blockquote>Mấy cái request dạng này đều có điểm chung nhât định. Theo như log bạn gửi lên thì nó đều chứa referer từ một site không có thực nào đó. Bạn có thể dựa vào điểm này để loại bỏ các request bất hợp lệ. VD như chỉ cho những request nào có referer được phép thì mới được truy cập, tất cả các dạng khác thì deny.
+Ngoài ra bạn có thể tìm thêm một số đặc điểm nhận dạng khác để kết hợp, giảm thiểu tình trạng chặn nhầm.
+&nbsp;
+		</blockquote>
+
+Theo cách này thì có phải là e lọc các referer không có <b>http://</b> phải không ạ?  :-/ 
+A có thể cho e 1 rule ví dụ để lọc các referer như vậy không ạ?
+Chân thành cảm ơn anh!!!
+
+Update: Hiện tại thêm 1 rule lọc referer vào varnish như sau:
+<blockquote>
+if (req.http.referer && req.http.referer !~ "http(s)?:\\") {
+return (error);
+}
+&nbsp;
+		</blockquote>
+
+Kết quả khả thi là chặn hết các request theo dạng trên ở varnish...  #:S 
+Nhưng e vẫn sợ là mình chặn nhầm người sử dụng thực sự. Có cú pháp nào hay hơn không nhỉ???]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280616</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280616</link>
+				<pubDate><![CDATA[Mon, 12 May 2014 11:46:46]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Mình nghĩ thế này:
+- Khi ta phát hiện ra lưu lượng truy cập bất thường từ 1 ip nào đó, thì tiến hành buộc nhập Captcha.
+- Sau đó, lưu cookie đó, để lượt truy cập sau không phải nhập
+- Hỗ trợ cho nhiều link tài nguyên khác nhau trong cùng 1 site.
+(giống kiểu Google đang làm thì phải)
+
+Mình nghĩ ra có đến vậy, nhưng chưa biết làm thế nào. Ai làm rồi chỉ giúp cùng với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280667</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280667</link>
+				<pubDate><![CDATA[Thu, 15 May 2014 22:08:20]]> GMT</pubDate>
+				<author><![CDATA[ Vnalink]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Chặn hơn cả tháng mà tụi nó vẫn gửi request liên tục  :-S 
+Load average lúc nào cũng từ 1~2 (tài nguyên server không đủ, nên giờ load web lúc nào cũng mất 5~10s)
+
+Mở varnishstat ra xem thì thấy:
+
+<blockquote>
+0+00:20:15
+Hitrate ratio:        9        9        9
+Hitrate avg:     0.3596   0.3596   0.3596
+
+       88452        63.97        72.80 client_conn - Client connections accepted
+       90445        64.97        74.44 client_req - Client requests received      
+       88450        64.97        72.80 s_sess - Total Sessions
+       90445        64.97        74.44 s_req - Total Requests     
+       87518        64.97        72.03 sess_closed - Session Closed
+&nbsp;
+		</blockquote>
+
+20 phút mà tận 90k req, closed hết 87k theo bộ lọc....
+
+Capture header thì thấy vào ào ạt 
+<blockquote>
+    GET /gui-thong-tin-tu-van-phap-luat/view/form.html HTTP/1.0\r\n
+        Request Method: GET
+        Request URI: /gui-thong-tin-tu-van-phap-luat/view/form.html
+        Request Version: HTTP/1.0
+    Host: xxxxxxxxxx.com\r\n
+    Keep-Alive: 300\r\n
+    Connection: keep-alive\r\n
+    User-Agent: Mozilla/4.0 (compatible; DepSpid/5.0x; +http://about.h21c1ie8.net) \r\n
+    Referer: 993r4fd.biz\r\n
+    \r\n
+&nbsp;
+		</blockquote>
+
+Haizzzz, giờ phải làm sao đây....  :-( 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280737</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280737</link>
+				<pubDate><![CDATA[Sat, 31 May 2014 12:06:31]]> GMT</pubDate>
+				<author><![CDATA[ meomeo1133]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn cách chống ddos hiệu quả hơn</title>
+				<description><![CDATA[ Vẫn còn capture được HTTP header thì làm sao mà chả tốn tài nguyên. Tại sao phải tốn công xử lý các kết nối mà cuối cùng sẽ bị chặn? Còn việc lo chặn nhầm người sử dụng ư, vậy sự khác nhau giữa người dùng thực sự và kẻ tấn công là gì? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45600.hva#280750</link>
+				<pubDate><![CDATA[Sun, 1 Jun 2014 14:42:02]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+	</channel>
+</rss>

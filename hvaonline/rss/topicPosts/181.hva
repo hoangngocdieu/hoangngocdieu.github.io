@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Ký sự các vụ DDoS đến HVA - Phần 7"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Ký sự các vụ DDoS đến HVA - Phần 7"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Ký sự các vụ DDoS đến HVA - Phần 7</title>
+				<description><![CDATA[ <b>Sáng 15/10:</b>
+
+Tối qua tôi quá bận rộn nên không có thời gian log vào HVA server xem tình hình ra sao. Sáng nay, phải vào công ty rất sớm nên tôi có chút thời gian xem xét kết quả thâu lượm được đêm hôm trước. Làm một ly cà fê trong khi đợi máy khởi động. Tôi ngồi xuống ghế và bắt đầu log vào HVA server.
+
+Trên console, tôi phóng ngay lệnh đầu tiên:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># cat /tmp/load | sort -rn | more</pre>
+		</div>
+Chà, server load lên cao nhất là <b>7.20</b> lúc 23:35pm (giờ server), giá trị này nằm sừng sững ngay trên dòng đầu tiên của console sau khi chạy lệnh trên. Điều này có nghĩa từ 23:27pm đến 23:42pm server phải thao tác đến 108 jobs (tính luôn cả dịch vụ web và những dịch vụ khác trên server trong khoảng thời gian 15 phút để lấy giá trị trung bình): 
+<b>15 phút x 7.20 = 108 jobs</b>
+
+Tôi tiếp tục rà xuyên qua error log của web server.... không có gì đáng ngại ngoài những cảnh báo vặt vãnh như hồ sơ này không tìm thấy, hồ sơ kia không tồn tại.... Ít ra tôi rất an tâm SIGFAULT không còn là mối quan ngại nữa. Web server hoàn toàn phục vụ các request đúng theo dự định và đúng chất lượng. 
+
+Tôi hăm hở rà tiếp xuyên qua access log của web server. Tôi thâu thập giá trị access time <font color='orange'>-44-</font> của vài chục lượt truy cập trong web server log không theo thứ tự nào cả (nhưng trong khoảng 2 giờ bị "dội" nặng nề nhất) để thử tính giá trị trung bình của access time. Điều tôi cần biết ở đây là web server phục vụ request ở mức độ ra sao. Sau vài phút tính toán, tôi tìm được giá trị trung bình cho access time là 3.25s. Chà! đối với tôi, con số nhỏ bé và dường như vô nghĩa kia lại là câu trả lời cụ thể và đầy đủ hơn bất cứ câu trả lời hoặc giải thích nào. Nói cho cùng, người dùng truy cập đến HVA server không cần biết server đang bị sự cố gì. Công tác của người quản lý và bảo trì máy chủ là phải tối ưu hoá khả năng hoạt động ngoài việc kiện toàn tính bảo mật của nó. Nếu nhìn theo phương diện người dùng thì con số 3.25s chỉ là chuyện nhanh chậm. Nhưng nếu nhìn theo phương diện quy trình hoạt động thì con số 3.25s kia bao gồm cả một chuỗi công việc đa tầng trước khi người dùng nhận được thông tin trên trình duyệt của họ. Tôi cho rằng mức độ access này hoàn toàn chấp nhận được nhất là trong khi server bị "đấm" liên miên.
+
+Trở lại vấn đề server load <b>7.20.</b> Theo tôi ước tính trong bài trước thì trong khoảng 2 giờ cao điểm, server sẽ phải sản xuất ra chừng 47 child processes nếu dùng giá trị MaxRequestsPerChild là 256. Tuy nhiên, theo tính toán ở trên thì có đến 108 jobs xảy ra trong vòng 15 phút cao điểm nhất dựa trên giá trị server load là 7.2. 108 jobs này có thể bao gồm các công việc mother process tạo thêm child processes, mother process hủy child process... và hệ thống điều tác các dịch vụ khác. Với cường độ DoS trong 2 giờ cao điểm thì có lẽ chủ yếu số child process được tạo thêm nhiều hơn là bị huỷ. Lý do: số lượng requests vào liên tục như thế này sẽ khó có thể có một vài child processes đứng yên và bị huỷ <font color='orange'>-45-</font>. Cứ tạm cho rằng 40% số lượng jobs ở đây dùng cho web service nói chung; như thế ta có thể áng chừng có khoảng:
+<b>108 x 40% = 43 jobs</b> dành cho web service.
+
+Và nếu cho rằng các jobs này đều dùng trong việc điều tác child process thì số lượng job này sẽ tương đương với việc tiếp nhận:
+<b>256 requests mỗi child process x 43 = 11008 requests</b> <font color='red'>(A)</font>
+
+Nên biết rằng con số 43 jobs ở trên chỉ là một giá trị biểu thị nhất thời của khoảng cao điểm. Có thể trong 15 phút cao điểm này có đến vài chục child process được tạo ra vì số lượng request lên quá cao nhưng sau đó lượng request trở nên dung hoà. Ở tình trạng dung hoà này, có thể chỉ có vài child process được tạo ra trong 15 phút kế tiếp.
+
+Tôi cần phải xác thực con số <b>11008 requests</b> này. Tôi cần biết có bao nhiêu phần trăm con số này đã dành để phục vụ cho người dùng hợp lệ và tôi cũng cần biết nó có tương ứng với những thông tin snort đã bắt giữ ở tầng thấp hơn hay không.
+
+Hãy xem thử trong giờ thứ 21:00 của ngày 14/10, snort đã phát hiện bao nhiêu quả x-flash:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/14-21:" alert | grep "Flash" | wc - l
+44945</pre>
+		</div>
+Thử tiếp cho giờ thứ 22:00 của ngày 14/10:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/14-22:" alert | grep "Flash" | wc - l
+56635</pre>
+		</div>
+Tổng số:
+<b>44945 + 56635 = 101580</b> cú x-flash trong 2 giờ 21:00 và 22:00.
+
+Thật khinh khủng! Nếu dựa trên ước đoán rằng firewall + snort triệt tiêu chừng 65% - 75% các gói "x-flash", cứ cho 65% của <b>101580</b> bị triệt từ tầng dưới:
+<b>101580 x 65% = 66027 quả</b>
+
+còn lại cho mod_security lo:
+<b>101580 - 66027 = 35553 quả</b>
+
+nếu vậy, trung bình trong 15 phút đã có:
+<b>(15 phút x 35553) / 120 phút = 4444 quả x-flash</b> <font color='red'>(B)</font>
+
+A ha! đã lộ ra con số tôi cần ước tính: nếu sánh <font color='red'>(A)</font> và <font color='red'>(B)</font> thì thấy kết quả rất có lý. Con số 11008 của <font color='red'>(A)</font> là tổng số request được chiết tính từ server load một cách rất chủ quan (vì tôi không thể xác định được chính xác bao nhiêu phần trăm của tổng số jobs server đã làm việc dành riêng cho web service). Con số 4444 của <font color='red'>(B)</font> là con số các quả x-flash lọt qua khỏi firewall connection limit và snort reset, đi đến web server và bị mod_security "chộp" được.
+
+Như vậy có:
+<b>11008 - 4444 = 6564 requests</b> thuộc diện hợp lệ trong 15 phút.
+
+vậy thì có:
+<b>( 6564 x 100 ) / 11008 = 59.629 % request</b> thuộc dạng hợp lệ
+<b>100% - 59.629 % = 40.371% request</b> thuộc dạng x-flash
+
+Hãy thử xem con số x-flash tổng quát cho cả ngày hôm qua 14/10:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/14" alert | grep "Flash" | wc -l
+  141423</pre>
+		</div>
+Hừm... quả thật hôm qua HVA bị DoS ghê gớm hơn vài ngày trước đây nhưng thực tế các "cú đấm" x-flash này chỉ tập trung một khoảng thời gian nào đó. Số còn lại chỉ lẻ tẻ. 
+141423 - 101580 = 39843.
+
+39843 quả cho 22 giờ còn lại của cả một ngày quả thật không là gì cả. Theo tôi, các con số trên khá xác thực. Bởi vì các snort signatures dùng để phát hiện "x-flash" được điều chỉnh và tối ưu hoá để nó phát hiện "x-flash" trong khoảng thời gian ngắn nhất có thể được, cho nên con số 141423 được tường trình trong alert log không có gì đáng để nghi vấn. 
+
+Vậy, nhìn xuyên qua các con số thu thập được, tôi nên vui hay nên... buồn?. Tất nhiên là nên vui vì:
+- trước cuộc tấn công, server load chỉ nằm ở mức 0.5 - 1.2
+- trong quá trình tấn công và ở giai đoạn cao điểm, server load lên đến 7.20 là mức tối đa
+- trong suốt thời gian tấn công, web server đã không tốn quá nhiều thời gian và tài nguyên để tạo thêm child processes
+- 4444 requests được web server tiếp nhận (từ socket level lên đến child process level) nhưng lại bị mod_security loại bỏ. Hãy thử mường tượng 4444 requests đều vào được bên trong và database server phải nhận ít nhất là 4444 "query" trong vòng 15 phút thì server load sẽ lên tới con số bao nhiêu?
+
+Tôi đoán chắc bạn đã... mệt nhoài với hàng tràng phép tính ở trên. Rất tiếc tôi phải "lôi" bạn vào cõi tính toán này bởi vì theo tôi, số liệu có giá trị vững vàng hơn bất cứ một cảm giác mang tính "hình như nhanh, hình như chậm, hình như nhiều, hình như ít...". Thật tình mà nói thì tôi đã đi xuyên qua rất nhiều bài tính (nhiều hơn ít nhất là gấp đôi những gì tôi trình bày ở đây, chủ yếu là để thoả mãn tính tò mò của bản thân tôi).
+
+Rồi sau đó........
+
+<b>Ngày 15/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/15" alert | grep "Flash" | wc -l
+  129773</pre>
+		</div>
+
+<b>Ngày 16/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/16" alert | grep "Flash" | wc -l
+  78881</pre>
+		</div> 
+
+<b>Ngày 17/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/17" alert | grep "Flash" | wc -l
+  12134</pre>
+		</div>
+Có lẽ ngày này thiên hạ ít lên net?
+
+<b>Ngày 18/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/18" alert | grep "Flash" | wc -l
+  33546</pre>
+		</div> 
+
+<b>Ngày 19/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/19" alert | grep "Flash" | wc -l
+  13179</pre>
+		</div>
+
+<b>Ngày 20/10:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># grep "10/20" alert | grep "Flash" | wc -l
+  5437</pre>
+		</div>
+và cứ thế.... thưa dần rồi tắt hẳn.
+
+Cho đến một chiều đẹp trời ngày đầu tháng 11. Tôi nhận được một PM "khẩn" từ JAL:
+<i>"Lão có đó không? Hình như server đang bị DoS!</i>
+
+Lúc ấy là lúc tôi đang chuẩn bị rời sở. Tôi gởi ngay cho JAL một PM:
+<i>"OK bồ, để tớ dump một mớ packets xem thử có chuyện gì.</i>
+Và tôi log vào HVA server, chạy vài phút <b>tcpdump</b> <font color='orange'>-46-</font> và copy kết quả về laptop của tôi. Trên tàu lửa, tôi hăm hở phóng ngay Ethereal <font color='orange'>-47-</font> 
+
+Bạn đoán xem chuyện gì xảy ra đây? Sự thể ra sao, mời bạn đón xem phần kế tiếp vậy.
+
+<i>Các bạn có thể theo dõi tiếp phần 8 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/182.hva</span> 
+
+<b>Chú thích:</b>
+<font color='orange'>-44-</font> access time, thời gian một request truy cập đến server tính theo đơn vị giây. Giá trị này không có sẵn theo chế độ mặc định trên các web server. Để có thông tin cần thiết về access time, điều chỉnh log để tường trình thêm thông tin "access time" (hầu hết các web server đòi hỏi điều chỉnh thêm mới có thông tin này).
+
+<font color='orange'>-45-</font> chế độ điều tác (tạo child process, hủy child process) của web server (mà HVA dùng) dựa trên thuật toán tổng quát như sau:
+
+- nếu mother process nhận thấy số lượng child process dự bị (chờ sẵn) để tiếp nhận request có xu hướng thiếu cho nhu cầu hiện tại, nó tiếp tục tạo thêm child process để sẵn. Ví dụ, cấu hình hoạt động ứng định có ít nhất là 5 child processes bất cứ lúc nào. Ngay khi child process thứ nhất của 5 child process dự bị bắt đầu tiếp nhận request thứ nhất thì mother sẽ tạo ngay thêm một child process mới để duy trì số lượng 5 child process dự bị. Nếu child process thứ nhì trong số 5 child proces cũng bắt đầu tiếp nhận request đầu tiên, mother process sẽ tiếp tục tạo thêm child process theo đúng logic đã định.
+
+- nếu mother process nhận thấy số lượng child process dự bị có xu hướng bị thừa và cũng dựa trên căn bản 5 child process dự bị, nó sẽ lần lượt hủy bớt các child process bị thừa (đứng yên không phục vụ ai cả) cho đến khi số lượng child process dự bị được duy trì theo đúng ấn định.
+
+Logic trên ứng dụng cho việc điều tác số lượng child process phục vụ được thoả đáng và cân bằng. Nó tránh trường hợp bị thiếu child process để phục vụ, nó cũng tránh trường hợp quá dư child process làm hao phí tài nguyên của máy chủ một cách vô ích.
+
+<font color='orange'>-46-</font> tcmpdump, một công cụ không thể thiếu cho công tác phân tích gói tin. Không có một tài liệu nào liên quan đến security analysis mà không đề cập đến tcpdump. Có thể tải tcpdump về từ<span class="link"> http://www.tcpdump.org/</span>
+
+<font color='orange'>-47-</font> Ethereal, một công cụ phân tích giao thức mạng, một công cụ không thể thiếu được nếu như đã dùng một sniffer để bắt các gói tin ở dạng binary. Có thể tải Ethereal về từ<span class="link"> http://www.ethereal.com/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/181.hva#594</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/181.hva#594</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 09:09:54]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+	</channel>
+</rss>

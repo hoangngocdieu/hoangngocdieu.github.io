@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Qmail as a Mail Gateway - Phần 3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Qmail as a Mail Gateway - Phần 3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Qmail as a Mail Gateway - Phần 3</title>
+				<description><![CDATA[ <b>Qmail as a Mail Gateway - Phần 3</b>
+
+Các điều chỉnh quan trọng cho qmail.
+
+3.4.2 Thư mục “qmail-smtpd” trong supervise
+- Tương tự như trên, bạn tạo ra hồ sơ có tên là run trong thư mục /var/qmail/supervise/qmail-smtpd. Hồ sơ run này có trách nhiệm gọi một số phân bộ quan trọng của qmail để thi hành các chức năng trực thuộc smtp. Hồ sơ “run” này có chi tiết như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# concurincoming is not standard qmail control file
+# it is created manually to specify the allowed concurrent incoming messages
+#
+QMAILDUID=`id -u qmaild`
+NOFILESGID=`id -g qmaild`
+MAXSMTPD=`cat /var/qmail/control/concurincoming`
+if &#91; -z "$QMAILDUID" -o -z "$NOFILESGID" -o -z "$MAXSMTPD" &#93;; then
+        echo QMAILDUID, NOFILESGID, or MAXSMTPD is not set in
+        echo /var/qmail/supervise/qmail-smtpd/run
+    echo “Have you set qmaild UID & qmaild GID yet?”
+        exit 1
+     fi
+exec /usr/local/bin/softlimit -m 6291456 \
+    /usr/local/bin/tcpserver -v -p -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \
+        -u "$QMAILDUID" -g "$NOFILESGID" 0 smtp /var/qmail/bin/qmail-smtpd 2&gt;&1</pre>
+		</div>
+
+Hồ sơ này sẽ có thêm một vài thông số quan trọng cho vấn đề chống “SPAM” sẽ được đi sâu hơn trong phần 5.4 sau này. Ở đây, bạn chỉ cần nắm bắt một vài chi tiết quan trọng đó là:
+- softlimit -m $MEMSIZE trong đó, $MEMSIZE là số lượng memory thích hợp cho các phân bộ của qmail để xử lý khối lượng mail cao nhất trong khoảng thời gian bận rộn nhất.
+
+- tcpserver và các thông số -p -x trong đó, -p chỉ định cho tình trạng “hoảng” (paranoid) dùng để kiểm tra IP của host gởi mail đến xem domain, MX record và IP của nó có giá trị hay không (tránh tình trạng SPAM theo phương thức đơn giản). -x chỉ định cho tcpserver dùng database (trong phần 3.4 sau đây) để kiểm tra chế độ nhận hoặc từ chối mail từ người gởi dựa trên database này.
+
+- concurincoming variable trong hồ sơ “run” dùng để chỉ định số lượng mail được “đi vào” mail gateway mỗi lần. Bạn có thể cho nó một con số thích đáng tùy theo nhu cầu. Tuy nhiên, không nên cho concurincoming có giá trị quá cao để phòng ngừa khả năng bị DOS. Tôi chọn giá trị là 20 cho concurincoming, giá trị này đủ sức xử lý vài trăm đến vài ngàn mail mỗi giờ (tùy theo dung tích của mail đi xuyên qua mail gateway).
+<b># echo 20 > /var/qmail/control/concurincoming
+# chmod 644 /var/qmail/control/concurincoming</b>
+
+- Ðừng quên đổi hồ sơ “run” này thành “executable”:
+<b># chmod 755 /var/qmail/supervise/qmail-smtpd/run</b>
+
+- Bước kế tiếp là tạo ra hồ sơ “run” trong thư mục /var/qmail/supervise/qmail-smtpd/log. Hồ sơ này gọi multilog thi hành nhiệm vụ logging cho các lưu thông thuộc phần hành smtp, multilog chuyển các log thuộc smtp vào thư mục /var/log/qmail/smtpd; nó có chi tiết như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# set user id and group id for qmail smtp daemon
+exec /usr/local/bin/setuidgid qmaill /usr/local/bin/multilog t s5000000000 /var/log/qmail/smtpd</pre>
+		</div>
+
+- Ðừng quên đổi hồ sơ “run” này thành “executable”:
+<b># chmod 755 /var/qmail/supervise/qmail-smtpd/log/run</b>
+
+- Cuối cùng là tạo thư mục log cho qmail-smtpd:
+<b># mkdir -p /var/log/qmail/smtpd</b>
+
+- Và đổi chủ quyền của thư mục này cho qmaill (bạn còn nhớ phần tạo tài khoản nhân dụng và nhóm nhân dụng ở phần 2.4.3?):
+<b># chown qmaill /var/log/qmail /var/log/qmail/smtpd</b>
+
+3.5 Bộ quản trị “SMTP Access Control”
+Trong qmailctl có một function chuyên chịu trách nhiệm cho phần SMTP access control. Bạn xem lại qmailctl sẽ thấy có dòng như sau thuộc function cdb:
+<b>cat /etc/smtprules/qmail-rules.txt | tcprules /etc/tcp.smtp.cdb</b>
+
+Lệnh trên có hai phần: copy qmail-rules.txt và pipe nó sang tcprules để biến nó thành hash database. Database này chứa các thông tin để kiểm tra chế độ nhận hoặc từ chối mail từ người gởi như đã đề cập trong phần 3.4.2 ở trên.
+
+Bạn có thể tạo một hồ sơ có tên là qmail-rules.txt trong thư mục /etc/smtprules và có chi tiết như sau:
+- Tạo thư mục /etc/smtprules trước:
+<b># mkdir – p /etc/smtprules</b>
+
+- Ðưa chi tiết vào hồ sơ qmail-rules.txt:
+<b># echo '127.:allow,RELAYCLIENT=””' >> /etc/smtprules/qmail-rules.txt</b>
+Lệnh trên đưa vào policy cho phép các host thuộc loopback được phép relay, nếu không Qmail không làm việc được.
+
+<b># echo '192.168.1.:allow,RELAYCLIENT=””' >> /etc/smtprules/qmail-rules.txt</b>
+Lệnh trên đưa vào policy cho phép trọn bộ các client thuộc subnet 192.168.1.0/24 được quyền gởi mail đến Qmail gateway
+
+<b># echo '10.10.10.50:allow,RELAYCLIENT=””' >> /etc/smtprules/qmail-rules.txt</b>
+Lệnh trên đưa vào policy cho phép một IP address (có thể là MS Exchange Server bên trong một subnet của LAN) được quyền relay.
+
+<b># echo 'spamboy@spamhouse.com:deny' >> /etc/smtprules/qmail-rules.txt</b>
+Lệnh trên đưa vào policy từ chối mail từ người gởi có tên spamboy từ domain spamhouse.com. Cách này là cách đơn giản đề phóng chống bomb mail. Trên thực tế ứng dụng có nhiều phương pháp hữu hiệu hơn (sẽ bàn sâu hơn trong phần 5.4 sau này).
+
+<b># echo 'badhost.net:deny' >> /etc/smtprules/qmail-rules.txt</b>
+Lệnh trên đưa vào policy từ chối mail của trọn bộ domain badhost.com. Bạn có thể dùng phương cách :allow hoặc :deny một cách linh động cho thích hợp với nhu cầu riêng. Và cuối cùng của hồ sơ qmail-rules.txt này, bạn luôn luôn cần một dòng như sau:
+.:deny (# echo '.:deny' >> /etc/smtprules/qmail-rules.txt) với tác dụng từ chối tất cả các trường hợp còn lại.
+
+Hồ sơ qmail-rules.txt đến đây tương tự như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>127.:allow,RELAYCLIENT=””
+192.168.1.:allow,RELAYCLIENT=””
+10.10.10.50:allow,RELAYCLIENT=””
+spamboy@spamhouse.com:deny
+badhost.net:deny
+.:deny</pre>
+		</div>
+
+Sau khi đã hoàn tất hồ sơ qmail-rules.txt như ý (đúng syntax như trên cho :allow, :deny) bạn có thể dùng function cdb của qmailctl:
+<b># qmailctl cdb</b>
+
+Hoặc kiểu “dài dòng”:
+<b># cat /etc/smtprules/qmail-rules.txt | tcprules /etc/tcp.smtp.cdb</b>
+
+Cũng nên đi vào chi tiết của tcprules syntax để giúp bạn tạo thêm các rules theo ý muốn và tránh những sai sót có thể xảy ra. Syntax của tcprules rất đơn giản như sau:
+address:action,variable
+
+Trong đó,
+address có thể là một internet address (192.168.1.1), một chuỗi subnet (192.168.1.), một e-mail address (spamboy@spamhouse.com), một domain host (badhost.net) hoặc nếu không chỉ định một address nào thì bất cứ address cũng ứng dụng. Các variables của address có thể tóm gọn như sau:
+$TCPREMOTEINFO@$TCPREMOTEIP (spamboy@192.168.1.1)
+$TCPREMOTEINFO@$TCPREMOTEHOST (spamboy@spamhouse.com)
+$TCPREMOTEIP (192.168.1.1)
+$TCPREMOTEHOST (box.spamhouse.com)
+Một phần của $TCPREMOTEIP (192.168.1)
+Một phần của $TCPREMOTEHOST (spamhouse.com)
+Không để address (bất cứ address nào cũng ứng dụng)
+
+action là một trong hai trường hợp allow dành để cho phép address đã định hoặc deny dành để từ chối address đã định.
+
+variable đi sau action được tách ra bởi dấu phẩy (,) (comma separated) thông thường là variable RELAYCLIENT với giá trị là một empty string (RELAYCLIENT=””)
+
+
+3.6 Tạo ảo dụng “alias” cho Qmail
+“alias” đóng vai trò quan trọng trong vấn đề quản lý mail server, điều này có nghĩa mỗi “alias” là một “ảo nhân” chịu trách nhiệm cho một số trường hợp điển hình của các hoạt động trên một mail server. Sau đây là 3 “alias” cần thiết nhất :
+- postmaster (theo đúng RFC 2821) chỉ cho Administrator của mail server
+- mailer-daemon một loại người dùng bán tiêu chuẩn để nhận các mail bị dội (bounce)
+- root dùng để chuyển các loại mail mang tính chủ quyền đến system administrator
+
+Giả sử bạn muốn mailbox của chính mình lo luôn cả 3 alias ở trên, bạn cần ra các lệnh sau:
+<b># echo myname > /var/qmail/alias/.qmail-root
+# echo myname > /var/qmail/alias/.qmai-postmaster
+# ln -s /var/qmail/alias/.postmaster /var/qmail/alias/.qmail-mailer-daemon
+# chmod 644 /var/qmail/alias/.qmail-root /var/qmail/alias/.qmail-postmaster</b>
+
+Nên nhớ các alias trên đều là hồ sơ “dấu” (hidden files) nên chúng đều có dấu chấm (.) đằng trước tên của alias. Các alias này có thể dùng để chuyển mail đến các user trên Unix (hoặc Linux), tôi không đi sâu vào vấn đề này vì chủ đề của bài viết là dùng Qmail như một mail gateway để forward mail vào một MTA bên trong LAN (như MS Exchange chẳng hạn).
+Ðến đây Qmail có thể hoạt động được. Tuy nhiên, có một số vấn đề còn phải thử nghiệm và điều chỉnh để hoàn thiện các configuration của Qmail và daemontools. Ðây là các bước quan trọng và sẽ được đi sâu trong phần kế tiếp.
+
+(kết thúc phần 3)
+hnd, vninformatics.com / diendantinhoc.net 11/10/2002]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/121.hva#453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/121.hva#453</link>
+				<pubDate><![CDATA[Sun, 18 Jun 2006 05:23:12]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

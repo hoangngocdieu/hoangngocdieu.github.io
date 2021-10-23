@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn cài đặt và cấu hình User Mode Linux "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn cài đặt và cấu hình User Mode Linux "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn cài đặt và cấu hình User Mode Linux </title>
+				<description><![CDATA[ Phiên bản 0.8 - Phát hành ngày 08/10/2004.
+
+Việc cần thực hiện:
+
+      Xây dựng hệ thống tập tin gốc.
+
+      Cấu hình mạng cho môi trường UML.
+
+      UML dùng để làm gì?
+
+      Thuật ngữ
+
+      Hoàn thiện các phần đã viết.
+
+Nội dung
+
+      1. Giới thiệu
+
+      2. Cơ chế hoạt động
+
+      3. Cài đặt UML
+
+      4. Khởi tạo môi trường UML
+
+      5. Xây dựng hệ thống tập tin gốc
+
+      6. Kết luận
+
+      7. Phụ lục
+
+<b>1. Giới thiệu</b>
+
+User-mode Linux là một bản vá cho hạt nhân linux, cho phép biên dịch hạt nhân linux thành một chương trình có khả năng chạy trong môi trường linux. Bằng "Chương trình hạt nhân" này người dùng có thể xây dựng một môi trường mới, hoạt động song song với môi trường hiện có (môi trường nền). Khi đó chương trình hạt nhân sẽ đóng vai trò là hạt nhân của môi trường mới, do vậy chương trình hạt nhân có thể được gọi cùng với một số tài nguyên "ảo" như: hệ thống tập tin gốc (root filesystem), không gian tráo đổi (swap space), và có thể có cấu hình phần cứng tách biệt so với một trường linux chạy nó.
+UML dùng để làm gì?
+
+      Virtual hosting.
+
+      Kernel development and debug.
+
+      Process debugging.
+
+      Safely playing with the latest kernels.
+
+      Thử nghiệm các bản phân phối Linux (Linux distro).
+
+      Education.
+
+      Experimental development.
+
+      Poking around inside a running system.
+
+      As a secure sandbox or jail.
+
+      Virtual networking.
+
+      As a test environment.
+
+      Disaster recovery practice.
+
+<b>2. Cơ chế hoạt động của UML</b>
+
+Về cơ bản, một môi trường UML có thể thực thi bất cứ gì mà môi trường linux thông thường có thể làm. Hơn nữa nó đem đến cho người dùng khả năng chia nhỏ một chiếc máy tính ra thành một nhóm các máy ảo độc lập. Thông thường, hạt nhân linux đảm nhận các tác vụ giao tác với phần cứng (video card, keyboard, hard drives,...), và mọi chương trình muốn truy xuất, khai thác phần cứng đều thực hiện thông qua các dịch vụ của hạt nhân. Mô hình thông thường có thể minh hoạ theo sơ đồ sau:
+
+  +--------------+--------------+----+
+  | Tiến trình 1 | Tiến trình 2 | ...|
+  +--------------+--------------+----+
+  |         Hạt nhân Linux           |
+  +----------------------------------+
+  |           Phần cứng              |
+  +----------------------------------+
+
+Cơ chế hoạt động của UML có chút khác biệt; Thay vì giao tác trực tiếp với phần cứng, chương trình hạt nhân UML sẽ giao tác với một hạt nhân Linux thực sự (kể từ đây chúng ta gọi là "hạt nhân nền"), giống như các chương trình khác. Trong mô hình hoạt động của UML, sẽ là không có sự khác biệt giữa các chương trình chạy trong môi trường UML với môi trường thông thường. Mô hình hoạt động có thể được mô tả như sau:
+
+                 +-------------------+
+                 | Tiến trình 2 | ...|
+  +--------------+-------------------+
+  | Tiến trình 1 |  User-Mode Linux  |
+  +----------------------------------+
+  |           Hạt nhân Linux         |
+  +----------------------------------+
+  |             Phần cứng            |
+  +----------------------------------+
+
+<b>3. Cài đặt UML Linux</b>
+3.1 Cài đặt và điều chỉnh môi trường nền
+
+Để cài đặt UML Linux, chúng ta cần có một số điều chỉnh nhỏ cho môi trường nền, bao gồm: cài đặt các công cụ của UML linux và biên dịch lại hạt nhân với một bản vá SKAS (Separate Kernel Address Space) của dự án UML Linux (Bản vá này cho phép chương trình hạt nhân thực thi trong một không gian bộ nhớ tách biệt với không gian bộ nhớ của hạt nhân nền).
+3.1.1 Vá và biên dịch hạt nhân
+
+(Nếu bạn dùng UML ở chế độ theo dõi luồn - thread tracing mode - thì bước này không cần thiết)
+
+Các bước tiến hành cài đặt:
+
+Tải về mã nguồn của hạt nhân linux từ<span class="link"> http://www.kernel.org,</span> chúng ta cần phải lựa chọn phiên bản có khả năng làm việc tốt với UML, trong bài viết này chúng ta sử dụng phiên bản linux-2.6.8.1 (hay còn được gọi là vanilla kernel 2.6.8.1).
+
+<b># cd ~/kernel/
+# wget</b><span class="link"> ftp://ftp.us.kernel.org/pub/linux/kernel/v2.6/linux-2.6.8.1.tar.bz2</span>
+
+Tải bản vá SKAS cho hạt nhân nền. Chúng ta có thể tải về từ trang tải về của dự án UML. Tuy nhiên, bản vá này có thể tải về từ trang tải về của tác giả - trang này được cập nhật thường xuyên hơn. Với linux-2.6.8.1 chúng ta sử dụng bản vá mới nhất host-skas3-2.6.7-v5.patch, mặc dù đây là bản vá cho hạt nhân linux-2.6.7 nhưng nó vẫn làm việc tốt với hạt nhân linux-2.6.8.1:
+
+<b># wget</b><span class="link"> http://www.user-mode-linux.org/~blaisorblade/patches/host-skas3-2.6.7-v5.patch</span>
+
+Xả nén vào nới thích hợp. Thông thường mã nguồn của hạt nhân được đặt trong /usr/src, tuy nhiên nếu chúng ta muốn biên dịch hạt nhân bằng tài khoản thông thường, chúng ta có thể chọn một vị trí mà tài khoản đó có quyền ghi, ở đây chúng ta xả nén vào ~/kernel:
+
+<b># tar jxvpf linux-2.6.8.1.tar.bz2</b>
+
+Tiến hành vá hạt nhân vanilla kernel linux-2.6.8.1:
+
+<b># cd linux-2.6.8-1
+# patch -p1 --dry-run < ../host-skas3-2.6.7-v4.patch
+# patch -p1 < ../host-skas3-2.6.7-v4.patch</b>
+
+Cấu hình hạt nhân môi trường nền, quá trình được tiến hành thông thường tuy nhiên cần phải nhớ kích hoạt tính năng hỗ trợ /proc/mm trong mục "Processor type and features":
+
+<b># make mrproper
+# make menuconfig
+# make all</b>
+
+(Chúng ta cũng có thể sử dụng các công cụ xconfig hoặc menuconfig)
+
+Tiến hành cài đặt hạt nhân mới biên dịch vào hệ thống:
+
+<b># su
+# make modules_install
+# mount /boot
+# make install
+# vi /boot/grub/grub.conf </b>(chỉnh lại cấu hình grub)
+
+(Tùy vào từng môi trường/cá nhân mà các bước tiếng hành có thể tùy biến)
+3.1.2 Cài đặt công cụ của UML Linux
+
+Rất nhiều đặc điểm của hạt nhân UML cần được hỗ trợ bởi các chương trình chạy ở không gian người dùng (user space) của môi trường nền. Do vậy một số công cụ trợ giúp được xây dựng và phân phối trên trang chủ của UML. Người dùng cần phải tải về và cài đặt nhưng công cụ này trong môi trường nền. Những chương trình này bao gồm:
+
+   1. port-helper - được sử dụng bởi consoles để kết nối tới xterms hoặc ports
+   2. tunctl - Công cụ cấu hình dùng để thiết lập và xoá các thiết bị TAP
+   3. uml_net - Setuid binary chương trình tự động cấu hình thiết bị tap
+   4. uml_switch - bộ chuyển đổi ảo, sử dụng cho daemon transport
+
+Lưu ý rằng mỗi bản vá của hạt nhân UML sẽ yêu cầu một phiên bản phân phối tương ứng của các công cụ uml. nếu bạn không theo dõi mailing lists,thì phải đảm bảo là bạn sử dụng phiên bản phát hành mới nhất nếu bạn gặp các vấn đề với hạt nhân UML thì cũng cần lưu ý tới vấn đề tương thích giữa công cụ trợ giúp và hạt nhân UML.
+
+Tải về, biên dịch và cài đặt công cụ uml_utilities:
+
+<b># wget</b><span class="link"> http://ovh.dl.sourceforge.net/sourceforge/user-mode-linux/uml_utilities_20040406.tar.bz2</span>
+<b># tar jxvpf uml_ultilities_20040406.tar.bz2
+# cd tools
+# make && make install</b>
+
+3.2 Biên dịch và cài đặt "chương trình hạt nhân" UML
+3.2.1 Tải về và tạo mã nguồn UML
+
+Xả nén mã nguồn của hạt nhân vanilla linux-2.6.8.1 vào một vị trí khác:
+
+<b># mkdir uml-2.6.8.1
+# cd uml-2.6.8.1
+# tar jxvpf ../linux-2.6.8.1.tar.bz2</b>
+
+Tải về bản vá UML mới nhất của dự án UML Linux:
+
+<b># wget </b>http://ovh.dl.sourceforge.net/sourceforge/user-mode-linux/uml-patch-2.6.8.1-1.bz2
+
+(Người dùng nên vào trang tải về của dự án UML Linux để chọn một mirror gần nhất)
+
+Và chúng ta cũng cần một bản vá nhỏ điểu chỉnh hệ thống tmpfs, bản vá này là cần thiết cho chương trình hạt nhân UML.
+
+Để có mã nguồn của chương trình UML linux, Chúng ta tiến hành vá lần lượt từng bản vá:
+
+<b># cd linux-2.6.8.1
+# bzcat ../uml-patch-2.6.8.1-1.bz2 | patch -p1 --dry-run
+# bzcat ../uml-patch-2.6.8.1-1.bz2 | patch -p1
+# patch -p1 --dry-run < ../tmpfs.patch
+# patch -p1 < ../tmpfs.patch</b>
+
+(khi vá bản vá tmpfs.patch chúng ta sẽ gặp một sỗ trục trặc, nhưng đơn giản là bỏ qua và tiếp tục tiến hành)
+3.2.2 Tiến hành cấu hình và biên dịch chương trình hạt nhân UML
+
+Để cấu hình hạt nhân uml, bạn có thể sử dụng các công cụ cấu hình thông thường như: oldconfig, menuconfig, xconfig. Tuy nhiên bạn cần chỉ rõ kiến trúc hệ thống bạn sẽ biên dịch, ở đây thay vì các kiến trúc thông thường: x86, ia64,.. . Bạn cần phải chỉ rõ kiến trúc biên dịch là "User Mode" thông qua tham số chỉ thị "ARCH=um".
+
+<b># make ARCH=um xconfig</b>
+
+Quá trình biên dịch hạt nhân uml được tiến hành với tham số chỉ thị "ARCH=um" và mục tiêu biên dịch là "linux" thay vì bzImage, bzdisk,...:
+
+<b># make ARCH=um linux</b>
+
+Quá trình biên dịch này sẽ cho kết quả là một tập tin nhị phân trong thư mục chính của mã nguồn hạt nhân uml:
+
+<b># ll
+........................
+-rwxr-xr-x 1 tuanndh users 25M Thg 10 7 07:27 linux
+........................</b>
+
+đây chính là chương trình hạt nhân uml, cùng với các tài nguyên "ảo" chương trình này sẽ đem tới cho bạn một môi trường uml linux mới. Như bạn thấy tập tin này có kích thước khá lớn, bạn có thể giảm nhỏ kích thước của tập tin này:
+
+<b># strip linux
+# ll
+........................
+-rwxr-xr-x 1 tuanndh users 3,0M Thg 10 7 07:29 linux
+........................</b>
+Để thuận lợi trong sử dụng, bạn nên chép tập tin này vào một thư mục có trong biến môi trường $PATH của bạn:
+
+<b># echo $PATH
+/bin:/usr/bin:/usr/local/bin:/opt/bin:~/bin:
+# copy linux /usr/local/bin</b>
+
+<b>4. Khởi tạo môi trường UML</b>
+4.1 Khởi động môi trường UML
+
+Để khởi tạo môi trường bạn cần phải có một hệ thống tập tin gốc, hệ thống tập tin gốc có thể là 1 phân vùng trên đĩa cứng của bạn hoặc là một tập tin ảnh. Hệ thống tập tin gốc này là một bản hoàn chỉnh của một hệ thống tập tin của một phiên bản linux, Tại trang tải về của dự án uml sẵn có một số tập tin ảnh của một số phiên bản linux, bạn có thể tải về và sử dụng. Chúng ta sẽ trở lại vấn đề này trong phần "Xây dựng hệ thống tập tin gốc".
+
+Việc khởi động được thực hiện bằng chương trình hạt nhân uml - lệnh linux - bạn cần chỉ rõ hệ thống tập tin gốc, thông qua tham số ubd0=your_root_fs. Ngầm định, nếu bạn không chỉ rõ tham số này chương trình hạt nhân linux sẽ thử sử dụng tập tin root_fs nếu nó có mặt trong thư mục hiên tại.
+
+Để minh hoạ cho quá trình khởi tạo môi trường UML, chúng ta sử dụng hệ thống tập tin gốc của Debian Linux sẵn có tại trang tải về của dự án UML:
+
+<b># wget</b><span class="link"> http://ovh.dl.sourceforge.net/sourceforge/user-mode-linux/Debian-3.0r0.ext2.bz2</span>
+<b># bzip2 -d Debian-3.0r0.ext2.bz2</b>
+
+Ngoài hệ thống tập tin gốc, giống như môi trường linux thông thường chúng ta cần phải có một không gian tráo đổi (swap space), chúng ta có thể tạo không gian tráo đổi có kích thướng 500MB như sau:
+
+<b># dd if=/dev/zero of=swap_fs seek=500 count=1 bs=1M
+# mkswap -f swap_fs</b>
+
+Tới đây chúng ta đã có thế khởi động môi trường uml linux với hệ thống tập tin gốc là tập tin Debian-3.0r0.ext2 như sau:
+
+<b># linux ubd0=Debian-3.0r0.ext2 ubd1=swap_fs xterm=mlterm mem=128MB</b>
+
+Đăng nhập với tài khoản root (mật khẩu trống) và dạo một vòng trong môi trường mới của chúng ta ;-).
+
+Lưu ý: để khởi động môi trường uml thành công, bạn phải đảm bảo là phân vùng /tmp (nếu có) của bạn không được gắn kết (mount) với tuỳ chọn "noexec".
+
+Các tham số của chương trình hạt nhân uml có thể tham khảo trong phần trợ giúp ( #linux--help), dưới đây là một số lựa chọn thông dụng:
+
+mem
+    mem=size - Chỉ rõ số bộ nhớ phân bổ cho môi trường uml. Kích thước được chỉ rõ bởi một số theo sao bới một trong các ký tự 'k' 'K' 'm' 'M' (tương ứng với Kilobytes và MegaBytes).
+
+ubd
+    ubdX=filename - Chỉ rõ việc ấn định một thiết bị (trong môi trường uml) với một tập tin (trong môi trường nền). Thông thường tập tin này chứa một hệ thông thống tập tin, nhưng cũng không nhất thiết phải vậy. các thiết bị để gắn vào vùng tráo đổi của môi trường uml được ấn định bằng một tập tin có khuôn dạng của không gian tráo đổi tráo đổi. Chỉ số X phải nằm trong khoảng từ 0 tới 7.
+
+xterm
+    xterm=trình đầu cuối, tiêu đề, tuỳ chọn - cho phép chúng ta chỉ rõ trình thiết bị đầu cuối nào sẽ được "chương trình hạt nhân" sử dụng trong môi trường Xwindow cho trình gỡ rối, consoles, và serial lines. Bạn có thể chọn một trong những trình thiết bị đầu cuối ưa thích của bạn như: xterm, mlterm, aterm, rxvt,... 
+
+<b>4.2 Cấu hình mạng cho môi trường UML</b>
+
+Một bước khá quan trọng trong việc khởi tạo môi trường UML là cấu hình hệ thống mạng. Trong tài liệu về thiết lập mạng cho môi trường UML chỉ rõ năm loại kênh giao vận mạng có thể thiết lập để truyền thông giữa môi trương UML và các máy khác. Sau đây chúng ta sẽ thiết lập một kênh giao vận mạng dựa trên trình điều kiển TUN/TAP sẵn có trong hạt nhân linux.
+
+TUN/TAP là trình điều kiển cho phép các chương trình chạy ở không gian người dùng có thể nhận/truyền gói tin, trình điều kiển này có thể đưọc xem như là một thiết bị ethernet (hoặc Point-to-Point) đơn giản, thiết bị này thay vì truyền/nhận gói tin từ đường truyền vật lý thì sẽ truyền/nhận gói tin từ một chương trình chạy ở không gian người dùng. Để sử dụng bạn phải kích hoạt trình điều kiển này trong khi cái cấu hình hạt nhân nền:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;*&#93; Network device support
+   ..........................
+  &lt;M&gt; Universal TUN/TAP device driver support
+
+Ngoài ra bạn phải kích hoạt tính năng MASQUERADE trong cấu hình netfilter của hạt nhân linux:
+
+Networking --&gt;
+  IP: Netfilter Configuration --&gt;
+    IP tables support --&gt;
+      Full NAT --&gt;
+      &lt;M&gt; MASQUERADE target support</pre>
+		</div>
+
+Tại thời điểm này chúng ta có thể khởi động môi trường uml linux với hệ thống mạng đã sẵn sàng:
+Để đơn giản, trong phần này chúng ta sẽ khởi tạo một môi trường UML Debian Linux có địa chỉ mạng là 192.168.0.100, nằm cùng mạng con (subnet) với môi trường nền 192.168.0.4
+
+<b># linux ubd0=Debian_root_fs ubd1=swap_fs xterm=mlterm eth0=tuntap,,,192.168.0.4
+...........................</b>
+
+Sau khi đăng nhập vào môi trường uml - Debian, chúng ta tiến hành kích hoạt giao diện mạng eth0:
+
+<b># ifconfig eth0 192.168.0.200 up</b>
+
+Thử nghiệm giao diện mạng bằng cách ping tới môi trường nền:
+
+<b># ping -c 2 192.168.0.4</b>
+PING 192.168.0.254 (192.168.0.4): 56 octets data
+64 octets from 192.168.0.4: icmp_seq=0 ttl=255 time=0.8 ms
+64 octets from 192.168.0.4: icmp_seq=1 ttl=255 time=0.6 ms
+
+--- 192.168.0.4 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 0.6/0.7/0.8 ms
+
+Cấu hình gateway cho môi trường uml - Debian:
+
+<b># route add default gw 192.168.0.4</b>
+
+Kiểm tra bảng định tuyến:
+
+<b># netstat -rn
+Kernel IP routing table
+Destination Gateway Genmask Flags MSS Window irtt Iface
+192.168.0.0 0.0.0.0 255.255.255.0 U 40 0 0 eth0
+0.0.0.0 192.168.0.4 0.0.0.0 UG 40 0 0 eth0</b>
+
+Chỉnh sửa cấu hình DNS:
+
+<b># vi /etc/resolv.conf
+# cat /etc/resolv.conf
+nameserver 192.168.0.1
+search mshome.net</b>
+
+Thử hệ thống mạng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ping -c 2 www.gentoo.org
+PING www.gentoo.org &#40;207.170.82.202&#41;: 56 octets data
+64 octets from 207.170.82.202: icmp_seq=0 ttl=240 time=119.6 ms
+64 octets from 207.170.82.202: icmp_seq=1 ttl=240 time=92.0 ms
+
+--- www.gentoo.org ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 92.0/105.8/119.6 ms</pre>
+		</div>
+
+Tất nhiên, sau khi cấu hình và thử nghiệm thành công, chúng ta cần phải tiến hành cấu hình theo cách chuẩn tắc của phiên bản linux sử dụng trong môi trường UML.
+<b>5. Xây dựng hệ thống tập tin gốc.</b>
+5.1 Fedora
+5.2 Slackware
+
+Người dùng có thể cái đặt một phiên bản của Slackware Linux trong môi trường ảo, trước hết chúng ta cần phải có đĩa cài đặt Slackware Linux, chúng ta có thể tải về tập tin iso từ trang chủ của Slackware Linux hoặc từ một mirror. Do có một số vấn đề về dò tìm phần cứng, đĩa cài đặt của Slackware không nhận được đĩa cứng ảo cũng như cdrom; do vậy để cài đặt Slackware bạn cần chỉnh sửa tập tin khởi động của đĩa cài đặt Slackware linux, tuy nhiên bạn có thể đơn giản là tải về tập tin initrd từ đây và tiến hành cài đặt:
+6. Kết luận
+7. Phụ lục
+A. Các thuật ngữ sử dụng trong tài liệu
+
+Hệ thống tập tin gốc (root filesystem)
+
+Hạt nhân nền (host kernel)
+    Là hạt nhân được biên dịch để chạy hệ nền, nó là hạt nhân linux thông thường được vá thêm miếng vá SKAS
+Chương trình hạt nhân uml, hạt nhân uml (user mode linux kernel)
+
+Trang tải về (Download page)
+
+Không gian người dùng (user space)
+
+Không gian tráo đổi (swap space)
+
+Gắn kết (mount)
+
+B. Tài liệu tham khảo và tài nguyên
+
+      [1] Trang chủ của dự án User-Mode-Linux.
+
+      [2] User-Mode-Linux Howto.
+
+      [3] User-Mode-Linux User's mailist archive.
+
+      [4] Trang chủ của cộng đồng User-Mode-Linux.
+
+      [5] DatuX Use-Mode-Linux with Slackware 9.1 HOWTO.
+
+      [6] Hệ thống tập tin gốc và công cụ cho Slackware 9.1.
+
+      [7] Hệ thống tập tin gốc của Fedora Core 2 và RedHat 9.
+
+
+- Nguyễn Đặng Hoàng Tuân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/123.hva#456</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/123.hva#456</link>
+				<pubDate><![CDATA[Sun, 18 Jun 2006 05:47:36]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

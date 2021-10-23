@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "sử dụng OSSEC để theo dõi process"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "sử dụng OSSEC để theo dõi process"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>sử dụng OSSEC để theo dõi process</title>
+				<description><![CDATA[ OSSEC (ossec.net) là một hệ thống khá hiệu quả để phát hiện và phòng chống thâm nhập. Tui tóm tắt 1 cách sử dụng hơi khác với cách cài đặt truyền thống như sau:
+
+Case: 
+- Máy windows có chạy 1 ứng dụng. Mục tiêu là cần phải theo dõi service đó coi có đang chạy hay không.
+- Phân tích: ứng dụng chạy thì sẽ phải ghi dữ liệu. Do vậy có thể viết script để theo dõi coi ứng dụng có mở file ra để ghi dữ liệu vào hay không -&gt; cần có:
+  + handle.exe trong bộ Sysinternals để in ra các file mà 1 process mở (tương ứng trong Linux là lsof)
+  + .cmd (.bat) để chạy handle và lọc in ra thông tin
+  + ossec agent chạy tại máy để gửi về ossec server phân tích thông tin và xử lý (gửi mail hoặc active response)
+
+- Cấu hình:
+  + File path_to_cmd_file:
+  c:\sysinternals\handle.exe -p processname filename | find /c &quot;type: File&quot;
+
+  Ý nghĩa: đếm số filename do processname mở. Các bạn có thể thêm prefix/suffix để matching trong rule 100002 bên dưới dễ dàng.
+
+  + Ossec agent ossec.conf, phần &lt;ossec_config&gt;, thêm vào bên trong:
+  &lt;localfile&gt;
+    &lt;log_format&gt;full_command&lt;/log_format&gt;
+    &lt;command&gt;path_to_cmd_file&lt;/command&gt;
+    &lt;alias&gt;files_check&lt;/alias&gt;
+    &lt;frequency&gt;900&lt;/frequency&gt;
+  &lt;/localfile&gt;
+
+  Ý nghĩa: ossec agent sẽ chạy path_to_cmd_file, output của path_to_cmd_file sẽ được gửi về OSSEC server phân tích và xử lý. 900 giây sẽ chạy 1 lần. Mỗi lần report kết quả về sẽ có prefix là "ossec: output: 'files_check'"
+
+  + Ossec server rules/local_rules.xml
+  &lt;rule id="100001" level="1"&gt;
+    &lt;if_sid&gt;530&lt;/if_sid&gt;
+    &lt;match&gt;ossec: output: 'files_check&lt;/match&gt;
+    &lt;description&gt;File event&lt;/description&gt;
+  &lt;/rule&gt;
+  &lt;rule id="100002" level="12" ignore="900"&gt;
+     &lt;if_sid&gt;100001&lt;/if_sid&gt;
+     &lt;regex&gt;output_of_cmd_file&lt;/regex&gt;
+     &lt;description&gt;Description&lt;/description&gt;
+     &lt;options&gt;alert_by_email&lt;/options&gt;
+  &lt;/rule&gt;
+
+  Ý nghĩa: sau khi agent chạy full_command 'files_check' (rule 100001 sẽ match sau rule 530), nếu kết quả có string 'output_of_cmd_file' thì phát sinh event 100002 và gửi mail
+
+  + Ossec server ossec.conf, bên trong &lt;ossec_config&gt;, thêm:
+  &lt;email_alerts&gt;
+      &lt;email_to&gt;emails&lt;/email_to&gt;
+      &lt;rule_id&gt;100002&lt;/rule_id&gt;
+      &lt;do_not_delay/&gt;
+      &lt;do_not_group/&gt;
+  &lt;/email_alerts&gt;
+
+  Ý nghĩa: nếu rule 100002 thì gửi mail ngay lập tức đến emails
+
+  Bắt được event 100002 trên Ossec server thì tùy nghi bạn xử lý.
+
+  Lưu ý: 
+  + Phải dùng psexec để chạy handle.exe với quyền system trước khi gắn vào ossec, tại vì sysinternals có màn hình accept end user agreement.
+  + Localfile dùng full_command PHẢI ĐƯỢC để trong ossec.conf của agent, không phải ở ossec.conf của server
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45670.hva#280809</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45670.hva#280809</link>
+				<pubDate><![CDATA[Tue, 10 Jun 2014 02:30:40]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

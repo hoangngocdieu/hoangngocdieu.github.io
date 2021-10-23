@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin tư vấn về mô hình test Snort và SnortSam."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin tư vấn về mô hình test Snort và SnortSam."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ Chào các anh chị. Hiện tại em đang nghiên cứu về giải pháp phát hiện xâm nhập. Kết hợp với SnortSam để active response. Tuy nhiên em vẫn chưa hình dung ra được mô hình mạng trong thực tế triển khai như thế nào cũng như khi test thử hệ thống thì bố trí ra sao.
+
+Đây là mô hình em vẽ, các <font color='red'>chấm đỏ</font> là các vị trí có thể đặt Snort sensor.
+
+<br>
+			<div align="center" class="limitview"><img src='http://i.imgur.com/rsI3T.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+1. Trong mô hình test thử (chỉ có Snort) em định bố trị như sau:
+
+(web server)-------(snort)----------(iptables)----------(internet)
+(client)-----------------|
+
+2. Trong mô hình test thử có SnortSam em chưa hình dung ra được phải bố trí ra sao.
+
+Theo em đọc hiểu thì SnortSam gồm 2 phần: 1 phần chạy trên firewall và một phần chạy trên Snort (nếu mô hình có cả fw và Snort). Phần agent chạy trên fw sẽ nhận các command từ output-log của Snort gửi nên và block các IP đó.
+
+Tuy nhiên như trong mô hình (1) thì Snort đứng sau iptables, các packet khi tới Snort thì đã đi qua iptables mất rồi. Liệu có phải trong trường hợp này em nên bố trí Snort ở phía trước iptables không ạ. Và trong mô hình test thử em có thể bố trí (snort, snortsam, iptables) chung trên một máy ảo được không ạ.
+
+SnortSam em đọc vẫn chưa thông suốt được, nên không biết nhận định có chính xác hay không.
+
+Hị vọng được anh chị giúp đỡ.  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270664</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270664</link>
+				<pubDate><![CDATA[Thu, 1 Nov 2012 11:56:31]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ Chào bạn,
+
+Để đơn giản, SnortSam, bạn hãy xem nó là cầu nối để Firewall nhận message Snort và tiến hành block IP tương ứng, vậy là đủ.
+
+<blockquote>
+Tuy nhiên như trong mô hình (1) thì Snort đứng sau iptables, các packet khi tới Snort thì đã đi qua iptables mất rồi.
+&nbsp;
+		</blockquote>
+Đây là một câu hỏi rất ngay ngô, thế bạn nghĩ nếu để Snort ở trước Firewall thì bạn cần SnortSam để làm gì ? :D
+
+Snort cung cấp các tính năng phân tách và đối soát dữ liệu lưu thông trên mạng cao hơn Firewall, và nó dùng để phát hiện (và ngăn chặn) các hành động "tinh vi" hơn là những "bất thường" của network.
+
+Do đó việc đặt Snort trước FW sẽ làm cho Snort phải chịu tải lớn không cần thiết, và quá trình "kiểm tra cái thứ đã biết rồi" đó cứ lặp đi lặp lại, đáng không ? Đổi lại nếu FW ở trước lọc một phần các dữ liệu bất hợp lệ, sau đó Snort phát hiện các "thủ đoạn tinh vi" và gởi đến FW để chặn ngay từ đầu. Đến giờ mình cũng chưa thấy TH nào đặt Snort trước FW cả :D
+
+
+<blockquote>
+Và trong mô hình test thử em có thể bố trí (snort, snortsam, iptables) chung trên một máy ảo được không ạ. 
+&nbsp;
+		</blockquote>
+
+Câu trả lời là được. Tuy nhiên cần tỉnh táo khi xử lí trên các interface và routing data :D
+
+------
+Bổ sung về vị trí đặt Snort, nên đặt ở 3 và 4.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270673</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270673</link>
+				<pubDate><![CDATA[Thu, 1 Nov 2012 23:42:59]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LNH wrote:</cite><br>
+		<blockquote>
+Đây là một câu hỏi rất ngay ngô, thế bạn nghĩ nếu để Snort ở trước Firewall thì bạn cần SnortSam để làm gì ? :D
+
+Snort cung cấp các tính năng phân tách và đối soát dữ liệu lưu thông trên mạng cao hơn Firewall, và nó dùng để phát hiện (và ngăn chặn) các hành động "tinh vi" hơn là những "bất thường" của network.
+
+Do đó việc đặt Snort trước FW sẽ làm cho Snort phải chịu tải lớn không cần thiết, và quá trình "kiểm tra cái thứ đã biết rồi" đó cứ lặp đi lặp lại, đáng không ? Đổi lại nếu FW ở trước lọc một phần các dữ liệu bất hợp lệ, sau đó Snort phát hiện các "thủ đoạn tinh vi" và gởi đến FW để chặn ngay từ đầu. Đến giờ mình cũng chưa thấy TH nào đặt Snort trước FW cả :D
+&nbsp;
+		</blockquote>
+
+Ý anh ở đây có phải là fw phía trước sẽ lọc bớt những traffic không đáng có, đến Snort sẽ detect ra xâm nhập (nếu có) và gửi lại cho fw phía trên để fw block IP ở những lần sau phải không a?
+
+Em nghĩ đặt Snort trước Fw là do SnortSam chỉ làm nhiệm vụ phân tích và gửi command tới fw và việc chặn IP nào là trách nhiệm của IP. Nếu đặt Snort sau thì liệu cuộc xâm nhập "đã thành công rồi" và SnortSam lúc này chỉ có thể "alert" thôi mà ko thể gửi cảnh báo để fw chặn được nữa, vậy liệu chức năng Active Response có còn tác dụng nữa hay ko a?
+
+<blockquote>
+Câu trả lời là được. Tuy nhiên cần tỉnh táo khi xử lí trên các interface và routing data :D
+&nbsp;
+		</blockquote>
+
+Ý em ở đây là trong mô hình test, nhưng qua những phân tích của anh thì có lẽ em nên tách FW ra riêng và Snort ra riêng.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270681</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270681</link>
+				<pubDate><![CDATA[Fri, 2 Nov 2012 06:34:39]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ <blockquote>
+Em nghĩ đặt Snort trước Fw là do SnortSam chỉ làm nhiệm vụ phân tích và gửi command tới fw và việc chặn IP nào là trách nhiệm của IP. Nếu đặt Snort sau thì liệu cuộc xâm nhập "đã thành công rồi" và SnortSam lúc này chỉ có thể "alert" thôi mà ko thể gửi cảnh báo để fw chặn được nữa, vậy liệu chức năng Active Response có còn tác dụng nữa hay ko a? 
+&nbsp;
+		</blockquote>
+Có lẽ khi bạn đọc tài liệu về snortsam và diễn dịch sang tiếng Việt có nhầm lẫn dẫn đến bạn hiểu không đúng vai trò của snortsam. Tuy nhiên ngay cả khi bạn dịch sai, bạn không thấy có gì đó bất ổn khi snortsam làm-nhiệm-vụ-phân-tích ? Thế snort sẽ làm gì nếu không có snortsam ? Và đó cũng là thắc mắc của mình với giả định của bạn.
+
+Để kiểm chứng, mình tải source snortsam về và xem xét, kết quả như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>* This is the remote module that listens for snort alerts generated with the 
+ * Alert_FWsam plug-in. This module provides secure gateway functionality between 
+ * the snort alerts and various firewalls. It listens to the snort alerts, and can
+ * invoke a block on following firewalls:
+...
+... các loại firewall được support. Kèm theo các function cho từng loại, loại nào connect ra sao ...</pre>
+		</div>
+Vậy, nó là một remote module, chạy độc lập như một service và nhận alert từ snort (bạn cần patch snort để gởi alert cho snortsam), sau khi nhận alert từ snort, snortsam sẽ thực hiện "nối kết" vào các firewall để "nhờ chặn hộ".
+
+Tóm lại là, bạn chưa đọc đến đoạn triển khai snortsam như thế nào, tìm hiểu sơ sài vậy thì ỷ lại quá !!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270690</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270690</link>
+				<pubDate><![CDATA[Fri, 2 Nov 2012 12:46:06]]> GMT</pubDate>
+				<author><![CDATA[ LNH]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ Dạ, rất cám ơn anh đã phản hồi lại. Đúng là em mới chỉ "đọc" chứ chưa bắt tay vào triển khai, có lẽ em nên thử triển khai trước đã rồi xem xét lại các nhận định của mình. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270691</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270691</link>
+				<pubDate><![CDATA[Fri, 2 Nov 2012 13:49:07]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Xin tư vấn về mô hình test Snort và SnortSam.</title>
+				<description><![CDATA[ Dạ, rất cám ơn anh đã phản hồi lại. Đúng là em mới chỉ "đọc" chứ chưa bắt tay vào triển khai, có lẽ em nên thử triển khai trước đã rồi xem xét lại các nhận định của mình. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43711.hva#270692</link>
+				<pubDate><![CDATA[Fri, 2 Nov 2012 13:49:19]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+	</channel>
+</rss>

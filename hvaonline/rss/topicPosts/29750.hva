@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi Về Code Chống DoS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi Về Code Chống DoS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ - Kính Chào Các Anh Chị HVA.
+- Khi tìm hiểu về phòng chống Dos em có tìm thấy một đoạn code chống Dos trên diễn đàn HVA có nội dung như sau: 
+"
+
+
+/* Ok, giờ bạn có hai chọn lựa: 
+- Điều chỉnh bật/tắt chống ddos trực tiếp trên file này (1) 
+- Điều chỉnh bật/tắt chống ddos ở một file trên một host khác (2) 
+*/ 
+
+$scheme = 1; //Điền một trong hai số: 1: Chọn cách điều chỉnh thứ (1) 2: Chọn cách điều chỉnh thứ (2) 
+
+// Nếu bạn lựa chọn giải pháp (1) thì hãy edit phần này: 
+$antidos = 1; //Nhập 1 để bật, 0 để tắt chống ddos 
+
+// Nếu bạn lựa chọn giải pháp (2) thì hãy edit phần này: 
+$determiner = "http://another.com/determiner.txt"; //Link tới file quy định bật/tắt chống ddos - Nếu bạn muốn bật chống ddos chỉ việc nhập vào nội dung file này số "1" 
+
+
+//Có thể chỉnh sửa phần sau hoặc để nguyên vậy cũng được 
+$wwwect = "&lt;center&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;&lt;a href='".$_SERVER['REQUEST_URI']."'&gt;[ Click Vào đây ]&lt;/a&gt; &lt;br&gt;Để tới trang bạn cần xem&lt;/center&gt;"; 
+
+// -------------- Hết phần thông tin cần chỉnh sửa - Không chỉnh sửa phần dưới!!! ------------ 
+
+
+//########################################## 
+// ### Okie, chúng ta vào việc nào (-_-) ### 
+//########################################## 
+
+//Ok, định nghĩa mí cái function đã 
+
+function url_exists($url) { 
+$a_url = parse_url($url); 
+if (!isset($a_url['port'])) $a_url['port'] = 80; 
+$errno = 0; 
+$errstr = ''; 
+$timeout = 30; 
+if(isset($a_url['host']) && $a_url['host']!=gethostbyname($a_url['host'])){ 
+$fid = fsockopen($a_url['host'], $a_url['port'], $errno, $errstr, $timeout); 
+if (!$fid) return false; 
+$page = isset($a_url['path']) ?$a_url['path']:''; 
+$page .= isset($a_url['query'])?'?'.$a_url['query']:''; 
+fputs($fid, 'HEAD '.$page.' HTTP/1.0'."\r\n".'Host: '.$a_url['host']."\r\n\r\n"); 
+$head = fread($fid, 4096); 
+fclose($fid); 
+return preg_match('#^HTTP/.*\s+[200|302]+\s#i', $head); 
+} else { 
+return false; 
+} 
+} 
+
+
+function on_off($file) { 
+$string = file_get_contents($file); 
+$fetch = strstr($string,"1"); 
+
+if ($fetch) { 
+return true; 
+} 
+
+else { 
+return false; 
+} 
+} 
+
+function level_1() { 
+global $antidos, $wwwect; 
+if($antidos){ 
+if(!$_SERVER['HTTP_REFERER']) { 
+echo $wwwect; 
+exit; 
+} 
+} 
+} 
+
+function level_2() { 
+global $antidos, $wwwect, $yoursite; 
+if($antidos){ 
+if(strpos($_SERVER['HTTP_REFERER'], 'http://www.'.$yoursite) !== 0) { 
+if(strpos($_SERVER['HTTP_REFERER'], 'http://'.$yoursite) !== 0) { 
+echo $wwwect; 
+exit; 
+} 
+} 
+} 
+} 
+
+// Done function definition ^_^ 
+
+
+if($scheme == 1) { 
+if($level == 1) level_1(); 
+elseif($level == 2) level_2(); 
+else { echo "Bạn phải chọn \$level = 1 hoặc \$level = 2"; exit; } 
+} 
+
+elseif($scheme == 2) { 
+if (!url_exists($determiner)) $antidos = 1; 
+else { $antidos = on_off($determiner); } 
+
+if($level == 1) level_1(); 
+elseif($level == 2) level_2(); 
+else { echo "Bạn phải chọn \$level = 1 hoặc \$level = 2"; exit; } 
+} 
+
+else { 
+echo "Bạn phải chọn \$scheme = 1 hoặc \$scheme = 2"; 
+exit; 
+} 
+
+?&gt; 
+================= 
+
+"
+------&gt;&gt; Em thử nghiệm cho trang<span class="link"> http://noone.hostwq.net/</span>   (índex.php)
+- khi lần đầu tiên vào <span class="link"> http://noone.hostwq.net/</span> thì nó sẽ báo click "vào đây"  --&gt; khi đã vào trong site rồi em refetch thi nó không báo nữa. Nếu em coppy địa chỉ sang một trình duyệt khác thì nó lại báo click "vào đây".
+- Anh chị giúp em cho em hỏi tại sao nó có thể làm được như vậy.?
+
+------&gt;&gt; Theo cách hiểu của em thì đoạn code này sẽ xủ dụng biến $_SERVER['HTTP_REFERER']  để ghi nhận xem đây có phải là lần đầu truy cap hay không ? 
+- Cho em hỏi cách hiểu của em như vậy có đúng không ?
+- Mong các anh chị giúp đỡ.
+- Em xin cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183428</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183428</link>
+				<pubDate><![CDATA[Sat, 13 Jun 2009 02:29:36]]> GMT</pubDate>
+				<author><![CDATA[ 205376]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ <blockquote>- khi lần đầu tiên vào<span class="link"> http://noone.hostwq.net/</span> thì nó sẽ báo click "vào đây" --&gt; khi đã vào trong site rồi em refetch thi nó không báo nữa. Nếu em coppy địa chỉ sang một trình duyệt khác thì nó lại báo click "vào đây". &nbsp;
+		</blockquote>
+
+Điều này là bình thường thôi, khi bạn bấm "vào đây" trình duyệt sẽ ghi nhớ, những lần sau F5 không cần nhấp lại. Nếu F5 mà phải nhấp lại thì mỗi lần chuyển trang bạn vẫn sẽ nhấp "vào đây" à :D
+Còn vào với trình duyệt khác thì phải nhấp lại, 1 lần đầu tiên thôi, khi vào được forum F5 nó sẽ không hiện nữa.
+
+$HTTP_REFERER dùng trả về một địa chỉ url sau đó chứ không phải ghi nhận lần đầu tiên truy cập.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183459</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183459</link>
+				<pubDate><![CDATA[Sat, 13 Jun 2009 14:25:47]]> GMT</pubDate>
+				<author><![CDATA[ shift9x]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ - Thanks bác shift9x .
+- Có bác nào rảnh cho em xin thêm một số ý kiến nữa đi. điều em khó hiểu ở đây là " dựa vào biến gì và tại sao nó có thể làm được như vậy".
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183465</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183465</link>
+				<pubDate><![CDATA[Sat, 13 Jun 2009 15:28:12]]> GMT</pubDate>
+				<author><![CDATA[ 205376]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ HVA chưa bao giờ chống DDoS như trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183553</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183553</link>
+				<pubDate><![CDATA[Sun, 14 Jun 2009 14:32:13]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>HVA chưa bao giờ chống DDoS như trên.&nbsp;
+		</blockquote>
+
+- Ý của em không phải như vậy.
+- Mà em thấy trên diễn đàn có mấy người đưa ra phương pháp như vậy.  wlfng2005 hướng dẫn phương pháp này.
+   ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183561</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183561</link>
+				<pubDate><![CDATA[Sun, 14 Jun 2009 15:42:59]]> GMT</pubDate>
+				<author><![CDATA[ 205376]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ pó tay....
+CHống DDos bằng cách bắt click 1 cái link..... client dính virus no click cũng ddos được như thường... chả tác dụng zì....
+
+DDOS chỉ có nước tùy trường hợp mà xử lý thôi.....]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183644</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#183644</link>
+				<pubDate><![CDATA[Mon, 15 Jun 2009 18:29:09]]> GMT</pubDate>
+				<author><![CDATA[ micr0vnn]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ Ai cho em code chongddoss với :-&lt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184854</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184854</link>
+				<pubDate><![CDATA[Sun, 28 Jun 2009 13:39:20]]> GMT</pubDate>
+				<author><![CDATA[ teen9x]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">teen9x wrote:</cite><br>
+		<blockquote>Ai cho em code chongddoss với :-&lt;&nbsp;
+		</blockquote>
+
+DDoS gì mà cần "code chống DDoS"?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184855</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184855</link>
+				<pubDate><![CDATA[Sun, 28 Jun 2009 13:41:33]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">teen9x wrote:</cite><br>
+		<blockquote>Ai cho em code chongddoss với :-&lt;&nbsp;
+		</blockquote>
+
+DDoS gì mà cần "code chống DDoS"?&nbsp;
+		</blockquote>
+
+Diễn đàn em bị ddos csdl liên tục , làm sao để hạn chế việc này, mong mấy anh giúp đỡ, mới làm web nên việc bảo mật chưa có kinh nghiệm.
+Đây là những gì mà  ghi lại được:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>+-----+--------------+-----------+--------------------+---------+------+----------------+-----------------------------------                         -------------------------------------------------------------------+
+| Id  | User         | Host      | db                 | Command | Time | State          | Info                                                                                                                          |
++-----+--------------+-----------+--------------------+---------+------+----------------+-----------------------------------                         -------------------------------------------------------------------+
+| 442 | tuoitre      | localhost | thanh              | Sleep   | 0    |                |                                                                                                                               |
+| 443 | tuoitre      | localhost | thanh              | Sleep   | 0    |                |                                                                                                                               |
+| 444 | tuoitre| localhost | thanh              | Query   | 8    | Opening tables | SELECT COUNT&#40; * &#41; as field5
+                        FROM userfield WHERE field5 = 'Male'                                 |
+| 447 | tuoitre      | localhost | thanh              | Query   | 1    | Opening tables | SELECT moderator.*, user.username,
+                IF&#40;user.displaygroupid = 0, user.usergroupid, user.displaygroup |
+| 448 | tuoitre    | localhost | thanh              | Query   | 4    | closing tables | SELECT COUNT&#40; * &#41; as field5
+                        FROM userfield WHERE field5 = 'Female'                               |
+| 449 | tuoitre     | localhost | thanh              | Query   | 1    | Opening tables | UPDATE session
+                                        SET lastactivity = 1245466728, inforum = 0, inthread = 0, incalendar = 0, badloc |
+| 452 | tuoitre     | localhost | thanh              | Query   | 9    | closing tables | SELECT thread.threadid, thread.tit                         le, thread.lastpost, thread.forumid, thread.replycount, thread.las |
+| 457 | tuoitre     | localhost | thanh              | Query   | 7    | closing tables | SELECT COUNT&#40; * &#41; as field5
+                        FROM userfield WHERE field5 = 'Female'                               |
+| 458 | tuoitre      | localhost | thanh              | Query   | 42   | closing tables | SELECT threadid, title, lastpost,                          forumid, replycount, dateline, visible, open
+                                        FROM thread AS  |</pre>
+		</div>
+
+web của em <span class="link"> http://tuoitrequynhon.com</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184995</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#184995</link>
+				<pubDate><![CDATA[Mon, 29 Jun 2009 18:14:21]]> GMT</pubDate>
+				<author><![CDATA[ tuoitrequynhon]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ @tuoitrequynhon: em nên xem qua http://www.hvaonline.net/hvaonline/posts/list/112.hva ký sự các vụ ddos đến hva. Cần phải xác định nó là cái gì ,nó xảy ra như thế nào, thì khi đặt câu hỏi sẽ dễ dàng hơn. thân
+
+p/s: dạo này bị stress, muốn về quy nhon quá. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#185049</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#185049</link>
+				<pubDate><![CDATA[Tue, 30 Jun 2009 11:00:13]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Hỏi Về Code Chống DoS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>@tuoitrequynhon: em nên xem qua<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/112.hva</span> ký sự các vụ ddos đến hva. Cần phải xác định nó là cái gì ,nó xảy ra như thế nào, thì khi đặt câu hỏi sẽ dễ dàng hơn. thân
+
+p/s: dạo này bị stress, muốn về quy nhon quá. &nbsp;
+		</blockquote>
+
+chắt là em pó tay rồi vì log này được gửi  từ nhà cung cấp dịch vụ  :-( đọc mù cả mắt mà không biết forum mình bị cách nào như các trận ddos của hva cả, nhà cung cấp dịch vụ có bảo là ddos này là ddos csdl 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29750.hva#185064</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29750.hva#185064</link>
+				<pubDate><![CDATA[Tue, 30 Jun 2009 15:40:31]]> GMT</pubDate>
+				<author><![CDATA[ tuoitrequynhon]]></author>
+			</item>
+	</channel>
+</rss>

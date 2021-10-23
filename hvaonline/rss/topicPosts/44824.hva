@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi Return code of 127 is out of bounds trên Nagios Core"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi Return code of 127 is out of bounds trên Nagios Core"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi Return code of 127 is out of bounds trên Nagios Core</title>
+				<description><![CDATA[ Chào mọi người, mình cài đặt nagios core Version 3.5.0rc1 và nagios plugin-1.4.16 trên hệ điều hành Centos(hostname:nagioscore, địa chỉ ip: 192.168.146.138).
+Mình giám sát 1 máy centos thứ 2 (hostname: severLinux, có địa chỉ ip:192.168.146.139) bằng addon NRPE
+Đây là file /usr/local/nagios/etc/object/nagioscore.cfg:
+<blockquote>define host{
+          name                  linux-box             ; Name of this template
+          use                   generic-host          ; Inherit default values
+          check_period          24x7
+          check_interval        5
+          retry_interval        1
+          max_check_attempts    10
+          check_command         check-host-alive
+          notification_period   24x7
+          notification_interval 30
+          notification_options  d,r
+          contact_groups        admins
+          register              0          ; DONT REGISTER THIS - ITS A TEMPLATE
+          }
+&nbsp;
+		</blockquote>
+Đây là file /usr/local/nagios/etc/objects/linux-box-remote.cfg:
+ 
+<blockquote>
+
+define host{
+          use       linux-box     ; Inherit default values from a template
+          host_name serverLinux    ; The name we're giving to this server
+          alias     serverLinux ; A longer name for the server
+          address   192.168.146.139   ; IP address of the server
+          }
+
+define service{
+          use                 generic-service
+          host_name           serverLinux
+          service_description CPU Load
+          check_command       check_nrpe!check_load
+          }
+define service{
+          use                 generic-service
+          host_name           serverLinux
+          service_description Current Users
+          check_command       check_nrpe!check_users
+          }
+define service{
+          use                 generic-service
+          host_name           serverLinux&nbsp;
+		</blockquote>
+ 
+Mình đã thêm 2 object trên vào tập tin cấu hình chính của nagios
+Nhưng khi truy cập vào web interface thì gặp lỗi: Tình trạng Status luôn ở trạng thái down và status information: 	(Return code of 127 is out of bounds - plugin may be missing) 
+Nhờ mọi người khắc phục giúp.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276392</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276392</link>
+				<pubDate><![CDATA[Fri, 7 Jun 2013 00:57:17]]> GMT</pubDate>
+				<author><![CDATA[ CrashOverride1102]]></author>
+			</item>
+			<item>
+				<title>Lỗi Return code of 127 is out of bounds trên Nagios Core</title>
+				<description><![CDATA[ Bạn đã định nghĩa `check_load ` và `check_users` trên 146.139 chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276394</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276394</link>
+				<pubDate><![CDATA[Fri, 7 Jun 2013 01:47:19]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi Return code of 127 is out of bounds trên Nagios Core</title>
+				<description><![CDATA[ #/usr/local/nagios/libexec/check_nrpe -H localhost -c check_users
+<blockquote>USERS OK - 2 users currently logged in |users=2;5;10;0&nbsp;
+		</blockquote>
+#/usr/local/nagios/libexec/check_nrpe -H localhost -c check_load
+<blockquote>OK - load average: 0.01, 0.04, 0.04|load1=0.010;15.000;30.000;0; load5=0.040;10.000;25.000;0; load15=0.040;5.000;20.000;0; &nbsp;
+		</blockquote>
+Đây là file /etc/xinetd.d/nrpe:
+<blockquote># description: NRPE (Nagios Remote Plugin Executor)
+service nrpe
+{
+        flags           = REUSE
+        socket_type     = stream
+        port            = 5666
+        wait            = no
+        user            = nagios
+        group           = nagios
+        server          = /usr/local/nagios/bin/nrpe
+        server_args     = -c /usr/local/nagios/etc/nrpe.cfg --inetd
+        log_on_failure  += USERID
+        disable         = no
+        only_from       = 127.0.0.1 &lt;192.168.146.138&gt;
+}&nbsp;
+		</blockquote>
+Không hiểu sao mà status lúc nào cũng trong trạng thái Down và Status information thông báo là Return code of 127 is out of bounds - plugin may be missing anh quanta ạ.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276453</link>
+				<pubDate><![CDATA[Sun, 9 Jun 2013 12:30:43]]> GMT</pubDate>
+				<author><![CDATA[ CrashOverride1102]]></author>
+			</item>
+			<item>
+				<title>Lỗi Return code of 127 is out of bounds trên Nagios Core</title>
+				<description><![CDATA[ Mình đã tìm ra được lỗi:
+Do mình không tắt tường lửa, nên từ máy nagioscore không thể check được nrpe trên máy severLinux.
+Mình tắt tường lửa đi thì check được và đã khắc phục được lỗi trên.
+Cám ơn anh quanta nhiều nhé. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276454</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276454</link>
+				<pubDate><![CDATA[Sun, 9 Jun 2013 13:15:00]]> GMT</pubDate>
+				<author><![CDATA[ CrashOverride1102]]></author>
+			</item>
+			<item>
+				<title>Lỗi Return code of 127 is out of bounds trên Nagios Core</title>
+				<description><![CDATA[ Chào mọi người!
+Hix, lại làm phiền mọi người 1 chút xíu.
+Mình đã giám sát được CPU load và Curent Users của máy serverlinux. Nhưng vào xem host thì status của serverlinux vẫn ở tình trạng lỗi như trên đó là Tình trạng Status luôn ở trạng thái down và status information: (Return code of 127 is out of bounds - plugin may be missing).
+Mong mọi người khắc phục giúp mình.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276739</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44824.hva#276739</link>
+				<pubDate><![CDATA[Wed, 19 Jun 2013 14:39:45]]> GMT</pubDate>
+				<author><![CDATA[ CrashOverride1102]]></author>
+			</item>
+	</channel>
+</rss>

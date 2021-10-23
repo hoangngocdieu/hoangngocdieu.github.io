@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Chia xẻ 1 bài tập Linux tổng quát !"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Chia xẻ 1 bài tập Linux tổng quát !"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ Tạo 1 shellcript tên của bạn(viết hoa, có khoảng trắng vd : TRAN A) làm tất cả các việc sau :
+1&gt;	Vào thư mục nhà của mình, tạo một thư mục có tên là họ tên của mình (viết thường vd : nguyenb). Thư mục cho người chủ thư mục có đủ quyền hạn, người trong nhóm và người dùng khác chỉ có quyền đọc.
+2&gt;	Vào thư mục mới tạo ở phần 1 tạo 1 thư mục có tên của người đang sử dụng (tên này xuất phát từ stdout của lệnh hostname) ghép với tên người đang chạy chương trình  (stdout của lệng whoami ), tên thư mục có 1 khoảng trắng ở giữa , vd : “may3 t8” . ). Thư mục cho người chủ thư mục có quyền đọc ghi, người trong nhóm và người dùng khác chỉ có quyền đọc.
+3&gt;	Vào thư mục vừa tạo ở phần 2 tạo một tập tin có tên là tên họ đầy đủ của chính mình ghép với tên của máy đang chạy chương trình (stdout của lệnh hostname) dùng các chữ hoa [uppercase] và ko có khoảng trắng trong tên (vd : tên nguyen van a,  đang chạy trên máy : may3 -&gt; NGUYENVANAMAY3). Tập tin này chứa các thông tin trong /ect/paswd về chính user chạy chương trình này.
+4&gt;	Vào thư mục vừa tạo ở phần 1 tạo các thư mục có tên là 1 kí tự duy nhất nằm trong tên của thư mục được tạo trong phần 1(vd : tên thư mục là : nguyenb thì các thư mục trong nó gồm n,g,u,y,e,n,b). Các thư mục này cho người chủ có quyền đọc và ghi, các nguời dùng khác có quyền đọc thôi.
+5&gt;	Đọc tập tin /ect/passwd  tìm những user thuộc về nhóm có mã số người dùng (UID) lớn hơn 500 và nhỏ hơn 1000 trích ra 3 thông tin về user là tên, UID, tên shell { trường 1, trường 3, trường 7}để ghi vào tập tin thongtin nằm trong thư mục mô tả ở phần 3; mỗi dòng của tập tin thongtin chứa 3 thông tin kể trên, mỗi trường thông tin ngăn cách nhau bằng TAB 
+Thí dụ : 
+- Trong /ect/passwd có dòng :   u8:ABCD12*nADcdq:1008:100:User for                      practices:/home/u8:/bin/bash
+- Thì trong thongtin phải có dòng : u8	1008	/bin/bash
+
+6&gt;	Tập tin thongtin này cho người chủ và người cùng nhóm được quyền đọc ghi nhưng những người khác chỉ có quyền đọc.
+7&gt;	Tâp tin thongtin này được xếp thứ tự tăng dần theo giá trị số của UID.
+8&gt;	Vào trong thư mục tạo ra ở phần 3 tạo các tập tin có tên là các mã số nhóm (GID) đã được liệt kê trong tập tin /ect/passwd sao cho mỗi tập tin như thế chứa các thông tin gồm tên, UID, GID { trường 1, 3, 4} của những users có mã số nhóm đúng như tên tập tin. Nội dung các tập tin này phải được xếp thứ tự tăng dần theo giá trị số của mã số người dùng (UID).
+9&gt;	Vào trong thư mục đã tạo ra ở phần 1, tạo một tập tin tên password gồm nội dung tập tin /ect/passwd được xếp thứ tự tăng dần theo giá trị số của mã số nhóm GID và UID
+      
+Các bạn thử và post lên anh em cùng thảo luận :)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#101985</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#101985</link>
+				<pubDate><![CDATA[Tue, 4 Dec 2007 19:13:06]]> GMT</pubDate>
+				<author><![CDATA[ quanghuy12]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ Không biết cái đề bài do bạn nghĩ ra hay là lấy ở đâu? Tớ thấy nó giống cái bài tập về nhà  =))  =))  =)) Dù sao thì nó cũng khá hay và tổng hợp kiến thức về Bash Shell. Tớ demo một đoạn từ bước 1 đến bước 4 (Phần còn lại sẽ khó hơn, và khó nhất có lẽ là sort theo cả GUID và UID)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+# Step 1
+cd /home/quanta
+mkdir $1
+chmod 744 $1
+
+# Step 2
+cd $1
+mkdir `hostname`\ `whoami`
+chmod 644 `hostname`\ `whoami`
+
+# Step 3
+cd `hostname`\ `whoami`
+echo $2`hostname` | tr 'a-z' 'A-Z' &gt;&gt; step3.txt
+cat /etc/passwd &gt;&gt; `cat step3.txt`
+
+# Step 4
+cd /home/quanta/$1
+myname=$1
+for &#40;&#40; i = 0 ; i &lt; `expr length $1` ; i++ &#41;&#41;
+do
+	mkdir ${myname:$i:1}
+	chmod 644 ${myname:$i:1}
+done</pre>
+		</div>
+
+ps: Tớ sẽ nghĩ và thử viết tiếp những phần còn lại cũng như sửa lại cho tối ưu nếu bạn cùng tham gia thảo luận.
+
+
+
+
+
+
+
+  
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102028</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102028</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 01:21:49]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <font color='red'>$</font> và <font color='red'>'</font> có ý nghĩa gì vậy bạn quanta]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102043</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102043</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 02:47:13]]> GMT</pubDate>
+				<author><![CDATA[ minhhuy192]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Không biết cái đề bài do bạn nghĩ ra hay là lấy ở đâu? Tớ thấy nó giống cái bài tập về nhà  =))  =))  =)) Dù sao thì nó cũng khá hay và tổng hợp kiến thức về Bash Shell. Tớ demo một đoạn từ bước 1 đến bước 4 (Phần còn lại sẽ khó hơn, và khó nhất có lẽ là sort theo cả GUID và UID)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+# Step 1
+cd /home/quanta
+mkdir $1
+chmod 744 $1
+
+# Step 2
+cd $1
+mkdir `hostname`\ `whoami`
+chmod 644 `hostname`\ `whoami`
+
+# Step 3
+cd `hostname`\ `whoami`
+echo $2`hostname` | tr 'a-z' 'A-Z' &gt;&gt; step3.txt
+cat /etc/passwd &gt;&gt; `cat step3.txt`
+
+# Step 4
+cd /home/quanta/$1
+myname=$1
+for &#40;&#40; i = 0 ; i &lt; `expr length $1` ; i++ &#41;&#41;
+do
+	mkdir ${myname:$i:1}
+	chmod 644 ${myname:$i:1}
+done</pre>
+		</div>
+
+ps: Tớ sẽ nghĩ và thử viết tiếp những phần còn lại cũng như sửa lại cho tối ưu nếu bạn cùng tham gia thảo luận.
+
+
+
+
+
+
+
+  
+&nbsp;
+		</blockquote>
+
+Thì ra anh quanta thành pro linux rồi. Tưởng bắt nạt được, vầy thì thua rồi, cố gắng học để tranh luận với anh quanta vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102044</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102044</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 02:53:29]]> GMT</pubDate>
+				<author><![CDATA[ KZM]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">minhhuy192 wrote:</cite><br>
+		<blockquote><font color='red'>$</font> và <font color='red'>'</font> có ý nghĩa gì vậy bạn quanta&nbsp;
+		</blockquote>
+Nó có nghĩa là: ...
+......................... Bạn nên kiếm một quyển về Bash Shell để đọc. Ví dụ như vài cuốn <a href="http://www.hvaonline.net/hvaonline/posts/list/10496.hva" target="_blank"><font color='yellow'>này</font></a>.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102046</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102046</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 03:13:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ @quanta: tớ thấy bước 3 có chút vấn đề, đề bài yêu cầu tạo ra file với tên người ghép với tên máy chứ ko phải tạo ra 1 file chứa nội dung chứa chúng. Hơn nữa, để bổ xung nội dung file /etc/passwd vào file của mình thì viết thế này mới được chứ nhỉ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/passwd &gt;&gt; step3.txt</pre>
+		</div>
+
+Bước 3 tớ đề xuất cách này, mượn cách làm của quanta và đi vòng 1 chút:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/passwd &gt;&gt; $&#40;echo $2`hostname` | tr &#91;a-z&#93; &#91;A-Z&#93;&#41;</pre>
+		</div>
+
+Mấy câu sau đọc thấy khoai quá, 1 số lệnh tớ vẫn chưa biết :( nên chưa làm được. Chỗ này phải cám ơn quanta đã mở mang cho mấy lệnh :).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102053</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102053</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 06:34:22]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">learn2hack wrote:</cite><br>
+		<blockquote>@quanta: tớ thấy bước 3 có chút vấn đề, đề bài yêu cầu tạo ra file với tên người ghép với tên máy chứ ko phải tạo ra 1 file chứa nội dung chứa chúng. Hơn nữa, để bổ xung nội dung file /etc/passwd vào file của mình thì viết thế này mới được chứ nhỉ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/passwd &gt;&gt; step3.txt</pre>
+		</div>
+
+Bước 3 tớ đề xuất cách này, mượn cách làm của quanta và đi vòng 1 chút:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat /etc/passwd &gt;&gt; $&#40;echo $2`hostname` | tr &#91;a-z&#93; &#91;A-Z&#93;&#41;</pre>
+		</div>
+
+Mấy câu sau đọc thấy khoai quá, 1 số lệnh tớ vẫn chưa biết :( nên chưa làm được. Chỗ này phải cám ơn quanta đã mở mang cho mấy lệnh :).&nbsp;
+		</blockquote>
+chào <b><font color='green'>learn2hack</font></b>,
+
+Thật ra thì đoạn code của tớ không <b>sai</b> nhưng bị <b>thừa</b>. Lúc đó viết vội nên không hiểu sao tự nhiên lại phải đi vòng qua 1 file trung gian: step3.txt (chứa nội dung là TÊN FILE yêu cầu của đề bài). Đoạn <b><font color='green'>learn2hack</font></b> viết là chuẩn và không có gì gọi là "đi vòng" cả.
+
+Nên lưu ý chỗ này của tớ:
+<blockquote>cat /etc/passwd &gt;&gt; <font color='orange'><b>`</b></font>cat step3.txt<font color='orange'><b>`</b></font>&nbsp;
+		</blockquote>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102066</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102066</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 10:36:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[  Em xin lam theo cach sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#phan 1
+
+d1='hoquocanh0311048'
+if &#91; -d $d1 &#93;
+then
+	rm -r $d1	
+	cd ~ 
+	mkdir $d1
+else	
+	cd ~
+	mkdir $d1	
+fi
+chmod u=rwx,go=r $d1
+#chmod 744 $d1
+
+#phan 2
+host=$&#40;echo `hostname` | tr '&#91;A-Z&#93;' '&#91;a-z&#93;'&#41;
+user=$&#40;echo `whoami` | tr '&#91;A-Z&#93;' '&#91;a-z&#93;'&#41;
+d3="$host $user"
+# vao trong thu muc duoc tao tu phan 1
+cd $d1
+
+# kiem tra d3 co ton tai chua
+if &#91; -d "$d3" &#93;
+then
+	rm -r "$d3"
+	mkdir "$d3"
+else	
+	mkdir "$d3"
+fi
+chmod u=rwx,go=r "$d3"
+#chmod 744 $d3
+#phan 3
+# vao thu muc duoc tao ra o phan 3
+cd "$d3"
+
+host=$&#40;echo `hostname` | tr '&#91;a-z&#93;' '&#91;A-Z&#93;'&#41;
+f4="HOQUOCANH$host"
+grep $user /etc/passwd &gt; "$f4"
+
+# phan 4
+count=$&#40;echo -n $d1 | wc -c&#41;
+i=1
+cd
+cd $d1
+while &#91; $i -le $count &#93;
+do
+	tempd=$&#40;echo -n $d1 | cut -c$i&#41;
+	if &#91; -d $tempd &#93;
+	then
+		rm -r $tempd
+		mkdir $tempd
+	else	
+		mkdir $tempd
+	fi	
+	chmod 744 $tempd
+	i=`expr $i + 1`
+done
+
+cac bac dong gop cho em nha</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102078</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102078</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 11:35:26]]> GMT</pubDate>
+				<author><![CDATA[ quanghuy12]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[  san day gui cac bac cai link hoc linux tieng viet : doanngan.googlepages.com/unix.htm]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102083</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102083</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 11:46:25]]> GMT</pubDate>
+				<author><![CDATA[ quanghuy12]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanghuy12 wrote:</cite><br>
+		<blockquote> Em xin lam theo cach sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#phan 1
+
+d1='hoquocanh0311048'
+if &#91; -d $d1 &#93;
+then
+	rm -r $d1	
+	cd ~ 
+	mkdir $d1
+else	
+	cd ~
+	mkdir $d1	
+fi
+...</pre>
+		</div>&nbsp;
+		</blockquote>
+Những đoạn check thư mục cần tạo đã tồn tại hay chưa của bạn là hoàn toàn đúng và cần thiết. 
+<p></p>
+		<cite class="blockquote">quanghuy12 wrote:</cite><br>
+		<blockquote>
+Sẵn đây hỏi luôn cá bác : vd : ghi tên người đang chạy máy vào tập tin soyeulylich (nằm trong thư mục đã được tạo ra ỏ
+phần 1). Và cấp quyền read/wirte cho chủ nhân, chỉ cấp quyền read cho nhóm và cho người khác.
+Em lam :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>di='thu_muc_nguon'
+ echo "Nguoi chay may : `whoami`" &gt; $d1/soyeulylich
+ chmod u=rw,g=r,o-rwx soyeulylich
+ #chmod 640 soyeulylich</pre>
+		</div> 
+
+Cho thực thi, nó đã ghi dữ liệu đúng vào tập tin soyeulich ,nhưng lại báo là ::
+chmod: cannot access `soyeulylich': No such file or directory
+nghĩa là sao các bác&nbsp;
+		</blockquote>
+Nghĩa là bạn cần xem lại xem đang đứng ở đâu, bằng lệnh <font color='orange'><b>pwd</b></font>
+
+Xin được viết tiếp Phần 5 và 6:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+# Step 5
+cat /etc/passwd | while read line
+do
+	uid=$&#40;echo $line | cut -d: -f3&#41;
+	if &#91; `expr $uid` -ge 500 &#93; && &#91; `expr $uid` -le 1000 &#93;; then
+		echo $line | cut -d: -f1,3,7 &gt;&gt; temp
+	fi
+done
+sed 's/:/\t/g' temp &gt;&gt; thongtin
+rm -fr temp
+
+# Step 6
+chmod 664 thongtin</pre>
+		</div>
+
+ps: chưa làm thế nào để "<font color='orange'>sed</font>" luôn file <b>thongtin</b> được, đành lưu tạm ra file <b>temp</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102093</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102093</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 12:48:14]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[  có 1 cách nhìn tổng quát hơn :
+
+d1='tap_tin_nguon'
+host=$(echo `hostname` | tr '[A-Z]' '[a-z]')
+d3="$host $user"
+cd
+file6='thongtin'
+# xoa du lieu trong tap tin 'thongtin' neu co
+[ -f $file6 ] && rm -f $file6
+# duyet trong /etc/passwd 
+cat /etc/passwd | while read LINE
+do
+	uid=`echo $LINE | cut -f3 -d':'`
+	
+		name=`echo $LINE | cut -f1 -d':'`
+		shellname=`echo $LINE | cut -f7 -d':'`
+		echo -e "$name \t$uid \t$shellname" &gt;&gt; $d1/"$d3"/$file6    # cái này có thể đưa trực tiếp vào file
+	#else
+		#echo "uid = $uid khong nam trong khoang 500&lt;uid&lt;1000"
+	
+done]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102098</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102098</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 13:09:22]]> GMT</pubDate>
+				<author><![CDATA[ quanghuy12]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ #phan 8:
+
+# sap xep cho tap tin 'thongtin' neu co
+if [ -f $d1/"$d3"/$file6 ]
+then
+	sort -n -k2  $d1/"$d3"/$file6  -o  $d1/"$d3"/$file6
+fi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102101</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102101</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 13:25:10]]> GMT</pubDate>
+				<author><![CDATA[ quanghuy12]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ Hoàn thành tác phẩm (có vài dòng mà đọc <font color='orange'><b>man sort</b></font> mãi mới làm được  =)))
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Step 8
+cat /etc/passwd | while read line
+do
+	echo $line | cut -d: -f1,3,4 &gt;&gt; $&#40;echo $line | cut -d: -f4&#41;
+	sort -n -t: --key=2 $&#40;echo $line | cut -d: -f4&#41; -o $&#40;echo $line | cut -d: -f4&#41;
+done
+
+# Step 9
+cat /etc/passwd | while read line
+do
+	echo $line &gt;&gt; passwd
+	sort -n -t: --key=4 --key=3 passwd -o passwd
+done</pre>
+		</div>
+
+ps: Sau bài tập này có lẽ phải lập cái topic chuyên dành cho viết bash shell script. Cảm ơn <b>quanghuy12</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102125</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102125</link>
+				<pubDate><![CDATA[Wed, 5 Dec 2007 15:16:36]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">minhhuy192 wrote:</cite><br>
+		<blockquote><font color='red'>$</font> và <font color='red'>'</font> có ý nghĩa gì vậy bạn quanta&nbsp;
+		</blockquote>
+Nó có nghĩa là: ...
+......................... Bạn nên kiếm một quyển về Bash Shell để đọc. Ví dụ như vài cuốn <a href="http://www.hvaonline.net/hvaonline/posts/list/10496.hva" target="_blank"><font color='yellow'>này</font></a>.
+&nbsp;
+		</blockquote>
+thanks quanta]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102267</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102267</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 02:39:24]]> GMT</pubDate>
+				<author><![CDATA[ minhhuy192]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ @quanta: đúng là tớ đọc vội quá, ko để ý cặp `` của cậu, thanks.
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Xin được viết tiếp Phần 5 và 6:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+# Step 5
+cat /etc/passwd | while read line
+do
+	uid=$&#40;echo $line | cut -d: -f3&#41;
+	if &#91; `expr $uid` -ge 500 &#93; && &#91; `expr $uid` -le 1000 &#93;; then
+		echo $line | cut -d: -f1,3,7 &gt;&gt; temp
+	fi
+done
+sed 's/:/\t/g' temp &gt;&gt; thongtin
+rm -fr temp</pre>
+		</div>
+
+ps: chưa làm thế nào để "<font color='orange'>sed</font>" luôn file <b>thongtin</b> được, đành lưu tạm ra file <b>temp</b>&nbsp;
+		</blockquote>
+
+Chỗ này dùng tr là ổn thôi quanta à:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo $line | cut -d: -f1,3,7 | tr : '\t' &gt;&gt; thongtin</pre>
+		</div>
+
+@quanghuy12: Bạn tối ưu và sắp xếp lại code cho nó gọn nhẹ và đẹp mắt hơn, sẽ dễ theo dõi hơn đấy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102896</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102896</link>
+				<pubDate><![CDATA[Sun, 9 Dec 2007 04:14:00]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+			<item>
+				<title>Re: Chia xẻ 1 bài tập Linux tổng quát !</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>ps: chưa làm thế nào để "<font color='orange'>sed</font>" luôn file <b>thongtin</b> được, đành lưu tạm ra file <b>temp</b>&nbsp;
+		</blockquote>
+Hề, xài thêm thằng <font color='orange'>-i</font> là ổn:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sed -i 's/:/\t/g' temp</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102932</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16970.hva#102932</link>
+				<pubDate><![CDATA[Sun, 9 Dec 2007 13:22:49]]> GMT</pubDate>
+				<author><![CDATA[ lihavim]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Authentication Gap in TLS Renegotiation"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Authentication Gap in TLS Renegotiation"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <blockquote>
+The SSL 3.0+ and TLS 1.0+ protocols are vulnerable to a set of related attacks which allow a man-in-the-middle (MITM) operating at or below the TCP layer to inject a chosen plaintext prefix into the encrypted data stream, often without detection by either end of the connection. This is possible because an “authentication gap” exists during the renegotiation process at which the MitM may splice together disparate TLS connections in a completely standards-compliant way. This represents a serious security defect for many or all protocols which run on top of TLS, including HTTPS.
+&nbsp;
+		</blockquote>
+
+Full paper:<span class="link"> http://extendedsubset.com/.</span> Xem thêm:<span class="link"> http://www.ietf.org/mail-archive/web/tls/current/threads.html#03928</span>
+
+----
+
+Một phát hiện hết sức thú vị. Thú vị ở chỗ bao nhiêu người, bao nhiêu chuyên gia, bao nhiêu năm qua dòm vô TLS/SSL mà không thấy được lỗ hổng có vẻ như rất hiển nhiên mà các tác giả ở trên phát hiện. 
+
+Có lẽ nguyên nhân nhiều người dòm nhưng không thấy là vì họ chỉ dòm TLS/SSL khi nó đứng một mình, mà không nhìn vào bức tranh lớn OSI, trong đó TLS/SSL chỉ là một layer. Chuyện gì sẽ xảy ra nếu TLS/SSL không hiểu rõ cơ chế hoạt động của các protocol bên trên nó, như HTTP, SMTP hay POP3? Nói cách khác, chuyện gì sẽ xảy ra nếu các protocol ở mức Application không hiểu rõ cơ chế vận hành của TLS/SSL để sử dụng cho đúng cách? Đó là lúc lỗ hổng xuất hiện.
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197675</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197675</link>
+				<pubDate><![CDATA[Thu, 5 Nov 2009 16:13:19]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ Không phải là không phát hiện ra. Thực ra ý tưởng về sự yếu kém từ việc bất đồng về khái niệm security ở các layers đã được bàn thảo khá lâu rồi. Ngoài TLS ra thì còn một số các protocols khác cũng bộc lộ nhược điểm, ví dụ như BTNS IPSec, HIP.
+
+Các protocols này (kể cả TLS) thường hoạt động hoàn hảo nếu chúng đi cùng với PKI. Đáng tiếc, không phải lúc nào cũng vậy. Thêm vào đó là các vấn đề như: higher-layer protocols không hiểu mình được cái gì bảo vệ, lower-layer protocols không hiểu mình đang bảo vệ cái gì, thời lượng của communication sessions ở mỗi layer khác nhau, etc. 
+
+Tuy nhiên, cách thức chính xác để tấn công vào HTTP và TLS thì bây giờ mới thấy nói. Chỉ có điều, ở paper trên tác giả viết hơi khó hiểu, nên mình cũng chưa nắm rõ. Bạn <b>mrro</b> có thể giúp mình chỉ ra step-by-step của cuộc tấn công trong cả 3 scenarios được không?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197716</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197716</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 00:55:10]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ Hi StarGhost,
+
+Ha ha ha mình biết StarGhost sẽ tham gia :-D. Lạ đời là nhiều bạn cứ than phiền HVA dạo này xuống dốc, nhưng mà những topic hay ho thế này thì lại vắng hoe, trong khi topic tầm xàm thì dài 5-7 trang, cãi hoài về những cái đâu đâu. 
+
+Anyway, tổng quan thì lỗ hổng này nằm ở sự thiếu "ăn rơ" giữa TLS/SSL và các protocol trên nó như HTTP hay SMTP. Khai thác lỗ hổng này thì kẻ tấn công có thể <b>chèn thêm một đoạn plaintext bất kỳ vào TLS/SSL encrypted stream giữa client và server mà cả client và server đều không thể phát hiện được</b>. Đây là một lỗ hổng cực kỳ nghiêm trọng, bởi vì nó phá vỡ hoàn toàn cam kết an toàn của bộ giao thức TLS/SSL. Nói một cách *hoành tráng* thì về mặt lý thuyết, nền tảng của thương mại điện tử đang chao đảo. Mình dùng chữ lý thuyết vì để cho hướng tấn công này nguy hiểm hơn trong thực tế, thì còn có nhiều trở ngại phải vượt qua (và sẽ bị vượt qua).
+
+Đấy một đề tài hay như thế, phù hợp với HVA như thế, nhưng không có bạn nào từng cãi rất hăng là "HVA đã xuống cấp" tham gia cả. Hay là đề tài này cũng không phù hợp với đẳng cấp của các bạn ấy?
+
+Thôi quay trở lại với câu chuyện thú vị của chúng ta. Để minh họa cho câu chuyện, và để dễ giải thích, mình đặt ra một ví dụ như sau:
+
+<b>0. Giả định:</b>
+
+<blockquote>
+
+* Ngân hàng A có cung cấp dịch vụ Internet Banking ở địa chỉ<span class="link"> https://www.ebank.com.</span> Máy chủ của của họ chạy phần mềm có lỗ hổng mà chúng ta đang bàn ở đây. Chúng ta gọi máy chủ này là server.
+
+* Để tăng cường an ninh, ngân hàng A yêu cầu khi khách hàng (giờ cứ gọi là client) sử dụng các tính năng có liên quan đến giao dịch tài chính nằm trong khu vực<span class="link"> https://www.ebank.com/account/,</span> thì (browser của) họ phải có cài đặt client certificate cho ngân hàng A cung cấp. Lưu ý là nhiều ngân hàng ở VN thực hiện cái này lắm nha.
+
+* Ngoài ra ngân hàng A còn hỗ trợ khách hàng truy cập bằng (Safari trên) iPhone, lúc đó khách hàng sẽ được chuyển đến<span class="link"> https://www.ebank.com/iphone/.</span> Do iPhone có processor yếu, nên ngân hàng A cấu hình máy chủ web của họ để sử dụng một bộ ciphersuite yếu hơn bộ ciphersuite mà họ sử dụng cho các khách hàng thông thường. Cái này trong thực tế cũng có nhiều công ty triển khai.
+
+&nbsp;
+		</blockquote>
+
+Rồi bây giờ mình sẽ sử dụng cái kỹ thuật vừa mới phát hiện để tấn công các khách hàng của ngân hàng A theo 3 hướng tấn công mà các tác giả nêu ra. Àh lưu ý là đây là loại tấn công MITM, nghĩa là attacker phải có quyền theo dõi, điều chỉnh dữ liệu truyền qua lại giữa client và server nha. Attacker có thể làm việc này thông qua các tấn công vào các giao thức ARP hay DNS.
+
+<b>1. Hướng tấn công số 1</b>
+
+Đối với hướng tấn công số 1, mình sẽ lợi dụng việc khi truy cập vào<span class="link"> https://www.ebank.com/account/</span> thì server sẽ yêu cầu client phải trình certificate. 
+
+Sơ đồ bên dưới là mình lấy từ paper của các tác giả phát hiện ra lỗ hổng này. Mình thấy cái sơ đồ này giải thích rất rõ lỗ hổng này và cách thức tấn công theo hướng thứ 1. Thật ra thì hướng thứ 2 và hướng thứ 3 cũng khá giống hướng thứ 1, nên mình nghĩ nắm rõ hướng thứ 1 thì sẽ thấy các hướng kia cũng đơn giản.
+
+<br>
+			<div align="center" class="limitview"><img src='http://farm3.static.flickr.com/2534/4078446262_1a478302c1_o.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Có 4 bước khi triển khai tấn công này:
+
+* Bước 1: client truy cập vào<span class="link"> https://www.ebank.com.</span> Lúc này client sẽ kết nối đến attacker, và gửi CLIENT_HELLO để bắt đầu giao thức TLS/SSL. Attacker sẽ tạm dừng cái kết nối này và lưu msg CLIENT_HELLO lại để dùng trong bước 3.
+
+* Bước 2: attacker mở kết nối đến server thật. Hai bên sẽ bắt tay theo giao thức TLS/SSL để tạo thành một session. Sau khi hoàn tất bắt tay, attacker gửi một HTTP request, đại loại như:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+POST /account/transfer?amount=1000&receiver=attacker HTTP/1.1\r\n
+...</pre>
+		</div>
+
+* Bước 3: server thấy có một request đến khu vực /account/ nên nó tạm thời dừng xử lý request này lại và như đã nói ở trên, nó yêu cầu attacker phải đưa client certificate cho nó xem. Cái hay ở đây, mặc dầu attacker không có (private key của) certificate của client, nhưng hắn vẫn có thể *proxy* cái certificate đó từ client lên server, mà không bị bên nào phát hiện cả.
+
+Server bắt đầu quá trình xác thực bằng việc gửi một msg HELLO_REQUEST ngược lại cho attacker. Attacker nhận được msg này thì hắn gửi CLIENT_HELLO mà hắn đã lưu ở bước 1 ngược lại cho server. Rồi cứ thế, attacker đứng giữa, chuyển msg qua lại giữa client và server cho đến khi quá trình xác thực bằng client certificate kết thúc thành công. 
+
+Lưu ý là có 2 loại msg mà attacker sẽ gửi. Loại thứ nhất (trên sơ đồ là những msg kết thúc hoặc bắt đầu từ cột m) là những msg mà hắn phải giải mã/mã hóa trước khi gửi đi. Ví dụ như hắn nhận "Certificate" từ phía client thì hắn sẽ mã hóa cái msg này lại, rồi mới gửi cho server. Loại thứ hai (trên sơ đồ là những msg màu hồng và đỏ) là những msg mà hắn không đọc được (vì không có key), hắn chỉ làm mỗi việc là nhận từ client thì gửi qua server và ngược lại.
+
+* Bước 4: quá trình xác thực client certificate đã kết thúc thành công, server tiếp tục xử lý cái request của attacker ở trên, và trả kết quả lại cho attacker (lưu ý là attacker sẽ không đọc được kết quả này). 
+
+Điểm yếu là ở đây. Như chúng ta thấy, khi attacker gửi request ở bước 3, lúc đó hắn chưa được xác thực. Nói cách khác, lúc này request của hắn là unauthenticated request. Việc xác thực diễn ra sau đó, và sau khi xác thực rồi thì server lại quay lại xử lý tiếp cái unauthenticated request của attacker. 
+
+Lưu ý, ở bước này, để tránh bị tình nghi, attacker có thể tiếp tục trả kết quả về cho client để đóng kết nối lại một cách êm đẹp.
+
+---
+
+Mai mình sẽ giải thích tiếp 2 hướng còn lại.
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197726</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197726</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 05:35:02]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <b>2. Hướng tấn công số 2</b>
+
+Trước khi bắt đầu giải thích hướng số 2, mình muốn nhấn mạnh ý này: <b>tất cả 3 hướng tấn công này đều hướng đến chôm credential của client để gửi các authenticated request đến server. Credential ở đây có thể là certificate (như ở hướng số 1) hay cookie/session (như ở hướng số 2 và số 3).</b> Nếu chỉ áp dụng cho HTTPS, nhìn ở một góc độ nào đó, các hướng tấn công này rất giống với tấn công CSRF. Nên nếu ứng dụng của bạn đã có các phương thức phòng chống CSRF rồi hay nếu ứng dụng của bạn không chấp nhận thay đổi state bằng GET, thì tạm thời cũng không phải có gì lo lắng.
+
+Đối với hướng số 1, mình lợi dụng client certificate để gửi một authenticated request. Ở trường hợp các server không xác thực bằng certificate, mình sẽ sử dụng hướng tấn cống số 2. 
+
+Hướng tấn công này cũng có 4 bước:
+
+* Bước số 1: tương tự như hướng tấn công số 1.
+
+* Bước 2: attacker mở kết nối đến server thật. Hai bên sẽ bắt tay theo giao thức TLS/SSL để tạo thành một session.
+
+Sau khi hoàn tất bắt tay, attacker gửi một HTTP request, đại loại như:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+GET /iphone/login HTTP/1.1\r\n
+Host: ebank.com\r\n
+Connection: keep-alive\r\n
+\r\n
+GET /account/transfer?amount=1000&receiver=attacker HTTP/1.1\r\n
+Host: ebank.com\r\n
+Connection: close\r\n
+X-ignore-this:
+...</pre>
+		</div>
+
+* Bước số 3: server thấy có request đến /iphone/ nên nó tạm thời dừng xử lý request này lại và, như đã nói ở phần giả định, server sẽ bắt đầu quá trình renegotiate lại để chọn một bộ ciphersuite yếu hơn. Vấn đề ở đây là server sẽ buffer lại toàn bộ nhóm unauthenticated request này, khi mà renegotiate xong thì lại quay lại xử lý hết tất cả.
+
+Trong quá trình renogotiation, vai trò của attacker cũng tương tự như ở bước số 3 của hướng tấn công số 1, nghĩa là hắn cũng chỉ *proxy* msg qua lại giữa client và server, cho đến khi quá trình renegotiate kết thúc thành công.
+
+* Bước số 4: lúc này, client thấy đã handshake xong rồi, nên bản thân nó sẽ gửi tiếp cái HTTP request của nó ở dạng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+GET /index HTTP/1.1\r\n
+Cookie: AuthMe=Now\r\n
+\r\n
+...</pre>
+		</div>
+
+Chuyện bất ngờ diễn ra ở đây. Server nó sẽ gom nhóm unauthenticated request ở bước 2 (do attacker gửi) và cái authenticated request này (do client gửi) rồi xử lý chung một lần. Nguyên nhân server xử lý như thế là do cái cờ keep-alive ở request đầu tiên. Thành ra lúc này nhóm request trở thành như sau (màu vàng là attacker gửi, màu xanh là client gửi):
+
+<font color='yellow'>
+GET /iphone/login HTTP/1.1\r\n
+Host: ebank.com\r\n
+Connection: keep-alive\r\n
+\r\n
+GET /account/transfer?amount=1000&receiver=attacker HTTP/1.1\r\n
+Host: ebank.com\r\n
+Connection: close\r\n
+X-ignore-this:</font><font color='green'>GET /index HTTP/1.1\r\n
+Cookie: AuthMe=Now\r\n
+\r\n</font>
+
+Ở đây cái header X-ignore-this đã vô hiệu hóa cái request <b>GET /index HTTP/1.1</b> của client, đồng thời chôm luôn cookie của client để gắn vào cái unauthenticated request <b>GET /account/transfer?amount=1000&receiver=attacker</b>. Rất hay!
+
+<b>3. Hướng tấn công số 3</b>
+
+Đây là hướng tấn công mạnh nhất, không cần server phải có cấu hình đặc biệt gì để thực hiện. Sự khác biệt cơ bản giữa tấn công này với hai hướng tấn công vừa rồi là trong trường hợp này, client bắt đầu quy trình renegotiation. 
+
+Ý tưởng thực hiện tấn công rất giống với hướng 2, chỉ khác nhau ở bước số 2, attacker sẽ không gửi <b>GET /iphone/login</b> nữa mà gửi trực tiếp luôn request của hắn, kèm theo một cái "X-ignore-this" header. 
+
+Ngay sau khi gửi cái request đó, attacker sẽ forward cái CLIENT_HELLO thu được ở bước 1 sang cho phía server để bắt đầu quy trình renegotiation. Khi đã renegotiate xong, client sẽ gửi request ban đầu của mình đến server, lúc này toàn bộ request sẽ trông như sau (phần màu vàng của attacker gửi, phần màu xanh của client gửi):
+
+<font color='yellow'>GET /account/transfer?amount=1000&receiver=attacker HTTP/1.1\r\n
+Host: ebank.com\r\n
+Connection: close\r\n
+X-ignore-this:</font><font color='green'> GET /index HTTP/1.1\r\n
+Cookie: AuthMe=Now\r\n
+\r\n</font>
+
+Tương tự ở trên, X-ignore-this đã vô hiệu hóa request của client và chôm cookie để biến request của attacker thành authenticated. Không cần keep-alive, không cần server phải có cấu hình đặc biệt gì cả!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197756</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197756</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 18:10:00]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ Thanks anh mrro đã post 1 topic rất hay.
+
+Em có vài điều thắc mắc
+
+1) Ở hướng tấn công thứ 3 :
+<blockquote>
+Ý tưởng thực hiện tấn công rất giống với hướng 2, chỉ khác nhau ở bước số 2, attacker sẽ không gửi GET /iphone/login nữa mà gửi trực tiếp luôn request của hắn, kèm theo một cái "X-ignore-this" header. 
+&nbsp;
+		</blockquote>
+
+Lúc này attacker chưa có kết nối với server, vậy lấy đâu ra session key để server decrypt cái msg này mà gắn vào phần của client ?
+
+2) Em thấy cái cách tấn công 2 và 3 không hẳn là bug về design của TSL protocol, mà là bug của implementation nhiều hơn. Ví dụ như các vấn đề về buffer này nọ, không có thấy đề cập trong design ? ( !??! vừa đọc thử cái spec, không thấy nói về vấn đề này )
+
+p/s Cái link trên hình như die rồi, em tìm thấy cái khác ở đây :<span class="link"> http://packetstormsecurity.org/0911-advisories/Renegotiating_TLS.pdf</span> 
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197772</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197772</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 20:50:43]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ @mrro: à, hóa ra đây là các kiểu tấn công hoàn toàn mới, khác nhiều với suy nghĩ của mình. Bạn<b>mrro</b> tài thật, lại còn biết mình sẽ tham gia nữa. ^_^
+
+@WinDak: 
+1) việc gắn 2 messages không phải do attacker làm, mà là do server làm.
+2) Mình thấy bạn nói cũng có lí. Về mặt nguyên tắc thì toàn bộ communication phải được bound với credentials, bao gồm cả requests lẫn replies. Lúc đầu mình cũng không tưởng ra là server lại chấp nhận unauthenticated requests. Mình cho rằng đây phần nhiều là lỗi implementation. Tuy nhiên, mình cũng không chắc là trong RFCs của TLS có nhấn mạnh điều mình nói ở trên để nhắc nhở developers không nữa.
+p/s: Cái link của <b>mrro</b> không có die, chỉ là nó thừa dấu chấm thôi.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197777</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197777</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 23:42:26]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+1) việc gắn 2 messages không phải do attacker làm, mà là do server làm. 
+&nbsp;
+		</blockquote>
+Oh mình hiểu việc này chứ ... 
+
+Lúc đầu đọc ở trên bài của mrro mình nghĩ là trong trường hợp 3 khác ở chỗ là attacker không cần connect đến server trước, nhưng thật ra việc này không thể được, vì nếu attacker không connect thì sẽ không có session key giữa attacker vs server. Do đó server không thể decrypt cái msg "GET ..." mà attacker send.
+
+Vừa rồi đọc kỹ lại paper bằng tiếng Anh và nghiền ngẫm cái ở trên mới biết mình hiểu nhầm ý mrro.
+
+Thật ra 2 và 3 chỉ khác ở chỗ, ở 3, attacker chủ động gửi re-negotiation request đến server, thay vì kích hoạt server gửi.
+
+<blockquote>
+Scenario: Client-initiated renegotiation
+TLS equally allows the client side of the connection to initiate a renegotiation. This case
+is perhaps more attractive to the attacker because he does not need to elicit a Hello
+Request from the server, so no particular server-side configuration is required for this
+attack to succeed.
+In the HTTPS domain, a practical attack involves the MITM splicing an initial request
+with an un-terminated HTTP “ignore” header onto the beginning of the client's intended
+request, again stealing whatever authentication or authorization information provided.
+Note that this does not require pipelining or HTTP keep-alive. In all other respects, the
+server sees the same sort of request buffer as above.
+&nbsp;
+		</blockquote>
+
+Trong paper, tác giả còn đề cập đến 1 số cách giải quyết problem này
+- trước khi client muốn request bất cứ thứ gì thì phải trình certificate ra (server ignore mọi thứ trước đó ??)
+- thêm session ID vào việc re-negotiation
+- sửa đổi cách thức làm việc giữa HTTP và TSL
+- client phải authenticate server trước khi send certificate cho server  ( cái này chưa hiểu lắm anh mrro có thể giải thích không ? )
+
+Mọi người có thể thảo luận và cùng tìm hiểu thêm
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197782</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197782</link>
+				<pubDate><![CDATA[Sat, 7 Nov 2009 00:51:01]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>
+ - client phải authenticate server trước khi send certificate cho server ( cái này chưa hiểu lắm anh mrro có thể giải thích không ? ) 
+&nbsp;
+		</blockquote>
+
+Chỗ này mình cũng chưa hiểu rõ lắm. Theo ý mình thì là vầy. Attacker có cung cấp một dịch vụ hợp lệ, chẳng hạn như một proxy server có hỗ trợ SSL ở địa chỉ<span class="link"> https://www.proxy.com.</span> Khi có một client kết nối vào, attacker sẽ SSL handshake đầy đủ bằng certificate của www.proxy.com với client này.
+
+Sau đó attacker sẽ chọn server để tấn công (thành ra các tác giả mới gọi là chosen-server attack). Khi chọn được một server hội đủ các điều kiện cần thiết, attacker sẽ mở kết nối đến server và trick cho server bắt đầu quá trình renegotiation. 
+
+Lúc nhận được HELLO_REQUEST từ server, attacker sẽ gửi lại cái HELLO_REQUEST đó cho phía client, nhằm giả bộ rằng máy chủ www.proxy.com muốn renegotiate lại với client. Trong quá trình renegotiate này, attacker sẽ yêu cầu client gửi certificate. Để làm được điều đó thì attacker phải gửi server certificate ngược lại cho client. Lúc này nếu client kiểm tra, sẽ thấy cái server certificate này khác với cái certificate ban đầu của www.proxy.com.
+
+Cái này là dự đoán của mình thôi, mình chưa test nên chưa biết rõ có đúng là ý của các tác giả hay không.
+
+Về việc đây là lỗi của thằng nào thì cũng khó nói :-D. Kêu lỗi của thằng web server thì cũng oan cho nó, HTTP là stateless mà, nó không có cơ chế nào để phân biệt authenticated/unauthenticated request cho đến khi nó nhận được request đó. Với lại, đối với hướng tấn công số 3, web server cũng không thể nào biết được, là ngay giữa lúc nó đang xử lý request, thì thằng client lại đòi renegotiate. 
+
+Phần này là trích ra từ man page của SSL_read(3):
+
+<blockquote>
+If necessary, SSL_read() will negotiate a TLS/SSL session, if not already explicitly performed by SSL_connect(3) or SSL_accept(3). If the peer requests a re-negotiation, it will be performed transparently during the SSL_read() operation. The behaviour of SSL_read() depends on the underlying BIO.
+&nbsp;
+		</blockquote>
+
+Như vậy đó. Application nó gọi SSL_read() để đọc dữ liệu ra từ cái TLS/SSL session, nó không thể nào biết được rằng sẽ có re-negotiation diễn ra, rằng cái mà nó nhận được thực ra là ghép lại từ 2 nguồn khác nhau.
+
+Vả lại, nhìn kỹ thì lỗi của thằng TLS không phải là nhỏ. Tại sao nó lại không bind cái renegotiation session (inner session) với cái outer session? Nói cách khác, nếu có một cái cryptography state nào đó được đem từ outer session vào trong cái inner session thì sẽ không thể có chuyện attacker lợi dụng client để làm renegotiation. SSH làm tốt chuyện này, nên nó không bị nguy hiểm <span class="link"> http://djm.net.au/2009/11/6/ssh-is-not-vulnerable-to-the-ssl-tls-mitm-attack</span>).
+
+Hiện giờ đã có proposed fix theo hướng là TLS sẽ bind mấy cái renegotiate session với cái outer session. Xem thêm:<span class="link"> https://svn.resiprocate.org/rep/ietf-drafts/ekr/draft-rescorla-tls-renegotiate.txt</span>
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197796</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197796</link>
+				<pubDate><![CDATA[Sat, 7 Nov 2009 05:23:37]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ 
+Àh nói thêm, ngoài HTTP, mình đang xem mấy cái protocol khác để coi có cái nào có thể bị khai thác bởi cái điểm yếu này không. Mình đã coi IMAP, nhưng có vẻ là IMAP không bị, vì IMAP nó có state rõ ràng, khi ở trong unauthenticated state thì chỉ chạy được vài command mà thôi. Có vẻ như POP3, LDAP, XMPP cũng không bị ảnh hưởng.
+
+Mà theo kinh nghiệm của mình, trước khi release thế này, có lẽ các tác giả cũng đã coi mấy cái protocol này hết rồi và chỉ có mỗi HTTP là có thể bị khai thác thôi. 
+
+Tiếc nhỉ, một cái lỗ *đẹp* thế mà không có *thọt* được gì nhiều.
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197797</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197797</link>
+				<pubDate><![CDATA[Sat, 7 Nov 2009 05:32:53]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ Nếu xét trên bình diện tiêu chuẩn (qua RFC) thì chính những người thiết kế protocol đã nhận ra những điểm yếu không thể tránh khỏi. Ví dụ, RFC  5246 (The Transport Layer Security (TLS) Protocol V 1.2) có đưa ra ở phần overview về handshake protocol như sau:
+
+<blockquote>Note that <b>higher layers should not be overly reliant on whether TLS
+   always negotiates the strongest possible connection between two
+   peers</b>.  There are a number of ways in which a <font color='red'>man-in-the-middle
+   attacker can attempt to make two entities drop down</font> to the least
+   secure method they support.  <b>The protocol has been designed to
+   minimize this risk, but there are still attacks available</b>: for
+   example, an attacker could block access to the port a secure service
+   runs on, or attempt to get the peers to negotiate an unauthenticated
+   connection.  <b>The fundamental rule is that higher levels must be
+   cognizant of what their security requirements are and never transmit
+   information over a channel less secure than what they require</b>.  The
+   TLS protocol is secure in that any cipher suite offers its promised
+   level of security: if you negotiate 3DES with a 1024-bit RSA key
+   exchange with a host whose certificate you have verified, you can
+   expect to be that secure.&nbsp;
+		</blockquote>
+
+
+Với đoạn trên, những người thiết kế đã nhận ra khả năng khai thác MitM hoàn toàn có thể xảy ra. Vấn đề được đặt ra là: ở điều kiện thế nào thì MitM có thể đắc lợi được và mitigate những tấn công ở dạng này phải chăng chỉ trông cậy hoàn toàn vào SSL/TLS và những ứng dụng của các protocol khác ở tầng cao hơn?
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197813</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197813</link>
+				<pubDate><![CDATA[Sat, 7 Nov 2009 14:10:26]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <blockquote>RFC2595 – Using TLS with IMAP, POP3 and ACAP
+
+A TLS negotiation begins immediately after the CRLF at the end of the tagged OK response from the server. Once a client issues a STARTTLS command, it MUST NOT issue further commands until a server response is seen and the TLS negotiation is complete.
+
+The STARTTLS command is only valid in non-authenticated state. The server remains in non-authenticated state, even if client credentials are supplied during the TLS negotiation. The SASL [SASL] EXTERNAL mechanism MAY be used to authenticate once TLS client credentials are successfully exchanged, but servers supporting the STARTTLS command are not required to support the EXTERNAL mechanism.
+
+Once TLS has been started, the client MUST discard cached information about server capabilities and SHOULD re-issue the CAPABILITY command. This is necessary to protect against man-in-the-middle attacks which alter the capabilities list prior to STARTTLS. The server MAY advertise different capabilities after STARTTLS.
+<span class="link"> http://www.faqs.org/rfcs/rfc2595.html</span>
+&nbsp;
+		</blockquote>
+
+@conmale : MitM có thể lấy được xác thực phía client và sử dụng nó để authen với bất kỳ server nào chấp nhận cer của client.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197910</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197910</link>
+				<pubDate><![CDATA[Mon, 9 Nov 2009 09:22:03]]> GMT</pubDate>
+				<author><![CDATA[ Phuongdong]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ :D sorry em không hiểu ý anh PD, em thấy đoạn anh quote chỉ ra rằng người thiết kế protocol đã rất cẩn thận lưu ý developer khi xử dụng chung với IMAP, POP3 and ACAP, tuy vậy những cảnh báo đó không có trong bản RFC với HTTP (?!?<span class="link"> http://tools.ietf.org/html/rfc2818</span>)
+
+MitM dù có thể có cer của client và auth với server, nhưng nếu client và server trong TLS state (đã negotiate và trao đổi key xong) thì attacker cũng không thể fake client dc vì không có correct key. 
+
+Em cũngg cùng chung suy nghĩ này với StarGhost
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+Về mặt nguyên tắc thì toàn bộ communication phải được bound với credentials, bao gồm cả requests lẫn replies
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197961</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#197961</link>
+				<pubDate><![CDATA[Mon, 9 Nov 2009 22:25:16]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ mình đọc bài này cũng hiểu thêm về cách làm việc TLS/SSL, cách ineject đoạn text vào https session, nhưng ko biết cách hiện thực việc này như thế nào? anh em nào có cách hiện thực hoặc video demo ko, ?  có thể với các protocol khác bị dính lỗi này cũng đc 
+
+thanks]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#199881</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#199881</link>
+				<pubDate><![CDATA[Sat, 5 Dec 2009 10:55:08]]> GMT</pubDate>
+				<author><![CDATA[ B 0 0 B]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>:D sorry em không hiểu ý anh PD, em thấy đoạn anh quote chỉ ra rằng người thiết kế protocol đã rất cẩn thận lưu ý developer khi xử dụng chung với IMAP, POP3 and ACAP, tuy vậy những cảnh báo đó không có trong bản RFC với HTTP (?!?<span class="link"> http://tools.ietf.org/html/rfc2818</span>)
+
+MitM dù có thể có cer của client và auth với server, nhưng nếu client và server trong TLS state (đã negotiate và trao đổi key xong) thì attacker cũng không thể fake client dc vì không có correct key. 
+
+Em cũngg cùng chung suy nghĩ này với StarGhost
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+Về mặt nguyên tắc thì toàn bộ communication phải được bound với credentials, bao gồm cả requests lẫn replies
+&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+Chính xác, lỗ hỗng và việc tấn công là hai vấn đề hoàn toàn khác nhau nên ở trên anh conmale mới hỏi là:
+<blockquote>Vấn đề được đặt ra là: ở điều kiện thế nào thì MitM có thể đắc lợi được và mitigate những tấn công ở dạng này phải chăng chỉ trông cậy hoàn toàn vào SSL/TLS và những ứng dụng của các protocol khác ở tầng cao hơn? &nbsp;
+		</blockquote>
+Attacker hầu như không thể fake client. 
+Anh mrro đang tiếc vì không được chơi bi da lỗ kìa  =)) <span class="link"> http://extendedsubset.com/Renegotiating_TLS.pdf</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#199934</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#199934</link>
+				<pubDate><![CDATA[Sun, 6 Dec 2009 09:21:02]]> GMT</pubDate>
+				<author><![CDATA[ louisnguyen27]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <span class="link"> http://www.redteam-pentesting.de/files/tls-renegotiation-poc.py</span>  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#201561</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#201561</link>
+				<pubDate><![CDATA[Mon, 21 Dec 2009 17:35:15]]> GMT</pubDate>
+				<author><![CDATA[ holiganvn]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ hôm nay ngồi đọc lại bài này, có phần bất ngờ là hai năm trước mình đã viết những dòng như thế này:
+
+<p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>
+Một phát hiện hết sức thú vị. Thú vị ở chỗ bao nhiêu người, bao nhiêu chuyên gia, bao nhiêu năm qua dòm vô TLS/SSL mà không thấy được lỗ hổng có vẻ như rất hiển nhiên mà các tác giả ở trên phát hiện. Có lẽ nguyên nhân nhiều người dòm nhưng không thấy là vì họ chỉ dòm TLS/SSL khi nó đứng một mình, mà không nhìn vào bức tranh lớn OSI, trong đó TLS/SSL chỉ là một layer. Chuyện gì sẽ xảy ra nếu TLS/SSL không hiểu rõ cơ chế hoạt động của các protocol bên trên nó, như HTTP, SMTP hay POP3? Nói cách khác, chuyện gì sẽ xảy ra nếu các protocol ở mức Application không hiểu rõ cơ chế vận hành của TLS/SSL để sử dụng cho đúng cách? Đó là lúc lỗ hổng xuất hiện. 
+&nbsp;
+		</blockquote>
+
+cái nghiên cứu mà mình đang làm và sắp công bố đúng y bóc cái quan sát ở trên. he he nên tiện tay "đào mồ" bài này lên lại để "khởi động" là vừa ;-).
+
+-m ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#242055</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#242055</link>
+				<pubDate><![CDATA[Fri, 24 Jun 2011 18:01:26]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ đúng bài viết em đang cần
+các anh hay thật]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#243535</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#243535</link>
+				<pubDate><![CDATA[Thu, 14 Jul 2011 08:07:08]]> GMT</pubDate>
+				<author><![CDATA[ minhhath]]></author>
+			</item>
+			<item>
+				<title>Authentication Gap in TLS Renegotiation</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">minhhath wrote:</cite><br>
+		<blockquote>bài viết này cách đây gần 10 năm mà bây giờ em mới mò ra thật đáng xấu hổ.
+các anh hay thật&nbsp;
+		</blockquote>
+06/11/2009 05:13:19 (+0700) | #1 | 197675  Mười năm đâu bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32014.hva#243602</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32014.hva#243602</link>
+				<pubDate><![CDATA[Fri, 15 Jul 2011 05:12:32]]> GMT</pubDate>
+				<author><![CDATA[ Mr.SuperCat]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Thủ thuật] Cẩn thận với sudo trên *nix."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Thủ thuật] Cẩn thận với sudo trên *nix."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Thủ thuật] Cẩn thận với sudo trên *nix.</title>
+				<description><![CDATA[ Sudo, một phương tiện cần thiết để giới hạn người dùng bình thường có quyền thực thi các công tác đòi hỏi chủ quyền root. Trích từ <b>man sudo</b>:
+
+<blockquote>       sudo allows a permitted user to execute a command as the superuser or another user, as speci-
+       fied in the sudoers file.  The real and effective uid and gid are set to match those of the
+       target user as specified in the passwd file and the group vector is initialized based on the
+       group file (unless the -P option was specified).  If the invoking user is root or if the tar-
+       get user is the same as the invoking user, no password is required.  Otherwise, sudo requires
+       that users authenticate themselves with a password by default (NOTE: in the default configu-
+       ration this is the user's password, not the root password).  Once a user has been authenti-
+       cated, a timestamp is updated and the user may then use sudo without a password for a short
+       period of time (5 minutes unless overridden in sudoers).&nbsp;
+		</blockquote>
+
+<b>Tạm dịch:</b>
+sudo cho phép người dùng thực thi một lệnh nào đó với quyền superuser hoặc quyền của một người khác như đã ấn định trong hồ sơ <b>sudosers</b>. Giá trị thật sự và xác thực uid (user id) và gid (group id) được gán với mục tiêu user như đã ấn định trong hồ sơ <b>passwd</b> và thành phần nhóm được ứng động dựa trên hồ sơ <b>group</b> (ngoại trừ chọn lựa -P được dùng). Nếu người thực thi (sudo) là root hoặc nếu chủ quyền thực thi của mục tiêu cũng là người thực thi thì sẽ không đòi hỏi mật khẩu. Ngoài ra, sudo đòi hỏi người dùng xác thực danh tánh của họ bằng mật khẩu theo mặc định (LƯU Ý: trong cấu hình mặc định, đây là mật khẩu của người dùng chớ không phải là mật khẩu của root). Sau khi người dùng đã được xác thực, giá trị dấu ấn thời gian được cập nhật và người dùng có thể sử dụng sudo mà không cần phải cung cấp mật khẩu trong một khoảng thời gian ngắn (5 phút theo mặc định ngoại trừ đã được chỉnh sửa trong <b>sudoers</b>).
+
+
+Tại sao phải cẩn thận? sudo chỉ giới hạn người dùng được quyền chạy một số lệnh nhất định nào đó, thường là để thực thi các lệnh đòi hỏi chủ quyền root. Ví dụ muốn khởi động apache thì phải chạy bằng root vì để thiết lập cổng 80 (thuộc dãy "privilege ports" cần phải là root). Thông thường một script start apache có nhiều thứ trong đó nhưng cốt lõi là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+......
+/usr/local/apache2/bin/apachectl -f /usr/local/apache2/conf/httpd.conf -k start</pre>
+		</div>
+
+Nếu như script này cho phép người dùng chỉnh sửa (do gán quyền sai, hoặc do script này được người dùng bình thường tạo ra và làm chủ và admin chỉ đưa nó vào danh sách được quyền thực thi bằng sudo mà không xét cẩn thận) thì hậu quả rất nguy hại. Nếu người dùng chỉ cần thay đổi 1 điểm nhỏ trong cái script như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+su -
+......
+/usr/local/apache2/bin/apachectl -f /usr/local/apache2/conf/httpd.conf -k start</pre>
+		</div>
+thì thay vì chỉ thực thi công tác khởi động apache, <b>user đã có hoàn toàn chủ quyền root trên shell</b>.
+
+<b>Demo:</b>
+
+Giả sử tôi có 1 cái script đơn giản và ngốc nghếch như sau:
+
+<b>$ cat test.sh</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "me @ `hostname`"</pre>
+		</div>
+
+Khi chạy nó bằng sudo:
+
+<b>$ sudo ./test.sh</b>, tôi có kết quả:
+<font color='orange'>me @ home</font>
+
+Thử xem tôi có chủ quyền gì:
+<b>$ whoami</b>
+
+<font color='orange'>conmale</font>
+
+Thử xem một lần nữa bằng cách khác cho chắc ăn:
+<b>$ id</b>
+
+<font color='orange'>uid=500(conmale) gid=500(conmale) groups=500(conmale) context=system_u:system_r:initrc_t</font>
+
+
+Giả sử tôi có thể điều chỉnh file test.sh ở trên và chèn dòng <b>su -</b> vào:
+<b>$ cat test.sh</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "me @ `hostname`"
+su -</pre>
+		</div>
+
+Sau đó tôi thực thi:
+<b>[conmale@home ~]$ sudo ./test.sh</b>
+<font color='orange'>me @ home</font>
+<font color='red'>[root@home ~]#</font>
+
+thêm 1 dòng màu đỏ ở trên trên console sau khi thực thi lệnh trên. Từ dấu nhắp $ biến thành #, trông có vẻ bất thường. Tôi thử:
+
+<b>[root@home ~]# whoami</b>
+<font color='red'>root</font>
+
+Thử thêm một lần nữa cho chắc:
+[root@home ~]# id
+uid=0(<font color='red'>root</font>) gid=0(<font color='red'>root</font>) groups=0(<font color='red'>root</font>),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel) context=root:system_r:unconfined_t
+
+Tôi không bàn cụ thể việc thiết lập và điều chỉnh sudoers thế nào ở đây mà chỉ muốn nhắc:
+
+1) khi đưa một account hoặc nhóm account vào sudoers, phải xét thật kỹ các account đó là gì và lý do tại sao chúng được phép sudo.
+2) ấn định cụ thể từng lệnh được quyền chạy sudo và điều tra kỹ lưỡng nội dung của chúng.
+3) scripts và binaries được chạy xuyên qua sudo luôn luôn chỉ ở chế độ executable và không được ấn định quyền write.
+
+Bài này tôi viết một cách ngắn gọn như một dạng thủ thuật vì vừa "thừa hưởng" một đống máy chủ, thiết bị... từ một bộ phận khác và trên 80% bị rơi vào lỗi chết người này.
+
+Have fun.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17027.hva#102317</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17027.hva#102317</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 12:11:10]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>[Thủ thuật] Cẩn thận với sudo trên *nix.</title>
+				<description><![CDATA[ Cảm ơn anh về bài viết 
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Giả sử tôi có thể điều chỉnh file test.sh ở trên và chèn dòng <b>su -</b> vào:
+<b>$ cat test.sh</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+echo "me @ `hostname`"
+su -</pre>
+		</div>
+
+Sau đó tôi thực thi:
+<b>[conmale@home ~]$ sudo ./test.sh</b>
+<font color='orange'>me @ home</font>
+<font color='red'>[root@home ~]#</font>
+
+thêm 1 dòng màu đỏ ở trên trên console sau khi thực thi lệnh trên. Từ dấu nhắp $ biến thành #, trông có vẻ bất thường. 
+&nbsp;
+		</blockquote>
+Còn "có vẻ" gì nữa anh. Nhìn cái <font color='red'>[root@home ~]#</font> ở trên biết là bị "dính cước" rồi. 
+Em hỏi thêm là: có phải tất cả các distro đều quy ước dấu nhắc <font color='orange'><b>$</b></font> cho <b>normal user</b> và <font color='orange'><b>#</b></font> cho <b>root</b> không anh? Em chỉ có dịp kiểm chứng trên Fedora, Ubuntu, CentOS
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...
+Tôi không bàn cụ thể việc thiết lập và điều chỉnh sudoers thế nào ở đây mà chỉ muốn nhắc:
+
+1) khi đưa một account hoặc nhóm account vào sudoers, phải xét thật kỹ các account đó là gì và lý do tại sao chúng được phép sudo.
+<font color='orange'>2) ấn định cụ thể từng lệnh được quyền chạy sudo và điều tra kỹ lưỡng nội dung của chúng.</font>
+3) scripts và binaries được chạy xuyên qua sudo luôn luôn chỉ ở chế độ executable và không được ấn định quyền write.
+...
+Have fun.&nbsp;
+		</blockquote>
+Có lẽ điểm thứ 2 chính là điểm khó thực hiện và cần xem xét kỹ nhất. Phần lớn mọi người khi thêm 1 user vào <b>/etc/sudoers</b> đều thường làm giống như:
+<blockquote>quanta ALL=(ALL) ALL&nbsp;
+		</blockquote>
+Đây chính là ví dụ minh họa cho 2 mặt của vấn đề "tiện dụng" và "bảo mật" trong "Đối thoại với Rookie" của anh  :-S ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17027.hva#102334</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17027.hva#102334</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 12:57:00]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "anti-ddos"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/236808.hva</link>
+		<description><![CDATA[Messages posted by "anti-ddos"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cho em hỏi về giải pháp chống DDOS</title>
+				<description><![CDATA[ Mình định translate xong sẽ post lại (sau khi có sự góp ý của tác giả).
+Về vấn đề link, do tác giả gửi cho mình 1 file gần cả mấy chục Mb, nên không thể post lên được. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39215/241785.hva#241785</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39215/241785.hva#241785</link>
+				<pubDate><![CDATA[Wed, 22 Jun 2011 23:06:10]]> GMT</pubDate>
+				<author><![CDATA[ anti-ddos]]></author>
+			</item>
+			<item>
+				<title>Cho em hỏi về giải pháp chống DDOS</title>
+				<description><![CDATA[ Đây là một số cách giảm tấn công DDoS, mọi người tham khảo
+(Vì mình chỉ sưu tầm, nên để nguyên ý của tác giả --&gt; Sorry Mod ):
+<b>
+Invalid Packets</b>
+Always‐on countermeasure that handles fragment reassembly and other basic layer 3 and layer 4 packet validation.
+
+<b>Filter Evaluation (SP UI: Black / White List)</b>
+Looks at the fcap expression that is provided in the SP interface in the &quot;Black /Whitelist&quot; tab. If the evaluation says it &quot;passes&quot;, then no further mitigation is done. If it says &quot;drop&quot;, the packet is dropped, stats updated accordingly, and no further mitigation is done. This corresponds to the Black List / White List expression in the SP UI. This expression defines a list of pass and drop expressions. Anything that matches a &quot;pass&quot; statement will not get looked at any further (thus, it is on the &quot;white list&quot;). Anything that matches a &quot;drop&quot; statement will be instantly dropped and will not get looked at further (it is on the &quot;black list&quot;). All other traffic proceeds to be evaluated through the remaining shaping and countermeasures.
+
+<b>Blacklist Evaluation</b>
+If the source host is on the blacklist because it was put there by one of the countermeasures, the packet is dropped, stats updated accordingly, and no further mitigation is done. Note that the countermeasure that put the host on the blacklist is the one credited as having dropped the packet. You can think of this as dynamic version of the Blacklist configuration in the SP UI. 
+
+<b>Zombie Countermeasure</b>
+Hosts that exceed a pps or bps threshold are considered zombies. These hosts are  blacklisted, the packet is dropped, stats are updated accordingly, and no further mitigation is done.
+
+<b>TCP SYN Authentication Countermeasure</b>
+This countermeasure looks to authenticate hosts initiating TCP connections. If we see a SYN, this countermeasure will SYN|ACK it with a certain special sequence number. If the host responds with ACK and the special sequence number +1, then we authenticate it. The connection is reset. If dropped, the stats updated accordingly and no further mitigation is done. NOTE: No blacklisting is done by this countermeasure.
+
+<b>DNS Authentication Countermeasure</b>
+This countermeasure validates source hosts perfoming DNS lookups. Only requests on udp/53 are considered The countermeasure drops the first request and those hosts that retransmit within the timeout are validated. Their requests pass through until we don't hear another request from them in the timeout period. If dropped, the stats are updated accordingly and no further mitigation is done. NOTE: No blacklisting is done by this countermeasure.
+
+<b>Idle Reset Processing</b>
+This countermeasure doesn't produce an effect immediately. It never drops packets.
+At this time, it just looks at the packet if it's TCP, it tracks the connection.
+Asynchronously every timeout period, TCP connections that have sat idle on the configured ports for longer than one timeout are reset. The hosts are blacklisted.
+
+<b>Payload Regex Processing</b>
+Depending on whether the packet has a configured tcp or udp dest port, the regular expression is applied to the payload. If it matches, then the packet is dropped. Keep in mind that the regex is not evaluated across multiple TCP segments or IP fragments. If dropped, the stats are updated accordingly and no further mitigation is done. No blacklisting of the source host is done.
+
+<b>Source/24 Baseline Stats</b>
+If this source/24 is blocked due to being 5 times over the baseline rate limit, then the packet is dropped, the stats are updated accordingly and no further mitigation is done. We get baselines for /24s from our SP leader in 24‐hour chunks (with 5‐minute bins inside).
+
+<b>Protocol Baseline Stats</b>
+If this protocol is blocked due to being over the rate limit, then the packet is dropped, the stats are updated accordingly and no further mitigation is done. We get baselines for each protocol from our SP leader in 24‐hour chunks (with 5‐minute bins inside).
+
+<b>Malformed DNS Filtering </b>
+Any UDP DNS packets containing no payload are are dropped. The stats are updated accordingly and no further mitigation is done.
+
+<b>Malformed SIP Filtering </b>
+Any UDP SIP packets containing no payload are are dropped. The stats are updated accordingly and no further mitigation is done.
+
+<b>Rate Limiting</b>
+Packets are matched against a regex filter. If they match, then their bps/pps is limited to the maximum. If it exceeds the limit, then the packet is dropped, the stats are updated accordingly, and no further mitigation is done.
+
+<b>Malformed DNS filtering</b>
+When a DNS message is decoded, this countermeasure looks for it to be well‐formed. If it's not, then the packet is dropped and the stats are updated accordingly. Note that the offending host is not blacklisted.
+
+<b>Malformed HTTP Filtering</b>
+When an HTTP header is decoded, this countermeasure looks for it to conform to RFC2616 Section 2.2 &quot;Basic Rules&quot; with the exception of allowing the &quot; &quot; character.
+It also looks for any error in the entire stream. If either of these occur then the packet(s) are dropped and the stats are updated accordingly. The offending host is blacklisted.
+
+<b>HTTP Object and Request Rate Limiting</b>
+When HTTP Requests are decoded, this countermeasure makes sure that the number of requests / objects for that source / dest IP pair do not exceed the given rate. If they do, then the packet(s) are dropped and the stats are updated accordingly. The offending host is blacklisted.
+
+<b>HTTP Regex Filtering</b>
+When HTTP requests or headers are decoded, this countermeasure evaluates the configured expression against the full payload. If it matches, then the packet(s) are dropped and the stats are updated accordingly. The offending host is blacklisted.
+
+<b>Malformed SIP Filtering</b>
+When SIP responses or headers are decoded, this countermeasure validates that they're well formed. If not, then the packet(s) are dropped and the stats are updated accordingly. The offending host is blacklisted.
+
+<b>SIP Request Rate Limiting</b>
+When SIP requests are decoded, this countermeasure makes sure that the number of requests for that source / dest IP pair do not exceed the given rate. If they do, then the packet(s) are dropped and the stats are updated accordingly. The offending host is blacklisted.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39215/241773.hva#241773</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39215/241773.hva#241773</link>
+				<pubDate><![CDATA[Wed, 22 Jun 2011 22:13:09]]> GMT</pubDate>
+				<author><![CDATA[ anti-ddos]]></author>
+			</item>
+			<item>
+				<title>Giám sát an ninh mạng - Bàn về giải pháp chống DDoS</title>
+				<description><![CDATA[ Nói thêm về Anti-DDOS:
+
+Cơ bản nhất của các loại tấn công DDOS là làm cạn kiệt tài nguyên:
+- Băng thông mạng.
+- Năng lực xử lý của thiết bị.
+
+Nếu chỉ bàn bề vấn đề kỹ thuật, thì hệ thống chống DDOS, tốt nhất:
+- Chuyên dụng: Vì các thiết bị IPS, Firewall phải dành tài nguyên để tối ưu bảo mật cho rất nhiều hoạt động.
+- Hệ thống phải có khả năng chặn được các cuộc tấn công phân tán, state-exhausting.
+- Trong môi trường Cloud đang phát triển hiện nay thì hệ thống này cũng phải làm được.
+- Hệ thống phải có cơ chế thông báo tự động hoặc thủ công cho các ISP, Tổ chức trên toàn thế giới kiểm tra
+các IP, Source bất thường (tấn công DoS, hoặc có khả năng tham gia tấn công DoS).
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/32553/241161.hva#241161</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/32553/241161.hva#241161</link>
+				<pubDate><![CDATA[Fri, 17 Jun 2011 00:26:49]]> GMT</pubDate>
+				<author><![CDATA[ anti-ddos]]></author>
+			</item>
+			<item>
+				<title>Giám sát an ninh mạng - Bàn về giải pháp chống DDoS</title>
+				<description><![CDATA[ Hi,
+
+1.Về Giao thức TCP:
+* Trong hoạt động truyền dữ liệu của  bộ giao thức TCP/IP, TCP sẽ đảm nhiệm tính chất có kết nối và truyền không lỗi.
+* Để làm được điều này (có kết nối và truyền không lỗi) hoạt động của TCP chia làm 3 bước:
+@  Thiết lập kết nối
+Để thiết lập một kết nối, TCP sử dụng một quy trình bắt tay 3 bước (3-way handshake) Trước khi client thử kết nối với một server, server phải đăng ký một cổng và mở cổng đó cho các kết nối: đây được gọi là mở bị động. Một khi mở bị động đã được thiết lập thì một client có thể bắt đầu mở chủ động. Để thiết lập một kết nối, quy trình bắt tay 3 bước xảy ra như sau:
+&gt;	Client yêu cầu mở cổng dịch vụ bằng cách gửi gói tin SYN (gói tin TCP) tới server, trong gói tin này, tham số sequence number được gán cho một giá trị ngẫu nhiên X.
+&gt;	Server hồi đáp bằng cách gửi lại phía client bản tin SYN-ACK, trong gói tin này, tham số acknowledgment number được gán giá trị bằng X + 1, tham số sequence number được gán ngẫu nhiên một giá trị Y
+&gt;	Để hoàn tất quá trình bắt tay ba bước, client tiếp tục gửi tới server bản tin ACK, trong bản tin này, tham số sequence number được gán cho giá trị bằng X + 1 còn tham số acknowledgment number được gán giá trị bằng Y + 1.
+Tại thời điểm này, cả client và server đều được xác nhận rằng, một kết nối đã được thiết lập.
+@ Truyền dữ liệu: Đảm bảo truyền:
+&gt;	Truyền dữ liệu không lỗi (do có cơ chế sửa lỗi/truyền lại)
+&gt;	Truyền các gói dữ liệu theo đúng thứ tự
+&gt;	Truyền lại các gói dữ liệu mất trên đường truyền
+&gt;	Loại bỏ các gói dữ liệu trùng lặp
+&gt;	Cơ chế hạn chế tắc nghẽn đường truyền
+@ Kết thúc kết nối
+Để kết thúc kết nối hai bên sử dụng quá trình bắt tay 4 bước và chiều của kết nối kết thúc độc lập với nhau. Khi một bên muốn kết thúc, nó gửi đi một gói tin FIN và bên kia gửi lại tin báo nhận ACK. Vì vậy, một quá trình kết thúc tiêu biểu sẽ có 2 cặp gói tin trao đổi. Một kết nối có thể tồn tại ở dạng : một bên đã kết thúc gửi dữ liệu nên chỉ nhận thông tin, bên kia vẫn tiếp tục gửi.
+
+2.Tấn công tấn công theo TCP SYN, SYN-ACK (hay còn gọi là tấn công ngập lụt SYN, SYN-ACK): 
+&gt;	Bây giờ giả sử có N x Client gửi gói tin SYN tới Server. 
+&gt;	Vì cơ chế hoạt động của TCP nên Server sẽ trả lời với N gói SYN-ACK.
+&gt;	Sau đó Server sẽ chờ N gói ACK xác nhận từ N x Client . 
+&gt;	Do chủ đích tấn công nên Nx Client này không trả lời ACK hoặc IP không tồn tại dẫn đến Server rơi vào trạng thái chờ đợi.
+&gt;	Và NxClient lại tiếp tục gửi các N gói tin SYN tới Server, Server lại gửi lại N gói SYN-ACK và chờ, đến một lúc toàn bộ tài nguyên của Server sẽ phải sử dụng để nhận SYN, gửi SYN-ACK, chờ --&gt; dẫn đến cạn kiệt --&gt; treo máy.
+
+3. Phòng chống tấn công TCP SYN, SYN-ACK cho Sever
+- Phải có cơ chế  xác thực sự bất thường trong kết nối TCP SYN, SYN-ACK giữa Client với Server.
+- Một hệ thống ngăn chặn tấn công TCP SYN tốt có các cơ chế xác thực sau: 
+&gt; TCP SYN Authentication with reset to Sever.
+&gt; TCP SYN Authentication with refresh sent to Sever.
+&gt; TCP SYN Authentication with Aplication(http, ftp…) Authentication.
+&gt; TCP SYN Authentication with safe reset to Sever.
+&gt; TCP SYN ACK Authentication
+&gt; Hệ thống phải đảm bảo các thông số cho các xác thực này có thể tự điều chỉnh hoặc tự động.
+
+- Còn thuật toán để đưa ra các xác thực này thì tùy hệ thống sẽ khác nhau, nhưng cơ bản sẽ dựa vào:
+* Thời gian trạng thái của socket: LISTEN, SYN-SENT, SYN-RECEIVED, ESTABLISHED, TIME-WAIT...
+* Dựa vào thông số sequencing. 	
+* Dựa vào baseline kết nối TCP giữa Client và Server.
+* …. và nhiều thứ khác nữa, mình đang tìm hiểu, sẽ share lên tiếp....
+
+Thân.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/32553/241067.hva#241067</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/32553/241067.hva#241067</link>
+				<pubDate><![CDATA[Thu, 16 Jun 2011 04:03:07]]> GMT</pubDate>
+				<author><![CDATA[ anti-ddos]]></author>
+			</item>
+	</channel>
+</rss>

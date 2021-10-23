@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi đáp về NAT"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi đáp về NAT"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi đáp về NAT</title>
+				<description><![CDATA[ Em có ba câu hỏi về NAT, mong mọi người giải đáp
+
+Câu 1: Em không hiểu tại sao NAT lại ảnh hưởng đến các hệ thống P2P và VoIP ạ ?
+Em nghĩ hai peer trong môi trường đó cứ tiếp tục nói chuyện với nhau qua  public IP của NAT device thôi chứ nhỉ. Mọi người có thể cho em một ví dụ NAT ngăn cản truyền thông giữa hai peer không ạ.
+
+Câu 2: Port forwarding cũng là một giải pháp NAT traversal nhưng nếu trường hợp đằng sau thiết bị NAT có nhiều hơn một host cung ứng dịch vụ nhưng sử dụng port giống nhau (ví dụ có hai host khác nhau cung cấp httpd 80 chả hạn) thì có cách nào port forwarding thực hiện được không ạ ?
+
+Câu 3: Em đọc trên wiki về các loại NAT. Em không rõ symmetric NAT khác gì với các loại NAT còn lại. Trong đó, có một phát biểu là: "Each request from the same internal IP address and port to a specific destination IP address and port is mapped to a unique external source IP address and port, if the same internal host sends a packet even with the same source address and port but to a different destination, a different mapping is used." Thế chả lẽ các loại NAT khác không dùng một external source IP và port riêng cho mỗi connect đến một destination ạ ?
+
+Em cám ơn ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44672.hva#275406</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44672.hva#275406</link>
+				<pubDate><![CDATA[Fri, 3 May 2013 04:04:08]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Hỏi đáp về NAT</title>
+				<description><![CDATA[ Dạ hôm nay tìm hiểu em cũng đã tự trả lời được rồi ạ. Nhân đây, em cũng trình bày luôn, biết đâu có bạn nào cũng giống em thì cũng giúp các bạn ý đỡ mất công
+
+Câu 1: Lý do NAT ảnh hưởng đến P2P và các hệ thống VoIP vì trong môi trường P2P các host sau NAT sẽ phải gửi địa chỉ cho nhau để hai bên có thể talk trực tiếp. Vì các process sau NAT không hiểu và không biết gì về NAT nên theo lệ thường nó sẽ gửi địa chỉ và port trong internal network chứ không phải địa chỉ (đây là địa chỉ public) và port mà NAT sẽ gán cho nó. Do đó peer còn lại sẽ không thể giao tiếp khi sử dụng các thông tin này.
+
+Trong môi trường client server thông thường thì NAT làm việc rất ổn vì server luôn có địa chỉ cố định và well know port cũng cố định nốt, connection lại luôn được init từ client nên sau khi đã connection đã hình thành server cứ theo cái socket đó mà talk với client thôi. Một số loại NAT như: address restricted NAT, port restricted NAT và symmetric NAT sẽ chỉ cho phép external host send packet đến địa chỉ NAT nếu như trước đó đã có packet send đi từ địa chỉ NAT này. Ngay cả rule này, trong môi trường client và server, nó cũng không bị vi phạm vì client luôn là đối tượng thực hiện active open.
+
+Câu 2: Port forwarding là giải pháp NAT traversal, one-to-one, static NAT, còn gọi là reverse NAT (khó diễn tả nhưng xem cách nó thực hiện thì gọi thế cũng không sai)
+địa chỉ x.x.x.x, port x trong internal network sẽ được map đến địa chỉ public y.y.y.y port y (y có thể giống hoặc khác x)
+Và port forwarding hoàn toàn có thể thực hiện NAT cho nhiều dịch vụ chạy trên các host khác nhau sử dụng cùng một port.
+
+Câu 3: Em đọc ở tài liệu khác chi tiết hơn thì biết symmetric NAT làm việc tương tự port restricted NAT nhưng khác biệt lớn nhất của nó là nó không thực hiện port preservation (ở cả ba loại NAT: full cone, address restricted, porn restricted thì NAT device luôn giữ nguyên port mà không thực hiện ánh xạ ra port mới). Symmetric NAT sẽ NAT cả port đối với mỗi connection đến một destination khác nhau (hoặc khác về dest addr hoặc khác về dest port hoặc khác cả hai)  x.x.x.x port x ánh xạ ra  x1.x1.x1.x1 port x1 với x1 sẽ khác x
+
+Chính vì lý do này symmetric NAT rất khó vượt qua. Một số giải pháp vượt NAT: Stun, hole punching... 
+Stun là giải pháp sử dụng một server nói chuyện với peer trước khi peer này thông báo thông tin kết nối cho peer khác. Stun sẽ thông báo cho peer biết địa chỉ public của nó và port của nó. Trong trường hợp NAT là kiểu symmetric thì port mà Stun biết không thể dùng cho kết nối mới giữa hai peer. Còn hole punching thì em mới nghe cuộc thảo luận trên hva là giải pháp này cũng không vượt qua được symmetric NAT.
+
+Nguồn tham khảo
+[1] <span class="link"> <span class="link"> http://think-like-a-computer.com/2011/09/16/types-of-nat/</span> </span>
+[2] <span class="link"> <span class="link"> http://think-like-a-computer.com/2011/09/19/symmetric-nat/</span> </span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44672.hva#275415</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44672.hva#275415</link>
+				<pubDate><![CDATA[Fri, 3 May 2013 13:00:13]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

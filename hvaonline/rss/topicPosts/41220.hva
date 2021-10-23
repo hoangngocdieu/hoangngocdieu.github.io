@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Automatic failover Redis with NRPE"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Automatic failover Redis with NRPE"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Automatic failover Redis with NRPE</title>
+				<description><![CDATA[ Redis có hỗ trợ master-slave replication như nhiều bạn đã biết:<span class="link"> http://redis.io/topics/replication.</span> Nhưng chuyện gì xảy ra nếu Master die? Làm cách nào để tự động chuyển Slave thành Master? Bài viết sau ghi lại cách thực hiện với NRPE (Nagios Remote Plugin Executor).
+
+Mô hình:
+<ul><li>A: Nagios server
+B: Master Redis
+C: Slave Redis</li></ul>
+Về ý tưởng: đơn giản là sẽ dùng Nagios monitor Redis trên B, nếu không kết nối được thì sẽ đẩy C lên làm Master.
+
+Trên A, mình có định nghĩa một service thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define service{
+    use                     critical-service
+    host_name               B
+    service_description     redis:2302
+    check_command           check_tcp!2302
+    event_handler           promote_slave_redis!C!2302
+    contact_groups          admin-sms,admin
+
+}</pre>
+		</div>
+
+`promote_slave_redis` có nội dung như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>define command{ 
+	command_name 	promote_slave_redis
+	command_line 	$USER1$/eventhandlers/promote_slave_redis.sh $SERVICESTATE$ $SERVICESTATETYPE$ $SERVICEATTEMPT$ $ARG1$ $ARG2$
+}</pre>
+		</div>
+
+Nagios sẽ căn cứ vào mấy cái macro đầu tiên để quyết định khi nào thì gọi event handler. 2 arguments sau đó lần lượt là slave_redis:port.
+
+Nội dung của event handler script có thể viết đơn giản như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+
+case "$1" in
+	OK&#41;
+		;;
+	WARNING&#41;
+		;;
+	UNKNOWN&#41;
+		/usr/local/nagios/libexec/check_nrpe -H $4 -c promote_slave_redis -a $5
+		;;
+	CRITICAL&#41;
+		/usr/local/nagios/libexec/check_nrpe -H $4 -c promote_slave_redis -a $5
+		;;
+esac
+
+exit 0</pre>
+		</div>
+$4, $5 lần lượt là host và port của slave Redis server.
+
+Trên C (Slave), `promote_slave_redis` command được định nghĩa như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>command&#91;promote_slave_redis&#93;=/usr/lib64/nagios/plugins/promote_slave_redis.sh $ARG1$</pre>
+		</div>
+
+Để có thể truyền arguments cho NRPE, các bạn cần 2 yêu cầu:
+<ol><li>compile with --enable-command-args
+set dont_blame_nrpe = 1</li></ol>
+Nội dung của `promote_slave_redis.sh` chỉ gồm 1 lệnh thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+
+echo 'slaveof no one' | /usr/local/redis/bin/redis-cli -h C -p $1</pre>
+		</div>
+
+Restart NRPE trên C, Nagios trên A, thử stop Redis trên B, soi log Nagios bạn sẽ thấy:
+<blockquote>[1329330131] SERVICE ALERT: B;redis:2302;CRITICAL;SOFT;1;Connection refused
+[1329330131] SERVICE EVENT HANDLER: B;redis:2302;CRITICAL;SOFT;1;promote_slave_redis!C!2302&nbsp;
+		</blockquote>
+
+Trên một terminal khác, chạy một lệnh thế này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ watch 'echo "info" | redis-cli -h C -p 2302'</pre>
+		</div>
+
+bạn sẽ thấy:
+<blockquote>vm_enabled:0
+role:slave
+master_host:B
+master_port:2302
+master_link_status:up
+master_last_io_seconds_ago:5
+db0:keys=3,expires=0
+&nbsp;
+		</blockquote>
+
+được chuyển thành:
+<blockquote>vm_enabled:0
+role:master
+db0:keys=3,expires=0&nbsp;
+		</blockquote>
+
+Làm tương tự để biến B thành slave khi nó online trở lại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41220.hva#253967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41220.hva#253967</link>
+				<pubDate><![CDATA[Wed, 15 Feb 2012 13:25:26]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

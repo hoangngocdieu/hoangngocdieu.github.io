@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Sưu tầm: Các thuật toán sắp xếp thường dùng."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Sưu tầm: Các thuật toán sắp xếp thường dùng."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Sưu tầm: Các thuật toán sắp xếp thường dùng.</title>
+				<description><![CDATA[    Hồi trước Fal có save lại bài <b>"Các kĩ thuật sắp xếp, hay dùng"</b> của:
+
+<b>LQV0604</b>
+Group: HVA Member
+Posts: 164
+Joined: 29-December 03
+From: Nothing is impossible
+Member No.: 55908
+
+Bây giờ post lên lại đây, tiện thể học tí luôn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21694</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21694</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 02:56:17]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Merge sort</title>
+				<description><![CDATA[ <b>Merge sort </b>
+<blockquote>
+<font color='yellow'>Nguyên tắc :</font>
+
+VD ta có 
+12 13 45 32 100 34 65 10
+
+Ta có ở trên là 8 phần tử cần được sắp xếp :
+Ý tưởng của merge sort là thay vì sắp xếp 8 phần tử (khó sắp ) thì ta chia đôi dãy đó ra làm đôi (số phần tử nhỏ hơn --&gt; sắp dễ hơn ) và sắp xếp các dãy con rồi ghép 2 dãy con lại ( gọi là merge 2 dãy con )
+
+Vậy ta làm như sau: 
+Chia đôi --&gt;  được  hai dãy con mới là 12 13 45 32 và 100 34 65 10
+sắp 2 dãy con lại : 12 13 45 32 gọi là dãy A
+                              100 34 65 10 gọi là dãy B
+        + Muốn sắp A ta cũng làm y  như trên 
+                  Chia đôi A , được 2 dãy mới là A11 = { 12 13 } A12 = {45 32 }
+                  Chia đôi B được 2 dãy mới là B11 = {100 34} B12 = {65 10 }
+      + Sắp xếp A11, B11 , A12 , B12
+              + Muốn sắp xếp A11 thì ta cũng chia đôi đến khi sắp được 
+                          ta có 2 dãy con là A21 = {12} A22 = { 13} 
+                          Sắp 2 dãy con trên được ( đơn giản vì chỉ có một phần tử ) là A21 = {12 } A22 = {13} 
+                          Sắp xong thì ta merge lại thành A11 = { 12 13 }
+              + Tương tự sắp xếp cho B11 , A12 , B12 ta cũng có 
+                        B11 = {34 100} B12 = {10 65 } A12 = {32 45 }
+        +Sắp xếp xong , ta sẽ merge lại A11 , A12  thành A = { 12 13 32 45 }
+                                                          B11 , B12 thành  B = { 10 34 65 100 }
+Sắp xong A , B , ta sẽ merge chúng lại thành dãy ban đầu :
+{10 12 13 32 34 45  65 100 } 
+
+<font color='yellow'>Phương pháp merge:  </font>
+VD A = { 12 13 32 45 }
+    B = { 10 34 65 100}
+
+Đầu tiên lấy phần tử đầu tiên  của A và B : 12 và 10 
+10 &lt; 12 nên ta lấy 10 bỏ vào mảng kết quả là C = {10} 
+Giử lại số 12 , và lấy tiếp phần tử thay thế 10 trong mảng B là 34 
+So sánh 12 và 34 . 12 &lt; 34 , lấy 12 ra và bỏ vào C = {10 12} 
+Giử lại 34 . Lấy phần tử kế tiếp để thay cho 12 trong mảng A là 32
+So sánh 32 và 34 chọn 32 bỏ vảo C = { 10 12 32 }
+........ Làm tương tự ......
+Đến bước cuối cùng A hết phần tử B còn lại B = { 65 100}
+Ta sẽ bỏ toàn bộ mảng B vào C . Kết quả C đã được merge và có thứ tự
+
+<b><font color='yellow'>Giải thuật</font>:</b>(cho trường hợp dùng list để chứa các phần tử cần sort) 
+
+Sortable_List là một lớp list có đặc điểm là có hàm sort 
+Node là một template class biểu diễn cho các node trong list
+Record là class dùng để biểu diễn data cần sắp xếp . ( VD như sắp một dãy các số nguyên , hay VD là sắp theo tên của các record bao gồm tên , tuổi , số điện thoại ...)
+sublist là list cần sắp xếp 
+&nbsp;
+		</blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Sortable_List&lt;Record&gt;::recursive_merge_sort&#40;Node&lt;Record&gt; *&sublist &#41;
+{
+    if &#40; sublist  != 0 && sublist-&gt;next != 0 } //tức là có tồn tại 2 node trở lên để có thể chia đôi sublist được
+    {
+              Node &lt;Record &gt; *second_half = divide_from &#40;sublist&#41;; 
+              recursive_merge_sort&#40;sublist&#41; ;
+              recursive_merge_sort&#40;second_half&#41; ;
+              sublist = merge&#40;sublist, second_half&#41;
+    }
+}
+
+Node&lt;Record&gt;* Sortable_List &lt;Record&gt;::divide_from&#40; Node&lt;Record&gt; *sublist&#41;
+{
+          Node&lt;Record&gt; *position , *midpoint , *second_half ;
+          if &#40;&#40; midpoint = sublist&#41; == NULL&#41; return NULL ; // hổng có ds để chia 
+          position  = midpoint-&gt;next ;
+          while&#40;position != 0&#41; 
+        {
+                  position = position-&gt;next ;
+                  if &#40; position  != 0&#41;
+                  {
+                            midpoint = midpoint-&gt;next ;
+                            position = position-&gt;next ;  
+// midpoint duyêt 1 thì position duyệt 2 node cùng 1 lúc nên khi position kết thúc = NULL thì midpoint cũng đang ở vị trí chính giữa;
+                  }
+        }
+          second_half = midpoint-&gt;next ;
+          midpoint-&gt;next = NULL ;
+          return second_half ;
+}
+
+
+
+Node &lt;Record&gt; * merge&#40;Node&lt;Record&gt; *first , Node&lt;Record&gt;* second &#41; 
+{
+      Node&lt;Record&gt; *last_sorted ;
+      Node&lt;Record&gt; combined ;
+      last_sorted = &combined ;
+      while &#40; first != NULL && second !=  NULL &#41;
+      {
+              if &#40;first-&gt;entry &lt;= second-&gt;entry &#41; {
+                        last_sortesorted-&gt;next = first ;
+                        last_sorted = first ; 
+                        first = first-&gt;next ;
+              }
+              else 
+              {
+                      last_sorted-&gt;next = second ; 
+                      last_sorted = second ;
+                      second = second-&gt;next ;
+              }
+        }
+        if &#40; first == NULL &#41; 
+              last_sorted-&gt;next = second ;
+        else
+              last_sorted-&gt; next = first  ;
+        return combind.next 
+}</pre>
+		</div>//
+
+PS : Hàm merge này viết hay , không tạo ra một ds mới để chứa kết quả như ta trình bày ở VD mà chỉ dùng một ds các con trỏ (combined) để chỉ đến thứ tự các node ở trên cả hai first và second. Cách này có lợi nếu Record là một trường phức tạp . 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21696</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21696</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:02:10]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Quick sort</title>
+				<description><![CDATA[ <b>Quick sort</b>
+<blockquote>
+<font color='yellow'>Ý tưởng:</font>
+Gần giống như merge sort , ta sẽ chia đôi mảng cần xếp rồi sắp xếp các mảng con , sau đó sẽ ghép mảng con đã sắp xếp thành mảng ban đầu nhưng đã sắp xếp
+
+<font color='yellow'>Điểm khác nhau</font>: Là chổ ta chia đôi mảng con theo nguyên tắc riêng :
+Gọi điểm mà tại đó ta chia đôi mảng ban đầu có trị là pivot (không nhất thiết là nằm đúng vị trí chính giữa . Nhưng giải thuật sẽ chạy tốt nếu nó nằm gần điểm chính giữa) và ta sẽ không cần merge 2 dãy con (do đó nhìn chung sẽ chạy nhanh hơn ) , thỏa điều kiện là tất cả những phần tử bên trái pivot đều nhỏ hơn pivot và nằm bên phải pivot thì lớn hơn pivot
+
+VD :
+2 4 6 7 18 14 13 
+Ta chọn phần tử pivot = 7 ( do bên trái của nó nhỏ hơn pivot = 7 , bên phải lớn hơn pivot = 7 ) (Thực ra ta phải tìm pivot , do ở đây làm bằng tay nên dễ thấy )
+Chia đôi : A = { 2 4 6  } B = { 18 14 13 }
++ Sắp A 
+        + Trong dãy A ta cũng chọn phần tử pivot là 4
+        + Được 2 dãy con là A11 = {2 } A12 = {6}
+                +  Sắp A11 ( sắp sẵn rồi )
+                +  Sắp  A12 ( sắp sẵn rồi )
+                +  Tạo lại mảng A = { A11 được sắp , pivot , A12 được sắp } = {2 4 6      }
++Sắp B . Trong B ta không thấy được pivot do chọn cái nào ta cũng không thấy thỏa . Nhưng mục tiêu của quick sort là làm sao ta được dãy  
+  &lt;C= dãy có trị nhỏ hơn pivot &gt; pivot  &lt; D= dãy có trị lớn hơn pivot &gt;
+Sắp 2 dãy con C , D rồi ghép lại ta được dãy sắp thứ tự . 
+
+
+Vì vậy áp dụng một giải thuật tìm pivot trong B( sẽ trình bày sau ) ta sẽ được C = { 13} D = {18} và pivot là 14 . 
+        + Sắp dãy con C , D ( do chỉ có một phần tử nên không sắp , hoặc tìm pivot)
+        + Ghép lại tạo thành mảng B được sắp B = { 13 14 18 }
+
++Ghép A và B để tạo thành mảng được sắp xếp ban đầu
+&nbsp;
+		</blockquote>
+
+<font color='yellow'><b>Thuật toán</b></font> 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void Sortable_List&lt;Record&gt;::quick_sort&#40;&#41;
+{
+          recursive_quick_sort&#40;0 , count -1 &#41; ;
+}
+
+void Sortable_List&lt;Record&gt;::recursive_quick_sort&#40;int low , int high &#41;
+{
+          int pivot_position ;
+          if &#40;low &lt; high &#41;
+          {
+                    pivot_position = partition &#40;low , high &#41; ;
+                    recursive_quick_sort&#40;low , high &#41; ;
+                    recursive_quick_sort&#40;pivot_position +1 , high &#41; ;
+          }
+}
+
+
+int Sortable_List&lt;Record&gt;::partition&#40;int low , int high &#41; 
+{
+              Record pivot ;
+              int i , last_small;
+              swap &#40; low , &#40;low +high&#41; /2 ;
+              pivot = entry&#91;low&#93; ;
+              last_small = low ;
+              for &#40; i = low +1 ; i &lt;= high ; i ++ &#41;
+              {
+                        if&#40;entry&#91;i&#93; &lt; pivot &#41;
+                        {
+                                    last_small = last_small +1 ;
+                                    swap &#40; last_small , i &#41; ;
+                        }
+                
+              }
+                swap &#40;low , last_small &#41;;
+                return last_small ;
+}</pre>
+		</div>
+
+PS : Hiệu quả của giải thuật quicksort phụ thuộc rất nhiều vào việc chọn cho được pivot tốt ( tức nếu pivot nằm gần chính giữa thì đạt gần tối ưu )
+
+Có rất nhiều phiên bản quicksort khác nhau nếu ta thay đôi cách tìm pivot  . VD Ở cách trên phương pháp làm là  chọn phần tử giữa để lấy trị của nó làm pivot ,rồi sau đó sẽ di chuyển phần tử giữa để nó đúng vào vị trí cần có của pivot là &lt;bên trái nhỏ hơn pivot &gt; pivot &lt;bên phải lớn hơn pivot &gt; . Ta có thể chọn cách khác là lấy phần tử đầu làm trị pivot . Sau đó di chuyển phần tử đầu đến đúng vị trí cần có của pivot   . 
+Do đó ta sẽ có rất nhiều cách để hiện thực một ý tưởng và nhiều phiên bản của quick sort . Bởi vậy tui thích xem ý tưởng hơn là đưa ra những đoạn code rồi ngồi xem code nó chạy như thế nào . 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21697</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21697</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:05:12]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Heap Sort</title>
+				<description><![CDATA[ <blockquote>
+   Heap là một cấu trúc dữ liệu  , có thể được biểu diễn thông qua 2 cách :
+  -Dạng thứ 1: Dạng cây nhị phân có đặc điểm là node cha thì lớn hơn 2 node con trực tiếp của nó . 
+  -Dạng thứ 2: nếu ta đánh số các node theo thứ tự từ trên xuống và từ trái qua . Bắt đầu là node root = 0 , thì ta có thể định nghĩa heap thông qua mảng một chiều , có đặc điểm là phần tử thứ k sẽ lớn hơn các phần tử thứ 2k+1 và 2k+2 . Ta có thể dễ nhận thấy là phàn tử thứ 0 sẽ tương ứng với root trong cây ở cách biểu diễn thứ 1
+
+<font color='yellow'>Nguyên tắc sắp xếp của heap sort </font>
+        Dựa vào tính chất của heap trong cách biểu diễn thứ 1 và thứ 2 , ta có thể thấy phần tử đầu tiên trong cách biểu diễn theo mảng sẽ là phần tử lớn nhất  ---&gt; cách sắp xếp đơn giản là : ( Gọi mảng ban đầu là A )
+
+Khởi tạo : Tạo heap từ mảng ban đầu đã cho (mảng A )
+      1. Lấy phần tử đầu tiên trong mảng ra bỏ vào mảng kết quả
+      2. Tạo lại heap từ mảng A  
+      3.Quay lại bước 1 
+
+VD : Ta lấy một mảng đã được tạo thành một heap :
+
+               y r p d f  b k a c 
+
+Lấy phần tử đầu tiên là y bỏ vào mảng kết quả C = { y }
+
+khi này A =  r p d f b k a c 
+Tạo heap A = r f p d c b k a
+
+Lấy phần tử đầu tiên ra là r bỏ vào mảng C = { r y }
+Khi này A = { f p d c b k a }
+Tạo heap cho A = { p f k d c b a}
+
+Lấy phần tử đầu tiên ra là p bỏ vào mảng C = { p r y }
+Khi này A = {  f k d c b a }
+Tạo heap cho A = { k f b d c a}
+
+Lấy phần tử đầu tiên ra là k bỏ vào mảng C = { k p r y }
+Khi này A = { f b d c a }
+Tạo heap cho A = { f d b a c}
+
+Lấy phần tử đầu tiên ra là f bỏ vào mảng C = { f k p r y }
+Khi này A = { b d c a }
+Tạo heap cho A = { d c b a}
+
+Lấy phần tử đầu tiên ra là d bỏ vào mảng C = {d  f k p r y }
+Khi này A = {  c b a }
+Tạo heap cho A = { c a b }
+
+
+Lấy phần tử đầu tiên ra là c bỏ vào mảng C = {c d  f k p r y }
+Khi này A = {  b a }
+Tạo heap cho A = { b a }
+
+Lấy phần tử đầu tiên ra là b bỏ vào mảng C = {b c d  f k p r y }
+Khi này A = {  a }
+Tạo heap cho A = { a }
+
+Kết thúc ta có được mảng C đã có thứ tự . 
+
+<font color='yellow'>Cải tiến:</font>
+Ta có thể hạn chế việc sử dụng thêm mảng C bằng cách tận dụng luôn mảng A ban đầu  . Ta làm như sau 
+
+A = y r p d f b k a c
+Bước 1 :
+Lấy y ra 
+Lấy c ra 
+Bỏ y vào chổ của c .
+Bỏ c vào chỗ của y
+
+Khi ta bỏ y vào chỗ của c thì giống như ta bỏ y vảo mảng C . 
+Khi này mảng A sẽ coi như gồm 2 phần A = c r p d f b k a ---- y 
+
+Bước 2 : tạo heap cho phần đứng trước của A là c r p d f b k a 
+Phần sau là chứa y để nguyên
+
+Ta sẽ có A mới là : r f p d c b k a -- y
+
+Quay lại bước 1 : Lấy r , a ra và swap r và a
+A sẽ thành  A= a f p d c b k -- r y 
+Tạo heap cho A = p f k d c b a -- r y
+...........
+Làm tương tự đến khi kết thúc 
+
+Qua VD ta thấy rằng phần quan trọng nhất là làm sao sinh ra heap từ một mảng cho trước 
+
+Sau đây là phần code cho phần cải tiến 
+Giải thuật
+
+Post Condition : Dùng để phục hồi lại heap .
+Pre   Condition : 
+
+
+             Ta sẽ có A mới là : r f p d c b k a -- y
+             Quay lại bước 1 : Lấy r , a ra và swap r và a
+             A sẽ thành  A= a f p d c b k -- r y 
+             Tạo heap cho A = p f k d c b a -- r y
+
+Thì khi này current chính là a
+              low là 0
+              high là 7
+&nbsp;
+		</blockquote>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void Sortable_List&lt;Record&gt;::insert_heap&#40;const Record &current, int low , int high &#41; 
+{
+              int large ; 
+              large = 2*low+1 ;
+              while &#40; large &lt;= high &#41; {
+                        if &#40;large &lt; high  && entry&#91;large&#93; &lt; entry&#91;large+1&#93; &#41;
+                                    large ++ ;
+                        if&#40;current &gt;= entry&#91;large&#93; &#41; 
+                          {
+                                break ;
+                          }
+                          else 
+                          {
+                                entry&#91;low&#93; = entry&#91;large&#93; ; 
+                                low = large ;
+                                large = 2 *  low + 1 ;
+                          }
+              }
+              entry&#91;low&#93; = current ; 
+}
+
+Tạo ra heap lúc ban đầu , lúc chưa chạy giải thuật
+void Sortable_List&lt;Record&gt;::bulidheap&#40;&#41;
+{
+          int low ;
+          for &#40; low = count / 2- 1; low &gt;= 0 ; low -- &#41;
+          {
+                  Record current = entry&#91;low&#93; ;
+                  insert_heap&#40;current, low, count -1&#41; ;
+          }
+}
+
+void Sortable_List&lt;Record&gt;::heapsort &#40;&#41;
+{
+            Record current ;
+            int last_unsorted ;
+            buildheap&#40;&#41; ;
+            for &#40; last_unsorted = count -1 ; last_unsorted &gt; 0 ; last_unsorted -- &#41;
+            {
+                      current = entry&#91; last_unsorted&#93; ;
+                      entry&#91;last_unsorted&#93;  = entry&#91;0&#93; ;
+                      insert_heap&#40;current,0,last_unsorted-1&#41; ;
+            }
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21701</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21701</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:11:27]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Insertion Sort</title>
+				<description><![CDATA[ <b>insertion sort</b>
+<blockquote>
+VD  : 
+          A = { 5 8 6 3 10 }
+Insertion sort làm như sau :
+
+Chia mảng A làm 2 phần sorted và unsorted
+Ban đầu sorted là B = { 5 }
+Unsorted là C = { 8 6 3 10 }
+
+Lần làm thứ nhất :
+    Lấy phần tử đầu tiên của C là 8 ra---&gt; C = { 6 3 10 }
+    Tìm vị trí của số 8 trong mảng B ---&gt; B = { 5 8 }
+
+Lần làm thứ hai :
+    Lấy phần tử đầu tiên của C là 6 ra---&gt; C = { 3 10 }
+    Tìm vị trí của số 6 trong mảng B ---&gt; B = { 5 6 8 }
+
+Lần làm thứ ba  :
+    Lấy phần tử đầu tiên của C là 3 ra---&gt; C = {  10 }
+    Tìm vị trí của số 3 trong mảng B ---&gt; B = { 3 5 6 8 }
+
+Lần làm thứ tư  :
+    Lấy phần tử đầu tiên của C là 10 ra---&gt; C = {  }
+    Tìm vị trí của số 10 trong mảng B ---&gt; B = { 3 5 6 8 10}
+
+Kết thúc thuật toán &nbsp;
+		</blockquote>
+
+<i>Ý nghĩa của insertion sort là lấy một phần tử của mảng ra và insert vào vị trí thích hợp trong mảng </i>
+
+<font color='yellow'><b>Giải thuật</b></font>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void Sortable_List&lt;Record&gt;::insertion_sort&#40;&#41; // phien bản nay list được hien thưc thông qua mảng chứ kg phải con trỏ 
+{ 
+    int  first_unsorted ;
+    int position ;
+    Record current ;
+    for&#40; first_unsorted = 1 ; first_unsorted &lt; count ; first_unsorted ++&#41;
+    {
+                if&#40;entry&#91;first_unsorted&#93; &lt; entry&#91;first_unsorted-1&#93;&#41;
+                {
+                        position = first_unsorted ;
+                        current = entry&#91;first_unsorted&#93; ;
+                        do {
+                                    entry&#91;position&#93; = entry &#91; position -1&#93; ;
+                                    position -- ;
+                        } while &#40;position &gt; 0 && entry&#91;position-1&#93;&gt; current &#41;;
+                        entry&#91;position&#93; = current ;
+                }
+      }
+}</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21703</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21703</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:15:16]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Selection Sort</title>
+				<description><![CDATA[ <b>Selection Sort</b>
+
+<blockquote>Nguyên tắc :
+          Chia mảng cần sắp thành 2 phần 
+          Phần đã được sắp và phần chưa được sắp :
+          &lt;A = phần được sắp&gt;  &lt; B= phần chưa được sắp&gt;
+          C = phần tử  đầu tiên của B 
+          
+          Bước 1 : Tìm trong B phần tử lớn nhất max_key
+          Bước 2 : swap C và max_key ( hoán đổi vị trí )
+          Bước 3 : Bỏ max_key vào A . Khi này A mới = { A cũ , max_key } .    
+Quay lại bước 1 &nbsp;
+		</blockquote>
+
+        Gọi Sortable_List là list được hiện thực bằng mảng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void Sortable_List&lt;Record&gt;::selectionsort&#40;&#41; 
+        {
+                    for &#40; int position = count -1 ; position &gt; 0 ; position -- &#41; 
+                    {
+                              int max = max_key&#40;0,position&#41; ; // tìm key lớn nhất 
+                              swap &#40;  max , position &#41; ; 
+                    }
+        }
+        
+        void Sortable_List&lt;Record&gt;::swap &#40; int low , int high&#41;
+        {
+                    Record temp ;
+                    temp = entry&#91;low&#93; ;
+                    entry&#91;low&#93; = entry&#91;high&#93; ;
+                    entry&#91;high&#93; = temp ;
+        }
+        
+        .... max_key&#40;int low , int high&#41; 
+        {
+                int largest , current ;
+                largest = low ;
+                for &#40; current = low +1 ; current &lt;= high ; current ++ &#41;
+                        if &#40; entry&#91;largest&#93; &lt; entry&#91;current&#93; &#41;
+                        {
+                                    largest = current ;
+                          }
+                  return largest ;
+          }</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21704</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21704</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:17:45]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Sưu tầm: Các thuật toán sắp xếp thường dùng.</title>
+				<description><![CDATA[ Tạm thời bây nhiêu đã. Có chỗ nào sai sót mong anh em góp ý, đặc biệt là bác <b>LQV0604</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21709</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21709</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 03:27:45]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>bổ xung thuật toán sắp xếp</title>
+				<description><![CDATA[ mình xin bổ xung thêm một vài thuật toán sắp xếp khác.
+
+<font color='yellow'>1. thuật toán sắp xếp nổi bọt (buble sort):</font>
+trong thuật toán này, các giá trị trong mảng sẽ được duyệt từ cuối lên đầu, tại mỗi bước sẽ so sánh giá trị của 2 phần tử kề nhau. nếu chúng bị ngược thứ tự thì đổi lại vị trí. sau 1 lần như vậy thì phần tử có giá trị nhỏ nhất sẽ được chuyển về đầu mảng. và quá trình tiếp tục duyệt từ cuối đến phần tử thứ 2, rồi từ cuối đến phần tử thứ 3, ...
+sở dĩ gọi là nổi bọt vì quá trình so sánh giữa các cặp phần tử giống như &quot;bọt&quot; nổi trên mặt nước:D.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void bublesort&#40;double *a&#41;{
+  double temp;
+  for &#40;int i = 2; i &lt;= n; i++&#41;
+    for &#40;int j = n; j &gt;= i; j--&#41;
+      if &#40;a&#91;j&#93; &lt; a&#91;j-1&#93;&#41; {
+        temp = a&#91;j&#93;;
+        a&#91;j&#93; = a&#91;j+1&#93;;
+        a&#91;j+1&#93; = temp;
+      }
+}</pre>
+		</div>
+
+thuật toán này có độ phức tạp là O(n^2).
+
+<font color='yellow'>2. thuật toán sắp xếp đếm phân phối (distribution counting):</font>
+thuật toán này được áp dụng trong trường hợp đặc biệt, khi mà tất cả các giá trị trong mảng đều là số nguyên và thuộc khoảng [0..M] đã biết.
+ý tưởng của thuật toán là đếm xem trong khoảng [0..M] đó có bao nhiêu giá trị 0 (giả sử là a), bao nhiêu giá trị 1 (giả sử là b), ..., bao nhiêu giá trị M (giả sử là z). sau đó xếp lại mảng bằng cách đặt a phần tử 0 ở đầu, tiếp theo đặt b phần tử 1 tiếp theo, ..., và đặt z phần tử M ở cuối cùng.
+để giảm thiểu thì việc đếm trên không đếm những giá trị không có trong mảng. giả sử mảng a có các giá trị a[1], a[2], ..., a[k] trong tổng số n phần tử thì chỉ đếm số lần lặp lại của k giá trị đó.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>double *distributioncounting&#40;double *a&#41;{
+  int c&#91;M+1&#93;; /* lưu số lần xuất hiện của các phần tử mảng a */
+  int v;
+  double b&#91;n&#93;;
+  for &#40;int i = 0; i &lt;= M; i++&#41; c&#91;i&#93; = 0;
+  for &#40;i = 1; i &lt;= n; i++&#41; c&#91;a&#91;i&#93;&#93;++; /* đếm số lần xuất hiện của a&#91;i&#93; trong khoảng &#91;0..M&#93; */
+  for &#40;i = 1; i &lt;= M; i++&#41; c&#91;i&#93; += c&#91;i-1&#93;; /*tính vị trí cuối của mỗi đoạn con */
+  for &#40;i = n; i &gt; 0; i--&#41; {
+    v = a&#91;i&#93;;
+    b&#91;c&#91;v&#93;&#93; = a&#91;i&#93;;
+    c&#91;v&#93;--;
+  }
+  return b;
+}</pre>
+		</div>
+
+độ phức tạp của thuật toán này là O(max(M, n)), do kết quả của phép đếm. nhược điểm của thuật toán này là khi M quá lớn thì khó thực hiện.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21734</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3724.hva#21734</link>
+				<pubDate><![CDATA[Fri, 8 Sep 2006 06:26:41]]> GMT</pubDate>
+				<author><![CDATA[ learn2hack]]></author>
+			</item>
+	</channel>
+</rss>

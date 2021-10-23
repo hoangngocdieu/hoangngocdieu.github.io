@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Proxmox - Backup trên SAN"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Proxmox - Backup trên SAN"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Proxmox - Backup trên SAN</title>
+				<description><![CDATA[ Hiện mình chạy hệ thống 2 server Promox, đã add vào Cluster. Tạm gọi là vm1 & vm2. Với con vm1 là master, con vm2 là slave.
+
+2 server này kết nối đến 1 con SAN qua cổng HBA. Trên SAN chia 1 volume 5TB cho cả 2 con để backup các VMs.
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img59/5983/jd0k.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Trên vm1 định dạng SAN 5TB thành LVM 
+
+<blockquote>
+root@vm1:/media# lvscan
+  ACTIVE            '/dev/pve/swap' [15.00 GiB] inherit
+  ACTIVE            '/dev/pve/root' [96.00 GiB] inherit
+  ACTIVE            '/dev/pve/data' [338.23 GiB] inherit
+  ACTIVE            '/dev/san_Backup/lv_Backup' [4.55 TiB] inherit
+&nbsp;
+		</blockquote>
+
+Trên vm2 nó cũng sẽ tự nhận LVM này, chỉ cần active lên là được
+<blockquote>
+root@vm2:/media# lvscan
+  ACTIVE            '/dev/pve/swap' [15.00 GiB] inherit
+  ACTIVE            '/dev/pve/root' [96.00 GiB] inherit
+  ACTIVE            '/dev/pve/data' [338.23 GiB] inherit
+  ACTIVE            '/dev/san_Backup/lv_Backup' [4.55 TiB] inherit
+&nbsp;
+		</blockquote>
+
+Sau đó trên vm1 & vm2 mình tạo thư mục /media/san_Backup và mout vào LVM trên.
+
+Trên vm1 mình tạo thêm thư mục /media/san_Backup/VM1, vm2 tạo /media/san_Backup/VM2
+
+Trên Proxmox sẽ add 2 Storage tương ứng với 2 thư mục trên
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img14/2329/8b52.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Đặt lịch backup cho các VMs trên vm1 & vm2 ứng với 2 storage trên
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img18/5608/3gfs.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Khi đến lịch chạy backup, trên con vm2 nó xong trước thì có kết quả
+
+<blockquote>
+root@vm2:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+└── VM2
+└── dump
+├── vzdump-qemu-200-2014_01_09-11_30_02.log
+└── vzdump-qemu-200-2014_01_09-11_30_02.vma.gz
+&nbsp;
+		</blockquote>
+
+Sau khi vm1 nó chạy backup xong sau thì nó lại ra kết quả
+<blockquote>
+root@vm2:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+│ ├── vzdump-qemu-103-2014_01_09-11_30_05.log
+│ └── vzdump-qemu-103-2014_01_09-11_30_05.vma.gz
+└── VM2
+└── dump
+&nbsp;
+		</blockquote>
+
+Còn trên vm1 kết quả là
+<blockquote>
+root@vm1:/media# tree
+.
+└── san_Backup
+├── lost+found
+├── VM1
+│ └── dump
+│ ├── vzdump-qemu-103-2014_01_09-11_30_05.log
+│ └── vzdump-qemu-103-2014_01_09-11_30_05.vma.gz
+└── VM2
+└── dump
+&nbsp;
+		</blockquote>
+
+Kết quả trên Proxmox, ban đầu nó có file backup của vm 200. Nhưng mình chưa kịp capture lại
+
+<br>
+			<div align="center" class="limitview"><img src='http://imageshack.us/a/img856/9470/vl27.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+Vậy bác nào gặp trường hợp này cho mình giải pháp để có thể lưu backup vào cùng volume trên SAN. Mình không muốn tách mỗi server vm mỗi volume.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45396.hva#279441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45396.hva#279441</link>
+				<pubDate><![CDATA[Thu, 9 Jan 2014 04:10:06]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+	</channel>
+</rss>

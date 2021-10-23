@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Qmail as a Mail Gateway - Phần 2 <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/120.hva#452" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: Hoàng Ngọc Diêu (conmale) - Translator:  - Entry Date: 24/02/2009 15:21:16" title="Author: Hoàng Ngọc Diêu (conmale) - Translator:  - Entry Date: 24/02/2009 15:21:16"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>Qmail as a Mail Gateway - Phần 2</b><br/> Thiết lập ứng dụng qmail như một mail gateway.<br/> <br/> [/b]3. Thiết lập ứng dụng Qmail[/b]<br/> 3.1 Hồ sơ rc và “defaultdelivery”<br/> Hồ sơ “rc” là boot script của qmail ấn định phương thức chuyển giao mail tùy theo cách sắp xếp và chọn lựa của từng hệ thống. Trong thư mục /var/qmail/boot có sẵn một số script cho từng trường hợp.<br/> <br/> Nếu bạn không dùng daemontools mà dùng splogger của qmail để gởi log xuyên qua syslog (tiêu chuẩn Unix) và binmail để chuyển giao thông điệp theo phương thức /var/spool/mail/$USER thì “rc” script tương tự như sau:<br/> <br/> Ví dụ thứ nhất:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#!/bin/sh<br/> # Dùng splogger để chuyển log xuyên qua syslog<br/> # Dùng binmail để chuyển giao thông điệp đến /var/spool/mail/$USER theo default<br/> # Dùng V7 binmail interface: /bin/mail -f<br/> <br/> exec env – PATH=”/var/qmail/bin:$PATH” \<br/> qmail-start  \<br/> `|preline -f /bin/mail -f "${SENDER:-MAILER-DAEMON}" -d "$USER"` \<br/> splogger mail</pre><br/> 		</div><br/> <br/> Trong đó,<br/> - Phương thức chuyển giao mail đến /var/spool/mail/$USER chính là phương thức chuyển giao mail theo truyền thống Unix.Nếu bạn muốn hiểu rõ hơn, nên tham khảo thêm phương thức chuyển giao mail của Unix.<br/> - Các dấu back-slash (\) chỉ cho sự nối tiếp trong câu lệnh (\ là return character)<br/> - Phần lệnh preline -f /bin/mail -f của người gởi là MAILER-DAEMON đến $USER nằm trong dấu backquote (`) chớ không phải là singlequote ('). Nên phân biệt rõ các dấu quote này khi đánh lệnh trên trong script “rc” (backquote dùng để ứng thế một cụm lệnh, singlequote chỉ là một singlequote). Nếu bạn muốn hiểu rõ hơn về khả năng “command subtitution” trên Unix, nên đọc thêm phần này.<br/> <br/> Dĩ nhiên bạn có thể tạo nên một “rc” như trên và dùng splogger. Tuy nhiên, nếu đã install daemontools, tại sao không tận dụng chức năng của nó? Hồ sơ “rc” của tôi như sau:<br/> <br/> Ví dụ thứ nhì:<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#!/bin/sh<br/> # Dùng multilog của daemontools để gởi log đến /var/log/qmail<br/> # Dùng /var/qmail/control/defaultdelivery làm hồ sơ configuration<br/> # Dùng ./Mailbox làm phương thức chuyển giao thông điệp<br/> <br/> exec env – PATH=”/var/qmail/bin:$PATH” \<br/> qmail-start “`cat /var/qmail/control/defaultdelivery`”</pre><br/> 		</div><br/> <br/> - So với hồ sơ “rc” ở trên dùng splogger và hồ sơ “rc” dùng daemontools này thì hồ sơ “rc” này giản tiện hơn nhiều.<br/> - Lệnh exec env xác định môi trường qmail và qmail-start chỉ đơn giản khởi động theo thông số  đã định sẵn trong defaultdelivery.<br/> - defaultdelivery không phải là một hồ sơ tiêu chuẩn của qmail. Nó đơn giản chỉ là một phương tiện gởi thông số cho qmail-start.<br/> <br/> Sau khi đã tạo ra hồ sơ “rc” trong thư mục /var/qmail, có hai việc cần làm là:<br/> - Thay “mod” của hồ sơ này thành “executable: # chmod 755 /var/qmail/rc để script rc này có thể “khởi động” được khi cần.<br/> - Tạo ra thư mục /var/log/qmail để daemontools gởi log của qmail vào vị trí này: # mkdir /var/log/qmail (nếu bạn không muốn dùng daemontools mà chỉ dùng rc như phần ví dụ thứ nhất thì không cần tạo ra thư mục này vì splogger sẽ dùng syslog).<br/> <br/> Ðến đây có lẽ bạn sẽ hỏi: defaultdelivery ở đâu ra và trong hồ sơ này chứa những gì? Như đã đề cập ở trên, defaultdelivery chỉ đơn giản là một phương tiện gởi thông số cho qmail-start; nó giúp qmail-start xác định phương thức chuyển gởi mail (nếu không muốn dùng .qmail). Có 3 phương thức chuyển gởi mail thông thường trên Unix như sau:<br/> <br/> Format    Vị trí    defaultdelivery    Lợi điểm<br/> maildir    $HOME    ./Maildir/        Ðáng tin cậy nhưng ít MUA hỗ trợ<br/> mbox    $HOME    ./Mailbox        Phổ biến và được các MUA hỗ trợ<br/> username    /var/spool/mail xem thêm INSTALL.vsm   Mail tiêu chuẩn Unix.<br/> <br/> Dựa vào bảng phân tích trên, bạn có thể chọn phương thức thích hợp cho mình. Trong thư mục mã nguồn có kèm các hồ sơ INSTALL.mbox, INSTALL.maildir và INSTALL.vsm giải thích rất chi tiết các ưu khuyết điểm của từng phương thức nếu bạn muốn tìm hiểu sâu hơn. Cá nhân tôi chọn ./Mailbox vì muốn tạo tiện dụng cho các MUA (Mail User Agent).<br/> <br/> Vậy, để tạo ra defaultdelivery, bạn chỉ cần chọn một phương thức và dùng lệnh echo để đính phương thức đã chọn, giả sử như:<br/> <b># echo ./Mailbox &gt; /var/qmail/control/defaultdelivery</b><br/> <br/> Trong đó,<br/> - ./Mailbox là phương thức.<br/> - hồ sơ defaultdelivery được nằm trong thư mục /var/qmail/control, nơi trọn bộ các configuration thuộc qmail được lưu trữ.<br/> - lệnh echo đính dòng ./Mailbox (&gt<img src="/hvaonline/images/smilies/068ae40523a24c9ef54edefd375e542d.gif" border="0" alt="smilie" align="absbottom"> vào hồ sơ defaultdelivery.<br/> <br/> 3.2 Hồ sơ khởi động “qmailctl” của hệ điều hành<br/> Ðến đây, bạn đã có thể khởi động qmail bằng cách chạy script “rc” đã tạo ở trên. Tuy nhiên, để qmail được ứng dụng như một mail gateway có khả năng tự khởi động và tự tắt theo đúng quy chế thì “rc” không có khả năng này. Hơn nữa, các chức năng tiện dụng của phần daemontools không được ứng dụng đầy đủ nếu chỉ dùng script “rc” ở trên. Hồ sơ “rc” sẽ được dùng như một phân bộ trong cơ chế chuyển gởi thông điệp (qua smtp), các phần kế tiếp sẽ đi sâu hơn.<br/> <br/> Vì lý do trên, hồ sơ khởi động qmailctl được hình thành để quản lý các phân bộ của qmail và daemontools đúng hệ thống. Trước khi đi sâu vào nội dung của hồ sơ qmailctl, bạn cần biết qua một số binaries và các chức năng của chúng trong phần mềm hỗ trợ “daemontools” để dễ hình dung cơ chế làm việc của hồ sơ qmailctl.<br/> <br/> Sau khi compile và build daemontools thành công, phần mềm này có 14 binaries được lưu trữ trong /usr/local/bin, bạn chỉ cần biết đến một số binaries và chức năng của chúng như sau:<br/> <br/> Tên binary    Chức năng<br/> supervise: Dùng để khởi động và theo dõi một process. Có khả năng tái khởi động process đó nếu nó bị “chết”<br/> svok: Dùng để kiểm tra xem supervise đang thao tác hay không<br/> svc: Dùng để điều khiển một process được khởi động bởi supervise, binary này cho phép Admin ngưng và tái khởi động một process nào đó.<br/> svstat: Dùng để báo cáo tình hình của một process được khởi động bởi supervise<br/> svscan: Dùng để khởi động vào theo dõi một nhóm process được supervise tạo ra<br/> <br/> Theo đây là một bản mẫu của hồ sơ qmailctl, bạn có thể dùng nó cho hệ thống của mình nếu không muốn tự tạo một “qmailctl” riêng:<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#!/bin/sh<br/> # Người dùng RedHat có thể giản tiện chu trình sắp xếp<br/> # “runlevel” với lệnh “chkconfig”<br/> # chkconfig: - 80 30<br/> # description: qmail as MTA<br/> <br/> # Phần kế tiếp dùng để chỉnh user environment<br/> PATH=/var/qmail/bin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin<br/> export PATH<br/> <br/> # Xác định variables cho qmail daemon ID và user group ID<br/> QMAILDUID=`id -u qmaild`<br/> NOFILESGID-`id -g qmaild`<br/> <br/> # Bắt đầu tạo ra các trường hợp hoạt dụng cho supervise<br/> case “$1” in<br/> start&#41;<br/> echo -n “Starting qmail: svscan”<br/> cd /var/qmail/supervise<br/> env – PATH=”$PATH” svscan &<br/> echo $! &gt; /var/run/svscan.pid<br/> echo “.”<br/> ;;<br/> stop&#41;<br/> echo -n “Stopping qmail: svscan<br/> kill `cat /var/run/svscan.pid`<br/> echo -n “ qmail down”<br/> svc -dx /var/qmail/supervise/*<br/> echo -n “ logging down too”<br/> svc -dx /var/qmail/supervise/*/log<br/> echo “.”<br/> ;;<br/> stat&#41;<br/> cd /var/qmail/supervise<br/> svstat * */log<br/> ;;<br/> doqueue&#41;<br/> echo “Sending ALRM signal to qmail-send”<br/> svc -a /var/qmail/supervise/qmail-send<br/> ;;<br/> queue&#41;<br/> qmail-qstat<br/> qmail-qread<br/> reload&#41;<br/> echo “Sending HUP signal to qmail-send”<br/> svc -h /var/qmail/supervise/qmail-send<br/> ;;<br/> pause&#41;<br/> echo “Pausing qmail-send”<br/> svc -p /var/qmail/supervise/qmail-send<br/> echo “Pausing qmail-smtpd”<br/> svc -p /var/qmail/supervise/qmail-smtpd<br/> ;;<br/> cont&#41;<br/> echo “Continuing qmail-send”<br/> svc -c /var/qmail/supervise/qmail-send<br/> echo “Continuing qmail-smtpd”<br/> svc -c /var/qmail/supervise/qmail-smtpd”<br/> ;;<br/> restart&#41;<br/> echo “Restarting qmail:”<br/> echo “* Stopping qmail-smtpd”<br/> svc -d /var/qmail/supervise/qmail-smtpd<br/> echo “* Sending qmail-send SIGTERM and restarting”<br/> svc -t /var/qmail/supervise/qmail-send<br/> echo “* Restarting qmail-smtpd”<br/> svc -u /var/qmail/supervise/qmail-smtpd<br/> ;;<br/> cdb&#41;<br/> echo “Do not forget to modify /etc/smtprules/qmail-rules.txt or it will use the old cdb”<br/> cat /etc/smtprules/qmail-rules.txt | tcprules /etc/tcp.smtp.cdb /tmp/tcp.smtp.tmp<br/> chmod 644 /etc/tcp.smtp*<br/> echo “/etc/tcp.smtp.cdb is reloaded”<br/> ;;<br/> help&#41;<br/> cat &lt;&lt;HELP<br/> stop -- stops mail service &#40;smtp connections refused, nothing goes out&#41;<br/> start -- starts mail service &#40;smtp connection accepted, mail can go out&#41;<br/> pause -- temporarily stops mail service &#40;connections accepted, nothing leaves&#41;<br/> cont -- continues paused mail service<br/> stat -- displays status of mail service<br/> cdb -- rebuild the tcpserver cdb file for smtp<br/> restart -- stops and restarts smtp, sends qmail-send a TERM & restarts it<br/> doqueue -- sends qmail-send ALRM, scheduling queued messages for delivery<br/> reload -- sends qmail-send HUP, rereading locals and virtualdomains<br/> queue -- shows status of queue<br/> HELP<br/> ;;<br/> *&#41;<br/> echo “Usage: $0 {start|stop|restart|doqueue|reload|stat|pause|cont|cdb|queue|help}”<br/> exit 1<br/> ;;<br/> esac<br/> exit 0</pre><br/> 		</div><br/> <br/> Ðến đây có lẽ bạn sẽ thấy là binary svc được dùng rất nhiều trong hồ sơ qmailctl và sẽ thắc mắc các thông số -a, -h, -t, -u.... của binary này có những chức năng nào?<br/> <br/> Như đã đề cập ở trên về một số binaries của daemontools và các chức năng của chúng; svc dùng để điều khiển một process được khởi động bởi supervise, binary này cho phép Admin ngưng và tái khởi động một process nào đó. Việc ứng dụng chức năng “tái khởi động một process nào đó” của svc hết sức quan trọng vì nó bảo đảm sự hoạt động liên tục của qmail và các phân bộ của  qmail (nếu không mail sẽ bị bounce và không chuyển gởi được khi một trong những phân bộ của qmail bị ngưng).<br/> <br/> Sau đây là bảng tóm gọn các thông số của svc (cho trường hợp bạn cần đào sâu), bạn có thể dùng bảng thông số của svc và đối chiếu với phần script trong hồ sơ qmailctl để hiểu rõ hơn các functions của nó:<br/> <br/> Thông số        Chức năng<br/> <br/> -a  Alarm – Dùng để gởi tín hiệu ALRM đến service<br/> -c  Continue – Dùng để gởi tín hiệu CONT đến service<br/> -d  Down – Dùng để gởi tín hiệu TERM và CONT đến service (nếu service này đang chạy) và không cho phép supervise tái khởi động service này.<br/> -h  Hangup – Dùng để gởi tín hiệu HUP đến service<br/> -i  Interrupt – Dùng để gởi tín hiệu INT đến service<br/> -k  Kill – Dùng để gởi tín hiệu KILL đến service<br/> -o  Once – Dùng để khởi động service nếu service này chưa khởi động, nếu service này ngừng sau đó, once ngăn chặn supervise tái khởi động nó.<br/> -p  Pause – Dùng để gởi tín hiệu STOP đến service<br/> -t  Terminate – Dùng để gởi tín hiệu TERM đến service<br/> -u  Up – Nếu service đang ngưng, thông số này khởi động service<br/> -x  Exit – Ðình chỉ supervise ngay sau khi service down.<br/> <br/> Có hai cách sắp xếp cho hồ sơ “qmailctl” ở trên tự động chạy khi Linux (Unix) system đi xuyên qua “run level”. Linux và các Unix System V xử dụng init.d thư mục để chứa các shell scripts cho các run level, thông thường thư mục init.d có cấu trúc như:<br/> /etc/init.d hoặc,<br/> /etc/rc.d/init.d tùy theo cách sắp xếp và ứng dụng của mỗi Linux distro và Unix System V.<br/> a. Cách “lười” (trên RedHat và một số distro có ứng dụng chkconfig):<br/> - Tạo hồ sơ qmailctl như trên trong /var/qmail/bin (cho tiện)<br/> - Làm cho qmailctl “chạy được” và tạo “soft link” từ hồ sơ qmailctl này vào /etc/rc.d/init.d (hoặc /etc/init.d tùy theo) và /usr/bin<br/> <b># chmod 755 /var/qmail/bin/qmailctl<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/init.d/qmail<br/> # ln -s /var/qmail/bin/qmailctl /usr/bin</b><br/> <br/> - Chuyển vào thư mục /etc/rc.d/init.d<br/> <b># cd /etc/rc.d/init.d</b><br/> <br/> - Chạy lệnh chkconfig để đưa các “soft links” vào đúng các “run level”<br/> <b># chkconfig –add qmail</b><br/> <br/> Nên nhớ phải có phần #chkconfig: - 80 30 và # description: ở phần đầu của qmailctl không thì lệnh chkconfig sẽ không chạy được. 80 và 30 là enable level và disable level của qmail (xem thêm các tài liệu về runlevel trên Sys V)<br/> <br/> b. Cách “cổ điển” (trên tất cả các distro và System V):<br/> Cách “cổ điển” để tạo ra runlevel cho System V sau đây rất căn bản và thông thường.<br/> Sau khi tạo hồ sơ qmailctl trong /var/qmail/bin và làm nó “chạy được” với chmod như trên phần “lười”, bạn tạo ra các soft link từ qmailctl đến tới từng runlevel như sau:<br/> <br/> <b># ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc0.d/K30qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc1.d/K30qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc2.d/S80qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc3.d/S80qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc4.d/S80qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc5.d/S80qmail<br/> # ln -s /var/qmail/bin/qmailctl /etc/rc.d/rc6.d/K30qmail</b><br/> <br/> Ở trên cho thấy các symbolic links từ /var/qmail/bin/qmailctl đến mỗi runlevel (của các rcX.d) với chỉ định: qmail ngưng hoạt động ở rc0.d, rc1.d và rc6.d và hoạt động ở rc2.d, rc3.d, rc4.d và rc5.d (ký hiệu K dùng cho Stop và ký hiệu S dùng cho Start trong runlevel). Ở đây tôi chọn S80 và K30 dựa trên runlevel (by default) của Sendmail, bạn có thể chọn chỉ số khác thích hợp cho yêu cầu riêng. Tuy nhiên, nên sắp xếp runlevel theo đúng trình tự và ưu tiên của mỗi daemon không thì sẽ tạo ra sự cố cho các daemon của system.<br/> <br/> 3.3 Stop Sendmail và link Sendmail<br/> Có lẽ bạn sẽ tự hỏi tại sao lại có Sendmail ở đây và tại sao phải Stop Sendmail rồi link Sendmail? Câu trả lời như sau: Sendmail gần như là một MTA default cho các Linux Distro cũng như đa số các Unix flavor cho nên cơ hội Sendmail daemon đang chạy và chiếm cứ port 25 trên máy của bạn rất cao. Ðiều này dẫn đến nhiều trục trặc tai quái khi qmail bắt đầu khởi động (cho dù bạn vẫn có thể chỉnh định cho Sendmail và Qmail cùng chạy trên một host nếu sắp xếp cẩn thận). Bước Stop Sendmail và Link Sendmail theo tôi, là một bước hết sức quan trọng và cần thiết. Tất nhiên, nếu bạn không hề có Sendmail trên máy thì bước này không cần phải đi xuyên qua.<br/> <br/> 3.3.1 Stop Sendmail:<br/> - Thông thường, Stop Sendmail cách đơn giản nhất là dùng runlevel script trong /etc/rc.d/init.d/sendmail để Stop:<br/> <b># /etc/rc.d/init.d/sendmail stop</b><br/> <br/> - Cách “dã chiến” là kill process ID nào của Sendmail nếu Sendmail đang chạy (hoặc system của bạn không dùng runlevel hoặc Sendmail được khởi động kiểu “dã chiến”...). Dùng lệnh ps để in ra các process nào của Sendmail:<br/> <b># ps -ef | grep sendmail</b><br/> <br/> - Sau khi ps cho bạn danh sách các process thuộc Sendmail, bạn chỉ đơn giản “kill”:<br/> <b># kill PID-of-Sendmail</b><br/> <br/> - Cho an toàn, bạn nên tháo bỏ trọn bộ Sendmail nếu đã quyết định không dùng nó nữa hoặc ít nhất là tháo bỏ các symbolic link cho runlevel của Sendmail trong /etc/rc.d/rcX.d. Ðể tháo bỏ các runlevel theo phương pháp tiện dụng chkconfig (trên RedHat và các distro có ứng dụng chkconfig này):<br/> <b># chkconfig –del sendmail</b><br/> <br/> - Ðể tháo bỏ các symbolic links cho runlevel của Sendmail theo kiểu “dã chiến”:<br/> <b># mv /etc/rc.d/init.d/sendmail /etc/rc.d/init.d/sendmail.old<br/> # rm -f /etc/rc.d/rc0.d/K30sendmail<br/> # rm -f /etc/rc.d/rc1.d/K30sendmail<br/> # rm -f /etc/rc.d/rc2.d/S80sendmail<br/> # rm -f /etc/rc.d/rc3.d/S80sendmail<br/> # rm -f /etc/rc.d/rc4.d/S80sendmail<br/> # rm -f /etc/rc.d/rc5.d/S80sendmail<br/> # rm -f /etc/rc.d/rc6.d/K30sendmail</b><br/> <br/> - Ðể tháo bỏ luôn cả binaries của Sendmail, trên RedHat hoặc distro nào dùng RPM bằng cách:<br/> <b># rpm -e –nodeps sendmail</b><br/> <br/> - Hoặc đi vào từng thư mục /usr/sbin hoặc /usr/local/sbin (hoặc /usr/lib, /usr/local/lib) để manually rename từng binary thuộc về Sendmail (nếu Sendmail được cài vào máy theo phương thức “compile and build” tổng quát.<br/> <br/> 3.3.2 Link Sendmail<br/> Ðã muốn xoá luôn Sendmail vậy sao còn link Sendmail là sao? Có rất nhiều chương trình trên Linux và Unix “gọi” Sendmail để chuyển gởi thông điệp theo “default”. Nếu Sendmail binary bị hoàn toàn tháo gỡ thì không chóng thì chầy bạn sẽ lâm vào nhiều trục trặc bí ẩn <img src="/hvaonline/images/smilies/b5e9b4f86ce43ca65bd79c894c4a924c.gif" border="0" alt="smilie" align="absbottom">. Cách loại trừ những trục trặc “bí ẩn” có thể xảy ra là dùng phương thức Link Sendmail. Link Sendmail ở đây là link một copy có tên là Sendmail từ binary của Qmail thay vì dùng nguyên bản binary của Sendmail.<br/> <br/> - Ðổi tên của nguyên bản binary Sendmail:<br/> <b># mv /usr/sbin/sendmail /usr/sbin/sendmail.old<br/> # mv /usr/lib/sendmail /usr/lib/sendmail.old</b><br/> <br/> - Link bản Sendmail của Qmail vào các thư mục /usr/sbin và /usr/lib:<br/> <b># ln -s /var/qmail/bin/sendmail  /usr/lib<br/> # ln -s /var/qmail/bin/sendmail /usr/sbin</b><br/> <br/> 3.4 Thư mục “supervise” và các ứng động trong thư mục này<br/> Ðến đây, bạn cần tạo các thư mục và một số hồ sơ “supervise” cho qmailctl làm việc (bạn xem lại qmailctl có rất nhiều phần svc dùng /var/qmail/supervise/qmail-send hoặc /var/qmail/supervise/qmail-smtpd). Các bước kế tiếp rất đơn giản, tuy nhiên bạn nên cẩn thận với các chi tiết không thì sẽ gặp những trục trặc sau này.<br/> Ðầu tiên, bạn tạo ra 2 thư mục:<br/> <b># mkdir -p /var/qmail/supervise/qmail-send/log<br/> # mkdir -p /var/qmail/supervise/qmail-smtpd/log</b><br/> <br/> Trong đó, thông số -p (parents) dùng để tạo các thư mục từ trên xuống dưới (từ supervise đến qmail-send và log tương tự cho qmail-smtpd và log). Ðiều này có nghĩa trước khi mkdir tạo ra thư mục log bên trong thư mục qmail-send, nó kiểm tra xem thư mục qmail-send có sẵn hay không và tạo ra thư mục này nếu cần. Tương tự nó kiểm tra xem thư mục supervise có sẵn hay không.... (Dùng # mkdir –help để xem thêm chi tiết)<br/> <br/> 3.4.1 Thư mục “qmail-send” trong supervise<br/> Sau khi tạo ra các thư mục /var/qmail/supervise/qmail-send/log như trên, bạn phải đi qua các bước như sau:<br/> - Tạo một hồ sơ gọi là run trong /var/qmail/supervise/qmail-send (hồ sơ run nằm trong thư mục qmail-send – chú ý vị trí của các hồ sơ trong các thư mục). Hồ sơ run này có chi tiết như sau:<br/> <b>#!/bin/sh<br/> exec /var/qmail/rc</b><br/> <br/> Bạn còn nhớ hồ sơ “rc” ở phần 3.1 không? Ðây chính là nơi “rc” được gọi và thi hành nhiệm vụ trong trọn bộ cơ chế hoạt động của qmail và daemontools. Sau khi tạo ra hồ sơ run này, bạn phải đổi “mod” của nó thành “executable”:<br/> <b># chmod 755 /var/qmail/supervise/qmail-send/run</b><br/> <br/> - Tạo một hồ sơ khác cũng có tên là run nhưng nằm trong thư mục log của thư mục qmail-send). Hồ sơ run này có trách nhiệm gọi multilog thi hành nhiệm vụ logging của những gì qmail-send gởi đi; nó có chi tiết như sau:<br/> <b>#!/bin/sh<br/> exec /usr/local/bin/setuidgid qmaill /usr/local/bin/multilog t s5000000000 /var/log/qmail</b><br/> <br/> - Ðừng quan tâm lắm đến các thông số của shell script “run” lúc này. Các chi tiết sẽ đưọc đào sâu thêm trong những phần sau. Nếu bạn quan sát kỹ sẽ thấy mọi bước ăn khớp với nhau từ giai đoạn tạo ra thư mục cho log và thư mục này đến đây được dùng như một thông số trong shell script “run” ở trên. Sau khi tạo ra hồ sơ run này, bạn phải đổi “mod” của nó thành “executable”:<br/> <b># chmod 755 /var/qmail/supervise/qmail-send/log/run</b><br/> <br/> (kết thúc phần 2)<br/> hnd, vninformatics.com / diendantinhoc.net 04/10/2002</div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/452.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+						<div class="postbody"><b>Other posts in the same group:</b></div><br />
+									<div class="gen"><a href="/hvaonline/readingRoom/item/454.hva">Qmail as a Mail Gateway - Phần 4</a></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/453.hva">Qmail as a Mail Gateway - Phần 3</a></div>
+									<div class="gen"><b>Qmail as a Mail Gateway - Phần 2</b></div>
+									<div class="gen"><a href="/hvaonline/readingRoom/item/451.hva">Qmail as a Mail Gateway - Phần 1</a></div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/120.hva#452" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

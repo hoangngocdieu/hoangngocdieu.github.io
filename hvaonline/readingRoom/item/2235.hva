@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::*nix::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Cài đặt nhanh hệ thống phát hiện xâm nhập <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/643.hva#2235" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: moonlight123 - Translator:  - Entry Date: 24/02/2009 15:10:52" title="Author: moonlight123 - Translator:  - Entry Date: 24/02/2009 15:10:52"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody"><b>Cài đặt nhanh hệ thống phát hiện xâm nhập dùng Snort+ACID :</b><br/> <br/> Hướng dẫn cài đặt nhanh hệ thống phát hiện xâm nhập (IDS) trên Linux/Unix sử dụng Snort với cơ sở dữ liệu mysql để lưu log, alert và ACID làm giao diện theo dõi.<br/> <br/> <b>* Yêu cầu hệ thống:</b><br/> - mysql-3.23+<span class="link"> http://www.mysql.org/</span><br/> - apache-1.3+<span class="link"> http://httpd.apache.org/</span><br/> - php-4.04+<span class="link"> http://www.php.net/</span><br/> - snort-1.8.3+<span class="link"> http://www.snort.org/</span><br/> - acid-0.9.6+<span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/snortacid.html</span><br/> - adodb-1.2+<span class="link"> http://php.weblogs.com/adodb</span><br/> - phplot-4.4.6+<span class="link"> http://phplot.sourceforge.net/</span> (tuỳ chọn để xem các thống kê dạng biểu đồ đưọc vẽ bằng thư viện gd, yêu cầu php phải được biên dịch hỗ trợ gd)<br/> <br/> <b>* Giả thiết: </b><br/> - Hệ thống đã được cài đặt mysql, apache, php và hoạt động tốt (ví dụ RH 7.2).<br/> - Địa chỉ mạng cục bộ cần theo dõi: 192.168.1.0/24<br/> <br/> <b>* Cài đặt snort và cấu hình snort.</b><br/> <br/> Download mã nguồn: <br/><span class="link"> http://www.snort.org/dl/snort-1.8.6.tar.gz</span><br/> <br/> # tar zxvf snort-1.8.6.tar.gz<br/> # cd snort-1.8.6<br/> # ./configure --with-mysql=/usr<br/> # make<br/> # make install<br/> # mkdir /etc/snort<br/> # cp *.rules classification.config snort.conf /etc/snort/<br/> <br/> Tạo bảng dữ liệu để lưu trữ snort log, alert:<br/> <br/> # mysql -u root -p<br/> mysql&gt; create database snort;<br/> mysql&gt; grant INSERT,SELECT on snort.* to snort@localhost identified by '<password>';<br/> mysql&gt; exit<br/> # mysql snort -u root -p &lt; ./contrib/create_mysqlSửa các thông số sau trong file <b>/etc/snort/snort.conf</b><br/> <blockquote><br/> var HOME_NET 192.168.1.0/24<br/> ...<br/> output database: log, mysql, user=snort password=<password> dbname=snort host=localhost<br/> output database: alert, mysql, user=snort password=<password> dbname=snort host=localhostKhởi động snort: <br/> &nbsp;<br/> 		</blockquote><br/> # /usr/local/bin/snort -D -d -v -i eth0 -c /etc/snort/snort.conf<br/> <br/> <b>* Cài đặt và cấu hình acid</b><br/> <br/> Download mã nguồn: <br/><span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/...0.9.6b21.tar.gz</span><br/><span class="link"> http://phplens.com/lens/dl/adodb190.tgz</span><br/><span class="link"> http://prdownloads.sourceforge.net/phplot/...ot-4.4.6.tar.gz</span><br/> <br/> <b>Giải nén và đặt adodb, acid vào thư mục con của httpd DocumentRoot:</b><br/> <br/> # cp acid-0.9.6b21.tar.gz /var/www/html<br/> # tar zxvf acid-0.9.6b21.tar.gz<br/> # cp adodb190.tgz /var/www/html<br/> # tar zxvf adodb190.tgz<br/> # cp phplot-4.4.6.tar.gz /var/www/html<br/> # tar zxvf phplot-4.4.6.tar.gz<br/> <br/> Kiểm tra xem php có được cấu hình đúng với gd không:<br/><span class="link"> http://locolhost/phplot-4.4.6/examples/test_setup.php</span><br/> <br/> Nếu không xem được các biểu đồ ví dụ, bạn phải xem lại php có được biên dịch với thư viện gd và đã bật hỗ trợ gd trong /etc/php.ini chưa (extension=gd.so).<br/> <br/> Tạo bảng dữ liệu để lưu trữ các alert dành riêng cho acid:<br/> # mysql -u root -p<br/> mysql&gt; create database snort_archive;<br/> mysql&gt; grant INSERT,SELECT on snort.* to snort_archive@localhost identified by '<password>';<br/> mysql&gt; exit<br/> # mysql snort -u root -p &lt; create_acid_tbls_mysql.sql<br/> <br/> Cấu hình các thông số cần thiết cho acid trong file <b>acid_conf.php</b><br/> <blockquote><br/> $DBlib_path = "../adodb";<br/> <br/> $DBtype = "mysql";<br/> <br/> /* Alert DB connection parameters */<br/> <br/> $alert_dbname = "snort";<br/> $alert_host = "localhost";<br/> $alert_port = "";<br/> $alert_user = "snort";<br/> $alert_password = "<password>";<br/> <br/> /* Archive DB connection parameters */<br/> <br/> $archive_dbname = "snort_archive";<br/> $archive_host = "localhost";<br/> $archive_port = "";<br/> $archive_user = "snort";<br/> $archive_password = "<password>";<br/> <br/> $ChartLib_path = "../phplot-4.4.6"; // tuỳ chọn, nếu php hỗ trợ gd<br/> <br/> /* File format of charts ('png', 'jpeg', 'gif') */<br/> $chart_file_format = "png";<br/> Để an toàn, nên thiết lập yêu cầu xác thực cho các truy xuất đến thư mục acid trên web server. <br/> <br/> File /var/www/html/acid/.htaccess:<br/> <br/> AuthName ACID Secure Area<br/> AuthType Basic<br/> AuthUserFile /var/www/html/acid/.htpasswd<br/> Allow from all<br/> <limit GET POST><br/> require valid-user<br/> </limit>&nbsp;<br/> 		</blockquote><br/> <br/> File /var/www/html/acid/.htpasswd:<br/> acid:<encrypted password><br/> <br/> Thiết lập browser của bạn cho phép tất cả cookie từ host chạy acid. Hoàn tất quá trình cài đặt và bắt đầu sử dụng acid để theo dõi các hoạt động trên mạng được snort phát hiện:<br/> <br/><span class="link"> http://localhost/acid/</span><br/> <br/> <b>* Tham khảo tại :</b><br/> <br/><span class="link"> http://www.snort.org/</span><br/><span class="link"> http://www.andrew.cmu.edu/~rdanyliw/snort/snortacid.htm</span></div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/2235.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/643.hva#2235" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

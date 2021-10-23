@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent</title>
+				<description><![CDATA[ Chào các bạn,
+
+Mình cài CentOS 5.7 để làm web server trong cty. Mình đã cài đầy đủ các phần mềm cần thiết như httpd, mysqld,... theo hướng dẫn tại đây: <span class="link"> www.howtoforge.com/perfect-server-centos-5.2</span>
+
+Start thử Apache đã thấy trang chào mừng của Apache+CentOS ok.
+
+Tiếp đó mình tạo một thư mục dành riêng cho web (mình <font color='red'>không dùng</font> mặc định /var/www/) là <font color='green'>/web</font>
+
+Tạo một VirtualHost trong <font color='red'>/etc/httpd/conf.d/vhosts.conf</font> như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>NameVirtualHost *:80
+
+&lt;VirtualHost *:80&gt;
+DocumentRoot /web/abc.com/html
+ServerName abc.com
+&lt;Directory "/web/abc.com/html"&gt;
+allow from all
+Options +Indexes
+&lt;/Directory&gt;
+&lt;/VirtualHost&gt;</pre>
+		</div>
+
+Khi mình truy cập vào abc.com trên trình duyệt thì xem được nội dung trang index.html
+
+Mình upload thư mục phpmyadmin lên và truy cập vào abc.com/phpmyadmin thì bị lỗi:
+
+<font color='red'>Forbidden
+
+You don't have permission to access /phpmyadmin/ on this server.
+Apache/2.2.3 (CentOS) Server at abc.com Port 80</font>
+
+Trong Apache log:
+
+<font color='red'>[Wed Dec 07 06:35:04 2011] [error] [client xxx.xxx.xxx.xxx] (13)Permission denied: access to /phpmyadmin/index.php denied</font>
+
+Mình tạo thử 1 file info.php với nội dung
+
+<font color='green'>&lt;?php
+phpinfo();
+?&gt;</font>
+
+trên abc.com chạy tốt.
+
+Tiếp đó, mình chmod 644 các lần lượt các thư mục và tập tin trong:
+
+/web
+/web/abc.com
+/web/abc.com/html
+/web/abc.com/html/phpmyadmin
+
+và chown tất cả về <font color='red'>apache:apache</font>
+
+Kết quả vẫn là lỗi như trên.
+
+Note: Mình thực hiện tất cả những thao tác trên server với quyền <font color='orange'>root</font>.
+
+Các bạn hướng dẫn mình khắc phục với !
+
+Cảm ơn :)
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250790</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250790</link>
+				<pubDate><![CDATA[Wed, 7 Dec 2011 00:37:21]]> GMT</pubDate>
+				<author><![CDATA[ TheShinichi]]></author>
+			</item>
+			<item>
+				<title>Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent</title>
+				<description><![CDATA[ `getenforce` trả về kết quả là gì bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250799</link>
+				<pubDate><![CDATA[Wed, 7 Dec 2011 02:35:07]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent</title>
+				<description><![CDATA[ Hi TheShinichi!
+
+Bạn có thể vào file config của phpMyAdmin để chỉnh sữa lại 2 dòng:
+
+# vim /etc/httpd/conf.d/phpMyAdmin.conf
+
+     order deny,allow
+     deny from all
+     allow from 127.0.0.1
+
+Sữa thành:
+
+  #   order deny,allow
+  #   deny from all
+     allow from 127.0.0.1
+
+service httpd restart
+
+Finish!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250801</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250801</link>
+				<pubDate><![CDATA[Wed, 7 Dec 2011 02:38:42]]> GMT</pubDate>
+				<author><![CDATA[ hungth05]]></author>
+			</item>
+			<item>
+				<title>Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hungth05 wrote:</cite><br>
+		<blockquote>Hi TheShinichi!
+
+Bạn có thể vào file config của phpMyAdmin để chỉnh sữa lại 2 dòng:
+
+# vim /etc/httpd/conf.d/phpMyAdmin.conf
+
+     order deny,allow
+     deny from all
+     allow from 127.0.0.1
+
+Sữa thành:
+
+  #   order deny,allow
+  #   deny from all
+     allow from 127.0.0.1
+
+service httpd restart
+
+Finish!&nbsp;
+		</blockquote>
+---&gt; trường hợp này nếu install phpmyadmin bằng yum thì như thế nếu như down source về dùng thì cần kiểm tra như anh Quân.
+getenforce ---&gt; trả về kết quả Enforcing ---&gt; chưa tắt Selinux ---&gt; thực hiện setenfoce 0 để tắt.
+getenforce ---&gt;trả về kết quả Permissive ---&gt; đã tắt Selinux]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250802</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250802</link>
+				<pubDate><![CDATA[Wed, 7 Dec 2011 02:44:07]]> GMT</pubDate>
+				<author><![CDATA[ vitcon01]]></author>
+			</item>
+			<item>
+				<title>Lỗi (13)Permission denied: access to xxx denied trong Apache trên Cent</title>
+				<description><![CDATA[ Chào các bạn,
+
+Mình đã getenforce sau đó setenforce 0 thì mọi việc đã ổn định.
+
+Cảm ơn sự giúp đỡ của các bạn :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250852</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40739.hva#250852</link>
+				<pubDate><![CDATA[Thu, 8 Dec 2011 05:23:23]]> GMT</pubDate>
+				<author><![CDATA[ TheShinichi]]></author>
+			</item>
+	</channel>
+</rss>

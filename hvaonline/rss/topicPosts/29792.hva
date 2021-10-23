@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Chống DOS bằng cho php script nhờ kết hợp với memcache."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Chống DOS bằng cho php script nhờ kết hợp với memcache."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Chống DOS bằng cho php script nhờ kết hợp với memcache.</title>
+				<description><![CDATA[ Hi!
+Thấy vài member thảo luận về code chống DOS. Tớ góp 1 tí cho vui.
+Đây là đoạn code tớ đã áp dụng 1 cho 1 site của tớ, nó có khoảng 5000 keep-alive session, 10K IP khác nhau truy cập hàng ngày, site cung cấp thông tin trực tuyến nên mỗi client request khoảng 5-7 giây 1 lần, với 18-20 triệu hit/ngày (cường độ khá kinh khủng đấy).
+
+code này áp dụng cho php. Phải kết hợp với memcache để đảm bảo tốc độ (1 ứng dụng khá là ... hay đấy). Nếu dùng mysql cũng đc, với memory table, nhưng ko hay lắm vì mysql nhiều overhead hơn nên chậm hơn.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$antiflood = 4; // anti-flooding protect time in seconds.
+
+	$MCobj = new Memcache;
+	if&#40;!$MCobj-&gt;pconnect&#40;$MCHost, 11211&#41;&#41;
+		$MCHost = null;
+	else if&#40;$debug&#41; echo "&lt;debug&gt;Connected to cached&lt;/debug&gt;";
+
+//Anti flooding
+$pattern = '/^&#40;10\.|192\.168\.|127\.&#41;/';
+if&#40;$MCobj && !preg_match&#40;$pattern,$_SERVER&#91;'REMOTE_ADDR'&#93;&#41;&#41; {
+        $protectedkey = 'ip'.$_SERVER&#91;'REMOTE_ADDR'&#93;.'-'.$_SERVER&#91;'SCRIPT_FILENAME'&#93;;
+	$isquery = $MCobj-&gt;get&#40;$protectedkey&#41;;
+
+	if&#40;$isquery&#41; { // query too fast
+		echo 'Server too busy, please visit later.;
+		exit&#40;&#41;;
+	}
+	$MCobj-&gt;set&#40;$protectedkey, 1, 0, $antiflood&#41;;
+}</pre>
+		</div>
+
+Chúc các bạn thành công.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183665</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183665</link>
+				<pubDate><![CDATA[Tue, 16 Jun 2009 00:33:18]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Chống DOS bằng cho php script nhờ kết hợp với memcache.</title>
+				<description><![CDATA[ Của tui 1 ngày hơn 30k Ip.Ngoài ra còn bị  DDOS nữa.... code nào cũng đấp chiếu.
+Chỉ có nước đưa đầu ra cho nó đập thôi..
+
+CÒn cách khác la mua server co cấu hình mạnh...
+Cách chống DDOS tốt nhất là phần cứng....
+
+Còn code thì đã caching hết tất cả nhũng gì có thể cache được rồi.....]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183793</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183793</link>
+				<pubDate><![CDATA[Wed, 17 Jun 2009 13:29:35]]> GMT</pubDate>
+				<author><![CDATA[ micr0vnn]]></author>
+			</item>
+			<item>
+				<title>Chống DOS bằng cho php script nhờ kết hợp với memcache.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Hi!
+Thấy vài member thảo luận về code chống DOS. Tớ góp 1 tí cho vui.
+Đây là đoạn code tớ đã áp dụng 1 cho 1 site của tớ, nó có khoảng 5000 keep-alive session, 10K IP khác nhau truy cập hàng ngày, site cung cấp thông tin trực tuyến nên mỗi client request khoảng 5-7 giây 1 lần, với 18-20 triệu hit/ngày (cường độ khá kinh khủng đấy).
+
+code này áp dụng cho php. Phải kết hợp với memcache để đảm bảo tốc độ (1 ứng dụng khá là ... hay đấy). Nếu dùng mysql cũng đc, với memory table, nhưng ko hay lắm vì mysql nhiều overhead hơn nên chậm hơn.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$antiflood = 4; // anti-flooding protect time in seconds.
+
+	&#91;b&#93;&#91;color=yellow&#93;$MCobj = new Memcache;&#91;/color&#93;&#91;/b&#93;
+	if&#40;!$MCobj-&gt;pconnect&#40;$MCHost, 11211&#41;&#41;
+		$MCHost = null;
+	else if&#40;$debug&#41; echo "&lt;debug&gt;Connected to cached&lt;/debug&gt;";
+
+//Anti flooding
+$pattern = '/^&#40;10\.|192\.168\.|127\.&#41;/';
+if&#40;$MCobj && !preg_match&#40;$pattern,$_SERVER&#91;'REMOTE_ADDR'&#93;&#41;&#41; {
+        $protectedkey = 'ip'.$_SERVER&#91;'REMOTE_ADDR'&#93;.'-'.$_SERVER&#91;'SCRIPT_FILENAME'&#93;;
+	$isquery = $MCobj-&gt;get&#40;$protectedkey&#41;;
+
+	if&#40;$isquery&#41; { // query too fast
+		echo 'Server too busy, please visit later.;
+		exit&#40;&#41;;
+	}
+	$MCobj-&gt;set&#40;$protectedkey, 1, 0, $antiflood&#41;;
+}</pre>
+		</div>
+
+Chúc các bạn thành công.&nbsp;
+		</blockquote>
+
+Mình vẫn chưa thấy Class Memcache... ? Bạn giải thick rõ hơn về đoạn code trên được ko ? Vd như Memcache được gọi ra từ đâu ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183888</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183888</link>
+				<pubDate><![CDATA[Thu, 18 Jun 2009 05:08:43]]> GMT</pubDate>
+				<author><![CDATA[ flier_vn]]></author>
+			</item>
+			<item>
+				<title>Chống DOS bằng cho php script nhờ kết hợp với memcache.</title>
+				<description><![CDATA[ Cái Class Memcache là 1 extension của php (tên gói là php-pecl-memcache).
+Ngoài ra còn cần memcached server (tên gói là memcached), cài vào vào start lên.
+Kỹ thuật sử dụng memcache này áp dụng cho khá nhiều site có tải nặng, ở VN đấy, khi muốn lưu lại nội dung tạm thời để tăng tốc và giảm tải cho CSDL, hiệu quả tốt không ngờ đấy. Nhiều Web master giấu nghề nên ko nói ra thôi. Tớ thì dùng nó cho đoạn code chống DoS trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183970</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29792.hva#183970</link>
+				<pubDate><![CDATA[Thu, 18 Jun 2009 20:13:55]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+	</channel>
+</rss>

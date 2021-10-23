@@ -1,0 +1,1158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Từng buớc một để triển khai hệ thống Cluster "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Từng buớc một để triển khai hệ thống Cluster "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ 	<b>Từng buớc một để triển khai hệ thống Cluster 
+</b>
+
+1.	Mở đầu
+2.	Kĩ thuật cluster là gì ?
+3.	HAC và HPC 
+3.1.	HAC (High Availability Computing )
+3.1.1.	 HA Cluster
+3.2.	HPC (High Performance Computing)
+4.	Nâng cao tính khả dụng cho hệ thống　 
+5.	Giới thiệu về Linux Virtual Server (LVS)
+5.1.	Load blance bằng LVS / NAT 
+5.1.1.	 Định nghĩa 
+5.1.2.	 Mô hình thiêt lập
+5.1.3.	 Build/patch/config kernel 
+5.1.4.	 Cài đặt ipvsadmin
+5.1.5.	 Cấu hình load blance (LV1)
+5.1.5.1.	Khai báo network 
+5.1.5.2.	Khai báo realserver
+5.1.5.3.	Điều chỉnh kernel
+5.2. Load blance bằng LVS / DR
+5.2.1. Định nghĩa
+5.2.2. Mô hình thiết lập
+5.2.3. Build/patch/config kernel
+5.2.4. Điều chỉnh network
+5.2.4.3. Khai báo / điều chỉnh RealServer
+5.3.	Đánh giá và giải pháp tối ưu cho hệ thống 
+5.3.1.	 Đánh giá / Giải pháp (1)
+5.3.2.	 Đánh giá / Giải pháp (2)
+5.3.3.	 Đánh giá / Giải pháp (3)
+6.	Sử dụng keepalived để giám sát hệ thống (Real Server)
+7.	VRRP Load blance
+8.	MySQL và load blance
+9.	Samba và load blance
+10.	FPT và load blance
+11.	Mail và load blance
+12.	Tài liệu tham khảo
+
+
+
+
+<b>1. Mở đầu </b>
+      Để nâng cao tính bảo mật và tính khả dụng của máy chủ, thật sự không phải là 1 chuyên đơn giản , không chỉ riêng về mặt kĩ thuật , trang bị hàng loạt thiết bị có tính năng load blancing cũng không rẻ . bênh cạnh đó, những tài liệu viết về load blancing bằng tiếng việt cũng không thể nói là phong phú . 
+đó là những lý do tôi quyết định viết bài này để chia sẽ với bạn đọc về kĩ thuật cấu trúc cluster.
+<b>
+2. Kĩ thuật cluster là gì ?</b>
+	Hệ thống được xây dựng cần thiết nhất là không bị down, bảo mật tốt ,và chịu được 1 số lượng truy cập lớn vv…. để đáp ứng được nhu các cầu trến , từ đó kĩ thuật cluster đã ra đời , khái niệm của cluster được hình thành rất đa dạng . định nghĩa của cluster được chia ra thành 2 phần lớn, đó là HPC và HAC . HAC được viết tắt của High- Availability Computing và HPC được viết tắt của High Performance Computing . sau đây tôi xin lấy khái niệm HAC và HPC để giới thiệu .
+
+3.1 HAC và HPC 
+Những phương thức tiêu biểu được chia nhỏ ra từ 2 khái niệm HAC và HPC .
+
+<b>3.1.1 HA Cluster </b>
+
+- Failover cluster
+	Share type 
+	Data mirror type 
+	Remote cluster
+
+- Load-balancing cluster
+	Load balance Cluster
+	Parallel database cluster
+
+<b>3.2. HPC Cluster</b>
+
+HPC – High performance computing
+
+Bài viết này sẽ trình bày cách cấu hình HA cluster và kèm theo những giải thích kĩ thuật của HA Cluster . bạn đọc muốn tìm hiểu về HPC Cluster xin tham khảo tài liệu từ các trang sau đây . 
+
+Beowulf :<span class="link"> http://www.beowulf.org/</span>
+Score :<span class="link"> http://www.pccluster.org/index.html.en</span>
+Open mosix :<span class="link"> http://openmosix.sourceforge.net/</span>
+
+<b>4. Cách nâng cao tính khả dụng cho hệ thống</b>
+	Bài viết sẽ được hình thành dưới hình thức  <i>“Cách cấu hình cụ thể” </i>và<i> “Các khái niệm của những kĩ thuật xung quanh cần thiết khi cấu hình”</i> , do đó về phần giải thích cụ thể về khái niệm của những kĩ thuật sẽ không được phong phú .  bạn đọc có thể tìm hiểu thêm từ các nguồn sau đây .
+<span class="link"> http://www.linux-ha.org/</span><span class="link"> http://www.linuxvirtualserver.org/</span>
+
+<b>5. Linux Virtual Server</b>
+(được trích và chỉnh sửa từ bài “Linux virtual server” của anh Nguyễn Ngọc Khoa )
+
+	Là một phần mềm load balancing chạy trên *nix, cho phép xây dựng 1 server rất mạnh bao gồm tập hợp nhiều server thực có cấu hình giống nhau. Cấu trúc của Linux Virtual Server (thường gọi tắt là LVS) thông suốt đối với người dùng nên phía người dùng chỉ nhận biết thấy LVS là 1 server mạnh chứ không biết được cấu trúc thực bên trong. LVS cho phép load balancing theo 3 cách NAT (gọi là VS/NAT), Direct (gọi là VS/DR) và Tunneling (VS/TUN) . 
+
+VS/NAT
+
+bmuht_gpj.76252_a2c60b2d2f762cf60c6a4fff159fc549/61/21/6002/daolpu/enilnoavh/ten.enilnoavh//:ptth
+  	
+
+Phương pháp VS/DR và VS/TUN có chung cấu trúc như hình vẽ dưới, chỉ khác nhau ở cách kết nối giữa máy load balancing và real server. Hai cách này có nhược điểm là tốn địa chỉ IP, máy load balancing cần 2 IP, mỗi real server cũng cần 1 địa chỉ IP. Tuy nhiên ưu điểm là khả năng rất mạnh (có thể kết nối hàng trăm real server), máy load balancing không yêu cầu cao vì chỉ làm duy nhất nhiệm vụ load balancing. Các máy real server sẽ trả lời trực tiếp.
+
+VS/DR – VS/TUN
+ 
+[img]http:/bmuht_gpj.76252_a2c60b2d2f762cf60c6a4fff159fc549/61/21/6002/daolpu/enilnoavh/ten.enilnoavh//:pttho phép load balancing với rất nhiều dịch vụ , số lượng server cho mỗi dịch vụ cũng có thể khác nhau. Ngoài phần mềm chính LVS còn có một số phần mềm hỗ trợ như <b>ipvsadmin</b> để thiết lập, khai báo thêm, bớt các real server, <b>keepalived</b> để tự động kiểm tra các real server, xoá bỏ các khai báo của 1 real server ra khỏi LVS khi real server .
+
+<b>5.1. Load blance bằng LVS / NAT </b>
+Nâng cao tính khả dụng và giảm down time của hệ thống đến mức tối ưu, để thực hiện được những điều đó , LVS/NAT cũng là 1 giải pháp . sau đây là phần giới thiệu về cách thức triển khai bằng LVS/NAT. như mô hình dưới bạn có thể thấy khi từ client (bên hình cho là từ internet) request đến máy chủ , các cú request này đều qua LV1 và sau đó sẽ đến RealServer1. 
+Sau khi phía realserver1 nhận và xử lý xong sẽ reply cho LV1 , và LV1 sẽ thay thế realserver1 trả lời cho client . 
+
+<b>5.1.1. Định nghĩa </b>
+
+LV1 : 172.16.0.1 ( Local IP : 10.0.0.1 ) 
+RealServer1 : 10.0.0.101 
+RealServer2 : 10.0.0.102 
+
+
+<u>Những IP thuộc 172.16.0.1/24 là các IP dùng để cung cấp dịch vụ .
+Những IP thuộc 10.0.0.0/24 là các IP cục bộ của các realserver.</u>
+
+
+<b>5.1.2. Mô hình</b>
+
+[img]http://hvaonline.bmuht_gpj.76252_7b9e93063d73f151a2a8c138025762bd/42/21/6002/daolpu/enilnoavh/ten.enilnoavh//:ptth</b>
+Để hình thành được mô hình trên, bạn cần chuẩn bị 3 server có cấu hình tương đối gần nhau, tuy nhiên, dùng vmware hoặc các chương trình virtual pc vẫn có thể thực hiện được . 
+
+
+<b>5.1.3.	 Build/patch/config kernel </b>
+
+Các phiên bản 2.6.x đã có hổ trợ LVS , do đó máy chủ đã được cài đặt các phiên bản 2.6.x sẽ không cần thiết thực thi bước này .
+dùng phiên bản kernel 2.4.x  phải lưu ý 1 điểm là khi biên dịch kernel phải lựa chọn phiên bản của ipvsadm và kernel thích họp với nhau vì chương trình quản lý ipvsadm rất có thể xãy ra xung đột với phiên bản kernel không thích họp . 
+
+
+Tham khảo thêm cách build/patch kernel 2.4.x tại link sau :<span class="link"> http://www.austintek.com/LVS/LVS-HOWTO/mini-HOWTO/LVS-mini-HOWTO.html#2.4.x_kernels</span>
+
+
+<b>5.1.4. Cài đặt ipvsadmin</b>
+Tải chương trình ipvsadm<span class="link"> http://www.linux-vs.org/software/ipvs.html</span>
+
+Các lệnh cài đặt chương trình ipvsadm
+
+<blockquote>$ wget<span class="link"> http://www.linux-vs.org/software/kernel-2.6/ipvsadm-1.24.tar.gz</span>
+$ tar zxf ipvsadm-1.24.tar.gz
+$ cd ipvsadm-1.24
+$ make
+# make install&nbsp;
+		</blockquote>
+
+
+<b>5.1.5. Cấu hình load blance (LV1)</b>
+
+Cho phép IP fowarding
+<blockquote># echo "1" &gt; /proc/sys/net/ipv4/ip_forward&nbsp;
+		</blockquote>
+
+Tạo virtual service cho LV server (qua phương thức round robin )
+<blockquote>
+# ipvsadm -A -t 172.16.0.1:http -s rr&nbsp;
+		</blockquote>
+
+Đối với dịch dịch vụ virtual  trên , dùng các lệnh sau để cấu hình cho realserver 
+
+<blockquote>
+# ipvsadm -a -t 172.16.0.1:http -r 10.0.0.101:http -m
+# ipvsadm -a -t 172.16.0.1:http -r 10.0.0.102:http -m
+&nbsp;
+		</blockquote>
+
+Có thể kiểm tra kết quả bằng lệnh 
+
+<blockquote>ipvsadm -L &nbsp;
+		</blockquote>
+
+Chỉnh default gateway tại máy LV1
+
+<blockquote>route add -net default gw 10.0.0.1&nbsp;
+		</blockquote>
+
+đến đây bạn đã cấu hình xong , để kiểm chứng những kết quả trên , bạn có thể request trực tiếp từ phía client đến địa chỉ<span class="link"> http://172.16.0.1/</span> để xem kết quả các máy chủ có hoạt động đúng vai trò của chúng hay không .
+
+ -----------------------------------------------------------
+
+
+<b>5.2. Load blance bằng LVS / DR</b>
+Phương thức xử lý cũng như cấu trúc của mô hình LVS/DR rất khác biệt so với mô hình LVS/NAT . như hình dưới ta có thể thấy được khi client yêu cầu đến máy chủ , LV1 sẽ trực không trực tiếp xử lý , thay vì đó sẽ chuyển nguyên cú request của client sang RealServer1 (RealServer2) xử lý , sau khi được realserver1 (realserver2) xử lý xong sẽ không chuyển về LV1 như  mô hình LVS/NAT, thay vì đó realserver của mô hình LVS/DR sẽ tự động trả lời đến client mà không qua LV1.
+và một sự khác biệt lớn giữa LVS/NAT với LVS/DR là LVS/DR nằm chung network với các Realserver . 
+
+phương thức xử lý theo thứ tự như sau 
+
+1)	LVS nhận request của client
+2)	Chuyển request từ client sang RealServer, trong quá trình này , LV1 sẽ chỉ mang vai trò wwwect .
+3)	RealServer nhận được cú request của LV1 sẽ trực tiếp xử lý và trả lời đến client
+
+Từ các trình tự trên, khi ta có 2 Realserver , phía LV1 sẽ nhẹ hơn đáng kể ,bên cạnh đó  các RealServer (1 , 2 ) sẽ phân tán các request từ phía client, từ đây chúng ta đã thực hiện được mô hình load blance một cách rất hiệu quả .	
+	
+
+<b>5.2.1. Định nghĩa</b>
+LV1 – 172.16.0.100 (eth0)
+Virtual IP - 172.16.0.1(eth0:0)
+RealServer1 – 172.16.0.101
+RealServer2 – 172.16.0.102
+
+<b>5.2.2. Mô hình thiết lập</b>
+[img]http://hvaonline.net/hvaonlibmuht_gpj.76252_a9baf117b24df521d7ebbf48ff23eb3f/42/21/6002/daolpu/enilnoavh/ten.enilnoavh//:ptthkernel </b>
+Cũng như LVS/NAT , trước tiên ta phải điều chỉnh các thông số của kernel để có thể sử dụng chức năng IP forwarding . 
+
+<blockquote>echo "1" &gt; /proc/sys/net/ipv4/ip_forward
+&nbsp;
+		</blockquote>
+
+hoặc có thể điều chỉnh trong /etc/sysctl.conf .
+
+<b>5.2.4. Điều chỉnh network</b>
+
+Ngoài việc điều chỉnh interface thực của LV1 (eth0) ta cũng phải thêm interface ảo cho LV1, vì mô hình LVS/DR yêu cầu ta phải tạo thêm virtual IP trên LV1, cách làm như sau .
+
+<blockquote># ifconfig <font color='yellow'>eth0:0</font> 172.16.0.1 netmask 255.255.255.0&nbsp;
+		</blockquote>
+
+Điều chỉnh khi bạn khởi động máy có thể ghi vào như sau .
+
+File : /etc/sysconfig/network-scripts/ifcfg-eth0:0
+
+<blockquote>DEVICE=eth0:0
+IPADDR=172.16.0.1
+NETMASK=255.255.255.0
+ONBOOT=yes&nbsp;
+		</blockquote>
+
+
+<b>5.2.4.3. Khai báo / điều chỉnh RealServer</b>
+
+Khai báo dịch vụ ảo cho LV1 
+<blockquote>LV1# ipvsadm -A -t 172.16.0.1:http -s rr &nbsp;
+		</blockquote>
+
+bước kế tiếp là khai báo realserver 
+<blockquote>
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.101:http -m
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.102:http -m
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.103:http -m &nbsp;
+		</blockquote>
+
+Kiểm tra 
+
+<blockquote>LV1# ipvsadm -L&nbsp;
+		</blockquote>
+
+Điều chỉnh RealServer để có thể nhận được các gói từ LV1 .
+
+<blockquote>RealServer1 # iptables –t nat –A PREROUTING –d 172.16.0.1 –p tcp –dport 80 –j REDIRECT –to-ports 80&nbsp;
+		</blockquote>
+<blockquote>RealServer2 # iptables –t nat –A PREROUTING –d 172.16.0.1 –p tcp –dport 80 –j REDIRECT –to-ports 80&nbsp;
+		</blockquote>
+
+
+Đến đây bạn đã cấu hình xong LVS/DR , để kiểm chứng những kết quả trên , bạn có thể request trực tiếp từ phía client đến địa chỉ<span class="link"> http://172.16.0.1/</span> để xem kết quả các máy chủ có hoạt động đúng vai trò của chúng hay không .
+
+
+còn tiếp ........ 
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31727</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31727</link>
+				<pubDate><![CDATA[Wed, 20 Dec 2006 23:14:05]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Mình có chút thắc mắc là kĩ thuật tạo cluster với Linux Virtual Server ko biết có giúp chạy ứng dụng với khả năng chịu tải và chịu lỗi cao hay ko hay chỉ là hệ thống Cluster với kĩ khả năng tính toán đa luồng MultiThread và chỉ dùng để chạy các Application đa luồng ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31735</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31735</link>
+				<pubDate><![CDATA[Thu, 21 Dec 2006 00:00:55]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>Mình có chút thắc mắc là kĩ thuật tạo cluster với Linux Virtual Server ko biết có giúp chạy ứng dụng với khả năng chịu tải và chịu lỗi cao hay ko hay chỉ là hệ thống Cluster với kĩ khả năng tính toán đa luồng MultiThread và chỉ dùng để chạy các Application đa luồng ?&nbsp;
+		</blockquote>
+
+LVS làm việc tại layer 4 để phân tán các cú request từ phía client, do đó từ bên ngoài sẽ thấy dàn máy này là 1  high-performance server .  
+khi cấu hình hệ thống này ta sẽ có được các lợi điểm là nâng cao được performance , thêm server vào dễ dàng. 
+
+<blockquote>kĩ khả năng tính toán đa luồng MultiThread và chỉ dùng để chạy các Application đa luồng ?&nbsp;
+		</blockquote>
+Tôi không hiểu câu hỏi này lắm , bạn có thể nói rõ hơn được không ? nếu tôi đoán không sai, phần này của bạn có liên quan đến khái niệm HPC ? 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#31743</link>
+				<pubDate><![CDATA[Thu, 21 Dec 2006 00:34:33]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hackernohat wrote:</cite><br>
+		<blockquote>Mình có chút thắc mắc là kĩ thuật tạo cluster với Linux Virtual Server ko biết có giúp chạy ứng dụng với khả năng chịu tải và chịu lỗi cao hay ko hay chỉ là hệ thống Cluster với kĩ khả năng tính toán đa luồng MultiThread và chỉ dùng để chạy các Application đa luồng ?&nbsp;
+		</blockquote>
+Giải pháp cho vấn đề này là rocks clusters - www.rocksclusters.org chứ không phải LVS. 
+
+Rgds.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32239</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32239</link>
+				<pubDate><![CDATA[Fri, 22 Dec 2006 17:22:34]]> GMT</pubDate>
+				<author><![CDATA[ MrSleep]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Chủ đề này rất hay nhưng tiếc tôi chưa có điều kiện để thử vì policy của công ty tôi khá hạn hẹp . Thôi thì 
+<blockquote> Để hình thành được mô hình trên, bạn cần chuẩn bị 3 server có cấu hình tương đối gần nhau, tuy nhiên, dùng vmware hoặc các chương trình virtual pc vẫn có thể thực hiện được . &nbsp;
+		</blockquote>
+
+Tôi ví dụ như thế này nhờ anh em tư vấn. Tôi muốn <b>triển khai hệ thống Cluster</b> này trên 3 server và mỗi server <b>có vị trí địa lý khác nhau</b> 
+- 1 server ở Mỹ sử dụng IP tỉnh
+- 1 server ở Đức sử dụng IP tỉnh
+- 1 server ở VN sử dụng IP động 
+
+Làm thế nào để tôi có thể làm cho cả 3 anh server có vị trí khác nhau này "bắt tay" được với nhau  :cry: 
+
+Nhìn vào mô hình của bro <b>777</b> ở trên thì yêu cầu của tôi khó trở thành hiện thực (eth0) :)) Nếu tôi muốn <b>triển khai hệ thống Cluster</b> ở 3 server có vị trí khác nhau thì tôi có thể xây dựng được hệ thống này hay không ? Nếu được thì tôi cần trang bị thêm những gì cho cả 3 server này ? Cũng sử dụng những phần mềm mà bro <b>777</b> mô tả ở trên hay còn trang bị những package nào nữa . 
+Thanks anh em . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32480</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32480</link>
+				<pubDate><![CDATA[Sun, 24 Dec 2006 02:40:43]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Chủ đề này rất hay nhưng tiếc tôi chưa có điều kiện để thử vì policy của công ty tôi khá hạn hẹp . Thôi thì 
+<blockquote> Để hình thành được mô hình trên, bạn cần chuẩn bị 3 server có cấu hình tương đối gần nhau, tuy nhiên, dùng vmware hoặc các chương trình virtual pc vẫn có thể thực hiện được . &nbsp;
+		</blockquote>
+
+Tôi ví dụ như thế này nhờ anh em tư vấn. Tôi muốn <b>triển khai hệ thống Cluster</b> này trên 3 server và mỗi server <b>có vị trí địa lý khác nhau</b> 
+- 1 server ở Mỹ sử dụng IP tỉnh
+- 1 server ở Đức sử dụng IP tỉnh
+- 1 server ở VN sử dụng IP động 
+
+Làm thế nào để tôi có thể làm cho cả 3 anh server có vị trí khác nhau này "bắt tay" được với nhau  :cry: 
+
+Nhìn vào mô hình của bro <b>777</b> ở trên thì yêu cầu của tôi khó trở thành hiện thực (eth0) :)) Nếu tôi muốn <b>triển khai hệ thống Cluster</b> ở 3 server có vị trí khác nhau thì tôi có thể xây dựng được hệ thống này hay không ? Nếu được thì tôi cần trang bị thêm những gì cho cả 3 server này ? Cũng sử dụng những phần mềm mà bro <b>777</b> mô tả ở trên hay còn trang bị những package nào nữa . 
+Thanks anh em . &nbsp;
+		</blockquote>
+
+Các bước sau sẽ có hint về vấn đề của anh đã đưa ra, em sẽ cố gắng hoàn thiện các bước sau để có thể thoả mãn yêu cầu của anh  hì hì :wink:  
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32506</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32506</link>
+				<pubDate><![CDATA[Sun, 24 Dec 2006 10:45:32]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ 5.2. Load blance bằng LVS / DR 
+5.2.1. Định nghĩa 
+5.2.2. Mô hình thiết lập 
+5.2.3. Build/patch/config kernel 
+5.2.4. Điều chỉnh network 
+5.2.4.3. Khai báo / điều chỉnh RealServer
+
+
+<b>5.2. Load blance bằng LVS / DR</b>
+Phương thức xử lý cũng như cấu trúc của mô hình LVS/DR rất khác biệt so với mô hình LVS/NAT . như hình dưới ta có thể thấy được khi client yêu cầu đến máy chủ , LV1 sẽ trực không trực tiếp xử lý , thay vì đó sẽ chuyển nguyên cú request của client sang RealServer1 (RealServer2) xử lý và trả lời .
+
+phương thức xử lý theo thứ tự như sau 
+
+1)	LVS nhận request của client
+2)	Chuyển request từ client sang RealServer, trong quá trình này , LV1 sẽ chỉ mang vai trò wwwect .
+3)	RealServer nhận được cú request của LV1 sẽ trực tiếp xử lý và trả lời đến client
+
+Từ các trình tự trên, khi ta có 2 Realserver , phía LV1 sẽ nhẹ hơn đáng kể bên cạ nh đ ó  các RealServer (1 , 2 ) sẽ phân tán các request từ phía client. như vậy là chúng ta đã thực hiện được mô hình load blance một cách rất hiệu quả .	
+	
+
+<b>5.2.1. Định nghĩa</b>
+LV1 – 172.16.0.100 (eth0)
+Virtual IP - 172.16.0.1(eth0:0)
+RealServer1 – 172.16.0.101
+RealServer2 – 172.16.0.102
+
+<b>5.2.2. Mô hình thiết lập</b>
+bmuht_gpj.76252_a9baf117b24df521d7ebbf48ff23eb3f/42/21/6002/daolpu/enilnoavh/ten.enilnoavh//:ptth
+
+<b>5.2.3. Build/patch/config kernel </b>
+Cũng như LVS/NAT , trước tiên ta phải điều chỉnh các thong số của kernel để có thể dung chức năng IP forwarding . 
+
+<blockquote>echo "1" &gt; /proc/sys/net/ipv4/ip_forward
+&nbsp;
+		</blockquote>
+
+hoặc có thể điều chỉnh trong /etc/sysctl.conf 
+
+<b>5.2.4. Điều chỉnh network</b>
+
+Ngoài việc điều chỉnh interface thưự c của LV1 (eth0) ta cũng phải thêm interface ảo cho LV1,ngoài việc sử dụng ip thực (172.16.0.10x) , LVS/DR yêu cầu ta phải tạo thêm virtual IP trên LV1, cách làm như sau .
+
+<blockquote># ifconfig <font color='yellow'>eth0:0</font> 172.16.0.1 netmask 255.255.255.0&nbsp;
+		</blockquote>
+
+Điều chỉnh khi bạn khởi động máy có thể ghi vào như sau .
+
+File : /etc/sysconfig/network-scripts/ifcfg-eth0:0
+
+<blockquote>DEVICE=eth0:0
+IPADDR=172.16.0.1
+NETMASK=255.255.255.0
+ONBOOT=yes&nbsp;
+		</blockquote>
+
+
+<b>5.2.4.3. Khai báo / điều chỉnh RealServer</b>
+
+Khai báo dịch vụ ảo cho LV1 như sau 
+<blockquote>LV1# ipvsadm -A -t 172.16.0.1:http -s rr &nbsp;
+		</blockquote>
+
+bước kế tiếp là khai báo realserver như sau 
+<blockquote>
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.101:http -m
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.102:http -m
+LV1# ipvsadm -a -t 172.16.0.1:http -r 172.16.0.103:http -m &nbsp;
+		</blockquote>
+
+Kiểm tra 
+
+<blockquote>LV1# ipvsadm -L&nbsp;
+		</blockquote>
+
+Điều chỉnh RealServer để có thể nhận được các gói từ LV1 .
+
+<blockquote>RealServer1 # iptables –t nat –A PREROUTING –d 172.16.0.1 –p tcp –dport 80 –j REDIRECT –to-ports 80&nbsp;
+		</blockquote>
+<blockquote>RealServer2 # iptables –t nat –A PREROUTING –d 172.16.0.1 –p tcp –dport 80 –j REDIRECT –to-ports 80&nbsp;
+		</blockquote>
+
+
+Đến đây bạn đã cấu hình xong LVS/DR , để kiểm chứng những kết quả trên , bạn có thể request trực tiếp từ phía client đến địa chỉ<span class="link"> http://172.16.0.1/</span> để xem kết quả các máy chủ có hoạt động đúng vai trò của chúng hay không .
+
+
+còn tiếp ........ 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#32576</link>
+				<pubDate><![CDATA[Sun, 24 Dec 2006 18:10:57]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ OK, mình đã làm theo 777 hướng dẫn giống như ở trên rồi , chỉ có phần kernel của mình nó hơi "lượm thượm" một chút . Bị lỗi khi upgrade kernel đó mà, bây giờ thì mọi thứ xong rồi . :cry: 
+
+Khi nào rãnh nhờ 777 viết tiếp tục để mình làm các phần còn lại . 
+Chủ đề này rất hay  :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#33377</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#33377</link>
+				<pubDate><![CDATA[Fri, 29 Dec 2006 15:24:45]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Sao lâu quá mà không ai mần tiếp hết vậy trời?
+
+Toi có chút ý kiến này:
+Nếu dùng cách 1 (NAT) và RealServer chạy Web, thì access-log trên web-server luôn ghi ip của chú Director. Nhưng được một chổ: cách này mần nhanh nhất
+
+Dùng DR (bản thân tài liệu LVS viết phức tạp quá, kiến thức tui nông cạn lại dốt Eng): chính nhờ Virtual NIC giúp cho ip không bị đổi khi qua máy Director, đảm bảo yêu cầu log-access của service trên RealServer. Chỉ việc cho GW của các RealServer trỏ về Director thì đường đi ra của cú request đó giống với NAT. 
+
+Còn Tunnel thì ... hic hic không hiểu tí nào. 
+
+Sẳn đây xin hỏi mọi người: tôi muốn tận dụng LVS xây dựng hệ thống DMZ, không biết có khả thi không?
+
+Tks.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#54526</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#54526</link>
+				<pubDate><![CDATA[Wed, 18 Apr 2007 17:55:55]]> GMT</pubDate>
+				<author><![CDATA[ jetbin]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Hix, bài viết hay vậy mà sao ko thấy bác tranvanminh viết tiếp vậy nhỉ ? Mình đang rất có nhu cầu về việc build 1 Cluster System  :oops: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#58951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#58951</link>
+				<pubDate><![CDATA[Sun, 13 May 2007 17:37:39]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Bài này thật là hay. Mình đang tìm hiểu về cluster để xây dựng 1 hệ thống cluster chạy apache và MySQL.
+Cho mình hỏi là xây dựng cluster như trên chỉ là cluster cho OS hay là cluster cho cả application?
+Nếu ở các RealServer chạy ứng dụng MySQL thì có cần cấu hình gì thêm không?
+Redhat có 1 giải pháp Data Availability mà không cần đến cluster, không biết là có ai biết giải pháp của redhat như thế nào không? Nói cho anh em biết để mở rộng tầm nhìn.
+Rất cảm ơn và đang chờ bài tiếp theo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#124672</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#124672</link>
+				<pubDate><![CDATA[Fri, 11 Apr 2008 16:57:01]]> GMT</pubDate>
+				<author><![CDATA[ phuongtqh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Hê lô anh em . 
+
+Cám ơn mấy chú bác ủng hộ bài viết trên kia của thằng em , cũng muốn viết tiếp lắm nhưng vì lúc trước đang viết giữa chừng thì bị mất hàng (kô hiểu lý do) nên mất hết history . Muốn quay vào copy lại mấy cái lệnh và log cũng không được, đó là lý do thằng em không viết tiếp nữa . Thành thật cáo lỗi cùng mọi người . 
+Bởi từ nhũng lý do trên, chủ đề này sẽ không tiếp tục theo xu hướng trước (cái list đầu tiên )  nữa , mà chỉ sẽ tập trung viết những giải pháp về LB mà thôi . 
+
+Dạo này mới quay lại làm việc nên có chút log, copy&paster lên cho anh em sơi ,Đi đọc nhiều mà về viết dài dòng rồi giải thích linh tinh thì dễ bị sai ý nên  thằng em viết bài lúc nào cũng cùng một mục đích là "mì ăn liền" . Ai hiểu gì thì hiểu nhen , không ép :D 
+
+Chương trình tiếp theo sẽ là "Sử dụng keepalived để giám sát hệ thống ".  B-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157899</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157899</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 10:32:22]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Bài viết này nhằm đưa ra giải pháp cho các nhu cầu cấu trúc hệ thống có tính khả dụng cao . Tại đây sẽ lấy ví dụ mô hình như sau .
+
+bmuht_gpj.76252_1fb32460040c0b1dad24a4f57a46a732/6/11/8002/daolpu/enilnoavh/ten.enilnoavh.www//:ptth
+ 
+Tính năng của hệ thống này chỉ có việc khi khách hàng (User PC) kết nối đến yêu cầu WEB cung cấp dữ liệu , WEB server có nhiệm vụ lấy các dữ liệu được lưu trong LDAP server và hiển thị cho khách hằng . Hoặc có thể Update dữ liệu của khách hàng . Như vậy trong mô hình này , sự lien kết giữa WEB Server, LDAP server là việc tất yếu , và đồng thời giữa các LDAP server với nhau cũng có giải pháp liên kết nào đó với nhau.
+
+<b>Giám sát hệ thống </b>
+  Các bài viết về WEB server thì đã có nhiều người đề cập đến , nhưng đôi khi mô hình chỉ gói trọn vào 2 hoặc 3 server với nhau là đa số . Tại bài viết này, ta sẽ tham khảo cách cấu hình cho chương trình giám sát keepalived . Không chỉ riêng 2 hoặc 3 máy chủ , nếu bạn có nhu cầu , bạn có thể áp dụng vào hơn vài chục máy chủ để cung cấp các dịch vụ như apache , mysql , ldap .Tại ví dụ bên dưới , ta sẽ cấu hình cho keepalived (VRRP)giám sát các máy chủ được thiết lập dịch vụ LDAP . Tuy nhiên , như đã đề cập bên trên, bạn chỉ cần thay đổi vài dòng thôi cũng sẽ áp dụng cho cách dịch vụ khác. 
+Từ　mô hình trong ví dụ trên , ta sẽ thiết lập tính năng giám sát khi LDAP1- MASTE chết , trong vòng 1 giây sẽ tự động chuyển LDAP2-SLAVE thành LDAP2 – MASTER . Thêm vào đó, sẽ gửi email đến conmale@hvaonline.net .  
+
+<b>Cấu hình keepalived .
+</b>
+
+1.	Cài đặt OpenLdap, Apache (Tham khảo các bài khác trong diễn đàn HVA)
+2.	Install & Cấu hình keepalived
+
+
+<blockquote># cd /usr/local/src
+# tar zxf keepalived-1.1.15.tar.gz
+# cd keepalived-1.1.15
+# ./configure
+# make
+# make install
+# cd /etc/init.d
+# cp /usr/local/src/keepalived-1.1.15/keepalived/etc/init.d/keepalived.rh.init keepalived
+&nbsp;
+		</blockquote>
+
+Sau khi cài đặt thành công keepalived , ta xem những thông số ?  cấu hình của chúng có những chức năng gì và hoạt động như thế nào . 
+ 
+<b><u>
+/etc/keepalived/keepalived.conf</u></b>
+
+<blockquote>
+global_defs {
+   notification_email {
+     conmale@hvaonline.net
+   }
+   notification_email_from  keepalived@localhost
+   smtp_server              localhost
+   smtp_connect_timeout     30
+   router_id                MY_LDAP
+}
+&nbsp;
+		</blockquote>
+
+Trước tiên là global_dfs . Tại đây  ta có thể ấn định những thông tin có đặt tính là "global" . Những thông số này có đặc điểm như sau . Ví dụ trong notification_email , ta có thể chỉ định địa chỉ email của người chịu trách nhiệm quản lý .  và quan trọng là router_id , theo giải thích trên trang web chính thức của chương trình , thì thông số này là định nghĩa cluster ID . Cũng có thể hiểu là đạt đại cho vui!   
+
+--------------------
+
+<blockquote>
+vrrp_instance LDAP {
+    state              BACKUP
+    interface          eth2
+    garp_master_delay  5
+    virtual_router_id  200
+    priority           100
+    advert_int         1
+    nopreempt
+　　smtp_alert
+    authentication {
+        auth_type      PASS
+        auth_pass      1111
+    }
+    virtual_ipaddress {
+        192.168.223.33/25 dev eth2
+    }
+    notify_master "/etc/keepalived/ldap.sh active"
+    notify_backup "/etc/keepalived/ldap.sh backup"
+    notify_fault  "/etc/keepalived/ldap.sh backup"
+    notify        "/etc/keepalived/ldap.sh status"
+}
+&nbsp;
+		</blockquote>
+
+Tiếp theo là ấn định VRRP instance . Block này có ý nghĩa là dùng cấu trúc cho những router ảo trong VRRP. Nếu khó hiểu thì bạn hiểu là cấu hình chổ này là quan trọng nhất trong chương trình này và tìm hiểu các option bên dưới . Các option mang đặc tính như sau :
+
+<b>state &lt;MASTER/SLAVE&gt; :</b> Cho server chạy bằng MASTER hay SLAVE . MASTER có nghĩa là máy cung cấp dịch vụ , còn SLAVE là máy backup . 
+
+<b>interface : </b>Ấn định trên của NIC . Thông thường bạn dùng linux với mục đích server , sẽ có 2 NIC . trong ví dụ này tôi dùng eth2 . 
+
+<b>garp_master_delay : </b>Khi server được nâng cấp lên trạng thái MASTER, sẽ có packet ARP báo delay .
+
+<b>priority : </b>Thông thương MASTER sẽ có số cao hơn SLAVE .Có thể dung từ 0 ~ 255 . Và những máy chủ có thong số priority cao sẽ tự động thành chế độ MASTER .
+
+<b>nopreempt :</b> Không dùng chế độ Preemt　của VRRP . Khi ta tắt chế độ này, mấy chủ nào mang số priority thấp được nâng thành MASTER cũng không trở về trạng thái SLAVE . Cũng có thể hiểu là , không bị những máy có priority cao dành chế độ MASTER . Phần này khá quan trọng nên xin được thêm vài dòng , 
+
+ví dụ : Khi hệ thống được cấu hình và đưa vào hoạt động 1 thời gian , trong khi đó LDAP1 default là MASTER, và LDAP2 dùng với SLAVE . Nhưng khi LDAP1 bị sự cố và bổng nhiên bị tắt , keepalived sẽ chạy các script như ta đã cấu hình , trong môi trường của bài viết , là khi LDAP1 bị teo thì LDAP2 sẽ chạy file cấu hình (slapd.conf) mang chức nang MASTER để trở LDAP2 trở thành MASTER. Nhưng khi thực hiện việc này sẽ có sự xung đột . Các server SLAVE thông thường sẽ mang số priority thấp hơn MASTER , vì vậy khi SLAVE được keepalived nâng cấp lên thành MASTER khi LDAP1 là MASTER bị chết , thì vẫn có khả năng tụt xuống lại vì priority thấp .   Do đó ta cần phải dùng <b>nopreempt :</b> . 
+
+<b>advert_int : </b>Theo dõi sống chết giữa các máy chủ có khoảng cách bào nhiêu giây đều có thể ghi tại option này . Ví dụ tại bài viết này là 1 giây . 
+
+<b>virtual_ipaddress : </b>IP của nhóm server MASTER và SLAVE . Tất cả các máy LDAP tại bài viết này đều có 1 IP là 192.168.223.33 . Giải thích them một chút nữa thì network này mang subnet là 25 . 
+
+<b>notify_master &lt;CMD&gt; : </b>Khi keepalived　khẳng định LDAP1 đã chết , sẽ tự động chuyển LDAP2 thành master . Trong khi đó , tại option này ta có thể định nghĩa script khởi động cho LDAP2 . 
+
+<b>notify_backup &lt;CMD&gt; : </b>Khi keepalived khẳng định LDAP1 là MASTER , sẽ tự động chuyển LDAP2 thành SLAVE . Trong khi đó , tại option này ta có thể định nghĩa script khởi sang trạng thái slave cho LDAP2 . 
+
+
+<b>Cuối cùng là tạo script </b>
+
+<b><u>/etc/keepalived/ldap.sh</u></b>
+<blockquote>
+#!/bin/bash
+// Set path đến openldap directory
+LDAP_CONFDIR="/usr/local/openldap/etc/openldap"
+
+case "$1" in
+  active)
+    logger "&gt;&gt;active"
+// Chạy đến directory của LDAP
+    cd $LDAP_CONFDIR
+// Đổi file config slave thành master 
+    ln -sf slapd.conf.master slapd.conf
+    logger "result $?"
+// Ngừng dịch vụ SLAVE
+    service slapd stop
+// Chạy dịch vụ  MASTER
+    service slapd start
+    logger "&lt;&lt;active"
+    ;;
+  backup)
+    logger "&gt;&gt;backup"
+    cd $LDAP_CONFDIR
+    ln -sf slapd.conf.slave slapd.conf
+    logger "result $?"
+    service slapd stop
+    service slapd start
+    logger "&lt;&lt;backup"
+    ;;
+  status)
+    logger "&gt;&gt;status"
+    logger "&lt;&lt;status"
+    ;;
+  fault)
+    logger "&gt;&gt;fault"
+    logger "&lt;&lt;fault"
+    ;;
+esac
+
+&nbsp;
+		</blockquote>
+
+
+Đọc đến đây chắc bạn sẽ thắc mắc việc làm sao cấu hình keepalive　trên LDAP1 và LDAP2 . Có cần thay đổi những trong số trong file config hay không ? 
+Tại ví dụ này , trong file config của keepalived　bạn có thể copy & paster nguyên nội dung sang các server bạn cần làm backup . (LDAP1 và LDAP2) File cấu hình trong ví dụ có tính năng giảm tỷ lệ down cho hệ thống bạn . Vì vậy khi dùng 2 máy chủ trở lên , bạn chỉ cần cấu hình keepalived giống nhau, thì bạn sẽ có một hệ thống 1 máy LDAP cung cấp dịch vụ , nhưng khi LDAP đó chết , sẽ có nhiều máy backup  chạy thay thế .
+
+<b>Các điểm cần chú ý khi cấu hình dịch vụ</b>
+1. Ví dụ mysql , bạn phải thêm chức năng đồng bộ giữ liệu .  
+2. Ví dụ apache , bạn chỉ cần cấu hình 2 server apache giống nhau , chắc nó sẽ chạy (vì tui chưa làm)
+3. Ví dụ LDAP , cũng giống như mysql . Keepalived chỉ cung cấp dịch vụ giám sát chết/ sống và start và restart các script ta đã ấn định . Do đó , để chạy được dịch vụ đúng nghĩa của LDAP , bạn cần phải cấu hình LDAP riêng để giữa các máy chủ LDAP đồng bộ dữ liệu . 
+4. Để chạy được VRRP, bạn phải điều chỉnh firewall . 
+
+Tham khảo thêm về các thuật ngữ : 
+VRRP :<span class="link"> http://www.quantrimang.com.vn/hethong/linux/35521_Su_dung_VRRP_tren_Linux_nang_cao_kha_nang_san_sang_cho_mang.aspx</span>
+
+keepalived :<span class="link"> http://www.keepalived.org/pdf/UserGuide.pdf</span>
+
+777]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157914</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157914</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 12:02:41]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Thanks, bài viết rất hay nhưng hình như bác tranvanminh thiếu phần hướng dẫn cài đặt keepalived rồi thì phải  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157933</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157933</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 13:01:27]]> GMT</pubDate>
+				<author><![CDATA[ hoahongtim]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hoahongtim wrote:</cite><br>
+		<blockquote>Thanks, bài viết rất hay nhưng hình như bác tranvanminh thiếu phần hướng dẫn cài đặt keepalived rồi thì phải  :D &nbsp;
+		</blockquote>
+
+Đã thêm  :x ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157935</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#157935</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 13:05:12]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Thanx bác tranvanminh, em chờ bài này tiếp lâu lắm rồi  :D  Ko biết bác có thể viết thêm phần load balancing cho MySQL, Mail, Samba và VRRP ko ? em thấy những phần này khá hay và quan trọng  ;) 
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#158598</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#158598</link>
+				<pubDate><![CDATA[Wed, 12 Nov 2008 11:24:54]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>A Load-Balanced MySQL Cluster</title>
+				<description><![CDATA[ Ứng dụng Heartbeat và DRDB cho Mysql (Phần 1)
+
+Là một giải pháp khá phổ biến hiện nay là dùng DRBD để cấu trúc hệ thống HA Cluster cho Mysql . Có thể hiểu , DRBD là chương trình cho phép ta xây dựng RAID1 thông qua mạng . Nói dể hiểu hơn 1 chút thì DRBD là chương trình dùng mạng để đồng bộ dữ liệu partition của HD .  Vì vậy , thật ra không cần phải là Mysql, khi xây dựng xong chương trình này, ta sẽ có thể ứng dụng cho apache , mail , ftp , ldap vv… . Với nhu cầu của thành viên HVA nênbài viết này đặt trọng tâm ứng dụng DRBD cho Mysql .
+
+Cấu hình DRBD yêu cầu ta tạo các phần vùng meta data để quản lý phần vùng và tạo phần vùng chứa dữ liệu .  
+
+Cài đặt 
+<blockquote># yum –y drbd kmod-drbd &nbsp;
+		</blockquote>
+
+Tạo 2 tất cả là 2 phần vùng tại HD /dev/sdb như sau , 
+<blockquote># fdisk /dev/sdb
+	/dev/sdb1 – Meta data (128M hoặc 256M)
+	/dev/sdb2 – Data &nbsp;
+		</blockquote>
+
+Chú ý : Để tránh tình trạng lãng phí tài nguyên giải quyết domain , nên cấu hình/etc/hosts tương ứng cho mạng LAN của bạn . 
+
+Sau khi fdisk xong , sẽ có kết quả như sau 
+<blockquote>コマンド (m でヘルプ): p
+
+Disk /dev/sdb: 73.4 GB, 73407820800 bytes
+255 heads, 63 sectors/track, 8924 cylinders
+Units = シリンダ数 of 16065 * 512 = 8225280 bytes
+デバイス Boot      Start         End      Blocks   Id  System
+/dev/sdb1               1          65      522081   83  Linux
+/dev/sdb2              66        8924    71159917+  83  Linux&nbsp;
+		</blockquote>
+
+
+Copy file /usr/share/doc/drbd/drbd.conf vào /etc/ như sau 
+<blockquote>
+/etc/drbd.conf 
+resource d0 {
+  protocol C;
+  startup {
+    degr-wfc-timeout 120;    # 2 minutes.
+  }
+  disk {
+    on-io-error   detach;
+  }
+  net {
+  }
+  syncer {
+    rate 500M;
+    al-extents 257;
+  }
+  on hvaonline.net {
+    device     /dev/drbd0;
+    disk       /dev/sdb2;
+    address    192.168.10.10:7788;
+    meta-disk  /dev/sdb1[0];
+  }
+  on hvaonline.net {
+    device    /dev/drbd0;
+	disk      /dev/sdb2;
+    address   192.168.10.11:7788;
+    meta-disk /dev/sdb1[0];
+
+  }
+}&nbsp;
+		</blockquote>
+
+Ý nghĩa của các thông số có ý nghĩa như sau , 
+
+Resource :  Đặt tên cho resource .
+
+Protocol : Hãy chọn option này là C . Vì trong readme nó ghi vậy . 
+<blockquote>
+ C: write IO is reported as completed, if we know it has
+     reached _both_ local and remote DISK.
+     * for critical transactional data.
+  B: write IO is reported as completed, if it has reached
+     local DISK and remote buffer cache.
+     * for most cases.
+  A: write IO is reported as completed, if it has reached
+     local DISK and local tcp send buffer. (see also sndbuf-size)
+    * for high latency networks
+ **********
+ # uhm, benchmarks have shown that C is actually better than B.
+ # this note shall disappear, when we are convinced that B is
+ # the right choice "for most cases".
+ # Until then, always use C unless you have a reason not to.
+ #     --lge
+ #**********&nbsp;
+		</blockquote>
+
+on-io-error : Xử lý khi bị I/O error 
+
+pass_on  : Report the io-error to the upper layers. (chưa hiểu lắm )
+
+call-local-io-error  : Chạy script mang tên call-local-io-error
+
+detach : The node drops its backing storage device, and   continues in disk less mode. (Chưa hiểu lắm) 
+
+Đọc module của drbd 
+<blockquote>lsmod |grep drbd
+modprobe drbd minor_count=1&nbsp;
+		</blockquote>
+
+Kết quả khi nhúng drbd vào . 
+<blockquote># modinfo drbd
+filename:       /lib/modules/2.6.9-42.ELsmp/kernel/drivers/block/drbd.ko
+author:         Philipp Reisner , Lars Ellenberg 
+description:    drbd - Distributed Replicated Block Device v8.0.7
+license:        GPL
+parm:           minor_count:Maximum number of drbd devices (1-255)
+alias:          block-major-147-*
+parm:           allow_oos:DONT USE!
+license:        GPL
+author:         Evgeniy Polyakov 
+description:    Generic userspace &lt;-&gt; kernelspace connector.
+parm:           cn_idx:Connector's main device idx.
+parm:           cn_val:Connector's main device val.
+vermagic:       2.6.9-42.ELsmp SMP 686 REGPARM 4KSTACKS gcc-3.4
+
+&nbsp;
+		</blockquote>
+
+Tạo metadata.(chạy trên cả 2 máy chủ .  ) 
+<blockquote># drbdadm create-md d0&nbsp;
+		</blockquote>
+
+Khởi động và kiểm tra như sau . (chạy trên cả 2 máy chủ ) 
+<blockquote>
+# drbdadm up all
+# cat /proc/drbd
+# service drbd start  
+&nbsp;
+		</blockquote>
+
+Vào host 192.168.10.10, dùng lệnh sau để thành primary 
+<blockquote>#drbdadm -- --overwrite-data-of-peer primary all&nbsp;
+		</blockquote>
+
+
+<b>-&gt; Phần 2 : Tạo filesystem cho 2 node </b>
+
+Tại bước này , sẽ tạo file system và mount nó theo các trình tự sau 
+
+Tại Primary : 192.168.10.10
+<blockquote># mke2fs -j /dev/drbd0&nbsp;
+		</blockquote>
+
+
+Mount /dev/drdb0 đã tạo 
+<blockquote>#mkdir /mnt/drbd
+#mount /dev/drbd0 /mnt/drbd/&nbsp;
+		</blockquote>
+
+Xong bước này xem như đã có sẵn những thứ cần thiết để đồng bộ dữ liệu . 
+
+<b>Thử failover bằng tay như sau  </b>
+
+tại Primary node : 192.168.10.10
+<blockquote># umount /mnt/drbd/
+# drbdsetup /dev/drbd0 secondary&nbsp;
+		</blockquote>
+
+Tại Secondary node : 192.168.10.11
+<blockquote># drbdsetup /dev/drbd0 primary
+# mount /dev/drbd0 /mnt/drbd/&nbsp;
+		</blockquote>
+
+Cuối cùng , tạo một file nào đó và  xem phía primary:192.168.10.10 có tồn tại nó hay không . 
+
+<b>
+-&gt; Phần 3 : Setup Mysql để đồng bộ dữ liệu .</b>
+
+1. Cài đặt mysql -&gt; Tìm trên HVA
+2. cấu hình mysql 
+
+Phần này là dễ nhất , bạn chỉ cần ấn định tại basedir vào dưới directory <b>/mnt/drdb </b>là xong . 
+
+Ví dụ file cấu hình . 
+
+<blockquote># Example MySQL config file for medium systems.
+
+# The following options will be passed to all MySQL clients
+[client]
+#password       = your_password
+port            = 3306
+socket          = /tmp/mysql.sock
+
+# Here follows entries for some specific programs
+
+# The MySQL server
+[mysqld]
+port            = 3306
+socket          = /tmp/mysql.sock
+<b><font color='yellow'>basedir=/mnt/drbd/data</font></b>
+skip-locking
+key_buffer = 16M
+max_allowed_packet = 1M
+table_cache = 64
+sort_buffer_size = 512K
+net_buffer_length = 8K
+read_buffer_size = 256K
+read_rnd_buffer_size = 512K
+myisam_sort_buffer_size = 8M
+
+
+# Replication Master Server (default)
+# binary logging is required for replication
+log-bin
+
+
+# required unique id between 1 and 2^32 - 1
+# defaults to 1 if master-host is not set
+# but will not function as a master if omitted
+server-id       = 1
+
+[mysqldump]
+quick
+max_allowed_packet = 16M
+
+[mysql]
+no-auto-rehash
+# Remove the next comment character if you are not familiar with SQL
+#safe-updates
+
+[isamchk]
+key_buffer = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[myisamchk]
+key_buffer = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[mysqlhotcopy]
+interactive-timeout
+&nbsp;
+		</blockquote>
+
+
+-&gt; Phần 4 : Dùng heartbeat để giám sát 2 máy chủ .  
+
+Đón đọc và làm thử post kết quả lên cho vui nha bà con  B-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#158925</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#158925</link>
+				<pubDate><![CDATA[Fri, 14 Nov 2008 19:03:39]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Cho mình hỏi là tại sao bạn lại triển khai MySQL với DRBD. Tại sao lại không dùng MySQL cluster?
+Mình có tìm qua thấy có nơi bảo rằng giải pháp MySQL cluster rất tốn kém, nhưng mình thấy nó cũng free đấy chứ.
+Có ai có thể so sánh qua về ưu và nhược điểm của hai kiểu triển khai này với nhau không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159368</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159368</link>
+				<pubDate><![CDATA[Tue, 18 Nov 2008 16:25:24]]> GMT</pubDate>
+				<author><![CDATA[ giobuon]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">giobuon wrote:</cite><br>
+		<blockquote>Cho mình hỏi là tại sao bạn lại triển khai MySQL với DRBD. Tại sao lại không dùng MySQL cluster?
+Mình có tìm qua thấy có nơi bảo rằng giải pháp MySQL cluster rất tốn kém, nhưng mình thấy nó cũng free đấy chứ.
+Có ai có thể so sánh qua về ưu và nhược điểm của hai kiểu triển khai này với nhau không?&nbsp;
+		</blockquote>
+
+Không phải là MySQL dỏm. Từ trước đến giờ tôi vẫn thích nó lắm , dùng dòng 5.0 thì rất bất ổn định, từ 5.1 thì tốt hơn 1 chút . Đánh giá ở thời điểm này tôi thấy MySQL Cluster 6.2.15 rất ổn định và thích họp với các nhu cầu của HA khi dùng Mysql replication cho mô hình MASTER/SLAVE . 
+Còn tại sao tôi viết bài DRDB với Mysql thì vì mới đây tôi vừa làm nên còn log để đưa lên cho mọi người tham khảo và cũng làm log cho cá nhân tôi .
+Vụ so sánh nhược điểm của hai cái này thì thú thật không dám nói vì tôi dùng DRDB không nhiều nên không biết . 
+
+
+ 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159451</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159451</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 10:54:02]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Hi bác tranvanminh, em có vài thắc mắc
+
+Thứ 1 là theo em biết thì MySQL Cluster với MySQL Replication là 2 kỹ thuật khác nhau hoàn toàn, vậy bác nói "thích hợp" ở đây là sao nhỉ  :D 
+
+Thứ 2 là nếu ta chỉ dùng DRDB mà ko dùng Heartbeat thì khi server chính die thì server backup còn lại sẽ ko tự động up lên thay thế mà ta phải làm manually việc này đúng ko bác ?
+
+P/s : đang đón đọc phần tiếp của bác :x 
+Thân, ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159453</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 11:13:41]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <blockquote>Thứ 1 là theo em biết thì MySQL Cluster với MySQL Replication là 2 kỹ thuật khác nhau hoàn toàn, vậy bác nói "thích hợp" ở đây là sao nhỉ smilie
+&nbsp;
+		</blockquote>
+Sorry , gõ thiếu dấu chấm . 
+
+Đánh giá ở thời điểm này tôi thấy MySQL Cluster 6.2.15 rất ổn định và thích họp với các nhu cầu của HA. Và dùng Mysql replication cho mô hình MASTER/SLAVE cu~ng to^'t . 
+
+<blockquote>Thứ 2 là nếu ta chỉ dùng DRDB mà ko dùng Heartbeat thì khi server chính die thì server backup còn lại sẽ ko tự động up lên thay thế mà ta phải làm manually việc này đúng ko bác ? &nbsp;
+		</blockquote>
+
+Đúng vậy . Cho nên có HB thì tốt hơn nhiều   B-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159456</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159456</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 11:36:48]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>
+<blockquote>Thứ 1 là theo em biết thì MySQL Cluster với MySQL Replication là 2 kỹ thuật khác nhau hoàn toàn, vậy bác nói "thích hợp" ở đây là sao nhỉ smilie
+&nbsp;
+		</blockquote>
+Sorry , gõ thiếu dấu chấm . 
+
+Đánh giá ở thời điểm này tôi thấy MySQL Cluster 6.2.15 rất ổn định và thích họp với các nhu cầu của HA. Và khi dùng Mysql replication cho mô hình MASTER/SLAVE . 
+&nbsp;
+		</blockquote>
+Vẫn không ổn bác à. Theo như câu trên thì người đọc sẽ hiểu là:
+MySQL Cluster 6.2.15 rất ổn định và:
+- thích họp với các nhu cầu của HA
+- khi dùng Mysql replication cho mô hình MASTER/SLAVE
+
+Mà như vậy thì khá lủng củng. Tôi vẫn chưa rõ cái ý bác muốn diễn đạt là gì?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159461</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159461</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 11:54:51]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Em sữa rồi đó ạ máy bác trong này bắt bẻ ghê quá . 
+Check lại rồi báo em biết có sai nữa không để còn sữa nhé . 
+
+Với lại , em thấy kiểu bác quanta "châm" không thoải mái chút nào . Viết sai thì bảo sai thôi , cần gì phải tỏ ra bộ mặt nghiêm túc quá đáng để làm gì vậy bác . Làm mất hết cả hứng thảo luận của người ta  B-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159465</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159465</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 12:20:23]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranvanminh wrote:</cite><br>
+		<blockquote>Em sữa rồi đó ạ máy bác trong này bắt bẻ ghê quá . 
+Check lại rồi báo em biết có sai nữa không để còn sữa nhé . 
+
+Với lại , em thấy kiểu bác quanta "châm" không thoải mái chút nào . Viết sai thì bảo sai thôi , cần gì phải tỏ ra bộ mặt nghiêm túc quá đáng để làm gì vậy bác . Làm mất hết cả hứng thảo luận của người ta  B-) &nbsp;
+		</blockquote>
+Hạ hỏa lão ơi,lâu rồi mới thấy lão có hứng viết bài lại mà   :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159469</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159469</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 13:12:25]]> GMT</pubDate>
+				<author><![CDATA[ htt1]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Em ủng hộ bác quanta ở chỗ luôn có ý châm để đóng góp cho topic nhưng giống vớ bác tranvanminh là em đề nghị bác quanta nên tập xài các emoticon trong forum để cho anh em bớt căng thẳng đi ạ  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159490</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159490</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 16:09:12]]> GMT</pubDate>
+				<author><![CDATA[ rickb]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rickb wrote:</cite><br>
+		<blockquote>Em ủng hộ bác quanta ở chỗ luôn có ý châm để đóng góp cho topic nhưng giống vớ bác tranvanminh là em đề nghị bác quanta nên tập xài các emoticon trong forum để cho anh em bớt căng thẳng đi ạ  :D &nbsp;
+		</blockquote>
+Em xin nói thẳng là em không có ý bắt bẻ hay <i>"tỏ ra bộ mặt nghiêm túc quá đáng"</i> gì cả, các bác bỏ qua nhé.
+
+PS: Sẽ để ý dùng emoticons nhiều hơn,  -:|- (tại có vài cái không hiểu ý nghĩa của nó, sợ dùng nhầm, hehe).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159493</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159493</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 16:24:22]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Đã update phần 2 và phần 3 .
+
+Mời các kháng giả đón đọc phần 4   *-: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159504</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#159504</link>
+				<pubDate><![CDATA[Wed, 19 Nov 2008 18:23:19]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ <blockquote>
+Chỉnh default gateway tại máy LV1 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>route add -net default gw 10.0.0.1</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+Cho em hỏi: sao khi em chỉnh default gateway tại máy LV1 thì không work, nhưng khi em chỉnh default gateway trong máy RealServer thì work? Có bác nào bị giống em không?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#214615</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#214615</link>
+				<pubDate><![CDATA[Sun, 4 Jul 2010 02:23:35]]> GMT</pubDate>
+				<author><![CDATA[ asaxin]]></author>
+			</item>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ thật sự mong là có tiếp các phần tiếp theo
+
+đang mày mò load balancing mysql, HA cho database.v.v.
+
+vậy mà tìm mỏi mắt chẳng có bài nào hướng dẫn chạy ok hết hic...
+
+mấy bros vào đây thảo luận nha
+
+http://www.hvaonline.net/hvaonline/posts/list/38089.hva]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#265659</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#265659</link>
+				<pubDate><![CDATA[Wed, 27 Jun 2012 04:45:22]]> GMT</pubDate>
+				<author><![CDATA[ boy_popping]]></author>
+			</item>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Đang buồn ngủ thì gặp chiếu manh, thanks anh tranvanminh :))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#276370</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#276370</link>
+				<pubDate><![CDATA[Wed, 5 Jun 2013 05:30:03]]> GMT</pubDate>
+				<author><![CDATA[ __ikaZuchi]]></author>
+			</item>
+			<item>
+				<title>Từng buớc một để triển khai hệ thống Cluster </title>
+				<description><![CDATA[ Bài này không có ích hay sao mà bị trôi mất tích luôn, post lại cho những ai cần
+<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/43883.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5417.hva#276377</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5417.hva#276377</link>
+				<pubDate><![CDATA[Wed, 5 Jun 2013 21:36:25]]> GMT</pubDate>
+				<author><![CDATA[ ngtrongtri]]></author>
+			</item>
+	</channel>
+</rss>

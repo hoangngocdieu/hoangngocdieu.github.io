@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Debug PHP bị segfault"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Debug PHP bị segfault"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ Bạn có một LAMP server. Một hôm bạn thấy một lỗi PHP bị segmentation fault trong /var/log/messages:
+<blockquote>kernel: php[27700]: segfault at 0000003455c094fe rip 0000003455c094fe rsp 0000000041a3a0d8 error 14&nbsp;
+		</blockquote>
+Trong khi error_log của Apache lại không có gì liên quan. Bạn sẽ bắt đầu debug từ đâu?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232353</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232353</link>
+				<pubDate><![CDATA[Thu, 3 Mar 2011 07:40:13]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ tắt hết php extension rồi cứ thế bật lại từng cái cho tới khi phun lỗi. :D.
+Nếu tìm được thì kiếm version mới hơn của extension đó compile lại, nếu không tìm được thì compile lại php, update  lên version mới nếu có.
+Còn nếu không được nữa em bó tay :))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232357</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232357</link>
+				<pubDate><![CDATA[Thu, 3 Mar 2011 08:04:38]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ Bạn nào có cách khác không, chứ mình sợ cái list này nhiều khi hơi dài.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232359</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232359</link>
+				<pubDate><![CDATA[Thu, 3 Mar 2011 08:25:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ quanta thử dùng mod_backtrace xem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232806</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232806</link>
+				<pubDate><![CDATA[Fri, 11 Mar 2011 01:36:13]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ Không bạn nào nghĩ đến việc "bắt" nó gen ra core file nhỉ:<span class="link"> http://bugs.php.net/bugs-generating-backtrace.php</span>
+
+Nhưng điều kiện tiên quyết là phải compile PHP với <b>--enable-debug</b>. Trong khi đó mình lại cài các thứ từ yum, mặc định là <b>--disable-debug</b>.
+
+Giống như việc mình thử compile mod_backtrace:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># apxs -ci mod_backtrace.c 
+/usr/lib64/apr-1/build/libtool --silent --mode=compile gcc -prefer-pic -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic -fno-strict-aliasing  -DLINUX=2 -D_REENTRANT -D_GNU_SOURCE -pthread -I/usr/include/httpd  -I/usr/include/apr-1   -I/usr/include/apr-1   -c -o mod_backtrace.lo mod_backtrace.c && touch mod_backtrace.slo
+mod_backtrace.c:82: error: expected '&#41;' before '*' token
+mod_backtrace.c: In function 'bt_register_hooks':
+mod_backtrace.c:159: warning: implicit declaration of function 'ap_hook_fatal_exception'
+mod_backtrace.c:159: error: 'bt_exception_hook' undeclared &#40;first use in this function&#41;
+mod_backtrace.c:159: error: &#40;Each undeclared identifier is reported only once
+mod_backtrace.c:159: error: for each function it appears in.&#41;
+apxs:Error: Command failed with rc=65536</pre>
+		</div>
+
+Chắc là Apache không được compile với <b>--enable-exception-hook</b> rồi. 
+
+Giả sử mình không muốn compile lại từ source, đó các bạn biết có cách nào sửa hoặc thêm, bớt các configure options này không?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232813</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232813</link>
+				<pubDate><![CDATA[Fri, 11 Mar 2011 04:02:20]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ Đổ ra core file thì có 2 cách đó:
+1 là dùng gdb
+2 là dùng mod_backtrace như đã nói bên trên dễ dàng hơn
+Nếu quanta không đủ khả năng can thiệp vào apache như vậy thì có cho ra dump file cũng chỉ đọc để chơi thôi. Tuy nhiên gdb cũng là 1 giải pháp không tồi.
+Có 1 thời gian tui cũng phải debug php nên có thể recommend cho lão thêm 1 số tool nữa
+- mod_whatkilledus, cũng phải compile như mod_backtrace
+- strace
+Còn không dễ nhất như mR.Bi đã nói là tắt từng module và chịu khó mất công vậy.
+1 là tốn công compile, 2 là tốn công ngồi mò. Compile cũng không chịu mà ngồi mò cũng không thì làm sao ra :D.
+Ngoài ra, lão nên xem những module nào mà web không cần dùng đến disable đi cho nhẹ người. Thông thường cũng chỉ dùng 1 số module căn bản thôi.
+Nhưng như trên tui đã nói đó, nếu không phải PHP team, chắc coi đến mức biết module nào gây crash là hết cỡ. Lúc đó có muốn disable module đó cũng không được vì nhiều khi website lại cần nó.
+Mấy cái ZendGuard, IceCube... hay xảy ra mấy tình trạng này.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232834</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#232834</link>
+				<pubDate><![CDATA[Fri, 11 Mar 2011 13:28:32]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Debug PHP bị segfault</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Đổ ra core file thì có 2 cách đó:
+1 là dùng gdb
+2 là dùng mod_backtrace như đã nói bên trên dễ dàng hơn
+Nếu quanta không đủ khả năng can thiệp vào apache như vậy thì có cho ra dump file cũng chỉ đọc để chơi thôi. Tuy nhiên gdb cũng là 1 giải pháp không tồi.
+&nbsp;
+		</blockquote>
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Nhưng như trên tui đã nói đó, nếu không phải PHP team, chắc coi đến mức biết module nào gây crash là hết cỡ. Lúc đó có muốn disable module đó cũng không được vì nhiều khi website lại cần nó.
+&nbsp;
+		</blockquote>
+Đúng như lão nói, hiện tại thì tôi cũng chỉ đủ khả năng tìm ra xem module nào bị crash thôi.
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Có 1 thời gian tui cũng phải debug php nên có thể recommend cho lão thêm 1 số tool nữa
+- mod_whatkilledus, cũng phải compile như mod_backtrace
+- strace
+&nbsp;
+		</blockquote>
+strace thì tôi có biết và thử trong một số trường hợp bị segfault rồi. Tôi sẽ thử ngâm cứu mod_whatkilledus. Cảm ơn lão.
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Còn không dễ nhất như mR.Bi đã nói là tắt từng module và chịu khó mất công vậy.
+&nbsp;
+		</blockquote>
+Tôi không thích cách này.
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+1 là tốn công compile, 2 là tốn công ngồi mò. Compile cũng không chịu mà ngồi mò cũng không thì làm sao ra :D.
+&nbsp;
+		</blockquote>
+Đâu, tôi vẫn chịu compile đấy chứ (nếu cần thiết). Tuy nhiên, tôi vẫn đặt ra câu hỏi để mọi người thảo luận:
+<blockquote><font color='orange'>Có cách nào chỉnh sửa các configure options của một package cài từ binary không?</font>&nbsp;
+		</blockquote>
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>
+Ngoài ra, lão nên xem những module nào mà web không cần dùng đến disable đi cho nhẹ người. Thông thường cũng chỉ dùng 1 số module căn bản thôi.
+
+Mấy cái ZendGuard, IceCube... hay xảy ra mấy tình trạng này.&nbsp;
+		</blockquote>
+OK lão.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/37772.hva#233497</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/37772.hva#233497</link>
+				<pubDate><![CDATA[Fri, 18 Mar 2011 21:47:44]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

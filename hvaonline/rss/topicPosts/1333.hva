@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Giám sát hệ thống bằng SNMP "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Giám sát hệ thống bằng SNMP "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Giám sát hệ thống bằng SNMP </title>
+				<description><![CDATA[ <b>Sơ luợt về SNMP</b>
+
+1. SNMP (UDP) lấy thông tin từ MIB（Management Information Base） để xuất ra rất nhiều thông tin cho bạn ... như là fan speed , traffic , disk I/O , server load , prosess load tree , vv... thông thường chủ yếu chia thành 2 giao thức  , thứ nhất là agent , 2 là manager
+
+các thông tin dùng Protocol Data Units hoạt động
+
+thông tin giao thức  từ manager đến agent
+
+<b>GetRequest - &gt; GetNextRequest - &gt; SetRequest</b>
+
+từ agent qua manager
+
+<b>GetResponse - &gt; Trap</b>
+
+sau đó nếu system có vấn đề snmp dùng Trap để báo các sự cố cho bạn (qua mail, ĐTDD vv..)
+
+<b>0 GetRequest - &gt; 1 GetNextRequest - &gt; 2 GetResponce - &gt; 3 SetRequest#6699FF - &gt; 4 Trap</b>
+
+tiện một cái là hiện giờ có rất nhiều tool lấy data từ SNMP ra , change interface qua đồ hoạ , các chương trình hiện có khá đẹp mắt cho người dùng  , điễn hình : RRDTOOL , HotSaniC ...
+là một admin của hệ thống Linux chắc chắn SNMP sẻ là một lợi thế quản lý  "24×364 system" 
+
+
+2 :Chương trình cần thiết để cấu hình 
+
+======================
+<b>RRDtool</b><span class="link"> http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/</span>
+RPM<span class="link"> http://dag.wieers.com/packages/rrdtool/</span>
+======================
+<b>HotSaNIC</b><span class="link"> http://hotsanic.sourceforge.net/</span>
+RPM<span class="link"> http://freshmeat.net/projects/xqf/?branch_...elease_id=38761</span>
+======================
+<b>SNMP</b><span class="link"> http://atrpms.physik.fu-berlin.de/name/lm_sensors/</span>
+RPM<span class="link"> http://sourceforge.net/project/showfiles.php?group_id=12694</span>
+======================
+<b>lm_sensors-</b><span class="link"> http://www2.lm-sensors.nu/~lm78/index.html</span>
+RPM<span class="link"> http://atrpms.physik.fu-berlin.de/name/lm_sensors/</span>
+======================
+
+<b>3 :Bắt đầu cài đặt và cấu hình </b>
+
+Đầu tiên nên cài lm_sensors. 
+
+<b>Cài đặt</b>
+
+rpm -Uvh lm_sensors-2.8.4-0_21.rhfc1.at.i386.rpm
+
+警告: lm_sensors-2.8.4-0_21.rhfc1.at.i386.rpm: V3 DSA signature: NOKEY, key ID 66534c2b
+Preparing... ########################################### [100%]
+1:lm_sensors ########################################### [100%]
+
+chú ý : truớc khi bạn dùng lm_sensors , bạn hãy gé thăm site duới đây để check chip của bạn có đuợc hổ trợ  hay không .
+<span class="link"> http://secure.netroedge.com/~lm78/supported.html</span>
+
+
+Sau khi hoàn tất , gỏ lệnh sau 
+<b>/usr/sbin/sensors-detect</b>
+
+<blockquote>
+This program will help you determine which I2C/SMBus modules you need to
+load to use lm_sensors most effectively. You need to have i2c and
+lm_sensors installed before running this program.
+Also, you need to be `root`, or at least have access to the /dev/i2c-*
+files, for most things.
+If you have patched your kernel and have some drivers built in, you can
+safely answer NO if asked to load some modules. In this case, things may
+seem a bit confusing, but they will still work.
+
+We can start with probing for (PCI) I2C or SMBus adapters.
+You do not need any special privileges for this.
+<b>Do you want to probe now?</b> (YES/no):
+Probing for PCI bus adapters...
+Use driver `i2c-viapro` for device 00:07.4: VIA Technologies VT82C686 Apollo ACPI
+Probe succesfully concluded.
+
+We will now try to load each adapter module in turn.
+<b>Load `i2c-viapro` (say NO if built into your kernel)? (YES/no)</b>:
+&nbsp;
+		</blockquote>
+
+sau khi cài đặt xong , chương trình sẻ yêu cầu bạn chèn thêm modules vào file<b> /etc/modules.conf</b> . 
+sau khi chèn xong , copy link sang<b> /etc/rc.d/init.d</b> .
+
+Khởi động lm_senors
+# /etc/rc.d/init.d/lm_sensors start
+
+<blockquote>
+
+Starting up sensors: starting module __i2c-viapro__
+starting module __i2c-isa__
+starting module __lm80__
+starting module __eeprom__
+starting module __via686a__
+starting module __bmcsensors__
+[ OK ]
+&nbsp;
+		</blockquote>
+
+Gỏ lệnh senors bạn sẻ thấy các thông tin như sau 
+
+<b># sensors</b>
+
+<blockquote>
+lm80-i2c-0-2d
+Adapter: SMBus Via Pro adapter at 8100
++5V: +3.37 V (min = +5.53 V, max = +0.00 V) ALARM
+VTT: +1.25 V (min = +1.90 V, max = +1.67 V) ALARM
++3.3V: +2.62 V (min = +3.13 V, max = +3.46 V) ALARM
++Vcore: +3.14 V (min = +1.80 V, max = +1.99 V) ALARM
++12V: +13.20 V (min = +11.37 V, max = +12.57 V)
+-12V: -3.87 V (min = -12.64 V, max = -11.43 V)
+-5V: -0.92 V (min = -5.27 V, max = -4.78 V)
+fan1: 10629 RPM (min = 6000 RPM, div = 1) ALARM
+fan2: 7988 RPM (min = 6783 RPM, div = 1)
+temp: +127.00°C (hot: limit = +6°C, hyst = -82°C) ALARM
+: (os: limit = -92°C, hyst = -31°C) ALARM
+alarms: Board temperature input (LM75) ALARM
+alarms: Chassis intrusion detection ALARM
+
+eeprom-i2c-0-50
+Adapter: SMBus Via Pro adapter at 8100
+Memory type: SDR SDRAM DIMM
+Memory size (MB): 128
+
+eeprom-i2c-0-51
+Adapter: SMBus Via Pro adapter at 8100
+
+Memory type: SDR SDRAM DIMM
+Memory size (MB): 128
+
+eeprom-i2c-0-52
+Adapter: SMBus Via Pro adapter at 8100
+Memory type: SDR SDRAM DIMM
+Memory size (MB): 256
+
+eeprom-i2c-0-56
+Adapter: SMBus Via Pro adapter at 8100
+Memory type: DRDRAM RIMM
+Memory size (MB): invalid (4 9 0 176)
+
+via686a-isa-6800
+Adapter: ISA adapter
+CPU core: +1.79 V (min = +1.98 V, max = +2.49 V) ALARM
++2.5V: +2.53 V (min = +2.36 V, max = +2.25 V) ALARM
+I/O: +3.32 V (min = +2.14 V, max = +2.86 V) ALARM
++5V: +5.07 V (min = +4.92 V, max = +3.01 V) ALARM
++12V: +12.22 V (min = +4.01 V, max = +10.79 V) ALARM
+CPU Fan: 3994 RPM (min = 3000 RPM, div = 2)
+P/S Fan: 0 RPM (min = 3000 RPM, div = 2)
+SYS Temp: +23.8°C (high = +45°C, hyst = +40°C)
+CPU Temp: +22.4°C (high = +60°C, hyst = +55°C)
+SBr Temp: +20.6°C (high = +65°C, hyst = +60°C)
+&nbsp;
+		</blockquote>
+
+
+<b>5:Cài đặt SNMP</b>
+
+#
+
+rpm -ivh ucd-snmp-4.2.3-1vl1.i386.rpm
+
+
+ucd-snmp　　　　　　##################################################
+#
+
+rpm -ivh ucd-snmp-devel-4.2.3-1vl1.i386.rpm
+
+
+ucd-snmp-devel　　　##################################################
+#
+
+rpm -ivh ucd-snmp-utils-4.2.3-1vl1.i386.rpm
+
+
+ucd-snmp-utils　　　##################################################
+
+
+Cấu hình SMMP như sau trong file  <b>/etc/snmp/snmpd.conf</b>
+
+<blockquote>
+
+####
+
+com2sec local localhost private
+# server de view data va pass , o day toi dac pass la home
+com2sec mynetwork 192.168.0.0/24 home
+
+group MyRWGroup v1 local
+group MyRWGroup v2c local
+group MyRWGroup usm local
+group MyROGroup v1 mynetwork
+group MyROGroup v2c mynetwork
+group MyROGroup usm mynetwork
+
+view all included .1 80
+
+access MyROGroup ```` any noauth exact all none none
+access MyRWGroup ```` any noauth exact all all all
+
+#tuy theo system cua ban , co le phan it87-isa-0290 se khong dung nhu toi config , neu khong dung thi edit path lai .
+
+exec temp1 /bin/cat /proc/sys/dev/sensors/it87-isa-0290/temp2
+exec temp2 /bin/cat /proc/sys/dev/sensors/it87-isa-0290/temp1
+#disk / 10000
+
+# phan data disk , chac cac ban deu dung nhu la /dev/hda /dev/sda vv ... edit lai luon .
+disk / 5%
+disk /export/hd1 5%
+
+
+syslocation Asus Terminator TU
+# co the chen email cua ban
+syscontact root
+
+&nbsp;
+		</blockquote>
+
+
+<b>6: Cài đặt RRDTOOL</b>
+
+#
+
+rpm -ivh ./rrdtool-1.0.40-1.7.2j.rpm
+
+
+rrdtool　　　　　　　　##################################################
+#
+
+rpm -ivh ./rrdtool-devel-1.0.40-1.7.2j.i386.rpm
+
+
+rrdtool-devel　　　　　##################################################
+# ldconfig &lt;-- khoi cung duoc
+
+
+6 : INSTALL HOTSANIC
+
+# cd /usr/local
+
+# tar zxfv HotSaNIC-0.4.0.tgz
+
+# cd HotSaNIC
+
+# ./setup.pl
+
+Các option khi chạy script setup.pl
+
+<blockquote>
+SENSORS = để chạy lm_sensors ○
+PART = Disk free ○
+TRAFFIC = Network traffic ○
+DISKIO = Disk Ì/O/O ○
+SYSTEM =CPU ,MEM, vv... ○
+DNET = không biết ×
+PING =pingchecker ×
+NETWORK =xem info cũa 1 host nào đó ×
+iptables = isntall iptables ×
+WORMS = không cần ×&nbsp;
+		</blockquote>
+
+
+Sữa file <b>/usr/locall/HotSanic/settings</b>
+
+BINPATH=``not configured`` - &gt; BINPATH=``/usr/bin`` ##bin path của RRDtool
+WEBDIR=``not configured``- &gt; WEBDIR=``/home/httpd/html/rrdtool`` ``xuất file vô dir nào``
+IMAGEFORMAT=``gif`` - &gt; IMAGEFORMAT=``png`` (png cho nhẹ)
+
+<b>
+Setting sensors</b>
+
+Mở file 
+/usr/local/HotSaNIC/data-sensors/settings
+
+thêm vào
+
+SENSOR=/proc/sys/dev/sensors/it87-isa-0290/temp1,cputemp,CPU temp,3,1,0,度
+SENSOR=/proc/sys/dev/sensors/it87-isa-0290/temp2,mbtemp,MB temp,3,1,0,度
+
+setting part
+
+/usr/local/HotSaNIC/data-part/settings
+them vào
+DRIVE=filesystemmount
+
+
+setting DISKIO
+
+<b>cat /proc/stat</b>
+disk_io: (3,0):(471176,92636,3013450,378540,12126724) (3,1):(97807,54960,757450,42847,3364496)
+
+<b>/usr/local/HotSaNIC/data-diskio/settings</b>
+
+DEV=3_0,hda
+DEV=3_1,hdb
+
+demo setting files
+<span class="link"> http://network.dynsite.net/minh/hotsanicco...rs-settings.txt</span><span class="link"> http://network.dynsite.net/minh/hotsanicco...io-settings.txt</span><span class="link"> http://network.dynsite.net/minh/hotsanicco...rt-settings.txt</span><span class="link"> http://network.dynsite.net/minh/hotsanicco...em-settings.txt</span><span class="link"> http://network.dynsite.net/minh/hotsanicco...ic-settings.txt</span>
+
+# Sau cùng
+
+Dùngcác lệnh sau để make cài đặt hotsanic , và start hotsanic .
+
+1: /usr/local/HotSaNIC/makeindex.pl
+2: /usr/local/HotSaNIC/rrdtimer -i
+3:/usr/local/HotSaNIC/rrdgraph start
+4:/usr/local/HotSaNIC/diagrams
+5:/usr/local/HotSaNIC/convert.pl
+
+
+Chú ý : Default HostSanic lấy data (DISK , CPU , Traffic ....) từ SNMP một luợt , và trong một thời gian ngắn (10sec lấy một lần ) , do đó bạn nên config lại thời gian lấy data từ SNMP .
+
+Mỏ file rrdtimer cũa HostSanic và kếm tới section sau , và edit đoạn có COLOR màu vàng thành con số thích họp (sec) .
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>######################################################################
+#
+# the main loop executes all timed scripts:
+#
+# data-*/read-data every &gt; =10 sec. &#40;hardcoded&#41;
+# data-*/diagrams every $DTIME
+# convert&#40;&#41; every $CTIME if $CONVERTMETHOD is other than ``HTML``
+# scan_for_modules&#40;&#41; every $STIME
+#
+sub main_loop {
+my &#40;$DAEMONDIR,$WEBDIR,$CTIME,$CONVERTMETHOD,$DTIME,$STIME,$LOGSI
+ZE,$LOGBACKUPS,$debuglevel,$parallel,$RUN,$SHOW&#41;=@_;
+my &#40;$now,$last,$lastscan,$lastdiagram,$lastconvert,@modules&#41;;
+
+$now=time;
+$last=$now-100;
+$lastscan=$now;
+$lastdiagram=int&#40;$now/$DTIME&#41;*$DTIME;
+$lastconvert=int&#40;$now/$CTIME&#41;*$CTIME;
+
+@modules=scan_for_modules&#40;$DAEMONDIR,$debuglevel,$RUN&#41;;
+initialize_modules&#40;$DAEMONDIR,@modules&#41;;
+
+
+while &#40;&#41; {
+$now=time;
+
+if &#40;$last&#91;color=yellow&#93;+100&#91;/color&#93; &lt;= $now&#41; { 
+
+if &#40;$debuglevel &gt; 0&#41; { print $now,``: main loop running ``; }
+
+# scan directory for rrdgraph-modules.
+#
+if &#40;$lastscan+$STIME &lt;= $now&#41; {
+@modules=scan_for_modules&#40;$DAEMONDIR,$debuglevel,$RUN&#41;;
+$lastscan=$now;
+if &#40;$debuglevel &lt; 0&#41; { logrotate&#40;$LOGDIR,$LOGSIZE,$LOGBACKUPS,$debuglevel&#41;; }
+}</pre>
+		</div>
+
+
+demo
+<span class="link"> http://anipro.vanouwerkerk.nl/</span><span class="link"> http://anipro.vanouwerkerk.nl/system/load.html</span><span class="link"> http://anipro.vanouwerkerk.nl/netstat/connections.html</span><span class="link"> http://anipro.vanouwerkerk.nl/netstat/connections.html</span>
+
+
+777]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1333.hva#6252</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1333.hva#6252</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 18:25:40]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

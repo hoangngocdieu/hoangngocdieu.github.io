@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Nguy cơ nhiễm virus từ Wine"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Nguy cơ nhiễm virus từ Wine"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Nguy cơ nhiễm virus từ Wine</title>
+				<description><![CDATA[ Từ lúc chuyển sang dùng Linux mình đã để ý tới một ứng dụng rất hay dành cho Linux là Wine, Wine chắc cũng không lạ với mọi người, sau quá trình sử dụng là quá trình vọc Wine. Mình tự đặt câu hỏi là liệu Wine có thể lây nhiễm Virus vào máy đang sử dụng Linux hay không ?. Trong khuôn khổ bài viết này mình sẽ tiến hành phân tích và nêu cách phòng tránh mà mình đã áp dụng.
+
+Trước khi đọc bài viết mình có một số quy ước nhỏ như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define Username &quot;noname01&quot;
+#define Computername &quot;noname01-pc&quot;
+#define ~/ &quot;/home/noname01/&quot;
+#define $ &quot;noname01@noname01-pc:~$&quot;</pre>
+		</div>
+
+Thực sự nguy cơ này rất rõ ràng, Wine được thực thi với quyền của noname01 sẽ có quyền chỉnh sửa các file thuộc quyền quản lý (own) của noname01. Nói cách khác một chương trình thực thi trong môi trường Wine sẽ có toàn quyền tương tác với /home/noname01/. Chúng ta sẽ để ý tới các Symlink sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>~/.wine/dosdevices/c:				--&gt;		~/.wine/drive_c
+~/.wine/dosdevices/z:				--&gt;		/
+~/.wine/drive_c/users/noname01/My Music	--&gt;		~./My Music
+~/.wine/drive_c/users/noname01/My Pictures	--&gt;		~./My Pictures
+~/.wine/drive_c/users/noname01/My Videos	--&gt;		~./My Videos
+~/.wine/drive_c/users/noname01/My Documents	--&gt;		~./My Documents
+~/.wine/drive_c/users/noname01/Desktop		--&gt;		~./Desktop</pre>
+		</div>
+
+Việc cài đặt cá ứng dụng &quot;Stand Alone&quot; như FreeBasic compiler, hoặc một số chương trình các bạn tự viết vào ~/, sẽ tạo cơ hội cho virus tiến hành inject vào các file này. Chương trình bị nhiễm nếu vô tình bạn thực thi nó sẽ tạo nên quá trình lây nhiểm sâu hơn vào hệ thống. Virus sẽ tiến hành nâng quyền tùy theo các lỗ hổng khả hữu trên noname01-pc.
+
+Để ngăn chặn việc này mình đã đưa ra một số phương pháp sau:
+
+1.Backup thư mục .wine hiện tại.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$tar -cvzf backup.tar.gz /home/noname01/.wine</pre>
+		</div>
+
+2.Loại bỏ các symlink và thay thế bằng các thư mục.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$rm ~/.wine/dosdevices/z:
+$rm ~/.wine/drive_c/users/noname01/My Music
+$rm ~/.wine/drive_c/users/noname01/My Pictures
+$rm ~/.wine/drive_c/users/noname01/My Videos
+$rm ~/.wine/drive_c/users/noname01/My Documents
+$rm ~/.wine/drive_c/users/noname01/Desktop
+$mkdir ~/.wine/drive_c/users/noname01/My Music
+$mkdir ~/.wine/drive_c/users/noname01/My Pictures
+$mkdir ~/.wine/drive_c/users/noname01/My Videos
+$mkdir ~/.wine/drive_c/users/noname01/My Documents
+$mkdir ~/.wine/drive_c/users/noname01/Desktop</pre>
+		</div>
+
+3. Phân quyền chỉ đọc cho *.exe và *.dll.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$cd ~/.wine
+$find -name *.exe -exec chmod a-w {} \;
+$find -name *.dll -exec chmod a-w {} \;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41588.hva#258529</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41588.hva#258529</link>
+				<pubDate><![CDATA[Tue, 13 Mar 2012 12:08:13]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Nguy cơ nhiễm virus từ Wine</title>
+				<description><![CDATA[ Căn bản là dùng wine hay bất cứ thứ gì cũng tuyệt đối không bao giờ dùng "root" account. Có nâng mấy quyền cũng nằm trong giới hạn "normal user" thì virus chẳng thể gây tác hại được bao nhiêu (ngoại trừ "normal user" đó không.. normal) ;).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259003</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259003</link>
+				<pubDate><![CDATA[Fri, 16 Mar 2012 00:08:31]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Nguy cơ nhiễm virus từ Wine</title>
+				<description><![CDATA[ Linux dùng ELF format còn Windows là PE format thì làm sao lây nhiễm được :-o?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259062</link>
+				<pubDate><![CDATA[Fri, 16 Mar 2012 10:18:49]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Nguy cơ nhiễm virus từ Wine</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Căn bản là dùng wine hay bất cứ thứ gì cũng tuyệt đối không bao giờ dùng "root" account. Có nâng mấy quyền cũng nằm trong giới hạn "normal user" thì virus chẳng thể gây tác hại được bao nhiêu (ngoại trừ "normal user" đó không.. normal) ;).&nbsp;
+		</blockquote>
+
+Ưhm ! em đang tham khảo thêm từ một số nguồn bên ngoài. Về việc thực thi các shellcode cho phép malware có thể chiếm được quyền root tuỳ theo phiên bản của kernel.
+
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Linux dùng ELF format còn Windows là PE format thì làm sao lây nhiễm được :-o?&nbsp;
+		</blockquote>
+
+Về nguyền tắc thì am hiểu ELF format hoàn toàn có thể tiến hành inject vào file đó được vấn đề là trên Linux khó khăn là ứng dụng thường thực thi ở quyền normal user. Hồi năm 2002 có virus Winux.
+
+Anh có thể tham khảo thêm ở đây:<span class="link"> http://virus.wikia.com/wiki/Winux</span>
+
+Em có đọc qua về nó, cũng khá lâu rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259168</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259168</link>
+				<pubDate><![CDATA[Sat, 17 Mar 2012 22:22:29]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Nguy cơ nhiễm virus từ Wine</title>
+				<description><![CDATA[ <blockquote>
+However, cross-platform binary threats have never become a major threat and many researchers in the security field believed there was too much interest in this virus, innovative though it may have been.
+&nbsp;
+		</blockquote>
+
+Mặc dù vậy nhưng có 1 ý tưởng sau có thể thực thi nè:
+Người dùng sử dụng VMWare vì vậy vẫn có thể ghi vào linux partition được. Chiro8x check lại xem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259520</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41588.hva#259520</link>
+				<pubDate><![CDATA[Wed, 21 Mar 2012 09:19:26]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+	</channel>
+</rss>

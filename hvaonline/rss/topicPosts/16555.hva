@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Thảo luận] Lỗi ở đâu và đây là lỗi gì !?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Thảo luận] Lỗi ở đâu và đây là lỗi gì !?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Hình như QVT "có duyên" với PBLang Forum <font color='orange'>(1)</font>.
+Cách đây vài ngày, có dịp ngó sơ qua nó lần nữa thì thấy nó lại có bug.
+Bug lần này nằm tại file <b><font color='orange'>sendpm.php</font></b> (có thể các file khác vẫn có bug, nhưng QVT ko có thời gian để mò tiếp). Đây là source code của nó:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?php
+/***************************************************************************
+ *                            sendpm.php  - PBLang
+ *                            -------------------
+ *
+ *                  see docs/copyright.txt for more details
+ *
+ *			Last modified 1 March 2005
+ ***************************************************************************/
+
+require&#40;'header.php'&#41;;
+include&#40;$dbpath."/settings/styles/styles.php"&#41;;
+include_once&#40;"functions.php"&#41;;
+
+$liusername=$_COOKIE&#91;$cookieid&#93;;
+$permit=CheckLoginStatus&#40;$liusername,"1","0"&#41;;
+if &#40;$permit=="1"&#41; {
+	$language=SetLanguage&#40;$liusername&#41;;
+	include&#40;$temppath."/pb/language/lang_".$language.".php"&#41;;
+	$reg=$_GET&#91;'id'&#93;;
+	writeheader&#40;$newestm,0,0,0,$liusername,"1",$SendPM&#41;;
+	if &#40;$reg!="2"&#41; {
+		if &#40;isset&#40;$_GET&#91;'num'&#93;&#41; && strlen&#40;$_GET&#91;'num'&#93;&#41;&lt; 8&#41;{
+			$num=$_GET&#91;'num'&#93;;
+		}else{
+			$num='';
+		}
+		if &#40;isset&#40;$_GET&#91;'to'&#93;&#41; && strlen&#40;$_GET&#91;'to'&#93;&#41;&lt; 26&#41;{
+			$to=$_GET&#91;'to'&#93;;
+		}else{
+			$to='';
+		}
+		$subj=strip_tags&#40;stripslashes&#40;$_GET&#91;'subj'&#93;&#41;&#41;;
+		$msg=strip_tags&#40;stripslashes&#40;$_GET&#91;'msg'&#93;&#41;&#41;;
+		$orgp=strip_tags&#40;stripslashes&#40;$_GET&#91;'orig'&#93;&#41;&#41;;
+		$orgp=str_replace&#40;'/','',$orgp&#41;;		//make sure no other URL is being used
+		$orgp=str_replace&#40;chr&#40;92&#41;,'',$orgp&#41;;		//make sure no other URL is being used
+		$pmstat="3";
+		$fp = fopen&#40;$dbpath."/pm/".$liusername."_".$num."_pmstat", "w"&#41;;
+		fputs&#40;$fp, $pmstat&#41;;
+		fclose&#40;$fp&#41;;
+//          sendpm&#40;$to,$subj,$msg,$orgp,$liusername&#41;;
+		if &#40;trim&#40;$orgp&#41;!=''&#41;{
+			$filename=$dbpath.'/pm/'.$orgp;
+			if &#40;file_exists&#40;$filename&#41;&#41;{
+				$fd=@fopen&#40;$filename,"r"&#41;;
+				$rmsg=@fread&#40;$fd,filesize&#40;$filename&#41;&#41;;
+				@fclose&#40;$fd&#41;;
+			}else{
+				$rmsg='';
+			}
+		}else{
+			$rmsg='';
+		}
+		$form_tag="\n";
+		$form_tag.='&lt;form action="sendpm.php?id=2" method="POST" target="'.$frameset.'"&gt;'."\n";
+		WriteTableTop&#40;$form_tag&#41;;
+		echo "&lt;tr&gt;&lt;td bgcolor=\"$headercolor\" height=\"15\" background=\"$headergif\" colspan=\"2\"&gt;";
+		echo "&lt;a href=\"index.php\"&gt;$sitetitle&lt;/a&gt; :: &lt;a href=\"sendpm.php\"&gt;$PrivateMessaging&lt;/a&gt; :: $VSendMessage&lt;/td&gt;&lt;/tr&gt;";
+		echo "&lt;tr&gt;&lt;td class=\"subheader\" colspan=\"2\"&gt;&lt;a href=\"pm.php\"&gt;$VInbox&lt;/a&gt;";
+		echo " :: &lt;a href=\"sendpm.php\"&gt;$VSendPM&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;";
+		if &#40;$rmsg&#41;{
+			echo "&lt;tr&gt;&lt;td bgcolor=\"$fmenucolor\" height=\"15\" colspan=\"2\"&gt;";
+			echo "$VOriginalPM $VFrom &lt;b&gt;$to&lt;/b&gt;:&lt;br&gt;&lt;br&gt;$rmsg&lt;br&gt;&lt;/td&gt;&lt;/tr&gt;";
+			echo "&lt;tr&gt;";
+		}
+		echo "&lt;td height=\"5\" align=\"right\" bgcolor=\"$fmenucolor\" width=\"18%\"&gt;&lt;p&gt;$VTo:&lt;/p&gt;&lt;/td&gt;";
+		echo "&lt;td height=\"5\" bgcolor=\"$menucolor\" width=\"82%\"&gt;&lt;input type=\"text\" name=\"to\" value=\"$to\"&gt;&lt;/td&gt;&lt;/tr&gt;";
+		echo "&lt;tr bgcolor=\"$subheadercolor\" valign=\"top\"&gt;&lt;td height=\"5\" align=\"right\" bgcolor=\"$fmenucolor\" width=\"18%\"&gt;&lt;p&gt;$VSubject:&lt;/p&gt;&lt;/td&gt;";
+		echo "&lt;td height=\"5\" bgcolor=\"$menucolor\" width=\"82%\"&gt;&lt;input type=\"text\" name=\"subj\" value=\"$subj\"&gt;&lt;/td&gt;&lt;/tr&gt;";
+		echo "&lt;tr bgcolor=\"$subheadercolor\" valign=\"top\"&gt;&lt;td height=\"15\" align=\"right\" bgcolor=\"$fmenucolor\" width=\"18%\"&gt;$VMessage:&lt;/td&gt;";
+		echo "&lt;td height=\"15\" bgcolor=\"$menucolor\" width=\"82%\"&gt;&lt;textarea name=\"msg\" cols=\"60\" rows=\"10\"&gt;$msg&lt;/textarea&gt;&lt;/td&gt;&lt;/tr&gt;";
+		echo "&lt;tr bgcolor=\"$subheadercolor\" valign=\"top\"&gt;&lt;td height=\"15\" align=\"right\" bgcolor=\"$fmenucolor\" width=\"18%\"&gt;&nbsp;&lt;/td&gt;";
+		echo "&lt;td height=\"15\" bgcolor=\"$menucolor\" width=\"82%\"&gt;&lt;input type=\"submit\" name=\"Submit\" value=\"$VSubmit\"&gt;";
+		sbot&#40;1&#41;;
+	} else {
+		$to=strip_tags&#40;$_POST&#91;'to'&#93;&#41;;
+		$msg=strip_tags&#40;stripslashes&#40;$_POST&#91;'msg'&#93;&#41;&#41;;
+		$subj=strip_tags&#40;stripslashes&#40;$_POST&#91;'subj'&#93;&#41;&#41;;
+		$pmstat="1";
+		if &#40;trim&#40;$to&#41;==""&#41; {
+			ErrorMessage&#40;$AuthorRequired,$liusername&#41;;
+		} else {
+			$filet=$dbpath."/pm/".$to;
+			if &#40;file_exists&#40;$filet&#41;&#41; {
+				$filename = "$dbpath/pm/$to"."_tot";
+				if &#40;!file_exists&#40;$filename&#41;&#41;
+						{$filename=str_replace&#40;"_"," ",$filename&#41;;}
+				$fd = fopen &#40;$filename, "r"&#41;;
+				$num = fread &#40;$fd, filesize &#40;$filename&#41;&#41;;
+				fclose &#40;$fd&#41;;
+				$num++;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_tot", "w"&#41;;
+				fputs&#40;$fp, $num&#41;;
+				fclose&#40;$fp&#41;;
+				$filename = "$dbpath/pm/$to";
+				$fd = fopen &#40;$filename, "r"&#41;;
+				$num = fread &#40;$fd, filesize &#40;$filename&#41;&#41;;
+				fclose &#40;$fd&#41;;
+				$num++;
+				$fp = fopen&#40;"$dbpath/pm/$to", "w"&#41;;
+				fputs&#40;$fp, $num&#41;;
+				fclose&#40;$fp&#41;;
+
+				setlocale&#40;LC_TIME,$LangLocale&#41;;
+				$date = time&#40;&#41;+&#40;$timezone*3600&#41;;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_$num"."_a", "w"&#41;;
+				fputs&#40;$fp, $liusername&#41;;
+				fclose&#40;$fp&#41;;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_$num"."_d", "w"&#41;;
+				fputs&#40;$fp, $date&#41;;
+				fclose&#40;$fp&#41;;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_$num"."_c", "w"&#41;;
+				if &#40;$msg==''&#41;{
+					$msg='-- '.$VEmpty.' --';
+				}
+				fputs&#40;$fp, $msg&#41;;
+				fclose&#40;$fp&#41;;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_$num"."_s", "w"&#41;;
+				fputs&#40;$fp, $subj&#41;;
+				fclose&#40;$fp&#41;;
+				$fp = fopen&#40;"$dbpath/pm/$to"."_$num"."_pmstat", "w"&#41;;
+				fputs&#40;$fp, $pmstat&#41;;
+				fclose&#40;$fp&#41;;
+				msg&#40;$VSent,"$MessageSent!"&#41;;
+//				echo "&lt;meta http-equiv=\"Refresh\" content=\"0; URL=pm.php\"&gt;";
+			} else {
+					ErrorMessage&#40;$InvalidUsername,$liusername&#41;;
+			}
+		}
+	}
+	writefooter&#40;$newestm&#41;;
+}else{
+     include&#40;"login.php"&#41;;
+}
+ob_end_flush&#40;&#41;;
+?&gt;</pre>
+		</div>
+
+Xin mời mọi người cùng thảo luận xem: <font color='orange'>Lỗi ở đâu và đây là lỗi gì</font>. Cuối cùng là nguyên nhân chính phát sinh ra lỗi cùng với cách khắc phục nó.
+
+
+
+<font color='orange'>(1)</font>: PBLang Forum là 1 sản phẩm của Dr. Martinus (Download tại:<span class="link"> http://sourceforge.net/projects/pblang/</span>).
+Đây là 1 source code diễn đàn khá tiện dụng vì không cần đến DB mà chỉ sử dụng file để lưu giữ thông tin. Các hoạt động của PBLang đều dựa trên việc thao tác với file, chính vì điều này đã làm cho nó trở nên dễ phát sinh lỗi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99244</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99244</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 22:30:42]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <blockquote>
+        
+        Mới soi thêm cái này biến này nữa <font color='yellow'>$dbpath </font>
+	<font color='red'><b>$to=strip_tags($_POST['to']);</b></font>	
+&nbsp;
+		</blockquote>
+
+Nhìn qua nhìn lại chỉ thấy các chỗ đó có vấn đề. Và mấu chốt quanh đi quẩn lại cái biến đó. Vì chưa dùng qua forum PBLang này nên chưa thử với nó. Vả lại thẻ code hơi khó đọc . Mong diễn đàn sớm đưa cái google-syntax-highlighter vào hy vọng code sẽ rõ ràng hơn.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99248</link>
+				<pubDate><![CDATA[Wed, 21 Nov 2007 23:04:49]]> GMT</pubDate>
+				<author><![CDATA[ ThíchHắcKinh]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ @ThíchHắcKinh: Theo anh là "có vấn đề" như thế nào ạh :) ?? Mời thảo luận :)..]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99270</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99270</link>
+				<pubDate><![CDATA[Thu, 22 Nov 2007 00:21:42]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ ko thấy ai nói gì nên em gái xin phép múa rìu xíu :
+<blockquote>$subj=strip_tags(stripslashes($_GET['subj']));
+ 		$msg=strip_tags(stripslashes($_GET['msg']));
+ 		$orgp=strip_tags(stripslashes(<font color='yellow'>$_GET['orig']</font>));
+ 		$orgp=str_replace('/','',$orgp);		//<font color='orange'>make sure no other URL is being used</font>
+ 		$orgp=str_replace(chr(92),'',$orgp);		//<font color='orange'>make sure no other URL is being used</font>
+ 		$pmstat="3";
+ 		$fp = fopen($dbpath."/pm/".$liusername."_".$num."_pmstat", "w");
+ 		fputs($fp, $pmstat);
+ 		fclose($fp)&nbsp;
+		</blockquote>
+xem đoạn code trên, mặc dù biến $orgp đã được "<font color='yellow'>làm sạch</font>" các ký tự meta bằng các hàm <font color='yellow'>stripslashes</font>, $orgp=str_replace('/','',$orgp); để tránh b<font color='yellow'>ị XSS</font> và <font color='yellow'>Directory transversal</font> nhưng vẫn có thể bị lợi dụng ..
+Lợi dụng như thế nào ??
+PBLang save các tin nhắn của member trong thư mục /db/pm với format $member_$i_$x
+trong đó $i là số thứ tự tên tin nhắn của $member đó, $x=c (c= content) để lưu nội dung tin nhắn, hoặc $x=s (s=subject)
+..Vì thế mặc dù ko tấn công kiểu Directory transversal được qua biến $_GET['orig'] được, nhưng dùng biến này có thể đọc lén được những tin nhắn của người khác
+<blockquote>if (trim($orgp)!=''){
+ 			$filename=$dbpath.'/pm/'.<font color='yellow'>$orgp</font>;
+ 			if (file_exists($filename)){
+ 				$fd=@fopen($filename,"r");
+ 				$rmsg=@fread($fd,filesize($filename));
+ 				@fclose($fd);
+ 			}&nbsp;
+		</blockquote>
+ex:
+<blockquote>http://localhost/PBlang/sendpm.php?to=admin&subj=aaa&num=1&orig=<font color='yellow'>admin_1_c</font>&nbsp;
+		</blockquote>
+
+--&gt; đọc nội dung tin nhắn thứ 1 của account admin
+(còn tiếp )
+
+
+ :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99384</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99384</link>
+				<pubDate><![CDATA[Thu, 22 Nov 2007 13:20:35]]> GMT</pubDate>
+				<author><![CDATA[ gái quê]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ @gái quê: chính xác ;). Đó là 1 bug.
+Bật mí thêm tí xíu. Nó vẫn bị path transversal đấy ;)..]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99393</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99393</link>
+				<pubDate><![CDATA[Thu, 22 Nov 2007 14:21:14]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Chỉ theo kinh nghiệm thấy nó có vấn đề.  :D
+<blockquote>
+$filename = "$dbpath/pm/$to";
+ 				$fd = fopen ($filename, "r");
+ 				$num = fread ($fd, filesize ($filename));
+ 				fclose ($fd);
+ 				$num++;
+ 				$fp = fopen("$dbpath/pm/$to", "w");
+ 				fputs($fp, $num);
+ 				fclose($fp);
+&nbsp;
+		</blockquote>
+
+Hehe ... Dạo này đang tập tành code với PHP nên không dám lạm bàn nữa .. vả lại cái PBLang chưa có dịp ngâm qua nên chưa hiểu rõ nó hehe ...xin rút lui .. Quan Van Trường chỉ điểm vậy  :D :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99404</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99404</link>
+				<pubDate><![CDATA[Thu, 22 Nov 2007 15:33:05]]> GMT</pubDate>
+				<author><![CDATA[ ThíchHắcKinh]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Những ứng dụng web dính dáng đến khả năng <b>viết</b> trực tiếp vào filesystem luôn luôn có những hiểm họa bảo mật. Đặc biệt quy trình input validation thiếu chặt chẽ thì không ít thì nhiều sẽ bị lỗi bảo mật.
+
+Cách khắc phục an toàn nhất có lẽ là thiết kế lại ứng dụng và dùng một DB hoàn chỉnh thay vì dùng file trên filesystem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99524</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99524</link>
+				<pubDate><![CDATA[Fri, 23 Nov 2007 05:59:14]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Việc chèn trực tiếp nội dung tin vào file như thế. 
+Điều gì sẽ xảy ra nếu chúng ta chèn vào file đó 1 dãy các code PHP hoặc code có khả năng bind được. 
+Và chúng ta xài script hoặc shell run trực tiếp các mã lệnh trong file đó -&gt; đưa file $to, $filename trở thành 1 file có khả năng run các mã lệnh PHP. 
+với những biến nhạy cảm trong đó!!!???!!!
+Kiếm tra cấu trúc của cái file pm này của mỗi thành viên đều lưu lại ở dạng khá đơn giản. Vậy có run được ko???
+Lại cùng thảo luận nào!!!
+
+$filename = "$dbpath/pm/$to"; 
+$fd = fopen ($filename, "r"); 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99662</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99662</link>
+				<pubDate><![CDATA[Sat, 24 Nov 2007 01:28:50]]> GMT</pubDate>
+				<author><![CDATA[ lion_king_lovely_1985]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Hi LKL, nếu là PBLang cách đây 2 năm thì có thể chèn code được như vậy (vì khi ấy nó ko lọc các input, XSS tè le). Còn bi giờ, nó đã lọc XSS nên các code php chèn vào cũng sẽ bị vô hiệu luôn :).
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99668</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#99668</link>
+				<pubDate><![CDATA[Sat, 24 Nov 2007 01:58:33]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Thêm gợi ý để "cứu ế" chủ đề: code phát sinh lỗi nằm từ dòng 83 trở đi.
+Xin mới tiếp tục thảo luận..
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100432</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100432</link>
+				<pubDate><![CDATA[Mon, 26 Nov 2007 21:09:49]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Các bác khi test lỗi "Path transversal" trong trường hợp này lưu ý là biến nhận vào dạng $_POST nên phải test theo kiểu POST thì mới ra vấn đề nhé, chứ test kiểu $_GET bằng cách input ../../../ này nọ ngay trên URL thì ko ra đâu
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100512</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100512</link>
+				<pubDate><![CDATA[Tue, 27 Nov 2007 01:58:46]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Quan Vân Trường wrote:</cite><br>
+		<blockquote>Thêm gợi ý để "cứu ế" chủ đề: code phát sinh lỗi nằm từ dòng 83 trở đi.
+Xin mới tiếp tục thảo luận..
+
+Thân.&nbsp;
+		</blockquote>
+
+Đoạn này theo nhận định của LKL thì chỉ toàn là cách thức đặt tên file, và ghi giữ liệu vào file của người nhận messenger.
+
+Vậy có phải ý QVT muốn nói ở đây là dựa vào nguyên tắc đó, hoàn toàn chúng ta có thể dịch ra được đường dẫn và tên file kia rồi down về và đọc đựoc PM đó?
+
+Ko biết đó có phải là ý mà QVT muốn nhắc đến!?!
+
+Thân LKL!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100516</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100516</link>
+				<pubDate><![CDATA[Tue, 27 Nov 2007 02:13:26]]> GMT</pubDate>
+				<author><![CDATA[ lion_king_lovely_1985]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lion_king_lovely_1985 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">Quan Vân Trường wrote:</cite><br>
+		<blockquote>Thêm gợi ý để "cứu ế" chủ đề: code phát sinh lỗi nằm từ dòng 83 trở đi.
+Xin mới tiếp tục thảo luận..
+
+Thân.&nbsp;
+		</blockquote>
+
+Đoạn này theo nhận định của LKL thì chỉ toàn là cách thức đặt tên file, và ghi giữ liệu vào file của người nhận messenger.
+
+Vậy có phải ý QVT muốn nói ở đây là dựa vào nguyên tắc đó, hoàn toàn chúng ta có thể dịch ra được đường dẫn và tên file kia rồi down về và đọc đựoc PM đó?
+
+Ko biết đó có phải là ý mà QVT muốn nhắc đến!?!
+
+Thân LKL!!!&nbsp;
+		</blockquote>
+
+Gần gần đúng rồi đây. Nhưng cái chúng ta cần không chỉ là các PM đó thôi đâu, còn nhiều thứ khác nữa mà ;).
+
+Thân.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100519</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#100519</link>
+				<pubDate><![CDATA[Tue, 27 Nov 2007 02:19:38]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Gợi ý tiếp theo: lợi dụng Debug Error..]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102242</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102242</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 00:34:45]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Lập trình kiểu này đọc đau cả mắt T_T
+QVT định hại anh em hả, cả lũ cận lòi rồi.
+Anh bó tay ^:)^]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102415</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102415</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 20:52:36]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Luke wrote:</cite><br>
+		<blockquote>Lập trình kiểu này đọc đau cả mắt T_T
+QVT định hại anh em hả, cả lũ cận lòi rồi.
+Anh bó tay ^:)^&nbsp;
+		</blockquote>
+Thế kiểu nào mới ko đau mắt vậy? Ko phải của mình viết ra thì tất nhiên là đau mắt rồi, nếu chưa đọc nó bao giờ thì càng nhức hơn. 
+
+Với lại QVT cho biết thêm là để exploit được thì có cần phải đọc toàn bộ code của PBLang(để xem có nên tiếp tục ko) ko vậy, chứ chỉ riêng file này thôi thì nó chỉ có mục đích là tạo 1 số file, có thể dùng path traversal(thấy mọi người toàn dùng transversal) để tạo file ở các thư mục khác, nên cũng chưa thấy lỗi lãi gì lắm.
+
+Còn cái hint Debug error, thì quả thật mình chịu thua.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102422</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102422</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 21:27:46]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ @StarGhost: tất cả nằm trong file đó hết :)..
+
+Thân.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102430</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102430</link>
+				<pubDate><![CDATA[Thu, 6 Dec 2007 22:18:42]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Quan Vân Trường wrote:</cite><br>
+		<blockquote>Gợi ý tiếp theo: lợi dụng Debug Error..&nbsp;
+		</blockquote>
+
+Hmm, nếu display_errors=Off (by default) thì làm sao lợi dụng được hả bro.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102450</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102450</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2007 00:20:20]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Thì ko lợi dụng được ạh :D.. Mời thảo luận tiếp :)..
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102456</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102456</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2007 00:47:09]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Quan Vân Trường wrote:</cite><br>
+		<blockquote>Thì ko lợi dụng được ạh :D.. Mời thảo luận tiếp :)..
+&nbsp;
+		</blockquote>
+
+hì hì, nếu vậy thì chỉ cần gửi pm to: ../members/admin thì lập tức mọi thông tin về user admin (quan trọng nhất là pass md5) sẽ được display dưới dạng error của fopen.
+
+Thường thì display_errors chỉ nên để On trong giai đoạn developing thôi, nếu ko thì risk vô cùng. Thực ra mình nghĩ là người phát triển PBLang cũng giả định như thế, vì trước kia sendpm.php cũng bị lỗi directory traversal, nên chắc chắn sau đó phải được kiểm tra lại rất cẩn thận.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102460</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102460</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2007 01:13:04]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ @StarGhost: Đáp án chính xác :D.. Phiền bạn chỉ ra đoạn code đó cho mọi người cùng thấy ;)..
+Cám ơn bạn đã tham gia vào chủ đề.
+
+Thân.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102462</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102462</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2007 01:21:36]]> GMT</pubDate>
+				<author><![CDATA[ Quan Vân Trường]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Quan Vân Trường wrote:</cite><br>
+		<blockquote>@StarGhost: Đáp án chính xác :D.. Phiền bạn chỉ ra đoạn code đó cho mọi người cùng thấy ;)..
+Cám ơn bạn đã tham gia vào chủ đề.
+
+Thân.
+&nbsp;
+		</blockquote>
+giả sử đường dẫn đến thư mục PBLang là /html/PBLang.
+
+Đầu tiên, user type vào mục to ở trang sendpm.php với nội dung: ../members/admin
+Như vậy ở dòng 77, biến $to sẽ được gán với giá trị "../members/admin"
+
+Sau đó ở dòng 96, biến $filename sẽ được gán với giá trị: "/html/PBLang/db/pm/../members/admin", thực chất sẽ là "html/PBLang/db/members/admin", tức là file chứa toàn bộ thông tin về admin.
+
+Ở dòng 98, toàn bộ thông tin trong file ở trên sẽ được đọc ra biến $num, mà sau đó ở các dòng 107, 110, 113, 119, 122 biến này sẽ được dùng làm tên file. Và hiển nhiên fopen sẽ báo lỗi, như vậy tên file sẽ được hiển thị, tức là toàn bộ giá trị của $num hay là toàn bộ thông tin về admin sẽ được hiển thị lên màn hình.
+
+Lỗi này thực ra khá đơn giản (đến 1 noob PHP như mình còn phát hiện được), tuy nhiên, sở dĩ ko ai trả lời chắc là vì ai cũng đinh ninh rằng error debugging đã bị tắt rồi. Có lẽ lần sau QVT nên chú thích rõ hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102465</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#102465</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2007 01:50:52]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ The End!!!
+
+Mục đích thì ai cũng biết là gì rồi ^^. 
+
+Chỉ có điều phương thức thì quả thực đôi khi ngẩn ngơ thế nào ấy hjx...!!! ( about myself -&gt; tránh hỉu lầm ^^)
+
+Thân LKL!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#114036</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#114036</link>
+				<pubDate><![CDATA[Sat, 9 Feb 2008 05:38:48]]> GMT</pubDate>
+				<author><![CDATA[ lion_king_lovely_1985]]></author>
+			</item>
+			<item>
+				<title>Re: [Thảo luận] Lỗi ở đâu và đây là lỗi gì !?</title>
+				<description><![CDATA[ Đoạn code có 1 số điểm yếu, trên phần if với GET thì kiểm tra độ dài input, phần else cho POST thì bỏ qua.
+2 dòng check slash lại bỏ qua với <b><font color='orange'>$to</font></b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$to=strip_tags&#40;$_POST&#91;'to'&#93;&#41;;
+$msg=strip_tags&#40;stripslashes&#40;$_POST&#91;'msg'&#93;&#41;&#41;;
+$subj=strip_tags&#40;stripslashes&#40;$_POST&#91;'subj'&#93;&#41;&#41;;</pre>
+		</div>
+
+
+Ngôn ngữ có auto type casting mềm dẻo quá thường dễ mắc lỗi hơn, nếu ngôn ngữ khác thì <font color='orange'>$num</font> theo mong muốn sẽ không thể chứa chuỗi, <font color='orange'>$num++</font> sẽ bung lỗi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/16555.hva#114107</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/16555.hva#114107</link>
+				<pubDate><![CDATA[Sat, 9 Feb 2008 23:21:28]]> GMT</pubDate>
+				<author><![CDATA[ vivashadow]]></author>
+			</item>
+	</channel>
+</rss>

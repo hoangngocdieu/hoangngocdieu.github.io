@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi khi thao tác lên vùng nhớ .text runtime"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi khi thao tác lên vùng nhớ .text runtime"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi khi thao tác lên vùng nhớ .text runtime</title>
+				<description><![CDATA[ Xin chào mọi người, em hiện tại đang bắt đầu học exploit thông qua chơi game qua<span class="link"> www.overthewire.org</span>). Hiện tại em đang có vấn đề với việc build asm code để exploit stack over flow.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>jmp 0x1f # 2 bytes
+popl %esi # 1 byte &#40;1&#41;
+movl %esi,0x8&#40;%esi&#41;  # 3 bytes &#40;2&#41;
+xorl %eax,%eax # 2 bytes
+movb %eax,0x7&#40;%esi&#41;    # 3 bytes
+movl %eax,0xc&#40;%esi&#41; # 3 bytes
+movb $0xb,%al # 2 bytes
+movl %esi,%ebx # 2 bytes
+leal  0x8&#40;%esi&#41;,%ecx # 3 bytes
+leal 0xc&#40;%esi&#41;,%edx # 3 bytes
+int $0x80 # 2 bytes
+xorl %ebx,%ebx # 2 bytes
+movl %ebx,%eax # 2 bytes
+inc %eax # 1 bytes
+int $0x80 # 2 bytes
+call  -0x24 # 5 bytes
+.string \&quot;/bin/sh\&quot; # 8 bytes</pre>
+		</div>
+Đây là code example trong tài liệu tham khảo<span class="link"> http://www.phrack.com/issues.html?issue=49&id=14&mode=txt</span>. Mục đích của đoạn asm code trên là lấy được address của string &quot;bin/sh&quot; truyền vào hàm execve -&gt; exit -&gt; spawn thành công shell. 
+<font color='orange'>1</font> -&gt; ta thấy %esi lúc này chứa address của string &quot;bin/sh&quot; và lệnh tiếp theo để insert NULL vào cuối string để đánh đấu kết thúc string -&gt; không bị lỗi khi insert thêm NOP để align string exploit sau này. Đây cũng là điểm khi em run code bị lỗi, %esi lúc này chứa address thuộc vùng .text nên lệnh<font color='orange'> movl %esi,0x8(%esi) </font> luôn trả về error Segmentation fault khi run.
+Câu hỏi của em là: 
+1. Có phải tài liệu này đã outdate và thời điểm hiện tại compiler đã thay đổi nên ví dụ trên không còn phù hợp nữa
+2. Em thử tìm có 2 cách để make .text writable :
+ - thử build với option -N của ld
+    <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+    gcc -c -o  $1.o $1.s
+    ld  -s -o -N $1 $1.o</pre>
+		</div>
+    -&gt; không hoạt động
+ - dùng mprotect. Cách này có vẻ bất khả thi vì phải tính toán theo page_size khi runtime.
+ Có cách nào khác nữa để &quot;make .text writable&quot;.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45441.hva#279703</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45441.hva#279703</link>
+				<pubDate><![CDATA[Mon, 10 Feb 2014 22:37:03]]> GMT</pubDate>
+				<author><![CDATA[ kokichi88]]></author>
+			</item>
+	</channel>
+</rss>

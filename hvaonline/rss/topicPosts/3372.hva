@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Kiện toàn bảo mật apache - conmale"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Kiện toàn bảo mật apache - conmale"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Kiện toàn bảo mật apache - conmale</title>
+				<description><![CDATA[ Theo theo thống kê tháng 9 của Netcraft, Apache là máy chủ web được dùng nhiều nhất trên Internet (chiếm đến 64,52% thị phần). Tuy nhiên, để cấu hình một máy chủ web Apache sao cho bảo mật không phải là một chuyện đơn giản và ai cũng có thể làm được. Bài viết "Bảo mật cho máy chủ web Apache" do anh hnd aka conmale dịch sẽ giúp cho việc xây dựng một máy chủ web có tính an tòan bảo mật cao dễ dàng hơn.
+
+<b>Bảo mật Apache: từng bước một</b>
+
+(Tác giả: Artur Maj)
+
+Chào các fan quan tâm đến bảo mật cho Apache.
+
+Tôi quyết định dịch bài này và thêm vào phần "Lời bàn và mở rộng" cho các đoạn quan trọng trong bài viết, hy vọng phần nào giúp các bạn ứng dụng những vấn đề này trong môi trường thật sự. Mời các bạn xem phần thứ nhất.
+
+Tài liệu này theo dạng chỉ dẫn từng bước cách cài đặt và chỉnh lý Apache 1.3.x web server với mục đích xử lý và phòng tránh các trường hợp đột nhập lúc những yếu điểm của chương trình này được khám phá.
+
+<i>Chức năng</i>
+
+Trước khi bắt đầu kiện toàn bảo mật Apache, chúng ta phải xác định rõ chức năng cần thiết nào của server sẽ được xử dụng. Tính đa năng của Apache tạo ra những khó khăn để thực hiện một mô thức tổng quát với mục đích kiện toàn bảo mật cho server trong mọi trường hợp có thể được. Ðây là lý do tài liệu này dựa trên các chức năng sau:
+- Web server có thể truy cập từ Internet; và,
+- Chỉ những trang HTML tĩnh (static HTML pages) sẽ được phục vụ
+- server hỗ trợ tên miền cho cơ chế dịch vụ ảo
+- các trang web đã ấn định chỉ có thể truy cập từ các cụm IP addresses hoặc người dùng (khai báo căn bản)
+- server sẽ tường trình trọn bộ các thỉnh cầu (bao gồm những thông tin về các web browsers)
+
+Ðiều đáng nhấn mạnh ở đây là mô hình trên không hỗ trợ PHP, JSP, CGI hoặc bất cứ công nghệ nào khác có thể tạo cơ hội tương tác đến các dịch vụ Web. Ứng dụng cho những công nghệ trên có thể dẫn đến những đe dọa to lớn cho vấn đề bảo mật, dù chỉ là một đoạn script nhỏ, kín đáo cũng có thể giảm thiểu mức triệt để bảo mật của server. Tại sao? trước hết, các ứng trình ASP/CGI có thể chứa những yếu điểm bảo mật (ví dụ SQL injection, cross-site-scripting). Kế tiếp, chính các kỹ nghệ ấy có thể nguy hiểm (các yếu điểm trong PHP, các module của Perl v..v..). Ðó là lý do tại sao tôi mạnh mẽ đề nghị xử dụng những công nghệ ấy chỉ khi nào nhu cầu tương tác với một web site hoàn toàn cần thiết mà thôi.
+
+<b>Lời bàn và mở rộng:</b>
+<i>
+Việc kiện toàn bảo mật cho một web server liên quan đến nhiều thủ thuật ở nhiều mức độ khác nhau. Tác giả chuộng nguyên tắc "tối thiểu" để giảm thiểu những lỗ hổng bảo mật có thể hiện diện trên một web server. Lý thuyết mà nói, nguyên tắc này đưa đến những ứng dụng và chỉnh định chặt chẽ hơn cho vấn đề bảo mật. Tuy nhiên, hoạt tính và nhu cầu làm việc của một web server không thể dừng lại ở khuôn khổ "tối thiểu" và bị áp đặt trong giới hạn các trang static HTML được. Thiết kế một chương trình làm việc cho web với yêu cầu đa năng và đa hoạt là một trong những yêu cầu hàng đầu. Một web site chỉ chuyên chú ở khuôn khổ các trang static HTML không những giới hạn tính năng của các trang web này một cách đáng kể, mà còn sa lầy trên mặt thực dụng và giá trị kinh tế lẫn giá thành xây dựng và bảo trì cho website. Giải pháp tối ưu có lẽ là sự cân bằng giữa kiến thức kiện toàn bảo mật cho web server cộng với khả năng thiết kế web một cách khoa học và vững chãi về mặt tính năng, hoạt động lẫn mặt giảm thiểu lỗi thiết kế, lỗi lập trình.
+
+Một trong những hạn chế hay đúng hơn là lối mòn thường gặp trong các thiết kế ứng dụng web là việc pha trộn lẫn lộn các phân đoạn làm việc với nhau. Nói một cách khác, các thiết kế gia và các lập trình viên không đầu tư đủ thời gian để nghiên cứu, phân tích và áp dụng các mẫu thiết kế hợp lý cho công trình của mình mà thường đi thẳng vào bước thực hiện. Các bước "đi thẳng" thường thiếu độ chín chắn trong bước thiết kế, dẫn đến tính năng hạn hẹp và mở cửa cho các lỗi bảo mật nghiêm trọng. Trên thực tế, sự khác biệt giữa việc làm cho một web site chạy được và làm cho một web site chạy được, chạy có hiệu xuất, có khả năng mở rộng và bảo đảm mật tính là chuyện khác nhau một trời một vực. Thói quen "xào nấu" các lệnh điều tác cho một hệ điều hành hoặc các lệnh tương tác đến database trực tiếp từ một trang html trần trụi, nhúng các lệnh điều tác vào php, jsp, asp... là chuyện rất thường gặp. Ðây là một ví dụ điển hình cho cái gọi là "chạy được nhưng thiếu hiệu xuất, thiếu khả năng mở rộng và mở cửa cho các lỗi bảo mật quan trọng".
+
+Vì khuôn khổ bài viết không tiện đi sâu vào các mẫu thiết kế cho những ứng dụng web, các bạn nên nghiên cứu thêm về những thiết kế này ở một số URL sau tùy theo công nghệ bạn đang dùng:<span class="link"> http://www.object-arts.com/Educatio...erviews/MVC.htm</span><span class="link"> http://www.enode.com/x/markup/tutorial/mvc.html</span><span class="link"> http://www.phppatterns.com/index.ph...cleview/19/1/1/</span><span class="link"> http://www.dmbcllc.com/asp_mvc.aspx</span><span class="link"> http://www.jdance.com/jsparchitecture.shtm</span><span class="link"> http://www.redbooks.ibm.com/abstracts/sg245755.html</span><span class="link"> http://www.redbooks.ibm.com/abstracts/sg245754.html</span>
+Bạn có thể dùng google để search thêm các tài liệu về MVC với keyword: "MVC Pattern" hoặc tham khảo một số tài liệu chuyên ngành từ các website lớn như<span class="link"> http://java.sun.com</span> hoặc<span class="link"> http://www.ibm.com</span>
+</i>
+
+<b>Những trù bị bảo mật</b>
+
+Một trong những nhân tố quan trọng nhất cho mọi công trình điện toán là việc xác thực các trù bị bảo mật. Ðiều này phải được thoả mãn trước khi công trình được ứng tạo. Các trù bị bảo mật cho web server của chúng ta như sau:
+- hệ điều hành phải được kiện toàn càng chặt chẽ càng tốt, bao gồm việc phòng bị cho những tấn công từ bên ngoài lẫn bên trong;
+- server không được cung cấp bất cứ dịch vụ nào khác ngoại trừ HTTP: (80/TCP);
+- truy cập từ xa đến server phải được khiển tác bởi tường lửa, thiết bị này chặn trọn bộ những tiếp nối cho lối ra và cho phép những tiếp nối cho lối vào đến cổng 80/TCP của web server mà thôi;
+- web server Apache là dịch vụ duy nhất hiện hữu trên hệ thống;
+- chỉ có những modules nào tuyệt đối cần thiết mới được cho phép hoạt động;
+- các trang web dùng cho công tác chẩn xét và tự động hoá mục lục phải được tắt bỏ;
+- server nên giảm thiểu tối đa vấn đề tiết lộ những thông tin của chính server (mật tính qua ẩn tính)
+- Apache server phải chạy bằng UID/GID riêng biệt (tín chỉ cá nhân, tín chỉ nhóm), không được dùng bất cứ process nào khác của hệ thống;
+- các process của Apache phải có giới hạn nhất định đến hệ thư mục (chrooting); và,
+- không có bất cứ chương trình dạng shell nào hiện hữu trong môi trường chrooted (/bin/sh, /bin/csh, v..v..).
+<b>
+Lời bàn và mở rộng:</b>
+
+<i>Một lần nữa tác giả đẩy mạnh tính "tối thiểu". Tuy nhiên, điểm khác biệt trong tính "tối thiểu" ở phần này thuộc bình diện môi trường hơn là giảm thiểu hoạt tính của web server Apache.
+
+Bước kiện toàn bằng cách chỉ cho phép port 80/TCP trên server chạy Apache là thao tác căn bản cần phải làm vì nếu tấn công, tin tặc chỉ có một cổng để tấn công và để phòng thủ, người bảo vệ chỉ tập trung đến một cổng. Hơn thế, với cơ chế kiểm soát của tường lửa như tác giả đề nghị, tính bảo mật chắc chắn sẽ được nâng cao. Ở đây tác giả không đề cập một cách cụ thể loại tường lửa nào nên dùng vì quy trình chọn lựa, chỉnh định một tường lửa cho thích hợp phụ thuộc vào nhiều yếu tố khá phức tạp. Ðể mở rộng chi tiết này, tôi tin rằng sự hiện diện của một stateful firewall vừa có khả năng kiểm soát state ở tầng IP vừa có khả năng kiểm soát nội dung ở tầng application là cách tốt nhất. Nếu điều kiện tài chính cho phép, một stateful firewall như CheckPoint FW-1 hoặc Cisco PIX có thể đóng vai trò quan trọng này. Nếu điều kiện tài chính không cho phép, phương pháp tích hợp một số chương trình mở nguồn để đạt được khả năng tương tự vẫn có thể được, tuy nhiên sẽ mất nhiều nhân lực và thời gian hơn để điều chỉnh và thử nghiệm nếu chưa có nhiều kinh nghiệm trong lĩnh vực này.</i>
+
+<b>
+Cài đặt hệ điều hành</b>
+
+Trước khi cài đặt Apache, chúng ta phải chọn lấy một hệ điều hành, đó là môi trường Apache sẽ hoạt động. Ở đây chúng ta có khá nhiều chọn lựa vì Apache có thể được biên dịch và cài đặt trên hầu hết các hệ điều hành. Phần còn lại của tài liệu này chỉ dẫn cách bảo mật Apache server trên nền FreeBSD (4.7), tuy nhiên các phương pháp được mô tả ở đây có thể ứng dụng trong hầu hết các hệ điều hành UNIX/LINUX. Chỉ có một hệ điều hành duy nhất tôi không giới thiệu là MS Windows - lý do chính là vì hệ điều hành này bị giới hạn khả năng kiện toàn bảo mật cho Apache.
+
+Bước đầu tiên trong vấn đề bảo mật Web server là kiện toàn hệ điều hành. Các thảo luận kiện toàn hệ điều hành vượt quá khuôn khổ tài liệu này. Tuy vậy, có rất nhiều tài liệu trên Net miêu tả cách thực hiện vấn đề ấy. Ðộc giả được khuyến khích khai phá các vấn đề liên hệ đến phạm vi này.
+
+Sau khi hệ thống được cài đặt và kiện toàn, chúng ta cần thêm một nhóm và một người dùng thông thường gọi là "apache" tương tự như thế này (một ví dụ từ FreeBDS):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pw groupadd apache
+pw useradd apache -c "Apache Server" -d /dev/null -g apache -s /sbin/nologin</pre>
+		</div>
+
+Theo mặc định, các process thuộc Apache chạy với chủ quyền của người dùng nobody (ngoại trừ process chính phải chạy với chủ quyền root) và GID thuộc nhóm nogroup. Ðiều này có thể dẫn đến những đe dọa bảo mật nghiêm trọng. Trong trường hợp đột nhập thành công, tin tặc có thể lấy được quyền truy dụng đến những process khác chạy cùng UID/GID. Bởi thế, giải pháp tối ưu là cho Apache chạy bằng UID/GID từ nhóm riêng biệt, chuyên chú đến software ấy thôi.
+
+<b>Lời bàn và mở rộng:</b>
+
+<i>Ðối với những ai quen dùng *nix hẳn không lạ gì với khái niệm UID/GID thuộc chế độ "file permission". Tuy nhiên, chi tiết này nên mở rộng một tí cho những bạn đọc chưa quen thuộc với UID/GID. Phần tạo nhóm (group) và người dùng (user) riêng cho Apache ở trên có hai chi tiết cần chú ý là:
+-d /dev/null: không cho phép user Apache có thư mục $HOME nhưng những user bình thường khác
+-s /sbin/nologin: không cho user Apache dùng bất cứ một shell nào cả. Có một số trường hợp dùng -s /bin/true thay vì nologin ở trên, true là một lệnh không thực thi gì cả và hoàn toàn vô hại.
+
+Lý do không cho phép user Apache có thư mục $HOME và không được cấp một "shell" nào cả vì nếu account Apache này bị nhân nhượng, tin tặc cũng không có cơ hội tiếp cận với system ở mức độ cần thiết cho thủ thuật gia tăng chủ quyền. Trên môi trường *nix nói chung, "shell" là giao diện giữa người dùng và hệ thống, không có shell thì không có cơ hội tiếp cận xa hơn. Nếu phần thiết lập trên cung cấp user Apache một $HOME và cho phép dùng một shell nào đó thì đã không mang giá trị gì trên quan điểm "kiện toàn".</i>
+
+
+<b>Chuẩn bị software</b>
+
+Bước kế tiếp là bước tải phiên bản Apache mới nhất từ web site Apache <span class="link"> http://www.apache.org</span>). Chỉ có một số chọn lựa tiện ích được phép hoạt động trong quá trình biên dịch mà thôi, bởi thể, quyết định tải mã nguồn về biên dịch thay vì tải bản nhị phân (binary) là điều hết sức quan trọng.
+
+Sau khi tải software về, chúng ta phải xả nén. Kế tiếp, chúng ta quyết định modules nào được phép hoạt động. Bản tường trình tổng quan về các modules hiện hữu cho phiên bản mới nhất của Apache 1.3.x (1.3.27) có ở:<span class="link"> http://httpd.apache.org/docs/mod/</span>
+
+<b>Những modules của Apache</b>
+
+Chọn lựa các modules là một trong những bước quan trọng nhất trong vấn đề bảo mật Apache. Chúng ta nên theo luật: càng ít càng tốt. Ðể thoả mãn chức năng và những trù bị bảo mật, các modules sau cần được cho phép:
+
+Tên module:
+
+httpd_core: Chứa các chức năng cốt lõi của Apache, cần thiết cho bất cứ Apache nào.
+
+mod_access: Cung cấp chế độ khiển tác dựa trên tên máy, địa chỉ IP, hoặc các tính chất yêu cầu thuộc về các clients. Bởi vì module này cần cho các chỉ phối (directive) "order", "allow" và "deny", nó cần được cho phép.
+
+mod_auth: Cần thiết để ứng dụng vấn đề khai báo người dùng cho việc sử dụng các hồ sơ nguyên bản (khai báo căn bản cho HTTP), được chỉ định trong chức năng trù bị.
+
+mod_dir: Cần thiết để tìm kiếm và phục vụ các hồ sơ thư mục: "index.html", "default.htm", v..v..
+
+mod_log_config: Cần thiết để ứng hiệu báo cáo những yêu cầu thực hiện đến server.
+
+mod_mime: Cần thiết để chỉnh lý nhóm chữ cái, mã hoá nội dung, tùy tác, ngôn ngữ nội dung và các loại MIME đại diện cho các loại tài liệu.
+
+Tất cả các modules khác của Apache phải được tắt bỏ. Chúng ta có thể tắt bỏ chúng một cách an toàn bởi vì chúng ta không cần đến chúng. Do tắt bỏ những modules không cần thiết, chúng ta tránh được trường hợp có thể bị đột phá khi những yếu điểm bảo mật vừa được khám phá thuộc về một trong những modules này.
+
+Cũng nên nhắc đến là có hai modules của Apache có thể nguy hiểm hơn các modules khác là: mod_autoindex và mod_info. Module thứ nhất cung cấp chức năng tự động sắp xếp thư mục và module này được phép chạy theo mặc định. Có thể dễ dàng dùng nó để xác định xem Apache được dùng trên một server nào đó hay không (ví dụ:<span class="link"> http://server_name/icons/</span>) và để lấy nội dung của các thư mục trên Web server dẫu không có các mục lục trong những thư mục này. Module thứ nhì, mod_info không nên cho phép truy cập từ Internet chính vì lý do nó tiết lộ cấu hình của Apache.
+
+Câu hỏi kế tiếp là làm sao biên dịch các modules. Phương pháp tĩnh được xem là lựa chọn tốt hơn hết. Nếu những yếu điểm của Apache vừa được khám phá, có lẽ chúng ta sẽ không những tái biên dịch các modules bị lỗi mà sẽ tái biên dịch trọn bộ software. Chọn phương pháp tĩnh, chúng ta triệt tiêu nhu cầu của thêm một module nữa - mod_so.
+
+<b>Lời bàn và mở rộng:</b>
+
+<i>Chọn lựa các modules cho Apache server thích hợp với từng nhu cầu là một việc khó khăn và mất thời gian. Chọn lựa đúng module và bảo đảm tính bảo mật lại càng khó khăn hơn. Ðể xác định module nào cần thiết và bảo đảm, việc chọn lựa và theo dõi "bug track" cho từng module là một điều rất cần thiết. Hiện nay có trên 200 modules lớn nhỏ, đủ loại chức năng cho Apache server. Bạn nên tham khảo thông tin ở website này cho công tác lựa chọn:<span class="link"> http://modules.apache.org/</span>
+
+Website trên có sẵn search engine giúp bạn trong việc khảo sát và lựa chọn modules.</i>
+
+
+<b>Biên dịch software</b>
+
+Trước tiên - nếu có bất cứ miếng vá (patch) nào cho bảo mật thì phải thực hiện ngay. Sau đó, server được biên dịch và cài đặt như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./configure --prefix=/usr/local/apache --disable-module=all --server-uid=apache 
+--server-gid=apache --enable-module=access --enable-module=log_config --enable-module=dir 
+--enable-module=mime --enable-module=auth</pre>
+		</div>
+
+(lệnh trên trải dài trong 1 dòng, không tách rời ra thành nhiều dòng)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>make
+su
+umask 022
+make install
+chown -R root:sys /usr/local/apache</pre>
+		</div>
+<b>
+Lời bàn và mở rộng:</b>
+
+<i>Ðối với các bạn chưa làm quen hoặc chỉ mới bắt đầu làm quen đến *nix, khái niệm biên dịch software có lẽ khá mới mẻ và lạ lẫm. Tuy nhiên, cảm giác này chỉ ở bước đầu trong quá trình làm quen mà thôi. Hầu như các bước trong phân đoạn "biên dịch software" cho các software khác nhau đều tương tự như nhau.
+
+Ðiều lý thú trong vấn đề "biên dịch software" trên phương diện bảo mật ở đây, ngoài cơ hội có thể xem mã nguồn, tìm lỗi, tìm lổ hổng từ mã nguồn, bạn còn có cơ hội thiết lập và biên dịch software mình cần theo ý muốn. Trong đoạn lệnh ./configure ở trên minh hoạ cụ thể tính "tự do" ở chỗ bạn có toàn quyền muốn thêm hoặc bớt module tùy thích. Tính linh động trong vấn đề biên dịch software và tính đóng kín khi dùng một "installshield" trở nên hiển nhiên khi đem ra so sánh. Khi bạn phải cài một software gồm các binaries đã được biên dịch (theo khuôn khổ nào đó) sẵn, bạn không có nhiều cơ hội quyết định hoặc chọn lựa theo ý muốn nữa. Ðây là một trong những nguyên tắc khá quan trọng cho những ai quan tâm hoặc làm việc trực tiếp đến vấn đề bảo mật.</i>
+
+<b>
+Ðổi "root" của server</b>
+
+Bước kế tiếp giới hạn các process của Apache truy dụng vào các hệ thống hồ sơ. Chúng ta có thể thực hiện vấn đề này bằng cách "chrooting" phần daemon chính của server (httpd). Tổng thể mà nói, thủ thuật "chrooting" có nghĩa là tạo một cấu trúc nguồn thư mục mới, dời chuyển các hồ sơ daemon vào đó và chạy các daemon thích ứng trong môi trường mới này. Nhờ vào đó, daemon (và cái process con) chỉ sẽ truy dụng đến cấu trúc thư mục mới.
+
+Chúng ta bắt đầu chu trình này bằng cách tạo ra một thư mục mới bên trong thư mục /chroot/httpd:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mkdir -p /chroot/httpd/dev
+mkdir -p /chroot/httpd/etc
+mkdir -p /chroot/httpd/var/run
+mkdir -p /chroot/httpd/usr/lib
+mkdir -p /chroot/httpd/usr/libexec
+mkdir -p /chroot/httpd/usr/local/apache/bin
+mkdir -p /chroot/httpd/usr/local/apache/logs
+mkdir -p /chroot/httpd/usr/local/apache/conf
+mkdir -p /chroot/httpd/www</pre>
+		</div>
+
+Chủ nhân của các thư mục trên phải là root and quyền truy dụng nên chỉnh lý ở mức 0755. Kế tiếp, chúng ta tạo hồ sơ thiết bị đặc biệt: /dev/null:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ls -al /dev/null
+crw-rw-rw- 1 root wheel 2, 2 Mar 14 12:53 /dev/null
+mknod /chroot/httpd/dev/null c 2 2
+chown root:sys /chroot/httpd/dev/null
+chmod 666 /chroot/httpd/dev/null</pre>
+		</div>
+
+Một phương pháp khác cần dùng để tạo thiết bị /chroot/httpd/dev/log, thiết bị này cần thiết để server làm việc đúng mức. Trong trường hợp hệ thống FreeBSD, cần thêm dòng sau đây vào /etc/rc.conf:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>syslogd_flags="-l /chroot/httpd/dev/log"</pre>
+		</div>
+
+ 
+<font color='lightgreen'>Đã chỉnh lại tag [code] cho khỏi vỡ khung màn hình.
+Edited by Quan Vân Trường.</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3372.hva#19279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3372.hva#19279</link>
+				<pubDate><![CDATA[Wed, 30 Aug 2006 13:56:13]]> GMT</pubDate>
+				<author><![CDATA[ zeno]]></author>
+			</item>
+			<item>
+				<title>Re: Kiện toàn bảo mật apache(repost)</title>
+				<description><![CDATA[ <b>Chỉnh lý Apache</b>
+
+
+Bước đầu tiên là tháo bỏ hồ sơ /chroot/httpd/usr/local/apache/conf/httpd.conf và tạo một hồ sơ mới thay thế vào với nội dung tương tự như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># =================================================
+# Basic settings
+# =================================================
+ServerType standalone
+ServerRoot "/usr/local/apache"
+PidFile /usr/local/apache/logs/httpd.pid
+ScoreBoardFile /usr/local/apache/logs/httpd.scoreboard
+ResourceConfig /dev/null
+AccessConfig /dev/null
+
+# =================================================
+# Performance settings
+# =================================================
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 15
+MinSpareServers 5
+MaxSpareServers 10
+StartServers 5
+MaxClients 150
+MaxRequestsPerChild 0
+
+# =================================================
+# Apache's modules
+# =================================================
+ClearModuleList
+AddModule mod_log_config.c
+AddModule mod_mime.c
+AddModule mod_dir.c
+AddModule mod_access.c
+AddModule mod_auth.c
+
+# =================================================
+# General settings
+# =================================================
+Port 80
+User apache
+Group apache
+ServerAdmin Webmaster@www.ebank.lab
+UseCanonicalName Off
+ServerSignature Off
+HostnameLookups Off
+ServerTokens Prod
+&lt;IfModule mod_dir.c&gt;
+    DirectoryIndex index.html
+&lt;/IfModule&gt;
+DocumentRoot "/www/vhosts"
+
+# =================================================
+# Access control
+# =================================================
+&lt;Directory /&gt;
+    Options None
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+&lt;/Directory&gt;
+&lt;Directory "/www/vhosts/www.ebank.lab"&gt;
+    Order allow,deny
+    Allow from all
+&lt;/Directory&gt;
+&lt;Directory "/www/vhosts/www.test.lab"&gt;
+    Order allow,deny
+    Allow from all
+&lt;/Directory&gt;
+
+# =================================================
+# MIME encoding
+# =================================================
+&lt;IfModule mod_mime.c&gt;
+    TypesConfig /usr/local/apache/conf/mime.types
+&lt;/IfModule&gt;
+DefaultType text/plain
+&lt;IfModule mod_mime.c&gt;
+    AddEncoding x-compress Z
+    AddEncoding x-gzip gz tgz
+    AddType application/x-tar .tgz
+&lt;/IfModule&gt;
+
+# =================================================
+# Logs
+# =================================================
+LogLevel warn
+LogFormat "%h %l %u %t \"%r\" %&gt;s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %&gt;s %b" common
+LogFormat "%{Referer}i -&gt; %U" referer
+LogFormat "%{User-agent}i" agent
+ErrorLog /usr/local/apache/logs/error_log
+CustomLog /usr/local/apache/logs/access_log combined
+
+# =================================================
+# Virtual hosts
+# =================================================
+NameVirtualHost *
+&lt;VirtualHost *&gt;
+    DocumentRoot "/www/vhosts/www.ebank.lab"
+    ServerName "www.ebank.lab"
+    ServerAlias "www.e-bank.lab"
+    ErrorLog logs/www.ebank.lab/error_log
+    CustomLog logs/www.ebank.lab/access_log combined
+&lt;/VirtualHost&gt;
+&lt;VirtualHost *&gt;
+    DocumentRoot "/www/vhosts/www.test.lab"
+    ServerName "www.test.lab"
+    ErrorLog logs/www.test.lab/error_log
+    CustomLog logs/www.test.lab/access_log combined
+&lt;/VirtualHost&gt;</pre>
+		</div>
+Cấu hình trên chỉ có những lệnh cần thiết để thoả mãn chức năng hoạt động và các trù bị bảo mật. Trong cấu hình đưa ra ở trên có hai hosts ảo được Web server hỗ trợ:
+<i>
+- www.ebank.lab<span class="link"> www.e-bank.lab</span>)
+- www.test.lab</i>
+
+Nội dung của các Web site trên được chứa trong các thư mục:
+
+<i>
+- /chroot/httpd/www/vhosts/www.ebank.lab
+- /chroot/httpd/www/vhosts/www.test.lab
+</i>
+
+Mỗi Web site có riêng log files được chứa trong các thư mục:
+
+<i>
+- /chroot/httpd/usr/local/apache/logs/www.ebank.lab
+- /chroot/httpd/usr/local/apache/logs/www.test.lab
+</i>
+Các thư mục trên phải được tạo ra trước khi Apache hoạt động lần đầu tiên - nếu không Apache sẽ không làm việc đúng mức. Chủ nhân của các thư mục trên nên là root:sys, và chủ quyền nên chỉnh thành 0755.
+
+So sánh với hồ sơ cấu hình mặc định của Apache, có những thay đổi sau:
+
+<i>
+-Số modules được ứng động đã giảm thiểu đáng kể, 
+-Apache không tiết lộ thông tin version number (phiên bản) (dùng các directives: ServerTokens, ServerSignature), 
+-Các process của Apache (ngoại trừ process của root) được chỉnh định bằng chủ quyền riêng biệt của user/group bình thường (dùng các directives: User, Group), 
+-Apache chỉ cho phép truy cập vào các thư mục, các thư mục con và các hồ sơ đã được quy định cụ thể trong hồ sơ cấu hình (dùng các directives: Directory, Allow); mọi requests khác đều bị từ chối theo mặc định, 
+-Apache sẽ log nhiều thông tin hơn với các HTTP requests. </i>
+
+<b>Lời bàn và mở rộng:</b>
+
+<i>Configuration trên của Artur Maj triển khai theo lối "blank paper", có nghĩa là bắt đầu từ trang giấy trắng. Ðây là lối khai triển rất hay cho các config đòi hỏi tính bảo mật cao. Lý do: dùng config mặc định có sẵn của Apache sẽ có nhiều cơ hội thiếu sót những điểm quan trọng vì config mặc định của Apache chứa quá nhiều thông tin, mở cửa cho quá nhiều thứ có thể tạo lỗ hổng. Ðiều đáng nêu ra là configuration này rất gọn gàng và khoa học cho các phần của cấu hình. Khi cần phải thêm bớt và thay đổi, một cấu hình gọn gàng giúp cho vấn đề quản lý dễ dàng và chính xác hơn, tất nhiên cũng sẽ giảm thiểu những lỗi (ít khi nhận thấy được) trong quá trình chỉnh định.
+
+Một điểm quan trọng khác cũng nên nhắc đến là các chi tiết về "Directives" tác giả bài viết đề cập trong phần giải thích. Tác giả đã không khai triển và giải thích chi tiết tác dụng của các "directives" này, có lẽ, ông ta giả định người dùng ở mức độ quan tâm đến bảo mật cho Apache hẳn phải nắm vững cơ chế làm việc của Apache và những "directives" dùng trong configuration của Apache. Ở điểm này, cá nhân tôi cho rằng việc tham khảo và nghiên cứu kỹ lưỡng các "directives" dùng trong Apache là một việc tối cần thiết nếu muốn bảo đảm hoạt tính và mật tính của Apache. Bạn có thể tham khảo chi tiết các "directives" trên website của Apache ở:<span class="link"> http://httpd.apache.org/docs/mod/directives.html</span> (cho Apache 1.3.x)
+và<span class="link"> http://httpd.apache.org/docs-2.0/mod/quickreference.html</span> (cho Apache 2.x)
+
+Ứng dụng các directives trong cấu hình của Apache một cách khoa học và thích hợp với nhu cầu là một điều không đơn giản. Việc đầu tiên giúp cho quá trình ứng dụng này là tạo cho mình một thói quen chuẩn bị cẩn thận và chính xác những phần tố cần dùng. Nếu bạn đã quen cách chỉnh định một server cho "nhanh" và có để "chạy liền" thì nên điều chỉnh lại thói quen này một khi đã dấn thân vào những điều thuộc về bảo mật.
+
+Apache cũng cung cấp một số tài liệu cho vấn đề kiện toàn bảo mật cho Apache server, bạn nên tham khảo thêm ở:<span class="link"> http://httpd.apache.org/docs/misc/security_tips.html</span> (cho Apache 1.3.x)
+và<span class="link"> http://httpd.apache.org/docs-2.0/misc/security_tips.html</span> (cho Apache 2.x)
+Hai tài liệu trên gần giống nhau, tuy nhiên có những tiểu tiết quan trọng cần tham khảo kỹ lưỡng.</i>
+
+<b>Bước cuối</b>
+Cuối cùng chúng ta nên tạo một đoạn "script" khởi động "apache.sh" với nội dung tương tự như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+
+CHROOT=/chroot/httpd/
+HTTPD=/usr/local/apache/bin/httpd
+PIDFILE=/usr/local/apache/logs/httpd.pid
+
+echo -n " apache"
+
+case "$1" in
+start&#41;
+    /usr/sbin/chroot $CHROOT $HTTPD
+    ;;
+stop&#41;
+    kill `cat ${CHROOT}/${PIDFILE}`
+    ;;
+*&#41;
+    echo ""
+    echo "Usage: `basename $0` {start|stop}" &gt;&2
+    exit 64
+    ;;
+esac
+
+exit 0</pre>
+		</div>
+
+Ðoạn script trên nên được đưa vào đúng thư mục (tùy hệ thống UNIX nào), nơi các script khởi động mặc định được cất giữ. Trong trường hợp dùng FreeBSD, script này nằm ở thư mục /usr/local/etc/rc.d
+
+<b>Lời bàn và mở rộng:</b>
+
+<i>Ðối với những ai quen dùng *nix, đoạn script trên có lẽ rất đơn giản và dễ hiểu. Ðiều đáng đề cập ở đây là một cái script đơn giản nhưng lại quan trọng vì nó "ép" Apache khởi động trong môi trường "jail", dùng binary và tạo log thuộc môi trường "jail" này.
+
+Trên Linux và một số system V thì "startup script" này nên đặt trong /etc/rc.d/init.d (hoặc /etc/init.d) và tạo symbolic link vào đúng "run level", bạn có thể tham khảo thêm chi tiết tùy loại *nix nào đang dùng. Tất nhiên bạn có thể điều chỉnh tùy thích "startup script" này nhưng điều quan trọng là phải nắm vững tinh thần "jail" được nêu ra ở trên.</i>
+
+<b>Tổng kết</b>
+
+Các phương pháp trên cho phép tạo nên mức bảo mật chặt chẽ hơn cho Apache so với cấu hình mặc định có sẵn sau khi cài đặt.
+
+Bằng phương pháp chỉ cho phép những modules tuyệt đối cần thiết cho Apache hoạt động, server của chúng ta không hẳn bị nhân nhượng khi một yếu điểm nào đó bị khám phá trong nhóm các modules của Apache. Dấu version number của Apache, "chrooting" và hạn chế cấu hình của Apache làm cho các trường hợp đột phá đến server trở nên rất khó khăn. Một môi trường "chrooted" còn có thêm một ưu điểm quan trọng - miễn nhiễm đến số lớn các loại tấn công, lý do chính là vì thiếu "shell" (/bin/sh, /bin/csh vâng vâng...). Ngay cả nếu tin tặc thao tác thành công các lệnh trên hệ thống, nhưng để thoát ra khỏi môi trường "chroot" là vấn đề không đơn giản.
+
+<b>Lời bàn và mở rộng:</b>
+<i>Ngoài những điểm Artur Maj tổng kết ở trên, có lẽ điều cần mở rộng vài vấn đề bên ngoài phạm vi Apache. Trên thực tế, việc kiện toàn chính Apache phải đi song song với việc kiện toàn trọn bộ server mà Apache chạy. Nếu tin tặc không tấn công và đột nhập được qua môi trường "chrooted" của Apache, vẫn có thể đột nhập qua ngõ khác nếu server chạy Apache không được kiện toàn. Cực đoan hơn, cho dù Apache server được một firewall bảo vệ vẫn không thể phó mặc cho firewall mà lơ là chuyện kiện toàn server mà Apache chạy. Kiện toàn bảo mật đúng nghĩa là một công tác đòi hỏi một cách nhìn tổng quát cho trọn bộ môi trường hoạt động.
+
+Trước khi kết thúc, tôi xin nhấn mạnh một điều quan trọng cho vấn đề bảo mật nói chung đó là: luôn luôn theo dõi, cập nhật software và thường xuyên kiểm soát cấu hình cũng như hoạt động của server. Không có software nào không có bugs và yếu điểm. Cho nên, việc theo dõi và bảo trì là một công tác hàng đầu trong vấn đề bảo mật. Kiện toàn bảo mật không thích hợp với tư duy "set and forget" (chỉnh lý rồi phó mặc). Kiện toàn bảo mật có lẽ cũng không nên theo tư duy theo kiểu "marketing hype" (quảng cáo sản phẩm một cách quá đáng ) ví dụ như "keep intruders at bay" hoặc "unbreakable systems"... Ðiều chắc chắn bạn có thể thực hiện là làm chậm bước tấn công và đột phá của tin tặc để có thể đối phó kịp thời.
+</i>
+ 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/3372.hva#19289</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/3372.hva#19289</link>
+				<pubDate><![CDATA[Wed, 30 Aug 2006 14:12:39]]> GMT</pubDate>
+				<author><![CDATA[ zeno]]></author>
+			</item>
+	</channel>
+</rss>

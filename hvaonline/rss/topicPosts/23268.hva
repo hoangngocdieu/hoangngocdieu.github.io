@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lấy tự động cập nhật giá vàng, ngoại tệ"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lấy tự động cập nhật giá vàng, ngoại tệ"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Bạn nào có code lấy giá vàng, ngoại tệ bằng ASP.Net share mình với.
+Cám ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#139973</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#139973</link>
+				<pubDate><![CDATA[Fri, 4 Jul 2008 21:33:07]]> GMT</pubDate>
+				<author><![CDATA[ sunrise_vn]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Bạn định lấy tỉ giá trong code hay = javascript? 
+Tui có đoạn code phân tích dạng html rồi lấy thông tin vào file XML nhưng mỗi lần chạy lại phải refresh.Và nó hơi cứng chỉ áp dụng lấy cho 1 trang cụ thể thôi sang trang khác là chít liền.Bạn nào biết làm cách nào mà khi up lên server ko cần refresh nó vẫn chạy theo một thời gian nhất định không bảo tui với.
+--Get HTML 
+ <b><font color='orange'>public static string GetHtmlFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentNullException("url", "Parameter is null or empty");
+
+            string html = "";
+            //HttpWebRequest request = GenerateHttpWebRequest(url);
+            WebRequest request = WebRequest.Create(url);
+            // If required by the server, set the credentials.
+            //request.Credentials = CredentialCache.DefaultCredentials;
+            //request.Timeout = 8000;
+            try
+            {
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                if (response.StatusDescription == "OK")
+                {
+                    Stream responseStream = response.GetResponseStream();
+                    using (StreamReader reader = new StreamReader(responseStream, Encoding.UTF8))
+                    {
+                        html = reader.ReadToEnd();
+                    }
+                }
+                else
+                {
+                    html = "error";
+                }
+            }
+            catch (WebException ex)
+            {
+                //   Response.Write("Xin lỗi hiện tại hệ thống không kết nối được với máy chủ cung cấp tin tức.");
+            }
+            return html;
+        }//Get code html</font></b>
+--lấy phần html chứa giá vàng
+<font color='orange'><b>  public static void getgiavang(string html, string dir)//Tách lấy từng mã tỉ giá một từ table vừa phân tích được
+        {
+            string src = gettablegiavang(GetHtmlFromUrl(html));
+            src = src.ToLower();
+            string kq = "";
+            string loai, mua, ban, tam1, tam2, tam3;
+            loai = ""; mua = ""; ban = ""; tam1 = ""; tam2 = ""; tam3 = "";
+            int x1, x2, x3; x1 = 0; x2 = 0; x3 = 0;
+            int i = 0;
+            x1 = src.IndexOf("&lt;tr");
+            //bỏ tr đầu tiên tìm thấy
+            if (x1 != -1)
+            {
+                x2 = src.IndexOf("&lt;/tr", x1);
+                if (x2 != -1)
+                {
+                    src = src.Substring(x2 + 5);
+                }
+            }
+            string file = "giavang.xml";
+            toolwebservices.del_create_file(dir, file);
+            while (i &lt; src.Length)
+            {
+                x1 = src.IndexOf("&lt;/tr&gt;", 0);
+                if (x1 != -1)
+                {
+                    tam1 = src.Substring(0, x1);
+                    src = src.Substring(x1 + 5);
+                    int j1 = 0;
+                    int j2 = 0;
+                    while (j1 &lt; tam1.Length)
+                    {
+                        x2 = tam1.IndexOf("&lt;/font&gt;");
+                        if (x2 != -1)
+                        {
+                            j1 = j1 + 1;
+                            tam2 = tam1.Substring(0, x2);
+                            tam1 = tam1.Substring(x2 + 7);
+                            j2 = tam2.LastIndexOf("&gt;");
+                            if (j2 != -1)
+                            {
+                                //dia diem
+                                if (j1 ==1)
+                                {
+                                    loai = tam2.Substring(j2 + 1);
+                                }
+                                //kq = kq + "," + diadiem;
+                                if (j1 == 2)
+                                {
+                                    mua = tam2.Substring(j2 + 1);
+                                }
+                                if (j1 == 3)
+                                {
+                                    ban = tam2.Substring(j2 + 1);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            j1 = tam1.Length;
+                            break;
+                        }
+                    }
+                    toolwebservices.WriteXMLgiavang(dir,loai,mua,ban);
+                }
+                else
+                {
+                    i = src.Length;
+                    break;
+                }
+            }
+        }
+        public static string gettablegiavang(string html)
+        {
+            string src = html.ToLower();
+            int x1, x2, x3;
+            x1 = 0; x2 = 0; x3 = 0;
+            string tam = "";
+            string temp1 = "";
+            string kq = "";
+            x1 = src.IndexOf("gi tham kh&#7843;o)", 0);
+            if (x1 != -1)
+            {
+                tam = src.Substring(x1);
+                x2 = tam.IndexOf("&lt;table");
+                if (x2 != -1)
+                {
+                    x3 = tam.IndexOf("&lt;/table&gt;", x2);
+                    kq = tam.Substring(x2, x3 + 8 - x2);
+                }
+
+            }
+            else
+            {
+                kq = "0";
+            }
+
+            return kq;
+        }</b></font>//Tách lấy table bao quanh phần thông tin giá vàng
+
+--write file xml
+<font color='orange'><b>public static void WriteXMLgiavang(string dir,string loai,string mua,string ban)
+        {
+            try
+            {
+
+                //pick whatever filename with .xml extension
+                //XmlTextWriter xmlWRITER = new XmlTextWriter ( "C:\\writeEmployeeRecordInXML1.xml" , null );
+                string filename = dir + "/" + "giavang.xml";
+                XmlDocument xmlDoc = new XmlDocument();
+                try
+                {
+                    xmlDoc.Load(filename);
+                }
+                catch (System.IO.FileNotFoundException)
+                {
+                    //if file is not found, create a new xml file
+                    XmlTextWriter xmlWriter = new XmlTextWriter(filename, System.Text.Encoding.UTF8);
+                    xmlWriter.Formatting = Formatting.Indented;
+                    xmlWriter.WriteProcessingInstruction("xml", "version='1.0' encoding='UTF-8'");
+                    xmlWriter.WriteStartElement("Root");
+
+                    xmlWriter.Close();
+                    xmlDoc.Load(filename);
+                }
+                XmlNode root = xmlDoc.DocumentElement;
+                XmlElement childNode = xmlDoc.CreateElement("Item");
+                XmlElement childNode1 = xmlDoc.CreateElement("Loai");
+                XmlElement childNode2 = xmlDoc.CreateElement("Mua");
+                XmlElement childNode3 = xmlDoc.CreateElement("Ban");
+
+                root.AppendChild(childNode);
+                childNode.AppendChild(childNode1);
+                childNode.AppendChild(childNode2);
+                childNode.AppendChild(childNode3);
+
+                //gan gia tri cho cac thuoc tinh
+                XmlText textNode1 = xmlDoc.CreateTextNode(loai);
+                childNode1.AppendChild(textNode1);
+                XmlText textNode2 = xmlDoc.CreateTextNode(mua);
+                childNode2.AppendChild(textNode2);
+                XmlText textNode3 = xmlDoc.CreateTextNode(ban);
+                childNode3.AppendChild(textNode3);
+                xmlDoc.Save(filename);
+            }
+            catch (Exception ex)
+            {
+                //  WriteError(ex.ToString());
+
+            }
+        }</b></font>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#140039</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#140039</link>
+				<pubDate><![CDATA[Sat, 5 Jul 2008 10:38:13]]> GMT</pubDate>
+				<author><![CDATA[ phamtungvnp]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Mình định update giá cả trông MasterPage. Tất cả bằng code. Cảm ơn bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#140162</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#140162</link>
+				<pubDate><![CDATA[Sun, 6 Jul 2008 10:41:15]]> GMT</pubDate>
+				<author><![CDATA[ sunrise_vn]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Cái này tìm 1 trang nào đó cập nhật nhanh uy tín chút. down cả nội dung trang web ( trang có chứa giá cả ) đấy vào 1 file text. Rồi tìm, cắt....xâu gì gì đó là ok mà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#142278</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#142278</link>
+				<pubDate><![CDATA[Sat, 19 Jul 2008 02:41:54]]> GMT</pubDate>
+				<author><![CDATA[ KoL]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ <blockquote>toolwebservices.del_create_file(dir, file); &nbsp;
+		</blockquote>
+Cái hàm này ở đâu bạn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#164756</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#164756</link>
+				<pubDate><![CDATA[Wed, 31 Dec 2008 21:20:05]]> GMT</pubDate>
+				<author><![CDATA[ quainhankid]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Em có 1 sỗ links có lẽ có ích nè:
+
+Chứng Khoán HOSE 
+<span class="link"> http://vnexpress.net/User/ck/hcms/HCMStockSmall.asp</span>
+Chứng khoán HaSTC
+<span class="link"> http://vnexpress.net/User/ck/hns/HNStockSmall.asp</span>
+Ngoại tệ 
+<span class="link"> http://www.vietstock.com.vn/Transweb/tygia.htm</span>
+Vàng
+<span class="link"> http://www.vietstock.com.vn/Transweb/giavang.htm</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#164770</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#164770</link>
+				<pubDate><![CDATA[Wed, 31 Dec 2008 23:24:14]]> GMT</pubDate>
+				<author><![CDATA[ mrhoangha]]></author>
+			</item>
+			<item>
+				<title>Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ Mình có đoạn này dễ dùng hơn nè. Cái này lấy DL từ ngân hàng eximbank
+
+&lt;div style="overflow-x: auto;"&gt;
+                        
+      &lt;iframe src="http://www.eximbank.com.vn/WebsiteExrate1/exchange.aspx" marginheight="5px"
+                            marginwidth="0" scrolling="no" width="300px" frameborder="0" height="245px"&gt;&lt;/iframe&gt;
+                      
+       &lt;iframe src="http://www.eximbank.com.vn/WebsiteExrate1/gold.aspx" marginheight="0"
+                            marginwidth="0" scrolling="no" width="300px" frameborder="0" height="100px"&gt;&lt;/iframe&gt;
+&lt;/div&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#243414</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#243414</link>
+				<pubDate><![CDATA[Tue, 12 Jul 2011 21:25:48]]> GMT</pubDate>
+				<author><![CDATA[ vn.cuongquoc.hue]]></author>
+			</item>
+			<item>
+				<title>Re: Lấy tự động cập nhật giá vàng, ngoại tệ</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phamtungvnp wrote:</cite><br>
+		<blockquote>
+            toolwebservices.del_create_file(dir, file);
+           
+&nbsp;
+		</blockquote>
+ hàm này nằm ở đâu vậy bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23268.hva#271820</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23268.hva#271820</link>
+				<pubDate><![CDATA[Thu, 13 Dec 2012 09:08:39]]> GMT</pubDate>
+				<author><![CDATA[ abonlahor]]></author>
+			</item>
+	</channel>
+</rss>

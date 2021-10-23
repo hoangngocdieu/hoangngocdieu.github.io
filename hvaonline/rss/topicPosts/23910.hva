@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Hỏi] Shellcode không thực hiện được"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Hỏi] Shellcode không thực hiện được"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ Em có đoạn mã với mục đích là: <b>sau khi chạy sẽ cho ra byte code của 1 chương trình viết bằng assembly để có thể đưa vào C</b>. Chương trình như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define MAX_BUFFER 150
+
+/*A function pointer for executing shellcode*/
+void &#40;*shell_code_execute&#41;&#40;void&#41;;
+
+/*A buffer for input shellcode*/
+char buffer&#91;MAX_BUFFER&#93;;
+
+int main&#40;int argc, char **argv&#41;
+{
+  FILE *f;
+  unsigned int col,byte;
+  int *ret;
+  char *ptrbuff;
+  
+  /*The number of argument must be 1 or 2*/
+  if&#40;argc &gt; 3 || argc ==1&#41;
+    {
+      printf&#40;"Usage: bct filename &#91;exec&#93;\n"&#41;;
+      return 1;
+    }
+
+  /*Open a file for reading*/
+  if&#40;&#40;f=fopen&#40;argv&#91;1&#93;,"r"&#41;&#41;==NULL&#41;
+    {
+      printf&#40;"Error! File not found!\n"&#41;;
+      return -1;
+    }
+
+  printf&#40;"----------\n"&#41;;
+  printf&#40;"Printing your code\n"&#41;;
+  printf&#40;"----------\n"&#41;;
+
+  printf&#40;"buffer&#91;&#93;=\n"&#41;;
+  col = 0;
+
+  /*Repeat reading each byte from opened file until reaching end of file
+   With each byte, print and put it in buffer*/
+
+  ptrbuff = &#40;char*&#41;&buffer; //pointer to buffer
+  while&#40;&#40;byte=fgetc&#40;f&#41;&#41;!=EOF&#41;
+    {
+      if&#40;col==0&#41; printf&#40;"\""&#41;; 
+      printf&#40;"\\x%.2x",&#40;unsigned char&#41;byte&#41;;
+      *&#40;ptrbuff++&#41;=&#40;unsigned char&#41;byte;
+      col++;
+      if&#40;col==10&#41; //print a new line after printing 10 bytes
+	{
+	  col=0;
+	  printf&#40;"\"\n"&#41;;
+	}
+    }
+  printf&#40;"\";\n"&#41;;
+  fclose&#40;f&#41;;
+
+  /*Execute the code has been read. We get address of buffer and call
+   the shellcode in buffer by using function pointer shell_code_execute*/
+  if&#40;argc==3 && strcmp&#40;argv&#91;2&#93;,"exec"&#41;==0&#41;
+    {
+      
+      printf&#40;"------------\n"&#41;;
+      printf&#40;"Executing your code!\n"&#41;;
+      printf&#40;"------------\n"&#41;;
+
+      shell_code_execute = &#40;void&#40;*&#41;&#40;void&#41;&#41;buffer;
+      &#40;*shell_code_execute&#41;&#40;&#41;;
+    }
+
+  return 0;
+}</pre>
+		</div>
+
+Bây giờ em có 1 đoạn mã assembly như sau (đặt tên là hello.asm)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>jmp short string
+code:
+  pop ecx       
+  mov ebx, 1    
+  mov edx, 14   
+  mov eax, 4    
+  int 80h
+  mov ebx, 0    
+  mov eax, 1
+  int 80h
+string:
+  call code
+  db "Hello, World!", 00h</pre>
+		</div>
+
+Đầu tiên em dịch đoạn mã assembly trên
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>nasm hello.asm -o hello</pre>
+		</div>
+
+Khi chạy chương trình với 1 đối đầu vào là tên chương trình nó cho ra kết quả đúng như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Tal@vxer:~/Documents/Research$ ./bct hello
+----------
+Printing your code
+----------
+buffer&#91;&#93;=
+"\xeb\x24\x66\x59\x66\xbb\x01\x00\x00\x00"
+"\x66\xba\x0e\x00\x00\x00\x66\xb8\x04\x00"
+"\x00\x00\xcd\x80\x66\xbb\x00\x00\x00\x00"
+"\x66\xb8\x01\x00\x00\x00\xcd\x80\xe8\xd9"
+"\xff\x48\x65\x6c\x6c\x6f\x2c\x20\x57\x6f"
+"\x72\x6c\x64\x21\x0a";</pre>
+		</div>
+
+Nhưng nếu chạy với 2 đối số (thêm đối số exec) thì chương trình bị lỗi <b>segmentation fault</b>
+
+Em đã dùng gdb để debug thì thấy byte code đã được chép vào buffer và địa chỉ của con trò hàm đúng = địa chỉ của buffer. Tuy vậy đoạn code trong buffer không được thực hiện
+
+<b>Máy của em chạy ubuntu 8.04, dịch = gcc 4.2.3 và lênh biên dịch là: </b>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gcc -o bct bct.c</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144061</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144061</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 17:33:27]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ Hi Tal,
+
+Bồ xem thêm cái này http://nasm.sourceforge.net/doc/nasmdoc5.html, mục 5.1.
+
+--m
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144075</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144075</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 18:40:20]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ File object còn có 1 mớ thứ linh tinh nữa trước đoạn shell code của cậu.
+Dùng 1 decompiler và 1 hex editor, extract từ file object của cậu ra chính xác đoạn code cần execute, lưu thành 1 .bin chẵng hạn rồi test lại.
+Để ý calling convention của function pointer shell_code_execute, trong trường hợp này là _cdecl phải không, debug xem stack có cân bằng không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144079</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144079</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 19:16:31]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ TQN: vấn đề ở đây nó đơn giản hơn nhiều anh. nasm mặc định xuất ra code để chạy trên các processor 16-bit:
+
+<blockquote>
+The BITS directive specifies whether NASM should generate code designed to run on a processor operating in 16-bit mode, 32-bit mode or 64-bit mode. The syntax is BITS XX, where XX is 16, 32 or 64.
+
+In most cases, you should not need to use BITS explicitly. The aout, coff, elf, macho, win32 and win64 object formats, which are designed for use in 32-bit or 64-bit operating systems, all cause NASM to select 32-bit or 64-bit mode, respectively, by default. The obj object format allows you to specify each segment you define as either USE16 or USE32, and NASM will set its operating mode accordingly, so the use of the BITS directive is once again unnecessary.
+
+The most likely reason for using the BITS directive is to write 32-bit or 64-bit code in a flat binary file; this is because the bin output format defaults to 16-bit mode in anticipation of it being used most frequently to write DOS .COM programs, DOS .SYS device drivers and boot loader software. 
+&nbsp;
+		</blockquote>
+
+Thành ra chỉ cần sửa cái file .asm trên lại, thêm vào cái directive "BITS 32" là xong.
+
+Tal: bồ mà dùng gdb debug thêm chút nữa, chẳng hạn đặt breakpoint ngay trong cái đoạn shellcode của bồ, thì bồ sẽ thấy nguyên nhân tại sao liền àh :-p.
+
+--m
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144082</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144082</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 19:32:07]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ <blockquote>  The BITS directive specifies whether NASM should generate code designed to run on a processor operating in 16-bit mode, 32-bit mode or 64-bit mode. The syntax is BITS XX, where XX is 16, 32 or 64.
+
+    In most cases, you should not need to use BITS explicitly. The aout, coff, elf, macho, win32 and win64 object formats, which are designed for use in 32-bit or 64-bit operating systems, all cause NASM to select 32-bit or 64-bit mode, respectively, by default. The obj object format allows you to specify each segment you define as either USE16 or USE32, and NASM will set its operating mode accordingly, so the use of the BITS directive is once again unnecessary.
+
+    The most likely reason for using the BITS directive is to write 32-bit or 64-bit code in a flat binary file; this is because the bin output format defaults to 16-bit mode in anticipation of it being used most frequently to write DOS .COM programs, DOS .SYS device drivers and boot loader software.
+&nbsp;
+		</blockquote>      
+
+Đúng rồi! Cái này là do mặc định của nasm sẽ dịch ra bytecode 16 bits, nếu mà không có chọn lựa gì thêm :D
+
+Đây là chương trình asm sau khi sửa lại:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>USE32                 ;directive này nói cho ta biết ta dịch ra mã 32 bits
+  jmp short string
+code:
+  pop ecx
+  mov ebx, 1    		
+  mov edx, 14   
+  mov eax, 4    
+  int 80h
+  mov ebx, 0    
+  mov eax, 1
+  int 80h
+string:
+  call code
+  db "Hello, World!", 00h</pre>
+		</div>
+
+<blockquote>Tal: bồ mà dùng gdb debug thêm chút nữa, chẳng hạn đặt breakpoint ngay trong cái đoạn shellcode của bồ, thì bồ sẽ thấy nguyên nhân tại sao liền àh :-p.
+&nbsp;
+		</blockquote>
+
+Đặt breakpoint trong shellcode kiểu gì vậy anh? Em không làm thế mà em đặt break point trước lệnh gọi shellcode và disassembly cái hàm đó ra. Kết quả mã asm nếu không có directive USE32
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Breakpoint 1, main &#40;argc=3, argv=0xbffff9f4&#41; at bct.c:69
+69	      shell_code_execute = &#40;void&#40;*&#41;&#40;void&#41;&#41;buffer;
+&#40;gdb&#41; n
+70	      &#40;*shell_code_execute&#41;&#40;&#41;;
+&#40;gdb&#41; disas shell_code_execute 
+Dump of assembler code for function buffer:
+0x08049920 &lt;buffer+0&gt;:	jmp    0x8049946 &lt;buffer+38&gt;
+0x08049922 &lt;buffer+2&gt;:	pop    %cx
+0x08049924 &lt;buffer+4&gt;:	mov    $0x1,%bx
+0x08049928 &lt;buffer+8&gt;:	add    %al,&#40;%eax&#41;
+0x0804992a &lt;buffer+10&gt;:	mov    $0xe,%dx
+0x0804992e &lt;buffer+14&gt;:	add    %al,&#40;%eax&#41;
+0x08049930 &lt;buffer+16&gt;:	mov    $0x4,%ax
+0x08049934 &lt;buffer+20&gt;:	add    %al,&#40;%eax&#41;
+0x08049936 &lt;buffer+22&gt;:	int    $0x80
+0x08049938 &lt;buffer+24&gt;:	mov    $0x0,%bx
+0x0804993c &lt;buffer+28&gt;:	add    %al,&#40;%eax&#41;
+0x0804993e &lt;buffer+30&gt;:	mov    $0x1,%ax
+0x08049942 &lt;buffer+34&gt;:	add    %al,&#40;%eax&#41;
+0x08049944 &lt;buffer+36&gt;:	int    $0x80
+0x08049946 &lt;buffer+38&gt;:	call   0x6d4d9924
+0x0804994b &lt;buffer+43&gt;:	insb   &#40;%dx&#41;,%es:&#40;%edi&#41;
+0x0804994c &lt;buffer+44&gt;:	insb   &#40;%dx&#41;,%es:&#40;%edi&#41;
+0x0804994d &lt;buffer+45&gt;:	outsl  %ds:&#40;%esi&#41;,&#40;%dx&#41;
+0x0804994e &lt;buffer+46&gt;:	sub    $0x20,%al
+0x08049950 &lt;buffer+48&gt;:	push   %edi
+0x08049951 &lt;buffer+49&gt;:	outsl  %ds:&#40;%esi&#41;,&#40;%dx&#41;
+0x08049952 &lt;buffer+50&gt;:	jb     0x80499c0</pre>
+		</div>
+
+Đặt lại như anh mrro nói là ok. 
+
+--m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144118</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144118</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 23:35:55]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>File object còn có 1 mớ thứ linh tinh nữa trước đoạn shell code của cậu.
+Dùng 1 decompiler và 1 hex editor, extract từ file object của cậu ra chính xác đoạn code cần execute, lưu thành 1 .bin chẵng hạn rồi test lại.&nbsp;
+		</blockquote>
+
+Nếu dịch bằng nasm mà không chỉ rõ file format bằng option -f thì mặc định là nó sẽ tạo ra file bin (opcode của các lệnh asm)
+
+<p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Để ý calling convention của function pointer shell_code_execute, trong trường hợp này là _cdecl phải không, debug xem stack có cân bằng không.&nbsp;
+		</blockquote>
+
+Em không hiểu đoạn này lắm, anh có thể giải thích kỹ hoặc lấy ví dụ cụ thể được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144119</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144119</link>
+				<pubDate><![CDATA[Tue, 29 Jul 2008 23:38:43]]> GMT</pubDate>
+				<author><![CDATA[ Tal]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ Trường hợp của cậu thì OK vì nó là void function, không push parameters vào stack.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144126</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144126</link>
+				<pubDate><![CDATA[Wed, 30 Jul 2008 00:17:57]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Re: [Hỏi] Shellcode không thực hiện được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Tal wrote:</cite><br>
+		<blockquote>
+Đặt breakpoint trong shellcode kiểu gì vậy anh? Em không làm thế mà em đặt break point trước lệnh gọi shellcode và disassembly cái hàm đó ra. Kết quả mã asm nếu không có directive USE32
+&nbsp;
+		</blockquote>
+
+Ý tôi là sau khi bồ đã biết địa chỉ của đoạn shellcode rồi, thì bồ đặt breakpoint trong đó, để xem nó chạy đến lệnh nào của shellcode thì bị segfault. Ví dụ như ở trên, bồ disas ra shellcode bắt đầu từ 0x08049920, thì bồ có thể đặt breakpoint từ đây trở đi.
+
+Tuy vậy đoạn code này khá đơn giản, nên nhìn vào là thấy ngay nguyên nhân bị segfault, đó là do cái lệnh:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0x08049946 &lt;buffer+38&gt;:	call   0x6d4d9924</pre>
+		</div>
+
+Nguyên nhân thì Tal đã giải thích rồi đó.
+
+--m
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144128</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/23910.hva#144128</link>
+				<pubDate><![CDATA[Wed, 30 Jul 2008 00:29:08]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,745 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[?] Quá nhiều socket TIME_WAIT"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[?] Quá nhiều socket TIME_WAIT"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ chào các anh em. 
+Server chỗ mình đang gặp tình trạng lỗi khó hiểu, nhờ mọi người giúp đỡ nha :D
+
+<font size='+1'>1.Trình tự</font>
+Hiện tại bên mình có 3 webserver (tạm gọi theo ip là 88, 89 và 102) dùng lighttpd, fast php-cgi, centos 5.3 (64 bit) đã được cân bằng tải dùng lvs. Sau khi được cân bằng tải, request được đi vào một trong 3 webserver, tại webserver, lighttpd sẽ nhận request và giao cho php-cgi xử lý, code php ở đây chỉ làm công việc là kết nối đến memcacheq server và set một giá trị vào memcacheq.
+
+<font size='+1'>2.Cấu hình</font>
+<b>mỗi</b> web server có cấu hình như sau: chip 4 core, 16Gb Ram, được cài đặt lighttpd (lighttpd quản lý khoảng 1000 process php-cgi), memcacheq. Cả 3 server đều được cấu hình tương tự nhau (về cả hardware và software), code php kết nối đến memcacheq local của riêng mình.
+
+<font size='+1'>3.Vấn đề</font>
+các server này đều phải chịu tải khá cao, trong 3 server trên, server 88 và 102 đều hoạt động bình thường, riêng server 89 thì có số connection trong trạng thái TIME_WAIT rất cao (có thời điểm đạt tới ~30 000), dẫn đến tình trạng thiếu local port cấp phát cho các socket mới (cat /proc/sys/net/ipv4/ip_local_port_range --&gt; 32000   65000), xem netstat thì thấy hầu hết các socket bị TIME_WAIT là các connection từ php-cgi sang memcacheq
+
+sau đây là một số info
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@SVR146R-589 ~&#93;# netstat -tnp|wc -l
+10277</pre>
+		</div>
+trong đó có khoảng 7000 trong tình trạng TIME_WAIT của php-cgi sang memcacheq
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@SVR145R-588 ~&#93;# netstat -tnp|wc -l
+804
+netstat -nt|grep TIME_WAIT|wc -l
+140</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@SVR145L-29102 ~&#93;# netstat -tnp|wc -l
+936</pre>
+		</div>
+nếu cần thông tin gì nữa mình sẽ post lên thêm, hiện tại mình đang tạm thời khắc phục tình trạng quá nhiều socket bị TIME_WAIT này bằng cách set /proc/sys/net/ipv4/tcp_max_tw_buckets = 5000 , các bác cho em xin ý kiến để khắc phục tình trạng trên với nhé.
+thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182200</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182200</link>
+				<pubDate><![CDATA[Thu, 28 May 2009 04:37:37]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ mình bổ sung thêm đoạn thông báo lỗi trong log của lighttpd
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2009-05-19 17:36:52: &#40;mod_fastcgi.c.2618&#41; FastCGI-stderr: PHP Notice:  memcache_connect&#40;&#41; &#91;&lt;a href='function.memcache-connect'&gt;function.memcache-connect&lt;/a&gt;&#93;: Server 192.168.5.89 &#40;tcp 22202&#41; failed with: Cannot assign requested address &#40;99&#41; in /srv/www/lighttpd/_adv.php on line 41</pre>
+		</div>
+atop hệ thống.
+<br>
+			<div align="center" class="limitview"><img src='http://i124.photobucket.com/albums/p35/secmask/atop.png' border="0" onload="maxImg(this, 500px);" /></div>
+khi bị lỗi lượng RAM cache vẫn khá lớn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182201</link>
+				<pubDate><![CDATA[Thu, 28 May 2009 04:48:07]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Em cân nhắc, tìm hiểu kỹ trước khi chỉnh giá trị cho 2 thằng sau:
+<b>/proc/sys/net/ipv4/tcp_tw_recycle</b>
+<b>/proc/sys/net/ipv4/tcp_tw_reuse</b>
+
+thành <b>1</b>, sau đó theo dõi xem sao.
+
+<span class="link"> http://bram.creative4vision.nl/debian/timewait.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182202</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182202</link>
+				<pubDate><![CDATA[Thu, 28 May 2009 05:00:34]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ hi anh quanta, 2 value đó em đã thử set lên rồi nhưng tình hình vẫn không khá hơn :( ,sau đó em đã thử tiếp giảm value của tcp_fin_timeout (từ 15 xuống 1), tuy nhiên tình hình vẫn như vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182208</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182208</link>
+				<pubDate><![CDATA[Thu, 28 May 2009 21:52:58]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>hi anh quanta, 2 value đó em đã thử set lên rồi nhưng tình hình vẫn không khá hơn :( ,
+&nbsp;
+		</blockquote>
+Lạ nhỉ! Vậy thử thêm vài cách nữa: 
+- giảm cái <b>ip_local_port_range</b> xuống 1024 65000 xem sao
+- Biên dịch lại kernel, trong file <b>/usr/src/linux/include/net/tcp.h</b> sửa dòng này: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define TCP_TIMEWAIT_LEN &#40;60*HZ&#41;</pre>
+		</div>
+thành: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define TCP_TIMEWAIT_LEN &#40;15*HZ&#41;</pre>
+		</div>
+chẳng hạn.
+<p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>
+sau đó em đã thử tiếp giảm value của tcp_fin_timeout (từ 15 xuống 1), tuy nhiên tình hình vẫn như vậy.&nbsp;
+		</blockquote>
+Cái <b>FIN_TIMEOUT</b> nó không liên quan đến <b>TIME_WAIT</b> length thì phải.
+
+PS: Tặng em <span class="link"> http://www.isi.edu/touch/pubs/infocomm99/</span> khá hay.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182221</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 00:53:24]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>hi anh quanta, 2 value đó em đã thử set lên rồi nhưng tình hình vẫn không khá hơn :( ,
+&nbsp;
+		</blockquote>
+Lạ nhỉ! Vậy thử thêm vài cách nữa: 
+<font color='orange'>- giảm cái <b>ip_local_port_range</b> xuống 1024 65000 xem sao</font>
+<font color='brown'>- Biên dịch lại kernel, trong file <b>/usr/src/linux/include/net/tcp.h</b> sửa dòng này: </font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define TCP_TIMEWAIT_LEN &#40;60*HZ&#41;</pre>
+		</div>
+thành: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define TCP_TIMEWAIT_LEN &#40;15*HZ&#41;</pre>
+		</div>
+chẳng hạn.
+<p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>
+sau đó em đã thử tiếp giảm value của tcp_fin_timeout (từ 15 xuống 1), tuy nhiên tình hình vẫn như vậy.&nbsp;
+		</blockquote>
+Cái <b>FIN_TIMEOUT</b> nó không liên quan đến <b>TIME_WAIT</b> length thì phải.
+&nbsp;
+		</blockquote>
+<font color='orange'>--&gt;</font> cái này thì em có thử đổi range từ 32 000 --&gt; 65 000 thành 10 000 --&gt; 65 000 , tuy nhiên em vẫn chưa tìm ra được lý do mà 3 server được cài đặt tương tự nhau, lại chỉ có một server bị tình trạng "lụt" socket với TIME_WAIT state thế này, 2 server còn lại số socket bị TIME_WAIT chỉ tầm vài chục đến vài trăm.
+<font color='brown'>---&gt;</font>thông số này ở 3 server cũng giống nhau, em cũng tính dịch lại kernel rồi, nhưng đang cố thử tìm nguyên nhân của "căn bệnh" này trước :D
+cám ơn anh, em đang đọc cái link anh gửi xem sao.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182223</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182223</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 01:20:09]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Bạn thử dump một ít packets xem có nhìn thấy nhiều FIN packets không? <font color='red'>Nếu có thì có khi bị DoS cũng nên.</font>
+
+Edited: sorry mình còn chưa nhìn thấy đoạn "7000 trong tình trạng TIME_WAIT của php-cgi sang memcacheq".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182230</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182230</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 07:55:25]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Thay đổi những giá trị ấn định liên quan đến sockets trên kernel thật ra là một phương pháp buộc sockets đóng / mở nhanh chậm theo ý muốn của mình. Tuy nhiên, nguồn gốc của tình trạng TIME_WAIT quá nhiều là do dịch vụ ở tầng trên (web) tạo ra.
+
+Em nên rà soát lại hồ sơ cấu hình của máy chủ bị tình trạng này và thử so sánh với hai máy chủ kia xem sao. Chắc chắn phải có một số chi tiết khác biệt nào đó. Việc biên dịch lại kernel không hẳn sẽ khắc phục tình trạng này đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182231</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182231</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 07:58:29]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ dạ, em sẽ kiểm tra và thử vài trường hợp nữa, cố gắng khoanh vùng xem vấn đề tại OS hay tại apps.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182297</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182297</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 16:53:46]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ hix, tình hình là em mới thử qua mấy kịch bản test như sau:
+giả sử đặt tên lighttpd trên server 89 là lighttpd89, memcacheq trên server 89 là memcacheq89 và php-cgi là php-cgi89, 2 server còn lại đặt tên tương tự.
+
+Test1: lighttpd89 --&gt;   php-cgi89 --&gt; memcacheq89 --&gt; TIME_WAIT rất nhiều
+Test2: lighttpd102 --&gt; php-cgi102 --&gt; memcacheq102 --&gt; TIME_WAIT ít (tình trạng bình thường)
+Test3: lighttpd89  --&gt;  php-cgi102 --&gt; memcacheq102 --&gt; trường hợp này em đặt lighttpd trên 89 gọi php-cgi nằm trên sever 102 qua tcp/ip (php-cgi và memcacheq trên 102 vẫn dùng hàng ngày và chạy tốt), lúc này server 102 có TIME_WAIT rất nhiều từ php-cgi sang memcacheq ==&gt; có thể là tại lighttpd.
+Test4: không dùng lighttpd nữa, em chuyển sang dùng nginx, kết quả là nginx cũng gặp tình trạng như với lighttpd
+Đến đây thì em bó tay, không đoán được là tại thằng nào nữa :( . Liệu còn nguyên nhân gì không các bác nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182313</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182313</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 18:39:56]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ TIME_WAIT là trạng thái cuối cùng của một kết nối tcp trước khi đóng kết nối chủ động (chủ động gửi FIN). Hiện tượng nhiều TIME_WAIT thực ra không phải lỗi của OS hay TCP/IP stack mà nguyên nhân thường bắt nguồn từ tốc độ mở socket mới quá nhanh so với tốc độ giải phóng socket: mỗi socket sẽ đợi ở tình trạng TIME_WAIT 1 khoảng thời gian là 2 *MSL (thông thường là 120s, trên CentOS là 60s).
+
+Để khắc phục vấn đề này có các hướng sau:
+ - Điều chỉnh tcp/ip stack nhằm giảm thời gian time_out để đóng socket time_wait và tái sử dụng socket: như quanta và secmask đang làm.
+
+ - Xem xét ở tầng app xem tại sao client sinh ra nhiều socket tới server tới vậy (thường là do lỗi lập trình). Ở đây là kết nối http, thử xem xét vấn đề về keep-alive để tiết kiệm số sockets xem sao.
+
+ - Search google: có một số giải pháp ở tầng TCP hoặc HTTP cho phép chủ động đóng bớt TIME_WAIT (Client chủ động gửi RST; thêm method CLOSE ở giao thức HTTP), nhưng có vẻ là khó triển khai với trường hợp này.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182314</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182314</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 18:52:12]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ chào mfeng!
+<p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>TIME_WAIT là trạng thái cuối cùng của một kết nối tcp trước khi đóng kết nối chủ động (chủ động gửi FIN). Hiện tượng nhiều TIME_WAIT thực ra không phải lỗi của OS hay TCP/IP stack mà nguyên nhân thường bắt nguồn từ tốc độ mở socket mới quá nhanh so với tốc độ giải phóng socket: mỗi socket sẽ đợi ở tình trạng TIME_WAIT 1 khoảng thời gian là 2 *MSL (thông thường là 120s, trên CentOS là 60s).
+&nbsp;
+		</blockquote>
+đây là server dùng để analytics của cty mình nên lượng request đổ về hàng ngày cũng khá lớn (mỗi server khoảng 30 triệu/ngày), các socket được đóng mở thường xuyên.
+<p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>
+Để khắc phục vấn đề này có các hướng sau:
+ - Điều chỉnh tcp/ip stack nhằm giảm thời gian time_out để đóng socket time_wait và tái sử dụng socket: như quanta và secmask đang làm.
+
+ - Xem xét ở tầng app xem tại sao client sinh ra nhiều socket tới server tới vậy (thường là do lỗi lập trình). Ở đây là kết nối http, thử xem xét vấn đề về keep-alive để tiết kiệm số sockets xem sao.
+
+ - Search google: có một số giải pháp ở tầng TCP hoặc HTTP cho phép chủ động đóng bớt TIME_WAIT (Client chủ động gửi RST; thêm method CLOSE ở giao thức HTTP), nhưng có vẻ là khó triển khai với trường hợp này.
+&nbsp;
+		</blockquote>
+mình cũng search trên google về lỗi này mấy hôm nay rồi, cũng đã thử chỉnh vài thông số trong /proc/sys/net/ipv4 tuy nhiên vẫn không hiệu quả lắm, và đau đầu nhất là trong 3 server lại chỉ có một server bị tình trang trên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182315</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182315</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 19:03:33]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>hix, tình hình là em mới thử qua mấy kịch bản test như sau:
+giả sử đặt tên lighttpd trên server 89 là lighttpd89, memcacheq trên server 89 là memcacheq89 và php-cgi là php-cgi89, 2 server còn lại đặt tên tương tự.
+
+Test1: lighttpd89 --&gt;   php-cgi89 --&gt; memcacheq89 --&gt; TIME_WAIT rất nhiều
+Test2: lighttpd102 --&gt; php-cgi102 --&gt; memcacheq102 --&gt; TIME_WAIT ít (tình trạng bình thường)
+Test3: lighttpd89  --&gt;  php-cgi102 --&gt; memcacheq102 --&gt; trường hợp này em đặt lighttpd trên 89 gọi php-cgi nằm trên sever 102 qua tcp/ip (php-cgi và memcacheq trên 102 vẫn dùng hàng ngày và chạy tốt), lúc này server 102 có TIME_WAIT rất nhiều từ php-cgi sang memcacheq ==&gt; có thể là tại lighttpd.
+Test4: không dùng lighttpd nữa, em chuyển sang dùng nginx, kết quả là nginx cũng gặp tình trạng như với lighttpd
+Đến đây thì em bó tay, không đoán được là tại thằng nào nữa :( . Liệu còn nguyên nhân gì không các bác nhỉ?&nbsp;
+		</blockquote>
+
+Thu thập hết các config của lighhttpd, php-cgi và memcache của các server lại rồi run một loạt diff để so sánh những điểm khác nhau theo cặp. Ví dụ:
+
+lighhttpd89 vs lighhttpd102
+php-cgi89 vs php-cgi102
+memcache89 vs memcache102
+
+Lọc ra những đoạn khác biệt và nghiên cứu cho thật kỹ. Đối với những ứng dụng có đụng đến socket, đôi khi một chỉnh sửa có thông số khác sẽ tạo phản ứng rất khác. Phương pháp test như trên cũng hay nhưng rất khó đoán.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182316</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182316</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 19:55:15]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>
+
+....
+code php ở đây chỉ làm công việc là kết nối đến memcacheq server và set một giá trị vào memcacheq.
+....
+
+....
+code php kết nối đến memcacheq local của riêng mình.
+....
+
+&nbsp;
+		</blockquote>
+
+1. Kết nối local giữa php tới memcached tại sao không xài Unix domain socket mà xài TCP socket chi vậy ? Unix domain socket không phải chịu các overhead của TCP socket như encap, decap, checksum calculate, verify, flow control,... Tui coi PHP manual của memcache_connect thì thấy nó cũng support Unix domain socket.
+
+2. Nếu ông vẫn quá khoái xài AF_INET socket, mà mỗi lần kết nối từ php-cgi vào memcacheq chỉ để set 1 giá trị, tại sao không thử xài UDP thay vì TCP ? Thay vì tốn nhiều memory cho TCP socket creation/destruction, memory đó được memcache tận dụng thì vẫn hơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182319</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182319</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 20:37:58]]> GMT</pubDate>
+				<author><![CDATA[ rcrackvn]]></author>
+			</item>
+			<item>
+				<title>Re: [?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">rcrackvn wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>
+
+....
+code php ở đây chỉ làm công việc là kết nối đến memcacheq server và set một giá trị vào memcacheq.
+....
+
+....
+code php kết nối đến memcacheq local của riêng mình.
+....
+
+&nbsp;
+		</blockquote>
+
+1. Kết nối local giữa php tới memcached tại sao không xài Unix domain socket mà xài TCP socket chi vậy ? Unix domain socket không phải chịu các overhead của TCP socket như encap, decap, checksum calculate, verify, flow control,... Tui coi PHP manual của memcache_connect thì thấy nó cũng support Unix domain socket.
+
+2. Nếu ông vẫn quá khoái xài AF_INET socket, mà mỗi lần kết nối từ php-cgi vào memcacheq chỉ để set 1 giá trị, tại sao không thử xài UDP thay vì TCP ? Thay vì tốn nhiều memory cho TCP socket creation/destruction, memory đó được memcache tận dụng thì vẫn hơn.&nbsp;
+		</blockquote>
+
+tại vì memcacheq sau đó được một ứng dụng ở máy khác đọc sang nữa, nên tớ không dùng unix-socket được, memcache-client của mình thì không chắc lắm nó có support udp không nên tạm thời vẫn dùng tcp.
+May mắn là đến giờ này mình đã tìm được nguyên nhân của căn bệnh, vẫn liên quan đến khả năng recycle các TIME_WAIT socket, tuy nhiên còn một tham số nữa ảnh hưởng đến khả năng recycle là tcp_timestamps. Kernel tái sử dụng các TIME_WAIT socket dựa trên timestamps, thông số này trước đây bị disable nên đã làm cho kernel không thể tái sử dụng được khiến số TIME_WAIT socket tăng cao.
+tóm lại, set các thông số sau đã giải quyết được vấn đề TIME_WAIT của mình:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo 1 &gt; /proc/sys/net/ipv4/tcp_tw_recycle
+echo 1 &gt; /proc/sys/net/ipv4/tcp_tw_reuse
+echo 1 &gt; /proc/sys/net/ipv4/tcp_timestamps</pre>
+		</div>
+thanks all :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182324</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182324</link>
+				<pubDate><![CDATA[Fri, 29 May 2009 21:53:38]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title> Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Chào các bác;
+
+Cho phép em đẩy topic này lên một chút.
+
+Hiện tại site em cũng bị tình trạng tương tự. 
+
+VPS em chạy webserver lighttpd; CentOS trên VPS 512MB, phục vụ static content (HTML và text file)
+
+- Với lighttpd, nếu em đặt keep-alive-request thì với lượng lớn request tới vps, website sẽ bị đơ, load rất chậm mà không rõ lý do. (RAM mới chỉ sử dụng cỡ 50%; CPU load rất thấp 0.9 -&gt; 1.1
+
+- Nếu đặt keep-alive-request = 0; vps sẽ sinh ra rất nhiều KEEP_ALIVE (timeout=30s), cỡ 30.000 vào giờ cao điểm dẫn đến tình trạng thiếu socket như trên;
+
+- em không thể biên dịch kernel để bỏ KEEP_ALIVE đi vì HP không cho phép (do chạy vps)
+
+có cách nào để giải quyết tình trạng này không các bác? Mong được các bác chỉ giáo!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182987</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182987</link>
+				<pubDate><![CDATA[Sun, 7 Jun 2009 05:26:58]]> GMT</pubDate>
+				<author><![CDATA[ namduong8889]]></author>
+			</item>
+			<item>
+				<title>re:Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ bạn có thể cho xem kết quả của các lệnh sau nhé:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -nt|grep TIME_WAIT|wc -l</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>netstat -nt|grep ESTABLISHED|wc -l</pre>
+		</div>
+và cấu hình cho lighttpd nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182995</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#182995</link>
+				<pubDate><![CDATA[Sun, 7 Jun 2009 12:06:12]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title> Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Chào bác.
+
+Nếu cấu hình lighttpd:
+
+<b><font size='+1'>Phương án 1:</font>
+</b>
+Cấu hình lighttpd:
+<blockquote>
+server.max-keep-alive-requests = 0
+server.max-keep-alive-idle = 5
+server.max-fds = 16384
+server.max-connections = 8192
+&nbsp;
+		</blockquote>
+
+Kết quả:
+- số TIME_WAIT trung bình: 30.000
+- Website load nhanh, nhưng thỉnh thoảng bị ngắt kết nối, phải F5 vài lần
+
+<b><font size='+1'>
+Phương án 2:</font></b>
+Cấu hình lighttpd:
+<blockquote>
+server.max-keep-alive-requests = 4
+server.max-keep-alive-idle = 5
+server.max-fds = 16384
+server.max-connections = 8192
+&nbsp;
+		</blockquote>
+
+Kết quả:
+- số TIME_WAIT trung bình 3.000; Website không bị ngắt kết nối.
+- Website load chậm hơn rất nhiều so với phương án kia mặc dù tài nguyên hệ thống (CPU & MEMORY) còn thừa rất nhiều.
+
+
+Đặc điểm site em là: 
+* Phục vụ static content (HTML - TEXT), số lượng truy cập đông (từ 6000-8000 user online trong vòng 15 phút * Hoặc 2000 online nếu tính trong vòng 1 phút) ; Site em là site kết quả xổ số nên nó đông lắm.
+* Số ESTABLISHED trong cả 2 trường hợp đều rơi vào khoảng 1200-&gt;1300
+<b>
+<font color='cyan'>Tạm thời em hài lòng với phương án 2. Các bác có thể giải thích cho em tại sao cứ để HTTP KEEP ALIVE là website bị chậm mặc dù tài nguyên còn rất nhiều được không? Em vẫn chưa rõ về việc này lắm. Nếu rõ rồi thì em mới có thể phân tích và tune theo đúng ý được.</font>
+</b>
+Em cám ơn các bác!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183011</link>
+				<pubDate><![CDATA[Sun, 7 Jun 2009 23:00:17]]> GMT</pubDate>
+				<author><![CDATA[ namduong8889]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ ok, nghe cũng ná ná trường hơp của tớ :D, bạn thử áp dụng cách của tớ chưa? kết quả sao, cái này chỉ cần chỉnh mấy thông số trong kernel thôi, không cần dịch lại kernel. nếu thấy ổn thì có thể add config đó vào /etc/sysctl.conf để có hiệu lực lâu dài.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183016</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183016</link>
+				<pubDate><![CDATA[Sun, 7 Jun 2009 23:41:21]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>ok, nghe cũng ná ná trường hơp của tớ :D, bạn thử áp dụng cách của tớ chưa? kết quả sao, cái này chỉ cần chỉnh mấy thông số trong kernel thôi, không cần dịch lại kernel. nếu thấy ổn thì có thể add config đó vào /etc/sysctl.conf để có hiệu lực lâu dài.&nbsp;
+		</blockquote>
+
+Chào bác :D
+
+Nguyên nhân căn bản vẫn là do có quá nhiều TIME_WAIT giống như bác, nếu ngắt đi được cái TIME_WAIT thì tốt, 
+
+nhưng em đang chạy VPS chứ không phải server riêng, quyền root có thể ghi vào fule sysctl.conf nhưng các lệnh trong đó thì không có quyền thực hiện. Em không được sửa kernel vì HP họ nó sửa là ảnh hưởng tới các VPS khác trên cùng server;
+
+Hiện giờ em chỉ cố gắng tune cho nó chạy tạm hết cỡ cho tròn tháng này để em chuyển sang dedicated server... nếu bác có tìm ra đựoc cái gì để tune tạm trong thời gian này thì chỉ em với nhé... thanks bác hehe!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183017</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183017</link>
+				<pubDate><![CDATA[Sun, 7 Jun 2009 23:52:53]]> GMT</pubDate>
+				<author><![CDATA[ namduong8889]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">namduong8889 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>ok, nghe cũng ná ná trường hơp của tớ :D, bạn thử áp dụng cách của tớ chưa? kết quả sao, cái này chỉ cần chỉnh mấy thông số trong kernel thôi, không cần dịch lại kernel. nếu thấy ổn thì có thể add config đó vào /etc/sysctl.conf để có hiệu lực lâu dài.&nbsp;
+		</blockquote>
+
+Chào bác :D
+
+Nguyên nhân căn bản vẫn là do có quá nhiều TIME_WAIT giống như bác, nếu ngắt đi được cái TIME_WAIT thì tốt, 
+
+nhưng em đang chạy VPS chứ không phải server riêng, quyền root có thể ghi vào fule sysctl.conf nhưng các lệnh trong đó thì không có quyền thực hiện. Em không được sửa kernel vì HP họ nó sửa là ảnh hưởng tới các VPS khác trên cùng server;
+
+Hiện giờ em chỉ cố gắng tune cho nó chạy tạm hết cỡ cho tròn tháng này để em chuyển sang dedicated server... nếu bác có tìm ra đựoc cái gì để tune tạm trong thời gian này thì chỉ em với nhé... thanks bác hehe!&nbsp;
+		</blockquote>
+VPS = Virtual Private Server , tức là server của bạn được cài trên máy ảo, cùng với các server ảo khác trên một máy vật lý, vì vậy cấu hình các server ảo nào không hề phụ thuộc vào nhau, làm gì có chuyện ảnh hưởng tới các máy ảo khác được, bạn nên hỏi lại bên cho thuê server. Khi bạn đã thuê một vps, bạn đươc toàn quyền cài đặt từ OS đến các phần mềm trên đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183018</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183018</link>
+				<pubDate><![CDATA[Mon, 8 Jun 2009 00:04:01]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">namduong8889 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>ok, nghe cũng ná ná trường hơp của tớ :D, bạn thử áp dụng cách của tớ chưa? kết quả sao, cái này chỉ cần chỉnh mấy thông số trong kernel thôi, không cần dịch lại kernel. nếu thấy ổn thì có thể add config đó vào /etc/sysctl.conf để có hiệu lực lâu dài.&nbsp;
+		</blockquote>
+
+Chào bác :D
+
+Nguyên nhân căn bản vẫn là do có quá nhiều TIME_WAIT giống như bác, nếu ngắt đi được cái TIME_WAIT thì tốt, 
+
+nhưng em đang chạy VPS chứ không phải server riêng, quyền root có thể ghi vào fule sysctl.conf nhưng các lệnh trong đó thì không có quyền thực hiện. Em không được sửa kernel vì HP họ nó sửa là ảnh hưởng tới các VPS khác trên cùng server;
+
+Hiện giờ em chỉ cố gắng tune cho nó chạy tạm hết cỡ cho tròn tháng này để em chuyển sang dedicated server... nếu bác có tìm ra đựoc cái gì để tune tạm trong thời gian này thì chỉ em với nhé... thanks bác hehe!&nbsp;
+		</blockquote>
+VPS = Virtual Private Server , tức là server của bạn được cài trên máy ảo, cùng với các server ảo khác trên một máy vật lý, vì vậy cấu hình các server ảo nào không hề phụ thuộc vào nhau, làm gì có chuyện ảnh hưởng tới các máy ảo khác được, bạn nên hỏi lại bên cho thuê server. Khi bạn đã thuê một vps, bạn đươc toàn quyền cài đặt từ OS đến các phần mềm trên đó.&nbsp;
+		</blockquote>
+
+Chào bác... Em đang host tại vinahost.vn
+
+Nhân viên support trả lời em như sau, sau khi em yêu cầu cho phép em edit một số cấu hình:
+<blockquote>
+Chào bạn,
+
+Do giá trị /proc/sys/net/ipv4/tcp_fin_timeout ảnh hưởng toàn bộ các VPS trên cùng hệ thống nên VinaHost chỉ có thể giảm xuống 30. Nếu hiện tượng bị ngắt vẫn còn tiếp diễn thì bạn nên thử chạy Apache + mod_php thay vì lighttpd một vài ngày xem có khác biệt không. Cơ chế quản lý, tạo PHP process của lighttpd cũng không thực sự tốt lắm và cũng có thể là 1 nguyên nhân gây ra lỗi trên.
+
+Thân,&nbsp;
+		</blockquote>
+
+Nghe cũng hơi vô lý nhưng cũng đành mặc kệ thôi, nếu em sử dụng quyền root để edit thì nó sẽ báo là 'operation not permitted' :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183021</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183021</link>
+				<pubDate><![CDATA[Mon, 8 Jun 2009 00:11:44]]> GMT</pubDate>
+				<author><![CDATA[ namduong8889]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ nếu bạn không có quyền control toàn bộ cái server đấy thì tớ cũng bó tay :D .
+@: ls -l /etc/sysctl.conf    thì kết quả thế nào bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183023</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183023</link>
+				<pubDate><![CDATA[Mon, 8 Jun 2009 00:25:55]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ bồ xem sơ qua cái này
+
+http://www.securityfocus.com/infocus/1711
+
+và 
+
+/proc/sys/net/ipv4/netfilter/ip_conntrack_tcp_timeout_close_wait 
+
+net.ipv4.ip_local_port_range = 16384 65536
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183044</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#183044</link>
+				<pubDate><![CDATA[Mon, 8 Jun 2009 06:27:04]]> GMT</pubDate>
+				<author><![CDATA[ Phó Hồng Tuyết]]></author>
+			</item>
+			<item>
+				<title> Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mfeng wrote:</cite><br>
+		<blockquote>TIME_WAIT là trạng thái cuối cùng của một kết nối tcp trước khi đóng kết nối chủ động (chủ động gửi FIN). Hiện tượng nhiều TIME_WAIT thực ra không phải lỗi của OS hay TCP/IP stack mà nguyên nhân thường bắt nguồn từ tốc độ mở socket mới quá nhanh so với tốc độ giải phóng socket: mỗi socket sẽ đợi ở tình trạng TIME_WAIT 1 khoảng thời gian là 2 *MSL (thông thường là 120s, trên CentOS là 60s).
+
+Để khắc phục vấn đề này có các hướng sau:
+ - Điều chỉnh tcp/ip stack nhằm giảm thời gian time_out để đóng socket time_wait và tái sử dụng socket: như quanta và secmask đang làm.
+
+ - Xem xét ở tầng app xem tại sao client sinh ra nhiều socket tới server tới vậy (thường là do lỗi lập trình). Ở đây là kết nối http, thử xem xét vấn đề về keep-alive để tiết kiệm số sockets xem sao.
+
+ - Search google: có một số giải pháp ở tầng TCP hoặc HTTP cho phép chủ động đóng bớt TIME_WAIT (Client chủ động gửi RST; thêm method CLOSE ở giao thức HTTP), nhưng có vẻ là khó triển khai với trường hợp này.
+&nbsp;
+		</blockquote>
+Sory vì mình có *khơi* vấn đề này lên. Hệ thống của mình run webserver Apache trên w2003. Với ipfw và mod_security được build cùng. Mình test thử bằng SYN Flood tool mà chỉ với 2 client thôi, server của mình đã vọt lên 7-10%cpu, socket time_wait lên tới vài nghìn (2000-3000) (không ngờ server thảm thế). 
+Mình đã điều chỉnh theo các hướng:
++ Giảm time_out -&gt; vẫn bị
++ Điều chỉnh trên OS:<span class="link"> http://technet.microsoft.com/en-us/library/cc938209.aspx</span> theo phương pháp enable SynAttackProtect -&gt; Vẫn bị
++ Trên ipfw có cách limit connection/ip(tớ cũng đã làm) nhưng cũng chỉ là phương pháp thiếu chủ động, dù có giảm xuống 4-8 connection/ip nhưng nếu clientAttack tăng lên thì vẫn die?
+Bạn Mfeng và các AE hỗ trợ mình phát này với nhé. Thanks.
+P/S: Sory AE vì trong phân mục cho Linux mà hỏi về windows vì vấn đề này giống với tình trạng tớ đang gặp quá.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244287</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244287</link>
+				<pubDate><![CDATA[Wed, 27 Jul 2011 01:07:15]]> GMT</pubDate>
+				<author><![CDATA[ crazym]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">namduong8889 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>ok, nghe cũng ná ná trường hơp của tớ :D, bạn thử áp dụng cách của tớ chưa? kết quả sao, cái này chỉ cần chỉnh mấy thông số trong kernel thôi, không cần dịch lại kernel. nếu thấy ổn thì có thể add config đó vào /etc/sysctl.conf để có hiệu lực lâu dài.&nbsp;
+		</blockquote>
+
+Chào bác :D
+
+Nguyên nhân căn bản vẫn là do có quá nhiều TIME_WAIT giống như bác, nếu ngắt đi được cái TIME_WAIT thì tốt, 
+
+nhưng em đang chạy VPS chứ không phải server riêng, quyền root có thể ghi vào fule sysctl.conf nhưng các lệnh trong đó thì không có quyền thực hiện. Em không được sửa kernel vì HP họ nó sửa là ảnh hưởng tới các VPS khác trên cùng server;
+
+Hiện giờ em chỉ cố gắng tune cho nó chạy tạm hết cỡ cho tròn tháng này để em chuyển sang dedicated server... nếu bác có tìm ra đựoc cái gì để tune tạm trong thời gian này thì chỉ em với nhé... thanks bác hehe!&nbsp;
+		</blockquote>
+VPS = Virtual Private Server , tức là server của bạn được cài trên máy ảo, cùng với các server ảo khác trên một máy vật lý, vì vậy cấu hình các server ảo nào không hề phụ thuộc vào nhau, làm gì có chuyện ảnh hưởng tới các máy ảo khác được, bạn nên hỏi lại bên cho thuê server. Khi bạn đã thuê một vps, bạn đươc toàn quyền cài đặt từ OS đến các phần mềm trên đó.&nbsp;
+		</blockquote>
+
+Mình nghĩ chắc là do cậu ấy dùng VPS công nghệ OpenVZ.
+
+@namduong8889: nếu bạn chủ yếu dùng static content sao không dùng varnish đặt trước lighttpd? varnish cache rất tốt, giảm tải khá nhiều nếu như content của bạn ít "động đậy".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244365</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244365</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 03:50:04]]> GMT</pubDate>
+				<author><![CDATA[ phonglanbiec]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ OpenVZ không chỉnh sửa được thông số kernel thật là bất tiện, mình cũng mới chỉ tìm ra được 1 cách để xử lý đó là 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>rm -f /sbin/modprobe
+ln -s /bin/true /sbin/modprobe
+rm -f /sbin/sysctl
+ln -s /bin/true /sbin/sysctl</pre>
+		</div>
+rồi mới sửa <b>sysctl.conf</b> và chạy lệnh <b>sysctl -p</b> nhưng tình hình nói chung là cũng không khả quan lắm, với thông số như thế này nhưng lượng TIME_WAIT vẫn lên tới 1000 :(
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>net.ipv4.tcp_fin_timeout = 35
+net.ipv4.tcp_keepalive_time = 1800
+net.ipv4.tcp_keepalive_intvl = 35
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_tw_reuse = 1</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># netstat -ant | awk '{print $6}' | sort | uniq -c | sort -n
+      1 established&#41;
+      1 Foreign
+      1 SYN_RECV
+      4 FIN_WAIT1
+      5 SYN_SENT
+      6 LAST_ACK
+     21 LISTEN
+     53 FIN_WAIT2
+    117 ESTABLISHED
+    979 TIME_WAIT</pre>
+		</div>
+VPS của mình đang chạy 2 forum VBB có khoảng gần 1000 người online cùng lúc, đã cài nginx.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244371</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244371</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 04:25:12]]> GMT</pubDate>
+				<author><![CDATA[ Kju]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ @crazym: Vấn đề bạn test thử sync flood và TIME_WAIT có vẻ không ăn nhập với nhau lắm.
+sync flood thông thường thì bạn chỉ cần enable sync cookie lên là được rồi, TIME_WAIT thì kết nối đã hình thành rồi, không còn liên quan đến sync flood nữa, TIME_WAIT  khoảng 1000 như của bạn nhưng nếu ổn định không tăng và hệ thống vẫn chạy thông suốt thì không cần phải lo lắng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244402</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244402</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 10:20:24]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>@crazym: Vấn đề bạn test thử sync flood và TIME_WAIT có vẻ không ăn nhập với nhau lắm.
+sync flood thông thường thì bạn chỉ cần enable sync cookie lên là được rồi, TIME_WAIT thì kết nối đã hình thành rồi, không còn liên quan đến sync flood nữa, TIME_WAIT  khoảng 1000 như của bạn nhưng nếu ổn định không tăng và hệ thống vẫn chạy thông suốt thì không cần phải lo lắng.&nbsp;
+		</blockquote>
+
+@Secmask: Tớ đã enable SynAttackProtect lên rồi nên mới giảm xuống ý chứ. Bạn Secmask giải thích hộ tớ phát này cái.
+=&gt;TIME_WAIT thì kết nối đã hình thành rồi =&gt; cái này chuẩn
+=&gt; không còn liên quan đến sync flood nữa =&gt; là sao? Không liên quan tức là &quot;SYN flood cứ đến&quot; và &quot;TIME_WAIT&quot; sinh ra nhiều là 2 vấn đề khác nhau à?
+Vì tại máy client tớ test vẫn bắn ầm ầm vào server và lượng TIME_WAIT cứ vọt lên xuống liên tục. Nếu có gì chưa đủ thì góp ý tớ nhé.
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244404</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244404</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 10:56:40]]> GMT</pubDate>
+				<author><![CDATA[ crazym]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ SYNC flood attack thì lúc đó kết nối mới đang ở giai đoạn khởi tạo thôi, kết nối chưa hoàn toàn được hình thành, 3 bước kết nối thì làm giữa chừng đã bỏ ngỏ rồi. Còn TIME_WAIT là trạng thái chờ đóng kết nối (mà đã được khởi tạo xong hoàn toàn từ trước). Do vậy sẽ sync flood sẽ không ảnh hưởng đến số TIME_WAIT socket.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244408</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244408</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 11:36:22]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Tớ hiểu ý Secmask rồi và cũng biết là SYNC flood attack sẽ chỉ có các kết nối chưa hoàn thành. Vậy:
+
+#Phía máy Attack(1 client):
+
+ TCP    ***-xp:1930            10.1.1.60:http         SYN_SENT
+ TCP    ***-xp:1931            10.1.1.60:http         SYN_SENT
+ TCP    ***-xp:1932            10.1.1.60:http         SYN_SENT
+ TCP    ***-xp:1933            10.1.1.60:http         SYN_SENT
+ TCP    ***-xp:1934            10.1.1.60:http         SYN_SENT
+
+#Phía máy server:
+
+C:\Documents and Settings\home&gt;netstat -a | find /C &quot;TIME_WAIT&quot;
+1345
+Nếu nói không liên quan nhau sau số TIME_WAIT lên vùn vụt vậy và phải chăng tool tớ đang test không phải là SYNC flood, thôi tớ đưa link tool luôn nhé<span class="link"> http://www.mediafire.com/?giykj25zizg</span>)
+=============================== 
+Một ít log apache server.
+===============================
+10.1.1.101 - - [29/Jul/2011:09:04:42 +0700] &quot;GET / HTTP/1.1&quot; 500 626 &quot;-&quot; &quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT
+5.1; .NET CLR 1.0.3705)&quot;
+10.1.1.101 - - [29/Jul/2011:09:04:42 +0700] &quot;GET / HTTP/1.1&quot; 500 626 &quot;-&quot; &quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT
+5.1; .NET CLR 1.0.3705)&quot;
+10.1.1.101 - - [29/Jul/2011:09:04:42 +0700] &quot;GET / HTTP/1.1&quot; 500 626 &quot;-&quot; &quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT
+5.1; .NET CLR 1.0.3705)&quot;
+=&gt; &quot;GET / HTTP/1.1&quot; 500 626 &quot; =&gt; Cái này do mình chặn bằng mod_security (SecRule Request header) vì mình nghĩ nó fake USER-AGENT
+
+Đoạn này thực sự là tớ rối lắm, Secmask nếu rảnh thì hướng dẫn cụ thể tớ phát nhé.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244427</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244427</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 21:15:17]]> GMT</pubDate>
+				<author><![CDATA[ crazym]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ tớ chưa có chạy thử cái tool của bạn nhưng mà chắc không phải tool sync flood.
+Thứ nhất, nó tên là httpfu**ker , http thì khỏi nói sync flood.
+Thứ hai là muốn sync flood thì phải dùng raw socket, trên các bản windows gần đây đã hạn chế rất nhiều việc sử dụng raw socket, mình nhìn mấy file exe + ocx thì chắc là không qua được cửa để tạo raw socket dùng cho sync flood được rồi :D.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244436</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244436</link>
+				<pubDate><![CDATA[Thu, 28 Jul 2011 22:56:05]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Diễn đàn bảo trì lâu quá không pm được.
+Nói như Secmask đây không phải là Sync flood vậy thì nó là một kiểu attack gì? Hay là giả mạo User-agent.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244492</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244492</link>
+				<pubDate><![CDATA[Tue, 2 Aug 2011 01:42:39]]> GMT</pubDate>
+				<author><![CDATA[ crazym]]></author>
+			</item>
+			<item>
+				<title>Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Http-flood thì nó tạo ra hàng loạt http request đẩy đến server, nếu server này phải thao tác với database/hoặc các thao tác chậm chạp mà không được xử lý tốt thì cũng tuơng đối vất vả :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244531</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244531</link>
+				<pubDate><![CDATA[Wed, 3 Aug 2011 06:13:35]]> GMT</pubDate>
+				<author><![CDATA[ secmask]]></author>
+			</item>
+			<item>
+				<title>[?] Quá nhiều socket TIME_WAIT</title>
+				<description><![CDATA[ Thêm một trường hợp có thể dẫn đến hàng loạt time wait của httpd là khi httpd bận read quá nhiều file cache của web app tạo ra. Mấy cái CMS thay vì query db để sinh html trả về client khi client request thì nó tạo sẵn html trong 1 directory, mà nếu nhiều content quá thì directory đó sẽ chứa rất nhiều file cache, httpd đọc ra để serve cho client sẽ bị treo. Bạn thử ls 1 directory có khoảng 10k-20k file sẽ thấy vấn đề.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244540</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/29559.hva#244540</link>
+				<pubDate><![CDATA[Wed, 3 Aug 2011 10:15:31]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "infobright: permission and INTO OUTFILE?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "infobright: permission and INTO OUTFILE?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ Chào mọi người,
+
+Mình dùng infobright 3.2.1. 
+
+Tài liệu của MySQL có đoạn:
+<blockquote>Any file created by INTO OUTFILE or INTO DUMPFILE is writable by all users on the server host. The reason for this is that the MySQL server cannot create a file that is owned by anyone other than the user under whose account it is running. (You should never run mysqld as root for this and other reasons.) The file thus must be world-writable so that you can manipulate its contents. 
+&nbsp;
+		</blockquote>
+Nhưng khi chạy câu lệnh: SELECT ... INTO OUTFILE ..., permission của file này chỉ là 660:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rw-rw---- 1 mysql mysql        140 Jul 21 14:05 test.out</pre>
+		</div>
+Do đó khi user LOAD DATA INFILE ... thì gặp lỗi:
+<blockquote><font color='orange'>The file 'test.out' must be in the database directory or be readable by all</font>&nbsp;
+		</blockquote>
+mysql user đã có toàn quyền trong thư mục:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>drwxr-xr-x 2 mysql mysql 4096 Jul 21 14:08 mysqldata/</pre>
+		</div>
+
+Mình chưa biết nguyên nhân ở đâu? Mọi người giúp mình với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215893</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215893</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 02:27:37]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>MySQL: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ datadir của mysql có phải là mysqldata hay chỉ là nơi anh tạo ra để chứa file anh vừa mới dump ra thôi? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215897</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215897</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 03:06:17]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>MySQL: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>datadir của mysql có phải là mysqldata hay chỉ là nơi anh tạo ra để chứa file anh vừa mới dump ra thôi? &nbsp;
+		</blockquote>
+Ở đây, mysqldata <b>không</b> phải là datadir của infobright em à. 
+
+Nhét vào datadir thì sẽ gặp lỗi này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; load data infile '/usr/local/infobright/outfile/test.out' into table xx;
+ERROR 13 &#40;HY000&#41;: Can't get stat of '/usr/local/infobright/outfile/test.out' &#40;Errcode: 2&#41;</pre>
+		</div>
+dù có change permission là bao nhiêu đi nữa. Còn để ở chỗ khác, chỉ cần <b>chmod o+r</b> là OK.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215898</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215898</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 03:25:42]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>MySQL: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ Em mới chạy thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; select * INTO OUTFILE &quot;/tmp/ofile_db.out&quot; FROM Log;</pre>
+		</div>
+thì permission của ofile_db.out
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rw-rw-rw-  1 mysql mysql    18 2010-07-21 15:43 ofile_db.out</pre>
+		</div>
+Nhưng em dùng root của mysql để dump ra file này, không biết anh dùng user nào? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215903</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215903</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 03:52:26]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ Mình đính chính lại là infobright chứ không phải MySQL, xin lỗi mọi người về sự nhầm lẫn này.
+
+@Bi: cả root và account có all privileges trên db đều bị.
+
+Bổ sung thông tin: 
+Nếu thử trên chính server và dùng <b>mysql&gt; LOAD DATA <font color='orange'>LOCAL</font> INFILE '/path/to/test.out' INTO TABLE xx;</b> thì OK.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215906</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215906</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 04:12:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ Em chưa dùng infobright, nhưng em "đoán" thì chỉ tại permission chưa đủ nên mới xảy ra hiện tượng trên. 2 command SELECT ... INTO OUTFILE và LOAD DATA INFILE cần đặc quyền tương đối đặc biệt để có thể đọc và ghi trên tât cả các file mà Mysql server có quyền write.
+Anh thử GRANT ALL PRIVILEGES lại cho user mà anh dùng để start mysql-ib thử, hoặc cho nó thêm quyền <b>FILE.</b>
+Em đọc sơ qua thì có vẻ như mysql-ib không nên chạy với quyền mysql root thì phải.
+<span class="link"> http://dev.mysql.com/doc/refman/5.1/en/privileges-provided.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215941</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215941</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 10:56:27]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>
+Anh thử GRANT ALL PRIVILEGES lại cho user mà anh dùng để start mysql-ib thử, hoặc cho nó thêm quyền <b>FILE.</b>
+&nbsp;
+		</blockquote>
+Sao lại grant cho user dùng để start mysql-ib (mysql) làm gì, user đó đâu có tồn tại trong mysql.user để mà grant. Còn grant cho user dùng để kết nối đến database thì anh làm rồi. Hơn nữa, ngay cả với root (MySQL user) anh cũng bị lỗi này mà.
+<p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>
+Em đọc sơ qua thì có vẻ như mysql-ib không nên chạy với <font color='orange'>quyền mysql root</font> thì phải.
+<span class="link"> http://dev.mysql.com/doc/refman/5.1/en/privileges-provided.html&nbsp;</span>
+		</blockquote>
+<i>"quyền mysql root"</i> là quyền gì vậy em?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215965</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215965</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 20:48:14]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ Em chỉ đọc một cái tutorial install Infobirght ở<span class="link"> http://blog.950buy.com/article/install-mysql-infobright-data-warehouse/</span> thì thấy là infobright cần một MySql user để chạy. Ý em nói là user này.
+<blockquote>"quyền mysql root" là quyền gì vậy em?<blockquote>
+Là root ( MySql user) 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215970</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215970</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 21:10:59]]> GMT</pubDate>
+				<author><![CDATA[ mR.Bi]]></author>
+			</item>
+			<item>
+				<title>infobright: permission and INTO OUTFILE?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>Em chỉ đọc một cái tutorial install Infobirght ở<span class="link"> http://blog.950buy.com/article/install-mysql-infobright-data-warehouse/</span> thì thấy là infobright cần một MySql user để chạy. Ý em nói là user này.
+<blockquote>"quyền mysql root" là quyền gì vậy em?&nbsp;
+		</blockquote>
+Là root ( MySql user) 
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+À, em đọc kỹ lại đi: nó dùng một MySQL user để stop mysql-ib bằng mysqladmin đấy chứ, có liên quan gì đến start đâu. Nếu có user nào đó liên quan đến start thì chắc chắn phải là OS user. Infobright cũng giống MySQL, dùng mysqld_safe - chạy với root, spawn ra một process mysqld chạy với mysql thôi (mặc định trên CentOS).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215973</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35134.hva#215973</link>
+				<pubDate><![CDATA[Wed, 21 Jul 2010 21:35:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

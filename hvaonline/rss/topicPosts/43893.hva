@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "BASE trên Snort không hiển thị thông tin."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "BASE trên Snort không hiển thị thông tin."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ Chào mọi người. Vấn đề của em là em cài BASE để theo dõi các cảnh báo từ Snort. Nhưng lại không nhận được bất cứ cảnh báo nào cũng như BASE ko có bất cứ dữ liệu gì.
+
+Mô hình của em là các cảnh báo sau khi được phát hiện --&gt; Barnyard2 --&gt; lưu xuống MySQL --&gt; và BASE sẽ đọc những log này.
+
+Barnyard em đã build với --with-mysql thành công.
+
+file config của Snort phần output là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>output unified2: filename snort.log, limit 128</pre>
+		</div>
+
+file config của Barnyard là:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config logdir: /var/log/barnyard2
+config hostname:        localhost
+config interface:       eth0
+config waldo_file: /var/log/snort/barnyard2.waldo
+output database: log, mysql, user=snort password=snortpass dbname=snort host=localhost</pre>
+		</div>
+
+Các file, thư mục cần thiết em đã đều tạo rồi, cơ sở dữ liệu cũng đã tạo
+
+fie base_conf.php
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$alert_dbname   = 'snort';
+$alert_host     = 'localhost';
+$alert_port     = '';
+$alert_user     = 'snort';
+$alert_password = 'snortpass';</pre>
+		</div>
+
+Sau đó em viết thử một rule để test trong local.rules như sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>alert icmp any any -&gt; any any &#40;msg:&quot;ICMP Testing Rule&quot;; sid:1000001;&#41;
+alert tcp any any -&gt; any 80 &#40;msg:&quot;TCP Testing Rule&quot;; sid:1000002;&#41;
+alert udp any any -&gt; any any &#40;msg:&quot;UDP Testing Rule&quot;; sid:1000003;&#41;</pre>
+		</div>
+
+Start snort và barnyard2
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># snort -c /etc/snort/snort.conf -A console
+# barnyard2 -c /etc/snort/barnyard2 -d /var/log/barnard2/ -f snort.log -w /var/log/snort/barnyard2.waldo</pre>
+		</div>
+
+Sau đó em thử ping tử một máy khác thì các cảnh báo đã hiển ra console.
+
+Nhưng khi truy cập vô BASE thì lại không thấy bất cứ cái gì, log trong /var/log/snort cũng đã được tạo ra.
+
+Em không biết sai chỗ nào, nhở mọi người giúp đỡ với ạ
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271505</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271505</link>
+				<pubDate><![CDATA[Sun, 2 Dec 2012 09:13:20]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ Sau khi search lại trên diễn đàn thì hình như vấn đề của em là BASE không đủ thẩm quyền để đọc các file log của Snort. Vì BASE đang chạy với user apache và chown của thư mục /var/log/snort thuộc về snort:snort.
+
+Sau đó em 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chmod 755 -R /var/log/snort</pre>
+		</div>
+
+Và test lại thử nhưng BASE vẫn chưa thể đọc được log của Snort.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271507</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271507</link>
+				<pubDate><![CDATA[Sun, 2 Dec 2012 09:39:32]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ barnyard2 đã đưa được vào mysql chưa?
+snort -&gt; unified2 -&gt; barnyard2 -&gt; mysql
+BASE chỉ đọc từ mysql nên bạn phải chắc barnyard2 đã out ra được mysql]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271513</link>
+				<pubDate><![CDATA[Sun, 2 Dec 2012 21:45:49]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>barnyard2 đã đưa được vào mysql chưa?
+snort -&gt; unified2 -&gt; barnyard2 -&gt; mysql
+BASE chỉ đọc từ mysql nên bạn phải chắc barnyard2 đã out ra được mysql&nbsp;
+		</blockquote>
+
+Vấn đề của mình chính là chỗ này, hôm qua khi xem mình cứ nghĩ là do permision của thư mục chứa log mà BASE ko thể đọc được.
+
+Sau đó mình thử kiểm tra lại tất cả cấu hình và các file config, sau đó start lại Snort và start lại Barnyard2 và thấy log có tạo ra đúng thuộc sở hữu của Snort.
+
+Sau đó mình để ý thấy một điều lại là Barnyard2 không record bất cứ gói tin nào. Dù bên Snort vẫn báo có khoảng bao nhiêu % gói tin TCP, ICMP...
+
+Vấn đề mình đã xác định được là do Barnyard2 ko record đc, nhưng kiểm tra đi kiểm tra lại vấn chưa thấy lỗi ở đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271529</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271529</link>
+				<pubDate><![CDATA[Mon, 3 Dec 2012 07:19:06]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ gửi config của barnyard2 lên cho mọi người xem và góp ý đi bạn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271538</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271538</link>
+				<pubDate><![CDATA[Mon, 3 Dec 2012 21:15:47]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ Em trình bày lại cách em cài đặt Barnyard2 như sau.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ./configure --with-mysql –with-mysql-libraries=/usr/lib64/mysql && make && make install
+# cp etc/barnyard2.conf /etc/snort # Copy tập tin cấu hình của Barnyard2 đặt vào thư mục cấu hình của Snort.
+# mkdir /var/log/barnyard2
+# chmod 666 /var/log/barnyard2
+# touch /var/log/snort/barnyard2.waldo
+# cp sid-msg.map /etc/snort -&gt; file này nằm trong tập luật tải về.</pre>
+		</div>
+
+Tập tin cấu hình của Barnyard2 như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config reference_file: /etc/snort/reference.config
+config classification_file: /etc/snort/classification.config
+config gen_file: /etc/snort/gen-msg.map
+config sid_file: /etc/snort/sid-msg.map
+config logdir: /var/log/barnyard2
+config hostname: localhost
+config interface: eth0
+config waldo_file: /var/log/snort/barnyard2.waldo
+#output alert_fast: stdout
+output database: log, mysql, user=snort password=snortpass dbname=snort host=localhost</pre>
+		</div>
+
+Sau đó em chạy snort và barnyard2 với 2 command sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># snort –u snort –g snort-c /etc/snort/snort.conf –i eth0
+# barnyard2 -c /etc/snort/barnyard2.conf -d /var/log/snort/ -f snort.log -w /var/log/snort/barnyard2waldo</pre>
+		</div>
+
+Và kết quả là Barnyard2 không record đc packet nào.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271630</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271630</link>
+				<pubDate><![CDATA[Fri, 7 Dec 2012 11:26:07]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ 1. thư mục /var/log/snort có file unified2 nào không? =&gt; đảm bảo snort đã capture được
+2. file waldo là barnyard2.waldo hay là barnyard2waldo?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271683</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271683</link>
+				<pubDate><![CDATA[Sun, 9 Dec 2012 21:44:32]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>1. thư mục /var/log/snort có file unified2 nào không? =&gt; đảm bảo snort đã capture được[code]&nbsp;
+		</blockquote>
+Dạ, đã có log dạng snort.log.xxx rồi. Và đã có thông tin trong đó luôn
+<p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>2. file waldo là barnyard2.waldo hay là barnyard2waldo?&nbsp;
+		</blockquote>
+Chỗ này em paste nhầm, command chạy đúng là file baryard2.waldo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271710</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271710</link>
+				<pubDate><![CDATA[Mon, 10 Dec 2012 10:57:53]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>BASE trên Snort không hiển thị thông tin.</title>
+				<description><![CDATA[ - chạy barnyard2 với thông số -v, đồng thời bật output fast trong barnyard2 để coi nó có output fast không.
+
+- Đọc thêm /var/log/message (hoặc /var/log/syslog) coi coi barnyard2 có phun log ra không?
+
+- Version của barnyard2 là gì?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271717</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43893.hva#271717</link>
+				<pubDate><![CDATA[Mon, 10 Dec 2012 20:20:31]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

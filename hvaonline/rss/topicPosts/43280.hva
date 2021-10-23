@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Về file, directory, inode và link trong Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Về file, directory, inode và link trong Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Về file, directory, inode và link trong Linux</title>
+				<description><![CDATA[ <b>1.      File và inode</b>
+
+Một file là một khối dữ liệu được lưu trữ liên tục hoặc không liên tục (tình trạng dữ liệu bị phân mảnh) trên thiết bị lưu trữ như ổ cứng, ổ mềm, ổ flash,… Người dùng bình thường sẽ nhận dạng một file dựa trên tên của nó (file name).
+
+Mỗi file được liên kết với một inode mà chứa các thuộc tính của file đó như là định dạng (text, binary,…), kích thước, ngày khởi tạo, vị trí trên thiết bị lưu trữ, chủ sở hữu, quyền truy cập,… Thông tin về file mà inode nắm giữ thường được gọi là metadata, đặc biệt inode không chứa tên file và nội dung thật sự của file.
+
+Mỗi inode được xác định bởi một con số (inode number) , có một bảng chỉ mục (inode table) gồm inode number – vị trí inode trên thiết bị lưu trữ. Với inode number có được kernel sẽ tìm trong bảng chỉ mục này và truy cập tới nội dung của inode, bao gồm con trỏ dữ liệu từ đó truy cập tới nội dung của file mà liên kết với inode đó.
+
+Khi một file được tạo, nó được gán một file name + một inode number là số nguyên duy nhất trong một file system. Các file name và inode number tương ứng được lưu trữ thành các mục (entry) trong thư mục, tức là thư mục thực ra chỉ là danh sách các liên kết giữa file name và inode number mà thôi.
+
+Khi người dùng hoặc chương trình sử dụng file name để tham khảo tới một file, hệ điều hành sẽ sử dụng tên này để tìm kiếm inode tương ứng bằng cách tra cứu trong inode table rồi từ đó biết được thông tin và vị trí của file trên thiết bị lưu trữ để phục vụ cho các thao tác về sau (như chỉnh sửa nội dung của file, cung cấp thuộc tính của file,…).
+
+Sử dụng lệnh ls -i để biết inode number của 1 file, và ls -l để biết metadata của file chứa trong inode.
+
+Trên nhiều kiểu file system thì số lượng các inode có thể sử dụng được cố định tại thời điểm khởi tạo file system, dẫn tới việc giới hạn số lượng file mà hệ thống file có thể nắm giữ, quản lý.
+
+<b>2.      Directory</b>
+
+Directory (hay folder – thư mục) trong *nix là một loại file đặc biệt, chứa danh sách các liên kết giữa tên đối tượng (file, folder, soft/hard link…) và inode number tương ứng với đối tượng đó.
+
+<b>Current Directory</b>
+Hay working directory (thư mục hiện hành) là thư mục mà hiện tại người dùng, chương trình đang “đứng”, tham khảo, làm việc tại đó.
+
+Mọi user luôn luôn đang làm việc bên trong một thư mục nào đó. Chính xác hơn thì mỗi tiến trình (process) có một WK được liên kết linh động với nó. Trong Windows thì process gọi hàm GetCurrentDirectory để xác định vị trí của WK và gọi hàm SetCurrentDirectory để thay đổi WK.
+
+Khi user hoặc process chỉ định một file mà đơn giản chỉ sử dụng tên file hoặc đường dẫn tương đối (relative path) của file thì việc tìm kiếm tới file này bắt đầu từ WK. Ví dụ trong Linux, khi mới mở Shell CLI lên để gõ lệnh thường thì ta đang đứng ở thư mục có đường dẫn tuyệt đối là
+/home/user_name thì thư mục user_name là WK. Khi gõ vào
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># rm foo.txt</pre>
+		</div>
+
+thì lệnh này sẽ thực hiện việc xóa file foo.txt trong thư mục chủ của người dùng.
+
+Thường có 2 cách để thể xác định WK.
+
+Một là nhìn vào dấu nhắc lệnh (command prompt). Với bash thì dấu nhắc lệnh chứa tên người dùng,  máy tính và thư mục hiện hành, ví dụ:
+
+<blockquote>[uit@localhost bluesky]#&nbsp;
+		</blockquote>
+
+thì uit là user name, localhost là computer name và bluesky là working directory, # chỉ ra rằng đây là user root.
+
+Cách thứ hai là sử dụng lệnh pwd (present working directory), lệnh này không có tùy chọn hay đối số để hiện đường dẫn đầy đủ của thư mục hiện hành.
+
+WK thường được biểu thị bởi 1 dấu chấm “.” , còn 2 dấu chấm liên tiếp “..” thay cho thư mục cha của WK. Ta sẽ luôn thấy 2 mục bị ẩn này tồn tại trong mọi thư mục trên *nix bằng cách sử dụng lệnh ls -a
+
+<b>Directory Tree</b>
+Gọi là cây thư mục, là hệ thống các thư mục được phân cấp và trong đó có duy nhất một thư mục được gọi là thư mục cha và tất cả các mức độ thư mục con của nó. Bất kỳ thư mục nào cũng có thể là điểm bắt đầu cho 1 cây thư mục của riêng nó nếu nó chứa ít nhất 1 thư mục con.
+
+Hầu hết các hệ điều hành ngày nay đều sử dụng cấu trúc cây thư mục cho việc tổ chức file. Với các hệ *nix chỉ có duy nhất một thư mục gốc (root directory, ký hiệu là /) mà từ đó các cây thư mục khác sinh ra từ đây. Con các hệ Microsoft Windows thì có nhiều thư mục gốc độc lập với nhau có các tên như C: , D: , E: ,…
+
+Lệnh du (disk usage) trong Linux là một tiện ích thu thập thông tin về các cây thư mục, bao gồm tổng không gian đĩa mà một cây chiếm dụng, tên và kích thước mỗi nhánh hoặc file trong cây đó.
+
+<b>3.      Hard Link</b>
+
+Hard link (HL) là tên gọi khác cho một file đang tồn tại trên file system.
+
+Một file có thể có nhiều HL và mỗi HL cũng có thể có nhiều HL cho nó. Tuy nhiên, không thể tạo cho HL cho thư mục và cũng không thể tạo ra HL cho một file không nằm cùng phân vùng với HL. Ví dụ, không thể tạo HL trên phân vùng A cho một file nằm trên phân vùng B.
+
+Hệ điều hành không phân biệt giữa file name ban đầu của file với các HL được tạo ra sau này cho file đó. Cả file name và các HL này đều trỏ tới cùng một inode, và vì mỗi inode có một số inode number là duy nhất trong một file system nên HL không thể làm việc chéo qua các phân vùng khác nhau.
+
+Sử dụng lệnh ln để tạo HL. Ví dụ dưới đây sẽ tạo một HL có tên hlink1 cho một file có tên file1, cả 2 file này đều nằm trong cùng thư mục hiện hành.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ln file1 hlink1</pre>
+		</div>
+
+File name ban đầu và tất cả các HL tới file đều chia sẻ chung inode, có thể thấy rõ điều này bằng cách sử dụng lệnh ls –i. Câu lệnh dưới đây sẽ cho thấy inode number của file1 và hlink1 là giống nhau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls -i file1 hlink1</pre>
+		</div>
+
+Số lượng các HL cho 1 file được thể hiện trong cột thứ 2 trong output của lệnh ls –l. Con số này là tổng của filename ban đầu và HL và số này giống nhau cho target file và mỗi HL, ví dụ:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls -l file1 hlink1</pre>
+		</div>
+
+Sử dụng lệnh sau để tìm các file có nhiều hơn một HL
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ find -type f -links +1</pre>
+		</div>
+
+Thử chỉnh sửa nội dung của target file và lưu lại. Sau đó mở HL của target file đó lên sẽ những thay đổi được giữ nguyên.
+
+<b>Lệnh rm thực sự làm gì?</b>
+Khi sử dụng lệnh rm để xóa file thì thực chất là làm giảm đi một HL. Khi số lượng HL giảm còn 0 thì không thể truy cập tới nội dung của file được nữa (mặc dù nội dung đó vẫn tồn tại trên thiết bị lưu trữ) vì hệ điều hành không còn cách nào để tham khảo tới file này. Dữ liệu của file chỉ thực sự bị mất khi vị trí của nó bị ghi đè bởi các file mới. Điều này giải thích tại sao ta vẫn có thể khôi phục dữ liệu vừa bị xóa và không có dữ liệu nào được tạo ra trên vị trí của dữ liệu cũ.
+
+HL cũng như shortcut trong Windows là cho phép truy cập tới file, chương trình, script từ một vị trí khác thuận tiện hơn.
+
+<b>4.      Symbolic link</b>
+
+SL thì hơi khác chút so với HL đó là có thể tạo SL cho 1 thư mục cũng như là tạo SL các file và thư mục trên các phân vùng khác. Tuy nhiên, hạn chế của SL so với HL là khi xóa target file thì SL không có tác dụng nữa. Sử dụng cú pháp lệnh sau để tạo SL
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ln -s target_file SL_name</pre>
+		</div>
+
+<b>–manthang</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43280.hva#268891</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43280.hva#268891</link>
+				<pubDate><![CDATA[Wed, 29 Aug 2012 20:38:13]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+	</channel>
+</rss>

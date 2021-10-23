@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Loại bỏ spam khỏi qmail SMTP bằng RBL"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Loại bỏ spam khỏi qmail SMTP bằng RBL"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Tớ chúa ghét spam và từ khi bắt đầu dùng qmail làm MTA hồi năm 2000 cho đến nay, tớ đã khoái ứng dụng <b>rblsmtpd</b> (real time backlist smtp daemon) có trong qmail.
+
+Ngày trước đoạn script run tớ thường dùng cho qmail-smtpd là:
+
+<blockquote>exec /usr/local/bin/softlimit -m 2000000 \
+    /usr/local/bin/tcpserver -v -H -P -R -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \
+        -u "$QMAILDUID" -g "$NOFILESGID" 0 smtp /usr/local/bin/rblsmtpd <b><font color='red'>-r relays.ordb.org -r relays.osirusoft.com</font></b> /var/qmail/bin/qmail-smtpd &gt;&gt; /var/log/qmail/rblsmtpd.log 2&gt;&1&nbsp;
+		</blockquote>
+
+trong đó, 
+relays.ordb.org và relays.osirusoft.com là hai RBL servers. Chúng được <b>rblsmtpd</b> hỏi thăm mỗi khi có mail đi vào xem mail này có phải thuộc diện spam hay không trước khi tiếp nhận. 
+
+Thời gian gần đây, tớ thấy spams đi vào system càng lúc càng nhiều, bèn điều tra. Hóa ra hai cái servers trên chết tiệt hồi nào rồi nên chẳng còn real time blacklist gì ráo  :P) .
+
+Tớ bèn google 1 phát và ra cái này:<span class="link"> http://www.email-policy.com/Spam-black-lists.htm</span>
+
+Sau khi duyệt xuyên qua cái danh sách và hí hoáy thử nghiệm, tớ thấy có 2 "anh chàng" ngon nhất và nhanh nhất đó là:
+<b>sbl-xbl.spamhaus.org</b> và <b>dnsbl.njabl.org</b>. Thế là đoạn script run tớ dùng cho qmail-smtpd trở thành:
+<blockquote>exec /usr/local/bin/softlimit -m 32000000 \
+    /usr/local/bin/tcpserver -v -H -R -l 0 -P -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \
+        -u "$QMAILDUID" -g "$NOFILESGID" 0 25 /usr/local/bin/rblsmtpd <b><font color='red'>-b -r sbl-xbl.spamhaus.org -b -r dnsbl.njabl.org</font></b> /var/qmail/bin/qmail-smtpd &gt;&gt; /var/log/qmail/rblsmtpd.log 2&gt;&1&nbsp;
+		</blockquote>
+
+Điểm khác biệt tất nhiên là 2 cái server mới ở trên. Tuy nhiên, điểm quan trọng là tớ dùng -b thêm vào. -b cho <b>rblsmtpd</b> có nghĩa là <i>"Use a 553 error code for IP addresses listed in the RBL"</i> (theo nguyên bản chú thích của Dan Bernstein). Bởi thế, một đoạn log mới của qmail's rblsmtpd.log cho thấy:
+
+<blockquote>tcpserver: pid 27269 from 24.195.254.113
+tcpserver: ok 27269 0:xxx.xxx.xxx.xxx:25 :24.195.254.113::1921
+rblsmtpd: 24.195.254.113 pid 27269: <font color='orange'><b>553</b></font><span class="link"> http://www.spamhaus.org/query/bl?ip=24.195.254.113</span>
+tcpserver: end 27269 status 0&nbsp;
+		</blockquote>
+
+Đại khái tcpserver daemon báo rằng, 
+- process id 27268 nhận mail từ 24.195.254.113. 
+
+- sau đó, nó tiếp nhận (ok) ở dòng tiếp theo. xxx.xxx.xxx.xxx:25 là cổng smtp và IP của server của tớ, 24.195.254.113 và cổng 1921 là IP và cổng của máy (hoặc open relay server đó) gởi mail đến server tớ.
+
+- dòng kế tiếp, <b>rblsmtpd</b> nhảy vào và query spamhaus.org xem IP 24.195.254.113 có bị blacklist hay không và cho biết kết quả 553 (SMTP Relay denied).
+
+- dòng cuối cùng, tcpserver báo rằng process đó kết thúc, không có chuyện gì xảy ra. Điều này có nghĩa rằng, spam mail từ 24.195.254.113 không hề vào được hệ thống của tớ  :P) 
+
+
+Ai dùng <b>qmail</b> nên thử xem thế nào? Ở đây tớ không bàn đến các phương pháp chống spam khác (như spamassasin... dùng fuzzy check, Bayesian filter... ) vì RBL là 1 dạng trong nhiều dạng chống. 
+
+Tớ nói thêm, những ai chưa dùng qmail thì bài viết này không có giá trị gì cả.
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61172</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61172</link>
+				<pubDate><![CDATA[Wed, 23 May 2007 11:14:19]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Rất hay .
+
+Từ khi em bắt đầu dùng qmail (chắc là 2005) thì em đã áp dụng  blacklist của relays.ordb.org và relays.osirusoft.com vào. mặc dù không biết khả năng xử lý spam của nó bao nhiêu nhưng vẫn thấy spam đến vài chục cái trong 1 ngày và cứ thế mà đều đều . chắc phải thử liền thôi, cám ơn anh đã share :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61180</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61180</link>
+				<pubDate><![CDATA[Wed, 23 May 2007 11:46:48]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hello !
+
+Theo em biết thì cái RBL Spamhaus này có lâu lắm rồi mà . Hiện tại em dùng 1 số sản phẩm khác Mirrapoint và của Clearswift đều hỗ trợ sử dụng Spamhaus .  Nhưng ở VN có một số trục trặc nho nhỏ về IP .
+
+Anh conmale có thể cho lên đoạn scripts cho sendmail và postfix được không ?
+
+Em chưa dùng qmail bao giờ nhưng vài hôm nữa test thử cái xem sao .
+
+PM]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61259</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#61259</link>
+				<pubDate><![CDATA[Wed, 23 May 2007 18:46:05]]> GMT</pubDate>
+				<author><![CDATA[ PureMoon]]></author>
+			</item>
+			<item>
+				<title>Re: Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Chào "cụ"
+
+Cụ search google lam gi cho mệt. cụ vào đây mà list cho nhanh.
+
+http://www.dnsstuff.com/tools/ip4r.ch?&ip=203.162.1.40
+
+tui làm HOSTING lâu rồi nên thấy sử dụng 2 thằng hiệu quả nhất là đến thơi điểm hiện tại.
+
+SORBS  và CBL 
+
+Còn thang Fiveteen*  thi "khủng" quá nó block hết cả mạng VDC cũ... " thằng này có vấn đề ..ko biết sử dụng nó làm gì nữa ".
+
+http://www.vtic.vn/spamlock   &lt;--- ai gửi thư đến mạng tui cần phải đọc cái này trước .  :D) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62071</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62071</link>
+				<pubDate><![CDATA[Mon, 28 May 2007 16:07:51]]> GMT</pubDate>
+				<author><![CDATA[ xevathethao]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ em không bao giờ dùng blacklist, em ghét blacklist, em dọt đây trước khi các bác phang cho gãy giò :-d]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62191</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62191</link>
+				<pubDate><![CDATA[Tue, 29 May 2007 04:09:48]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote>em không bao giờ dùng blacklist, em ghét blacklist, em dọt đây trước khi các bác phang cho gãy giò :-d&nbsp;
+		</blockquote>
+
+Blacklist có cái ưu, cái khuyết. 
+Fuzzy checking, Bayesian filtering có cái ưu, cái khuyết.
+
+Nếu em muốn hiệu suất và sẵn sàng chấp nhận một số spam đi qua được thì nên dùng blacklist.
+
+Nếu em không quan trọng hiệu suất và muốn số spam đi vào ít hơn thì dùng phương thức filtering khác.
+
+Nên nhớ rằng, cho dù combine cả blacklist và các phương pháp filtering khác đi chăng nữa, spam vẫn đi qua được vì có những dạng spam không thể blacklist, không thể filter được.
+
+
+to <b>PureMoon</b>, đây:
+
+đưa vào sendmail.mc:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>FEATURE&#40;`dnsbl',`sbl-xbl.spamhaus.org',`Rejected - see<span class="link"> http://www.spamhaus.org/'&#41;dnl</span>
+
+FEATURE&#40;`dnsbl',`dnsbl.njabl.org',`Rejected - see<span class="link"> http://www.njabl.org/'&#41;dnl</span></pre>
+		</div>
+
+
+Đối với postfix, em phải define <b>smtpd_recipient_restrictions</b> trong main.cf và đưa vào:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>reject_rbl_client sbl-xbl.spamhaus.org,
+reject_rbl_client dnsbl.njabl.org</pre>
+		</div>
+
+Good luck.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62208</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#62208</link>
+				<pubDate><![CDATA[Tue, 29 May 2007 11:39:40]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Tớ chúa ghét spam và từ khi bắt đầu dùng qmail làm MTA hồi năm 2000 cho đến nay, tớ đã khoái ứng dụng <b>rblsmtpd</b> (real time backlist smtp daemon) có trong qmail.
+
+Ngày trước đoạn script run tớ thường dùng cho qmail-smtpd là:
+
+<blockquote>exec /usr/local/bin/softlimit -m 2000000 \
+    /usr/local/bin/tcpserver -v -H -P -R -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \
+        -u "$QMAILDUID" -g "$NOFILESGID" 0 smtp /usr/local/bin/rblsmtpd <b><font color='red'>-r relays.ordb.org -r relays.osirusoft.com</font></b> /var/qmail/bin/qmail-smtpd &gt;&gt; /var/log/qmail/rblsmtpd.log 2&gt;&1&nbsp;
+		</blockquote>
+
+trong đó, 
+relays.ordb.org và relays.osirusoft.com là hai RBL servers. Chúng được <b>rblsmtpd</b> hỏi thăm mỗi khi có mail đi vào xem mail này có phải thuộc diện spam hay không trước khi tiếp nhận. 
+
+Thời gian gần đây, tớ thấy spams đi vào system càng lúc càng nhiều, bèn điều tra. Hóa ra hai cái servers trên chết tiệt hồi nào rồi nên chẳng còn real time blacklist gì ráo  :P) .
+
+Tớ bèn google 1 phát và ra cái này:<span class="link"> http://www.email-policy.com/Spam-black-lists.htm</span>
+
+Sau khi duyệt xuyên qua cái danh sách và hí hoáy thử nghiệm, tớ thấy có 2 "anh chàng" ngon nhất và nhanh nhất đó là:
+<b>sbl-xbl.spamhaus.org</b> và <b>dnsbl.njabl.org</b>. Thế là đoạn script run tớ dùng cho qmail-smtpd trở thành:
+<blockquote>exec /usr/local/bin/softlimit -m 32000000 \
+    /usr/local/bin/tcpserver -v -H -R -l 0 -P -x /etc/tcp.smtp.cdb -c "$MAXSMTPD" \
+        -u "$QMAILDUID" -g "$NOFILESGID" 0 25 /usr/local/bin/rblsmtpd <b><font color='red'>-b -r sbl-xbl.spamhaus.org -b -r dnsbl.njabl.org</font></b> /var/qmail/bin/qmail-smtpd &gt;&gt; /var/log/qmail/rblsmtpd.log 2&gt;&1&nbsp;
+		</blockquote>
+
+Điểm khác biệt tất nhiên là 2 cái server mới ở trên. Tuy nhiên, điểm quan trọng là tớ dùng -b thêm vào. -b cho <b>rblsmtpd</b> có nghĩa là <i>"Use a 553 error code for IP addresses listed in the RBL"</i> (theo nguyên bản chú thích của Dan Bernstein). Bởi thế, một đoạn log mới của qmail's rblsmtpd.log cho thấy:
+
+<blockquote>tcpserver: pid 27269 from 24.195.254.113
+tcpserver: ok 27269 0:xxx.xxx.xxx.xxx:25 :24.195.254.113::1921
+rblsmtpd: 24.195.254.113 pid 27269: <font color='orange'><b>553</b></font><span class="link"> http://www.spamhaus.org/query/bl?ip=24.195.254.113</span>
+tcpserver: end 27269 status 0&nbsp;
+		</blockquote>
+
+Đại khái tcpserver daemon báo rằng, 
+- process id 27268 nhận mail từ 24.195.254.113. 
+
+- sau đó, nó tiếp nhận (ok) ở dòng tiếp theo. xxx.xxx.xxx.xxx:25 là cổng smtp và IP của server của tớ, 24.195.254.113 và cổng 1921 là IP và cổng của máy (hoặc open relay server đó) gởi mail đến server tớ.
+
+- dòng kế tiếp, <b>rblsmtpd</b> nhảy vào và query spamhaus.org xem IP 24.195.254.113 có bị blacklist hay không và cho biết kết quả 553 (SMTP Relay denied).
+
+- dòng cuối cùng, tcpserver báo rằng process đó kết thúc, không có chuyện gì xảy ra. Điều này có nghĩa rằng, spam mail từ 24.195.254.113 không hề vào được hệ thống của tớ  :P) 
+
+
+Ai dùng <b>qmail</b> nên thử xem thế nào? Ở đây tớ không bàn đến các phương pháp chống spam khác (như spamassasin... dùng fuzzy check, Bayesian filter... ) vì RBL là 1 dạng trong nhiều dạng chống. 
+
+Tớ nói thêm, những ai chưa dùng qmail thì bài viết này không có giá trị gì cả.
+
+Thân mến.&nbsp;
+		</blockquote>
+
+Hiện tại spamhaus đã chuyển nguồn combine sbl-xbl.spamhaus.org sang zen.spamhaus.org 
+
+Trên spamhaus cũng có 1 số error return code 
+Tham khảo tại<span class="link"> http://www.spamhaus.org/zen/</span> <span class="link"> http://www.spamhaus.org/faq/answers.lasso?section=DNSBL%20Usage#200</span>
+
+@ anh conmale: Bài viết của anh rất có giá trị cho dù em không dùng qmail. :)
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188731</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188731</link>
+				<pubDate><![CDATA[Tue, 4 Aug 2009 22:21:47]]> GMT</pubDate>
+				<author><![CDATA[ thangdiablo]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Có một thứ &quot;thuốc&quot; mới chống spam cho qmail khá độc đó là dùng ứng dụng <span class="link"> http://www.spamdyke.org/download.html</span> với qmail.
+
+Thay vì:
+
+<blockquote>exec /usr/local/bin/softlimit -m 32000000 \
+/usr/local/bin/tcpserver -v -H -R -l 0 -P -x /etc/tcp.smtp.cdb -c &quot;$MAXSMTPD&quot; \
+-u &quot;$QMAILDUID&quot; -g &quot;$NOFILESGID&quot; 0 25 /usr/local/bin/rblsmtpd -b -r sbl-xbl.spamhaus.org -b -r dnsbl.njabl.org /var/qmail/bin/qmail-smtpd &gt;&gt; /var/log/qmail/rblsmtpd.log 2&gt;&1&nbsp;
+		</blockquote>
+
+Mình chỉ còn:
+
+<blockquote>exec /usr/local/bin/softlimit -m 40000000 \
+        /usr/local/bin/tcpserver -v -H -R -l 0 -P -x /etc/tcp.smtp.cdb -c &quot;$MAXSMTPD&quot; \
+        -u &quot;$QMAILDUID&quot; -g &quot;$NOFILESGID&quot; 0 25 \
+        <font color='red'>/usr/local/bin/spamdyke -f /etc/spamdyke.conf</font> \
+         /var/qmail/bin/qmail-smtpd /bin/true 2&gt;&1&nbsp;
+		</blockquote>
+
+và nội dung của spamdyke.conf như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>log-level=verbose
+local-domains-file=/var/qmail/control/rcpthosts
+max-recipients=5
+idle-timeout-secs=300
+graylist-dir=/var/qmail/graylist
+graylist-level=always
+graylist-min-secs=300
+graylist-max-secs=1814400
+sender-blacklist-file=/var/qmail/blacklist/bl-send
+recipient-blacklist-file=/var/qmail/blacklist/bl-recv
+ip-in-rdns-keyword-blacklist-file=/var/qmail/blacklist/bl-keywords
+ip-blacklist-file=/var/qmail/blacklist/bl-ip
+rdns-blacklist-dir=/var/qmail/blacklist/blacklist_rdns.d
+reject-empty-rdns
+reject-unresolvable-rdns
+reject-ip-in-cc-rdns
+rdns-whitelist-file=/var/qmail/whitelist/wl-rdns
+ip-whitelist-file=/var/qmail/whitelist/wl-ip
+greeting-delay-secs=5
+dns-blacklist-entry=dnsbl.sorbs.net
+dns-blacklist-entry=bl.spamcop.net
+dns-blacklist-entry=zen.spamhaus.org
+reject-missing-sender-mx
+sender-whitelist-file=/var/qmail/whitelist/wl-send
+config-dir=/etc/spamdyke.d</pre>
+		</div>
+
+trong config này mình có thể liệt kê mấy cái <b>dns-blacklist-entry</b> tùy thích. Ngoài ra spamdyke còn cho phép ấn định nhiều thứ khá độc đáo để chống spam.
+
+Logs do spamdyke tạo ra có những thông tin lý thú như sau:
+
+<blockquote>Aug  4 23:08:08 localhost spamdyke[28734]: <font color='red'>DENIED_RDNS_MISSING from</font>: inflammationp7241@kallmannkonzept.com to: copperiad@tienve.org origin_ip: 123.248.17.77 origin_rdns: (unknown) auth: (unknown)
+Aug  4 23:08:08 localhost spamdyke[28734]: <font color='red'>DENIED_RDNS_MISSING from</font>: inflammationp7241@kallmannkonzept.com to: czupryn@tienve.org origin_ip: 123.248.17.77 origin_rdns: (unknown) auth: (unknown)
+Aug  4 23:08:21 localhost spamdyke[28767]: <font color='red'>FILTER_RDNS_RESOLVE ip</font>: 190.55.99.38 rdns: cpe-38.99.55.190.in-addr.arpa
+Aug  4 23:08:21 localhost spamdyke[28767]: <font color='red'>DENIED_RDNS_RESOLVE from</font>: factxp8@laubergedelavallee.com to: isaganimerz@tienve.org origin_ip: 190.55.99.38 origin_rdns: cpe-38.99.55.190.in-addr.arpa auth: (unknown)
+Aug  4 23:08:21 localhost spamdyke[28767]: <font color='red'>DENIED_RDNS_RESOLVE from</font>: factxp8@laubergedelavallee.com to: it@tienve.org origin_ip: 190.55.99.38 origin_rdns: cpe-38.99.55.190.in-addr.arpa auth: (unknown)
+Aug  4 23:08:21 localhost spamdyke[28767]: <font color='red'>DENIED_RDNS_RESOLVE from</font>: factxp8@laubergedelavallee.com to: itp@tienve.org origin_ip: 190.55.99.38 origin_rdns: cpe-38.99.55.190.in-addr.arpa auth: (unknown)
+Aug  4 23:11:26 localhost spamdyke[28521]: <font color='red'>ERROR:</font> unable to write 37 bytes to file descriptor 1: <font color='orange'>Connection reset by peer</font>
+Aug  4 23:11:26 localhost spamdyke[28521]: TIMEOUT from: xxx@tienve.org to: xxx@tienve.org origin_ip: 123.236.6.243 origin_rdns: (unknown) auth: (unknown) reason: TIMEOUT
+Aug  4 23:11:46 localhost spamdyke[29134]: <font color='red'>ALLOWED from</font>: admin@tienve.org to: karma_dt_91@yahoo.com origin_ip: 127.0.0.1 origin_rdns: localhost auth: (unknown)
+Aug  4 23:12:23 localhost spamdyke[29182]: <font color='red'>FILTER_WHITElist_NAME ip</font>: 124.146.189.165 rdns: st0085.nas951.n-yokohama.nttpc.ne.jp file: /var/qmail/whitelist/wl-rdns(1)
+Aug  4 23:12:23 localhost spamdyke[29182]: <font color='red'>ALLOWED from</font>: (unknown) to: hoangngocdieu@tienve.org origin_ip: 124.146.189.165 origin_rdns: st0085.nas951.n-yokohama.nttpc.ne.jp auth: (unknown)
+Aug  4 23:13:16 localhost spamdyke[29321]: <font color='red'>FILTER_RDNS_MISSING ip:</font> 123.19.104.2
+Aug  4 23:13:16 localhost spamdyke[29321]: <font color='red'>DENIED_RDNS_MISSING from</font>: crotchets96@corlok.com to: xxx@tienve.org origin_ip: 123.19.104.2 origin_rdns: (unknown) auth: (unknown)
+Aug  4 23:15:28 localhost spamdyke[29606]: <font color='red'>FILTER_RDNS_MISSING ip</font>: 89.165.8.249
+Aug  4 23:15:28 localhost spamdyke[29606]: <font color='red'>DENIED_RDNS_MISSING from</font>: conclusions9380@livingfaithcapecoral.com to: info@tienve.org origin_ip: 89.165.8.249 origin_rdns: (unknown) auth: (unknown)&nbsp;
+		</blockquote>
+
+Không những spamdyke cản spam từ RBL mà còn cản dựa vào tính chất không đúng nguyên tắc và quy định mà spam thường có.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188746</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188746</link>
+				<pubDate><![CDATA[Tue, 4 Aug 2009 23:27:36]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi anh conmale và mấy lão .
+
+Em thường dùng chống spam mail bằng 2 giải pháp sau RBL và SpamAssassin. Cà 2 giải pháp đều tốt nhưng em thích dùng RBL vì nó ít chiếm tài nguyên trên máy chủ . Tuy nhiên cả 2 giải pháp này chưa thể chống spam tuyệt đối bao giờ được cả . 
+
+Trong topic của anh conmale có hướng dẫn config qmail chống spam bằng cách dùng RBL . Vậy có giải pháp tốt nhất nào đối với Posftfix cũng như Exim không anh nhĩ (kiểm soát, hạn chế khoãng hơn 90% lượng mail spam trong 1 hệ thống kha khá lớn-500 client)
+
+Sorry anh conmale  vì không mở topic mới , thấy chủ đề này khá hợp cho nên em mở câu hỏi của mình trong cùng topic này, mong anh và mấy lão thông cảm . 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188753</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188753</link>
+				<pubDate><![CDATA[Wed, 5 Aug 2009 00:52:05]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Không rõ tại sao post bài trả lời toàn dính lỗi nè: 
+<b>java.lang.StringIndexOutOfBoundsException: String index out of range: -148 </b>
+Không rõ mình đã gõ gì bất hợp lệ chăng?
+
+Đành post trả lời ở 1 forum khác:<span class="link"> http://forum.vnoss.org/post39292.html</span>
+
+Tớ không có ý chê qmail, nhưng đây chính là hạn chế của qmail khi sử dụng RBL và tích hợp cả gửi và nhận email trên 1 SMTP server duy nhất.
+Xem tớ ví dụ đoạn SMTP dialog sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ telnet hva.net 25
+Trying hva.net...
+Connected to hva.net.
+Escape character is '^'.
+220 rblsmtpd.local
+HELO test
+250 rblsmtpd.local
+AUTH LOGIN
+451<span class="link"> http://www.spamhaus.org/query/bl?ip=118.68.169.34</span>
+QUIT
+221 rblsmtpd.local</pre>
+		</div>
+
+
+Do các quá trình check RBL, xác thực, nhận mail ... của qmail xuyên suốt theo 1 cái đường ống pipe, cái nọ nối tiếp cái kia. Phải pass qua cái đầu mới đi đến cái tiếp theo.
+Nếu người sử dụng truy cập ở IP bị RBL chặn (như tớ), nhưng xác thực để gửi mail đi, khi xác thực rồi thì không được coi client đó là spammer nữa và phải bypass cái check RBL đi. Kiến trúc của Qmail khó làm được điều này được vì 2 tiến trình check RBL + xác thực là hoàn toàn độc lập nhau (ở đây xác thực tớ xài vpopmail), phải pass qua cái check RBL rồi mới pipe dữ liệu cho xác thực được.
+Vì thế qmail + RBL đã giết nhầm client, mà họ lại thường là mobility client, truy cập ở bất kỳ đâu có Internet.
+
+Xem tớ sử dụng postfix cho trường hợp này, thay cho qmail:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>smtpd_recipient_restrictions =
+        reject_non_fqdn_recipient,
+        reject_unknown_recipient_domain,
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        reject_unauth_destination,
+        reject_rbl_client dnsbl.sorbs.net,
+        reject_rbl_client bl.spamcop.net,
+        reject_rbl_client zen.spamhaus.org
+    permit</pre>
+		</div>
+
+Như cách trên, postfix sẽ cho phép client gửi mail khi thuộc mynetworks, và cái thứ 2 chính là đã sasl_authenticated. Khi đã xác thực, thì tôi chắc chắn rằng đó là user hợp lệ của chúng tôi, và bỏ qua các bước reject phía dưới, kể cả check RBL.
+
+<b>Ngoài lề:</b>
+Qmail còn 1 hạn chế nữa là cái quá trình xác thực và quá trình nhận mail cũng tách riêng ra, 1 cái do patch tool làm, cái kia do qmail làm, do đó nó không match được username đã xác thực với lại from email. Nghĩa là anh conmale xác thực rồi thì from &lt;xxxx@hva.net&gt; gì cũng được.
+Với postfix, có thể chặn điều này, anh conmale nhất định chỉ được phép from: &lt;conmale@hva.net&gt; như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>smtpd_sender_restrictions =
+        reject_non_fqdn_sender
+        reject_authenticated_sender_login_mismatch
+        permit_mynetworks
+        reject_unknown_sender_domain
+        reject_unauthenticated_sender_login_mismatch</pre>
+		</div>
+
+Cái tham số <b>reject_unauthenticated_sender_login_mismatch</b> cho phép nếu không xác thực thì không thể gửi from @domain của chúng tôi (vì nó match với 1 user nào đó của chúng tôi rồi). Cái này để chống cái kiểu chơi không cần xác thực mà: MAIL FROM: &lt;conmale@hva.net&gt; RCPT TO: &lt;conmale@hva.net&gt;, qmail sẽ pass qua cái này (nếu ko bị RBL), nhưng reject_unauthenticated_sender_login_mismatch sẽ báo là: Not Logged In. Spammer rất khoái xài cái này, ghi nhận của server của tôi nó tới 10 ngàn lần/1 ngày.
+
+<b>Ý kiến riêng:</b> nếu qmail vẫn đảm bảo nhu cầu của bạn, thì cứ dùng nó. Nhưng nếu bạn cần "chống spam" tốt hơn với RBL, linh hoạt hơn như mấy yêu cầu trên, thì postfix có thể tốt hơn. Tớ chưa dùng exim nên không có kết luận gì hơn.&nbsp;
+		</blockquote>
+
+<font color='red'>conmale: thử post bài myquartz bị trở ngại khi post.</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188769</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188769</link>
+				<pubDate><![CDATA[Wed, 5 Aug 2009 06:08:22]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <blockquote>Nếu người sử dụng truy cập ở IP bị RBL chặn (như tớ), nhưng xác thực để gửi mail đi, khi xác thực rồi thì không được coi client đó là spammer nữa và phải bypass cái check RBL đi.... mà họ lại thường là mobility client, truy cập ở bất kỳ đâu có Internet&nbsp;
+		</blockquote>
+
+Câu này có vấn đề. Vấn đề nằm ở chỗ bồ không gởi mail trực tiếp từ máy của bồ mà phải đi qua một smtp hợp lệ và đúng quy định chung. Nếu smtp ấy hợp lệ thì không thể nào nó bị đưa vào blacklist. Ngay cả nó bị đưa vào blacklist vì lý do gì đó thì admin của hệ thống ấy phải có trách nhiệm khắc phục và thông báo những RBL operators để họ tháo bỏ ra. Nếu ai cũng là "client" và có thể gởi mail trực tiếp đến smtp đích như thế thì còn gì là quản lý và kiểm soát spam?
+
+Mobile client cũng không thể gởi mail từ 1 desktop thẳng đến mai.company.com được. Ví dụ cho telnet ở trên chỉ phục vụ cho mục đích testing chớ không thể dùng phương pháp này gởi mail thông thường được.
+
+
+<blockquote>Như cách trên, postfix sẽ cho phép client gửi mail khi thuộc mynetworks, và cái thứ 2 chính là đã sasl_authenticated. Khi đã xác thực, thì tôi chắc chắn rằng đó là user hợp lệ của chúng tôi, và bỏ qua các bước reject phía dưới, kể cả check RBL. &nbsp;
+		</blockquote>
+Chuyện này thực hiện trên qmail cũng dễ dàng. Tuy nhiên, khi bồ đề cập đến vpopmail và "authenticated" thì sự thể có khác đi so với trường hợp bồ "telnet" ở trên. Bồ access vpopmail bằng telnet hay bằng một web front end? Nếu bồ access bằng telnet thì không có gì phải bàn vì tớ đã nói rằng phương tiện "telnet" chỉ dùng để thử nghiệm chớ không thể dùng cho việc gởi nhận mail bình thường. Nếu bồ access vpopmail xuyên qua một web front end nào đó thì IP của web front end sẽ được dùng để tiếp nhận authentication values. Sau khi thỏa mãn authentication thì chuyện gởi mail sẽ được thực hiện (theo kiểu pop before smtp). Ở tình trạng này IP dùng để gởi mail đã được tạm thời đưa vào "white list". Bởi thế RBL hoàn toàn không dính dự gì ở đây cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188813</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188813</link>
+				<pubDate><![CDATA[Wed, 5 Aug 2009 21:18:58]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi bác conmale.
+Thì đúng là nếu sử dụng webmail hoặc là qmail tách biệt incomming/outgoing thì chả nói làm gì. Nhưng mô hình cho doanh nghiệp cỡ nhỏ (và có thể là vừa) ở VN, với quy mô 10K users, 5GB mail/ngày, thì 1 smtp dùng cho cả 2 mục đích sẽ hợp lý và tiết kiệm hơn (1 con server, chắc chắn thế).
+Cái tôi muốn nói ở đây, là hiểu qmail, biết được 1 số ưu, nhược của nó, để mà triển khai phù hợp nhu cầu. Tôi thực đã gặp khó khăn với qmail + RBL, khi mà chỉ có 1 smtp server cho cả in/out, rất nhiều user của tôi xài Internet ADSL, hay bị coi là trong RBL và khỏi gửi mail. Thế là lại phải bỏ cái RBL.
+Nhưng nếu tôi có income/out riêng, thì incoming (là server gán bản ghi MX) có thể tôi sẽ xài qmail, vì qmail + simscan chạy rất lẹ, ăn ít tài nguyên, ít hơn mô hình tôi đang dùng là postfix + amavis.
+Còn việc dùng telnet, đó chẳng qua là cách test thôi mà bác. Cái mail client như Outlook hay là Thunderbird nó cũng chạy y hệt vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188892</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188892</link>
+				<pubDate><![CDATA[Thu, 6 Aug 2009 08:27:20]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Hi bác conmale.
+Thì đúng là nếu sử dụng webmail hoặc là <font color='red'>qmail tách biệt incomming/outgoing</font> thì chả nói làm gì. Nhưng mô hình cho doanh nghiệp cỡ nhỏ (và có thể là vừa) ở VN, với quy mô 10K users, 5GB mail/ngày, thì 1 smtp dùng cho cả 2 mục đích sẽ hợp lý và tiết kiệm hơn (1 con server, chắc chắn thế).
+Cái tôi muốn nói ở đây, là hiểu qmail, biết được 1 số ưu, nhược của nó, để mà triển khai phù hợp nhu cầu. Tôi thực đã gặp khó khăn với qmail + RBL, khi mà chỉ có 1 smtp server cho cả in/out, rất nhiều user của tôi xài Internet ADSL, hay bị coi là trong RBL và khỏi gửi mail. Thế là lại phải bỏ cái RBL.
+Nhưng nếu tôi có income/out riêng, thì incoming (là server gán bản ghi MX) có thể tôi sẽ xài qmail, vì qmail + simscan chạy rất lẹ, ăn ít tài nguyên, ít hơn mô hình tôi đang dùng là postfix + amavis.
+<font color='orange'>Còn việc dùng telnet, đó chẳng qua là cách test thôi mà bác. Cái mail client như Outlook hay là Thunderbird nó cũng chạy y hệt vậy</font>.&nbsp;
+		</blockquote>
+
+Hình như bồ không hiểu ý tôi.
+
+qmail nào cũng có qmail-smtp và qmail-send cả. Đây là cái mà bồ gọi là "incoming" và "outgoing" đó. Còn nếu bồ nói đến chuyện dựng 2 con servers, cài 2 con qmail, 1 con cho đường vào, 1 con cho đường ra thì thú thật... tôi chưa hề thấy mô hình đó bao giờ.
+
+qmail luôn luôn handle in và out từ khi nó... chào đời.
+
+Riêng phần màu cam ở trên thì hình như bồ vẫn chưa hiểu ý tôi nói về vai trò và vị trí của một mail client và một MTA.
+
+Bồ dùng telnet là bồ telnet thẳng từ máy của bồ đến target SMTP server (mail server của tôi).
+Bồ dùng Outlook hay Thunderbird là bồ phải đăng ký địa chỉ smtp server trên phần settings của chúng. SMTP server này chính là <b>SMTP server của bồ chớ chẳng phải của tôi</b>. Khi Outlook hay Thunderbird gởi mail đi, mail đi từ máy của bồ đến SMTP server của bồ. Sau đó, SMTP server của bồ mới gởi mail đến SMTP server của tôi.
+
+Trên Outlook hoặc Thunderbird, bồ không cách gì khai báo SMTP server là SMTP server của tôi được cả vì tôi đâu có open để bồ relay mail như vậy? Đó là sự khác biệt giữa telnet và Outlook mà bồ đã nhầm lẫn.
+
+Nếu bị black list, chính cái SMTP server của bồ bị blacklist vì nó vi phạm quy định chung chớ chẳng phải máy của bồ vi phạm.
+
+Nói tóm lại, tôi ngờ ngợ là bồ không phân biệt được thế nào là mail client, thế nào là MTA và quy trình gởi mail đúng tiêu chuẩn là gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188910</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188910</link>
+				<pubDate><![CDATA[Thu, 6 Aug 2009 17:06:46]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Hi bác conmale.
+Thì đúng là nếu sử dụng webmail hoặc là <font color='red'>qmail tách biệt incomming/outgoing</font> thì chả nói làm gì. Nhưng mô hình cho doanh nghiệp cỡ nhỏ (và có thể là vừa) ở VN, với quy mô 10K users, 5GB mail/ngày, thì 1 smtp dùng cho cả 2 mục đích sẽ hợp lý và tiết kiệm hơn (1 con server, chắc chắn thế).
+Cái tôi muốn nói ở đây, là hiểu qmail, biết được 1 số ưu, nhược của nó, để mà triển khai phù hợp nhu cầu. Tôi thực đã gặp khó khăn với qmail + RBL, khi mà chỉ có 1 smtp server cho cả in/out, rất nhiều user của tôi xài Internet ADSL, hay bị coi là trong RBL và khỏi gửi mail. Thế là lại phải bỏ cái RBL.
+Nhưng nếu tôi có income/out riêng, thì incoming (là server gán bản ghi MX) có thể tôi sẽ xài qmail, vì qmail + simscan chạy rất lẹ, ăn ít tài nguyên, ít hơn mô hình tôi đang dùng là postfix + amavis.
+<font color='orange'>Còn việc dùng telnet, đó chẳng qua là cách test thôi mà bác. Cái mail client như Outlook hay là Thunderbird nó cũng chạy y hệt vậy</font>.&nbsp;
+		</blockquote>
+
+Hình như bồ không hiểu ý tôi.
+
+qmail nào cũng có qmail-smtp và qmail-send cả. Đây là cái mà bồ gọi là &quot;incoming&quot; và &quot;outgoing&quot; đó. Còn nếu bồ nói đến chuyện dựng 2 con servers, cài 2 con qmail, 1 con cho đường vào, 1 con cho đường ra thì thú thật... tôi chưa hề thấy mô hình đó bao giờ.
+
+qmail luôn luôn handle in và out từ khi nó... chào đời.
+
+Riêng phần màu cam ở trên thì hình như bồ vẫn chưa hiểu ý tôi nói về vai trò và vị trí của một mail client và một MTA.
+
+Bồ dùng telnet là bồ telnet thẳng từ máy của bồ đến target SMTP server (mail server của tôi).
+Bồ dùng Outlook hay Thunderbird là bồ phải đăng ký địa chỉ smtp server trên phần settings của chúng. SMTP server này chính là <b>SMTP server của bồ chớ chẳng phải của tôi</b>. Khi Outlook hay Thunderbird gởi mail đi, mail đi từ máy của bồ đến SMTP server của bồ. Sau đó, SMTP server của bồ mới gởi mail đến SMTP server của tôi.
+
+Trên Outlook hoặc Thunderbird, bồ không cách gì khai báo SMTP server là SMTP server của tôi được cả vì tôi đâu có open để bồ relay mail như vậy? Đó là sự khác biệt giữa telnet và Outlook mà bồ đã nhầm lẫn.
+
+Nếu bị black list, chính cái SMTP server của bồ bị blacklist vì nó vi phạm quy định chung chớ chẳng phải máy của bồ vi phạm.
+
+Nói tóm lại, tôi ngờ ngợ là bồ không phân biệt được thế nào là mail client, thế nào là MTA và quy trình gởi mail đúng tiêu chuẩn là gì.&nbsp;
+		</blockquote>
+
+Hì, em nghĩ bác đang hiểu lầm ý em, em mô tả lại cho bác hiểu nhé.
+<i>Em tạm gọi mail client của bác là mail user agent = MUA, cho nó đồng hành với MTA.</i>
+
+Công ty em, mycompany.vn, có 1 cái mail server đặt tại 1 ISP nào đó, có static IP. tên cái server này là mail.mycompany.vn, với bản ghi MX của domain mycompany.vn được ghi là mail.mycompany.vn. Sơ bộ các đặc điểm như sau:
+
+1. mail server được cài đủ cả dịch vụ: POP/IMAP/SMTP/Webmail. Tuy nhiên ta chỉ nói đến cái SMTP và MTA trên cái mail server vì nó là chủ đề thảo luận chính.
+2. mail server có nhiệm vụ nhận email từ công ty khác, nghĩa là email từ @domain không phải mycompany.vn tới. Các MTA khác sẽ gửi tới mail server qua SMTP với 1 chuỗi lệnh: EHLO xxx, MAIL FROM, RCPT TO....
+3. mail server cũng là &quot;outgoing SMTP server&quot; cho các user của công ty. Mọi MUA của công ty đều phải setup để tham số outgoing SMTP server = mail.mycompany.vn.
+4. Để không là Open Relay, nhưng cần relay cho các user của em, em setup để mọi user công ty muốn gửi mail (relay cho domain khác hay cho cùng domain) phải xác thực bằng chính user của họ, qua cái mail server. Các MUA đều được bật cái này lên. Lúc này MUA sẽ kết nối đến mail server với 1 chuỗi lệnh SMTP: EHLO xxx, AUTH LOGIN, MAIL FROM, RCPT TO...
+5. Để chống spam, em dùng RBL.
+
+<b>Nếu em dùng qmail + RBL (thỏa mãn điểm 5), kết quả sẽ như sau:</b>
+
+- Xét điểm 2: Các MTA khác gửi tới mail server ok, ngon lành, nếu pass được cái RBL check.
+Nhưng 1 thằng spammer, giả làm MTA, IP của nó nằm trong RBL, thì sao?
+Khi nó gửi mail đến user của em. IP của nó bị check và nằm trong RBL. sau chuỗi lệnh: EHLO xxx, MAIL FROM: xxx nó nhận ngay được câu reject. =&gt; OK very good.
+
+IP nằm trong RBL khi nào? đó là các MTA bị Open Relay, bị lợi dụng... Nhưng có 1 loại IP thường bị nằm trong này, chính là Dynamic IP của 1 ISP nào đó. Tại sao vậy, vì các MTA hợp lệ thường ... giống công ty em, thuê server ngon lành, có static IP ngon lành... các RBL liệt Dynamic IP vào dạng blacklist (nếu làm MTA).
+Dynamic IP thường được gán cho các thuê bao ADSL, dial-up... Do đó nếu dùng các kết nối này làm MTA gửi thì hay bị reject lắm (không kể trường hợp ADSL nhưng lại mua IP tĩnh nhé)
+
+- Xét điểm 3 và 4: user của em là thuê bao ADSL, Dynamic IP, mà dải đó bị RBL.
+Họ gửi mail cho 1 ai đó. MUA sẽ kết nối đến mail server, sau chuỗi lệnh: EHLO xxx, AUTH LOGIN .... bị reject luôn vì RBL (giống như cái telnet em paste trước đó).
+Thế là họ khỏi gửi luôn =&gt; complaint. Đúng ra thì sau khi AUTH LOGIN, user của em được relay thoải mái.
+
+Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác.
+Tại sao Qmail lại thế thì các post trước của em đã nói. Em dùng Postfix thì xử lý được vấn đề trên.
+
+Em hi vọng là bác hiểu ý em. Nếu không thì em cũng xin hàng vì khả năng diễn đạt của em chỉ có đến vậy.
+
+P/S: À, mà cái vụ tách tời incoming/outgoing SMTP server là thế này:
+- Công ty em có rất nhiều user, rất nhiều email/ngày và có 1 số lý do bảo mật khác, nên em tách việc nhận/gửi riêng ra. Em có 2 server cho việc này, 1 cái là in-mail.mycompany.vn, cái kia là out-mail.mycompany.vn.
+- Bản ghi MX của @mycompany.vn được gán thành in-mail.mycompany.vn =&gt; mọi email từ domain khác đến đều vào in-mail.
+- Các MUA của công ty setup để xài out-mail.mycompany.vn. như là Outgoing SMTP Server.
+
+2 cái khác nhau của in-mail và out-mail là:
+- In-mail: chỉ nhận từ MTA khác qua SMTL về local =&gt; có RBL, có check anti-virus, spam, TLS là optional.... Sử dụng qmail + RBL ok.
+- Out-mail: chỉ nhận mail từ MUA qua SMTP rồi relay đi (hoặc lưu về local): ko có RBL, ko chống spam, nhưng bắt buộc phải authenticate, có anti-virus, TLS là bắt buộc... Qmail cũng làm tốt tuy nhiên không linh hoạt lắm trong trường hợp này.
+
+Em không nhầm lẫn với qmail-send và qmail-smtp (dù khái niệm nó hơi ... giống nhau). Trên cả 2 con in-mail và out-mail đều xài 1 hoặc cả 2 cái này. In-mail chỉ xài qmail-smtp là chính và xài qmail-send 1 ít (khi gửi các mail daemon notification chẳng hạn). Còn out-mail thì cả 2 cái tích cực.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188947</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#188947</link>
+				<pubDate><![CDATA[Fri, 7 Aug 2009 00:02:28]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hì hì, bồ giải thích cặn kẽ lắm và chính thế, nhận định telnet cũng nhưng Outlook làm việc như nhau mà bồ nói ở bài trước rõ ràng không như nhau rồi đó nhe?  :P 
+
+Tôi hiểu ý bồ mọi chuyện nằm ở chỗ này:
+
+<blockquote>IP nằm trong RBL khi nào? đó là các MTA bị Open Relay, bị lợi dụng... Nhưng có 1 loại IP thường bị nằm trong này, chính là Dynamic IP của 1 ISP nào đó. Tại sao vậy, vì các MTA hợp lệ thường ... giống công ty em, thuê server ngon lành, <font color='red'>có static IP ngon lành</font>... các RBL liệt Dynamic IP vào dạng blacklist (nếu làm MTA).
+<font color='orange'>Dynamic IP thường được gán cho các thuê bao ADSL, dial-up</font>... Do đó nếu dùng các kết nối này làm MTA gửi thì hay bị reject lắm (không kể trường hợp ADSL nhưng lại mua IP tĩnh nhé)&nbsp;
+		</blockquote>
+Cho dù bồ thuê static IP ngon lành nhưng <b>reverse DNS</b> của IP đó không phải là mail.company.com mà là xxx.xxx.xxx.xxx-adsl-xxx.isp.com chẳng hạn thì cũng bị tó như thường. Bởi thế, đừng dùng phần màu cam ở trên làm MTA bởi vì chúng được ứng dụng sai RFC.
+
+<blockquote>- Xét điểm 3 và 4: user của em là thuê bao ADSL, Dynamic IP, mà dải đó bị RBL.
+Họ gửi mail cho 1 ai đó. MUA sẽ kết nối đến mail server, sau chuỗi lệnh: EHLO xxx, AUTH LOGIN .... bị reject luôn vì RBL (giống như cái telnet em paste trước đó).
+Thế là họ khỏi gửi luôn =&gt; complaint. Đúng ra thì sau khi AUTH LOGIN, user của em được relay thoải mái. &nbsp;
+		</blockquote>
+Tại sao users lại gởi mail cho ai đó mà không gởi qua SMTP / MTA của ISP mà họ dùng mà lại gởi thẳng đến SMTP / MTA đích? Cái này hoàn toàn sai nguyên tắc RFC đưa ra. Bị blacklist là hoàn toàn đúng.
+
+<blockquote>Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác.
+Tại sao Qmail lại thế thì các post trước của em đã nói. Em dùng Postfix thì xử lý được vấn đề trên. &nbsp;
+		</blockquote>
+<b>qmail hay bất cứ MTA nào được thiết kế để nhận mail từ một MTA hợp lệ khác chớ không nhận mail từ MUA hoặc một MUA &quot;giả&quot; làm MTA</b>. Bởi thế, việc cố tình &quot;workaround&quot; bằng cách cho phép AUTH để thực hiên open relay rồi để cho MUA gởi mail trực tiếp từ MUA đến MTA (không phải MTA của chính ISP mà người dùng được cung cấp) là hoàn toàn sai nguyên tắc RFC. Những lối khai triển sai nguyên tắc này nên bị blacklist 100% bởi vì nó tạo điều kiện để dùng MTA nào đó cho phép AUTH cho mục đích spamming.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189154</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189154</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 06:30:09]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>- Xét điểm 3 và 4: user của em là thuê bao ADSL, Dynamic IP, mà dải đó bị RBL.
+Họ gửi mail cho 1 ai đó. MUA sẽ kết nối đến mail server, sau chuỗi lệnh: EHLO xxx, AUTH LOGIN .... bị reject luôn vì RBL (giống như cái telnet em paste trước đó).
+Thế là họ khỏi gửi luôn =&gt; complaint. Đúng ra thì sau khi AUTH LOGIN, user của em được relay thoải mái.
+
+Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác.
+Tại sao Qmail lại thế thì các post trước của em đã nói. Em dùng Postfix thì xử lý được vấn đề trên. 
+&nbsp;
+		</blockquote>
+Theo mình hiểu thì ý bạn <b>myquartz</b> là ví dụ như bạn Alice có email là alice@abc.com tiến hành login vào server smtp.abc.com để gửi email từ alice@abc.com đi bob@def.com. Tuy nhiên, con server stmp.abc.com lại reject bạn Alice vì IP của bạn Alice nằm trong RBL. 
+
+Trường hợp này thì rõ là con server đó sai, nhưng mình không nghĩ là qmail lại tệ đến vậy, mặc dù mình chưa bao giờ dùng qmail. bạn có chắc là bạn configure đúng không?
+
+Ngược lại, nếu ý của bạn <b>myquartz</b> là bạn Alice connect trực tiếp đến smtp.def.com, thì rõ ràng là sai nguyên tắc, như anh <b>conmale</b> đã đề cập.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189156</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189156</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 07:40:57]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>- Xét điểm 3 và 4: user của em là thuê bao ADSL, Dynamic IP, mà dải đó bị RBL.
+Họ gửi mail cho 1 ai đó. MUA sẽ kết nối đến mail server, sau chuỗi lệnh: EHLO xxx, AUTH LOGIN .... bị reject luôn vì RBL (giống như cái telnet em paste trước đó).
+Thế là họ khỏi gửi luôn =&gt; complaint. Đúng ra thì sau khi AUTH LOGIN, user của em được relay thoải mái.
+
+Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác.
+Tại sao Qmail lại thế thì các post trước của em đã nói. Em dùng Postfix thì xử lý được vấn đề trên. 
+&nbsp;
+		</blockquote>
+Theo mình hiểu thì ý bạn <b>myquartz</b> là ví dụ như bạn Alice có email là alice@abc.com tiến hành login vào server smtp.abc.com để gửi email từ alice@abc.com đi bob@def.com. Tuy nhiên, <font color='red'>con server stmp.abc.com lại reject bạn Alice vì IP của bạn Alice nằm trong RBL</font>. 
+
+Trường hợp này thì rõ là con server đó sai, nhưng mình không nghĩ là qmail lại tệ đến vậy, mặc dù mình chưa bao giờ dùng qmail. bạn có chắc là bạn configure đúng không?
+
+Ngược lại, nếu ý của bạn <b>myquartz</b> là bạn Alice connect trực tiếp đến smtp.def.com, thì rõ ràng là sai nguyên tắc, như anh <b>conmale</b> đã đề cập.&nbsp;
+		</blockquote>
+
+<font color='red'>---&gt;</font> qmail không bao giờ dựa vào blacklist để &quot;xử&quot; các MUA nằm trong dãy network hoặc domains chính nó manage (tạm gọi là white list). Nếu Alice có IP thuộc dãy IP đã được ấn định cho qmail biết rằng Alice là... phe ta thì qmail không bao giờ cần phải đi qua RBL để kiểm tra.
+
+Nếu Alice đang dùng một máy có network <b>không thuộc</b> network &quot;white list&quot; mà access MTA này thì nó <b>phải reject</b> bởi vì đây là nguyên tắc không cho phép open relay. Cách duy nhất và tạm gọi là &quot;reliable&quot; là cách cho phép Alice &quot;pop before smtp&quot;, đây là một cách buộc Alice phải authenticate xuyên qua pop3 (nhận mail) trước khi tạm thời open relay để Alice có thể gởi mail (xuyên qua smtp) vào qmail (rồi qmail mới gởi mail của Alice đến một MTA khác là đích).
+
+Nếu Alice đang dùng một máy có network <b>không thuộc</b> network &quot;white list&quot; mà access MTA này và access vào một web front end (web mail chẳng hạn) thì sau khi authenticate trên webmail ấy, Alice có thể gởi mail xuyên qua webmail. Ở tình trạng này, IP của webmail ấy đã thuộc &quot;white list&quot; của qmail MTA kia cho nên mail sẽ được qmail tiếp nhận (rồi qmail mới gởi mail của Alice đến một MTA khác là đích).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189157</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189157</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 08:15:44]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Nếu Alice đang dùng một máy có network không thuộc network "white list" mà access MTA này thì nó phải reject bởi vì đây là nguyên tắc không cho phép open relay. Cách duy nhất và tạm gọi là "reliable" là cách cho phép Alice "pop before smtp", đây là một cách buộc Alice phải authenticate xuyên qua pop3 (nhận mail) trước khi tạm thời open relay để Alice có thể gởi mail (xuyên qua smtp) vào qmail (rồi qmail mới gởi mail của Alice đến một MTA khác là đích). &nbsp;
+		</blockquote>
+
+Nếu SMTP server đó có implement SMTP-AUTH thì cũng là một giải pháp vậy. Tuy nhiên không biết qmail có cái extension này không. Nếu không có thì đúng là phải authenticate qua pop3 rồi. Phải chăng đây là lý do bạn <b>myquartz</b> không thích dùng qmail.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189158</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189158</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 08:32:16]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Nếu Alice đang dùng một máy có network không thuộc network "white list" mà access MTA này thì nó phải reject bởi vì đây là nguyên tắc không cho phép open relay. Cách duy nhất và tạm gọi là "reliable" là cách cho phép Alice "pop before smtp", đây là một cách buộc Alice phải authenticate xuyên qua pop3 (nhận mail) trước khi tạm thời open relay để Alice có thể gởi mail (xuyên qua smtp) vào qmail (rồi qmail mới gởi mail của Alice đến một MTA khác là đích). &nbsp;
+		</blockquote>
+
+Nếu SMTP server đó có implement SMTP-AUTH thì cũng là một giải pháp vậy. Tuy nhiên không biết qmail có cái extension này không. Nếu không có thì đúng là phải authenticate qua pop3 rồi. Phải chăng đây là lý do bạn <b>myquartz</b> không thích dùng qmail.&nbsp;
+		</blockquote>
+
+Qmail đã có patch hỗ trợ smtp auth từ năm 2000.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189159</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189159</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 08:43:40]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ @conmale: vừa đọc qua post đầu tiên của <b>myquartz</b>, em thấy vấn đề chính là ở việc xử lý SMTP-AUTH của qmail. Cụ thể như sau (dựa vào posts của <b>myquartz</b>):
+
+Alice có email là alice@abc.com login sử dụng SMTP-AUTH vào qmail server là smtp.abc.com để gửi email đi bob@def.com. Quá trình này về mặt nguyên tắc là đúng. 
+
+Tuy nhiên, qmail server smtp.abc.com lại hoạt động như sau: đầu tiên nó check IP của Alice xem có nằm trong RBL hay không, rồi sau đó mới sử dụng SMTP-AUTH để authenticate Alice. Như vậy nếu IP của Alice (e.g., home ADSL connection) nằm trong RBL, thì qmail server sẽ reject Alice ngay lập tức mà không nghĩ đến việc Alice là client của mình (alice@abc.com), và có cả login credential hẳn hoi. Có lẽ đây là lý do bạn <b>myquartz</b> cho rằng:
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác. &nbsp;
+		</blockquote>
+Như đã đề cập ở trên, liệu qmail tệ đến vậy chăng, hay là có chút sơ sót trong khâu configuration?
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189201</link>
+				<pubDate><![CDATA[Sat, 8 Aug 2009 15:33:57]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>@conmale: vừa đọc qua post đầu tiên của <b>myquartz</b>, em thấy vấn đề chính là ở việc xử lý SMTP-AUTH của qmail. Cụ thể như sau (dựa vào posts của <b>myquartz</b>):
+
+Alice có email là alice@abc.com login sử dụng SMTP-AUTH vào qmail server là smtp.abc.com để gửi email đi bob@def.com. Quá trình này về mặt nguyên tắc là đúng. 
+
+Tuy nhiên, qmail server smtp.abc.com lại hoạt động như sau: đầu tiên nó check IP của Alice xem có nằm trong RBL hay không, rồi sau đó mới sử dụng SMTP-AUTH để authenticate Alice. Như vậy nếu IP của Alice (e.g., home ADSL connection) nằm trong RBL, thì qmail server sẽ reject Alice ngay lập tức mà không nghĩ đến việc Alice là client của mình (alice@abc.com), và có cả login credential hẳn hoi. Có lẽ đây là lý do bạn <b>myquartz</b> cho rằng:
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Qmail + RBL không phân biệt được MUA với MTA trong trường hợp này, dù cả MUA lẫn MTA đều dùng SMTP nhưng MUA có AUTH LOGIN trước mọi cái khác. &nbsp;
+		</blockquote>
+Như đã đề cập ở trên, liệu qmail tệ đến vậy chăng, hay là có chút sơ sót trong khâu configuration?
+
+
+&nbsp;
+		</blockquote>
+
+Tớ không biện hộ cho tính năng của qmail vì tớ chuộng qmail (secured, small foot print, stable, less resource...) nhưng tớ tham gia thảo luận những điều myquartz đưa ra là vì nó đụng đến những quy định chung và những ghi nhận trong RFC.
+
+SMTP AUTH là một &quot;extended&quot; feature nhằm cung cấp khả năng xác thực authentication giữa <b>SMTP client</b> và <b>SMTP server</b>.
+
+Trong trường hợp này đó là mối liên quan giữa &quot;sending MTA&quot; và &quot;receiving MTA&quot; (như mô hình bên dưới) chớ không phải giữa &quot;sending MUA&quot; và &quot;receiving MTA&quot; hoặc &quot;sending MTA&quot;.
+
+<b>sending MUA ---&gt; MSA ---&gt; <font color='red'>sending MTA</font> ---&gt; <font color='red'>receiving MTA</font> ---&gt; MDA ---&gt; receiving MUA.</b>
+
+Mục đích của extension này là để &quot;cải thiện bảo mật&quot; giữa các MTA nếu cần nhưng nó lại được dùng để đối phó với spam và open relay. Nếu xét về mặt áp dụng RFC, qmail áp dụng hoàn toàn đúng các điểm RFC đưa ra. Nếu xét về mặt linh động theo khía cạnh &quot;work around&quot; để cho phép &quot;sending MUA&quot; đang ở một network ngoài network của &quot;sending MTA&quot; được phép auth và được tạm thời &quot;open relay&quot; để gởi mail thì qmail không thỏa mãn việc này. Bởi thế, không thể cho rằng qmail là &quot;tệ&quot; trong trường hợp này khi xét đúng theo các điểm mà RFC đưa ra.
+
+Để bảo mật hơn nữa và để đối phó với spam trong trường hợp open realy, SMTP auth có thể được thực hiện bằng cách ứng dụng secure (smtps) trên một cổng khác mà chỉ có người dùng của &quot;phe ta&quot; biết được và không áp dụng RBL với dịch vụ SMTPS này. Tốt hơn như thế nữa, &quot;sending MUA&quot; và &quot;sending MTA&quot; nên được thiết lập xuyên qua encrypted tunnel (một dạng VPN giữa &quot;sending MUA&quot; và &quot;sending MTA&quot;). Trong trường hợp này, IP của &quot;sending MUA&quot; thuộc về chuỗi network mà &quot;sending MTA&quot; đã &quot;whitelist&quot;. Bởi thế, chuyện RBL sẽ không còn liên quan gì nữa. Một ứng dụng được dùng khá rộng rãi là cho phép người dùng authenticate vào POP service, sau khi authentication hoàn tất, tạm thời đưa IP của người ấy vào &quot;whitelist&quot; để cho phép open relay trong một khoảng thời gian nào đó. Phương pháp này có cái lợi và cái hại đó là điều tất nhiên.
+
+Theo tớ, cách an toàn nhất cho remote users là dùng webmail (xuyên qua HTTPS) hoặc nếu họ cần gởi mail xuyên qua SMTP thì họ cần thiết lập VPN với hệ thống chạy MTA. Các ứng dụng kiểu &quot;workaround&quot; nhưng không đúng theo RFC có thể được xem là tốt hay không tốt thì tùy vào quan điểm cá nhân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189353</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189353</link>
+				<pubDate><![CDATA[Sun, 9 Aug 2009 22:36:31]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Trong trường hợp này đó là mối liên quan giữa &quot;sending MTA&quot; và &quot;receiving MTA&quot; (như mô hình bên dưới) chớ không phải giữa &quot;sending MUA&quot; và &quot;receiving MTA&quot; hoặc &quot;sending MTA&quot;.
+
+<b>sending MUA ---&gt; MSA ---&gt; <font color='red'>sending MTA</font> ---&gt; <font color='red'>receiving MTA</font> ---&gt; MDA ---&gt; receiving MUA.</b>&nbsp;
+		</blockquote>
+Good point. Về cơ bản thì SMTP-AUTH chỉ nên dùng trong trusted environment, hơn nữa, việc gửi credential cho smtp server cũng đi hơi lệch với design. Tuy nhiên, nếu MTA thỏa mãn các điểm sau thì có thể chấp nhận được:
+- MTA đó thuộc sự quản lý trực tiếp của chủ mail server mà client thường login vào để đọc mail, với cùng username+password.
+- Việc login của MUA từ untrusted network phải thỏa mãn mutual authentication, sử dụng TLS/SSL. Đây là biện pháp tạo nên cái gọi là trusted environment ở trên. Tất nhiên việc dùng Telnet  là không thể chấp nhận được, trừ phi client thiết lập VPN đến trusted environment.
+- MTA phải có cơ chế cho phép một authenticated user chỉ được gửi email từ một số email nhất định. Ví dụ: user Alice chỉ được gửi email từ alice@abc.com.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189430</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189430</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 04:28:20]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Trong trường hợp này đó là mối liên quan giữa &quot;sending MTA&quot; và &quot;receiving MTA&quot; (như mô hình bên dưới) chớ không phải giữa &quot;sending MUA&quot; và &quot;receiving MTA&quot; hoặc &quot;sending MTA&quot;.
+
+<b>sending MUA ---&gt; MSA ---&gt; <font color='red'>sending MTA</font> ---&gt; <font color='red'>receiving MTA</font> ---&gt; MDA ---&gt; receiving MUA.</b>&nbsp;
+		</blockquote>
+Good point. Về cơ bản thì SMTP-AUTH chỉ nên dùng trong trusted environment, hơn nữa, việc gửi credential cho smtp server cũng đi hơi lệch với design. Tuy nhiên, nếu MTA thỏa mãn các điểm sau thì có thể chấp nhận được:
+- MTA đó thuộc sự quản lý trực tiếp của chủ mail server mà client thường login vào để đọc mail, với cùng username+password.
+- Việc login của MUA từ untrusted network phải thỏa mãn mutual authentication, sử dụng TLS/SSL. Đây là biện pháp tạo nên cái gọi là trusted environment ở trên. Tất nhiên việc dùng Telnet  là không thể chấp nhận được, trừ phi client thiết lập VPN đến trusted environment.
+- MTA phải có cơ chế cho phép một authenticated user chỉ được gửi email từ một số email nhất định. Ví dụ: user Alice chỉ được gửi email từ alice@abc.com.
+&nbsp;
+		</blockquote>
+
+Hi!
+Theo em bác conmale kết luận hơi ... võ đoán về cái SMTP-AUTH dùng cho cái <b>sending MTA với receiving MTA</b>. Vì 2 MTA này thường là thuộc 2 tổ chức khác nhau, ví dụ MyCompany.vn với lại Yahoo.com. Em không thể bảo Yahoo.com là mày cho tao 1 cái user/password để tao set vào MTA của tao khi gửi mail cho mày, và ngược lại mày phải dùng pass tao cấp để gửi cho tao được. Chưa bao giờ em gặp mô hình kiểu đó cả. Chỉ có 1 kiểu giữa MTA này xác thực user/pass với MTA khác mà em từng được biết đó là &quot;SmartHost&quot;, còn lại chỉ có sending MUA xác thực user/pass với sending MTA và cần đến SMTP-AUTH mà thôi.
+Chỉ có sử dụng TLS giữa các MTA với nhau thì có thể, đôi khi MTA gửi check thêm cái CA Cert của MTA nhận khi kết nối đến nó, mà mình biết chắc là hợp lệ. Nhưng cái này là optional.
+MUA thì luôn kiểm tra TLS CA Cert của MTA nó kết nối đến có hợp lệ hay không (trừ khi bạn bypass nó đi).
+
+Nói chung, xét cái mô hình em có làm theo RFC ko thì em ko dám chắc, nhưng giải pháp em đang dùng nó thực tế, cũng tuân theo các hỗ trợ RFC mở rộng của hầu hết các MUA và MTA hiện tại. Qmail có thể thiết kế theo kiểu cổ xưa nên nó hoạt động tốt khi nó là như thế, tức là chỉ In-Mail only (MTA -&gt; MDA), hoặc là Relay MTA only, chứ nó không uyển chuyển hoặc không thiết kế cho nhiều các tình huống như là In-mail MTA kiêm relay MTA. Tất nhiên giải pháp để tách đôi nó ra hoặc phân biệt client để mà xử (SMTPS hay VPN thành 1 trusted network), là 1 ý kiến hay, nhưng là để khắc phục yếu điểm uyển chuyển của Qmail mà thôi.
+Dù sao, hi sinh vài lợi điểm về sự uyển chuyển để được cái tốc độ và tốn ít RAM thì cũng đáng, tùy thuộc vào factor của từng người thôi.
+
+<blockquote>- MTA phải có cơ chế cho phép một authenticated user chỉ được gửi email từ một số email nhất định. Ví dụ: user Alice chỉ được gửi email từ alice@abc.com.
+&nbsp;
+		</blockquote>
+=&gt; Cái này qmail cũng không làm được nốt, vì hầu hết các patch của nó đều xác thực trước, pass rồi thì tới đoạn MAIL FROM/RCPT TO. Tới công đoạn sau rồi thì không còn check thêm gì về user nữa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189491</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189491</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 11:28:26]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+- MTA đó thuộc sự quản lý trực tiếp của chủ mail server mà client thường login vào để đọc mail, với cùng username+password.
+- Việc login của MUA từ untrusted network phải thỏa mãn mutual authentication, sử dụng TLS/SSL. Đây là biện pháp tạo nên cái gọi là trusted environment ở trên. Tất nhiên việc dùng Telnet  là không thể chấp nhận được, trừ phi client thiết lập VPN đến trusted environment.
+&nbsp;
+		</blockquote>
+
+2 điểm này cần nói thêm là:
+- MTA và MUA của 1 tổ chức mới xác thực với nhau, hoặc là của ISP với khách hàng của ISP đó. Chứ còn của 2 công ty partner với nhau để xác thực user+password với nhau thì trao đổi "pass" hơi mệt đấy.
+- MUA với MTA chỉ cần sử dụng SMTP with START-TLS hoặc là SMTP over SSL là đảm bảo toàn vẹn, bí mật và MUA xác thực được MTA là ai qua SSL cert. Còn MTA xác thực MUA là ai thì bằng user+pass. Như thế đã được coi là trusted rồi, không cần thêm VPN làm gì cho rắc rối. Telnet chỉ là demo thôi, nếu muốn tớ ... telnet over stunnel là được chứ gì?
+
+The last thing: cái chủ đề này đã đi xa khỏi cái topic title rồi. Tôi cũng stop tại đây, xin cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189492</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189492</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 11:38:35]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>2 điểm này cần nói thêm là: 
+- MTA và MUA của 1 tổ chức mới xác thực với nhau, hoặc là của ISP với khách hàng của ISP đó. Chứ còn của 2 công ty partner với nhau để xác thực user+password với nhau thì trao đổi "pass" hơi mệt đấy.
+- MUA với MTA chỉ cần sử dụng SMTP with START-TLS hoặc là SMTP over SSL là đảm bảo toàn vẹn, bí mật và MUA xác thực được MTA là ai qua SSL cert. Còn MTA xác thực MUA là ai thì bằng user+pass. Như thế đã được coi là trusted rồi, không cần thêm VPN làm gì cho rắc rối. Telnet chỉ là demo thôi, nếu muốn tớ ... telnet over stunnel là được chứ gì? &nbsp;
+		</blockquote>
+Mình chưa hiểu cái sự "thêm" này của bạn là thêm cái gì vào 2 điểm trên của mình.
+
+Hơn nữa, nói về sự uyển chuyển, mình còn chưa thấy cái mô hình của bạn uyển chuyển hơn webmail hoặc "pop before smtp" ở chỗ nào.
+
+p/s: bạn <b>myquart</b> cứ đến khi nào thảo luận hơi căng một tí là lại out. Mình thấy cái thảo luận này chả có gì là đi xa khỏi topic title cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189493</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189493</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 11:54:16]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Trong trường hợp này đó là mối liên quan giữa &quot;sending MTA&quot; và &quot;receiving MTA&quot; (như mô hình bên dưới) chớ không phải giữa &quot;sending MUA&quot; và &quot;receiving MTA&quot; hoặc &quot;sending MTA&quot;.
+
+<b>sending MUA ---&gt; MSA ---&gt; <font color='red'>sending MTA</font> ---&gt; <font color='red'>receiving MTA</font> ---&gt; MDA ---&gt; receiving MUA.</b>&nbsp;
+		</blockquote>
+Good point. Về cơ bản thì SMTP-AUTH chỉ nên dùng trong trusted environment, hơn nữa, việc gửi credential cho smtp server cũng đi hơi lệch với design. Tuy nhiên, nếu MTA thỏa mãn các điểm sau thì có thể chấp nhận được:
+- MTA đó thuộc sự quản lý trực tiếp của chủ mail server mà client thường login vào để đọc mail, với cùng username+password.
+- Việc login của MUA từ untrusted network phải thỏa mãn mutual authentication, sử dụng TLS/SSL. Đây là biện pháp tạo nên cái gọi là trusted environment ở trên. Tất nhiên việc dùng Telnet  là không thể chấp nhận được, trừ phi client thiết lập VPN đến trusted environment.
+- MTA phải có cơ chế cho phép một authenticated user chỉ được gửi email từ một số email nhất định. Ví dụ: user Alice chỉ được gửi email từ alice@abc.com.
+&nbsp;
+		</blockquote>
+
+Hi!
+Theo em bác conmale kết luận hơi ... võ đoán về cái SMTP-AUTH dùng cho cái <b>sending MTA với receiving MTA</b>. Vì 2 MTA này thường là thuộc 2 tổ chức khác nhau, ví dụ MyCompany.vn với lại Yahoo.com. Em không thể bảo Yahoo.com là mày cho tao 1 cái user/password để tao set vào MTA của tao khi gửi mail cho mày, và ngược lại mày phải dùng pass tao cấp để gửi cho tao được. Chưa bao giờ em gặp mô hình kiểu đó cả. Chỉ có 1 kiểu giữa MTA này xác thực user/pass với MTA khác mà em từng được biết đó là &quot;SmartHost&quot;, còn lại chỉ có sending MUA xác thực user/pass với sending MTA và cần đến SMTP-AUTH mà thôi.
+Chỉ có sử dụng TLS giữa các MTA với nhau thì có thể, đôi khi MTA gửi check thêm cái CA Cert của MTA nhận khi kết nối đến nó, mà mình biết chắc là hợp lệ. Nhưng cái này là optional.
+MUA thì luôn kiểm tra TLS CA Cert của MTA nó kết nối đến có hợp lệ hay không (trừ khi bạn bypass nó đi).
+&nbsp;
+		</blockquote>
+Giả sử công ty tôi là một tổ chức tài chính. Họ có partners khắp nơi và họ muốn mail đi giữa các partners đều phải được authenticate giữa các MTA. Điều này có thực hiện được không và lợi ích của việc thực hiện chính sách này là gì?
+
+- Tôi có tài khoản với ISP cung cấp dịch vụ Internet cho tôi. Nếu tôi không connect vào network của họ thì <b>chắc chắn tôi không thể</b> dùng Outlook hoặc Thunderbird để gởi mail. Phương tiện duy nhất mà tôi có thể dùng để gởi mail trong hoàn cảnh này là webmail. Từ trước đến giờ, tôi dùng 5 ISP khác nhau và họ có quy chế y hệt như nhau. Không có ISP nào cho phép người dùng authenticate đến SMTP của họ để rồi được open relay tạm thời cả.
+
+- Tôi cũng có tài khoản mail ở công ty và họ có đến 5 SMTP servers nằm ở 5 vị trí khác nhau. Nếu tôi không VPN vào network của công ty thì không cách nào gởi mail cả. Họ chưa bao giờ và sẽ không bao giờ cho phép tôi dùng SMTP-AUTH để xác thực tên tôi với bất cứ 1 trong 5 SMTP server kia để có thể tạm thời open relay cho việc gởi mail. Tôi đã đổi job gần một chục cái từ lúc có Internet ở Úc và chưa thấy có công ty nào cho phép SMTP-AUTH từ một network nào bên ngoài đến SMTP của công ty cả.
+
+- Đối với các công ty nhỏ, tôi chỉ thấy (rất ít) công ty cho phép "pop before smtp". Hầu hết họ cung cấp webmail (xuyên qua https).
+
+Lý do tại sao có những tình trạng trên? Tất cả là vì bảo mật và vì họ muốn ngăn chặn spam.
+
+Tôi không chắc là trên thế giới có bao nhiêu % khai triển theo kiểu cho phép bất cứ ai SMTP-AUTH đến SMTP như kiểu bồ đưa ra cho trường hợp Postfix. Xét về tính năng và tiện lợi thì tôi tin rằng Postfix cho phép làm như thế thì tiện lợi. Tuy nhiên, xét về mặt bảo mật thì tôi tin là không.
+
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>
+Nói chung, xét cái mô hình em có làm theo RFC ko thì em ko dám chắc, nhưng giải pháp em đang dùng nó thực tế, cũng tuân theo các hỗ trợ RFC mở rộng của hầu hết các MUA và MTA hiện tại. Qmail có thể thiết kế theo kiểu cổ xưa nên nó hoạt động tốt khi nó là như thế, tức là chỉ In-Mail only (MTA -&gt; MDA), hoặc là Relay MTA only, chứ nó không uyển chuyển hoặc không thiết kế cho nhiều các tình huống như là In-mail MTA kiêm relay MTA. Tất nhiên giải pháp để tách đôi nó ra hoặc phân biệt client để mà xử (SMTPS hay VPN thành 1 trusted network), là 1 ý kiến hay, nhưng là để khắc phục yếu điểm uyển chuyển của Qmail mà thôi.
+Dù sao, hi sinh vài lợi điểm về sự uyển chuyển để được cái tốc độ và tốn ít RAM thì cũng đáng, tùy thuộc vào factor của từng người thôi.
+&nbsp;
+		</blockquote>
+Vấn đề ở đây là nguyên tắc ứng dụng dựa trên các RFC chớ không phải việc ứng dụng bất kỳ để đạt được mức uyển chuyển. Không riêng gì qmail mà hàng tá MTA khác cũng không có tính "uyển chuyển" này bởi vì khi họ viết chương trình cho một SMTP, họ không nghĩ đến việc cho phép SMTP-AUTH rồi mới cản lọc dựa trên những tiêu chuẩn nào đó. Hầu hết những hệ thống cản lọc mail (mail sweeper) ở cấp độ enterprise được dùng để đứng trước SMTP đều không cung cấp tính năng SMTP-AUTH để cho phép AUTH và tạm thời được open relay. Tất nhiên là người dùng chẳng có cách nào SMTP-AUTH trực tiếp đến SMTP (đang được mail sweeper bảo vệ).
+
+Postfix có thể uyển chuyển cho nhu cầu cụ thể nào đó nhưng điều này không có nghĩa rằng tất cả những ứng dụng khác không có cùng quan điểm với Postfix là... thiếu uyển chuyển. Vấn đề nằm ở cơ chế, chính sách và ưu tiên của bảo mật vs tiện dụng. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189517</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189517</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 18:41:20]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi!
+Có lẽ bác conmale ở nước ngoài nên chắc là không giống như em ở VN, nơi mà các ISP hầu như không chính thức cung cấp SMTP để cho KH của họ relay. Anyway, em sẽ nói đến lý thuyết chung thôi bác ạ.
+
+Theo em, cách sử dụng SMTP của ISP để relay khá cổ điển, truyền thống, nhưng chính nó lại không đảm bảo việc chống SPAM hiện tại. Tại sao thế? các máy tính botnet của KH trong ISP đó hoàn toàn có thể lợi dụng SMTP của chính ISP để gửi SPAM đi, nếu SMTP đó chỉ lọc chặn theo IP để cho relay. Nếu có thêm phương pháp nào đó khác thêm ngoài việc lọc theo IP thì rẻ riền và dễ làm nhất là SMTP-AUTH. Trong 1 ISP hầu như em chưa gặp giải pháp sử dụng VPN để nối với KH của họ tới SMTP, còn webmail thì cũng hạn chế tính năng (xem ở dưới ạ).
+Còn 2 điểm nữa liên quan đến việc bất lợi khi sử dụng SMTP của ISP, đó là với mobile client, họ có thể vào cafe wifi, mạng 3G, ADSL ở nhà để gửi mail, không có gì đảm bảo là chúng sẽ được cung cấp bởi 1 ISP, và user sẽ phải thay tham số SMTP outgoing liên tục? Và điều khó khăn thực sự nếu 1 quán cafe wifi họ xài WAN load balancing với 2 ISP khác nhau, đi lối nào chỉ biết khi mở kết nối TCP? Đó là điều khác nhiều với 10 năm trước đây cách người ta dùng Internet.
+
+Còn việc SMTP-AUTH rồi mới cho relay, theo em thì không thể làm nguồn cho SPAM được, đơn giản spammer không có password của 1 ai đó của công ty. Tất nhiên giả sử rằng chính sách mật khẩu của công ty là tốt. Nếu lộ mất password thì nguy hiểm không chỉ là bị lợi dụng gửi spam đi. Bảo mật hay kém bảo mật không phải vì cái SMTP-AUTH mà là vì cái mật khẩu đó bị lộ. Nếu cần strong hơn, em sẽ ép user xài TLS/SSL với Token để xác thực user, khỏi lo luôn.
+
+Em không tranh cãi về các cách để VPN hay sử dụng webmail so với cách SMTP-AUTH over TLS, mỗi cái có cái hay/dở riêng và là các con đường cho mục đích giống nhau. Tuy nhiên, nếu đảm bảo bảo mật, không phải là cái đó sẽ tăng thêm hay giảm đi bảo mật đâu bác. Các công ty ở Úc không xài cái SMTP-AUTH, cái đó bác biết rõ, nhưng em biết ở VN thì nhiều công ty họ xài SMTP-AUTH lắm, và họ cho phép user của họ relay qua SMTP của họ, thay vì dùng SMTP của ISP. Điều này cũng an toàn như VPN/webmail vì mail gửi nội bộ trong công ty sẽ không đi qua 1 host trung gian xử lý nào khác như là SMTP của ISP.
+
+Webmail, theo em, vẫn là cách "lỡ độ đường" không có máy tính của mình mà phải xài ké hoặc thuê, chứ có máy laptop đi kèm em không xài cái đó, chậm và thường là tính năng hạn chế (ví dụ không thể với mail có S/MIME hay soạn mail khi em đang ngồi trên ... máy bay chẳng hạn???).
+Với VPN thì tất nhiên, rất tốt, nhưng nó thường đáp ứng cho nhiều thứ khác kèm thêm với SMTP (ví dụ IM hay VoIP của công ty). Nhưng làm cái VPN này nhiều cái đau đầu lắm bác ạ, nhất là user thường stupid hơn là ta tưởng và các loại client hỗ trợ sẽ hạn chế (ví dụ gửi/nhận mail trên iPhone over VPN??). Bắt làm việc đó chỉ để ... SMTP thì em xin bỏ việc.
+
+Nói chung, bác yêu và bảo vệ qmail, em cũng thấy nó rất tốt nhưng chỉ chê nó cổ rồi và không uyển chuyển (tức là nó không dễ dàng thay đổi bằng tham số cấu hình) để đáp ứng nhiều kiểu khác nhau, trong đó có kiểu kiêm nhiệm 2 chức năng như em đã gặp phải.
+
+Mọi giải pháp đều để đáp ứng yêu cầu thực tế đề ra, yêu cầu thực tế bác gặp phải khác em nên giải pháp kỹ thuật em chọn nó khác, không xài được qmail. Còn em thực sự không quan tâm xem RFC này nọ có hợp không.
+Cảm ơn bác đã quan tâm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189535</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189535</link>
+				<pubDate><![CDATA[Mon, 10 Aug 2009 22:59:39]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>Hi!
+Có lẽ bác conmale ở nước ngoài nên chắc là không giống như em ở VN, nơi mà các ISP hầu như không chính thức cung cấp SMTP để cho KH của họ relay. Anyway, em sẽ nói đến lý thuyết chung thôi bác ạ.
+&nbsp;
+		</blockquote>
+ờ, thế nên mới có những vụ cứ mail gửi ra bằng SMTP của FPT, VNN là bị tống vô spam hoặc bị block nguyên cả subnet, đồng chí myquart chưa bị vụ nào thảm thương hở? 
+
+<blockquote>
+
+Webmail, theo em, vẫn là cách "lỡ độ đường" không có máy tính của mình mà phải xài ké hoặc thuê, chứ có máy laptop đi kèm em không xài cái đó, chậm và thường là tính năng hạn chế (ví dụ không thể với mail có S/MIME hay soạn mail khi em đang ngồi trên ... máy bay chẳng hạn???).
+&nbsp;
+		</blockquote>
+Xét về nhiều yếu tố như dễ triển khai, bảo đảm an toàn ở mức đơn giản và thuận tiện cho end-user thì cái lỡ độ đường ấy đáng đồng tiền bát gạo ra phết đấy.
+
+<blockquote>
+
+Với VPN thì tất nhiên, rất tốt, nhưng nó thường đáp ứng cho nhiều thứ khác kèm thêm với SMTP (ví dụ IM hay VoIP của công ty). Nhưng làm cái VPN này nhiều cái đau đầu lắm bác ạ, nhất là user thường stupid hơn là ta tưởng và các loại client hỗ trợ sẽ hạn chế (ví dụ gửi/nhận mail trên iPhone over VPN??). Bắt làm việc đó chỉ để ... SMTP thì em xin bỏ việc.
+&nbsp;
+		</blockquote>
+
+Đồng chí myquart phải làm chỗ nào support độ vài trăm chú thường xuyên đi du lịch với laptop mà nó lại dùng Outlook với Exchange server nữa cơ, VPN là phải có RSA token nữa nhá thì mới quán triệt tư tưởng Hết mình vì users thân yêu của Assmean chúng ta hé hé hé
+
+Simple thì đồng chi myquart ngâm cứu thử món OpenVPN xem, deploy server cũng không quá phức tạp mà implement + training cũng không mệt lắm đâu.
+
+PS: nếu đồng chí không thích làm thì thuê mình, miễn là có tiền, nhiều tiền nhiều tiền càng tốt he he he
+;)))
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189554</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#189554</link>
+				<pubDate><![CDATA[Tue, 11 Aug 2009 02:36:30]]> GMT</pubDate>
+				<author><![CDATA[ chairuou]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hôm nay ip mail cty bị đưa vào blacklist do một sơ sót , và một user Vip sử dụng outlook ở nhà ko gởi mail đươc.... mới nhớ tới chủ đề này.
+
+Thật ra myquartz đã nhầm lẫn viêc user ở ngoài sử dụng outlook không thể gởi mail được. Không phải do RBL gì cả mà là do ip của user đó không nằm trong MtaMyNetworks. Phần này anh conmale có chỉ rõ rùi. Việc cấu hình trong outlook phần outgoing server thì cũng nằm trong từ khóa pop before smtp mà anh conmle có giải thích.
+
+@anh conmale : việc sử dụng pop before smtp có cái hại như thế nào vậy anh. Đối với những user yêu cầu sự tiện dụng cao thì giải pháp nào là có thể áp dụng được anh. Thân
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198700</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198700</link>
+				<pubDate><![CDATA[Thu, 19 Nov 2009 22:34:45]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>
+
+@anh conmale : việc sử dụng pop before smtp có cái hại như thế nào vậy anh. Đối với những user yêu cầu sự tiện dụng cao thì giải pháp nào là có thể áp dụng được anh. Thân
+&nbsp;
+		</blockquote>
+
+&quot;pop before smtp&quot; khá an toàn (ở giới hạn giảm thiểu mail relaying) nếu như mỗi người dùng một IP cá biệt. Lý do là vì &quot;pop before smtp&quot; tạm thời gán một luật cho phép relaying mail trong một khoảng thời gian nào đó (30 phút chẳng hạn). Sau đó, luật này sẽ được xóa ---&gt; không thể tiếp tục send mail.
+
+Trong trường hợp nhiều người cùng share 1 IP (ví dụ cả một vùng dùng một proxy để truy cập net) thì ai đó &quot;pop b4 smtp&quot; sẽ tạo cơ hội cho một người nào khác spam xuyên qua tình trạng cho phép open relay tạm thời ấy (nếu kẻ có ý đồ spam biết được).
+
+Tận cùng mà nói, proxy và nat là giải pháp cho tình trạng thiếu hụt IP (public) nhưng nó tạo không ít những vấn đề về kỹ thuật và bảo mật. Thử hình dung nếu mỗi người được cấp 1 IP vĩnh viễn. Nếu người ấy vi phạm nghiêm trọng luật an ninh Internet (chung cho cả thế giới) thì IP đó sẽ bị vô hiệu hóa. Chừng ấy, xem cả mang Internet sẽ an ninh thế nào?  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198717</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198717</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 08:45:33]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi anh!
+
+Nhưng đầu tiên ta phải authen pop3 để chứng tỏ client đó thuộc sự quản lý của server , rồi sau đó server mới cho gởi mail mà anh. Em nghĩ thằng server chỉ tin tưởng vào session những thằng nào thỏa "pop3 before smtp ", đại loại như server bảo " mày gởi chứng nhận là đệ của tao thì tao mới làm giùm mày "]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198728</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 12:27:56]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>Hi anh!
+
+Nhưng đầu tiên ta phải authen pop3 để chứng tỏ client đó thuộc sự quản lý của server , <font color='red'>rồi sau đó server mới cho gởi mail mà anh</font>. Em nghĩ thằng server chỉ tin tưởng vào session những thằng nào thỏa &quot;pop3 before smtp &quot;, đại loại như server bảo &quot; mày gởi chứng nhận là đệ của tao thì tao mới làm giùm mày &quot;&nbsp;
+		</blockquote>
+
+<font color='red'>---&gt;</font> đúng là như vậy nhưng.... 
+
+Tạm gọi người đã &quot;pop b4 open relay&quot; là A, những ai cùng share chung IP với A là B.
+
+Luật tạm thời cho phép IP của A được relay mail hoàn toàn không có gì kiểm soát rằng ai sẽ được relay mail sau khi &quot;open relay&quot; đã tạm thời thiết lập. Điều này có nghĩa, B sẽ có thể gởi mail mà không cần &quot;pop&quot; gì nữa cả (trong khoảng thời gian relay cho phép). ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198733</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198733</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 13:01:28]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi anh!
+
+Cái luật đó nằm ở đâu vậy anh ? Và tại sao thằng server không kiểm tra theo kiểu phải " đối với những thằng ip được lưu tạm thì cứ phải pop3 rùi mới tới smtp"]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198734</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198734</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 13:17:38]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vikjava wrote:</cite><br>
+		<blockquote>Hi anh!
+
+Cái luật đó nằm ở đâu vậy anh ? Và tại sao thằng server không kiểm tra theo kiểu phải " đối với những thằng ip được lưu tạm thì cứ phải pop3 rùi mới tới smtp"&nbsp;
+		</blockquote>
+
+Cái luật đó nằm ở đâu tùy vào em dùng <b>cái gì</b> để tạo ra "pop b4 smtp" và tùy vào cấu hình cụ thể em quyết định <b>đặt nó ở đâu</b> nữa.
+
+Đối với những "thằng IP được lưu tạm" rồi mà còn "pop" xong mới "smtp" thì hỏng bét. Em "pop" xong bao lâu thì em "smtp"?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198765</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#198765</link>
+				<pubDate><![CDATA[Fri, 20 Nov 2009 17:20:23]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Loại bỏ spam khỏi qmail SMTP bằng RBL</title>
+				<description><![CDATA[ Hi anh.
+- Em dùng postfix làm MTA. Như phân tích ở trên của anh qmail không hổ trợ pop before smtp, postfix lại hổ trợ để cấu hình cái này. Vậy cái luật là do mình dùng cái nào làm MTA.
+- Đối với những user sử dụng outlook bên ngoài MTAMyNetwork thì chúng ta có những giải pháp nào đáp ứng cho nhu cầu gởi và nhận mail của họ. Và giải pháp nào tiện dụng cho người sử dụng , đồng thời phía admin cũng dễ cấu hình.
+
+thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/10639.hva#199274</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/10639.hva#199274</link>
+				<pubDate><![CDATA[Fri, 27 Nov 2009 01:41:38]]> GMT</pubDate>
+				<author><![CDATA[ vikjava]]></author>
+			</item>
+	</channel>
+</rss>

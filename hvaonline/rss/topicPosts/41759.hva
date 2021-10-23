@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "CHECKSUM trong gói tin TCP UDP ICMP"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "CHECKSUM trong gói tin TCP UDP ICMP"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>CHECKSUM trong gói tin TCP UDP ICMP</title>
+				<description><![CDATA[ Em đang viết chương trình sử dụng thư viện libpcap để gửi và nhận gói tin, công việc suôn sẽ cho tới khi gặp việc tính toán checksum. Vì thiếu hiểu biết nên em đã tính toán <b>sai cơ bản</b> dẫn tới checksum không đúng. Gói tin bị DROP và không có reply từ server mặc dù em không spoof IP. Sau đây em xin được chia sẽ <b>những cái ngu cơ bản của em</b> để lần sau các bạn có tìm hiểu về cái này cũng không tốn kém nhiều thời gian.
+
+Các header em sử dụng:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdlib.h&gt;
+#include &lt;pcap.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;string.h&gt;
+
+#define __FAVOR_BSD 1;
+
+#include &lt;netinet/ether.h&gt;
+#include &lt;netinet/ip.h&gt;
+#include &lt;netinet/udp.h&gt;
+#include &lt;netinet/ip_icmp.h&gt;
+#include &lt;netinet/tcp.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;time.h&gt;</pre>
+		</div>
+
+<font color='red'>1. Hàm tính checksum.</font>
+
+Cụ thể thế nào các bạn cứ mỗ xẽ nó ra, và nghiền ngẫm. Nó dễ hiểu và không khó với ai có căn bản. Nếu không hiểu các bạn có thể reply bên dưới mình sẽ trả lời.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>uint16_t checksum&#40;const uint16_t* buf, unsigned int nbytes&#41;{
+
+  uint32_t sum = 0;
+
+  for &#40;; nbytes &gt; 1; nbytes -= 2&#41;{
+    sum += *buf++;
+  }
+
+  if &#40;nbytes == 1&#41;
+  {
+    sum += *&#40;unsigned char*&#41; buf;
+  }
+
+  sum  = &#40;sum &gt;&gt; 16&#41; + &#40;sum & 0xFFFF&#41;;
+  sum += &#40;sum &gt;&gt; 16&#41;;
+
+  return ~sum;
+
+}</pre>
+		</div>
+
+<font color='red'>2. Tính checksum cho gói IP.</font>
+
+Check sum gói IP sẽ bao gồm toàn bộ nội dung gói IP. Chúng ta chuyển gói IP bào buffer và gọi hàm checksum để tính toán.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>uint16_t check_ip&#40;iphdr ipheader&#41;{
+    uint16_t *ptr;
+    uint16_t sum = 0;
+    size_t ip_s = sizeof&#40;iphdr&#41;;
+    ptr = new uint16_t &#91;ip_s/2&#93;;
+    memcpy&#40;ptr, &ipheader, ip_s&#41;;
+
+    sum = checksum&#40;ptr, ip_s&#41;;
+    delete ptr;
+    return sum;
+
+}</pre>
+		</div>
+
+<font color='red'>3. Tính checksum cho gói ICMP.</font>
+
+Gói ICMP khác với gói IP vì nó có chứa thêm data field lúc trước đã có lần em tính thiểu cái data field kết quả là checksum bị sai, nhưng thêm data field vào vẫn bị sai em cảm thấy bức bách lắm, nhưng để ý kỹ lại sẽ thấy như sau <font color='cyan'>memcpy(ptr + icmp_s, dat, dat_size);</font> bởi vì ptr là con trỏ uint16_t nó là 2 bytes nên dịch nó phải công cho <font color='cyan'>icmp_s/2</font> nhưng xuống đoạn tính checksum không phải là <font color='cyan'>sum = checksum(ptr, pkt_s/2);</font> mà là <font color='cyan'>sum = checksum(ptr, pkt_s);</font> vì ở đây nó tính bằng bytes nếu tính toán máy móc chút là sẽ sai checksum.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>uint16_t check_icmp&#40;icmphdr icmpheader, char *dat, size_t dat_size&#41;{
+    uint16_t *ptr;
+    uint16_t sum = 0;
+
+    size_t icmp_s = sizeof&#40;icmphdr&#41;;
+    size_t pkt_s = sizeof&#40;iphdr&#41; + icmp_s + dat_size;
+
+    if&#40;sizeof&#40;iphdr&#41;%2 == 1 || dat_size%2 == 1&#41;return 0x0000;
+
+    ptr = new uint16_t &#91;pkt_s/2&#93;;
+    memcpy&#40;ptr, &icmpheader, icmp_s&#41;;
+    memcpy&#40;ptr + icmp_s/2, dat, dat_size&#41;;
+
+    sum = checksum&#40;ptr, pkt_s&#41;;
+    delete ptr;
+    return sum;
+
+}</pre>
+		</div>
+
+<font color='red'>4. Tính checksum cho gói TCP</font>
+
+Đoạn này thì em mới bộc lộ cái ngu ra, em tính mỗi tcpheader và data, vì ăn quen mà tưởng nó giống như ICMP header. Sau này đọc tài liệu mới biết. Trước đây người ta không phân chia ra TCP hay IP và UDP mà chỉ có TCP kể từ năm 1970 mới tách ra để làm cấu trúc của gói tin minh bạch hơn. Để tính toán checksum cần phải tính cả những thứ &quot;nguyên thuỷ&quot; thuộc về nó <font color='cyan'>pseudo header</font> và cấu trúc của nó đây:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>struct pseudo_header
+{
+    unsigned int   s_addr;
+    unsigned int   d_addr;
+    char           reserved;
+    unsigned char  protocol;
+    unsigned short length;
+};</pre>
+		</div>
+
+Và đây là mã của tính toàn TCP:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>uint16_t check_tcp_syn&#40;iphdr ipheader, tcp_syn tcpheader, char* opt, size_t opt_size&#41;{
+    uint16_t *ptr;
+    uint16_t sum = 0;
+    pseudo_header psdheader;
+    size_t psd_s = sizeof&#40;pseudo_header&#41;;
+    size_t tcp_s = sizeof&#40;tcp_syn&#41;;
+    size_t pkt_s = psd_s + tcp_s + opt_size;
+
+    ptr = new uint16_t &#91;pkt_s/2&#93;;
+
+    psdheader.s_addr = ipheader.saddr;
+    psdheader.d_addr = ipheader.daddr;
+    psdheader.reserved = 0;
+    psdheader.protocol = ipheader.protocol;
+    psdheader.length = htons&#40;tcp_s+opt_size&#41;;
+
+    memcpy&#40;ptr, &psdheader, psd_s&#41;;
+    memcpy&#40;ptr + psd_s/2 , &tcpheader, tcp_s&#41;;
+    memcpy&#40;ptr + psd_s/2 + tcp_s/2, opt, opt_size&#41;;
+    sum = checksum&#40;ptr, pkt_s&#41;;
+
+    delete ptr;
+    return sum;
+
+}</pre>
+		</div>
+
+Ở trên là gói SYN không có data field em chưa viết phần đó. Để hôm nào phân tích bằng WireShark đã rồi tính tiếp. Nhưng về cơ bản ta sẽ đưa data field vào và tăng length lên thôi. Cái opt là TCP options.
+
+<font color='red'>5. Tính toán checksum với gói UDP</font>
+
+Việc tính toán check sum gói tin này sẽ giống với TCP tức là tính cả pseudo header. Dưới đây là mã tính toán nó.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>uint16_t check_udp&#40;iphdr ipheader, udphdr udpheader, char* dat, size_t dat_size&#41;{
+    uint16_t *ptr;
+    uint16_t sum = 0;
+    pseudo_header psdheader;
+    size_t psd_s = sizeof&#40;pseudo_header&#41;;
+    size_t udp_s = sizeof&#40;udphdr&#41;;
+    size_t pkt_s = psd_s + udp_s + dat_size;
+
+    ptr = new uint16_t &#91;pkt_s/2&#93;;
+
+    psdheader.s_addr = ipheader.saddr;
+    psdheader.d_addr = ipheader.daddr;
+    psdheader.reserved = 0;
+    psdheader.protocol = ipheader.protocol;
+    psdheader.length = htons&#40;udp_s + dat_size&#41;;
+
+    memcpy&#40;ptr, &psdheader, psd_s&#41;;
+    memcpy&#40;ptr + psd_s/2 , &udpheader, udp_s&#41;;
+    memcpy&#40;ptr + psd_s/2 +  udp_s/2, dat, dat_size&#41;;
+
+    sum = checksum&#40;ptr, pkt_s&#41;;
+    delete ptr;
+    return sum;
+}</pre>
+		</div>
+
+<font color='red'>6. Kết bài</font>
+Viết tới đây chắc cũng có bạn thắc mắc sao đoạn này em rườm rà thế.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sum = checksum&#40;ptr, pkt_s&#41;;
+    delete ptr;
+    return sum;</pre>
+		</div>
+
+Em làm thế vì nếu return ngay con trỏ <font color='cyan'>ptr</font> sẽ không được giải phóng.
+
+Từng đó thôi cũng đủ làm em tốn mất 2 ngày, đúng là sự thiếu hiểu biết thật đáng sợ. Lần sau em sẽ tìm hiểu một vấn đề kỹ càng hơn trước khi làm và đặt câu hỏi, cảm ơn anh <font color='red'>conmale</font> và bạn <font color='red'>vd_</font> đã trả lời những thẳng mắc <b>hồn nhiên</b> của em :&quot;&gt;.
+
+P/S: các bạn có thể sử dụng các hàm trên để:
+- Thử nghiệm việc gửi nhận các gói tin.
+- Viết module tự correct checksum trước khi gửi đi.
+- Bắt phân tích các gói checksum bị lỗi.
+
+Mà nguồn trên được em viết bằng C++ có tham khảo thêm các bài viết từ:<span class="link"> http://tcpdump.org/</span><span class="link"> http://www.winpcap.org/</span><span class="link"> http://www.cplusplus.com/</span><span class="link"> http://yuba.stanford.edu/~casado/pcap/section1.html</span>
+
+Một số trang khác nữa khi nào nhớ em sẽ bổ sung.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/41759.hva#260060</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/41759.hva#260060</link>
+				<pubDate><![CDATA[Tue, 27 Mar 2012 23:29:11]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm mail server với Postfix - Phần 3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm mail server với Postfix - Phần 3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm mail server với Postfix - Phần 3</title>
+				<description><![CDATA[ <b>Chống spam bằng SpamAssassin</b>
+
+<b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cài đặt, cấu hình cơ bản
+   3. Mở rộng, nâng cao
+   4. Tham khảo
+
+<b>Giới thiệu</b>
+
+SpamAssassin phát hiện và đánh dấu spam mail bằng cách phân tích thông tin trong header và nội dung mail. SpamAssassin tiêu tốn khá nhiều tài nguyên (cpu, memory, thời gian xử lý) của server, đặc biệt khi phải xử lý những mail có size lớn. Cấu hình để SpamAssassin hoạt động tốt, đồng thời giảm nhẹ sự tiêu tốn tài nguyên cho server là một vấn đề quan trọng.
+
+Bài viết này giới thiệu cách dùng SpamAssassin và procmail để đánh dấu spam mail cho Postfix server (postfix 2.x). Phương pháp này có những đặc điểm
+
+    * ít thay đổi cấu hình mặc định của Postfix (chỉ sửa một dòng trong file main.cf, không thay đổi file master.cf)
+    * giảm tải cho server bằng cách dùng spamc/spamd (không dùng trực tiếp chương trình spamassassin) và chọn cỡ mail thích hợp
+    * cho phép mỗi user tự xây dựng quy tắc kiểm tra spam riêng cho mình
+    * chú ý: ở đây chỉ dùng SpamAssassin để đánh dấu mail. Việc xử lý những mail bị đánh dấu spam (như xóa, phân loại vào hộp thư riêng) được thực hiện ở mail client. 
+
+Bắt đầu viết: tháng 5 năm 2003.
+Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.
+
+<b>Cài đặt và cấu hình</b>
+
+Mail đến server sẽ được xử lý như sau: <b>postfix → procmail → spamassassin</b> → hộp thư của user.
+
+Bài viết này giả sử postfix, spamassassin, và procmail đã được cài đặt và hoạt động. Những file cấu hình cần thiết và vị trí của chúng giả sử như sau
+
+   1. postfix: <b>/etc/postfix/main.cf</b>
+   2. procmail: <b>/etc/procmailrc</b>
+   3. SpamAssassin: <b>/etc/mail/spamassassin/local.cf </b>
+
+Trước hết, sửa file <b>main.cf</b> để procmail xử lý mail
+
+	<blockquote>### chỉ cần uncomment (xóa #) dòng này
+	mailbox_command = /usr/bin/procmail
+&nbsp;
+		</blockquote>
+Tiếp đến, tạo một file <b>/etc/procmailrc</b> như sau
+
+	<blockquote>### tôi thích dùng Maildir
+	MAILDIR=$HOME
+	DEFAULT=$MAILDIR/Maildir/
+	DROPPRIVS=yes
+
+	# spam thường có size nhỏ hơn 10 KiB (10*1024=10240 bytes),
+	# kiểm tra những file lớn chỉ làm tốn tài nguyên của server!
+	:0fw
+	* < 10240
+	        | /usr/bin/spamc
+&nbsp;
+		</blockquote>
+Sau đó lập những quy tắc kiểm tra mail cho SpamAssassin. File<b> local.cf </b>ghi những quy tắc chung cho mọi user.
+
+	<blockquote># thường chỉ nhận mail tiếng Việt, tiếng Anh
+	ok_locales	vi en
+	# ngưỡng spam, nên sử dụng những giá trị từ 5-10
+	required_hits	5
+	# thay đổi tiêu đề mail nếu là spam
+	rewrite_subject	1
+	# đánh dấu spam
+	subject_tag	[*** SPAM ***]
+
+	# với SpamAssassin 3.x: thay thế "rewrite_subject" và "subject_tag" bằng
+	# rewrite_header  Subject [*** SPAM ***]
+
+	# đây là mail của những người quan trọng,
+	# không bao giờ được đánh dấu spam!
+	whitelist_from	gf@domain-1.name
+	whitelist_from	*@domain-2.name&nbsp;
+		</blockquote>
+
+Khởi động SpamAssassin (xem script khởi động phía dưới) với option: <b>SPAMDOPTIONS="-d -c -a -m5</b>", trong đó
+
+   1. <b>-d</b>: (daemonize) chế độ daemon
+   2. <b>-c</b>: (create-prefs) tạo file cấu hình riêng cho các user
+   3. <b>-a</b>: (auto-whitelist) tự động điều chỉnh whitelist
+   4. <b>-m</b>: (max-children) số process tối đa
+
+Gõ "<b>man spamd</b>" để xem thêm về các option.
+
+Sau đây là một ví dụ về script khởi động /etc/init.d/spamassassin (tham khảo từ file của FC1).
+
+<blockquote>#!/bin/sh
+# spamassassin This script starts and stops the spamd daemon
+#
+# chkconfig: 3 80 30
+#
+# description: spamd is a daemon process which uses SpamAssassin to check
+#              email messages for SPAM.  It is normally called by spamc
+#              from a MDA.
+ 
+# Source function library.
+. /etc/rc.d/init.d/functions
+ 
+# Source networking configuration.
+. /etc/sysconfig/network
+ 
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+ 
+# Source spamd configuration.
+if [ -f /etc/sysconfig/spamassassin ] ; then
+        . /etc/sysconfig/spamassassin
+else
+        SPAMDOPTIONS="-d -c -a -m5 -H"
+fi
+ 
+[ -f /usr/bin/spamd -o -f /usr/local/bin/spamd ] || exit 0
+PATH=$PATH:/usr/bin:/usr/local/bin
+ 
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemon.
+        echo -n "Starting spamd: "
+        daemon spamd $SPAMDOPTIONS
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/spamassassin
+        ;;
+  stop)
+        # Stop daemons.
+        echo -n "Shutting down spamd: "
+        killproc spamd
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f /var/lock/subsys/spamassassin
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  status)
+        status spamd
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+ 
+exit 0&nbsp;
+		</blockquote>
+
+Sau khi khởi động, spamd (spamassassin daemon) sẽ chờ ở cổng 783 của localhost (address 127.0.0.1).
+
+	### khởi động spamassassin
+<b>	/etc/init.d/spamassassin start</b>
+
+	### kiểm tra bằng nmap
+<b>	$ nmap localhost</b>
+
+	### kết quả nmap
+	...
+<b>	783/tcp  open  hp-alarm-mgr</b>
+	...
+
+Đến đây kết thúc phần cấu hình. Khởi động lại postfix (lệnh "postfix reload"), gửi thử 1 mail và kiểm tra phần header
+
+<blockquote>### đây là ví dụ về header một mail bình thường, không phải spam
+X-Spam-Checker-Version: SpamAssassin ver (YYYY-MM-DD) on ServerName
+X-Spam-Level: *
+X-Spam-Status: No, hits=1.2 required=5.0 tests=xxx autolearn=xxx version=x.yz
+
+### đây là ví dụ về header của một spam mail
+X-Spam-Checker-Version: SpamAssassin ver (YYYY-MM-DD) on ServerName
+X-Spam-Level: ******************
+X-Spam-Status: Yes, hits=18.3 required=5.0 tests=FORGED_AOL_HTML,
+FORGED_MUA_AOL_FROM,HTML_90_100,HTML_IMAGE_ONLY_02,HTML_MESSAGE,
+MIME_HTML_NO_CHARSET,MIME_HTML_ONLY,MIME_HTML_ONLY_MULTI,
+MISSING_MIMEOLE,MISSING_OUTLOOK_NAME,NO_DNS_FOR_FROM,RCVD_IN_DSBL,
+RCVD_IN_NJABL,RCVD_IN_NJABL_PROXY,RCVD_IN_SORBS,RCVD_IN_SORBS_HTTP,
+RCVD_IN_SORBS_MISC autolearn=spam version=x.yz
+&nbsp;
+		</blockquote>
+
+<b>Tham khảo, thông tin thêm</b>
+
+   1. mẫu thử spam
+   2. ví dụ về một spam mail sau khi qua bộ lọc SpamAssassin
+   3.<span class="link"> http://www.peregrinehw.com/downloads/SpamAssassin/INSTALL-RH9-NOTES</span>
+   4. tại sao dùng spamc/spamd hiệu quả hơn dùng trực tiếp chương trình spamasassin?
+
+      <b>man spamc</b>: Spamc is the client half of the spamc/spamd pair. It should be used in place of "spamassassin" in scripts to process mail... Spamc has extremely low overhead in loading, so it should be much faster to load than the whole spamassassin program.
+
+      <b>man spamd</b>: The purpose of this program is to provide a daemonized version of the spamassassin executable. The goal is improving throughput performance for automated mail checking. This is intended to be used alongside "spamc", a fast, low-overhead C client program.
+   5. Theo cấu hình spamd như trong bài viết này, mỗi user có thể dùng bộ lọc mặc định (là file /etc/mail/spamassassin/local.cf do system admin quản lý), hoặc có thể tự điều chỉnh bộ lọc riêng cho mình nếu không thỏa mãn với cấu hình của bộ lọc mặc định. Cấu hình bộ lọc spam cho user nằm ở file <b>$HOME/.spamassassin/user_prefs</b>
+
+      Mỗi khi kiểm tra mail, spamd sẽ sử dụng bộ lọc user_prefs trước (ưu tiên), nếu không tìm thấy user_prefs, spamd sẽ dùng bộ lọc mặc định local.cf. Những option để cấu hình user_prefs hoàn toàn giống như của local.cf
+
+   6. Xem list tất cả những option của bộ lọc spam ở đây
+     <span class="link"> http://spamassassin.apache.org/tests.html</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2551.hva#13864</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2551.hva#13864</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 15:27:53]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 3</title>
+				<description><![CDATA[ cháu có tổng hợp đc thành  1 ebook cùng chia sẻ cho mọi người nhé! http://www.slideshare.net/h2audio/xy-dng-mail-server-vi-postfix-23399766]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2551.hva#276910</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2551.hva#276910</link>
+				<pubDate><![CDATA[Tue, 25 Jun 2013 14:51:42]]> GMT</pubDate>
+				<author><![CDATA[ h2_audio]]></author>
+			</item>
+	</channel>
+</rss>

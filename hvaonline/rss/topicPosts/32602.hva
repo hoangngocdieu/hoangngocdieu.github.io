@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Đây là bài viết hướng dẫn chi tiết cách xây dựng 1 AD trên linux (Ở đây là Centos)
+Không biết có bài viết nào chưa, nếu có rồi thì xóa dùm em nha :D
+Đã làm qua và thành công 100% (nếu ai làm ko được là do ko đọc kỹ đó :D)
+
+
+<b>Package dependencies
+Make sure you've got those RHEL packages installed,</b>
+openldap-servers
+nss_ldap
+samba
+httpd
+mysql
+mysql-server
+php-ldap
+php-mysql
+php-pdo
+php-cli
+perl-DBI
+perl-DBD-MySQL
+perl-Convert-ASN1
+perl-XML-NamespaceSupport
+perl-XML-SAX
+perl-Net-SSLeay
+perl-IO-Socket-SSL
+perl-LDAP
+perl-Digest-SHA1
+*Note. the &quot;nss_ldap&quot; package provides the PAM/LDAP library,
+ll /lib/security/pam_ldap.so
+
+
+
+<b>Plus those few ones from EPEL (fedoraproject.org/wiki/EPEL),</b>
+perl-Crypt-SmbHash
+perl-Digest-MD4
+perl-Jcode
+perl-Unicode-Map
+perl-Unicode-Map8
+perl-Unicode-MapUTF8
+perl-Unicode-String
+
+<b>Network settings</b>
+Configure static look ups,
+vi /etc/hosts
+like,
+127.0.0.1  localhost
+IP    HOSTNAME  SHORT_HOSTNAME
+
+<b>OpenLDAP server</b>
+Add that schema,
+cp /usr/share/doc/samba-3.0.25b/LDAP/samba.schema /etc/openldap/schema/
+
+<b>Configure the daemon,</b>
+mv -f /etc/openldap/slapd.conf /etc/openldap/slapd.conf.dist
+cat &gt; /etc/openldap/slapd.conf &lt;&lt;EOF9 && print " Done"
+include /etc/openldap/schema/core.schema
+include /etc/openldap/schema/cosine.schema
+include /etc/openldap/schema/inetorgperson.schema
+include /etc/openldap/schema/nis.schema
+include /etc/openldap/schema/samba.schema
+
+
+allow bind_v2
+pidfile /var/run/openldap/slapd.pid
+argsfile /var/run/openldap/slapd.args
+
+
+database bdb
+suffix "dc=example,dc=com"
+rootdn "cn=admin,dc=example,dc=com"
+rootpw LDAP_PASSWORD
+# rootpw {crypt}ijFYNcSNctBYg
+directory /var/lib/ldap
+
+
+index objectClass eq,pres
+index ou,cn,mail,surname,givenname eq,pres,sub
+index uidNumber,gidNumber,loginShell eq,pres
+index uid,memberUid eq,pres,sub
+index nisMapName,nisMapEntry eq,pres,sub
+EOF9
+
+*Note you could use a crypted password. Then add,
+password-hash {CRYPT}
+
+*Note you could add some Samba indexes,
+index cn,sn,uid,displayName pres,sub,eq
+index uidNumber,gidNumber eq
+index sambaSID eq
+index sambaPrimaryGroupSID eq
+index sambaDomainName eq
+index objectClass pres,eq
+index default sub
+
+*Note you could also add the TLS configuration later on.
+
+<b>Configure the database,</b>
+cp /etc/openldap/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+chown ldap:ldap /var/lib/ldap/DB_CONFIG
+chmod 600 /var/lib/ldap/DB_CONFIG
+
+<b>Start, check and stop the service,</b>
+service ldap start
+ldapsearch -x -b '' -s base '(objectclass=*)' namingContexts # should return two lines
+service ldap stop
+slapcat # should return empty
+
+
+<b>Initialize the database,</b>
+cat &gt; /etc/openldap/init.ldif &lt;&lt;EOF9 && print " Done"
+dn: dc=example,dc=com
+objectclass: dcObject
+objectclass: organization
+o: Ministere de la justice
+dc: base
+
+
+dn: cn=admin,dc=example,dc=com
+objectclass: organizationalRole
+cn: admin
+EOF9
+slapadd -l /etc/openldap/init.ldif && print " Done"
+chown -R ldap:ldap /var/lib/ldap
+chmod 600 /var/lib/ldap/*
+slapcat # should return the two ldap entries
+
+<b>Start & check the service</b>,
+service ldap start
+chkconfig ldap on
+ldapsearch -x -b "dc=example,dc=com"
+
+<b>Phpldapadmin frontend (optional)</b>
+Prepare PHP,
+mv -f /etc/php.ini /etc/php.ini.dist
+sed 's/memory_limit = 16M/memory_limit = 32M/' /etc/php.ini.dist &gt; /etc/php.ini
+
+Fetch phpldapadmin (phpldapadmin.sourceforge.net) and untar it,
+tar xzf phpldapadmin-1.1.0.5.tar.gz
+mv phpldapadmin-1.1.0.5 /var/www/html/ldap
+Note if this is a fresh OS install,
+mv -f /etc/httpd/conf.d/welcome.conf /etc/httpd/conf.d/welcome.conf.dist
+
+
+<b>Configure the frontend</b>,
+vi /var/www/html/ldap/config/config.php
+namely,
+$config-&gt;custom-&gt;jpeg['tmpdir'] = &quot;/tmp&quot;;
+
+<b>Start the http daemon,</b>
+service httpd start
+chkconfig httpd on
+
+<b>Check the url and login,</b>
+IP/ldap
+
+
+<b>Samba Domain Controller</b>
+Configure the daemons,
+mv /etc/samba/smb.conf /etc/samba/smb.conf.dist
+cat /usr/share/doc/samba-3.0.25b/LDAP/smbldap-tools-0.9.2/smb.conf \
+| sed '
+/^$/d;
+/^#/d;
+/^[[:space:]]*#/d;
+s|/opt/IDEALX/|/usr/local/|g;
+s/cn=Manager/cn=admin/g;
+s/dc=idealx,dc=org/dc=example,dc=com/g;
+s/idealx.com/example.com/g;  
+s/IDEALX-NT/EXAMPLE/g;
+s/PDC-SRV/SHORT_HOSTNAME/g;
+s/Samba Server %v/Domain Controller/g
+/min passwd length/d;
+/printer admin/d;
+' &gt; /etc/samba/smb.conf && print &quot; Done&quot;
+
+<b>
+Edit the configuration,</b>
+vi /etc/samba/smb.conf
+and add this at the end for user shares,
+[homes]
+comment = Home Directories
+browseable = no
+writable = yes
+; valid users = %S
+; valid users = MYDOMAIN\%S
+
+<b>Smbldap-tools connector</b>
+Prepare the scripts,
+cp /usr/share/doc/samba-3.0.25b/LDAP/smbldap-tools-0.9.2/smbldap-* /usr/local/sbin/
+cp /usr/share/doc/samba-3.0.25b/LDAP/smbldap-tools-0.9.2/smbldap_tools.pm /usr/local/sbin/
+chmod +x /usr/local/sbin/smbldap*
+
+<b>Configure the connector,</b>
+cat /usr/share/doc/samba-3.0.25b/LDAP/smbldap-tools-0.9.2/smbldap.conf \
+| sed '
+/^$/d;
+/^#/d;
+/^[[:space:]]*#/d;
+s|/opt/IDEALX/|/usr/local/|g;
+s/cn=Manager/cn=admin/g;
+s/dc=idealx,dc=org/dc=example,dc=com/g;
+s/idealx.com/example.com/g;  
+s/IDEALX-NT/EXAMPLE/g;
+s/PDC-SRV/SHORT_HOSTNAME/g;
+s/ldapTLS=&quot;1&quot;/ldapTLS=&quot;0&quot;/;
+/cafile/d;
+/clientcert/d;
+/clientkey/d;
+' &gt;&gt; /etc/smbldap-tools/smbldap.conf && print &quot; Done&quot;
+
+<b>Get the Domaine Controller's SID,</b>
+net getlocalsid
+and edit the configuration to change the SID,
+vi /etc/smbldap-tools/smbldap.conf
+like,
+SID=_SID_
+
+<b>Configure the access information,</b>
+cat &gt; /etc/smbldap-tools/smbldap_bind.conf &lt;&lt;EOF9 && print " Done"
+masterDN="cn=admin,dc=example,dc=com"
+masterPw="LDAP_PASSWD"
+EOF9
+
+<b>Fix file permissions,</b>
+chmod 644 /etc/smbldap-tools/smbldap.conf
+chmod 600 /etc/smbldap-tools/smbldap_bind.conf
+
+Ready to go
+Configure the UNIX users' LDAP magging,
+authconfig-tui
+Note. enable local authorize
+Note. this configures those files for the least,
+/etc/nsswitch.conf
+/etc/pam.d/system-auth-ac
+/etc/ldap.conf
+/etc/openldap/ldap.conf
+
+
+<b>Check Samba's configuration,</b>
+testparm
+
+
+<b>Setup the master password,</b>
+smbpasswd -w LDAP_MASTER_PASSWORD
+
+
+<b>Populate the LDAP tree,</b>
+/usr/local/sbin/smbldap-populate
+
+
+<b>Add some user,</b>
+smbldap-useradd -a -G 'Domain Users' -m -s /bin/ksh -d /home/user2 -F "" -P user2
+Note. other possible groups : "Administrators" and "Domain Admins"
+
+<b>Check,</b>
+getent passwd
+getent group
+
+
+<b>Start the Domain Controller,</b>
+service smb start
+chkconfig on
+net groupmap list
+
+
+<b>Watch the logs,</b>
+tail -f /var/log/* &
+tail -f /var/log/samba/* &
+
+
+<b>Join the "EXAMPLE" domain from a Windows box with those creditentials:</b>
+Login : root
+Password : LDAP master password
+&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201049</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201049</link>
+				<pubDate><![CDATA[Wed, 16 Dec 2009 22:58:40]]> GMT</pubDate>
+				<author><![CDATA[ dawnblack2]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Nó còn một đoạn nữa nè bạn
+
+<blockquote>
+Samba/LDAP configuration on RHEL5....
+
+Samba/LDAP configuration on RHEL5 : pbraun.nethence.com/doc/net/samba-ldap.html
+Samba configuration : pbraun.nethence.com/doc/net/samba.html
+OpenLDAP configuration : pbraun.nethence.com/doc/databases/openldap.html
+....
+Usage
+Create a group,
+smbldap-groupadd -a GROUPNAME
+getent group | grep GROUPNAME
+
+Create a user,
+smbldap-useradd -a -g GROUPNAME -G 'Domain Users' -m -s /bin/ksh -d /home/USERNAME -F '' -P USERNAME
+getent passwd | grep USERNAME
+Note. primary group 'GROUPNAME' and secondary group 'Domain Users'
+Note. other possible groups : "Administrators" and "Domain Admins"
+
+Check in the LDAP repository for USERNAME's primary group,
+dn: uid=USERNAME,ou=Users,dc=example,dc=net
+...
+gidNumber: GID_NUMBER
+and secondary groups (primary group is also referenced as secondary group in the LDAP repo),
+dn: cn=GROUPNAME,ou=Groups,dc=example,dc=net
+...
+memberUid: USERNAME
+also,
+dn: cn=Domain Users,ou=Groups,dc=example,dc=net
+...
+memberUid: USERNAME
+
+
+References
+smbldap-tools documentation : /usr/share/doc/samba-3.0.25b/LDAP/smbldap-tools-0.9.2/INSTALL
+Samba (v.3) PDC LDAP howto : www.unav.es/cti/ldap-smb/smb-ldap-3-howto.html
+Redhat knowledge base : kbase.redhat.com/faq/
+Additionnal links
+Official guide : us3.samba.org/samba/docs/man/Samba-Guide/happy.html
+Simple PDC : www.oregontechsupport.com/samba/samba-pdc.php
+Ldap scripts alternative : ldapscripts.sourceforge.net/
++ contribs.martymac.com/sambaConfig/smb.conf
++ contribs.martymac.com/sambaConfig/base.ldif
+Another alternative : sourceforge.net/projects/smb-scripts/
+Fedora Directory : fdstools.wiki.sourceforge.net/
+(FR) Guide on debian : www.coagul.org/spip.php?article625
+(FR) Yet another debian guide : damstux.free.fr/wiki/index.php?title=PDC_Samba_et_LDAP&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201074</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201074</link>
+				<pubDate><![CDATA[Thu, 17 Dec 2009 01:17:32]]> GMT</pubDate>
+				<author><![CDATA[ tmd]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ :D Chủ yếu post lên cho mọi người tìm hiểu và xây dựng cho riêng mình một AD chạy trên Centos thôi. Mình cũng có nói trước là không biết có ai đã post trước không, nếu có thì mod xóa dùm em ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201081</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201081</link>
+				<pubDate><![CDATA[Thu, 17 Dec 2009 01:45:05]]> GMT</pubDate>
+				<author><![CDATA[ dawnblack2]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dawnblack2 wrote:</cite><br>
+		<blockquote>:D Chủ yếu post lên cho mọi người tìm hiểu và xây dựng cho riêng mình một AD chạy trên Centos thôi. Mình cũng có nói trước là không biết có ai đã post trước không, nếu có thì mod xóa dùm em &nbsp;
+		</blockquote>
+
+Nếu bạn đã test và gửi lên đây cho anh em thì quá tốt. Cám ơn đã chia sẻ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201084</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201084</link>
+				<pubDate><![CDATA[Thu, 17 Dec 2009 02:08:02]]> GMT</pubDate>
+				<author><![CDATA[ demingcycle]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Còn ai muốn xây dựng hệ thống Domain trên Centos 1 cách hoàn chỉnh nhất với các cách thức bảo mật thì pm nick :maxximun87@yahoo.com
+Mình gửi tài liệu tham khảo cho 
+Đã test và thành công :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201331</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201331</link>
+				<pubDate><![CDATA[Sat, 19 Dec 2009 07:32:32]]> GMT</pubDate>
+				<author><![CDATA[ dawnblack2]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Bài viết hay quá. Anh có thể gửi tài liệu cho em được không? em đang tìm hiểu về cái này.
+
+Y!m : khatvong1811@yahoo.com
+
+Thanks !!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201948</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201948</link>
+				<pubDate><![CDATA[Sat, 26 Dec 2009 21:16:04]]> GMT</pubDate>
+				<author><![CDATA[ pindy]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dawnblack2 wrote:</cite><br>
+		<blockquote>Còn ai muốn xây dựng hệ thống Domain trên Centos 1 cách hoàn chỉnh nhất với các cách thức bảo mật thì pm nick :maxximun87@yahoo.com
+Mình gửi tài liệu tham khảo cho 
+Đã test và thành công :D&nbsp;
+		</blockquote>
+
+Sao không post lên đây cho mọi người cùng tham khảo khi cần? Và mọi người cũng sẽ giúp bạn tối ưu việc cấu hình khi có thể?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201963</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201963</link>
+				<pubDate><![CDATA[Sun, 27 Dec 2009 05:32:03]]> GMT</pubDate>
+				<author><![CDATA[ demingcycle]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ <blockquote>
+Hướng dẫn <font color='red'><b>xây dựng AD</b></font> trên Centos  <b><font color='red'>bằngLDAP/Samba</font></b>
+&nbsp;
+		</blockquote>
+
+<span class="link"> http://en.wikipedia.org/wiki/Active_Directory</span> khác hoàn toàn <span class="link"> http://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol</span>. 
+
+Tại sao có dòng màu đỏ đó nhỉ?  :-/ 
+
+Thân!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201969</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#201969</link>
+				<pubDate><![CDATA[Sun, 27 Dec 2009 06:17:17]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Ông anh KyO này bắt lỗi dữ wá :D
+To demingcycle: nếu post được mình đã post lên rồi chứ giữ làm gì :D với lại cái này mình làm cách đây 4 tháng rồi và hiện tại không còn đụng tới nó nữa vì đang dính tới vụ xây dựng hệ thống moodle ở chổ làm.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#202012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#202012</link>
+				<pubDate><![CDATA[Sun, 27 Dec 2009 22:20:20]]> GMT</pubDate>
+				<author><![CDATA[ dawnblack2]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Cho mình hỏi là mình đã cấu hình AD trên Centos và join 1 máy windows XP vào domain thành công. Login vào máy win xp bình thường nhưng không thể đổi password được.
+Có ai bị vấn đề này chưa và sửa chổ nào trong ldap hay samba ?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222173</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222173</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 04:45:05]]> GMT</pubDate>
+				<author><![CDATA[ goldarrow]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Bạn thử thêm vào file cấu hình của Samba mấy dòng này xem:
+<blockquote>	
+unix password sync = yes
+passwd program = /usr/bin/passwd %u
+passwd chat = *New*password* %n\n *Retype*new*password* %n\n *passwd:*all*authentication*tokens*updated*successfully*&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222192</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 11:03:14]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Mình cũng thử add máy dòng đó vào congig của smb.conf rồi và restart lại cả smb và ldap luôn vẫn không tác dụng
+
+Trong log smbd.log có dòng
+
+[2010/10/06 15:42:48, 0] lib/util_sock.c:read_socket_with_timeout(497)
+  read_socket_with_timeout: timeout read. read error = Input/output error.
+[2010/10/06 15:42:48, 0] lib/util_sock.c:read_socket_with_timeout(497)
+  read_socket_with_timeout: timeout read. read error = Input/output error.
+[2010/10/06 15:42:48, 0] lib/util_sock.c:read_socket_with_timeout(497)
+  read_socket_with_timeout: timeout read. read error = Input/output error.
+[2010/10/06 15:42:48, 0] lib/util_sock.c:read_socket_with_timeout(497)
+  read_socket_with_timeout: timeout read. read error = Input/output error.
+
+nhưng tìm hoài chưa thấy cách fix lỗi này
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222212</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222212</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 21:25:40]]> GMT</pubDate>
+				<author><![CDATA[ goldarrow]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Bạn thảy lên toàn bộ các files cấu hình liên quan xem.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222213</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222213</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 21:36:46]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Toàn bộ cấu hình bên dưới đây, mong các sư huynh giúp 
+
+Cấu hình smb.conf 
+
+[global]
+workgroup = LDAPGROUP
+netbios name = LDAPSERVER
+security=user
+domain master = yes
+domain logons = yes
+ldap suffix = dc=myldap,dc=org
+ldap admin dn = cn=root,dc=myldap,dc=org
+passdb backend = ldapsam:ldap://ldapserver.myldap.org/
+ldap user suffix = ou=Users
+ldap group suffix = ou=Groups
+ldap machine suffix = ou=Machines
+ldap passwd sync = Yes
+unix password sync = yes
+passwd program = /usr/bin/passwd %u
+passwd chat = *New*password* %n\n *Retype*new*password* %n\n *passwd:*all*authentication*tokens*updated*successfully*
+add user script = /usr/sbin/smbldap-useradd -m "%u"
+delete user script = /usr/sbin/smbldap-userdel "%u"
+add machine script = /usr/sbin/smbldap-useradd -t 0 -w "%u"
+add group script = /usr/sbin/smbldap-groupadd -p "%g"
+add user to group script = /usr/sbin/smbldap-groupmod -m "%u" "%g"
+delete user from group script = /usr/sbin/smbldap-groupmod -x "%u" "%g"
+set primary group script = /usr/sbin/smbldap-usermod -g .%g' .%u'
+
+[netlogon]
+comment = Network Logon Service
+path = /home/samba/netlogon
+admin users = Administrator
+valid users = %U
+read only = no
+guest ok = yes
+writable = no
+share modes = no
+
+[profiles]
+path=/home/samba/profiles
+read only=no
+writeable=yes
+guest ok=yes
+create mask = 0600
+create directory = 0700
+
+[homes]
+browseable=no
+writeable=yes
+guest ok=no
+
+Cầu hình smbldap.conf
+
+sambaDomain="myldap"
+masterLDAP="ldapserver.myldap.org"
+masterPort="389"
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222214</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222214</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 21:51:25]]> GMT</pubDate>
+				<author><![CDATA[ goldarrow]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ slapd.conf có không bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222217</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222217</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 22:37:31]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Cấu hình slapd.conf
+
+include         /etc/openldap/schema/core.schema
+include         /etc/openldap/schema/cosine.schema
+include         /etc/openldap/schema/inetorgperson.schema
+include         /etc/openldap/schema/nis.schema
+include         /etc/openldap/schema/samba.schema
+
+pidfile         /var/run/openldap/slapd.pid
+argsfile        /var/run/openldap/slapd.args
+
+database        bdb
+suffix          "dc=myldap,dc=org"
+rootdn          "cn=root,dc=myldap,dc=org"
+
+rootpw                {crypt}ijFYNcSNctBYg
+
+
+directory       /var/lib/ldap/myldap.org
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222218</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222218</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 22:47:08]]> GMT</pubDate>
+				<author><![CDATA[ goldarrow]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Mình nghĩ bạn cần cấu hình ACL trong OpenLDAP nữa: http://www.samba.org/samba/docs/man/Samba-Guide/ntmigration.html#id2602152]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222220</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222220</link>
+				<pubDate><![CDATA[Tue, 5 Oct 2010 23:13:15]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn xây dựng AD trên Centos bằng LDAP/Samba</title>
+				<description><![CDATA[ Thử thêm đoạn sau trong sldap.conf
+<blockquote>access to attrs=userPassword,sambaLMPassword,sambaNTPassword,shadowLastChange
+by dn.children=”ou=nix,dc=tranhuuphuoc,dc=hva” write
+by self write
+by anonymous auth
+by * none
+access to *
+by dn.children=”ou=nix,dc=tranhuuphuoc,dc=hva” write
+by * read&nbsp;
+		</blockquote>
+
+Thay đổi ou, dc,... cho phù hợp 
+
+Good luck]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222223</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32602.hva#222223</link>
+				<pubDate><![CDATA[Wed, 6 Oct 2010 00:04:23]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Về mod worker và prefork của apache"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Về mod worker và prefork của apache"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Về mod worker và prefork của apache</title>
+				<description><![CDATA[ Mình đã chuyển mod apache từ prefork sang worker, tuy nhiên khi coi thông qua apachectl kết quả là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Architecture:   32-bit
+Server MPM:     Worker
+  threaded:     yes &#40;fixed thread count&#41;
+    forked:     yes &#40;variable process count&#41;
+Server compiled with....
+ -D APACHE_MPM_DIR=&quot;server/mpm/worker&quot;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Compiled in modules:
+  core.c
+  worker.c
+  http_core.c
+  mod_so.c</pre>
+		</div>
+
+Nhưng khi xem thông qua httpd thì kết quả vẫn là prefork
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Architecture:   32-bit
+Server MPM:     Prefork
+  threaded:     no
+    forked:     yes &#40;variable process count&#41;
+Server compiled with....
+ -D APACHE_MPM_DIR=&quot;server/mpm/prefork&quot;</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Compiled in modules:
+  core.c
+  prefork.c
+  http_core.c
+  mod_so.c</pre>
+		</div>
+
+Khi kiểm tra nó xài thư viện nào: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ldd /usr/sbin/apachectl 
+	not a dynamic executable</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ldd /usr/sbin/httpd
+	linux-gate.so.1 =&gt;  &#40;0x00d0a000&#41;
+	libm.so.6 =&gt; /lib/libm.so.6 &#40;0x00135000&#41;
+	libpcre.so.0 =&gt; /lib/libpcre.so.0 &#40;0x009f0000&#41;
+	libselinux.so.1 =&gt; /lib/libselinux.so.1 &#40;0x00c3f000&#41;
+	libaprutil-1.so.0 =&gt; /usr/lib/libaprutil-1.so.0 &#40;0x0015e000&#41;
+	libcrypt.so.1 =&gt; /lib/libcrypt.so.1 &#40;0x00db5000&#41;
+	libexpat.so.0 =&gt; /lib/libexpat.so.0 &#40;0x0037b000&#41;
+	libdb-4.3.so =&gt; /lib/libdb-4.3.so &#40;0x0017f000&#41;
+	libapr-1.so.0 =&gt; /usr/lib/libapr-1.so.0 &#40;0x002c5000&#41;
+	libpthread.so.0 =&gt; /lib/libpthread.so.0 &#40;0x0089a000&#41;
+	libdl.so.2 =&gt; /lib/libdl.so.2 &#40;0x00ca0000&#41;
+	libc.so.6 =&gt; /lib/libc.so.6 &#40;0x0039c000&#41;
+	/lib/ld-linux.so.2 &#40;0x00980000&#41;
+	libsepol.so.1 =&gt; /lib/libsepol.so.1 &#40;0x004fc000&#41;
+	libuuid.so.1 =&gt; /lib/libuuid.so.1 &#40;0x0091c000&#41;</pre>
+		</div>
+
+Mình không hiểu lắm là tại sao nó lại hiển thị khác nhau như vậy. Và nếu muốn biết chính xác module nào đang được load lên khi httpd hoạt động thì kiểm tra như thế nào.? Thanks.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278933</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278933</link>
+				<pubDate><![CDATA[Sat, 2 Nov 2013 00:26:34]]> GMT</pubDate>
+				<author><![CDATA[ anonymous_itop]]></author>
+			</item>
+			<item>
+				<title>Về mod worker và prefork của apache</title>
+				<description><![CDATA[ Theo mình biết là khi gọi httpd lên, nó sẽ load thư viện prefork.so nên khi kiểm tra dù đang chạy với mod nào, nó cũng sẽ hiện thị là prefork. 
+
+Nếu gọi với httpd.worker thì nó sẽ hiển thị là worker, dù đang chạy module nào. Còn module nào thì
+ httpd -t -D DUMP_MODULES 
+để kiểm tra loaded module ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278961</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278961</link>
+				<pubDate><![CDATA[Tue, 5 Nov 2013 04:02:31]]> GMT</pubDate>
+				<author><![CDATA[ anonymous_itop]]></author>
+			</item>
+			<item>
+				<title>Về mod worker và prefork của apache</title>
+				<description><![CDATA[ Cái này không quan trọng lắm, cái quan trọng là bạn start đúng MPMs của bạn thôi, còn show sao thì cũng không cần quan tâm làm gì. Có thể testing thông qua việc xem các process và thread thông qua các công cụ của Linux. :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278997</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45283.hva#278997</link>
+				<pubDate><![CDATA[Tue, 12 Nov 2013 13:16:53]]> GMT</pubDate>
+				<author><![CDATA[ congnghevps.net]]></author>
+			</item>
+	</channel>
+</rss>

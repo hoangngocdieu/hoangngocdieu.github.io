@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Các bước xây dựng một hệ thống phân tích malware tự động"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Các bước xây dựng một hệ thống phân tích malware tự động"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Như các bạn đã biết, hiện nay có rất nhiều malware xuất hiện, do vậy với lượng malware ngày càng nhiều như vậy thì việc phân tích chúng cũng rất mất nhiều thời gian, chưa kể đến những malware phức tạp. Bài viết này với mong muốn giúp các bạn có thể hiểu sơ lược về hoạt động malware và cách thức xây dựng một hệ thống phân tích malware tự động như thế nào ? Theo ý kiến của seamoun thì không tham vọng xây dựng một hệ thống phân tích malware tự động mà có thể phân tích được tất cả malware xuất hiện, bởi vì malware hiện nay xuất hiện với nhiều hình thức khác nhau và hoạt động của chúng thì rất phức tạp (người phân tích soi còn không ra huống gì hệ thống tự động !!!  B-)  B-) ), thứ hai mà hệ thống có thể phân tích được tất cả các malware xuất hiện thì seamoun chắc nộp đơn xin nghỉ việc, vì mình chẳng có việc gì phải làm  :D  :D  :D  ;-)  ;-)  ;-) . Nhưng tại sao vẫn phát triển hệ thống phân tích malware tự động ? bởi vì hệ thống này sẽ giúp đỡ cho người phân tích bớt thời gian hơn cho những công đoạn mà người phân tích malware và cũng có cái nhìn tổng quát về những hành động, hành vi ban đầu của malware.
+
+Ví dụ: Khi có một malware mới xuất hiện thì ban đầu để phân tích chúng thì phải chạy malware cho một môi trường độc lập (tức là môi trường khi mà malware thực hiện sẽ không gây hại gì cho hệ thống), môi trường như vậy người ta gọi là sandbox. Tiếp đến người phân tích sử dụng các công cụ phân tích sơ bộ rằng malware thực hiện những hành động gì khi chạy chúng (lưu registry key nào, tạo file gì mới trên hệ thống, thay đổi , tiêm nhiễm gì ....) sau đó sử dụng các công cụ như Ollydbg, IDA, ... để tiến hành phân tích code ... (ngồi đọc code và phân tích mấy con malware này chắc hacnho, mrro, ... các anh em khác trong HVA chắc rành hơn, còn seamoun nhìn thấy là hoa cả mắt  #:S  #:S ). Như vậy có một số hoạt động phân tích sơ bộ về malware lặp đi lặp lại trong quá trình phân tích malware thì có thể chuyển nó cho một hệ thống phân tích tự động trước khi người phân tích malware tiến hành phân tích sâu hơn.
+
+Ý tưởng và triển khai như sau:
+Sẽ có một máy Linux làm master, trên Linux sẽ thực hiện cài đặt một máy ảo (sử dụng VMWare) có cài đặt Windows XP (đây là môi trường để malware chạy và thực hiện phân tích). Linux và máy ảo chỉ kết nối Host-only, tức là chỉ có máy Linux và WMware nói chuyện được với nhau, để khi thực thi malware sẽ không làm ảnh hưởng đến các hệ thống khác. Trên máy Linux sẽ có một kịch bản shell được viết với mục đích thực hiện các phân tích ban đầu đối với malware (sẽ giải thích rõ hơn phần sau), tiếp đến sẽ thực hiện tự động bật VMware lên và đẩy malware vào môi trường VMWare, trên VMware sẽ có sẵn một số công cụ phân tích malware và thực hiện gọi script phân tích (sử dụng AutoIt Script) gọi các công cụ phân tích trên môi trường VMWare để tiến hành phân tích và tất cả các kết quả sau khi phân tích được xuất ra và gửi trở lại cho môi trường Linux và kết thúc quá trình phân tích. 
+
+Trên đây mình chỉ giới thiệu sơ bộ, chi tiết các bạn sẽ theo dõi phần sau đây:
+
+<font color='red'>I. Các bước xây dựng một Automatic Malware Ananlysis</font>
+<font color='orange'>I.1. Sử dụng một master script, script này sẽ chạy trên môi trường Linux và trên Linux có cài đặt sẵn WMWare có Windows XP SP2 (Sử dụng máy ảo này như một sandbox).</font>
+
+<font color='orange'>I.2. Trên Windows XP SP2 của máy ảo trong Linux nên chuẩn bị như sau:</font>
+	Cấu hình IP Address tĩnh và để card mạng chỉ là Host-only
+	Tạo một thư mục chia sẻ VMWare để giao tiếp giữa Linux và WindowsXP
+	Đặt user và pass cho máy Windows XP
+	Firewall của Windows XP phải tắt
+	Windows XP Simple File Sharing nên tắt
+	Chuẩn bị công cụ SysInternal’s Process Monitor và RegShot, … có thể thêm công cụ phục vụ phân tích tùy thích.
+	Cài đặt AutoIT để cho kịch bản AutoIt có thể chạy được.
+
+
+<font color='red'>II. Triển khai ứng dụng</font>
+<font color='orange'>II.1. Cài đặt Backtrack trên hard disk</font>
+	Sử dụng tiện ích ubiquity
+
+<font color='orange'>II.2. Cài đặt VMWare Workstation trên Linux</font>
+	Sử dụng phiên bản: VMware-Workstation-6.5.3-185404.i386.bundle
+	Số serial : MVDUJ-TF4DT-284DV-4W9Z7
+
+<font color='orange'>II.3. Cấu hình network trên Linux và máy ảo Windows XP</font>
+	Linux
+	eth0 ip: 192.168.1.234
+	vmnet1:192.168.32.1
+	Windows
+	Eth0 ip: 192.168.32.2
+	Gateway: 192.168.32.1
+
+<font color='orange'>II.4. Cài đặt InetSim trên Linux</font>
+<font color='green'>II.4.1. Giới thiệu</font>
+InetSim là một gói mà chứa các kịch bản Perl được sử dụng để mô phỏng các dịch vụ thông dụng như DNS, HTTP và FTP. Khi chạy, InetSim sẽ đợi những kết nối và log bất kỳ những gì mà nó nhận được trong định dạng log chuẩn, dễ đọc khi phân tích các kết nối ra ngoài của malware.
+
+<font color='green'>II.4.2. Cài đặt</font>
+	Địa chỉ trang Web: http:/www.inetsim.org.
+	Xem yêu cầu cần thiết trước khi cài đặt InetSim:<span class="link"> http://www.inetsim.org/requirements.html</span>
+	Giải nén và cài đặt tại /usr/local/inetsim.
+	Tạo nhóm sử dụng cho InetSim
+# groupadd inetsim
+# ./setup.sh
+	Cấu hình
+	File cấu hình sẽ nằm tại thư mục sau: /usr/local/inetsim/conf/
+	Thiết lập hai tham số service_bind_address và dns_default_ip là địa chỉ của vmnet1.
+
+<font color='orange'>II.5. Cài đặt Volatility Framework trên Linux</font>
+<font color='green'>II.5.1. Giới thiệu</font>
+Để phục vụ cho việc Memory Analysis thì phải cần phải cài đặt Volatility Framework. Vì sao phải thực hiện Memory Analysis ? Bởi vì nhiều chương trình mã độc sử dụng packer để che dấu malware và làm khó khăn trong việc phân tích chúng. Tuy nhiên, packed malware phải unpacked trong bộ nhớ để thực thi. Bằng việc dumping một chương trình malware trong bộ nhớ, có thể kiểm tra nó mà không cần một packer.
+Do chúng ta sử dụng máy ảo cho nên việc ngừng tạm thời hoạt động của máy ảo thì chúng ta có thể phân tích memory của máy ảo thông qua file có phần mở rộng là .vmem.
+
+<font color='green'>II.5.2. Cài đặt</font>
+	Địa chỉ Volatility Framework:<span class="link"> https://www.volatilesystems.com/default/volatility</span>
+
+<font color='orange'>II.6. Download PEiD và WinExe cho Linux</font>
+	PeiD
+	Địa chỉ:<span class="link"> http://blog.didierstevens.com/</span>
+	WinExe
+winexe thực hiện giống chức năng của chương trình psexec trên Windows, cho phép thực hiện lệnh từ xa.
+	Địa chỉ:<span class="link"> http://eol.ovh.org/winexe/</span>
+
+<font color='orange'>II.7. Cài đặt AutoIt, Regshot, TCPView trên Windows</font>
+	Cài đặt AutoIt
+	Địa chỉ:<span class="link"> http://www.autoitscript.com/autoit3/</span>
+	Cài đặt Regshot
+	Địa chỉ:<span class="link"> http://sourceforge.net/projects/regshot</span>
+	Cài đặt TCPView
+	Địa chỉ:<span class="link"> http://technet.microsoft.com/en-us/sysinternals/bb896645.aspx</span>
+Lưu ý: công cụ Regshot và TCPView được tải về và cài đặt tại cùng một thư mục sau: c:\tools\
+Hiện tại demo chỉ hai công cụ, có thể tích hợp nhiều công cụ khác và khi đó chỉ cần thêm kịch bản chạy trong AutoIt.
+
+
+<font color='red'>III. Kịch bản trên Linux (analyze.sh)</font>
+<font color='orange'>III.1. Giải thích biến khởi tạo</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Tên biến	Mục dích
+ANALYSIS_DIR	Thư mục để chứa các report về malware, mỗi thư mục cấp dưới với md5 của malware là thư mục report về malware đã phân tích.
+SHARED_FOLDER	Thư mực sử dụng để chia sẻ malware cần phân tích giữa mỗi trường Linux và Windows. Malware sẽ được copy đến đây và từ đây sẽ map sang môi trường Windows.
+INETSIM_DIR	Thư mục cài đặt InetSim
+VM_LOAD_TIMEOUT	Biến sử dụng để định thời gian load của máy ảo, tùy thuộc vào khả năng load của máy ảo có thể tăng hoặc giảm thời gian timeout, đơn vị thời gian là giây
+MALWARE_RUNTIME	Là thời gian cho phép malware sẽ thực hiện trên máy ảo, đơn vị tính là giây
+TIMEOUT	Số lượng thời gian mà script sẽ đợi cho việc dynamic analysis hoàn tất
+…	Một số biến khác sẽ rõ trong quá trình giải thích chi tiết kịch bản.</pre>
+		</div>
+
+<font color='orange'>III.2. Giải thích chi tiết kịch bản</font>
+<font color='green'>III.2.1. Giải thích một số đoạn kịch bản ban đầu</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#Kiểm tra nếu như đối số 1 rỗng &#40;tức không chỉ định malware cần phân tích&#41; hoặc file đó không tồn tại và không đọc được thì thông báo và thoát
+if &#91; ! -n &quot;$1&quot; -o ! -r &quot;$1&quot; &#93;
+then
+	echo &quot;Usage: 'basename $0' executable&quot;
+	exit
+fi
+
+if &#91; ! -d ${SHARED_FOLDER} &#93;
+then
+	mkdir -p ${SHARED_FOLDER}
+fi
+
+MALWARE=&quot;$1&quot;
+MD5=`md5sum ${MALWARE} | awk '{print $1}'`
+# Malware sẽ được đặt trong thư mục $ANALYSIS_DIR/$MD5 của nó.
+if &#91; -d ${ANALYSIS_DIR}/${MD5} &#93; ; then
+	echo &quot;${ANALYSIS_DIR}/${MD5} already exists. Exiting.&quot;
+exit
+fi
+OUTDIR=&quot;${ANALYSIS_DIR}/${MD5}&quot;
+echo ${MALWARE} ${MD5} &gt;&gt; ${ANALYSIS_DIR}/records.txt
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting analysis on ${MALWARE}.
+echo `date +&quot;&#91;%F %T&#93;&quot;` Results will be placed in ${OUTDIR}
+echo
+mkdir ${OUTDIR}
+REPORT=${OUTDIR}/${REPORT_NAME}</pre>
+		</div>
+
+<font color='green'>III.2.2. Giải thích phần Static Analysis</font>
+Trong kịch bản sử dụng dịch vụ của Team Cymru Hash Database. Ý nghĩa của dịch vụ này là gửi MD5 của malware cần phần tích đến dịch vụ và dịch vụ sẽ phản hồi lại: nếu như malware đó được được phát hiện thì nó sẽ hiển thị ngày giờ mà dịch vụ cập nhật và phần trăm phần mềm diệt virus diệt được nó.
+Chi tiết về dịch vụ này có thể xem thêm tại:<span class="link"> http://www.team-cymru.org/Services/MHR/</span>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Static Analysis
+echo -e &quot;Analysis of ${MALWARE}\n&quot; &gt; ${REPORT}
+echo &quot;MD5 Hash: ${MD5}&quot; &gt;&gt; ${REPORT}
+echo &quot;Team Cymru Hash Database:&quot; &gt;&gt; ${REPORT}
+whois -h hash.cymru.com ${MD5} &gt;&gt; ${REPORT}
+# grab both ASCII and UNIcode strings from the sample
+echo `date +&quot;&#91;%F %T&#93;&quot;` Running strings.
+&#40;strings -a -t x ${MALWARE}; strings -a -e l -t x ${MALWARE}&#41; \
+| sort &gt; ${OUTDIR}/strings.txt
+# run pecheck.py
+echo `date +&quot;&#91;%F %T&#93;&quot;` Running pecheck.py.
+python pecheck.py -d ${PEID_DB} ${MALWARE} &gt; ${OUTDIR}/pecheck.txt</pre>
+		</div>
+
+Tiếp theo là thực hiện grab các ASCII và UNION string có trong malware. Trong file thực thi của malware khi chúng ta thu thập các string này có thể giúp ích có một số thông tin về malware như : có thể địa chỉ url mà malware có thể kết nối đến, các tài nguyên mà malware lấy, … Tuy nhiên việc thu thập này chỉ là phần phụ, nhỏ bởi hầu như các malware hiện nay đều được packed, do vậy string sẽ xuất hiện dưới dạng string không tường minh.
+Đoạn mã thực hiện python pecheck.py, pecheck.py là một chương trình Python được viết bởi Didier Stevens để xuất thông tin PE header từ malware. Thông tin này sẽ rất hữu ích bởi vì nó cho biết malware được biên dịch khi nào, các phân đoạn thực thi và các hàm được import vào. Hơn nữa nó còn so sánh với PeiD database để biết được malware được pack bởi loại packer nào.
+
+<font color='green'>III.2.3. Khởi động InetSim</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo `date +&quot;&#91;%F %T&#93;&quot;` Starting InetSim.
+CWD=`pwd`
+mkdir -p ${OUTDIR}/inetsim
+cd ${INETSIM_DIR}
+sudo ./inetsim --session inetsim --config ${INETSIM_DIR}/conf/inetsim.conf \
+--log-dir ${OUTDIR}/inetsim --report-dir ${OUTDIR} &gt; /dev/null & cd ${CWD}</pre>
+		</div>
+
+InetSim phải được chạy dưới quyền root, do vậy sử dụng lệnh sudo. Và ý nghĩa của các tham số như sau:
+-session: chỉ định tên cho phiên làm việc.
+-config: chỉ định nơi cấu hình được nạp.
+-log-dir: chỉ định nơi log.
+-report-dir: chỉ định nơi xuất ra report.
+Sẽ có ba file log được tạo ra đó là debug.log, service.log và main.log. Ý nghĩa của main.log chỉ đề cập đến hoạt động của InetSim (những vấn đề liên quan đến hoạt động của InetSim). Phần chúng ta quan tâm đó là phần mà malware kết nối ra ngoài sẽ được lưu tại service.log.
+
+<font color='green'>III.2.4. Khởi động Tcpdump</font>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo `date +&quot;&#91;%F %T&#93;&quot;` Starting tcpdump.
+sudo tcpdump -i vmnet1 -n -s 0 -w ${OUTDIR}/tcpdump.pcap &
+TCPPID=`jobs -l | grep &quot;sudo tcpdump&quot; | awk '{ print $2 }'`</pre>
+		</div>
+
+Tác dụng của TCPDump là một sniffer trên Linux, sử dụng nó để quan sát và ghi lại những hoạt động trao đổi của malware với môi trường ngoài, mà ở đây là Linux, do ta cấu hình Linux và Windows XP là Host-only, nên ta thực hiện sniff trên card vmnet1.
+
+<font color='green'>III.2.5. Khởi động VMWare</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Start up VMWare
+# First we revert to our base snapshot
+vmrun revertToSnapshot &quot;/root/vmware/MalwareAnalysis/sandbox.vmx&quot; base
+# Then we start VMWare running
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting VMWare.
+vmrun start &quot;/root/vmware/MalwareAnalysis/sandbox.vmx&quot;
+sleep ${VM_LOAD_TIMEOUT}
+# Move the malware over to the sandbox
+cp ${MALWARE} ${SHARED_FOLDER}/malware.exe
+# Set up the share and execute the AutoIT script
+echo `date +&quot;&#91;%F %T&#93;&quot;` Setting up network share.
+winexe -U WORKGROUP/analysis%analysis --interactive=1 --system //192.168.32.2 'cmd /c net use z: \\192.168.32.1\malware'
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting dynamic analysis script.
+winexe -U WORKGROUP/analysis%analysis --interactive=1 --system //192.168.32.2 &quot;c:\progra~1\autoit3\autoit3.exe c:\tools\scripts\analyze.au3  z:\malware.exe z:\ ${MALWARE_RUNTIME}&quot;
+sleep ${MALWARE_RUNTIME}
+LOOP=0
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting check for finished file.
+# Check for finished file - if not there, wait
+while &#91; ! -f ${SHARED_FOLDER}/_analysis_finished &#93; ; do
+	echo Checking...
+	sleep ${TIMEOUT}
+	LOOP=$&#40;&#40; $LOOP + 1 &#41;&#41;
+	if &#91; ${LOOP} -gt 5 &#93; ; then
+		echo `date +&quot;&#91;%F %T&#93;&quot;` ERROR: Sandbox is hung.
+		break;
+	fi
+done
+# Remove the share
+echo `date +&quot;&#91;%F %T&#93;&quot;` Removing network share.
+winexe -U WORKGROUP/analysis%analysis --interactive=1 --system //192.168.32.2 'cmd /c net use z: /delete'
+# Stop the VMWare Image
+echo `date +&quot;&#91;%F %T&#93;&quot;` Suspending VMWare.
+vmrun suspend &quot;/root/vmware/MalwareAnalysis/sandbox.vmx&quot;</pre>
+		</div>
+
+1)	Trước khi thực hiện chạy kịch bản ta cần phải Take SnapShot VMWare 1 lần và đặt tên nó là base.
+
+2)	vmware revertToSnapShot &quot;/root/vmware/MalwareAnalysis/sandbox.vmx&quot; base sẽ đưa VMWare về trạng thái SnapShot mà chúng ta đã lưu. Cần phải làm như vậy bởi vì VMWare phải luôn đặt trong tình trạng chưa có bất kỳ malware nào thực hiện trước khi chép malware vào máy ảo phân tích.
+
+3)	Khởi động VMWare và copy malware cần phân tích vào thư mục shared trên Linux.
+
+4)	Sau khi khởi động xong máy ảo Windows XP SP2 (trước đó chúng ta đã tạo một user và pass là analysis) chúng ta sẽ thực hiện map thư mục chia sẻ trên Linux vào máy Windows XP. Lưu ý nếu trên Linux không thể chia sẻ được có thể do chưa cài dịch vụ Samba, do vậy cần phải cài dịch vụ Samba để Linux có thể chia sẻ file.
+
+5)	Khởi động script analysis.au3 trên Windows XP để chạy kịch bản phân tích malware tự động trên Windows XP.
+
+6)	Chờ đợi kết quả từ máy ảo Windows XP, việc chờ đợi sẽ kết thúc khi máy ảo Windows XP xuất file _analysis_finished.
+
+7)	Sau khi kết thúc kịch bản analysis.au3 trên Windows XP thì sẽ gỡ bỏ map ổ đĩa trên Windows XP và suppend máy ảo.
+
+<font color='green'>III.2.6. Thực hiện Volatility trên Memory</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Run Volatility on memory
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting Volatility psscan2.
+python /usr/local/src/Volatility-1.3_Beta/volatility psscan2 -f &quot;/root/vmware/MalwareAnalysis/sandbox.vmem&quot; \
+&gt; ${OUTDIR}/volatility-psscan.txt
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting Volatility connscan2.
+python /usr/local/src/Volatility-1.3_Beta/volatility connscan2 -f &quot;/root/vmware/MalwareAnalysis/sandbox.vmem&quot; \
+&gt; ${OUTDIR}/volatility-connscan2.txt
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting Volatility dlllist.
+python /usr/local/src/Volatility-1.3_Beta/volatility dlllist -f &quot;/root/vmware/MalwareAnalysis/sandbox.vmem&quot; \
+&gt; ${OUTDIR}/volatility-dlllist.txt
+echo `date +&quot;&#91;%F %T&#93;&quot;` Starting Volatility modscan2.
+python /usr/local/src/Volatility-1.3_Beta/volatility modscan2 -f &quot;/root/vmware/MalwareAnalysis/sandbox.vmem&quot; \
+&gt; ${OUTDIR}/volatility-modscan2.txt
+# Move Results
+echo `date +&quot;&#91;%F %T&#93;&quot;` Cleaning up.
+mv ${SHARED_FOLDER}/* ${OUTDIR}</pre>
+		</div>
+
+1)	Sẽ thực hiện psscan2 module. Điều này rất hữu ích để phân tích các rootkit thường ẩn các tiến trình của malware trên hệ thống. Bằng việc truy vấn trực tiếp vào các danh sách tiến trình từ bộ nhớ, rootkit không thể ẩn tiến trình của chúng và người phân tích có thể quan sát một cách trực quan các tiến trình chạy trên hệ thống đã nhiễm malware.
+
+2)	Tiếp đến sẽ thực hiện truy vấn các kết nối trên hệ thống bị nhiễm với connscan2 module. Bởi vì những kết nối cũng có thể ẩn bởi rootkit, do vậy truy vấn trực tiếp lấy những kết nối mạng từ bộ nhớ sẽ cho phép người phân tích thấy được những kết nối trong hệ thống bị nhiễm malware.
+
+3)	Cuối cùng sẽ thực hiện xem thử những dll nào được nạp trong quá trình malware thực thi bằng cách sử dụng modscan2, bởi vì malware có thể tự nó nhiễm qua một tiến trình khác như là một DLL hoặc tự nó nạp, …
+
+<font color='green'>III.2.7. Kịch bản kết thúc quá trình phân tích</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Stop tcpdump. Since its running as root we need to sudo to kill it
+if &#91; ! -z ${TCPPID} &#93;; then
+	sudo kill ${TCPPID}
+fi
+# Stop InetSim
+if &#91; -f /var/run/inetsim.pid &#93; ; then
+	INETPID=`cat /var/run/inetsim.pid`
+	sudo kill ${INETPID} &gt; /dev/null
+	wait ${INETPID}
+fi
+# check to see if malware.exe is in the outdir - if so, delete it
+if &#91; -f ${OUTDIR}/malware.exe &#93;; then
+	rm -f ${OUTDIR}/malware.exe
+fi
+# Reset permissions on the files
+sudo chown -R ${WHOAMI} ${OUTDIR}
+echo `date +&quot;&#91;%F %T&#93;&quot;` Analysis finished.</pre>
+		</div>
+
+<font color='red'>IV. Kịch bản trên Windows</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>; AutoIT Windows Malware Automation Script
+Func startRegshot&#40;$logDir&#41;
+; Start up regshot as user analysis
+RunAs&#40;&quot;analysis&quot;,&quot;&quot;,&quot;analysis&quot;,0,&quot;c:\tools\regshot\regshot.exe&quot;&#41;
+WinActivate&#40;&quot;Regshot&quot;&#41;
+WinWaitActive&#40;&quot;Regshot&quot;&#41;
+; set to plain text
+ControlClick&#40;&quot;Regshot&quot;,&quot;Plain &TXT&quot;,&quot;Button7&quot;&#41;
+; set scan dir info
+ControlClick&#40;&quot;Regshot&quot;,&quot;&Scan dir1&quot;,&quot;Button9&quot;&#41;
+ControlClick&#40;&quot;Regshot&quot;,&quot;&quot;,1027&#41;
+send&#40;&quot;{HOME}&quot;&#41;
+send&#40;&quot;{LSHIFT}+{END}&quot;&#41;
+send&#40;&quot;c:\&quot;&#41;
+; set output dir
+ControlClick&#40;&quot;Regshot&quot;,&quot;&quot;,1026&#41;
+send&#40;&quot;{HOME}&quot;&#41;
+send&#40;&quot;{LSHIFT}+{END}&quot;&#41;
+send&#40;$logDir&#41;
+; set the comment
+ControlClick&#40;&quot;Regshot&quot;,&quot;&quot;,1025&#41;
+send&#40;&quot;regshot&quot;&#41;
+; Start the scan
+ControlClick&#40;&quot;Regshot&quot;,&quot;&1st shot&quot;,&quot;Button1&quot;&#41;
+send&#40;&quot;s&quot;&#41;
+; wait until the scan is done or 30 seconds
+WinWaitActive&#40;&quot;Regshot&quot;,&quot;Dirs:&quot;,30&#41;
+EndFunc
+Func stopRegshot&#40;&#41;
+; WinWaitActive&#40;&quot;Regshot&quot;&#41;
+WinSetState&#40;&quot;Regshot&quot;,&quot;&quot;,@SW_RESTORE&#41;
+WinActivate&#40;&quot;Regshot&quot;&#41;
+; stop the scan and run the second shot
+WinWaitActive&#40;&quot;Regshot&quot;&#41;
+ControlClick&#40;&quot;Regshot&quot;,&quot;&2nd shot&quot;,&quot;Button2&quot;&#41;
+send&#40;&quot;s&quot;&#41;
+; now compare
+WinActivate&#40;&quot;Regshot&quot;&#41;
+WinWaitActive&#40;&quot;Regshot&quot;,&quot;c&Ompare&quot;,10&#41;
+send&#40;&quot;o&quot;&#41;
+; Wait for notepad to pop up
+WinWait&#40;&quot;&#91;CLASS:Notepad&#93;&quot;, &quot;&quot;&#41;
+WinActivate&#40;&quot;&#91;CLASS:Notepad&#93;&quot;, &quot;&quot;&#41;
+WinClose&#40;&quot;&#91;CLASS:Notepad&#93;&quot;, &quot;&quot;&#41;
+; Close Regshot
+WinActivate&#40;&quot;Regshot&quot;&#41;
+WinClose&#40;&quot;Regshot&quot;&#41;
+EndFunc
+Func startProcmon&#40;&#41;
+; Start ProcMon
+; Run Procmon as user analysis
+RunAs&#40;&quot;analysis&quot;,&quot;&quot;,&quot;analysis&quot;,0,&quot;c:\tools\procmon\procmon.exe&quot;&#41;
+WinWaitActive&#40;&quot;Process Monitor - Sysinternals: www.sysinternals.com&quot;&#41;
+EndFunc
+Func stopProcmon&#40;$logDir&#41;
+; stop procmon
+WinActivate&#40;&quot;Process Monitor&quot;&#41;
+; stop procmon with a CTRL+e and wait for it to finish
+Send&#40;&quot;^e&quot;&#41;
+WinWaitActive&#40;&quot;Process Monitor - Sysinternals: www.sysinternals.com&quot;&#41;
+; save the captured data with CTRL+s
+Send&#40;&quot;^s&quot;&#41;
+WinActivate&#40;&quot;Save To File&quot;,&quot;Events to save:&quot;&#41;
+ControlSetText&#40;&quot;Save To File&quot;,&quot;Events to save:&quot;,1027,$logDir & &quot;procmon.csv&quot;&#41;
+; save the output in CSV format
+ControlClick&#40;&quot;Save To File&quot;,&quot;Events to save:&quot;,&quot;Button7&quot;&#41;
+ControlClick&#40;&quot;Save To File&quot;,&quot;Events to save:&quot;,1&#41;
+; If the file already exists, overwrite it
+if WinWaitActive&#40;&quot;Process Monitor&quot;,&quot;&Yes&quot;,1&#41; Then
+ControlClick&#40;&quot;Process Monitor&quot;,&quot;&Yes&quot;,&quot;Button1&quot;&#41;
+EndIf
+WinClose&#40;&quot;Process Monitor - Sysinternals: www.sysinternals.com&quot;&#41;
+EndFunc
+; Main Function
+; There are 2 options required – make sure they are there
+If $CmdLine&#91;0&#93; &lt;&gt; 3 Then
+msgbox&#40;4096,&quot;ERROR&quot;,&quot;Usage: malware.exe dir_to_log pause_time&quot;,10&#41;
+Exit
+EndIf
+; The malware to execute is the 1st parameter
+$malware=$CmdLine&#91;1&#93;
+$runmalware=&quot;c:\tools\malware\malware.exe&quot;
+; The dir to log to is the 2nd parameter
+$logdir = $CmdLine&#91;2&#93;
+$saveresult=$logdir
+$logdir=&quot;c:\tools\malware\&quot;
+; The time to pause &#40;in seconds&#41; is the last parameter
+$pauseTime = $CmdLine&#91;3&#93;
+; start our monitoring tools
+filecopy&#40;$malware,$runmalware,1&#41;
+startRegshot&#40;$logdir&#41;
+startProcmon&#40;&#41;
+WinMinimizeAll&#40;&#41;
+; run the malware as user analysis
+RunAs&#40;&quot;analysis&quot;,&quot;&quot;,&quot;analysis&quot;,0,$runmalware&#41;
+; wait – note time is in milliseconds
+sleep&#40;$pauseTime * 1000&#41;
+; stop our monitoring tools and save the results
+stopProcmon&#40;$logdir&#41;
+stopRegshot&#40;&#41;
+FileDelete&#40;&quot;z:\*.*&quot;&#41;
+filecopy&#40;&quot;c:\tools\malware\*.*&quot;,&quot;z:\*.*&quot;,1&#41;
+; let them know we're finished by creating a FileChangeDir
+$file=FileOpen&#40;$logdir & &quot;_analysis_finished&quot;,10&#41;
+FileClose&#40;$file&#41;
+FileCopy&#40;$logdir & &quot;_analysis_finished&quot;,&quot;z:\_analysis_finished&quot;,1&#41;</pre>
+		</div>
+
+--------------------------------------------------------------------------------------
+From quanta: Bài viết công phu quá. Mình xin phép được enter mấy phát cho dễ đọc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197762</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197762</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 18:56:15]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ <font color='red'>V. Kết luận</font>
+Trong hệ thống chỉ sử dụng hai công cụ phân tích đơn giản là regshot và TCPView, do vậy để hệ thống có thể phân tích tốt hơn và sâu hơn thì sẽ sử dụng những công cụ khác, với nhiều tính tằng hơn và thay đổi kịch bản AutoIt cho tương ứng những công cụ thêm vào.
+
+<font color='red'>VI. Video hệ thống đã thực hiện</font>
+seamoun đã xây dựng xong và chạy thử nghiệm các bạn có thể download tại đây
+
+Bài viết có tham khảo và sửa đổi kịch bản của tác giả Tyler Hudak
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197766</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197766</link>
+				<pubDate><![CDATA[Fri, 6 Nov 2009 19:04:25]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Anh seamoun ơi, file download ko được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197850</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197850</link>
+				<pubDate><![CDATA[Sun, 8 Nov 2009 02:44:09]]> GMT</pubDate>
+				<author><![CDATA[ FaL]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">FaL wrote:</cite><br>
+		<blockquote>Anh seamoun ơi, file download ko được.&nbsp;
+		</blockquote>
+Chắc HVA upload có vấn đề, seamoun upload lên đây vậy
+
+<span class="link"> http://hotfile.com/dl/16932930/7cfb158/demo.zip.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197854</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#197854</link>
+				<pubDate><![CDATA[Sun, 8 Nov 2009 10:13:41]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ link hotfile cũng die rồi anh !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#204075</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#204075</link>
+				<pubDate><![CDATA[Thu, 28 Jan 2010 04:07:38]]> GMT</pubDate>
+				<author><![CDATA[ mjning]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Đã upload lại ......  ;)  ;)  ;) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#204202</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#204202</link>
+				<pubDate><![CDATA[Sat, 30 Jan 2010 01:50:00]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Ý tưởng của bác seamoun có vẻ vận dụng rất nhiều kiến thức,
+Cho mình thắc mắc 1 tí: sao không làm 1 hệ thống ngăn chặn Malware mà phải là "Phân tích Malware"
+Sau khi đã phân tích thành công thì bước tiếp theo phải như thế nào để diệt malware,
+Bằng cách nào để diệt Malware an toàn mà không làm ảnh hưởng đến hệ thống (tự động)?
+Nếu như malware nhiễm tràn lan trong LAN thì làm sao để diệt hết (tự động)?
+
+Thật ra mình cũng có 1 ý tưởng tương tự, đó là "Phòng chống virus tự động", tức là ngăn chặn ngay từ đầu.
+Mình đang học nên không có nhiều thời gian, hi vọng các cao thủ nào có cùng ý tưởng thì cùng nhau chia sẻ
+Cám ơn bài viết của bác seamoun.
+
+Bác có nick yahoo không, nick của mình nè: taplamtrietgia@yahoo.com
+Có gì anh em cùng thảo luận nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#216799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#216799</link>
+				<pubDate><![CDATA[Thu, 29 Jul 2010 07:56:03]]> GMT</pubDate>
+				<author><![CDATA[ huyannet]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Đọc bài Anh seamoun biết anh pro tới mức nào.
+Em cũng làm bên hệ thống mà thấy mình cùi quá.
+Cái hệ thống bên Em bị nhiễm malware quá trời, mà Em đang loay hoay tìm cách diệt đồng thời em cũng muốn xây dựng một hệ thống phân tích malware.
+Nhưng Em đang chuối quá, đồng thời lại không biết về linux.
+Nên không biết bắt đầu như thế nào?
+Anh có thể cho Em cái advice]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#238162</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#238162</link>
+				<pubDate><![CDATA[Sun, 29 May 2011 07:51:45]]> GMT</pubDate>
+				<author><![CDATA[ Pham Van Duong_T]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Bài viết của bác seamoun rất hay. Sử dụng VMWare và các tool sẵn có để phân tích tự động. Cảm ơn bác nhiều.
+@huyannet: thường thì virus luôn luôn có trước, đây là nhu cầu cấp thiết cho việc xử lý virus thôi. Có log của nó rồi thì dựa vào đó mà kết luận có là virus hay không và đưa ra hàm diệt.
+
+Hiện tại em cũng đang nghiên cứu cơ chế của sandbox, ở đây không sử dụng VMware mà sẽ phân tích ngay trên máy thật, nhưng cũng rất là vất vả. Tiếp đó nếu có thể được chúng ta sẽ xây dựng thêm bộ học máy để dựa vào log mà kết luận có phải là virus hay không, lúc đó đúng là sướng thật, :))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240197</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240197</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 08:51:06]]> GMT</pubDate>
+				<author><![CDATA[ snapax]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Cách của bạn làm hay nhưng lại khó có thể ứng dụng vào thực tế, và trên thực tế là không phần mềm diệt virus này sử dụng cách này, vì hiệu suất quá thấp (tớ chưa đề cập tới chất lượng). Tại sao không nghĩ tới việc hook các DLL và tạo nên lớp ảo che lấp (override) các API mà hệ thống cung cấp để tiến hành phân tích hành vi của malware ?.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240274</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240274</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 21:45:49]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Các sanboxies đã làm hết các việc này rồi, đừng phát minh lại cái bánh xe.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240285</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240285</link>
+				<pubDate><![CDATA[Fri, 10 Jun 2011 22:36:08]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Các sanboxies đã làm hết các việc này rồi, đừng phát minh lại cái bánh xe.&nbsp;
+		</blockquote>
+Nhưng nếu Sandboxies chịu bán công nghệ của mình thì chúng ta sẽ không phải làm lại "cái bánh xe"!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240484</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#240484</link>
+				<pubDate><![CDATA[Sun, 12 Jun 2011 09:15:20]]> GMT</pubDate>
+				<author><![CDATA[ snapax]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Em thì sợ mấy hệ thống phân tích tự động này lắm rồi. Bao nhiêu mẫu mèo què của stl coder up lên, đi qua các hệ thống dạng này, đều 99% là clean hết. Phải mail, năn nỉ, thuyết phục thì tụi AVs đó mới manual analysis.
+Không có máy móc nào đủ thông minh bằng con người cả, nhưng con người cũng không "trâu bò" bằng máy móc được. Nên phải kết hợp cả hai !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#246616</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#246616</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 07:56:30]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ 
+a) thank bác seamoun rất cụ thể, rõ ràng và dễ hiểu.
+b) đồng ý với anh TQN " fai? kết hợp cả hai" chứ nếu dùng người mãi thì sinh ra máy tính toán hộ làm gì ? cũng như vậy malware được viết bằng máy+người. phân tích hay huỷ diệt nó cũng nên làm bằng người + máy mà . 
+
+chụt chịt :-*]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#246623</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#246623</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 13:16:28]]> GMT</pubDate>
+				<author><![CDATA[ kutruoi]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">seamoun wrote:</cite><br>
+		<blockquote>
+Số serial : MVDUJ-TF4DT-284DV-4W9Z7 
+&nbsp;
+		</blockquote>
+Em thấy đoạn này không nên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#254311</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#254311</link>
+				<pubDate><![CDATA[Fri, 17 Feb 2012 12:19:51]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ anh seamuon ơi cho em hỏi xây dựng hệ thống cuckoo trên môi trường centos để phân tích malware thì xây dựng như thế nào vậy anh seamuon,mong anh phản hồi sớm cho em.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#266186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#266186</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 22:13:27]]> GMT</pubDate>
+				<author><![CDATA[ chiplin]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ thank đại ka nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#274109</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#274109</link>
+				<pubDate><![CDATA[Fri, 15 Mar 2013 09:19:48]]> GMT</pubDate>
+				<author><![CDATA[ linuxdoanpham]]></author>
+			</item>
+			<item>
+				<title>Các bước xây dựng một hệ thống phân tích malware tự động</title>
+				<description><![CDATA[ Thật là một bài công phu không thể nào chê dc. Tks chủ topic.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/32029.hva#279120</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/32029.hva#279120</link>
+				<pubDate><![CDATA[Sun, 1 Dec 2013 00:25:22]]> GMT</pubDate>
+				<author><![CDATA[ Tinyhacker]]></author>
+			</item>
+	</channel>
+</rss>

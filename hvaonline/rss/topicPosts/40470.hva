@@ -1,0 +1,1529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <font size='+1'><b><font color='orange'>Hack account Facebook, Gmail, Yahoo mail… bằng HTTP Session Sidejacking</font></b></font>
+
+<b>Tình huống:</b>
+
+Bạn vào một quán café , có dịch vụ wifi miễn phí, bạn hăm hở kết nối vào mạng, truy cập vào Facebook.com (FB). Sau vài phút, trên wall của bạn xuất hiện một dòng status do chính bạn viết mà không phải do bạn viết, ghi là “Account FB này đã bị thâm nhập bởi abcxyz” . Bạn hết hồn, tắt máy, nhưng sau đó mở máy lại, truy cập lại vào FB, nhưng kẻ bí ẩn nào đó vẫn đang giả danh bạn post lung tung. Bạn vốn tự tin là máy mình an toàn do đã cài đặt một trình antivirus update liên tục, không bao giờ tải các chương trình bậy bạ để máy bị dính trojan hay keylogger. Ấy vậy mà Account Facebook của bạn vẫn đang bị đánh cắp trước mũi bạn.
+Chuyện gì đã xảy ra với account FB của tôi ? Làm sao nó lại bị đánh cắp một cách lãng nhách và nhanh chóng vậy ?
+
+Vâng, rất có thể bạn đã là nạn nhân của một cuộc tấn công Session Sidejacking. 
+
+Session Sidejacking là kiểu tấn công không mới, nếu không muốn nói là nó xưa rích rồi, kể từ khi phiên bản HTTP 1.1 ra đời cùng với  sự hỗ trợ session cookies
+
+<b>Session Sidejacking là gì ?</b>
+
+Đây là kiểu tấn công thuộc họ man-in-middle attack, mục đích là nghe lén đường truyền giữa người dùng và các máy chủ dịch vụ bằng các công cụ sniff rồi đánh cắp các dữ liệu quan trọng liên quan tới phiên làm việc của người dùng, rồi phục dựng phiên làm việc này trên một máy tính thứ 3.
+
+Session Sidejacking đặc biệt hữu hiệu và dễ thực hiện khi nhằm vào mục tiêu là các phiên truy cập trên môi trường web. Hướng tấn công này trong môi trường web và giao thức HTTP chủ yếu là nhằm vào việc đánh cắp session cookies <b>-1-</b> định danh người dùng, qua đó khôi phục phiên làm việc hiện thời của người dùng rồi sau đó người tấn công sẽ có các biện pháp tấn công sâu rộng hơn để chiếm được mật khẩu tài khoản của người dùng
+
+Nói ngắn gọn dễ hiểu, ở một mức độ nào đó, là người tấn công sẽ dễ dàng chiếm tài khoản Facebook, gmail, yahoo của người dùng bằng HTTP Session Sidejacking
+
+Bài viết này chủ yếu nói về cách thức tấn công HTTP Session Sidejacking . Tức hình thức tấn công Session Sidejacking nhắm vào việc đánh cắp session cookies và phục dựng là HTTP Session.
+
+Đặc biệt: Phương thức tấn công Session Sidejacking trong bài viết này không cần phải có card mạng hỗ trợ chế độ Promiscuous ( chế độ hỗn độn ) <b>-2-</b> . Đây là một bước tiến bộ so với các công cụ tấn công tự động như Firesheep, hamster & ferret, khiến việc tấn công session Sidejacking trở nên dễ dàng thực hiện đối với tất cả các card mạng hiện có. Nói cách khác, ai cũng làm được
+
+----------------------------------------------------------------
+
+<b>Môi trường tấn công:</b> một mạng wifi nhiều người dùng mà bạn cũng có quyền truy cập
+
+<b>Mô tả quá trình tấn công: </b>
+
+Như đã nói ở trên, Session Sidejacking là phương thức tấn công thuộc họ Man-in-middle attack, nó thực chất là sự kết hợp của 03 kĩ thuật tấn công khác nhau bao gồm ARP Poison Routing, Network Sniffing, Cookie injection.
+
+<b>Quá trình tấn công sẽ diễn ra qua các bước:</b>
+
+<b>Bước  1:</b> Kết nối vào mạng wifi, nếu bạn không có quyền truy cập thì bạn phải “crack” và tìm ra password truy cập mạng Wifi (tham khảo kỹ thuật crack wifi với aircrack-ng)
+
+<b>Bước 2:</b> Thực hiện ARP Poison Routing, bước này nằm giúp bạn có thể biến máy tính của bạn trở thành một router giả danh nhằm mục đích sniff <b>-3-</b> dữ liệu được trung chuyển trên toàn mạng wifi. Bạn nên tìm hiểu thêm về APR Poisoning attack để hiểu rõ kĩ thuật này làm như thế nào và tại sao nó có thể được thực hiện
+
+<b>Bước 3:</b> Sniff tất cả dữ liệu trung chuyển trên mạng wifi sau khi mạng này đã bị ARP Poison Routing
+
+<b>Bước 4:</b> lọc ra dữ liệu đến từ người dùng cụ thể, ví dụ một người dùng có IP là: 192.168.1.138
+
+<b>Bước 5:</b> tái dựng lại TCP stream của phiên truy cập website của người dùng, và bóc tách dữ liệu cookie của người dùng
+
+<b>Bước 6:</b> Thực hiện cookie injection, nhằm chèn dữ liệu về cookie vào trình duyệt của người tấn công
+
+<b>Bước 7:</b> Khôi phục hoàn toàn phiên truy cập web của người dùng trên máy tính của người tấn công
+
+xnohat - HVA
+
+----------------------------------------------------
+
+-0- Session: Phiên làm việc. Để dễ hình dung một phiên làm việc là như thế nào bạn hãy mường tượng bạn đang mở một truy cập mới vào trang facebook.com bằng trình duyệt trên máy tính của bạn. Trình duyệt của bạn thực hiện việc mở một loạt các kết nối TCP/UDP tới máy chủ web của trang web www.facebook.com, ngay lúc này phiên làm việc của bạn đã bắt đầu, vì bạn đã bắt đầu có kết nối tới trang facebook.com . Thế nhưng phiên làm việc này chưa được xác thực, tức là bạn chưa đăng nhập. Trang web www.facebook.com chưa biết bạn là ai, và bạn chưa thể truy cập các dữ liệu của mình trên trang www.facebook.com . Sau đó bạn thực hiện việc đăng nhập bằng username và password của bạn, lúc này bạn đã được xác thực, FB biết bạn là ai, và bạn truy cập được các dữ liệu cá nhân của bạn trên FB. Phiên làm việc sẽ kết thúc khi bạn đóng trình duyệt lại, mọi kết nối giữa trình duyệt của bạn và máy chủ web của www.facebook.com hoàn toàn bị đóng lại.
+
+-1-  session cookies : Các session cookies là các mẩu dữ liệu nhỏ, có thể là các files hoặc các record trong CSDL của trình duyệt, làm nhiệm vụ lưu giữ một số thông tin liên quan đến phiên làm việc của người dùng trên một trang web. Từ sự giải thích về session ở trên bạn sẽ thấy rõ cách mà trang web www.facebook.com ( hay đúng hơn là máy chủ web của www.facebook.com ) duy trì việc nó biết bạn là ai, sau khi bạn đã đăng nhập bằng username và password của mình. Đúng vậy, <span class="link"> http://www.facebook.com/</span> tạo một vài session cookies trên máy tính của bạn, trong đó nó lưu trữ một số thông tin liên quan tới username của bạn và một dạng mã hóa nào đó mật khẩu ( hiểu theo cách này cho đơn giản ), cùng với một số thông tin linh tinh khác. Sau mỗi lần bạn chuyển trang ( tức click vào hyperlinks và trình duyệt chuyển bạn tới một trang web khác dĩ nhiên vẫn thuộc địa chỉ <span class="link"> http://www.facebook.com/</span> , ví dụ: <span class="link"> http://www.facebook.com/xnohat/pic?id=abcxyz</span> ) thì <span class="link"> http://www.facebook.com/</span> lại đọc lại dữ liệu từ các session cookies này để biết bạn là ai, thay vì cứ mỗi lần bạn chuyển trang nó lại phải hỏi bạn thông tin đăng nhập như username và password
+
+-2- Promiscuous mode ( chế độ hỗn độn ) : Chế độ hỗn độn là một chế độ hoạt động đặc biệt của card mạng wireless. Ở chế độ này, Card Wireless cho phép chính nó được phép nhận lấy tất cả các gói tin trong tầm với của nó (tầm thu sóng của nó), mặc cho gói tin đó có được gửi tới cho nó hay không. Nói cách khác, card mạng wireless được phép đọc lén các gói tin gửi cho các card wireless khác trong mạng ( rất bất lịch sự ). Chế độ này không được các nhà sản xuất đưa vào các card mạng wireless thông thường từ năm 2005 vì lý do chúng được tận dụng cho mục đích xấu nhiều hơn là mục đích tốt (tỷ dụ như thực hiện crack mật khẩu mạng wifi chẳng hạn). Do đó hiện nay ngoài việc kiếm mua một card wireless chuyên dụng có hỗ trợ tính năng này thì thật khó để bạn có thể thực hiện các kĩ thuật liên quan tới Network Sniff và APR Poisoning. Tuy nhiên, cái khó ló cái khôn, nhiều chuyên gia về mạng hàng đầu ( hay các hacker cực kỳ tinh thông ) đã đưa ra thư viện Pcap. Thư viện Pcap hỗ trợ một số kỹ thuật chuyên sâu như Monitor mode – RFMon (Wireless card only) , Port mirroring, Network taps … , giúp việc thực hiện cá tác vụ Sniff, APR Poisoning có thể thực hiện trên các card mạng không hỗ trợ Promiscuous mode
+
+-3-  Sniff : Bắt gói tin . Đây là một tác vụ thường thấy trong việc phân tích luồng truy cập mạng. Tác vụ sniff này có thể tưởng tượng như là một người A gởi thư cho người B , trên đường thư được giao từ người A tới người B thì người C lén sao chép nội dung của lá thư rồi tiếp tục mang đến cho người B. Người A và B không hề biết thư đã bị sao chép và đọc lén.
+Thay người A , B ,C bằng máy tính A,B,C và lá thư bằng gói tin, “trên đường đưa thư” bằng “trên đường mạng”, bạn sẽ thấy ví dụ tôi đưa ra thực sự rất tương đồng
+
+----------------------------------------------------------
+
+Kỳ sau: <b>Hướng dẫn tấn công HTTP Session Sidejacking Step-by-Step</b>  B-) 
+
+<i>Khi nào up xong chục tấm hình minh hoạ và format cái bài viết sang BBCode xong thì post </i> :D 
+
+Tuy nhiên, tôi vẫn thích sẽ có sự thảo luận chuyên sâu về kĩ thuật trước khi bài viết hướng dẫn được đăng, vì thực hành chỉ là phần phụ, lý thuyết ở đây mới là thứ lý thú. Tôi luôn mong đợi các ý kiến đóng góp; Nhất là câu hỏi thắc mắc của anh em đặc biệt các câu hỏi dạng: Tại sao điều A lại làm cho điều B thực hiện được, Nếu điều A xảy ra thì có gì kéo theo không, Nếu tôi dùng điều C thì hiệu quả hơn chăng ? ...
+
+<i>Note: Title chỉ mang tính minh hoạ vì mục đích câu khách =))  Gmail và Yahoo mail hiện nay đều bắt buộc dùng HTTPS cho các phiên làm việc, chỉ còn facebook là còn bê bối </i> ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249353</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249353</link>
+				<pubDate><![CDATA[Mon, 31 Oct 2011 11:14:14]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Hi, bài viết hay lắm. Mấy chiêu man-in-the-middle khá hay. Mình đã test thành công. Tuy nhiên lúc đó chỉ xem lén nội dung chat thôi. Đang ngóng dài cổ đây :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249355</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249355</link>
+				<pubDate><![CDATA[Mon, 31 Oct 2011 11:25:23]]> GMT</pubDate>
+				<author><![CDATA[ xuanphongdocco]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ FB, Gmail và Yahoo áp dụng cái này giờ khó rồi.
+Đơn giản là hãy dùng HTTPS, cả 3 site trên đều cho phép bật mặc định dùng HTTPS. Mã hoá rồi thì man trên giời cũng ko middle được (dĩ nhiên cũng phải biết tí chút là khi nào SSL Cert bị giả mạo và trình duyệt từ chối nhé).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249357</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249357</link>
+				<pubDate><![CDATA[Mon, 31 Oct 2011 12:07:39]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>FB, Gmail và Yahoo áp dụng cái này giờ khó rồi.
+Đơn giản là hãy dùng HTTPS, cả 3 site trên đều cho phép bật mặc định dùng HTTPS. Mã hoá rồi thì man trên giời cũng ko middle được (dĩ nhiên cũng phải biết tí chút là khi nào SSL Cert bị giả mạo và trình duyệt từ chối nhé).&nbsp;
+		</blockquote>
+
+Ai trong dân kĩ thuật cũng biết SSL/TLS sẽ hỗ trợ việc chống lại man-in-middle attack. Thế nhưng đó là người dùng am hiểu kĩ thuật, còn người dùng bình thường chả mấy quan tâm, nhất là dân business.
+
+Việc HTTPS không được yêu cầu mặc định trong các website cũng là một nguyên nhân khiến kiểu tấn công này vẫn dung hại. Đáng nhẽ các website phải ép người dùng dùng HTTPS để an toàn
+
+Đã bảo là cái title được giật cho vui và để có cái mà bàn luận mà, dĩ nhiên thực tế là Gmail và Yahoo đã chơi trò ép người dùng được một thời gian rồi :D
+
+Mặt khác, SSL/TLS hiện đang bị kiểu tấn công do lão mrro mới công bố đe doạ nghiêm trọng. Kĩ thuật tấn công đó khó khăn khi tấn công từ xa, nhưng nếu tấn công trong một mạng local dạng mạng wireless, khi các dữ liệu dễ dàng bị nghe lén thì khả năng tấn công diễn ra dễ dàng hơn rất nhiều. Đọc thêm bài viết trên blog của lão mrro để rõ thêm
+
+Một câu hỏi nhỏ: Các bạn thử nghĩ tại sao mà các trang web hầu hết đều không áp dụng giao thức HTTPS là yêu cầu kết nối mặc định ?  :*- ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249373</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249373</link>
+				<pubDate><![CDATA[Mon, 31 Oct 2011 21:41:13]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>FB, Gmail và Yahoo áp dụng cái này giờ khó rồi.
+Đơn giản là hãy dùng HTTPS, cả 3 site trên đều cho phép bật mặc định dùng HTTPS. Mã hoá rồi thì man trên giời cũng ko middle được (dĩ nhiên cũng phải biết tí chút là khi nào SSL Cert bị giả mạo và trình duyệt từ chối nhé).&nbsp;
+		</blockquote>
+
+Ai trong dân kĩ thuật cũng biết SSL/TLS sẽ hỗ trợ việc chống lại man-in-middle attack. Thế nhưng đó là người dùng am hiểu kĩ thuật, còn người dùng bình thường chả mấy quan tâm, nhất là dân business.
+
+Việc HTTPS không được yêu cầu mặc định trong các website cũng là một nguyên nhân khiến kiểu tấn công này vẫn dung hại. Đáng nhẽ các website phải ép người dùng dùng HTTPS để an toàn
+
+Đã bảo là cái title được giật cho vui và để có cái mà bàn luận mà, dĩ nhiên thực tế là Gmail và Yahoo đã chơi trò ép người dùng được một thời gian rồi :D
+
+Mặt khác, SSL/TLS hiện đang bị kiểu tấn công do lão mrro mới công bố đe doạ nghiêm trọng. Kĩ thuật tấn công đó khó khăn khi tấn công từ xa, nhưng nếu tấn công trong một mạng local dạng mạng wireless, khi các dữ liệu dễ dàng bị nghe lén thì khả năng tấn công diễn ra dễ dàng hơn rất nhiều. Đọc thêm bài viết trên blog của lão mrro để rõ thêm
+
+Một câu hỏi nhỏ: Các bạn thử nghĩ tại sao mà các trang web hầu hết đều không áp dụng giao thức HTTPS là yêu cầu kết nối mặc định ?  :*- 
+ &nbsp;
+		</blockquote>
+
+Có gì đâu mà hỏi nhỏ? chắc bác này định học theo style conmale, thi thoảng làm 1 tý câu hỏi nhỏ. các trang web thông thường mục đích chính là phục vụ những người thông thường. nên không cần phải bảo mật cao lắm, nên ko áp dụng HTTPS là yêu cầu kết nối mặc định, thậm chí 1 số trang còn không hỗ trợ HTTPS. những trang như yahoo mail và gmail hay paypal thì áp dụng HTTPS là yêu cầu kết nối mặc định bởi vì nhu cầu bảo mật thông tin của người sử dụng cao. nếu người sử dụng không ý thức việc bảo mật giữa HTTP và HTTPS thì nhà cung cấp (yahoo, google, paypal, ...) cũng sẽ để mặc định vì họ muốn bảo vệ khách hàng của mình, bảo vệ khách hàng chính là bảo vệ đến uy tín của công ty. 
+PS: Tất cả sản phẩm được làm ra đều phải phục vụ cho nhu cầu và mục đích của người sử dụng, những sản phẩm trái với điều trên thì chỉ có thể là sản phẩm 'ép' người sử dụng phải dùng sản phẩm đó]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249385</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249385</link>
+				<pubDate><![CDATA[Mon, 31 Oct 2011 22:46:58]]> GMT</pubDate>
+				<author><![CDATA[ phanledaivuong]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">myquartz wrote:</cite><br>
+		<blockquote>FB, Gmail và Yahoo áp dụng cái này giờ khó rồi.
+Đơn giản là hãy dùng HTTPS, cả 3 site trên đều cho phép bật mặc định dùng HTTPS. Mã hoá rồi thì man trên giời cũng ko middle được (dĩ nhiên cũng phải biết tí chút là khi nào SSL Cert bị giả mạo và trình duyệt từ chối nhé).&nbsp;
+		</blockquote>
+
+Ai trong dân kĩ thuật cũng biết SSL/TLS sẽ hỗ trợ việc chống lại man-in-middle attack. Thế nhưng đó là người dùng am hiểu kĩ thuật, còn người dùng bình thường chả mấy quan tâm, nhất là dân business.
+
+Việc HTTPS không được yêu cầu mặc định trong các website cũng là một nguyên nhân khiến kiểu tấn công này vẫn dung hại. Đáng nhẽ các website phải ép người dùng dùng HTTPS để an toàn
+
+Đã bảo là cái title được giật cho vui và để có cái mà bàn luận mà, dĩ nhiên thực tế là Gmail và Yahoo đã chơi trò ép người dùng được một thời gian rồi :D
+
+Mặt khác, SSL/TLS hiện đang bị kiểu tấn công do lão mrro mới công bố đe doạ nghiêm trọng. Kĩ thuật tấn công đó khó khăn khi tấn công từ xa, nhưng nếu tấn công trong một mạng local dạng mạng wireless, khi các dữ liệu dễ dàng bị nghe lén thì khả năng tấn công diễn ra dễ dàng hơn rất nhiều. Đọc thêm bài viết trên blog của lão mrro để rõ thêm
+
+Một câu hỏi nhỏ: Các bạn thử nghĩ tại sao mà các trang web hầu hết đều không áp dụng giao thức HTTPS là yêu cầu kết nối mặc định ?  :*- &nbsp;
+		</blockquote>
+
+Mình nghĩ có một số lý do chính :
+ - Đề phòng client không hỗ trợ SSL
+ - Performance (cost cho server encrypt...)
+ - Không ai để home page là https cả vì chắc chắn là người dùng sẽ gõ thiếu :-) 
+ - Chỉ dùng được 1 domain trên 1 ip với https
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249403</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249403</link>
+				<pubDate><![CDATA[Tue, 1 Nov 2011 09:01:39]]> GMT</pubDate>
+				<author><![CDATA[ freakmind]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">freakmind wrote:</cite><br>
+		<blockquote>
+Mình nghĩ có một số lý do chính :
+ - Đề phòng client không hỗ trợ SSL
+ - Performance (cost cho server encrypt...)
+ - Không ai để home page là https cả vì chắc chắn là người dùng sẽ gõ thiếu :-) 
+<font color='yellow'> - Chỉ dùng được 1 domain trên 1 ip với https</font>
+&nbsp;
+		</blockquote>
+Cái màu vàng này hay à nha. Bạn giải thích một chút được không? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249410</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249410</link>
+				<pubDate><![CDATA[Tue, 1 Nov 2011 12:01:33]]> GMT</pubDate>
+				<author><![CDATA[ BlackParade]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ em có 1 thắc mắc là  
+em đọc xong cái title thấy là Session Sidejacking. thú thật em mới nghe lần đầu :D :^) 
+nhưng khi đọc xong bài viết của anh thì thực ra nó cũng là Session hijacking, từ khóa này thì khá quen thuộc rồi.
+vậy tại sao anh lại gọi là  Session Sidejacking mà không gọi phương thức tấn công này là  Session hijacking ?
+em nghĩ chắc anh gọi vậy có lý do của nó !!
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249411</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249411</link>
+				<pubDate><![CDATA[Tue, 1 Nov 2011 12:09:00]]> GMT</pubDate>
+				<author><![CDATA[ tranminhnghia]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">BlackParade wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">freakmind wrote:</cite><br>
+		<blockquote>
+Mình nghĩ có một số lý do chính :
+ - Đề phòng client không hỗ trợ SSL
+ - Performance (cost cho server encrypt...)
+ - Không ai để home page là https cả vì chắc chắn là người dùng sẽ gõ thiếu :-) 
+<font color='yellow'> - Chỉ dùng được 1 domain trên 1 ip với https</font>
+&nbsp;
+		</blockquote>
+Cái màu vàng này hay à nha. Bạn giải thích một chút được không? &nbsp;
+		</blockquote>
+
+Về mặt technique thì vẫn triển khai đc multiple domain trên 1IP với cùng một SSL cert thông qua Wildcard SSL, nhưng thông thường thì một SSL cert sẽ gắn với 1 IP và 1 Domain nên mới có đặc điểm như vậy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249412</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249412</link>
+				<pubDate><![CDATA[Tue, 1 Nov 2011 12:27:05]]> GMT</pubDate>
+				<author><![CDATA[ freakmind]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ @freakmind
+
+Xin bạn nói rõ hơn việc 1 cert chỉ gắn với một ip và domain?
+
+Theo tui nghĩ thì cert chỉ gắn với domain. Domain có thể có nhiều ip (load balancing).
+
+Xin nói thêm nếu arp poison + sslstrip thì attacker có thể lấy được session cookie]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249421</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249421</link>
+				<pubDate><![CDATA[Tue, 1 Nov 2011 21:11:48]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>@freakmind
+
+Xin bạn nói rõ hơn việc 1 cert chỉ gắn với một ip và domain?
+
+Theo tui nghĩ thì cert chỉ gắn với domain. Domain có thể có nhiều ip (load balancing).
+
+Xin nói thêm nếu arp poison + sslstrip thì attacker có thể lấy được session cookie&nbsp;
+		</blockquote>
+
+Bạn đọc thử cái link này nhé
+
+<span class="link"> http://staff.washington.edu/fmf/2008/11/05/ssl-and-ip-addresses/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249461</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249461</link>
+				<pubDate><![CDATA[Wed, 2 Nov 2011 08:15:38]]> GMT</pubDate>
+				<author><![CDATA[ freakmind]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ @freakmind
+
+cert chứa domain trong CN, nên client kiểm tra là kiểm tra domain name. Còn việc hạn chế 1 ip - 1 cert là do hạn chế của Name Virtual Host đối với apache httpd http://wiki.apache.org/httpd/NameBasedSSLVHosts
+
+Trong tài liệu bạn gửi có sơ đồ cụ thể cho việc này. Lúc thiết lập SSL thì HTTP GET request chưa được web server handle nên chưa thể xử lý Name Virtual Host (field Host trong HTTP request) -&gt; 1 ip chỉ có thể gắn với 1 cert, tuy nhiên không có ai cấm bạn sử dụng 1 cert cho nhiều ip, tất nhiên với điều kiện là các ip đó đều resolve ra 1 domain đã ghi trong CN của cert đó.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249480</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249480</link>
+				<pubDate><![CDATA[Thu, 3 Nov 2011 02:45:07]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>@freakmind
+
+cert chứa domain trong CN, nên client kiểm tra là kiểm tra domain name. Còn việc hạn chế 1 ip - 1 cert là do hạn chế của Name Virtual Host đối với apache httpd<span class="link"> http://wiki.apache.org/httpd/NameBasedSSLVHosts</span>
+
+Trong tài liệu bạn gửi có sơ đồ cụ thể cho việc này. Lúc thiết lập SSL thì HTTP GET request chưa được web server handle nên chưa thể xử lý Name Virtual Host (field Host trong HTTP request) -&gt; 1 ip chỉ có thể gắn với 1 cert, tuy nhiên không có ai cấm bạn sử dụng 1 cert cho nhiều ip, tất nhiên với điều kiện là các ip đó đều resolve ra 1 domain đã ghi trong CN của cert đó.
+&nbsp;
+		</blockquote>
+Bạn nói đúng, và cái mình muốn nhấn mạnh ở đây là không dùng được nhiều domain name, tức là không gắn được nhiều domain trên 1 IP khi dùng SSL, chứ mình không nói đến việc có dùng nhiều IP hay không]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249488</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249488</link>
+				<pubDate><![CDATA[Thu, 3 Nov 2011 07:06:08]]> GMT</pubDate>
+				<author><![CDATA[ freakmind]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ @freakmind, vd_: xem thêm cái này http://en.wikipedia.org/wiki/Server_Name_Indication
+
+-m
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249499</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249499</link>
+				<pubDate><![CDATA[Thu, 3 Nov 2011 12:41:22]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ Em dùng 3 Tools trong đó có Cain&Abel thì vẫn bắt đc cookies của Facebook,Gmail,Yahoo trong Lan bình thường..vẫn dùng cookies đó truy nhập các tài khoản  Facebook,Gmail,Yahoo đều ok ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249500</link>
+				<pubDate><![CDATA[Thu, 3 Nov 2011 13:22:05]]> GMT</pubDate>
+				<author><![CDATA[ hochack_9x]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ @mrro
+
+- Tui sẽ bookmark cái SNI này để khi nào nó được support nhiều hơn sẽ triển khai thử
+- Tiếc là hiện tại support cho SNI vẫn chưa đủ rộng để tui ứng dụng :(  (IE trên XP ... )]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249509</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249509</link>
+				<pubDate><![CDATA[Thu, 3 Nov 2011 23:30:35]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ Sniff trong Lan/Wifi thì ok. còn ra Net thì phải làm sao???
+à, vả lại sniff trên browser thui chứ còn ngta dùng soft (yahoo) thì cắn lưỡi...huhu
+
+đợi chờ là hạnh phúc............=))]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249510</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249510</link>
+				<pubDate><![CDATA[Fri, 4 Nov 2011 00:04:50]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Cool1987]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ Mình nghĩ cần điều chỉnh lại 1 chút:
+<blockquote>
+- Đề phòng client không hỗ trợ SSL 
+&nbsp;
+		</blockquote>
+Hầu hết các web brower giờ cái nào không hỗ trợ SSL?
+
+<blockquote>
+- Không ai để home page là https cả vì chắc chắn là người dùng sẽ gõ thiếu  
+&nbsp;
+		</blockquote>
+Gõ<span class="link"> http://</span> thì trang web sẽ wwwect về https để ép người dùng sử dụng https.
+
+<blockquote>
+- Chỉ dùng được 1 domain trên 1 ip với https 
+&nbsp;
+		</blockquote> 
+Mình confirm là Apache phiên bản mới (mình không nhớ rõ 2.x bao nhiêu) nhưng cho phép 1 IP multiple ssl certs. Ngoài ra trình duyệt cũng phải hỗ trợ chức năng này (nhưng các trình duyệt hiện tại hầu như đã hỗ trợ).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249514</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249514</link>
+				<pubDate><![CDATA[Fri, 4 Nov 2011 03:32:21]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ Đấy là liệt kê những khả năng có thể xảy ra thôi mà.
+<p></p>
+		<cite class="blockquote">LeVuHoang wrote:</cite><br>
+		<blockquote>Mình nghĩ cần điều chỉnh lại 1 chút:
+<blockquote>
+- Đề phòng client không hỗ trợ SSL 
+&nbsp;
+		</blockquote>
+Hầu hết các web brower giờ cái nào không hỗ trợ SSL?
+&nbsp;
+		</blockquote>
+- Có lynx  :D 
+<blockquote>
+Gõ<span class="link"> http://</span> thì trang web sẽ wwwect về https để ép người dùng sử dụng https.
+&nbsp;
+		</blockquote>
+Không phải ông web admin nào cũng nhớ để wwwect
+
+<blockquote>
+Mình confirm là Apache phiên bản mới (mình không nhớ rõ 2.x bao nhiêu) nhưng cho phép 1 IP multiple ssl certs. 
+&nbsp;
+		</blockquote> 
+- Như mình cũng đã nói là việc 1IP multiple là có thể làm được nhưng không phải trên mọi web server.  Theo mình biết thì từ Apache 2.2 trở lên có hỗ trợ việc này ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249520</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249520</link>
+				<pubDate><![CDATA[Fri, 4 Nov 2011 08:38:51]]> GMT</pubDate>
+				<author><![CDATA[ freakmind]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ Chào anh myquartz,
+
+Đúng là HTTPS thì khó mà lấy được session, nhưng không phải toàn bộ site của Facebook đều sử dụng HTTPS. GMail và Yahoo mail thì khoai không rõ, nhưng khoản 2 năm trước khoai có test thử trên facebook thì họ vẫn send cookies sang một số external resources hoặc apps mà chỉ dùng HTTP. Vậy thôi cũng đủ sidejack cái session rồi.
+
+BEAST của anh mrro và julianor cũng đã chứng minh là SSL vẫn có thể bị khai thác nếu có đủ thời gian và các điều kiện cụ thể.
+
+Trả lời anh xnohat:
+
+HTTPS không phải mặc định là tại vì thêm chữ "S". Một chữ thôi nhưng server và client phải làm việc nhiều lằm :)
+
+Mr.Cool1987,
+
+Trên WAN thì tất nhiên là khó hơn, nhưng không có nghĩa là hoàn toàn không thể tấn công MitM. Có không ít các research về việc tấn công trực tiếp vào core routers và network, không khác gì việc "ARP poisoning" trong LAN.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249530</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249530</link>
+				<pubDate><![CDATA[Fri, 4 Nov 2011 10:19:43]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>
+Trả lời anh xnohat:
+
+HTTPS không phải mặc định là tại vì thêm chữ "S". Một chữ thôi nhưng server và client phải làm việc nhiều lằm :)
+
+khoai&nbsp;
+		</blockquote>
+
+Tình hình có vẻ đúng như nhận định của Khoai . Việc áp dụng SSL không phải là một lựa chọn tốt cho hiệu suất, tác vụ encrypt/decrypt cũng ngốn mất một lượng lớn tài nguyên của máy (máy con lẫn máy chủ) để thực hiện. Điều này phụ thuộc nhiều vào khối lượng dữ liệu cần encrypt/decrypt , các site cần hiệu suất cao như Facebook, Youtube thì họ có lẽ họ cần tránh việc phải áp dụng trọn vẹn SSL trong việc trung chuyển dữ liệu giữa server và client (Trình duyệt sẽ báo cáo là kết nối chỉ được mã hoá một phần - Partically Encrypted) . Quan sát Youtube, bạn sẽ thấy họ tránh việc mặc định áp dụng SSL vào kết nối, trong khi Gmail ( cũng của Google ) lại ép người dùng phải đi xuyên qua một kết nối SSL ( có đổi thành<span class="link"> http://</span> nó cũng tự wwwect về<span class="link"> https://</span> ) . Youtube không làm, không phải vì Youtube họ lười, mà nếu encrypt toàn bộ kết nối của Youtube thì công việc encrypt/decrypt lúc này sẽ là một gánh nặng khủng khiếp, hàng triệu giờ video trung chuyển liên tục trên mạng của Youtube sẽ phải encrypt/decrypt.
+
+@vd_ : cám ơn bồ vì đã nhắc lại một kĩ thuật khá lâu nhưng còn hữu hiệu - SSL strip . Kĩ thuật này tôi có đọc document về nó từ hồi năm 2009, nhưng lúc đó tôi gặp rắc rối trong việc thử nghiệm nó, do cái card mạng của tôi (wireless lẫn ethernet) đều không hỗ trợ chế độ Promiscuous ( chế độ "hỗ độn" tôi có giải thích ở bài viết phía trên ), nên chỉ hiểu về nó trên lý thuyết. Nhưng nay thử nghiệm lại tôi đã thực nghiệm thành công trên Windows với card mạng không hỗ trợ Promiscuous mode. Tôi sẽ viết thêm phần này vào bài viết sắp tới của tôi.
+
+@tranminhnghia: nó được gọi là sidejacking vì tấn công thông qua cách sniff đường truyền. Session Hijacking là tên gọi chung cho kiểu tấn công "đánh cắp và tái dựng phiên làm việc"]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249639</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249639</link>
+				<pubDate><![CDATA[Tue, 8 Nov 2011 08:54:17]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <font size='+1'><font color='orange'><b>Tấn công HTTP Session Sidejacking</b></font></font>
+
+<b>Các công cụ sử dụng: </b>
+
+<ul><li>Trình duyệt: Firefox  (bắt buộc)
+Thực hiện ARP Poison Routing:  Cain&Abel
+Sniff dữ liệu và tái dựng TCP Stream:  Wireshark
+Cookie injection:  Firefox và Add-on GreaseMonkey, Cookie Injector script (down file đính kèm)</li></ul>
+
+Bạn phải tự tìm hiểu cách cài đặt các ứng dụng trên. Cách cài đặt add-on Grease Monkey và user script Cookie injector vui lòng xem phần phụ lục 
+
+<b>Thực hiện:</b>
+
+<b>Kết nối vào mạng Wifi</b>
+
+<b>Bước  1:</b> Bật <b>Cain&Abel</b> , vào menu configure chọn card mạng wireless của bạn (chọn cái nào hiện tại có địa chỉ IP) và cấu hình như hình dưới
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1076.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Giữ nguyên các thiết lập, nhớ check vào box <b>Don’t use Promiscuous mode</b>. Nhờ thiết lập này mà việc thực hiện session Sidejacking có thể thực hiện được bằng hầu hết các card mạng trên thị trường. Click OK
+
+<b>Bước 2: </b>
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1084.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Chuyển đến <b>tab Sniffer</b> ( trong dãy các tab nằm phía trên ). Click bật biểu tượng <b>Sniffer </b>( hình card mạng)
+Nhấp phải ở vùng trắng trắng phía dưới chọn <b>Scan MAC Address</b> từ menu hiện ra. Chờ một chút cho Cain&Abel quét toàn bộ các máy tính hiện đang kết nối trong mạng Wifi
+<b>Bước 3:</b>
+Sau khi có danh sách các máy tính hiện đang kết nối trong mạng wifi, ta tiến tới thực hiện <b>ARP Poison Routing</b>.
+Bạn chuyển qua <b>tab APR</b> ( nằm ở dãy tab phía dưới màn hình – biểu tượng màu vàng và đen )
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1081.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Click vào dấu cộng “+” ( chỗ khoanh tròn trong hình ) để mở hộp cấu hình ARP Poison Routing như sau:
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1083.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Việc <b>ARP Poison Routing</b> sẽ được thực hiện giữa <b>máy tính bên trái</b> và <b>“các” máy tính bên phải</b>. Bên trái có thể là router như trường hợp địa chỉ <b>192.168.1.1</b> trong hình ( các router thường có địa chỉ là <b>x.x.x.1</b> ). 
+Ở đây ta cần thực hiện việc sniff tất cả các gói tin ra ngoài internet (để truy cập các trang web), mà muốn ra ngoài internet thì các gói tin phải đi qua router, với logic này, ta sẽ xác định được là ta cần sniff đường truyền giữa router với tất cả các máy tính khác trong mạng. Do đó, ta sẽ chọn router ở phía bên trái, và tất cả các máy tính có trong mạng ở phía bên phải ( Shift-click hay Ctrl-click để chọn đều được ).
+Xong xuôi, click OK
+
+<b>Bước  4:</b>
+
+Click chọn biểu tượng Start/Stop APR ( màu vàng và đen ) nằm ở trên bên trái của cửa sổ Cain&Abel ( chỗ khoanh tròn )
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1073.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Sau khi click sẽ thấy các dòng idle trước các địa chỉ IP sẽ đổi thành Poisoning
+
+<b>Bước  5:</b>
+
+Hiện giờ ta đã thực hiện <b>ARP Poison Routing</b> thành công, vậy là ta có đủ điều kiện để <b>Sniff</b> dữ liệu trên toàn mạng wifi này rồi
+
+Ta sẽ tiếp tục với công cụ thứ 2 là <b>WireShark</b>
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1087.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bạn vào menu <b>Capture -&gt; Option</b> để bắt đầu cấu hình cho Wireshark
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1075.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Phần cấu hình, bạn chú ý tới các mục sau
+
+<b>Interface:</b> chọn card wireless của bạn
+<b>Capture packet in promiscuous mode:</b> uncheck nó để có thể capture với bất kì card mạng wifi thông thường nào
+<b>Capture filter:</b> thiết đặt là tcp port http , để WireShark chỉ sniff các gói thuộc giao thức HTTP, các giao thức khác ( như FTP, DNS, ICMP … ) đều ko dc capture để tránh nhìn rối mắt
+<b>Enable network name resolution:</b> check thiết lập này sẽ khiến WireShark sẽ phân giải các địa chỉ IP thành tên miền cụ thể giúp dễ nhìn hơn, bạn có thể uncheck để thấy sự khác biệt
+
+<b>Check vào các cấu hình khác giống như trong hình</b>
+
+Cấu hình xong click <b>Start</b> để bắt đầu Sniff packets, bạn sẽ thấy hàng loạt packet hiện ra ào ào.
+
+<b>Bước  6:</b>
+
+Bây giờ tới lúc quay trở lại với <b>Cain&Abel</b>. Lúc này bạn chuyển qua <b>tab Password</b> ở phần tab dưới , bạn sẽ thấy màn hình như vầy:
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1085.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Hãy chú ý vào cột <b>username</b> và <b>password</b>, nếu bạn gặp hên, thì có người dùng nào đó vô ý đăng nhập website trong khi bạn đang sniff thì user và pass của họ sẽ được <b>Cain&Abel</b> bắt lấy, thế nhưng nếu xui bạn không lấy được cái password nào hết thì vui lòng quay trở lại với chuyện <b>Session Sidejacking</b> của ta.
+
+Bạn chú ý tiếp tới cột <b>URL</b>, danh sách này sẽ liên tục được cập nhật, mỗi khi người dùng trong mạng wifi truy cập một website nào đó, <b>Cain&Abel</b> sẽ ghi lại chi tiết: người dùng có IP nào truy cập website nào, URL là gì, địa chỉ IP của website, username & password (nếu có).
+
+Bạn cứ liên tục theo dõi danh sách này, đến khi nào xuất hiện địa chỉ web bạn mong muốn. Ví dụ: <span class="link"> http://www.facebook.com/xnohat</span> 
+
+Ngay lập tức bạn hãy chuyển trở lại <b>Wireshark</b>, click nút <b>stop</b> trên thanh công cụ. 
+
+Bạn nhanh chóng ghi nhớ lại các thông tin sau:
+
+<ul><li>IP của HTTP Server: đây chính là IP của facebook
+IP của client: đây chính là IP của người dùng đang truy cập facebook</li></ul>
+
+<b>Bước 7:</b>
+
+Bây giờ sau khi click nút stop ta sẽ thấy hằng hà sa số các packet, biết lấy cái nào ra bây giờ ?
+
+Lúc này bạn vui lòng chú ý vào khung có nhãn <b>“Filter:”</b> , đây là chỗ ta sẽ nhập lệnh lọc ra các packets liên quan tới việc truy cập facebook.
+
+Câu hỏi bật ra trong đầu bạn: “Ta sẽ lọc theo tiêu chí nào” , “Ta sẽ lọc bằng cách nào”
+
+Đầu tiên là tiêu chí lọc. Ta sẽ lọc ra các packet có xuất xứ từ IP của Facebook. Vậy IP của facebook là bao nhiều ? Đó chính là thông tin hồi nãy tôi yêu cầu bạn ghi nhớ ở bước 6
+
+Hãy gõ vào khung filter dòng lệnh sau:
+
+<blockquote><b>Ip.addr  eq  địa_chỉ_ip_của_HTTP_Server </b>    (vd:  <b>Ip.addr  eq  69.171.228.13 ) </b> &nbsp;
+		</blockquote>
+   
+Rồi bấm apply, bạn sẽ thấy Wireshark sẽ lọc ra các gói tin có liên quan tới địa_chỉ_ip_của_HTTP_Server ( tức là gói tin đó được gửi từ hay gửi tới địa_chỉ_ip_của_HTTP_Server )
+
+Câu lệnh trên có nghĩa là: Tìm cho tôi các gói tin có liên quan tới địa chỉ IP abcxyz ( chữ eq viết tắt của equal – nghĩa là bằng )
+
+Thế nhưng cách lọc ở trên vẫn chưa kĩ, vì nhiều khi có nhiều ng dùng cùng vào facebook, vậy là Wireshark đều trả về kết quả hết, vì thế nên ta cần cụ thể cả client ( tức máy nào truy cập vào )
+
+Hãy gõ vào khung filter dòng lệnh sau:
+
+<blockquote><b>Ip.addr  eq  địa_chỉ_ip_của_HTTP_Server and Ip.addr  eq  địa_chỉ_ip_của_Client</b>&nbsp;
+		</blockquote>
+
+Xong bấm apply, kết quả sẽ như hình dưới
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1086.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Lúc này bạn chọn một packet bất kỳ bắt nguồn từ <b>facebook.com</b> nhấp phải sẽ có menu như trên hình, bạn chọn lệnh <b>Follow TCP Stream</b>. Lệnh này sẽ giúp tái dựng lại luồng dữ liệu truy cập website của người dùng
+
+<b>Bước 8:</b>
+
+Lúc này luồng dữ liệu truy cập của người dùng sẽ hiện rõ mồn một trước mắt bạn, họ gửi dữ liệu gì đi, nhận về dữ liệu gì, tất cả hiện ra ở đây
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1078.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bạn hãy chú ý tới dòng <b>Cookie:</b>
+
+Đây chính là nội dung <b>cookies định danh</b> của người dùng, thứ chúng ta đang săn tìm, có nó, ta sẽ có thể phục dựng <b>session làm việc trên web</b> của người dùng, và nghiễm nhiên trở thành người dùng. Hãy bôi đen nó như trong hình, nhấp phải và chọn copy
+
+<b>Bước 9: Phục dựng Session – Cookie injection</b>
+
+Đầu tiên, bạn bật Firefox lên và truy cập firefox.
+
+<b>Chú ý:</b> Bạn cần phải logout ra khỏi tài khoản facebook hiện tại. Giao diện cần được thấy như sau
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1082.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Lúc này thì việc ta cần làm là chèn các giá trị cookie đã lấy được ở bước 8 vào firefox (thuật ngữ gọi là <i>cookie injection</i> ). Có nhiều cách để làm việc này như dùng add-on cookie manager, Cookie + , Web developer toolbar, Firecookie … . Nhưng các công cụ trên đều chỉ cho phép chỉnh từng giá trị cookie một, ví dụ như trong hình dưới đây là công cụ FireCookie
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1089.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Chỉnh từng cái như thế này thì quá lâu, đến lúc chỉnh xong thì thời hạn hiệu lực của cái mớ session cookie mà chúng ta mới lấy được ở bước 8 có khi cũng đã trôi qua từ đời tám hoánh nào rồi.
+Do đó ta dùng add-on <b>Grease Monkey</b>, add-on này của firefox cho phép chạy các script nhỏ viết bằng javascript giúp ta thực hiện một số tác vụ tự động trong firefox, trong đó có việc chỉnh sửa cookie. Cái script dùng để làm công việc này được xnohat đính kèm theo bài viết này, bạn coi phần phụ lục để biết cách cài đặt add-on và script này.
+
+--------------------------
+
+Giải thích nhiều rồi, giờ là cách dùng, đơn giản thôi, click vào biểu tượng tam giác ngược màu đen cạnh hình mẹt con khỉ ( grease monkey ) để hiện ra cái menu, click chọn <b>Enable</b> và click chọn <b>Cookie Injector</b>. Hãy chắc chắn rằng biểu tượng mẹt con khỉ đang bật sáng ( tức là hiện rõ chứ không phải mờ mờ ), nếu không, bạn click vào nó một cái cho nó bật sáng
+
+Bây giờ thì bấm tổ hợp phím <b>Alt-C</b> ( phím <b>Alt</b> và phím <b>C</b> đồng thời ), nó sẽ hiện ra cái khung nhỏ nhỏ như trong hình dưới <b>(Wireshark Cookie Dump)</b>. Bạn paste cái <b>chuỗi cookies</b> đã copy ở <b>bước 8</b> vào ô textbox của cái khung nhỏ nhỏ này rồi bấm Ok
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1080.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Sau khi bấm Ok, quá trình <b>inject cookie</b> sẽ mất vài giây, khi script chạy xong thì nó sẽ hiện ra bảng thông báo như hình sau
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1074.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>Bước 10:</b> Đặt con trỏ chuột vào thanh address bar và bấm enter để trang được load lại . Chú ý: bấm F5 đôi khi không hiệu quả vì vậy hãy làm như tôi nói
+
+Xong, kết quả là bạn đã chiếm được phiên làm việc web này của người dùng, bây giờ bạn chính là người dùng !
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1079.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>Phụ lục: Cài đặt Grease Monkey và cài user script Cookie injector </b>
+
+<b>1.Cài Grease Monkey</b>
+Bật Firefox, vào menu tool ( ai dùng FF5 trở lên mà không thấy cái thanh menu bar thì bấm phím Alt thì nó sẽ hiện ra ), vào tiếp mục Add-on
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1088.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Bây giờ bạn gõ vào khung <i><b>Search all add-on</i></b> ( trên cùng bên phải ) nội dung: <b>Grease Monkey</b> như trong hình. Click <b>nút install</b> ở mục <b>Greasemonkey</b> được tìm thấy, đợi FF cài đặt addon rồi bấm <b>Restart now</b> để khởi động lại Firefox
+
+<b>2.Cài đặt user script Cookie Injector</b>
+
+Bạn đến thư mục đã tải về script <b>Cookieinjector.user.js</b> (trong file nén) mà xnohat đính kèm theo bài viết này. Giải nén lấy file <b>Cookieinjector.user.js</b> .Nắm và kéo thả file <b>Cookieinjector.user.js</b> vào cửa sổ Firefox như trong hình
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1077.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Sẽ có một cửa sổ yêu cầu cài đặt hiện ra như dưới đây
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1090.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+Click nút<b> install</b>
+
+Xong, bạn đã cài đặt thành công script <b>cookieinjector</b>. Bạn vào facebook.com rồi bấm <b>Alt-C</b> xem có hiện lên cửa sổ <b>Wireshark Cookie Dump</b> như trong hình là mọi thứ đã ổn, còn không thì vui lòng làm lại từ bước đầu
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/posts/downloadAttach/1080.hva' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b>xnohat – HVA</b>
+
+--------------------------------------
+
+Kì sau: <b>Tấn công HTTPS Session Sidejacking dùng SSLstrip - Thịt cả Gmail lẫn Yahoo</b>  B-) 
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249642</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249642</link>
+				<pubDate><![CDATA[Tue, 8 Nov 2011 09:37:34]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MrKhoai wrote:</cite><br>
+		<blockquote>
+HTTPS không phải mặc định là tại vì thêm chữ "S". Một chữ thôi nhưng server và client phải làm việc nhiều lằm.
+&nbsp;
+		</blockquote>
+
+anh không nghĩ là server và client phải làm việc quá nhiều. nhiều site lơn trên thế giới bây giờ đã triển khai mặc định HTTPS cho nhiều dịch vụ lớn của họ. em xem thêm<span class="link"> http://www.imperialviolet.org/2010/06/25/overclocking-ssl.html.</span>
+
+-m ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249646</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249646</link>
+				<pubDate><![CDATA[Tue, 8 Nov 2011 13:15:41]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MrKhoai wrote:</cite><br>
+		<blockquote>
+HTTPS không phải mặc định là tại vì thêm chữ "S". Một chữ thôi nhưng server và client phải làm việc nhiều lằm.
+&nbsp;
+		</blockquote>
+
+anh không nghĩ là server và client phải làm việc quá nhiều. nhiều site lơn trên thế giới bây giờ đã triển khai mặc định HTTPS cho nhiều dịch vụ lớn của họ. em xem thêm<span class="link"> http://www.imperialviolet.org/2010/06/25/overclocking-ssl.html.</span>
+
+-m &nbsp;
+		</blockquote>
+
+Gần đây em đang bị 1 vấn đề về SSL trên website của mình
+
+Nếu sử dụng các link internal mình có thể format thành "https" được. Nhưng nếu trong website có 1 link external format là "http" thì trình duyệt sẽ báo lỗi cert.
+
+Ví dụ như Gmail cũng hay bị báo lỗi như thế này
+
+<br>
+			<div align="center" class="limitview"><img src='http://upanh.tv/images/70715367218877930936.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Theo em nghĩ "https" sẽ được mở khi chúng ta vào những link yêu cầu nhập thông tin cá nhân trên 1 website là hợp lý nhất vì những trang đó ít khi kèm các link external  ( ví dụ như : login, register... )]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249650</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249650</link>
+				<pubDate><![CDATA[Tue, 8 Nov 2011 19:07:22]]> GMT</pubDate>
+				<author><![CDATA[ mv1098]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ @xnohat : 
+
+     Cho mình hỏi nếu bind IP cho MAC (hoặc static IP MAC tại client ) liệu cách tấn công này còn hữu hiệu không vậy xnohat  ?
+     
+     Cain&Abel liện có poinsoning được router hay gateway không ?
+
+Thanks !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249659</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249659</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 00:32:43]]> GMT</pubDate>
+				<author><![CDATA[ JFS]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ @mrro
+
+Xin ý kiến của mrro về nhận định ở trong blog post này http://vincent.bernat.im/en/blog/2011-ssl-dos-mitigation.html
+
+Theo đó thì với tỷ lệ CPU giữa client : server thì việc client có thể làm tốn CPU của server khá nhiều. Như vậy thì chừng vài chục máy trạm là có thể làm quá tài server? DOS ở đây sẽ là DOS về CPU chứ không còn là network nữa.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249660</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249660</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 00:42:09]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">JFS wrote:</cite><br>
+		<blockquote>@xnohat : 
+
+     Cho mình hỏi nếu bind IP cho MAC (hoặc static IP MAC tại client ) liệu cách tấn công này còn hữu hiệu không vậy xnohat  ?
+     
+     Cain&Abel liện có poinsoning được router hay gateway không ?
+
+Thanks !&nbsp;
+		</blockquote> 
+Trên mạng wifi thì traffic giữa client và server đều có thể bị capture quan trọng là trạng thái của Card Wifi (bạn xem lại Promiscuous mode). Đối với mạng LAN thì khó hơn vì nếu set port security trên Switch thì không có tình trạng gói tin broadcast được (nhưng các switch có tính năng này cũng tương đối mắc tiền :P). 
+
+Để hiểu rõ hơn bạn có thể đọc thêm về ARP Poison ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249661</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249661</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 00:46:42]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <blockquote>
+Trên mạng wifi thì traffic giữa client và server đều có thể bị capture quan trọng là trạng thái của Card Wifi (bạn xem lại Promiscuous mode). Đối với mạng LAN thì khó hơn vì nếu set port security trên Switch thì không có tình trạng gói tin broadcast được (nhưng các switch có tính năng này cũng tương đối mắc tiền :P). 
+
+Để hiểu rõ hơn bạn có thể đọc thêm về ARP Poison &nbsp;
+		</blockquote>
+
+@Ky0
+
+Có lẽ ở đây mình không chú ý đến cái wifi và trạng thái card mạng mà mình gắn nó vào LAN. 
+
+ Nếu dùng Static arp and gán MAC router cho client , trong LAN có 1 host bật trạng thái card mạng Promiscuous mode thì có bị poison ko ?
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249662</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249662</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 01:04:32]]> GMT</pubDate>
+				<author><![CDATA[ JFS]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">JFS wrote:</cite><br>
+		<blockquote>
+Có lẽ ở đây mình không chú ý đến cái wifi và trạng thái card mạng mà mình gắn nó vào LAN. 
+
+ <font color='red'>Nếu dùng Static arp and gán MAC router cho client , trong LAN có 1 host bật trạng thái card mạng Promiscuous mode thì có bị poison ko ?</font>
+
+&nbsp;
+		</blockquote>
+
+Bạn gắn static arp cho router hay client? Router của bạn của hãng nào, thuộc dòng nào? bạn cấu hình nó ra sao? 
+<font color='red'>=&gt; </font>Nếu dùng static ARP cho cả client và router thì không thể poison ARP nữa, nhưng gói tin vẫn có nguy cơ bị sniff :P
+
+Để phòng tránh thì tốt nhất là dùng tính năng port security trên Switch (và chỉ có một máy tính nối trực tiếp đến port được bật tính năng port security) đồng thời dùng arp tĩnh cho client và switch thì không có host nào có thể sniff cũng như poison được. 
+
+- Ky0 - ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249668</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249668</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 02:46:41]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <blockquote>
+
+1. Bạn gắn static arp cho router hay client? Router của bạn của hãng nào, thuộc dòng nào? bạn cấu hình nó ra sao? 
+<font color='red'>=&gt; </font>Nếu dùng static ARP cho cả client và router thì không thể poison ARP nữa, nhưng gói tin vẫn có nguy cơ bị sniff :P
+
+2. Để phòng tránh thì tốt nhất là dùng tính năng port security trên Switch (và chỉ có một máy tính nối trực tiếp đến port được bật tính năng port security) đồng thời dùng arp tĩnh cho client và switch thì không có host nào có thể sniff cũng như poison được. 
+
+- Ky0 - &nbsp;
+		</blockquote>
+1. Tất nhiên mình làm cho cả router và client , router mình có Port Security . Mình cấu hình nó theo yêu cầu của mình .
+2. Mình cũng nghĩ phương pháp ngăn chặn trên là hữu hiệu nhất , nếu gói tin vẫn bị sniff nhưng giao thức là SSL thì mình nghĩ tấn công trong LAN khi đã có các cơ chế bảo mật như thế thì ok và để lấy đc Session là rất khó như đã nói ở trên . 
+
+Nếu client change MAC và dùng 1 Static IP khác trong lớp thì sao nhỉ vẫn không có khả năng poision . 
+
+Thanks Ky0 
+
+ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249669</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249669</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 03:19:05]]> GMT</pubDate>
+				<author><![CDATA[ JFS]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Một số giải pháp chống đầu độc ARP:
+- Công cụ <b>Arpwatch</b> <span class="link"> https://secure.wikimedia.org/wikipedia/en/wiki/Arpwatch</span>
+
+- Giải pháp của Cisco: <b>Switched Port Analyzer (SPAN)</b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249671</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249671</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 03:35:52]]> GMT</pubDate>
+				<author><![CDATA[ hvthang]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">JFS wrote:</cite><br>
+		<blockquote><blockquote>
+
+1. Bạn gắn static arp cho router hay client? Router của bạn của hãng nào, thuộc dòng nào? bạn cấu hình nó ra sao? 
+=&gt; Nếu dùng static ARP cho cả client và router thì không thể poison ARP nữa, nhưng gói tin vẫn có nguy cơ bị sniff :P
+
+2. Để phòng tránh thì tốt nhất là dùng tính năng port security trên Switch (và chỉ có một máy tính nối trực tiếp đến port được bật tính năng port security) đồng thời dùng arp tĩnh cho client và switch thì  <font color='red'> không có host nào có thể sniff cũng như poison được.</font> 
+
+- Ky0 - &nbsp;
+		</blockquote>
+1. Tất nhiên mình làm cho cả router và client , router mình có Port Security . Mình cấu hình nó theo yêu cầu của mình .
+2. Mình cũng nghĩ phương pháp ngăn chặn trên là hữu hiệu nhất ,<font color='red'> nếu gói tin vẫn bị sniff</font> nhưng giao thức là SSL thì mình nghĩ tấn công trong LAN khi đã có các cơ chế bảo mật như thế thì ok và để lấy đc Session là rất khó như đã nói ở trên . 
+
+<font color='orange'>Nếu client change MAC và dùng 1 Static IP khác trong lớp thì sao nhỉ vẫn không có khả năng poision .</font> 
+
+Thanks Ky0 
+
+ &nbsp;
+		</blockquote>
+
+<font color='red'>=&gt;</font> Đoạn này hình như bạn chưa đọc kỹ :P Cơ chế quản lý kỹ càng như mình đề ra thì khả năng sniff gần như là bằng zero. 
+<font color='orange'>=&gt;</font> Đoạn này không hiểu ý bạn lắm
+
+- Ky0 - ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249672</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249672</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 03:38:29]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">JFS wrote:</cite><br>
+		<blockquote>@xnohat : 
+
+     Cho mình hỏi nếu bind IP cho MAC (hoặc static IP MAC tại client ) liệu cách tấn công này còn hữu hiệu không vậy xnohat  ?
+     
+     Cain&Abel liện có poinsoning được router hay gateway không ?
+
+Thanks !&nbsp;
+		</blockquote>
+
+Đây là một khía cạnh tôi muốn đề cập tới trong thảo luận này.
+
+Khởi nguồn của vấn đề ARP Poisoning Routing ( APR ) , là việc các thiết bị trong mạng LAN không biết địa chỉ IP nào hiện đang được gán cho thiết bị có địa chỉ MAC nào. Như ta đã biết, địa chỉ MAC là duy nhất đối với mỗi thiết bị mạng. 
+
+Các thiết bị trong mạng LAN khi cần biết địa chỉ IP của nhau thì chúng cần kiểm tra trong bộ nhớ của chúng (bảng ARP) nếu không thấy chúng phải "gào" lên với toàn mạng LAN để hỏi rằng "Tôi cần biết máy tính nào đang có địa chỉ IP 192.168.1.1" ( tức nó sẽ gửi đi một gói tin broadcast ARP Request ) . Khi này thiết bị nào hiện có IP là 192.168.1.1 sẽ "gào" lên trở lại với cái thiết bị vừa hỏi kia rằng nó hiện đang sở hữu IP 192.168.1.1 và nó tên là MAC add 00:01:03:02:03:08 ( hay gì gì đó, đây là ví dụ thôi - thiết bị mạng sẽ đáp trả lại gói ARP request kia bằng 01 gói tin ARP reply có chứa MAC add của nó).
+
+Vấn đề rắc rối phát sinh từ chỗ cái thằng đi hỏi thì chả biết mặt thằng nó cần tìm méo tròn ra sao để mà kiểm tra coi nó có phải là thằng đang sở hữu IP 192.168.1.1 . Nên lúc này nếu có cái thằng giả mạo mắc dịch nào đó nó to mồm hơn, nó "gào to" hơn thằng thật thì cái thằng đi hỏi sẽ chỉ nghe được câu trả lời từ thằng giả mạo mắc dịch . Thế thì thằng đi hỏi dĩ nhiên là bị xí gạt, mà bị xí gạt rồi thì có bị dụ đưa tiền nó cũng đưa  :D 
+
+Đặc biệt trong thực tế, khi không có thằng nảo đi hỏi vẫn có thằng rảnh việc đi vỗ vai từng thằng ( từng thiết bị mạng trong mạng LAN ) rồi bảo rằng "tao đang sở hữu IP 192.168.1.1 đó, khi nào cần thì cứ việc kiếm tao nhá", thằng kia lúc đầu không tin, nhưng bị nói mãi thì cũng phải tin ( ARP Reply flood )
+
+Vậy thử đặt trường hợp nếu bạn cấp cho mỗi thiết bị mạng một cái danh bạ điện thoại thì sao ? ( tức là một bảng ARP ghi rõ rằng địa chỉ MAC nào sở hữu IP nào ) . Chuyện gì sẽ xảy ra  B-) . Trong thực tế có áp dụng được không, khi áp dụng có thể gặp giới hạn nào không ?
+
+P/s: ai muốn coi các thiết bị mạng nói chuyện với nhau ra sao thì thử bật Wireshark như tôi đã hướng dẫn, lúc cấu hình trước khi sniff thì gõ trong phần filter là arp , thì sẽ thấy được cuộc nói chuyện của các thiết bị trong mạng, chúng rất con người :D 
+
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/upload/2011/11/9/a67bdd7eb3b27c225c3db8d30795fb80_101182.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249684</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249684</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 10:20:54]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mv1098 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">mrro wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MrKhoai wrote:</cite><br>
+		<blockquote>
+HTTPS không phải mặc định là tại vì thêm chữ "S". Một chữ thôi nhưng server và client phải làm việc nhiều lằm.
+&nbsp;
+		</blockquote>
+
+anh không nghĩ là server và client phải làm việc quá nhiều. nhiều site lơn trên thế giới bây giờ đã triển khai mặc định HTTPS cho nhiều dịch vụ lớn của họ. em xem thêm<span class="link"> http://www.imperialviolet.org/2010/06/25/overclocking-ssl.html.</span>
+
+-m &nbsp;
+		</blockquote>
+
+Gần đây em đang bị 1 vấn đề về SSL trên website của mình
+
+Nếu sử dụng các link internal mình có thể format thành "https" được. Nhưng nếu trong website có 1 link external format là "http" thì trình duyệt sẽ báo lỗi cert.
+
+Ví dụ như Gmail cũng hay bị báo lỗi như thế này
+
+<br>
+			<div align="center" class="limitview"><img src='http://upanh.tv/images/70715367218877930936.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Theo em nghĩ "https" sẽ được mở khi chúng ta vào những link yêu cầu nhập thông tin cá nhân trên 1 website là hợp lý nhất vì những trang đó ít khi kèm các link external  ( ví dụ như : login, register... )&nbsp;
+		</blockquote>
+
+bạn xem thêm cái này<span class="link"> http://googleonlinesecurity.blogspot.com/2011/06/trying-to-end-mixed-scripting.html.</span>
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249690</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249690</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 12:27:52]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>@mrro
+
+Xin ý kiến của mrro về nhận định ở trong blog post này<span class="link"> http://vincent.bernat.im/en/blog/2011-ssl-dos-mitigation.html</span>
+
+Theo đó thì với tỷ lệ CPU giữa client : server thì việc client có thể làm tốn CPU của server khá nhiều. Như vậy thì chừng vài chục máy trạm là có thể làm quá tài server? DOS ở đây sẽ là DOS về CPU chứ không còn là network nữa.
+&nbsp;
+		</blockquote>
+
+tỉ lệ đó sẽ không quá lớn (65%, như trong bài mà bạn gửi) nếu bạn sử dụng các cipher như TLS_RSA_WITH_RC4_128_SHA, với chiều dài khoá RSA là 1024-bit. đây cũng là cipher mà các trang nhiều người truy cập sử dụng.
+
+-m]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249698</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249698</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 18:57:47]]> GMT</pubDate>
+				<author><![CDATA[ mrro]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Để chống cái này em nghĩ chỉ cần logout (không phải tắt trình duyệt nhé, nhấn logout ở facebook) là xong.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249699</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249699</link>
+				<pubDate><![CDATA[Wed, 9 Nov 2011 19:01:19]]> GMT</pubDate>
+				<author><![CDATA[ Ninj@]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Sao em giải nén file anh đính kèm thì nó báo lỗi này vậy anh?
+<br>
+			<div align="center" class="limitview"><img src='http://upanh.tv/images/58744294986537479763.png' border="0" onload="maxImg(this, 500px);" /></div>[/URL]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249717</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249717</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 00:57:28]]> GMT</pubDate>
+				<author><![CDATA[ vaihiep]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Bồ click chạy hay giải nén vậy /:) cửa sổ ở trên thông báo là bồ đang click chạy nó (double click), đây là script của Grease Monkey nên không thể click chạy được]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249721</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249721</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 03:16:00]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ sao em mở config của cain ra thì không thấy card mạng nào hết
+<br>
+			<div align="center" class="limitview"><img src='http://nf2.upanh.com/b4.s5.d2/dea030418b77137ee5f1c1db0cb72265_37800332.untitled.png' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249747</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249747</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 07:18:47]]> GMT</pubDate>
+				<author><![CDATA[ trungdzodzo]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Cần chạy Cain&Abel, Wireshark,  dưới quyền của account Administrator]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249751</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249751</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 09:45:19]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ cảm  ơn anh em làm được rồi, nhưng cái cảm giác vào nhà người ta không xin phép sao sao ấy :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249752</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249752</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 09:51:37]]> GMT</pubDate>
+				<author><![CDATA[ trungdzodzo]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ có cách nào chống sniff cookies không anh? chứ thế này thì ai dám lên wifi quán nét nữa]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249754</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249754</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 09:53:59]]> GMT</pubDate>
+				<author><![CDATA[ trungdzodzo]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">trungdzodzo wrote:</cite><br>
+		<blockquote>cảm  ơn anh em làm được rồi, nhưng cái cảm giác vào nhà người ta không xin phép sao sao ấy :(&nbsp;
+		</blockquote>
+
+Tốt, có cái cảm giác này là rất tốt, rất quý, phải giữ lấy nó, vì còn nó thì còn phát triển được tri thức, còn không thì sẽ còn lạc lối
+
+Thử nghiệm đâu phải cứ phải đi ra ngoài quán nét, tấn công người ta. Cài thêm 1 máy ảo trên máy tính của mình, rồi thử hijack lấy session của mình cũng được vậy
+
+Còn việc chống Sidejacking. Dĩ nhiên là có cách chống, bồ hãy thử tìm hiểu rồi mang ra đây cùng bàn luận với mọi người   :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249762</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249762</link>
+				<pubDate><![CDATA[Thu, 10 Nov 2011 20:22:22]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ E thao tác đúng như hướng dẫn của a, và đã làm nhiều lần.nhưng cửa sổ Wireshark Cookie Dump không hiện lên và cũng không có thông báo lỗi gì.
+A có thể cho e biết vì sao được không?
+E dùng bản firefox 3.6]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249809</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249809</link>
+				<pubDate><![CDATA[Fri, 11 Nov 2011 22:11:41]]> GMT</pubDate>
+				<author><![CDATA[ tallica]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ @Xnohat,
+
+Cám ơn anh về bài viết, em mở mang thêm được chút kiến thức quý báu. Mong bài viết kế tiếp của anh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249974</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249974</link>
+				<pubDate><![CDATA[Tue, 15 Nov 2011 07:54:01]]> GMT</pubDate>
+				<author><![CDATA[ jerrykun]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ cho e hỏi phương pháp này có áp đụng với các trang web khác được hay không vậy
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249992</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#249992</link>
+				<pubDate><![CDATA[Tue, 15 Nov 2011 23:20:33]]> GMT</pubDate>
+				<author><![CDATA[ thaobkc]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Cách này đã phổ biến từ 2 năm trước mà đến giờ vẫn sử dụng được rất tốt lại cực kỳ dể thực hiện, một người chả biết gì về CNTT như em cũng thực hiện được! Vậy từ phía người dùng thì có cách gì để phòng chống hiệu quả không anh xnohat? Mà hình như cách này bị mấy thằng Internet Security báo thì phải?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250001</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250001</link>
+				<pubDate><![CDATA[Wed, 16 Nov 2011 05:12:31]]> GMT</pubDate>
+				<author><![CDATA[ maitan_10000]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p1)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vd_ wrote:</cite><br>
+		<blockquote>@freakmind
+
+Xin bạn nói rõ hơn việc 1 cert chỉ gắn với một ip và domain?
+
+Theo tui nghĩ thì cert chỉ gắn với domain. <font color='yellow'>Domain có thể có nhiều ip</font> (load balancing).
+
+Xin nói thêm nếu arp poison + sslstrip thì attacker có thể lấy được session cookie&nbsp;
+		</blockquote>
+
+mình bổ sung thêm là:
+
+<font color='yellow'>--&gt;</font> trường hợp 1 domain ánh xạ tới nhiều IP thì nếu mỗi IP được gán cho một máy riêng biệt thì trên mỗi máy cũng cần cài đặt chung 1 cái SSL Cert của domain đó.
+
+Còn nếu chỉ có một máy lưu trữ nhiều website/domain khác nhau mà máy đó được gán nhiều IP (do có nhiều card mạng chẳng hạn) và mỗi website/domain chạy trên 1 IP riêng biệt thì vẫn có thể cài đặt nhiều SSL Cert cho từng website/domain trên cùng cái máy đó.
+
+hơi rắc rối nhỉ :p]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250129</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250129</link>
+				<pubDate><![CDATA[Sat, 19 Nov 2011 04:46:08]]> GMT</pubDate>
+				<author><![CDATA[ manthang]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ Em thấy cái này được facebook phát hiện vào khoảng tháng 9 và cain & bell thì khá mạnh có thể thịt cả gmail, imap xác định names và pass]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250164</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250164</link>
+				<pubDate><![CDATA[Sun, 20 Nov 2011 21:01:58]]> GMT</pubDate>
+				<author><![CDATA[ TranbinhFPT]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking (p2)</title>
+				<description><![CDATA[ bước ARP Poison Routing : trong tab ARP em bấm nút start thì phần ở trên chữ idle--&gt;poisoning...
+nhưng ở phần dưới nó lại ko có những dòng Full-routing.... (em đã chờ cho nó chạy khoảng 20 phút luôn)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250529</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#250529</link>
+				<pubDate><![CDATA[Wed, 30 Nov 2011 08:15:00]]> GMT</pubDate>
+				<author><![CDATA[ thieuquangbinh]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Vẫn chưa biết cách phòng chống và phần 2 của bài viết! ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251546</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251546</link>
+				<pubDate><![CDATA[Mon, 26 Dec 2011 08:12:23]]> GMT</pubDate>
+				<author><![CDATA[ maitan_10000]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Cho tớ hỏi cái này, trong trường hợp đối phương sử dụng công cụ sniff để xác định và ăn cắp thông tin trong mạng. Nếu theo ví dụ mà xnohat đã nêu ra, là thằng giả mạo gào to hơn để lừa thằng thật. Thế thì nếu thằng thật cũng lừa thằng giả thì sao ?
+
+Ý mình ở đây tức là bản thân thằng broadcast đã che giấu nó đi rồi. Bằng cách gán static ARP,  disable Net Bios, thiết lập firewall cá nhân. Loại bỏ các gói ICMP, nói chung là làm mọi cách để tất cả mọi người trong mạng đó không thể lần ra nó, thậm chí là ping cũng không ? Thì liệu kẻ ăn cắp có thể mò ra không ? 
+
+Bản thân mình vẫn cảm thấy khá mù mờ về chuyện ăn cắp tài khoản FB trong mạng Lan này mặc dù đọc rất kỹ.
+
+Mình hơi thắc mắc chuyện này, nếu như trong hệ thống mạng đó sử dụng cơ chế mã hoá gói tin thì có thể khắc phục được không ? Tức là mã hoá gói tin từ client --&gt; Gateway thì liệu có khả năng vẫn bị đánh cắp thông tin ? Đối với 1 số đơn vị không có điều kiện để sở hữu các thiết bị thông minh có khả năng tránh flood ARP cũng như giả Mac, thì liệu còn cách nào để đỡ vụ này ? Nếu mình sử dụng tất cả IP động được tập trung quản lý bởi DHCP server và DNS server thì liệu có tránh được hay không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251553</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251553</link>
+				<pubDate><![CDATA[Mon, 26 Dec 2011 19:34:45]]> GMT</pubDate>
+				<author><![CDATA[ peter_nguyen1405]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ To:peter_nguyen1405Cái xnohat trình bầy dạng giống như MIT đó bạn.Ý bạn gào to ở đây là gửi nhiều bản tìn BROADCAST ra ngoài mạng phải ko ??A ( Thật ) , B ( Giả )  2 thằng này đều gửi bản tin BROADCAST .
+
+<p></p>
+		<cite class="blockquote">peter_nguyen1405 wrote:</cite><br>
+		<blockquote>
+<font color='red'>Ý mình ở đây tức là bản thân thằng broadcast đã che giấu nó đi rồi.</font> Bằng cách gán static ARP,  disable Net Bios, thiết lập firewall cá nhân. Loại bỏ các gói ICMP, nói chung là làm mọi cách để tất cả mọi người trong mạng đó không thể lần ra nó, thậm chí là ping cũng không ? Thì liệu kẻ ăn cắp có thể mò ra không ? 
+&nbsp;
+		</blockquote>
+<font color='red'>&gt;&gt;&gt;&gt;</font> h 2 thằng đều gửi BROADCAST thế bạn muốn nói là A hay B ??
+Nếu là A ở đây thì sẽ không bị ảnh hưởng bởi bản tin BROADCAST ( ARP ) nếu đã gán Static . 
+<br>
+			<div align="center" class="limitview"><img src='http://www.hvaonline.net/hvaonline/upload/2011/11/9/a67bdd7eb3b27c225c3db8d30795fb80_101182.png' border="0" onload="maxImg(this, 500px);" /></div>&nbsp;
+		</blockquote>
+Mượn tạm 1 hình của xnohat  :^) 
+Câu trả lời là hoàn toàn được bạn ạ .
+<p></p>
+		<cite class="blockquote">peter_nguyen1405 wrote:</cite><br>
+		<blockquote>
+Mình hơi thắc mắc chuyện này, nếu như trong hệ thống mạng đó sử dụng cơ chế mã hoá gói tin thì có thể khắc phục được không ? Tức là mã hoá gói tin từ client --&gt; Gateway thì liệu có khả năng vẫn bị đánh cắp thông tin ? <font color='red'>Đối với 1 số đơn vị không có điều kiện để sở hữu các thiết bị thông minh có khả năng tránh flood ARP cũng như giả Mac, thì liệu còn cách nào để đỡ vụ này ?</font> Nếu mình sử dụng tất cả IP động được tập trung quản lý bởi DHCP server và DNS server thì liệu có tránh được hay không ?&nbsp;
+		</blockquote>
+Cái này phía trên a Kyo đã nói rồi bạn ạ .
+<p></p>
+		<cite class="blockquote">Ky0 wrote:</cite><br>
+		<blockquote>
+
+Bạn gắn static arp cho router hay client? Router của bạn của hãng nào, thuộc dòng nào? bạn cấu hình nó ra sao? 
+<font color='red'>=&gt; </font>Nếu dùng static ARP cho cả client và router thì không thể poison ARP nữa, nhưng gói tin vẫn có nguy cơ bị sniff :P
+
+Để phòng tránh thì tốt nhất là dùng tính năng port security trên Switch (và chỉ có một máy tính nối trực tiếp đến port được bật tính năng port security) đồng thời dùng arp tĩnh cho client và switch thì không có host nào có thể sniff cũng như poison được. 
+
+- Ky0 - &nbsp;
+		</blockquote>
+Còn nếu bạn ko có đồ switch cisco thì đành thủ công  vậy . 
+Không thì dùng DHCP Reservation. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251605</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251605</link>
+				<pubDate><![CDATA[Tue, 27 Dec 2011 21:47:54]]> GMT</pubDate>
+				<author><![CDATA[ _KjlL_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Hôm nay thử làm chi tiết lại các bước, mình vẫn dừng lại ở bước dựng session. Cái grease monkey của mình vẫn chưa cài được cái script như xnohat trình bày ( chưa tải được). Nhưng mình vẫn sniff được username và password trước khi nó được mã hoá thành chuỗi các con số.
+
+Chi tiết vụn vặt không cần bàn, nhưng dựa theo bạn Kill, mình thử trên 2 hệ thống, 1 là dựa vào 1 server trung gian giữa router và client. Kết quả là ko thể poison được. Nhưng khi gắn với router thì ra hết.
+
+Vì thế nên mình thắc mắc, không có cách nào mã hoá được dữ liệu trước khi nó được send (dạng plaint text) trong mạng hay sao ? Ít ra cũng phải có cách nào đỡ được chứ, trong trường hợp cấu hình static cho router và client không hiệu quả ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251647</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251647</link>
+				<pubDate><![CDATA[Thu, 29 Dec 2011 01:50:21]]> GMT</pubDate>
+				<author><![CDATA[ peter_nguyen1405]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Bạn có thể nói rõ hơn cho mình hiểu việc set arp static ở quán cafe là như nào ?
+Mình công nhận nếu user set arp tới modem hay router thì việc ARP spoofing không còn tác dụng . 
+Còn thú thật việc quán care set tĩnh thì chưa rõ ntn ;)
+To: peter_nguyen1405 : Mình chưa test trên server trung gian nên ko dám phán bừa @@.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251709</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251709</link>
+				<pubDate><![CDATA[Sat, 31 Dec 2011 06:04:51]]> GMT</pubDate>
+				<author><![CDATA[ _KjlL_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Bạn có thể nói rõ hơn cho mình hiểu việc set arp static ở quán cafe là như nào ?
+Mình công nhận nếu user set arp tới modem hay router thì việc ARP spoofing không còn tác dụng . 
+Còn thú thật việc quán care set tĩnh thì chưa rõ ntn ;)
+To: peter_nguyen1405 : Mình chưa test trên server trung gian nên ko dám phán bừa @@.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251711</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251711</link>
+				<pubDate><![CDATA[Sat, 31 Dec 2011 06:10:16]]> GMT</pubDate>
+				<author><![CDATA[ _KjlL_]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">peter_nguyen1405 wrote:</cite><br>
+		<blockquote>Hôm nay thử làm chi tiết lại các bước, mình vẫn dừng lại ở bước dựng session. Cái grease monkey của mình vẫn chưa cài được cái script như xnohat trình bày ( chưa tải được). Nhưng mình vẫn sniff được username và password trước khi nó được mã hoá thành chuỗi các con số.
+
+Chi tiết vụn vặt không cần bàn, nhưng dựa theo bạn Kill, mình thử trên 2 hệ thống, 1 là dựa vào 1 server trung gian giữa router và client. Kết quả là ko thể poison được. Nhưng khi gắn với router thì ra hết.
+
+Vì thế nên mình thắc mắc, không có cách nào mã hoá được dữ liệu trước khi nó được send (dạng plaint text) trong mạng hay sao ? Ít ra cũng phải có cách nào đỡ được chứ, trong trường hợp cấu hình static cho router và client không hiệu quả ?&nbsp;
+		</blockquote>
+
+1. File tải script grease-monkey về hoàn toàn bình thường, file được đặt trên server của HVA
+
+2. Tôi chưa rõ đoạn này "mình thử trên 2 hệ thống, 1 là dựa vào 1 server trung gian giữa router và client. Kết quả là ko thể poison được. Nhưng khi gắn với router thì ra hết." bồ thực ra muốn nói về điều gì, nên chưa thể đưa ra câu trả lời thoả đáng được.
+
+3. Cách đỡ ? , đơn giản nhất có HTTPS , còn phức tạp hơn thì phải có các thiết bị mạng của hãng Cisco hoặc thiết lập một hệ thống đặc chủng để giám sát mạng và loại bỏ các máy tính đang thực hiện ARP Poisoning.
+
+Cách dùng HTTPS là đơn giản nhất cho người dùng thông thường tự bảo vệ mình. Các quán cafe thì có thể (hoặc nên) in ra một bảng hướng dẫn người dùng tự set static MAC add của Gateway Router lên máy mình ( rất đơn giản )
+
+Đây là lý do tôi không viết thêm phần 3 của loạt bài như dư định ban đầu, vốn sẽ viết về các cách tấn công thông dụng nhằm vô hiệu hoá biện pháp sử dụng HTTPS.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251729</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251729</link>
+				<pubDate><![CDATA[Sun, 1 Jan 2012 01:34:39]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xnohat wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">peter_nguyen1405 wrote:</cite><br>
+		<blockquote>Hôm nay thử làm chi tiết lại các bước, mình vẫn dừng lại ở bước dựng session. Cái grease monkey của mình vẫn chưa cài được cái script như xnohat trình bày ( chưa tải được). Nhưng mình vẫn sniff được username và password trước khi nó được mã hoá thành chuỗi các con số.
+
+Chi tiết vụn vặt không cần bàn, nhưng dựa theo bạn Kill, mình thử trên 2 hệ thống, 1 là dựa vào 1 server trung gian giữa router và client. Kết quả là ko thể poison được. Nhưng khi gắn với router thì ra hết.
+
+Vì thế nên mình thắc mắc, không có cách nào mã hoá được dữ liệu trước khi nó được send (dạng plaint text) trong mạng hay sao ? Ít ra cũng phải có cách nào đỡ được chứ, trong trường hợp cấu hình static cho router và client không hiệu quả ?&nbsp;
+		</blockquote>
+
+1. File tải script grease-monkey về hoàn toàn bình thường, file được đặt trên server của HVA
+
+2. Tôi chưa rõ đoạn này "mình thử trên 2 hệ thống, 1 là dựa vào 1 server trung gian giữa router và client. Kết quả là ko thể poison được. Nhưng khi gắn với router thì ra hết." bồ thực ra muốn nói về điều gì, nên chưa thể đưa ra câu trả lời thoả đáng được.
+
+3. Cách đỡ ? , đơn giản nhất có HTTPS , còn phức tạp hơn thì phải có các thiết bị mạng của hãng Cisco hoặc thiết lập một hệ thống đặc chủng để giám sát mạng và loại bỏ các máy tính đang thực hiện ARP Poisoning.
+
+Cách dùng HTTPS là đơn giản nhất cho người dùng thông thường tự bảo vệ mình. Các quán cafe thì có thể (hoặc nên) in ra một bảng hướng dẫn người dùng tự set static MAC add của Gateway Router lên máy mình ( rất đơn giản )
+
+Đây là lý do tôi không viết thêm phần 3 của loạt bài như dư định ban đầu, vốn sẽ viết về các cách tấn công thông dụng nhằm vô hiệu hoá biện pháp sử dụng HTTPS.
+
+&nbsp;
+		</blockquote>
+1 : Mình sẽ load cái này ngay khi có thể
+2 : Mình có cấu hình thử 1 cái server làm router trung gian giữa client và router thật. Thực tế là khi làm điều này, mình không thể poison ARP được. Nói thẳng ra, thì tín hiệu luôn là Idle chứ không chuyển sang poisonous như bài viết của bạn. Do mình tập trung dữ liệu IP về máy trung gian đó hết
+3 : Mình vẫn mơ màng về chỗ này, không bàn đến các vấn đề thiết bị, chỉ nói về HTTPS mà thôi. Mình nhận thấy HTTPS ngoại trừ các dịch vụ E-banking, mail, còn thì gần như đều ít sử dụng, mặc dù ưu điểm của nó là không thể chối cãi.
+
+Mình hỏi bồ chuyện này. Mình không biết các cách tấn công thông dụng mà bồ nói là gì, nhưng nếu sử dụng HTTPS ( như kiểu FB và Zing đang sử dụng), việc tấn công dựa vào flash player có thực thi được không ? Nếu được, thì theo bồ có cách nào hạn chế nó không ?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251738</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251738</link>
+				<pubDate><![CDATA[Sun, 1 Jan 2012 11:02:03]]> GMT</pubDate>
+				<author><![CDATA[ peter_nguyen1405]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Câu số
+
+2. Máy tấn công cần nằm cùng mạng với máy client, tức cả 2 cần nằm sau cùng 1 router, nếu bồ tách máy tấn công ra nằm ở router biên, còn client nằm sau 1 cái router sub của cái router biên thì (thông thường) chúng chả có cách nào trao đổi ARP broadcast mà để xảy ra trường hợp ARP Poisoning được.
+
+3. Đang HTTPS thì liên quan gì đến flash player ở đây ? bồ làm ơn khi trao đổi hay hỏi điều gì thì dành thời gian viết cho rõ ràng và cụ thể ( kèm các dẫn chứng được thì càng tốt ), việc này tốt hơn cho việc thảo luận]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251756</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251756</link>
+				<pubDate><![CDATA[Mon, 2 Jan 2012 00:19:59]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ anh xnohat có thể upload lại mấy cái hình không. em không xem được mấy tấm hình. Em cảm ơn anh nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251929</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#251929</link>
+				<pubDate><![CDATA[Thu, 5 Jan 2012 05:52:16]]> GMT</pubDate>
+				<author><![CDATA[ pdtg50]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ gần 1 năm rồi e mới quay lại hva mà gặp đc bài của anh xnohat viết quá chi tiết :x
+em chưa thử nhưng cách này chỉ vào đc fb của người khác chứ không lấy được pass đúng ko ạ? Và nếu người kia đổi pass thì mình cũng phải đợi cơ hội để hack lại, còn cookies cũ thì ko dùng đc nữa có đúng không anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253030</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253030</link>
+				<pubDate><![CDATA[Wed, 1 Feb 2012 15:11:55]]> GMT</pubDate>
+				<author><![CDATA[ lanhchuachaplin]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ sao bài nào cũng bị ban thế này nhỉ ! mình đâu có vi phạm điều gì đâu ta &gt;.&lt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253104</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253104</link>
+				<pubDate><![CDATA[Fri, 3 Feb 2012 21:04:51]]> GMT</pubDate>
+				<author><![CDATA[ hanker12]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">lanhchuachaplin wrote:</cite><br>
+		<blockquote>gần 1 năm rồi e mới quay lại hva mà gặp đc bài của anh xnohat viết quá chi tiết :x
+em chưa thử nhưng cách này chỉ vào đc fb của người khác chứ không lấy được pass đúng ko ạ? Và nếu người kia đổi pass thì mình cũng phải đợi cơ hội để hack lại, còn cookies cũ thì ko dùng đc nữa có đúng không anh?&nbsp;
+		</blockquote>
+
+ Theo mình nghĩ thì ! nếu victim mà đổi password thì cookie cũng sẽ đổi theo ! nên mình sẽ làm lại từ đầu theo bước của bạn xno để lấy cookie mới :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253105</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253105</link>
+				<pubDate><![CDATA[Fri, 3 Feb 2012 21:06:35]]> GMT</pubDate>
+				<author><![CDATA[ hanker12]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ em ngồi ở trường vào đc fb của rất nhiều người, nhưng vào rồi không nghĩ ra gì để nghịch tiếp, nên lại log out ra :))
+anw, cách này chỉ dùng được với http, còn nếu ai chuyển sang https thì không có cách nào để làm thế được đúng không anh? :-/
+hay là vẫn còn 1 số phương pháp sidejacking khác có thể vượt qua được https ạ :|]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253117</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253117</link>
+				<pubDate><![CDATA[Fri, 3 Feb 2012 23:44:09]]> GMT</pubDate>
+				<author><![CDATA[ lanhchuachaplin]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Theo em để ý thì khi mình vào 1 site như fb mà dùng https thì sau đấy mình lại vào fb bằng http (lúc này vẫn chưa log out) thì vẫn có thể load được như bình thường, vậy nếu mình có thể nhảy vào giữa và đưa 1 yêu cầu giả bằng http thì vẫn có thể lấy được cookie? Nhưng em mới chỉ nghĩ ra ý này mà vẫn chưa tìm ra được cách nào để làm :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253118</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#253118</link>
+				<pubDate><![CDATA[Fri, 3 Feb 2012 23:56:12]]> GMT</pubDate>
+				<author><![CDATA[ lanhchuachaplin]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ @xnohat: có thể nêu một số gợi ý để vượt qua https được không :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261691</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261691</link>
+				<pubDate><![CDATA[Wed, 18 Apr 2012 22:38:27]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuyenhva wrote:</cite><br>
+		<blockquote>@xnohat: có thể nêu một số gợi ý để vượt qua https được không :)&nbsp;
+		</blockquote>
+
+Các dạng tấn công kiểu này đều dựa trên MITM attack. Bạn tìm hiểu qua về nó. Quá trình chiếm quyền điều khiển một SSL bạn có thể sự dụng sslstrip để thực hiện việc này. Nói qua về cách thức chiếm quyền điều khiển một SSL
+1. Lưu lượng giữa máy khách và máy chủ đầu tiên sẽ bị chặn
+2. Khi bắt gặp một HTTPS URL, sslstrip sẽ thay thế nó bằng một liên kết HTTP và sẽ ánh xạ những thay đổi của nó.
+3. Máy tấn công sẽ cung cấp các chứng chỉ cho máy chủ web và giả mạo máy khách.
+4. Lưu lượng được nhận trở lại từ website an toàn và được cung cấp trở lại cho máy khách.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261742</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261742</link>
+				<pubDate><![CDATA[Thu, 19 Apr 2012 19:43:32]]> GMT</pubDate>
+				<author><![CDATA[ TrungKFC]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Khi nào thì có bài làm thịt HTTPS đây bác chủ thớt......]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261767</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#261767</link>
+				<pubDate><![CDATA[Fri, 20 Apr 2012 06:23:05]]> GMT</pubDate>
+				<author><![CDATA[ kisskumam]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ E vẫn chưa biết làm cách nào để đăng nhập bằng HTTPS trong facebook, em đâu thấy chỗ nào ghi đăng nhập bằng HTTPS đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#262513</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#262513</link>
+				<pubDate><![CDATA[Sat, 5 May 2012 05:43:24]]> GMT</pubDate>
+				<author><![CDATA[ n2v]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">n2v wrote:</cite><br>
+		<blockquote>E vẫn chưa biết làm cách nào để đăng nhập bằng HTTPS trong facebook, em đâu thấy chỗ nào ghi đăng nhập bằng HTTPS đâu.&nbsp;
+		</blockquote>
+
+ặc, bác chỉ cần gõ vào thank address là:<span class="link"> https://www.facebook.com</span> là bác đang dùng https rồi đó. Một số trang như gmail, các địa chỉ goverment, educate thì người ta thường tích hợp sẵn ( hay còn gọi là bắt buộc ) người dùng  sử dụng https để bảo mật tài khản của họ, ví dụ bác chỉ cầm bấm vào thanh address là : gmail.com thì nó sẽ tự động chuyển thành<span class="link"> https://gmail.com</span> . Chỉ riêng facebook  thì nó có hỗ trợ https nhưng ko bắt người dùng phải sử dụng khi truy cập trang.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#262873</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#262873</link>
+				<pubDate><![CDATA[Wed, 9 May 2012 23:22:47]]> GMT</pubDate>
+				<author><![CDATA[ kisskumam]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Mùng 2 Tết và ngóng chờ những cập nhật từ a xnohat. Liệu anh dùng SSL Strip để chiếm Gmail hay một cách hoàn toàn mới? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273404</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273404</link>
+				<pubDate><![CDATA[Mon, 11 Feb 2013 20:38:15]]> GMT</pubDate>
+				<author><![CDATA[ kiki9999]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Cảm ơn anh xnohat!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273425</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273425</link>
+				<pubDate><![CDATA[Wed, 13 Feb 2013 22:07:00]]> GMT</pubDate>
+				<author><![CDATA[ jvinhit]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ cái quan trọng là mình làm sao hack pass wifi đây xnohat :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273433</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273433</link>
+				<pubDate><![CDATA[Thu, 14 Feb 2013 21:41:25]]> GMT</pubDate>
+				<author><![CDATA[ minhhoangtoday]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">minhhoangtoday wrote:</cite><br>
+		<blockquote>cái quan trọng là mình làm sao hack pass wifi đây xnohat :D&nbsp;
+		</blockquote>
+BackTrack. Còn Cain thì e làm mãi ko dc. A Xnohat chỉ nun cái này cho rõ đi a. Còn trong mạng Lan thì e nghĩ cũng như wifi phải ko a? híc  :-S ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273530</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#273530</link>
+				<pubDate><![CDATA[Thu, 21 Feb 2013 06:25:51]]> GMT</pubDate>
+				<author><![CDATA[ jvinhit]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ chi co wifi mới làm được thui à a]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#275687</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#275687</link>
+				<pubDate><![CDATA[Mon, 13 May 2013 19:30:49]]> GMT</pubDate>
+				<author><![CDATA[ kinhthat]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ A:"anh ơi sao mạng em vào facebook chậm thế"
+
+B:"em tắt cái https đi, dùng http cho nhanh"
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#275731</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#275731</link>
+				<pubDate><![CDATA[Wed, 15 May 2013 01:33:54]]> GMT</pubDate>
+				<author><![CDATA[ tringuyenduc]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Link file PDF 2 phần trước cho các bạn vào sau không thấy ảnh
+http://sdrv.ms/14OtZk6]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#278450</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#278450</link>
+				<pubDate><![CDATA[Sat, 14 Sep 2013 00:34:10]]> GMT</pubDate>
+				<author><![CDATA[ skulldragon1st]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ ôg copy ak.thế thì cho may tấm hình minh hoạ luôn đi
+ :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#278476</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#278476</link>
+				<pubDate><![CDATA[Tue, 17 Sep 2013 10:01:57]]> GMT</pubDate>
+				<author><![CDATA[ armyroyalkx]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Quá tuyệt vời,cảm ơn anh nhiều.Em đang hóng các bài tiếp theo]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279089</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279089</link>
+				<pubDate><![CDATA[Wed, 27 Nov 2013 05:01:55]]> GMT</pubDate>
+				<author><![CDATA[ Atula Xine]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ Em đang hóng các phần tiếp theo :) Quá hay.
+Em đã làm thử theo các anh nhưng mà làm dc tới cái Wireshap ak :) 
+Mà theo em thấy thì hình như làm như vầy khiến mạng bị chậm à. Khi em làm thì các máy tính khác truy cập facebook rất lâu, không thể load hình và khung chat. Do khi mình chuyển trung gian thì việc truyền dữ liệu chậm lại thấy rõ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279396</link>
+				<pubDate><![CDATA[Fri, 3 Jan 2014 09:03:53]]> GMT</pubDate>
+				<author><![CDATA[ tuanpro103]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuanpro103 wrote:</cite><br>
+		<blockquote>Em đang hóng các phần tiếp theo :) Quá hay.
+Em đã làm thử theo các anh nhưng mà làm dc tới cái Wireshap ak :) 
+Mà theo em thấy thì hình như làm như vầy khiến mạng bị chậm à. Khi em làm thì các máy tính khác truy cập facebook rất lâu, không thể load hình và khung chat. Do khi mình chuyển trung gian thì việc truyền dữ liệu chậm lại thấy rõ?
+&nbsp;
+		</blockquote>
+
+Đương nhiên là chậm hơn rồi, vì lúc đó Cain giúp máy bạn như 1 gateway, mọi traffic phải đi qua card mạng máy bạn trước sau đó mới tới gateway thực sự.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279756</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279756</link>
+				<pubDate><![CDATA[Thu, 13 Feb 2014 23:34:45]]> GMT</pubDate>
+				<author><![CDATA[ anhsuytu]]></author>
+			</item>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ BAI VIET HAY, DANG CHO DOI STEP BY STEP]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279844</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40470.hva#279844</link>
+				<pubDate><![CDATA[Fri, 21 Feb 2014 23:55:10]]> GMT</pubDate>
+				<author><![CDATA[ MRD6363]]></author>
+			</item>
+	</channel>
+</rss>

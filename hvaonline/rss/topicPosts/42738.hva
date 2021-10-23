@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ Chào cả nhà,
+
+Mình đang cài hệ thống mail : Postfix + Dovecot + My SQL (Virtual User) trên Centos. Nhưng bị tình trạng là từ hệ thống mail mới xây gửi ra bình thường. Còn chiều ngược lại thì bị lỗi .
+
+#tail -f /var/log/maillog
+
+<blockquote> deliver(test02@domainxxx.vn): 2012-06-28 15:07:21 Error: Can't connect to auth server at /var/run/dovecot/auth-master: Connection refused
+deliver(test02@domainxxx.vn): 2012-06-28 15:07:21 Error: Can't connect to auth server at /var/run/dovecot/auth-master: Connection refused
+Jun 28 15:07:21 localhost postfix/pipe[20511]: 670D369F8840: to=&lt;test02@domainxxx.vn&gt;, relay=dovecot, delay=392, delays=392/0.01/0/0.45, dsn=4.3.0, status=deferred (temporary failure)
+Jun 28 15:07:21 localhost postfix/pipe[20512]: 53DAC69F8829: to=&lt;test02@domainxxx.vn&gt;, relay=dovecot, delay=4782, delays=4782/0.01/0/0.45, dsn=4.3.0, status=deferred (temporary failure)
+Jun 28 15:07:21 localhost postfix/smtpd[20424]: warning: unknown[113.172.3.210]: SASL LOGIN authentication failed: UGFzc3dvcmQ6
+deliver(test02@sdomainxxx.vn): 2012-06-28 15:07:21 Error: Can't connect to auth server at /var/run/dovecot/auth-master: Connection refused
+Jun 28 15:07:21 localhost postfix/pipe[20521]: 6C13269F882B: to=&lt;test02@domainxxx.vn&gt;, relay=dovecot, delay=0.46, delays=0.01/0/0/0.44, dsn=4.3.0, status=deferred (temporary failure)&nbsp;
+		</blockquote>
+
+với : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@localhost libexec&#93;# ls -ls /var/run/dovecot/
+total 12
+0 srwxrwxrwx 1 vmail vmail      0 Jun 27 23:20 auth-master
+0 srw------- 1 vmail mail       0 Jun 28 14:54 auth-worker.20362
+0 srwxrwxrwx 1 root  root       0 Jun 28 14:54 dict-server
+8 drwxr-x--- 2 root  dovecot 4096 Jun 28 14:54 login
+4 -rw------- 1 root  root       6 Jun 28 14:54 master.pid</pre>
+		</div>
+
+File : /etc/postfix/main.cf
+
+<blockquote>postconf -n
+alias_database = hash:/etc/postfix/aliases
+alias_maps = $alias_database
+append_dot_mydomain = no
+biff = no
+broken_sasl_auth_clients = yes
+command_directory = /usr/sbin
+config_directory = /etc/postfix
+daemon_directory = /usr/libexec/postfix
+debug_peer_level = 2
+disable_vrfy_command = no
+html_directory = no
+inet_interfaces = all
+mail_owner = postfix
+mail_spool_directory = /var/spool/mail
+mailbox_size_limit = 0
+mailq_path = /usr/bin/mailq
+manpage_directory = /usr/share/man
+mydestination = $myhostname, localhost.$mydomain, $transport_maps
+mydomain = sale.domainxxx.vn
+myhostname = mail.sale.domainxxx.vn
+mynetworks = 127.0.0.0/8
+myorigin = $myhostname
+newaliases_path = /usr/bin/newaliases
+queue_directory = /var/spool/postfix
+readme_directory = /usr/share/doc/postfix-2.2.10/README_FILES
+recipient_delimiter = +
+sample_directory = /usr/share/doc/postfix-2.2.10/samples
+sendmail_path = /usr/sbin/sendmail.postfix
+setgid_group = postdrop
+smtp_tls_note_starttls_offer = yes
+smtp_use_tls = yes
+smtpd_banner = $myhostname
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_authenticated_header = yes
+smtpd_sasl_local_domain =
+smtpd_sasl_path = ./dovecot-auth
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_type = dovecot
+smtpd_tls_CAfile = /etc/postfix/ssl/mailserver/cacert.pem
+smtpd_tls_key_file = /etc/postfix/ssl/mailserver/smtpd.key
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = no
+smtpd_tls_session_cache_timeout = 3600s
+smtpd_use_tls = yes
+tls_random_source = dev:/dev/urandom
+unknown_local_recipient_reject_code = 450
+virtual_alias_maps = mysql:/etc/postfix/mysql_virtual_alias_maps.cf
+virtual_gid_maps = static:12
+virtual_mailbox_base = /var/vmail
+virtual_mailbox_domains = mysql:/etc/postfix/mysql_virtual_domains_maps.cf
+virtual_mailbox_limit_maps = mysql:/etc/postfix/mysql_virtual_mailbox_limit_maps.cf
+virtual_mailbox_maps = mysql:/etc/postfix/mysql_virtual_mailbox_maps.cf
+virtual_minimum_uid = 150
+virtual_transport = dovecot
+virtual_uid_maps = static:150&nbsp;
+		</blockquote>
+
+và File : /etc/dovecot.conf
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># 1.0.7: /etc/dovecot.conf
+base_dir: /var/run/dovecot/
+log_path: /var/log/maillog
+log_timestamp: %Y-%m-%d %H:%M:%S
+protocols: imap pop3 imaps pop3s
+login_dir: /var/run/dovecot/login
+login_executable&#40;default&#41;: /usr/libexec/dovecot/imap-login
+login_executable&#40;imap&#41;: /usr/libexec/dovecot/imap-login
+login_executable&#40;pop3&#41;: /usr/libexec/dovecot/pop3-login
+first_valid_uid: 150
+last_valid_uid: 150
+mail_location: maildir:/var/vmail/%d/%n/Maildir
+maildir_copy_with_hardlinks: yes
+mail_executable&#40;default&#41;: /usr/libexec/dovecot/imap
+mail_executable&#40;imap&#41;: /usr/libexec/dovecot/imap
+mail_executable&#40;pop3&#41;: /usr/libexec/dovecot/pop3
+mail_plugins&#40;default&#41;:
+mail_plugins&#40;imap&#41;:
+mail_plugins&#40;pop3&#41;: quota
+mail_plugin_dir&#40;default&#41;: /usr/lib/dovecot/imap
+mail_plugin_dir&#40;imap&#41;: /usr/lib/dovecot/imap
+mail_plugin_dir&#40;pop3&#41;: /usr/lib/dovecot/pop3
+pop3_client_workarounds&#40;default&#41;:
+pop3_client_workarounds&#40;imap&#41;:
+pop3_client_workarounds&#40;pop3&#41;: outlook-no-nuls oe-ns-eoh
+namespace:
+  type: private
+  separator: /
+  inbox: yes
+auth default:
+  mechanisms: plain login
+  default_realm: sale.domainxxx.vn
+  user: vmail
+  passdb:
+    driver: sql
+    args: /etc/dovecot-mysql.conf
+  userdb:
+    driver: sql
+    args: /etc/dovecot-mysql.conf
+  socket:
+    type: listen
+    client:
+      path: /var/spool/postfix/dovecot-auth
+      mode: 3
+      user: vmail
+      group: vmail</pre>
+		</div>
+
+
+Nhờ anh em hỗ trợ giúp với. Tks.
+
+---
+Nên đọc cái này:<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/23321.hva</span> để biết khi nào dùng [ quote ], khi nào dùng [ code ].
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265702</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265702</link>
+				<pubDate><![CDATA[Thu, 28 Jun 2012 03:22:39]]> GMT</pubDate>
+				<author><![CDATA[ zero0_0]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ <blockquote>Jun 28 15:32:33 localhost postfix/smtpd[20648]: connect from mail-ob0-f171.google.com[209.85.214.171]
+Jun 28 15:32:34 localhost postfix/cleanup[20752]: 33E0169F8846: message-id=&lt;20120628083234.33E0169F8846@mail.sale.domainxxx.vn&gt;
+Jun 28 15:32:34 localhost postfix/qmgr[19120]: 33E0169F8846: from=&lt;double-bounce@mail.sale.domainxxx.vn&gt;, size=923, nrcpt=1 (queue active)
+Jun 28 15:32:34 localhost postfix/smtpd[20648]: disconnect from mail-ob0-f171.google.com[209.85.214.171]
+Jun 28 15:32:34 localhost postfix/local[20757]: 33E0169F8846: to=&lt;postfix@mail.sale.domainxxx.vn&gt;, orig_to=&lt;postmaster&gt;, relay=local, delay=0.03, delays=0.02/0.01/0/0, dsn=2.0.0, status=sent (delivered to mailbox)&nbsp;
+		</blockquote>
+
+Đây là log khi gửi từ gmail vào user@sale.domainxxx.vn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265703</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265703</link>
+				<pubDate><![CDATA[Thu, 28 Jun 2012 03:41:38]]> GMT</pubDate>
+				<author><![CDATA[ zero0_0]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ Bạn thử kiểm tra file: /etc/postfix/aliases và thêm # trước dòng:
+postfix:        root
+Sau đó check lại mail thử.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265706</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265706</link>
+				<pubDate><![CDATA[Thu, 28 Jun 2012 03:57:03]]> GMT</pubDate>
+				<author><![CDATA[ nhattruongadm]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">nhattruongadm wrote:</cite><br>
+		<blockquote>Bạn thử kiểm tra file: /etc/postfix/aliases và thêm # trước dòng:
+postfix:        root
+Sau đó check lại mail thử.&nbsp;
+		</blockquote>
+
+#root:          postfix    
+
+Vẫn vậy bạn ah. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265707</link>
+				<pubDate><![CDATA[Thu, 28 Jun 2012 04:15:24]]> GMT</pubDate>
+				<author><![CDATA[ zero0_0]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ Bạn có thể bắt đầu từ đây:
+
+<p></p>
+		<cite class="blockquote">zero0_0 wrote:</cite><br>
+		<blockquote>
+#tail -f /var/log/maillog
+
+Jun 28 15:07:21 localhost postfix/smtpd[20424]: warning: unknown[113.172.3.210]: <font color='orange'>SASL LOGIN authentication failed</font>: UGFzc3dvcmQ6
+deliver(test02@sdomainxxx.vn): 2012-06-28 15:07:21 <font color='orange'>Error: Can't connect to auth server at /var/run/dovecot/auth-master: Connection refused</font>
+&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265708</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265708</link>
+				<pubDate><![CDATA[Thu, 28 Jun 2012 04:31:53]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi nhận mail (Postfix / Dovecot / MySQL  )</title>
+				<description><![CDATA[ Bạn xem lại: 
+
+smtpd_sasl_path 
+
+và 
+
+  socket:
+    type: listen
+    client:
+      path: /var/spool/postfix/dovecot-auth
+      mode: 3
+      user: vmail
+      group: vmail
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265945</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42738.hva#265945</link>
+				<pubDate><![CDATA[Mon, 2 Jul 2012 02:18:49]]> GMT</pubDate>
+				<author><![CDATA[ centos]]></author>
+			</item>
+	</channel>
+</rss>

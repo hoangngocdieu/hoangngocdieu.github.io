@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Linux Execute-only binary vulnerability ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Linux Execute-only binary vulnerability ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ Chào mọi người,
+
+Mấy hôm nay ngồi chơi cái wargame ở io.smashthestack.org, tiện thể tìm hiểu thêm về Linux. Hôm nay mình phát hiện mọi điều khá &quot;thú vị&quot; và cũng hơi bất ngờ... nên share cùng mọi người. 
+
+Đầu tiên với account có quyền sysadmin mình tạo 1 file như thế này :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int main&#40;int argc, char* argv&#91;&#93;&#41; {
+  int a = 1;
+  int b = 1;
+  char x = 'A';
+  char y = 'B';
+  return 0;
+}</pre>
+		</div>
+Compile : gcc -o test test.c
+
+Sau đó mình tạo một user mới và copy file &quot;test&quot; này vào home folder của user này, chmod +s và remove read perm chgrp thành user. Sau khi làm xong thì nó trông như thế này :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rws--x--x 1 windak user    6255 2009-10-25 02:50 test</pre>
+		</div>
+Login thử vào bằng user : &quot;user&quot; và &quot;cat test&quot; -&gt; permission denied, 
+thử gdb :
+...(gdb) disass main
+...No symbol table is loaded
+thử execute ./test -&gt; ok
+
+Như mọi người biết, 1 khi một chương trình được execute thì nó sẽ được load vào memory, như vậy trên lí thuyết nếu ta execute cái binary này và read từ memory ra, ta sẽ có thể dumb được source của nó ==&gt; READ được nó ?!!??
+
+Mình nghi ngờ với khả năng này, do cũng chưa bao h liếc qua cái source kernel... Thế là test thử :
+
+Vẫn là quyền của &quot;user&quot; mình tạo file này :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;                                      
+#include &lt;stdlib.h&gt;                                     
+#include &lt;signal.h&gt;                                     
+#include &lt;syscall.h&gt;                                    
+#include &lt;sys/ptrace.h&gt;                                 
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;sys/user.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;errno.h&gt;
+int main&#40;void&#41; 
+{                                                                                                                                                                                                          
+        long long counter = 0;  /*  machine instruction counter */
+        int wait_val;           /*  child's return value        */
+        int pid;                /*  child's process id          */
+
+        puts&#40;&quot;Please wait&quot;&#41;;
+        struct user_regs_struct regs;
+        long ins;                    
+
+        switch &#40;pid = fork&#40;&#41;&#41; {
+        case -1:               
+                perror&#40;&quot;fork&quot;&#41;;
+                break;         
+        case 0: /*  child process starts        */
+                ptrace&#40;PTRACE_TRACEME, 0, 0, 0&#41;;
+                
+                execl&#40;&quot;/home/user/test&quot;, &quot;test&quot;, NULL&#41;;
+                
+                break;
+                /*  child process ends  */
+        default:/*  parent process starts       */
+                wait&#40;&wait_val&#41;;
+                /*
+                 *   parent waits for child to stop at next
+                 *   instruction &#40;execl&#40;&#41;&#41;
+                 */
+                while &#40;wait_val == 1407 &#41; {
+                        counter++;
+                        if &#40;ptrace&#40;PTRACE_SINGLESTEP, pid, 0, 0&#41; != 0&#41;
+                                perror&#40;&quot;ptrace&quot;&#41;;
+                        if &#40;ptrace&#40;PTRACE_GETREGS,pid,0,&regs&#41;!=0&#41;{
+                         // perror&#40;&quot;ptrace&quot;&#41;;
+                        }
+                        else {
+                                ins = ptrace&#40;PTRACE_PEEKTEXT, pid,
+                                 regs.eip, NULL&#41;;
+
+                                printf&#40;&quot;Instruction executed: %lx\n&quot;, ins&#41;;
+                        }
+                        wait&#40;&wait_val&#41;;
+                        /*   wait for next instruction to complete  */
+                }
+                /*
+                 * continue to stop, wait and release until
+                 * the child is finished; wait_val != 1407
+                 * Low=0177L and High=05 &#40;SIGTRAP&#41;
+                 */
+        }
+        printf&#40;&quot;Number of machine instructions : %lld\n&quot;, counter&#41;;
+        return 0;
+}</pre>
+		</div>
+code này mình chép từ đây :<span class="link"> http://tldp.org/LDP/LG/issue81/sandeep.html</span> có chỉnh sửa một chút
+compile :
+gcc -o ptrace ptrace.c
+
+Đoạn code trên của mình thật ra chỉ làm mỗi công việc là debug cái file test sau khi nó được nhét vào memory và in ra nó đang execute đoạn mã nào.
+
+Sau đấy mình run thử 
+user@windak-pc$ ./ptrace &gt; see
+windak@windak-pc$./ptrace &gt; how
+
+Đồng thời trên 1 terminal khác dưới quyền &quot;windak&quot; mình run :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gdb test
+&#40;gdb&#41; disass main
+Dump of assembler code for function main:
+0x0804831c &lt;main+0&gt;:    push   %ebp
+0x0804831d &lt;main+1&gt;:    mov    %esp,%ebp
+....
+0x08048338 &lt;main+28&gt;:   movl   $0x1,-0x4&#40;%ebp&#41;
+0x0804833f &lt;main+35&gt;:   movl   $0x1,-0x8&#40;%ebp&#41;
+0x08048346 &lt;main+42&gt;:   movb   $0x41,-0x9&#40;%ebp&#41;
+0x0804834a &lt;main+46&gt;:   movb   $0x42,-0xa&#40;%ebp&#41;
+0x0804834e &lt;main+50&gt;:   mov    $0x0,%eax
+0x08048353 &lt;main+55&gt;:   leave
+0x08048354 &lt;main+56&gt;:   ret
+&#40;gdb&#41; x/20 0x0804831c
+0x804831c &lt;main&gt;:       0x83e58955      0xe48318ec      0x0000b8f0      0xc0830000
+0x804832c &lt;main+16&gt;:    0x0fc0830f      0xc104e8c1      0xc42904e0      0x01fc45c7
+0x804833c &lt;main+32&gt;:    0xc7000000      0x0001f845      0x45c60000      0x45c641f7
+0x804834c &lt;main+48&gt;:    0x00b842f6      0xc9000000      0x909090c3      0x90909090
+0x804835c:      0x90909090      0x5de58955      0x26748dc3      0x27bc8d00</pre>
+		</div>
+
+Và thật ngạc nhiên... mình cũng tìm được đoạn code sau trong cả see và how :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Instruction executed: 83e58955
+Instruction executed: ec83e589
+Instruction executed: 8318ec83
+Instruction executed: b8f0e483
+Instruction executed: b8
+Instruction executed: 830fc083
+Instruction executed: c10fc083
+Instruction executed: c104e8c1
+Instruction executed: 2904e0c1
+Instruction executed: 45c7c429
+Instruction executed: 1fc45c7
+Instruction executed: 1f845c7
+Instruction executed: 41f745c6
+Instruction executed: 42f645c6
+Instruction executed: b8
+Instruction executed: 9090c3c9
+Instruction executed: 909090c3</pre>
+		</div>
+
+Như vậy có thât sự đã &quot;READ&quot; được nó ?!? .. Liệu đây có phải là một bug của Linux kernel hay mình đang mơ ngủ =,,= nhầm lẫn chỗ nào đó.... 
+
+Đây là thông số máy của mình
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ uname -a
+Linux windak-pc 2.6.28-11-generic #42-Ubuntu SMP Fri Apr 17 01:57:59 UTC 2009 i686 GNU/Linux
+$ gcc -v
+Reading specs from /usr/lib/gcc/i486-linux-gnu/3.4.6/specs
+Configured with: ../src/configure -v --enable-languages=c,c++,f77,pascal --prefix=/usr --libexecdir=/usr/lib --with-gxx-include-dir=/usr/include/c++/3.4 --enable-shared --with-system-zlib --enable-nls --without-included-gettext --program-suffix=-3.4 --enable-__cxa_atexit --enable-clocale=gnu --enable-libstdcxx-debug --with-tune=pentium4 i486-linux-gnu
+Thread model: posix
+gcc version 3.4.6 &#40;Ubuntu 3.4.6-1ubuntu2&#41;</pre>
+		</div>
+
+Giờ đi ngủ, hi vọng mai tỉnh táo sẽ xem xét lại lần nữa. Mọi người xem cùng nhé.
+wd.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196651</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196651</link>
+				<pubDate><![CDATA[Sun, 25 Oct 2009 04:36:51]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ Bạn không mơ ngủ, và đây cũng không phải là bug của Linux. Linux cho phép cái này để phục vụ debugging. GDB thông báo "Permission denied" là vì nó tiến hành open() cái executable trước khi ptrace() nên bị denied, chứ không phải là không trace được.
+
+Tuy nhiên, bạn chỉ có thể đọc được binary của executable này và các file bạn có read permission. Ngoài ra thì không còn gì khác. Hơn nữa, bạn cũng phải tốn khá nhiều công sức mới recover được chính xác cái binary đó, chỉ dựa vào việc peek qua ptrace.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196750</link>
+				<pubDate><![CDATA[Mon, 26 Oct 2009 16:17:20]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ :) Hi StarGhost,
+Mình cũng không nghĩ cái này là bug của Linux mà là do design, chỉ càm thấy nó hơi nonsense và unrational một tí vì vẫn leak được sau khi mà loại bỏ cái read permission đi. 
+
+Từ đó vẫn còn thắc mắc trong đầu lý do nào phần code/data segment của nó trong memory lại không được bảo vệ ? Liệu có phải là do khó khăn trong design hay là sự bất cẩn ?
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196761</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196761</link>
+				<pubDate><![CDATA[Mon, 26 Oct 2009 18:33:58]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>:) Hi StarGhost,
+Mình cũng không nghĩ cái này là bug của Linux mà là do design, chỉ càm thấy nó hơi nonsense và unrational một tí vì vẫn leak được sau khi mà loại bỏ cái read permission đi. 
+
+Từ đó vẫn còn thắc mắc trong đầu lý do nào phần code/data segment của nó trong memory lại không được bảo vệ ? Liệu có phải là do khó khăn trong design hay là sự bất cẩn ?
+&nbsp;
+		</blockquote>
+Mình nghĩ do thằng ptrace thôi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196828</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196828</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 01:05:29]]> GMT</pubDate>
+				<author><![CDATA[ gamma95]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ Quyền truy cập tập tin khác với quyền truy cập bộ nhớ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196853</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196853</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 11:26:20]]> GMT</pubDate>
+				<author><![CDATA[ lamer]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ Hi anh lamer,
+:P vậy có phải là không hợp lý không ? Cho dù có sự khác biệt về 2 quyền, vẫn tốt hơn nếu như ta block quyền access memory nếu như không có quyền access tập tin ?
+Giải sử mình có 1 tập tin chỉ muốn người khác execute thôi, không muốn bị xem trộm các thông tin bên trong =&gt; (datastructure, giải thuật v.v.. ) impossible ? 
+Nếu có cách nào như vậy xin chỉ dẫn ^^.
+
+<blockquote>
+Mình nghĩ do thằng ptrace thôi 
+&nbsp;
+		</blockquote>
+@gamma : rất có thể là khả năng này, ptrace là kernel function như vậy nghĩa là người develop nó không check quyền của user đang execute ? nếu có thời gian tớ sẽ ngó qua thử cái này.
+
+Một cái nữa mình đã thử là thử fopen(/etc/shadow) khi đang ptrace thì bị block ngay tại trận, như vậy ptrace không care đến cái SUID mà mình đã set.
+
+Kết luận đến đây: Nếu có những thông tin private, cách tốt nhất là tạo file riêng và set permission cho nó, không nên để trong file binary.
+
+wd.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196887</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196887</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 13:07:14]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Một cái nữa mình đã thử là thử fopen(/etc/shadow) khi đang ptrace thì bị block ngay tại trận, như vậy ptrace không care đến cái SUID mà mình đã set.&nbsp;
+		</blockquote>
+Không hiểu câu này của bạn. Bạn cơ bản không thể ptrace() được process có suid hoặc sgid, trừ phi process của bạn có euid là root. Một ví dụ điển hình là khi dùng gdb để debug suid/sgid programs.
+
+Nếu bạn muốn dấu algorithm này kia thì mình có một cách này. Đầu tiên bạn viết program của bạn như bình thường. Sau đó set permission cho nó, ví dụ 700, trong đó owner là bạn. Sau đó bạn viết một suid program khác gọi cái program này (dùng  execve()).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196899</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196899</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 14:50:55]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Một cái nữa mình đã thử là thử fopen(/etc/shadow) khi đang ptrace thì bị block ngay tại trận, như vậy ptrace không care đến cái SUID mà mình đã set.&nbsp;
+		</blockquote>
+Không hiểu câu này của bạn. Bạn cơ bản không thể ptrace() được process có suid hoặc sgid, trừ phi process của bạn có euid là root. Một ví dụ điển hình là khi dùng gdb để debug suid/sgid programs.
+&nbsp;
+		</blockquote>
+
+Không phải không thể, như bạn xem kỹ bài ở trên mình vẫn có thể ptrace được SUID program, trong khi ptrace của tớ euid là &quot;user&quot;. Vấn đề là khi đó thì euid mình vẫn chỉ là euid của ptrace chứ không được copy từ SUID của process child.
+
+<p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>
+Nếu bạn muốn dấu algorithm này kia thì mình có một cách này. Đầu tiên bạn viết program của bạn như bình thường. Sau đó set permission cho nó, ví dụ 700, trong đó owner là bạn. Sau đó bạn viết một suid program khác gọi cái program này (dùng  execve()).&nbsp;
+		</blockquote>
+Theo lý thuyết đây chắc là 1 cách :D. Mình sẽ thử nghiệm
+
+Thanks.
+wd.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196900</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196900</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 15:00:03]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Không phải không thể, như bạn xem kỹ bài ở trên mình vẫn có thể ptrace được SUID program, trong khi ptrace của tớ euid là &quot;user&quot;. Vấn đề là khi đó thì euid mình vẫn chỉ là euid của ptrace chứ không được copy từ SUID của process child.&nbsp;
+		</blockquote>
+Như vậy thì có gì mâu thuẫn? Nếu bạn gọi ptrace() trước, thì process sẽ không có suid/sgid. Nếu process đã có suid/sgid rồi, thì bạn không thể ptrace() được nữa. Đây là nguyên tắc security cho ptrace().]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196911</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196911</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 15:53:09]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">WinDak wrote:</cite><br>
+		<blockquote>Không phải không thể, như bạn xem kỹ bài ở trên mình vẫn có thể ptrace được SUID program, trong khi ptrace của tớ euid là &quot;user&quot;. Vấn đề là khi đó thì euid mình vẫn chỉ là euid của ptrace chứ không được copy từ SUID của process child.&nbsp;
+		</blockquote>
+Như vậy thì có gì mâu thuẫn? Nếu bạn gọi ptrace() trước, thì process sẽ không có suid/sgid. Nếu process đã có suid/sgid rồi, thì bạn không thể ptrace() được nữa. Đây là nguyên tắc security cho ptrace().&nbsp;
+		</blockquote>
+
+Có ai nói mâu thuẫn gì đâu :D, vì chưa hiểu ý StarGhost là sau khi run thì mới ptrace, cái này mình chưa thử, nếu ptrace trước thì sẽ chạy được, như ở trên đã trình bày.
+
+Câu hỏi ở đây là lí do gì ptrace vẫn có khả năng trace vào memory của process ? Nếu protect process memory đi trong trường hợp này thì sẽ hợp lí hơn.
+
+Vừa search ra cái này<span class="link"> http://www.quantumg.net/sudojump.php</span> mọi người xem cùng chơi.
+
+wd.
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196913</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196913</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 16:07:16]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ tui thấy chả có gì lạ ở đây hết. Ông hiểu nhầm nhiều thứ
+- Cái suid program của ông tuy ông có suid bit, nhưng ông không call mấy cái seteuid để change effective id thì nó vẫn execute với euid là user invoke nó. Tui thí dụ
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+
+int main&#40;int argc, char **argv&#41;
+{
+   int a = 1;
+   int b = 1;
+   char x = 'A';
+   char y = 'B';
+   int euid, uid;
+   euid = geteuid&#40;&#41;;
+   uid = getuid&#40;&#41;;
+   printf&#40;"euid: %d\nuid: %d\n",euid,uid&#41;;
+   sleep&#40;100000&#41;;
+   exit&#40;EXIT_SUCCESS&#41;;
+}</pre>
+		</div>
+
+output:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root@bsd# ls -l /tmp/test
+-rws--x--x  1 puffy  monkey  6704 Oct 28 14:09 /tmp/test*
+root@bsd# /tmp/test
+euid: 0
+uid: 0
+^C
+root@bsd# su -l monkey
+-bash-3.2$ /tmp/test
+euid: 1000
+uid: 1000
+^C
+-bash-3.2$ logout
+root@bsd# su -l puffy
+-bash-3.2$ /tmp/test
+euid: 1002
+uid: 1002
+^C
+-bash-3.2$</pre>
+		</div>
+
+- Ông xác định mấy thứ sau: cái ptrace của ông khi ông invoke nó với user 'windak' thì nó có euid là gì ? Sau khi ptrace fork thì child process của ông có euid là gì. Child process của ptrace gọi execl() thì process image của nó được thay bởi test, tuy nhiên cái program test này của ông không thực sự change cái euid của nó, nên nó vẫn có euid là id của user 'windak'. Vậy có gì mà parent process k0 access đc memory của nó.
+- Tương tự ông thử xác định xem khi ông invoke cái program ptrace kia với account là 'user' thì cuối cùng cái euid của program 'test' có được change thành id của windak k0, hay vẫn là id của 'user' ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196919</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196919</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 16:32:40]]> GMT</pubDate>
+				<author><![CDATA[ puffy]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ Hi bác puffy,
+Có thể mình sơ xuất trong chuyện seteuid, mình sẽ test lại như bác nói, để xem nếu nó seteuid thì có ptrace từ đầu được không và khi đó thì "test" sẽ có euid là j.
+
+Chỉ confirm lại phát nữa là ở ví dụ trên mình chạy ptrace dưới quyền "user", mà "user" dĩ nhiên không có quyền read cái test, khi ptrace invoke vào "test", "test" cũng không có quyền của "windak"
+
+Thanks.
+wd.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196922</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196922</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 17:04:24]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ @puffy: cái vụ seteuid() của bạn mình không đồng ý nhé. Không biết bsd kernel hoạt động ra sao, chứ trong linux thì chả cần seteuid(), chỉ cần SUID bit được set trong file permission thi khi file đó được chạy, euid sẽ tự động được set luôn thành file owner.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196927</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196927</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 18:43:20]]> GMT</pubDate>
+				<author><![CDATA[ StarGhost]]></author>
+			</item>
+			<item>
+				<title>Linux Execute-only binary vulnerability ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">StarGhost wrote:</cite><br>
+		<blockquote>@puffy: cái vụ seteuid() của bạn mình không đồng ý nhé. Không biết bsd kernel hoạt động ra sao, chứ trong linux thì chả cần seteuid(), chỉ cần SUID bit được set trong file permission thi khi file đó được chạy, euid sẽ tự động được set luôn thành file owner.&nbsp;
+		</blockquote>
+
+Confirm đúng như StarGhost nói khi chạy trên máy mình.
+
+Cũng cám ơn bác puffy, nhờ vậy biết linux != bsd chỗ này, trước giờ tưởng như nhau hệch hệch  :-) 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cat test.c
+int main&#40;int argc, char* argv&#91;&#93;&#41; {
+  int a = 1;
+  int b = 1;
+  char x = 'A';
+  char y = 'B';
+  printf &#40;"Euid : %d, ID: %d \n", geteuid&#40;&#41;, getuid&#40;&#41;&#41;;
+  return 0;
+}
+....
+windak@windak-pc$./test
+Euid : 1000, ID: 1000
+....
+user@windak-pc$./test
+Euid : 1000, ID: 1001</pre>
+		</div>
+
+Ngoài ra cách xử dụng wrap của StarGhost 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int main&#40;&#41;{
+  execl&#40;"/home/user/test","test",0&#41;;
+  return 0;
+}</pre>
+		</div>
+gcc -o wrap wrap.c
+ls -al :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>-rwx------ 1 windak windak    6582 2009-10-28 20:27 test
+-rws--x--x 1 windak user    6368 2009-10-28 20:31 wrap</pre>
+		</div>
+
+cũng rất hiệu quả  O-)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>user@windak-pc$./wrap
+Euid : 1000, ID: 1001
+user@windak-pc$./ptrace
+Please wait...
+Number of machine instructions : 115862
+...
+windak@windak-pc$./ptrace
+Please wait...
+Euid : 1000, ID: 1000
+Number of machine instructions : 237642</pre>
+		</div>
+
+Thanks các bác
+wd.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196941</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/31853.hva#196941</link>
+				<pubDate><![CDATA[Wed, 28 Oct 2009 21:52:00]]> GMT</pubDate>
+				<author><![CDATA[ WinDak]]></author>
+			</item>
+	</channel>
+</rss>

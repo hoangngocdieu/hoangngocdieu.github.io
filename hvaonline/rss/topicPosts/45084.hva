@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Process hpahcisr0 stuck in D state"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Process hpahcisr0 stuck in D state"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Process hpahcisr0 stuck in D state</title>
+				<description><![CDATA[ Mấy ngày hôm nay, IO wait của server em tăng cao hơn bình thường. Load Average cũng tăng từ ~1 lên 4-5
+Em có thử chạy  : 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># while true; do date; ps auxf | awk '{if&#40;$8==&quot;D&quot;&#41; print $0;}'; sleep 1; done</pre>
+		</div>
+
+Thì nhận được kết quả : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Sat Aug 17 17:27:31 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+root       353  0.0  0.0      0     0 ?        D    Aug14   4:05  \_ &#91;jbd2/sda3-8&#93;
+Sat Aug 17 17:27:32 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:33 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:34 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:35 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:36 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:37 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+root       353  0.0  0.0      0     0 ?        D    Aug14   4:05  \_ &#91;jbd2/sda3-
+8&#93;</pre>
+		</div>
+
+Chạy :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>top -b -n 1 | awk '{if &#40;NR &lt;=7&#41; print; else if &#40;$8 == &quot;D&quot;&#41; {print; count++} } END {print &quot;Total status D: &quot;count}'</pre>
+		</div>
+
+thì được 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># top -b -n 1 | awk '{if &#40;NR &lt;=7&#41; print; else if &#40;$8 == &quot;D&quot;&#41; {print; count++} } END {print &quot;Total status D: &quot;count}'
+top - 17:49:05 up 2 days, 20:39,  1 user,  load average: 3.96, 3.08, 3.07
+Tasks: 215 total,   1 running, 214 sleeping,   0 stopped,   0 zombie
+Cpu&#40;s&#41;: 10.3%us,  1.9%sy,  0.0%ni, 81.3%id,  10.3%wa,  0.0%hi,  0.1%si,  0.0%st
+Mem:   8015636k total,  7255852k used,   759784k free,   280508k buffers
+Swap:  8392696k total,    20956k used,  8371740k free,  5407328k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+  273 root      20   0     0    0    0 D  0.0  0.0   0:03.29 hpahcisr0
+  353 root      20   0     0    0    0 D  0.0  0.0   4:06.56 jbd2/sda3-8
+Total status D: 2</pre>
+		</div>
+
+
+Em có search thì thấy process hpahcisr0 là raid controller của HP, nhưng không rõ tại sao nó lại kẹt ở D state, phiền mọi người chỉ giáo.
+
+Em cảm ơn ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278143</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278143</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 05:52:57]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Process hpahcisr0 stuck in D state</title>
+				<description><![CDATA[ Tham khảo: https://www.kernel.org/doc/Documentation/sysrq.txt
+
+Bạn enable lên, sau đó chạy `echo w &gt; /proc/sysrq-trigger`, rồi vào kernel log xem có gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278145</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278145</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 10:44:52]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Process hpahcisr0 stuck in D state</title>
+				<description><![CDATA[ Đây là kernel log ạ.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Aug 18 10:51:49 hocdan kernel: SysRq : Show Blocked State
+Aug 18 10:51:49 hocdan kernel:  task                        PC stack   pid father
+Aug 18 10:51:49 hocdan kernel: hpahcisr0     D 0000000000000001     0   273      2 0x00000000
+Aug 18 10:51:49 hocdan kernel: ffff8801ffd01dd0 0000000000000046 0000000000000000 ffffffffa004aad9
+Aug 18 10:51:49 hocdan kernel: 0000000000000000 0000000000000286 ffff8801ffd01d50 ffffffff81012bd9
+Aug 18 10:51:49 hocdan kernel: ffff880201563ab8 ffff8801ffd01fd8 000000000000fb88 ffff880201563ab8
+Aug 18 10:51:49 hocdan kernel: Call Trace:
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa004aad9&gt;&#93; ? surface_iteration_raid1+0xb9/0x190 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff81012bd9&gt;&#93; ? read_tsc+0x9/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff814febc2&gt;&#93; schedule_timeout+0x192/0x2e0
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8107e1a0&gt;&#93; ? process_timeout+0x0/0x10
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff814fed2e&gt;&#93; schedule_timeout_uninterruptible+0x1e/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8107f240&gt;&#93; msleep+0x20/0x30
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa0067506&gt;&#93; hpsrahci_intr_bh_handler+0xb6/0x170 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff810097cc&gt;&#93; ? __switch_to+0x1ac/0x320
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8100c14a&gt;&#93; child_rip+0xa/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa0067450&gt;&#93; ? hpsrahci_intr_bh_handler+0x0/0x170 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8100c140&gt;&#93; ? child_rip+0x0/0x20
+Aug 18 10:51:49 hocdan kernel: Sched Debug Version: v0.09, 2.6.32-279.9.1.el6.x86_64 #1
+Aug 18 10:51:49 hocdan kernel: now at 308531843.410559 msecs
+Aug 18 10:51:49 hocdan kernel:  .jiffies                                 : 4603199139
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_latency                    : 15.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_min_granularity            : 3.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_wakeup_granularity         : 3.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_child_runs_first           : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_features                   : 3183
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_tunable_scaling            : 1 &#40;logaritmic&#41;
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#0, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 323404164
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 98363470
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.199131
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451831.716060
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 64093
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 328121254
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 156626511
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 163778376
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 5351152
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 282
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;0&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 50604835.635516
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 47392716.885792
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 3143
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;0&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#1, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 267703357
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 150007465
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 1
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.199332
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451843.734463
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 4
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 84097
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 269944992
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 128498470
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 909177
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 133929670
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 26902139
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 178
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;1&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 69847291.005358
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 69988221.218036
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 22595504.332244
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 4479
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;1&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#2, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 135610169
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 42962641
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.198998
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451698.829222
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 44454
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 137370737
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 63008296
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 65945609
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 7265158
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 106
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;2&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 20919991.255608
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 50457228.749128
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 3064511.863336
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 12244
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;2&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#3, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 1
+Aug 18 10:51:49 hocdan kernel:  .load                          : 1024
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 115531550
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 24244536
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.198995
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 10514
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451843.733337
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 33399
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 117097912
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 50443785
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 58211209
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 19922027
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 274
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;3&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 9036686.026945
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 31997132.585060
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : -15395584.300732
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 8342
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 1
+Aug 18 10:51:49 hocdan kernel:  .load                          : 1024
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;3&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: R           bash 10514  31997125.085060        73   120  31997125.085060        15.933171     36545.173769 /
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:53:45 hocdan auditd&#91;1986&#93;: Audit daemon rotating log files
+Aug 18 10:57:29 hocdan auditd&#91;1986&#93;: Audit daemon rotating log files</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278149</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45084.hva#278149</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 23:01:33]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+	</channel>
+</rss>

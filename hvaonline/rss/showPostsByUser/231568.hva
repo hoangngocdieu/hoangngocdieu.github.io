@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "robinhood_10889"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/231568.hva</link>
+		<description><![CDATA[Messages posted by "robinhood_10889"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Iptables cho mạng LAN</title>
+				<description><![CDATA[ 1. iptables -P INPUT DROP
+2. ptables -P OUTPUT DROP
+3. iptables -P FORWARD DROP
+4. iptables -A INPUT -i eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+5  iptables -A OUTPUT -o eth1 -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+6  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p tcp --dport 0:65535 -j ACCEPT
+7  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -p udp --dport 0:65535 -j ACCEPT
+8  iptables -A FORWARD -s 172.20.1.2 -i eth1 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT 
+
+ Mục đích bạn dựng iptables để làm gì ? Nêu rõ mục đích mới cấu hình iptables được chứ .
+  Chữa cháy cho đoạn cấu hình trên ( sử dụng được dịch vụ trong mạng) thì như sau: 
+
+ Bạn quên không xử lý khi Forward từ eth0-&gt;eth1, (-i eth0 -o eth1 ): Khi một gói tin forward từ eth0 sang eth1 , nó không match với bất cứ rule nào trong FORWARD CHAIN , và sẽ bị rule 3 xử lý Drop theo chính sách mặc định. Có nghĩa là bạn có thể request đến các dịch vụ trong LAN nhưng các respond bị iptable drop và nó không bao giờ đến được laptop của bạn.
+     bổ sung thêm các rule sau:
+
+  9.   iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -p tcp --sport 0:65535 -j ACCEPT
+  10. iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -p udp --sport 0:65535 -j ACCEPT
+  11. iptables -A FORWARD -d 172.20.1.2 -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT 
+
+      ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45712/281030.hva#281030</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45712/281030.hva#281030</link>
+				<pubDate><![CDATA[Wed, 16 Jul 2014 02:07:48]]> GMT</pubDate>
+				<author><![CDATA[ robinhood_10889]]></author>
+			</item>
+	</channel>
+</rss>

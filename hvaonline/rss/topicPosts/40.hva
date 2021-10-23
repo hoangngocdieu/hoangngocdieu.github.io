@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lập trình bảo mật cơ sở dữ liệu Access"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lập trình bảo mật cơ sở dữ liệu Access"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lập trình bảo mật cơ sở dữ liệu Access</title>
+				<description><![CDATA[ Tác giả: (someone)
+1. Bảo vệ mã lệnh VBA (Visual Basic for Application) bằng cách chọn mục Properties trên trình đơn Tools của cửa sổ soạn thảo Microsoft Visual Basic rồi chọn trang Protection trên hộp thoại Project Properties. Cuối cùng, chọn Lock project for viewing, kèm theo là mật khẩu bảo vệ. Với cách này, cấu trúc và dữ liệu các bảng (table) vẫn có thể được xem và sửa đổi.
+2. Dùng chức năng Make MDE file để ngăn không cho sửa đổi mã lệnh, thiết kế biểu mẫu (form) và thiết kế báo biểu (report). Với cách này, cấu trúc và dữ liệu các bảng (table) vẫn có thể được lấy đi để chuyển vào tập tin .MDB khác mà xem và sửa đổi.
+3. Dùng chức năng Encrypt / Decrypt database… để mã hóa CSDL, ngăn không cho các chương trình tiện ích hay xử lý văn bản giải mã nhưng vẫn có thể dùng Access để mở.
+4. Dùng chức năng Set database password để quy định mật khẩu cho CSDL. Cách này hơi phiền nếu có một bảng trong CSDL khác liên kết (link) với nó. Nếu quên mật khẩu thì … khóc luôn chứ sao!
+5. Thiết kế một biểu mẫu khởi động, trong đó yêu cầu cho biết tên và mật khẩu, dùng hộp thoại Startup (từ danh sách Display Form/Page) để quy định phải mở biểu mẫu này trước tiên mỗi lần mở CSDL. Nhờ cách này, ta có thể giấu luôn cửa sổ Database, nơi có thể xem và chọn các thành phần của CSDL để sửa chữa.
+Trong những cách trên, cách thứ 5 vẫn có thể bị vượt qua bằng cách nhấn và giữ phím Shift trong lúc mở CSDL. Để khắc phục, ta có thể dùng Visual Basic gán trị False cho thuộc tính AllowBypassKey để vô hiệu hóa phím Shift khi mở CSDL.
+Giả sử bạn có một CSDL tên dbLock.MDB. Mỗi lần người ta mở nó, bạn muốn biểu mẫu frmKhoiDong luôn được hiển thị trước tiên bằng cách xác định Display Form/Page là frmKhoiDong. Để thay đổi thuộc tính AllowBypassKey, bắt buộc phải mở CSDL, gán trị mới cho thuộc tính này, đóng CSDL lại thì lần mở sau mới có ép-phê. Bạn nhớ, cần khóa làm sao để người ta không mở được mà mình mở được, nghĩa là ta phải có chìa khóa để mở. Chìa ở đây chính là một biểu mẫu khác, chẳng hạn có tên là frmChiaKhoa.
+Khi đã thay đổi thuộc tính AllowBypassKey được rồi, chắc chắn biểu mẫu frmKhoiDong được hiển thị khi mở CSDL. Cho nên ta đặt chìa khóa thông qua biểu mẫu này bằng cách vẽ một ô điều khiển nào đấy (miễn sao nó có thủ tục xử lý tình huống Click là được), chẳng hạn nhãn lblChiaKhoa, rồi đặt thuộc tính Visible là No và thêm dòng lệnh DoCmd.OpenForm “frmChiaKhoa” vào thủ tục xử lý tình huống Click. Bạn phải nhớ vị trí nhãn lblChiaKhoa để lôi chìa khóa ra nhé. Như vậy, vấn đề còn lại nằm ở biểu mẫu frmChiaKhoa.
+Bạn mở cửa sổ soạn thảo Microsoft Visual Basic, chọn mục References… để bảo đảm Microsoft DAO xx.xx Object Library (trong đó, phiên bản xx.xx có thể là: 2.5 hoặc 3.51 hoặc 3.6 tùy theo phiên bản Access, dĩ nhiên nên chọn phiên bản mới nhất) đã được chọn trong danh sách Available References.
+ 
+Hình 1: Biểu mẫu cần thiết kế
+Hình 1 là biểu mẫu frmChiaKhoa cần thiết kế, bao gồm một ô văn bản txtPassword để nhận mật khẩu mà người cần mở khóa phải gõ vào, một nút lệnh cmdLock thực hiện việc khóa CSDL và một nút lệnh cmdUnlock thực hiện việc mở khóa CSDL. Xong, bạn gõ các thủ tục xử lý như đoạn mã 1. Trước khi quậy chuyện này trên một CSDL, bạn nên sao chép phòng hờ CSDL để tránh sự cố khóa được rồi nhưng không mở được (do bạn gõ nhầm các dòng lệnh).
+<blockquote>Đoạn mã 1
+'Hàm ChangeProperty thay đổi các thuộc tính của CSDL
+Function ChangeProperty(strPropName, varPropType, varPropValue)
+  Dim dbs As Database, prp As Property
+  Const conPropNotFoundError = 3270
+  Set dbs = CurrentDb
+  On Error GoTo Change_XuLyLoi
+  dbs.Properties(strPropName) = varPropValue
+  ChangeProperty = True
+Change_KetThuc:
+  Exit Function
+Change_XuLyLoi:
+  'Thuộc tính không thấy
+  If Err = conPropNotFoundError Then  
+  Set prp = dbs.CreateProperty(strPropName, _
+  varPropType, varPropValue)
+  dbs.Properties.Append prp
+  Resume Next
+  Else
+  'Không biết lỗi gì
+  ChangeProperty = False
+  Resume Change_KetThuc
+  End If
+End Function
+'Xử lý tình huống chọn nút [Khóa database]
+Private Sub cmdLock_Click()
+  ‘Biểu mẫu này được nạp trước
+  ChangeProperty "StartupForm", dbText, "frmKhoiDong"
+  ChangeProperty "StartupShowDBWindow", dbBoolean, False
+  ChangeProperty "StartupShowStatusBar", dbBoolean, False
+  ChangeProperty "AllowBuiltinToolbars", dbBoolean, False
+  ChangeProperty "AllowFullMenus", dbBoolean, False
+  ChangeProperty "AllowBreakIntoCode", dbBoolean, False
+  ChangeProperty "AllowSpecialKeys", dbBoolean, False
+ 
+  ‘Không cho xài phím Shift để bỏ qua biểu mẫu frmKhoiDong
+  ChangeProperty "AllowBypassKey", dbBoolean, False
+ 
+  MsgBox "Cơ sở dữ liệu đã được khóa! Đóng cơ sở dữ liệu, ê.", vbOKOnly, " Security"
+  cmdExit.SetFocus
+  cmdUnlock.Visible = True
+  cmdLock.Visible = False
+End Sub
+'Xử lý tình huống chọn nút [Mở database]
+Private Sub cmdUnlock_Click()
+  ‘Không cần biểu mẫu khởi động nữa
+  ChangeProperty "StartupForm", dbText, ""
+  ChangeProperty "StartupShowDBWindow", dbBoolean, True
+  ChangeProperty "StartupShowStatusBar", dbBoolean, True
+  ChangeProperty "AllowBuiltinToolbars", dbBoolean, True
+  ChangeProperty "AllowFullMenus", dbBoolean, True
+  ChangeProperty "AllowBreakIntoCode", dbBoolean, True
+  ChangeProperty "AllowSpecialKeys", dbBoolean, True
+  ChangeProperty "AllowBypassKey", dbBoolean, True
+  MsgBox "Cơ sở dữ liệu đã được mở khóa ! _
+  Đóng cơ sở dữ liệu,.", _
+  vbOKOnly, " Security"
+  cmdExit.SetFocus
+  txtPassword = ""
+  cmdLock.Visible = True
+  cmdUnlock.Visible = False
+  txtPassword.Visible = False
+End Sub
+'Xử lý tình huống khi mở biểu mẫu
+Private Sub Form_Open(Cancel As Integer)
+  Dim dbs As Database
+  Set dbs = CurrentDb
+  On Error GoTo KhongCoThuocTinh_Err
+  If dbs.Properties("AllowBypassKey") Then
+    cmdLock.Visible = True
+    txtPassword.Visible = False
+  Else
+    cmdLock.Visible = False
+    txtPassword.Visible = True
+  End If
+  Exit Sub
+  KhongCoThuocTinh_Err:
+  cmdLock.Visible = True
+  txtPassword.Visible = False
+End Sub
+'Khi người ta gõ mật khẩu và nhấn phím Enter
+Private Sub txtPassword_LostFocus()
+  If txtPassword = "echip" Then
+    cmdUnlock.Visible = True
+  End If
+End Sub&nbsp;
+		</blockquote>
+Tác giả: (someone)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40.hva#269</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40.hva#269</link>
+				<pubDate><![CDATA[Wed, 14 Jun 2006 03:52:56]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+	</channel>
+</rss>

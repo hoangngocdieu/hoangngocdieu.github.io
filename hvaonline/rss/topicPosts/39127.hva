@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin giúp đỡ về gọi Nt... Functions qua syscall trên HDH 64bit"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin giúp đỡ về gọi Nt... Functions qua syscall trên HDH 64bit"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin giúp đỡ về gọi Nt... Functions qua syscall trên HDH 64bit</title>
+				<description><![CDATA[ Chào mọi người,
+
+Hiện tại mình đang gặp rắc rối với vấn đề gọi hàm Nt trên HDH 64bit. Mình có tham khảo qua 1 số tài liệu và được biết trên những HDH từ XP trở đi, Syscall của nó có dạng:
+<blockquote>Each syscall number is moved into EAX and invoked through INT 2Eh. In Windows XP and later, the syscall mechanism had changed.
+
+    MOV EAX, 101h ; syscall number: NtTerminateProcess
+    MOV EDX, 7FFE0300h ; EDX = 7FFE0300h
+    CALL EDX ; call 7FFE0300h
+    RETN 8 
+
+Notice the difference. Instead of INT 2Eh, now it is replaced by CALL EDX which leads us to ntdll.KiFastSystemCall, a tiny stub containing the SYSENTER instruction.
+
+    MOV EDX, ESP
+    SYSENTER
+    RETN 
+
+&nbsp;
+		</blockquote>
+
+    Dựa vào tài liệu trên, mình code như sau:
+
+    <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#define SYSENTER __asm _emit 0x0F __asm _emit 0x34
+    DWORD NtOpenProcessCall,;
+    typedef struct _CLIENT_ID{
+        HANDLE UniqueProcess;
+        HANDLE UniqueThread;
+    } CLIENT_ID, *PCLIENT_ID;
+
+    DWORD GetCallNUM&#40;LPCSTR FuncName&#41;
+    {
+        HMODULE ntdll = GetModuleHandle&#40;"ntdll.dll"&#41;;
+        if &#40;!ntdll&#41;
+            LoadLibrary&#40;"ntdll.dll"&#41;;    
+        DWORD sysenter = *&#40;DWORD*&#41;&#40;&#40;DWORD&#41;GetProcAddress&#40;ntdll, FuncName&#41; + 1&#41;;
+        return sysenter;
+    }
+    void InitFunction&#40;&#41;
+    {
+        NtOpenProcessCall = GetCallNUM&#40;"NtOpenProcess"&#41;;
+    }
+
+    _declspec&#40;naked&#41; void __stdcall SystemCall&#40;void&#41;
+    {
+        __asm
+        {
+            MOV EDX,ESP
+            SYSENTER
+            RET
+        }
+    }
+    __declspec&#40;naked&#41; NTSTATUS __stdcall 
+NtOpenProcess&#40;PHANDLE ProcessHandle, ACCESS_MASK AccessMask, PVOID ObjectAttributes, PCLIENT_ID ClientID&#41;
+    {
+        __asm
+        {
+            mov eax, NtOpenProcessCall
+            call SystemCall
+            retn 10h
+        }
+    }
+
+    void main&#40;&#41;
+    {    
+        InitFunction&#40;&#41;;
+        CLIENT_ID cid;
+        cid.UniqueThread = 0;
+        cid.UniqueProcess = &#40;HANDLE&#41;21060;
+        BYTE bBuffer&#91;&#93; = {0x90, 0x90, 0x90, 0x90};
+        DWORD nWritten;
+        HANDLE VictimHandle = 0;
+        OBJECT_ATTRIBUTES ObjectAttributes;
+        InitializeObjectAttributes&#40;&ObjectAttributes, NULL, 0, 0, NULL&#41;;
+        NTSTATUS stt = NtOpenProcess&#40;&VictimHandle, PROCESS_QUERY_INFORMATION |
+ PROCESS_VM_OPERATION | PROCESS_VM_WRITE, &ObjectAttributes, &cid&#41;;
+        WriteProcessMemory&#40;VictimHandle, &#40;void*&#41;0x000A8BE0, &bBuffer, sizeof&#40;bBuffer&#41;, &nWritten&#41;;
+        printf&#40;"0x%X \n",stt&#41;;
+        system&#40;"pause"&#41;;
+    }</pre>
+		</div>Code của mình nếu chạy ở HDH 32bit thì hoạt động tốt nhưng khi chạy trên nền 64bit thì lại crash ở đoạn gọi NtOpenProcess.
+
+    Có ai biết vì sao và giải thích cho mình được không :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39127.hva#240374</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39127.hva#240374</link>
+				<pubDate><![CDATA[Sat, 11 Jun 2011 12:22:04]]> GMT</pubDate>
+				<author><![CDATA[ .lht.]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ về gọi Nt... Functions qua syscall trên HDH 64bit</title>
+				<description><![CDATA[ Hì, vấn đề đã được giải quyết:
+
+WinXP Sp2 32bit:
+
+7C90DD7B    B8 7A000000     MOV EAX,7A
+7C90DD80    BA 0003FE7F     MOV EDX,7FFE0300
+7C90DD85    FF12            CALL DWORD PTR DS:[EDX]
+7C90DD87    C2 1000         RETN 10
+
+
+Win7 Sp1 64bit:
+
+771BFC10 &gt;/$ B8 23000000    MOV EAX,23
+771BFC15  |. 33C9           XOR ECX,ECX
+771BFC17  |. 8D5424 04      LEA EDX,DWORD PTR SS:[ESP+4]
+771BFC1B  |. 64:FF15 C00000&gt;CALL DWORD PTR FS:[C0]
+771BFC22  |. 83C4 04        ADD ESP,4
+771BFC25  \. C2 1000        RETN 10
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39127.hva#240380</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39127.hva#240380</link>
+				<pubDate><![CDATA[Sat, 11 Jun 2011 13:04:47]]> GMT</pubDate>
+				<author><![CDATA[ .lht.]]></author>
+			</item>
+	</channel>
+</rss>

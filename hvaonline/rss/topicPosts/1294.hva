@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm mail server với Postfix - Phần 1 "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm mail server với Postfix - Phần 1 "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ Nguồn :<span class="link"> http://james.dyndns.ws/index.php</span>
+Tác giả : James Nguyen
+
+<b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cài đặt, cấu hình cơ bản
+   3. Mở rộng, nâng cao
+   4. Tham khảo
+
+<b>Giới thiệu</b>
+
+Postfix là một MTA (Mail Transport Agent), được viết bởi Wietse Venema khi ông đang làm việc ở trung tâm nghiên cứu T. J. Watson của IBM. Đặc điểm của Postfix: dễ quản lý, nhanh, an toàn. Chỉ cần một server với hardware thông thường, Postfix có thể chuyển giao hàng triệu email một ngày (đọc ở đâu quên rồi, sẽ tìm URL bổ sung sau).
+Bài viết này giới thiệu cách dùng Postfix để dựng một mail server trong Linux.
+
+Bắt đầu viết: tháng 5 năm 2003.
+Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.
+
+<b>Cài đặt và cấu hình</b>
+
+Nhiều distro đóng gói kèm theo Postfix. Nói chung việc cài đặt Postfix khá đơn giản và nhanh chóng. Ở đây chỉ giới thiệu cách cài đặt từ gói RPM.
+
+	// tải postfix RPM từ<span class="link"> http://rpmfind.net,</span> sau đó cài đặt bằng lệnh
+	<b># rpm -ivh postfix-***.i386.rpm</b>
+
+	// trong Fedora, có thể cài đặt bằng yum
+	<b># yum install postfix</b>
+
+	// cách cài đặt trong Trustix
+	<b># swup --install postfix</b>
+
+Những file cấu hình của Postfix nằm trong thư mục <b>/etc/postfix</b>. Để cấu hình một mail server cơ bản, chỉ cần vài thay đổi nhỏ trong những file sau đây
+
+	<b>/etc/postfix/aliases</b>: thông tin về user
+	<b>/etc/postfix/main.cf</b>: cấu hình cơ bản
+
+Trước hết, chỉ định người nhận mail cho account root. Tìm trong file aliases dòng bắt đầu bằng "root" và chuyển mail đến người nhận thích hợp (giả sử chuyển cho james)
+
+	// chuyển tất cả mail đến root cho james
+	<b>root:	james</b>
+
+	// update thông tin của aliases database, gõ lệnh
+	<b># /usr/bin/newaliases</b>
+
+Tiếp đến, ghi những thông tin về mail server vào file main.cf
+
+	// tên máy chủ, thay đổi cho thích hợp
+	<b>myhostname = mail.domain.name</b>
+
+	// nếu máy chủ gửi nhận mail cho cả domain
+	<b>mydomain = domain.name</b>
+
+	// nhận mail đến interface nào?
+	<b>inet_interfaces = all</b>
+
+	// chỉ nhận mail đến domain của tôi
+	<b>mydestination = $myhostname, localhost.$mydomain, $mydomain</b>
+
+	// địa chỉ mạng riêng
+	<b>mynetworks = 127.0.0.0, 172.16.0.0/12</b>
+
+	// máy này không phải là OPEN RELAY SERVER!!!
+	<b>relay_domains = $mydestination	</b>
+
+Đến lúc này, Postfix đã sẵn sàng hoạt động một cách an toàn. Tiếp theo hãy chuẩn bị khởi động Postfix với những thao tác sau đây.
+
+Kiểm tra xem máy chủ có MTA nào khác đang hoạt động hay không, nếu có hãy tắt MTA đó.
+
+<b>Khởi động Postfix</b>
+
+	<b># /etc/init.d/postfix start</b>
+
+	// để postfix tự khởi động mỗi lần bật máy
+	<b># chkconfig --level 3 postfix on</b>
+
+Bây giờ đến lúc kiểm tra lại
+
+	<b>$ telnet localhost 25</b>
+	<blockquote>// sẽ thấy những dòng sau đây
+	Trying 127.0.0.1...
+	Connected to localhost.
+	Escape character is '^]'.
+	220 mail.domain.name ESMTP Postfix
+
+	// Xong rồi, logout thôi, gõ
+	quit
+
+	// sẽ thấy
+	221 Bye
+	Connection closed by foreign host.&nbsp;
+		</blockquote>
+
+<b>Gửi thử một cái mail</b>
+
+	// tạo một file testmail.txt với nội dung tùy ý
+	<b>$ touch testmail.txt
+	$ vi testmail.txt, gõ vào "Hello, World"</b>
+
+	// dùng chương trình mailx gửi mail cho root
+	// chú ý: mail này sẽ được chuyển đến user james (xem phần aliases)
+	<b>$ mail root < testmail.txt</b>
+
+	// xong kiểm tra log (file /var/log/maillog)
+	// và kiểm tra hộp mail của james
+
+<b>Chú ý</b>: theo mặc định, Postfix chuyển mail đến <b>Mailbox</b>. Mailbox là kiểu lưu giữ tất cả các mail trong một file (thường ở thư mục <b>/var/spool/mail</b>). Khác với Mailbox, Maildir là kiểu lưu giữ mỗi mail thành một file riêng (tất cả đặt trong thư mục /home/user/Maildir). Bạn cần biết đặc điểm (ưu, khuyết điểm) của mỗi cách và chọn cho mình cách thích hợp. Sẽ có bài viết về vấn đề này.
+
+Cấu hình để Postfix chuyển mail đến Maildir: tìm dòng home_mailbox trong file main.cf, sửa lại như sau
+
+	# không dùng kiểu mặc định
+	# home_mailbox = Mailbox
+	# thích kiểu Maildir hơn
+	<b>home_mailbox = Maildir/</b>
+
+Sau đó tạo hộp thư
+
+	// chỉ tạo hộp thư cho user james
+	<b>$ mkdir $HOME/Maildir
+	$ mkdir $HOME/Maildir/cur
+	$ mkdir $HOME/Maildir/new
+	$ mkdir $HOME/Maildir/tmp
+	$ chmod -R 700 $HOME/Maildir</b>
+
+	// tạo hộp thư cho tất cả user: ghi vào /etc/skel
+	<b>$ su -
+	# mkdir /etc/skel/Maildir
+	# mkdir /etc/skel/Maildir/cur
+	# mkdir /etc/skel/Maildir/new
+	# mkdir /etc/skel/Maildir/tmp
+	# chmod -R 700 /etc/skel/Maildir</b>
+
+Đến đây có thể dùng Postfix được rồi. Tuy nhiên, để có được một mail server như ý muốn, hãy còn rất nhiều công việc phía trước. Xem thêm phần "Mở rộng và thông tin thêm".
+
+<b>Mở rộng, thông tin thêm</b>
+
+   1. Cho phép gửi mail từ những máy không thuộc relay_domains: SMTP AUTH, POP BEFORE SMTP
+   2. Nên dùng Mailbox hay Maildir?
+     <span class="link"> http://www.courier-mta.org/mbox-vs-maildir/</span>
+   3. Ngăn chặn, lọc thư rác (spam)
+   4. Quét virus kèm theo mail
+   5. Mã hóa: giải pháp TLS (Transport Layer Security)
+   6. Làm mailing list
+   7. Những thay đổi khác: tất cả những cấu hình của Postfix và giá trị mặc định (default) được ghi trong file /etc/postfix/main.cf.default. Tùy theo yêu cầu trong mỗi trường hợp, hãy thay đổi những giá trị mặc định đó.
+      Chú ý: mọi thay đổi phải được ghi vào file main.cf, không sửa trực tiếp lên file main.cf.default!
+
+ <blockquote>         * gửi toàn bộ lỗi, cảnh báo cho postmaster
+            notify_classes = delay, policy, protocol, resource, software
+          * yêu cầu client phải gửi lệnh HELO (EHLO)
+            smtpd_helo_required = yes
+            smtpd_helo_restrictions = permit_mynetworks, reject_invalid_hostname
+          * không muốn bị scan bằng VRFY
+            disable_vrfy_command = yes
+          * giới hạn kích cỡ mỗi e-mail là 2 MiB
+            message_size_limit = 2048000
+          * muốn tất cả địa chỉ e-mail đều được chuyển thành dạng @domain.name trước khi gửi đi
+            masquerade_domains = domain.name&nbsp;
+		</blockquote>
+
+<b>Tham khảo</b>
+
+   1.<span class="link"> http://www.postfix.org</span>
+   2. /usr/share/doc/postfix-version/*
+   3. hỏi Google :)
+
+
+
+-------------------
+
+<span class="link"> http://vnhacker.org/hvaonline/posts/list/2550.hva</span>  
+<span class="link"> http://vnhacker.org/hvaonline/posts/list/2551.hva</span>  
+<span class="link"> http://vnhacker.org/hvaonline/posts/list/2552.hva</span>  
+<span class="link"> http://vnhacker.org/hvaonline/posts/list/2553.hva</span>  
+<span class="link"> http://vnhacker.org/hvaonline/posts/list/2554.hva</span>  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6091</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6091</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 09:50:51]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Làm mail server với Postfix</title>
+				<description><![CDATA[ <b>Kiểm tra open relay</b>
+
+    *<span class="link"> http://www.abuse.net/relay.html</span>
+    *<span class="link"> http://spamlart.homeunix.org/</span>
+    *<span class="link"> http://www.ordb.org/submit/</span>
+    *<span class="link"> http://members.iinet.net.au/~remmie/relay/</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6092</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6092</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 09:52:12]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Làm mail server với Postfix</title>
+				<description><![CDATA[ <b>Theo dõi maillog</b>
+
+bằng pflogsumm
+<span class="link"> http://jimsun.linxnet.com/postfix_contrib.html</span>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6098</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#6098</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 10:00:41]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>cau hình external mail address?</title>
+				<description><![CDATA[ chào các bạn, mình đang cấu hình mail postfix trên Centos 5, giả sử mình có local domain của mình là abc.com, va external domain là camau.com, mình muốn khi gửi mail trong cty thì sẻ có địa chỉ là user@abc.com, và khi gửi ra internet thì sẻ la user@camau.com, như vậy thì phải cấu hình như thế nào?
+Thanks các bạn ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252286</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252286</link>
+				<pubDate><![CDATA[Wed, 11 Jan 2012 14:13:24]]> GMT</pubDate>
+				<author><![CDATA[ caochivicm]]></author>
+			</item>
+			<item>
+				<title>cau hình external mail address?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">caochivicm wrote:</cite><br>
+		<blockquote>chào các bạn, mình đang cấu hình mail postfix trên Centos 5, giả sử mình có local domain của mình là abc.com, va external domain là camau.com, mình muốn khi gửi mail trong cty thì sẻ có địa chỉ là user@abc.com, và khi gửi ra internet thì sẻ la user@camau.com, như vậy thì phải cấu hình như thế nào?
+Thanks các bạn &nbsp;
+		</blockquote>
+
+Xem ở đây<span class="link"> http://wiki.excito.org/wiki/index.php/Setting-up-postfix-for-sending-mail-using-an-external-SMTP-server</span>
+
+P/s : Cho hỏi vấn đề ngoài phạm vi bài viết này, bro ở Cà Mau , làm việc ở công ty nào vậy ? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252293</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252293</link>
+				<pubDate><![CDATA[Wed, 11 Jan 2012 19:44:00]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ mình làm ở cty phần mềm giải trí toàn cầu, ở Etown, chắc bạn củng o cà mau quá, :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252360</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252360</link>
+				<pubDate><![CDATA[Thu, 12 Jan 2012 07:49:42]]> GMT</pubDate>
+				<author><![CDATA[ caochivicm]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ Chào bạn tranvanminh.
+
+Bạn đã từng làm authenticate cho mail postfix server chưa..
+Nều làm rồi thì hướng dẫn mình với nha.. Mình đang làm mà hơi bí vẫn chưa thể authenticate được. Mô hình mail bên mình là : client ==&gt; Mail server ==&gt; Mail relay(send mail).
+Mình đang làm postfix authenticate dùng cyrus sasl..
+Và có cách nào sử dụng bằng file pass không cần dùng đến mysql không bạn?
+Thanks bạn nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252437</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252437</link>
+				<pubDate><![CDATA[Fri, 13 Jan 2012 21:02:13]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuank51cc wrote:</cite><br>
+		<blockquote>Chào bạn tranvanminh.
+
+Bạn đã từng làm authenticate cho mail postfix server chưa..
+Nều làm rồi thì hướng dẫn mình với nha.. Mình đang làm mà hơi bí vẫn chưa thể authenticate được. Mô hình mail bên mình là : client ==&gt; Mail server ==&gt; Mail relay(send mail).
+Mình đang làm postfix authenticate dùng cyrus sasl..
+Và có cách nào sử dụng bằng file pass không cần dùng đến mysql không bạn?
+Thanks bạn nhiều&nbsp;
+		</blockquote>
+
+Bạn cần tạo như sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_type = cyrus</pre>
+		</div>
+
+Sau đó bạn tạo tập tin 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/postfix/sasl_passwd:
+    hvaonline.net                    tranhuuphuoc:emyeu</pre>
+		</div>
+
+#chmod 600 /etc/postfix/sasl_passwd
+#postmap /etc/postfix/sasl_passwd
+
+Lúc này nó sẽ tạo ra 1 tập tin passwd.db cho bạn. 
+
+Tuy nhiên nếu điều chỉnh kiểu này thì mất thời gian lắm vì phải điều chỉnh nhân công, nếu công ty của bạn có hàng ngày, hàng trăm nhân sự thì việc quả thật không nên dùng do vậy giải pháp dùng MySQL, OpenLDAP là điều cần được tính đến. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252440</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252440</link>
+				<pubDate><![CDATA[Fri, 13 Jan 2012 21:27:35]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ Dear Phước!
+Thanks Phước nhiều nhé.. Mình cũng hiểu việc đó. Tại bên mình chỉ cần làm một cái mail server để active tài khoản trên webserver thôi. Liên quan đến code web nên phải xác thực cho account đó..
+Trước đó Mình đã làm cấu hình như phước nhưng vẫn chưa được. P có thể hướng dẫn chi tiết hơn cho mình không.
+Mình telnet thử đến mail và xác thực bằng câu lệnh: "auth login". Nhưng nhập user vào. Lập tức server báo lỗi là " <b>Error: authentication failed: another step is needed in authentication quit"</b>
+
+Dưới đây là 2 file cấu hình của mình:
++main.cf:
+relay_domains = $mydestination
+
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_local_domain = example.com
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+smtp_sasl_type = cyrus
+smtpd_recipient_restrictions = permit_sasl_authenticated permit_mynetworks permit_mydestination reject_unauth_destination permit_inet_interfaces 
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+
+
+sender_dependent_relayhost_maps = hash:/etc/postfix/relayhost_map
+message_size_limit = 0
+mailbox_size_limit = 0
+
+transport_maps = hash:/etc/postfix/transport
+
+Đã tạo ra sasl_passwd.db. Mình chưa hiểu postfix nó kêt nối cyrus sasl như thế nào "smtp_sasl_type = cyrus"
+thanks Phước nhiều :)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252450</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252450</link>
+				<pubDate><![CDATA[Fri, 13 Jan 2012 23:24:38]]> GMT</pubDate>
+				<author><![CDATA[ thuank51cc]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ Cấu hình Postfix + Cyrus SASL bạn có thể xem ở liên kết dưới đây<span class="link"> http://www.linuxtopia.org/online_books/mail_systems/postfix_documentation/SASL_README_008.html</span>
+
+Đại loại như thế này bạn muốn cấu hình Internal authentication (local users) thì trong tập tin cấu hình của saslauthd thì MECH=shadow , nếu bạn dùng PAM thì MECH=pam và cần chú ý đến smtpd.conf cho từng trường hợp, với điều kiện SASL Authentication.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = cyrus
+smtpd_sasl_path = smtpd
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_authenticated_header = yes</pre>
+		</div>
+
+Nếu có thêm LDAP thì thêm vào
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pwcheck_method: auxprop
+auxprop_plugin: ldapdb
+mech_list: DIGEST-MD5 PLAIN LOGIN
+ldapdb_uri:<span class="link"> ldap://localhost</span>
+ldapdb_id: postfix
+ldapdb_pw: highsecuritypassword
+ldapdb_mech: DIGEST-MD5</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252559</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252559</link>
+				<pubDate><![CDATA[Sun, 15 Jan 2012 19:42:46]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ Dear Anh Phước
+
+Cho mình hỏi nếu có một  mail server gỏi vào theo kiểu bruteforce để tìm user trong mail server . Nếu server gởi email mà không có user quá 3 lần thì nó sẽ tự đông block lại .
+
+Anh có giải pháp nào về vấn đề này không ?
+Thank Anh]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252621</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252621</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 21:54:06]]> GMT</pubDate>
+				<author><![CDATA[ docong1010]]></author>
+			</item>
+			<item>
+				<title>Làm mail server với Postfix - Phần 1 </title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">docong1010 wrote:</cite><br>
+		<blockquote>Dear Anh Phước
+
+Cho mình hỏi nếu có một  mail server gỏi vào theo kiểu bruteforce để tìm user trong mail server . Nếu server gởi email mà không có user quá 3 lần thì nó sẽ tự đông block lại .
+
+Anh có giải pháp nào về vấn đề này không ?
+Thank Anh&nbsp;
+		</blockquote>
+
+Được dùng Fail2ban<span class="link"> http://www.fail2ban.org/wiki/index.php/Main_Page</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252622</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1294.hva#252622</link>
+				<pubDate><![CDATA[Mon, 16 Jan 2012 21:58:39]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+	</channel>
+</rss>

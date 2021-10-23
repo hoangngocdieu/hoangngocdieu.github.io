@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình BIND"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình BIND"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình BIND</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần I: Các zone files</b></font>
+
+<font color='cyan'><i><u>Nguồn</u></i></font>: <span class="link"> http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch18_:_Configuring_DNS</span>
+
+<font color='orange'><i>Bắt đầu</i></font>:
+Ghi nhớ những điểm sau trước khi cấu hình:
++ Trong tất cả các zone files bạn có thể chú thích ở cuối dòng bằng cách chèn vào 1 dấu ";" sau đó là đoạn text bạn muốn comment
++ Theo mặc định thì các zone files sẽ nằm trong <i>/var/named</i>, hoặc <i>/var/named/chroot/var/named</i>
++ Mỗi zone file sẽ chứa đựng nhiều loại bản ghi khác nhau: <b>SOA</b>, <b>NS</b>, <b>MX</b>, <b>A</b>, <b>CNAME</b>, chúng quản lý những vùng khác nhau của BIND
+
+<font color='yellow'><i>Time to live</i></font>
+Entry đầu tiên trong zone file luôn luôn là: thời gian sống của zone (<b>TTL</b>). Mục đích của TTL là làm giảm số lượng các DNS queries mà DNS server phải trả lời. Nếu bạn set TTL là 3 ngày, thì caching servers sẽ sử dụng những response gốc được lưu trước đó 3 ngày, trước khi tạo query mới. Các hậu tố bạn có thể dùng ở đây là: D (ngày), W (tuần), H (giờ).
+
+<font color='yellow'><i>Các bản ghi DNS</i></font>
+Các bản ghi BIND định nghĩa thuộc tính của DNS trong các zone files của bạn, chúng được hiện diện để query DNS clients. Định dạng của chúng như sau:
+<blockquote>Name		Class	Type		Date&nbsp;
+		</blockquote>
+
+Có những loại bản ghi khác nhau như: mail (MX), forward lookups(A), reverse loopups (PTR), aliases (CNAME), và các định nghĩa zone toàn thể, Start Of Authority (SOA). Phần dữ liệu được định dạng theo sau mỗi loại bản ghi có thể bao gồm 1 vài giá trị cách nhau bởi khoảng trắng. 
+
+<font color='cyan'><i>Bản ghi SOA</i></font>: chứa đựng thông tin quản trị chung và những kiểm soát về domain. Bản ghi này có định dạng:
+<blockquote>Name Class Type Name-Server Email-Address Serial-No Refresh Retry Expiry Minimum-TTL&nbsp;
+		</blockquote>
+
+Để cho dễ nhìn bạn có thể xuống dòng, hoặc chèn vào 2 dấu ngoặc đơn ( ) ở đầu và cuối của đoạn thông tin bắt đầu xuống dòng. Bạn cũng có thể chèn chú thích sau dấu dấu ;
+
+<i><u>Định dạng bản ghi SOA</u></i>
+
+<font color='violet'><b>Name</b></font>: tên gốc của zone. Ký tự @ tham chiếu đến zone gốc hiện tại trong /etc/named.conf
+
+<font color='violet'><b>Class</b></font>: IN hoặc Internet - định nghĩa địa chỉ IP khi map thông tin trong BIND. Các classes khác dành cho các giao thức non-internel và hiếm khi được sử dụng
+
+<font color='violet'><b>Type</b></font>: loại bản ghi DNS
+
+<font color='violet'><b>Name-server</b></font>: tên đầy đủ của name server chính của bạn. 
+
+<font color='violet'><b>Email-address</b></font>: Địa chỉ email của người quản trị name server. 
+
+<font color='violet'><b>Serial-no</b></font>: một số serial cho cấu hình hiện tại. bạn có thể dùng định dạng ngày tháng YYYYMMDD, theo sau là 1 chữ số. 
+
+<font color='violet'><b>Refresh</b></font>: Khoảng thời gian mà slave DNS server sẽ check master DNS Server.
+
+<font color='violet'><b>Retry</b></font>: Khoảng thời gian Slave sẽ thử kết nối lại đến master sau khi bị lỗi
+
+<font color='violet'><b>Expiry</b></font>: Tổng khoảng thời gian slave nên thử lại để contact đến master trước khi data bị expired.
+
+<font color='violet'><b>Minimum-TTL</b></font>: Khi client tạo một query khôgn tồn tại trong sub domain, DNS server của bạn sẽ response là NXDOMAIN. Giá trị này định nghĩa thời lượng caching DNS của bạn bao gồm reponse đó.
+
+<font color='cyan'><i>Bản ghi NS, MX, A, và CNAME</i></font> 
+
+Các bản ghi này có định dạng tương tự như SOA
+
+<font color='cyan'><b>NS</b></font>: địa chỉ IP hoặc CNAME của name server
+
+<font color='cyan'><b>MX</b></font>: tên mail server DNS
+
+<font color='cyan'><b>A</b></font>: IP address của server
+
+<font color='cyan'><b>CNAME</b></font>: tên bí danh của server
+
+<font color='cyan'><b>PTR</b></font>: tên server đầy đủ khi phân giải ngược từ 1 địa chỉ IP
+
++ Nếu một key là trống, nó sẽ dùng lại key của bản ghi liền trước
++ Với phần lớn home / SOHO (Small Office / Home Office), class luôn luôn là IN hoặc Internet
+
+<font color='cyan'><i>TXT Record</i></font> (ít dùng): được sử dụng để cấu hình các thông tin chung. Phần dữ liệu của bản ghi này thông thường có định dạng: "<b>name-value</b>", với name là tên loại dữ liệu, value là giá trị được gán cho tên:
+<blockquote>my-web-site.org. TXT "v=spf1 -all"&nbsp;
+		</blockquote>
+
+<font color='orange'><i>Ví dụ</i></font>
+Sau khi đã đọc, hiểu rõ về ý nghĩa của từng tham số, cũng như chức năng của các bản ghi trong 1 zone file của BIND, việc cấu hình lúc này chắc hẳn sẽ dễ dàng hơn. Lấy ví dụ với một cấu hình DNS cho domain quanta-site.com, có thể query từ bất kỳ máy nào trong LAN:
+
++ Trong <i>/etc/named.conf</i>, bạn chỉ cần thêm vào 2 zones:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>zone "1.168.192.IN-ADDR.ARPA" IN {
+	type master;
+	file "1.168.192.db";
+};
+
+zone "quanta-site.com" IN {
+	type master;
+	file "quanta-site.com.db";
+};</pre>
+		</div>
+
++ Zone file <b>1.168.192.db</b> nằm trong <i>/var/named</i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 86400
+@       IN      SOA     quanta-site.com. root.quanta-site.com. &#40;
+                        2007121801 ; serial
+                        4H 		  ; refresh
+                        1H 		  ; retry
+                        1W 		 ; expire
+                        1D 		  ; minimum
+                        &#41;
+
+
+@       IN      NS      quanta-site.com.
+
+1       IN      PTR     one.quanta-site.com.
+2       IN      PTR     two.quanta-site.com.</pre>
+		</div>
+
++ Zone file <b>quanta-site.com.db</b> nằm trong <i>/var/named</i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 86400
+@       IN      SOA     quanta-site.com.  root.quanta-site.com. &#40;
+                        2007121802  ; serial
+                        8H                 ; refresh, seconds
+                        2H                 ; retry, seconds
+                        4W                ; expire, seconds
+                        1D                ; minimum, seconds
+                        &#41;
+@       IN     NS      quanta-site.com.
+
+	 IN	A 	   192.168.1.1
+ftp     IN	A	   192.168.1.3</pre>
+		</div>
+
++ Khởi động lại BIND named daemon:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /etc/init.d/named restart
+Stopping named:                                            &#91;  OK  &#93;
+Starting named:                                            &#91;  OK  &#93;</pre>
+		</div>
+
++ Chỉ định DNS server trong file /etc/resolv.conf:
+<blockquote>
+nameserver 192.168.1.3
+nameserver 127.0.0.1
+&nbsp;
+		</blockquote>
++ Thử một vài queries xem sao:
+<blockquote>
+# ping -c 3 quanta-site.com
+PING quanta-site.com (192.168.1.1) 56(84) bytes of data.
+64 bytes from one.quanta-site.com (192.168.1.1): icmp_seq=1 ttl=64 time=0.876 ms
+64 bytes from one.quanta-site.com (192.168.1.1): icmp_seq=2 ttl=64 time=0.880 ms
+64 bytes from one.quanta-site.com (192.168.1.1): icmp_seq=3 ttl=64 time=0.871 ms
+
+--- quanta-site.com ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.871/0.875/0.880/0.034 ms
+&nbsp;
+		</blockquote>
+<blockquote>
+# host quanta-site.com
+quanta-site.com has address 192.168.1.1
+&nbsp;
+		</blockquote>
+<blockquote>
+# host 192.168.1.1
+1.1.168.192.in-addr.arpa domain name pointer one.quanta-site.com.
+&nbsp;
+		</blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># nslookup quanta-site.com
+Server:         192.168.1.3
+Address:        192.168.1.3#53
+
+Name:   quanta-site.com
+Address: 192.168.1.1</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># nslookup 192.168.1.1
+Server:         192.168.1.3
+Address:        192.168.1.3#53
+
+1.1.168.192.in-addr.arpa        name = one.quanta-site.com.</pre>
+		</div>
+Trên đây chỉ là ví dụ cho một cấu hình đơn giản.
+
+<font color='brown'><b>CHÚC CÁC BẠN THÀNH CÔNG.</b></font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104747</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104747</link>
+				<pubDate><![CDATA[Wed, 19 Dec 2007 04:37:39]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình các zone files trong BIND</title>
+				<description><![CDATA[ Bác nói thêm về Zone: 1.168.192.IN-ADDR.ARPA . Nó có gì đặc biệt?. 
+Em thường thấy sau khi add site vào thì trong zone 1.168.192.IN-ADDR.ARPA nó thường có dạng:
+<blockquote>
+$TTL        86400
+@               IN      SOA     ns1.mysite.com. hostmaster.mysite.com. (
+                                2007121601       ; serial, todays date + todays serial #
+                                28800   ; Refresh
+                                7200    ; Retry
+                                604800  ; Expire
+                                86400)  ; Minimum TTL
+                        NS      ns1.mysite.com.
+                        NS      ns2.mysite.com.
+
+123       PTR     test123.com.
+123       PTR     www.test123.com.
+&nbsp;
+		</blockquote>
+
+file named.conf và 1.168.192.IN-ADDR.ARPA có mối quan hệ gì không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104749</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104749</link>
+				<pubDate><![CDATA[Wed, 19 Dec 2007 05:16:13]]> GMT</pubDate>
+				<author><![CDATA[ azteam]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình các zone files trong BIND</title>
+				<description><![CDATA[ <font color='brown'><b>Đọc kỹ đường link trong bài viết trên của tớ đi. Trang đó có nói khá đầy đủ.</b></font>
+
+<p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>Bác nói thêm về Zone: 1.168.192.IN-ADDR.ARPA . Nó có gì đặc biệt?. 
+&nbsp;
+		</blockquote>
+<i>1.168.192.IN-ADDR.ARPA</i> là một <b>Reverse Zone</b> (phân biệt với forward zone), nó có chức năng phân giải ngược từ địa chỉ IP ra domain. Reverse zone này sử dụng một reverse zone file có tên là <b>1.168.192.db</b> nằm trong <i>/var/named</i>.
+
+Với ví dụ trên của tớ, nếu bạn chạy <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>host 192.168.1.2</pre>
+		</div> sẽ nhận được kết quả sau:
+<blockquote>
+$ host 192.168.1.2
+2.1.168.192.in-addr.arpa domain name pointer two.quanta-site.com.
+&nbsp;
+		</blockquote>
+<font color='orange'><i>Một điều lưu ý là</i></font>: Trong reverse zone chỉ tồn tại 2 loại bản ghi: PTR và NS và bản ghi PTR cũng không thể có một bí danh CNAME.
+<p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>
+Em thường thấy sau khi add site vào thì trong zone 1.168.192.IN-ADDR.ARPA nó thường có dạng:
+<blockquote>
+$TTL        86400
+@               IN      SOA     ns1.mysite.com. hostmaster.mysite.com. (
+                                2007121601       ; serial, todays date + todays serial #
+                                28800   ; Refresh
+                                7200    ; Retry
+                                604800  ; Expire
+                                86400)  ; Minimum TTL
+                        NS      ns1.mysite.com.
+                        NS      ns2.mysite.com.
+
+123       PTR     test123.com.
+123       PTR     www.test123.com.
+&nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+Không riêng gì <b>1.168.192.db</b>, tất cả mọi zone files đều có định dạng tương tự như thế. 
+<p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>
+file named.conf và 1.168.192.IN-ADDR.ARPA có mối quan hệ gì không?&nbsp;
+		</blockquote>
+<b>named.conf</b> là file cấu hình chính của BIND, nó chứa các options, các Access Control List, các internal view, external view, các zones ...
+<i>1.168.192.IN-ADDR.ARPA</i> là một <b>reverse zone</b> nằm trong file cấu hình đó, hiển nhiên là chúng có mối quan hệ với nhau rồi. 
+
+Để hiểu rõ hơn bạn thử bỏ zone đó trong <i>/etc/named.conf</i> đi xem sao.
+Sau đó restart named:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># /etc/init.d/named restart
+Stopping named:                                            &#91;  OK  &#93;
+Starting named:                                            &#91;  OK  &#93;</pre>
+		</div>
+Thử thực hiện forward lookup:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># host quanta-site.com
+quanta-site.com has address 192.168.1.1</pre>
+		</div>
+Bây giờ thử reverse lookup:
+<blockquote>
+# host 192.168.1.1
+<font color='brown'><b>Host 1.1.168.192.in-addr.arpa. not found: 3(NXDOMAIN)</b></font>
+&nbsp;
+		</blockquote>
+hoặc:
+<blockquote>
+# nslookup 192.168.1.1
+Server:         192.168.1.3
+Address:        192.168.1.3#53
+
+<font color='brown'><b>** server can't find 1.1.168.192.in-addr.arpa.: NXDOMAIN</b></font>
+&nbsp;
+		</blockquote>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104750</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104750</link>
+				<pubDate><![CDATA[Wed, 19 Dec 2007 05:59:05]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình các zone files trong BIND</title>
+				<description><![CDATA[ Thanks bác. Bài viết của bác khá đầy đủ. Tuy nhiên có chỗ chưa thật chính xác:
+<blockquote>
+PTR: tên đầy đủ của server
+&nbsp;
+		</blockquote>
+
+Nói chính xác thì PTR (Point Record ) là một loại bản ghi (Record). Một bản ghi PTR thực hiện việc ánh xạ một địa chỉ IP đến một tên miền.
+Ex: 1.168.192.in-addr. arpa IN PTR mail.quanta-site.com
+
+in-addr. arpa và . arpa là các mức cao nhất trong không gian tên và miền ngược. Vì thế mọi tên miền ngược đều có đuôi là .in-addr.arpa.
+
+PTR có thể nói khá quan trọng đặc biệt trong việc sử dụng email, rất nhiều trường hợp không gửi được email cho các email đuôi @fpt, @viettel, @vnn ... là do server của các hosting provider  chưa được add PTR.
+
+Một vài ý kiến nhỏ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104763</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104763</link>
+				<pubDate><![CDATA[Wed, 19 Dec 2007 11:51:11]]> GMT</pubDate>
+				<author><![CDATA[ azteam]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình các zone files trong BIND</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">azteam wrote:</cite><br>
+		<blockquote>Thanks bác. Bài viết của bác khá đầy đủ. Tuy nhiên có chỗ chưa thật chính xác:
+<blockquote>
+PTR: tên đầy đủ của server
+&nbsp;
+		</blockquote>
+
+Nói chính xác thì PTR (Point Record ) là một loại bản ghi (Record). Một bản ghi PTR thực hiện việc ánh xạ một địa chỉ IP đến một tên miền.
+Ex: 1.168.192.in-addr. arpa IN PTR mail.quanta-site.com
+
+in-addr. arpa và . arpa là các mức cao nhất trong không gian tên và miền ngược. Vì thế mọi tên miền ngược đều có đuôi là .in-addr.arpa.
+
+PTR có thể nói khá quan trọng đặc biệt trong việc sử dụng email, rất nhiều trường hợp không gửi được email cho các email đuôi @fpt, @viettel, @vnn ... là do server của các hosting provider  chưa được add PTR.
+
+Một vài ý kiến nhỏ.&nbsp;
+		</blockquote>
+Cảm ơn <b>azteam</b>
+Thật ra thì chỗ đó tớ muốn nói đến: "<i>mình sẽ điền cái gì cho PTR trong 1 zone file</i>" chứ không nhằm "<i>giải thích ý nghĩa, chức năng của bản ghi PTR</i>". Tớ đã chỉnh lại cho đúng hơn.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104804</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#104804</link>
+				<pubDate><![CDATA[Wed, 19 Dec 2007 15:39:26]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình BIND</title>
+				<description><![CDATA[ <font color='cyan'><b>Phần II: Sử dụng rndc</b></font>
+
+Tham khảo từ: <span class="link"> http://www.redhat.com/docs/manuals/linux/RHL-7.2-Manual/ref-guide/s1-bind-rndc.html</span>
+
+BIND có một tiện ích gọi là <font color='orange'>rndc</font>, nó cho phép bạn quản lý <b>named</b> daemon, locally hay remotely bằng các dòng, khối lệnh. <b>rndc</b> sử dụng file <i>/etc/rndc.conf</i> cho các tuỳ chọn cấu hình.
+
+Đầu tiên bạn tạo một key bằng lệnh <b>dnssec-keygen</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ dnssec-keygen -a hmac-md5 -b 256 -n HOST rndckey
+Krndckey.+157+17600</pre>
+		</div>
+Lệnh này tạo ra 2 file <i>.key</i> và <i>.private</i>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls | grep Krndckey.+157+17600.
+Krndckey.+157+17600.key
+Krndckey.+157+17600.private</pre>
+		</div>
+Bạn tạo một file <font color='olive'><b>/etc/rndc.key</b></font> như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>key "rndckey" {
+	algorithm hmac-md5;
+	secret "ImNbiXwheU5S2/m2ZvmYbKC4iJTfPDwxoTr6GE+0UAs=";
+};</pre>
+		</div>
+Phần dữ liệu cho <b>secret</b> bạn copy từ 1 trong 2 file keys vừa tạo ra
+<blockquote>
+$ cat Krndckey.+157+17600.private 
+Private-key-format: v1.2
+Algorithm: 157 (HMAC_MD5)
+Key: <font color='orange'>ImNbiXwheU5S2/m2ZvmYbKC4iJTfPDwxoTr6GE+0UAs=</font>
+Bits: AAA=
+&nbsp;
+		</blockquote>
+<font color='olive'><b>/etc/named.conf</b></font>
+Để <b>rndc</b> có thể kết nối đến <b>named</b> service, trong <i>/etc/named.conf</i>, bạn cần đặt một khối lệnh <font color='orange'>controls</font> trước khi <b>named</b> khởi động, ví dụ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>controls {
+	inet 127.0.0.1 allow { localhost; } keys { rndckey; };
+};</pre>
+		</div>
+Khối lệnh này sẽ báo cho <b>named</b> biết để lắng nghe trên cổng TCP mặc định là 953 của địa chỉ loopback và cho phép <b>rndc</b> chạy trên localhost, nếu một key chính xác được gửi. 
+
+Khối lệnh <font color='orange'>key</font> trong <i>/etc/named.conf</i> (có thể copy từ <i>/etc/rndc.key</i>)
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>key "rndckey" {
+	algorithm hmac-md5;
+	secret "ImNbiXwheU5S2/m2ZvmYbKC4iJTfPDwxoTr6GE+0UAs=";
+};</pre>
+		</div>
+Hoặc đơn giản hơn, bạn dùng lệnh:
+<blockquote>include "/etc/rndc.key";&nbsp;
+		</blockquote>
+Ở đây, thuật toán mã hoá là HMAC-MD5
+
+<font color='olive'><b>rndc.conf</b></font>
+Để cấu hình <b>rndc</b> tự động sử dụng key được xác định trong <b>/etc/named.conf</b> cho localhost, bạn cần 3 khối lệnh trong <i>/etc/rndc.conf</i> 
+<font color='cyan'>options</font> cho phép bạn gán server mặc định, và key cho <b>rndc</b> sử dụng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>options {
+        default-key "rndckey";
+        default-server 127.0.0.1;
+        default-port 953;
+};</pre>
+		</div>
+<font color='cyan'>servers</font>: liệt kê các name server:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server localhost {
+        key "rndckey";
+};</pre>
+		</div>
+<font color='cyan'>key</font> là khối lệnh quan trọng nhất trong <i>/etc/rndc.conf</i>
+<blockquote>include "/etc/rndc.key";&nbsp;
+		</blockquote>
+
+Để test tất cả các phần cấu hình vừa rồi bạn có thể chạy <font color='olive'><i>rndc reload</i></font>, nếu thành công, bạn sẽ nhìn thấy thông báo sau:
+<blockquote>server reload successful&nbsp;
+		</blockquote>
+Nếu không hãy xem lại <i>/etc/named.conf</i> và <i>/etc/rndc.conf</i>
+
+<font color='green'><b>Các tùy chọn có thể dùng với rndc</b></font>
+
+<b>halt</b>: dừng dịch vụ named ngay lập tức
+
+<b>querylog</b>: bật logging cho tất cả các queries từ clients đến nameserver
+
+<b>refresh</b>: refresh lại database của nameserver
+
+<b>reload</b>: load lại các zone files nhưng giữ nguyên các cached reponses.
+
+<b>stats</b>: dumps named hiện tại vào file /var/named/named.stats
+
+<b>stop</b>: dừng server, save lại trước khi thoát
+
+<font color='green'><b>Chạy rndc với các cấu hình không phải là mặc định</b></font>
+
+<b>-c</b>: sử dụng file cấu hình khác, không phải là /etc/rndc.conf
+
+<b>-p</b>: thay đổi cổng mặc định (953)
+
+<b>-s</b>: cho rndc biết để gửi lệnh đến 1 server khác, không phải là server mặc định trong <i>/etc/rndc.conf</i>. Theo đó, bạn phải cấu hình named service khác để chấp nhận những lệnh từ host của bạn và có key cho nameservice
+
+<b>-y</b>: cho phép dùng key khác, không phải là key mặc định trong <i>/etc/rndc.conf</i>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#106118</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#106118</link>
+				<pubDate><![CDATA[Wed, 26 Dec 2007 01:53:17]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: Cấu hình BIND</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xevathethao wrote:</cite><br>
+		<blockquote>
+to Quanta
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Một điều lưu ý là: Trong reverse zone chỉ tồn tại 2 loại bản ghi: PTR và NS <font color='orange'><b>và bản ghi PTR cũng không thể có một bí danh CNAME</b></font>.
+&nbsp;
+		</blockquote>
+Mới đọc lướt qua bài này nhưng đã thấy một số sai lầm cơ bản.. cần phải sửa chữa tránh cho các bạn đọc hiểu sai căn bản.
+
+Thứ nhất:
+
+Trong Reverse Zone vẫn tồn tại dạng bạn ghi CNAME, ở bài này bạn mới viết một phần nhỏ đơn giản của Reverse đó là thực hiện cho ClassFull [ Class C 256 adds ] ..
+
+Khi thực hiện Subnet [delegate classless ] thì Reverse Zone phải thực hiện ALIAS [ CNAME ] cho các subnet con.
+
+Ví dụ Máy chủ A lưu trữ Reverse của CLass C 0/24 , bây giờ máy chủ A se chuyển giao 1 subnet 0/26 trong Class 0/24 cho máy chủ B khai báo khi đó se phải sử dụng kiểu CNAME để chuyển giao:
+
+Minh họa:
+
+Giả sử có Class C : 203.162.1.0/24
+
+Trong File Zone se có thêm khai báo của subnet như sau
+
+<blockquote>
+$ORIGIN .
+
+$TTL 86400 ; 1 day
+
+1.162.203.in-addr.arpa IN SOA .....
+
+
+( 2008121124 ; serial
+
+10800 ; refresh (3 hours)
+
+3600 ; retry (1 hour)
+
+604800 ; expire (1 week)
+
+86400 ; minimum (1 day)
+
+)
+&nbsp;
+		</blockquote>
+
+
+// Phần subnet
+
+<blockquote>
+$ORIGIN 1.162.203.in-addr.arpa.
+
+; Chuyển giao zone 0-26 cho máy chủ B
+
+0-26 NS Tên máy chủ DNS B
+
+
+1 CNAME 1.0-26
+
+2 CNAME 2.0-26
+.
+.
+64 CNAME 64.0-26 &nbsp;
+		</blockquote>&nbsp;
+		</blockquote>
+Chào <b>xevathethao</b>
+
+Trước hết cho tớ giải thích một chút (sợ mọi người hiểu nhầm): Bài dịch này được <b>tranvanminh</b> dời vào box "Các bài viết giá trị về hệ điều hành...". Tớ xin được dời lại nó vào box *nix để mọi người có thể thảo luận thêm.
+
+Quay trở lại phần góp ý của bạn, xin bạn lưu ý cho đoạn tớ viết:
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Một điều lưu ý là: Trong reverse zone chỉ tồn tại 2 loại bản ghi: PTR và NS <font color='orange'><b>và bản ghi PTR cũng không thể có một bí danh CNAME</b></font>.
+&nbsp;
+		</blockquote>
+tức là trong bản ghi PTR không thể dùng bí danh (CNAME).
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#108391</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#108391</link>
+				<pubDate><![CDATA[Fri, 4 Jan 2008 21:32:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Cấu hình BIND</title>
+				<description><![CDATA[ Em đọc bài này đọc đi dọc lại đọc thêm mấy cái tài của CentOS và nguồn từ internet cũng không thấy sáng ra tí nào. Em đang thiết kế một trang web cái này dùng VPS nên bên em lo từ A-Z. Tới phần named server thì chịu. Em làm theo thì khi thử nghiệm thì đều cho kết quả ổn, nhưng access DNS từ internet thì không nhận được trả lời nào.
+
+Dùng công cụ kiểm tra nói bảo là thêm A record cho ns1.domain.com và ns2.domain.com. Thêm rồi nhưng kết quả chẳng khả quan chút nào.
+
+Ai có thể gợi ý chút ít cho em được không ?.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#261170</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#261170</link>
+				<pubDate><![CDATA[Tue, 10 Apr 2012 20:14:18]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Cấu hình BIND</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>options {
+	listen-on port 53 { 127.0.0.1; };
+	listen-on-v6 port 53 { ::1; };
+	directory 	"/var/named";
+	dump-file 	"/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+
+	// Those options should be used carefully because they disable port
+	// randomization
+	// query-source    port 53;	
+	// query-source-v6 port 53;
+
+	allow-query     { any; };
+	allow-query-cache { any; };
+};
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+view localhost_resolver {
+	match-clients 	   { localhost; };
+	match-destinations { localhost; };
+	recursion yes;
+	include "/etc/named.rfc1912.zones";
+};</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>// named.rfc1912.zones:
+//
+// Provided by Red Hat caching-nameserver package 
+//
+// ISC BIND named zone configuration for zones recommended by
+// RFC 1912 section 4.1 : localhost TLDs and address zones
+// 
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+zone "." IN {
+	type hint;
+	file "named.ca";
+};
+
+zone "localdomain" IN {
+	type master;
+	file "localdomain.zone";
+	allow-update { none; };
+};
+
+zone "localhost" IN {
+	type master;
+	file "localhost.zone";
+	allow-update { none; };
+};
+
+zone "0.0.127.in-addr.arpa" IN {
+	type master;
+	file "named.local";
+	allow-update { none; };
+};
+
+zone "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa" IN {
+        type master;
+	file "named.ip6.local";
+	allow-update { none; };
+};
+
+zone "255.in-addr.arpa" IN {
+	type master;
+	file "named.broadcast";
+	allow-update { none; };
+};
+
+zone "0.in-addr.arpa" IN {
+	type master;
+	file "named.zero";
+	allow-update { none; };
+};
+
+zone "my-domain.com" IN {
+	type master;
+	allow-query { any; };
+	file "my-domain.com.db";
+};
+
+zone "XXX.YYY.ZZZ.IN-ADDR.ARPA" {
+	type master;
+	allow-query { any; };
+	file "XXX.YYY.ZZZ.db";
+};</pre>
+		</div>
+my-domain.com.db
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 604800
+@   IN  SOA my-domain.com. www.my-domain.com. &#40;
+      2000072802 ; serial
+      28800 ; refresh
+      7200 ; retry
+      3600000 ; expire
+      86400 ; default_ttl
+      &#41;
+@   IN  NS      ns1.my-domain.com
+ns1.my-domain.com. IN A ZZZ.YYY.XXX.188
+@   IN  NS    	ns2.my-domain.com
+ns2.my-domain.com. IN A ZZZ.YYY.XXX.189
+my-domain.com.              IN  A ZZZ.YYY.XXX.188
+www.my-domain.com.          IN  A ZZZ.YYY.XXX.188</pre>
+		</div>
+XXX.YYY.ZZZ.db
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 86400
+@       IN      SOA     my-domain.com. www.my-domain.com. &#40;
+                        2007121801 ; serial
+                        4H 		  ; refresh
+                        1H 		  ; retry
+                        1W 		 ; expire
+                        1D 		  ; minimum
+                        &#41;
+
+@       IN      NS      ns1.my-domain.com.
+@       IN      NS      ns2.my-domain.com.
+
+188       IN      PTR     my-domain.com.
+188       IN      PTR     www.my-domain.com.
+188	  IN 	  PTR 	  ns1.my-domain.com.
+189	  IN	  PTR 	  ns2.my-domain.com.</pre>
+		</div>
+Thử nghiệm:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ host www.my-domain.com.
+www.my-domain.com. has address ZZZ.YYY.XXX.188
+$ nslookup ZZZ.YYY.XXX.188
+Server:		127.0.0.1
+Address:	127.0.0.1#53
+
+188.XXX.YYY.ZZZ.in-addr.arpa	name = ns1.my-domain.com.
+188.XXX.YYY.ZZZ.in-addr.arpa	name = www.my-domain.com.
+188.XXX.YYY.ZZZ.in-addr.arpa	name = my-domain.com.</pre>
+		</div>
+Mất cả một đêm mà em chẳng làm xong cái này :|. Cái này khó thấm quá.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#261171</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#261171</link>
+				<pubDate><![CDATA[Tue, 10 Apr 2012 20:33:06]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Cấu hình BIND</title>
+				<description><![CDATA[ em nối máy ảo làm DNS này với máy ngoài , sao em ping vào tên domain k được mà ping đến địa chỉ của máy ảo lại được ạ . còn ping domain ngay chính trên máy cài DNS thì lại làm được , liệu có phải phần nào gây ra DNS này chỉ là cục bộ trên máy k bác ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/17448.hva#264822</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/17448.hva#264822</link>
+				<pubDate><![CDATA[Thu, 7 Jun 2012 04:19:25]]> GMT</pubDate>
+				<author><![CDATA[ duongtd1102]]></author>
+			</item>
+	</channel>
+</rss>

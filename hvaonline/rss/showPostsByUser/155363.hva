@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "St Konqueror"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/155363.hva</link>
+		<description><![CDATA[Messages posted by "St Konqueror"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Huawei E173Eu-1 trên Linux</title>
+				<description><![CDATA[ Bổ sung thêm file wvdial.conf của mình
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat /etc/wvdial.conf 
+
+&#91;Dialer Defaults&#93;
+Init1 = ATZ
+Init2 = ATQ0 V1 E1 S0=0 &C1 &D2 +FCLASS=0
+Modem Type = Analog Modem
+; Phone = &lt;Target Phone Number&gt;
+ISDN = 0
+; Password = &lt;Your Password&gt;
+; Username = &lt;Your Login Name&gt;
+Modem = /dev/ttyUSB0
+Baud = 9600
+
+&#91;Dialer viettel-3g&#93;
+Phone = *99#
+Username = ''
+Password = ''
+Stupid Mode = 1
+Baud = 460800
+Init3 = AT+CGDCONT=1,"IP","v-internet"</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40774/250982.hva#250982</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40774/250982.hva#250982</link>
+				<pubDate><![CDATA[Sun, 11 Dec 2011 03:46:52]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Huawei E173Eu-1 trên Linux</title>
+				<description><![CDATA[ Chào mọi người,
+
+Trước hết là câu hỏi mà mình sắp nêu ra có liên quan đến topic &quot;<b>D-Com 3G E173Eu-1 trên Gentoo</b>&quot; của anh <font color='orange'><b>quanta</b></font> <span class="link"> http://www.hvaonline.net/hvaonline/posts/list/39002.hva</span>). Vì topic kia đã lâu nên mình không &quot;đào mộ&quot; mà tạo topic mới.
+
+Thiết bị <b>Huawei E173Eu-1</b> thường có thể được tự động nhận diện trên Linux (ở trong topic này, distro mình dùng là Arch) dưới dạng<b> /dev/ttyUSB</b>* và chúng ta có thể quay số bằng wvdial. Thiết bị này mình đã dùng được một thời gian khá lâu, mãi đến gần đây (sau vài lần update packages) đem ra dùng lại thì không còn sử dụng được nữa.
+
+Thông tin về thiết bị:
+Nếu kiểm tra bằng lsusb thì Huawei sẽ có Vendor ID là <b>12d1</b> và Hardware ID của E173Eu-1 là <b>14b5</b> (đối với chế độ Mass Storage) hoặc <b>14a8 </b>(đối với chế độ 3G). Kết quả lsusb trên máy mình có vẻ là đúng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ lsusb | grep Huawei
+Bus 001 Device 023: ID 12d1:14a8 Huawei Technologies Co., Ltd.</pre>
+		</div>
+
+Ngoài ra, đèn LED của E173Eu-1 là màu xanh da trời nhấp nháy mỗi 3 giây, có nghĩa là có tìm thấy sóng 3G.
+
+Tuy nhiên, trong system của mình không còn thấy xuất hiện<b> /dev/ttyUSB* </b>nữa. Do vậy mà cả wvdial lẫn Network Manager đều không thể kết nối vào mạng 3G được nữa. Ví dụ:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo wvdial
+Password: 
+--&gt; WvDial: Internet dialer version 1.61
+--&gt; Cannot open /dev/ttyUSB0: No such file or directory
+--&gt; Cannot open /dev/ttyUSB0: No such file or directory
+--&gt; Cannot open /dev/ttyUSB0: No such file or directory</pre>
+		</div>
+
+Mình kiểm tra các file cấu hình của<b> usb_modeswitch</b> thì có vẻ là đúng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat /lib/udev/rules.d/40-usb_modeswitch.rules | grep -A1 Viettel
+# Huawei E173 &#40;Viettel 3G&#41;
+ATTRS{idVendor}==&quot;12d1&quot;, ATTRS{idProduct}==&quot;14b5&quot;, RUN+=&quot;usb_modeswitch '%b/%k'&quot;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat usb_modeswitch.setup | grep -A8 Viet
+# Huawei E173 &#40;Viettel 3G&#41;
+
+TargetVendor=  0x12d1
+TargetProduct= 0x14a8
+
+DefaultVendor= 0x12d1
+DefaultProduct=0x14b5
+
+MessageContent=&quot;55534243123456780000000000000011062000000100000000000000000000&quot;</pre>
+		</div>
+
+Tuy nhiên có một điểm đáng chú ý là nếu mình cắm thẻ nhớ microSD vào E173Eu-1 thì hệ thống sẽ tự nhận diện nó dưới dạng Storage USB (<b>/dev/sd[a-x]</b>) mặc dù lsusb vẫn cho ra kết quả là <b>12d1:14a8</b> chứ không phải <b>12d1:14b5</b>!
+
+Mình có thử vọc bằng 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo  rmmod usb-storage # để disable chế độ USB storage
+$ sudo modprobe usbserial # thử theo một số thông tin từ Google</pre>
+		</div>
+
+Nhưng mà vẫn vô phương. 
+
+Kernel mình đang dùng là <b>3.1.4</b>, cài đặt từ repo của Arch. Mình không có distro nào khác để test. Mình có thử trên Mac OS X thì USB 3G này vẫn chạy tốt (với phần mềm đi kèm của Viettel) nên loại trừ trục trặc của USB. Google thử vài vòng thì không ra giải pháp nào phù hợp. Chỉ có vài comment khá mơ hồ trên một số forum là vấn đề này thuộc về bản mới của wvdial.
+
+Không biết có bạn nào cũng gặp trục trặc tương tự mình không (đã từng dùng được một thời gian, sau đó là không dùng được nữa) thì ới một tiếng với. Nếu bạn nào đã tìm ra solution thì lại càng hoan nghênh.
+
+-stk
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40774/250981.hva#250981</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40774/250981.hva#250981</link>
+				<pubDate><![CDATA[Sun, 11 Dec 2011 03:38:36]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Chia dung lượng thư mục khi tạo Webserver</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vinhquang_th wrote:</cite><br>
+		<blockquote>Cảm ơn anh conmale và bạn centos.
+Mình muốn hỏi cụ thể một chút, Webserver dùng để làm Hosting và cho thuê Hosting thì các thư mục sau cần dung lượng tối thiểu là bao nhiêu?
+/root
+/boot
+/bin
+/var
+/dev
+/etc
+/home
+/var
+/usr
+/opt
+/lib&nbsp;
+		</blockquote><span class="link"> http://www.hvaonline.net/hvaonline/readingRoom/item/35831.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39393/242444.hva#242444</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39393/242444.hva#242444</link>
+				<pubDate><![CDATA[Wed, 29 Jun 2011 23:09:26]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Cần người hợp tác mở công ty về chuyên CNTT và Kỹ năng mềm</title>
+				<description><![CDATA[ 1. Anh nói đang công tác tại trường Đại học. Vậy cụ thể là trường nào?
+2. Anh nói có kinh nghiệm về thương mại điện tử. Vậy anh có thể chứng minh được điều đó không?
+
+Nếu được thì mong anh cung cấp một vài đường link về những gì anh đã làm.
+
+Cám ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39246/241368.hva#241368</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39246/241368.hva#241368</link>
+				<pubDate><![CDATA[Sat, 18 Jun 2011 18:52:01]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Liệu Instant Messenger có đáng tin cậy?</title>
+				<description><![CDATA[ Chào anh em,
+
+Số là cách đây vài năm mình có đọc bài viết của Pidgin nói về việc họ lưu mật mã dưới dạng PlainText trong file account.xml. <span class="link"> http://developer.pidgin.im/wiki/PlainTextPasswords</span>
+
+Tuy nhiên, lúc đó còn trẻ (còn nhỏ) quá nên không hiểu lắm về vụ này. Mãi đến gần đây lôi ra đọc lại mới thấy nhiều điểm đáng suy nghĩ. Đó là mấy tay Pidgin developers kết luận rằng IM vốn KHÔNG an toàn. Và cách các IM client khác lưu trữ password cũng không an toàn luôn.
+<blockquote>
+"But other programs don't store my password in plain text!"
+
+That's true. But few of them store it in a way that's any safer. A Google search for im passwords shows a bunch of hits for getting the passwords out of other IM clients just as easily as Pidgin.
+
+The very first link is a clear indication that none of these IM applications provide any sort of real password security: 
+...
+&nbsp;
+		</blockquote>
+
+Nói chung vụ này thì mình cảm thấy khá là mơ hồ. Đặc biệt là các protocols như Skype chả có tí tài liệu nào để tham khảo xem nó hoạt động ra làm sao. Chính vì vậy nên mình đăng câu hỏi này lên HVA, mong những ai có kinh nghiệm trong giới security vào chỉ bảo cho ít nhiều.
+
+Cheers.
+An]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39238/241246.hva#241246</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39238/241246.hva#241246</link>
+				<pubDate><![CDATA[Fri, 17 Jun 2011 09:43:18]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Lỗi tràn ổ cứng của server linux</title>
+				<description><![CDATA[ OT: Bạn có thể thử dùng <b>ncdu</b> để xem thay cho du. :) ncdu viết bằng ncurses, có hỗ trợ tương tác nên có lẽ sẽ thoải mái hơn tí.
+
+Cheers.
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/39085/241199.hva#241199</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/39085/241199.hva#241199</link>
+				<pubDate><![CDATA[Fri, 17 Jun 2011 02:55:01]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>ssh được nhưng scp bị treo ở 100%</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">secmask wrote:</cite><br>
+		<blockquote>Em oánh Google ra được cái này<span class="link"> http://www.derkeiler.com/Mailing-Lists/securityfocus/Secure_Shell/2010-06/msg00012.html</span>
+Tóm tắt lại là do 2 máy đã gửi qua nhau packet có kích thước &gt; MTU dẫn đến packet bị drop, việc này lại có lý do trước đó là quá trình discovery giá trị MTU trên &quot;PATH&quot;(con đường kết nối 2 host, bao gồm các router .. trung gian) không thành công. Thử một vài cách như này:
+
+1. Giảm MTU đến khi hết lỗi.
+2. Tìm xem thằng nào chặn ICMP discovery PMTU thì thiết đặt lại cho phép ICMP discovery PMTU.&nbsp;
+		</blockquote>
+
+Hehe, cái này có vẻ lí thú! Mình đang thử tái tạo lại xem có được không. 
+
+:)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38847/237890.hva#237890</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38847/237890.hva#237890</link>
+				<pubDate><![CDATA[Wed, 25 May 2011 13:49:45]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>hướng dẫn cách cài KDE or GNOME</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vanthanhth wrote:</cite><br>
+		<blockquote>Thanks!
+nhưng của mình là OpenBSD.&nbsp;
+		</blockquote>
+
+KDE trên OpenBSD:<span class="link"> http://is.gd/TswytM</span>
+GNOME trên OpenBSD:<span class="link"> http://is.gd/RtPhuQ</span>
+
+Bồ nên tập thói quen tìm kiếm và đọc tài liệu nhé.
+
+PS: Tớ tò mò chút, bồ học ở đâu mà lại có đề bài là OpenBSD và phải cài đặt cả bộ Desktop Environment vào? Thường thì đã dạy về BSD thì chỉ chú trọng mấy cái hard-core thôi chứ nhỉ, sao lại có vẻ... đại trà quá thế này?
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38509/236364.hva#236364</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38509/236364.hva#236364</link>
+				<pubDate><![CDATA[Thu, 28 Apr 2011 04:43:53]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Cần Tuyển Chuyên Viên Giám Sát An Toàn Thông Tin</title>
+				<description><![CDATA[ Mình đã gửi resume qua địa chỉ email của vikjava. :)
+Thân mến.
+- An]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38345/235638.hva#235638</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38345/235638.hva#235638</link>
+				<pubDate><![CDATA[Sun, 17 Apr 2011 06:32:08]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Linux, cơ hội nghề nghiệp và học tập ở nước ngoài</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thuongquoc wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Tệ hơn nữa, chính phủ không có chính sách thiết thực và mạnh mẽ nâng đỡ và đẩy mạnh phát triển Linux.
+Nếu không có chính sách và đường hướng nâng đỡ Linux và open source trong thời gian tới, có lẽ công việc quản trị hệ thống Linux ở VN rất hạn chế.
+&nbsp;
+		</blockquote>
+Quá chính xác. Vài năm trước họ phát động rầm rộ, báo chí liên tục viết bài về FOSS đặc biệt là Linux. Rất nhiều kinh phí đã được chi cho việc phổ cập kiến thức Linux nhưng đâu cũng vào đấy. Phần mềm nguồn đóng và bẻ khoá là lựa chọn số 1.
+Luật sở hữu trí tuệ về CNTT không được siết chặt, các cơ quan không chuyển sang dùng FOSS... là những lý do khiến FOSS kém phát triển ở Việt Nam.&nbsp;
+		</blockquote>
+
+Hehe, đúng là như vậy. Thành ra rất hy vọng thế hệ trẻ như bạn thuongquoc có thể làm được gì đó... "hoành tráng" hơn cho cộng đồng FOSS. Cái chính mà cộng đồng cần là sức trẻ và nhiệt huyết. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38141/234425.hva#234425</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38141/234425.hva#234425</link>
+				<pubDate><![CDATA[Fri, 1 Apr 2011 22:30:42]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Linux, cơ hội nghề nghiệp và học tập ở nước ngoài</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>...
+dù nhiều nhóm "open source"  cổ suý Linux mọc lên trong khoảng 2000 - 2010 nhưng <font color='red'>dần dần "rụng" hết</font>. Linux hiện nay chỉ được dùng rất hạn chế ở VN, chủ yếu những nhóm chuyên kỹ thuật sử dụng Linux ngoài ra chẳng mấy doanh nghiệp thật sự khuyến khích và sử dụng Linux (và open source).&nbsp;
+		</blockquote>
+
+Đọc xong mấy chữ màu đỏ của chú conmale, /me đỏ bừng mặt quay đi vì xấu hổ.  :^) 
+Hehe]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38141/234415.hva#234415</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38141/234415.hva#234415</link>
+				<pubDate><![CDATA[Fri, 1 Apr 2011 11:20:28]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Đề nghị tổ chức một buổi họp mặt nhằm quyên góp cho Nhật Bản</title>
+				<description><![CDATA[ Từ chỗ kêu gọi offline thành viên HVA để quyên góp từ thiện, topic này đã đi từ chỗ "diễn đàn thiện nguyện" đến chỗ "quốc gia, dân tộc": Đất nước Việt Nam chúng ta phải làm gì để giúp đỡ đất nước Nhật Bản anh em? Và rốt cuộc, chả thấy mấy phản hồi có giá trị về việc quyên góp từ thiện. :D
+
+Các bồ nên đọc kĩ lại những gì mà chú <font color='red'>conmale</font> viết. Các bồ nhớ cho là HVA chỉ là cái diễn đàn do admins bỏ tiền túi ra duy trì chứ chả phải tổ chức phi chính phủ quốc tế gì cả. Lấy danh nghĩa đâu mà đụng chuyện tiền nong? Trước nay diễn đàn là miễn phí 100% mà bao nhiêu bạn đăng kí nick 1, 2 ngày rồi vào nói ra những kế hoạch to lớn hoành tráng mong admin hãy mau chóng làm theo rồi. Giờ đụng chuyện tiền nong nữa thì ai rảnh đâu mà đi giải quyết mấy cái phát sinh.
+
+Tớ nghĩ là nếu có đóng góp thì hãy tìm kiếm các tổ chức NPO, NGO, các quỹ từ thiện đàng hoàng mà quyên góp. HVA cùng lắm cũng chỉ có thể là nơi thành viên của nó chia sẻ thông tin về các tổ chức từ thiện như vậy mà thôi.
+
+Thân.
+-stk
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37936/233549.hva#233549</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37936/233549.hva#233549</link>
+				<pubDate><![CDATA[Sat, 19 Mar 2011 11:15:43]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>HVAOnline's SSL expired?</title>
+				<description><![CDATA[ Hello BQT,
+
+Mấy hôm nay mình và vài người bạn mình khi thử đăng nhập https vào HVA thì được trình duyệt thông báo là certificate của HVA đã expire. Không biết vụ này thật hư ra sao nên muốn hỏi BQT HVA xem sao.
+
+Thanks!
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/38009/233547.hva#233547</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/38009/233547.hva#233547</link>
+				<pubDate><![CDATA[Sat, 19 Mar 2011 11:06:20]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>tìm việc IT support - Quản Trị Mạng tại Bình Dương và TPHCM</title>
+				<description><![CDATA[ Chào anh,
+
+Anh PM cho mình xem CV của anh được không? 
+
+Cám ơn anh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37758/233225.hva#233225</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37758/233225.hva#233225</link>
+				<pubDate><![CDATA[Tue, 15 Mar 2011 13:04:01]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về cập nhật nhân cho Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">jest wrote:</cite><br>
+		<blockquote>Mình có thắc mắc là tại sao các bản phân phối của Linux tại sao không biên dịch các bản cập nhật mới của nhân, người dùng chỉ việc cập nhật hệ thống mà người dùng phải tải mã nguồn nhân về rồi tự biên dịch lấy?&nbsp;
+		</blockquote>
+
+Bồ hiểu lầm rồi. Tất cả các bản phân phối Linux đều có bản cập nhật nhân (kernel) riêng của họ. Chỉ có điều, các bản cập nhật này thường được công bố chậm hơn các bản "vanilla" kernel cho nên những người dùng advanced thường thích tải bản "vanilla" về để tự biên dịch cho mình. Hơn nữa, bản kernel (đã được biên dịch sẵn) do chính nhóm phân phối Linux distro ấy thường khá to (vì nó phải thoả mãn hầu hết các cấu hình máy). Nếu tải "vanilla" kernel về tự biên dịch thì người dùng có cơ hội chọn lựa những "drivers" thích hợp riêng cho mình nên kernel thường nhỏ hơn và tối ưu hơn.&nbsp;
+		</blockquote>
+
+Không biết cài này có phải ý của jest muốn nói không nhưng các Linux distros có chu kỳ phát triển cố định thì thường chọn một version cố định cho kernel cũng như desktop environments,... cho từng bản phát hành. Ví dụ bản phát hành số 9 của distro này dùng nhân 2.6.32 thì trong suốt thời gian hỗ trợ họ chỉ cung cấp bản vá chứ không cung cấp bản update lên kernel 2.6.35 chẳng hạn (trừ khi dùng unstable repo thì không nói). Sau đó đến bản bản phát hành số 10 thì họ chọn 2.6.35 chẳng hạn và cứ thế...
+
+Lí do của việc này là để tăng tính ổn định của hệ thống (về mặt lý thuyết).
+
+Còn các distro rolling release như Arch, Gentoo, Fulgaware thì họ sẽ liên tục cung cấp binary cho kernel mới nhất. Và tất nhiên, kernel mà cứ đổi liên tục thì có thể có được những tính năng mới nhưng độ ổn định của hệ thống cũng không phải là không bị ảnh hưởng.
+
+Thân.
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37612/231475.hva#231475</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37612/231475.hva#231475</link>
+				<pubDate><![CDATA[Sun, 20 Feb 2011 02:13:58]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Tuyển CV Quản trị hệ thống Microsoft làm việc tại Ngân hàng tại HN</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">ORA2009 wrote:</cite><br>
+		<blockquote>Chào các bạn, 
+
+Vì một số lý do tế nhị nên mình chưa thể public thông tin của đơn vị tuyển dụng lên đây được mong mọi người thông cảm, mình sẽ thông tin thêm nếu bạn nào quan tâm. (Xin vui lòng PM/E-mail cho mình) 
+
+<b>Đơn vị tuyển dụng : </b>
+
+Là một Ngân hàng TMCP lớn có trụ sở chính tại HN, có hạ tầng CNTT hiện đại, môi trường làm việc tốt, trọng dụng người có năng lực chuyên môn, chính sách đãi ngộ tốt với IT.
+
+<b>Vị trí làm việc :</b> Chuyên viên Quản trị hệ thống Microsoft. 
+Làm việc tại Trung tâm CNTT thuộc trụ sở chính tại Hà Nội. 
+
+<b>Mô tả công việc: </b>
+
++ Quản trị hệ thống AD, Exchange, ISA/TMG Proxy, Windows Server 2003/Windows Server 2008, 
++ Hỗ trợ và vận hành các hệ thống ứng dụng cho nghiệp vụ ngân hàng (sẽ được đào tạo nếu chưa biết)
+
+<b>Yêu cầu : </b>
+
++ Đam mê công việc, có trách nhiệm với công việc, có tính cẩn thận, tính tình hòa nhã, hòa đồng với mọi người và đồng nghiệp. 
++ Có ít nhất 2 năm kinh nghiệm 
++ Có kiến thức tối thiểu tương đương MCSA .
+
+<b>Thu nhập và chế độ : </b>
+
+Lương : 8-10tr/th 
+Thưởng : Thưởng tết dương lịch, Lương tháng 13, thưởng tết âm lịch, thưởng cổ phiếu hàng năm, quyền mua cổ phiếu ưu đãi. 
+Được đóng đầy đủ BHYT, BHXH và các chế độ phúc lợi khác. 
+
+<b>Thời gian tuyển dụng :</b> Đến hết 30/3/2011 (ưu tiên ứng viên apply sớm)
+
+<b>Liên hệ :</b> Ứng viên quan tâm xin vui lòng apply qua E-mail : <b>ebanking2008vn (at) yahoo (dot) com</b> 
+
+Cảm ơn bạn đã đọc tin này!
+
+&nbsp;
+		</blockquote>
+
+Nếu đã 2 năm kinh nghiệm mà lương chỉ có 8 - 10 triệu thì có hơi thấp không nhỉ?
+
+Thân
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37595/231472.hva#231472</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37595/231472.hva#231472</link>
+				<pubDate><![CDATA[Sun, 20 Feb 2011 02:00:36]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về cập nhật nhân cho Linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">jest wrote:</cite><br>
+		<blockquote>Mình có thắc mắc là tại sao các bản phân phối của Linux tại sao không biên dịch các bản cập nhật mới của nhân, người dùng chỉ việc cập nhật hệ thống mà người dùng phải tải mã nguồn nhân về rồi tự biên dịch lấy?&nbsp;
+		</blockquote>
+
+Ơ, đâu ra cái vụ Linux distros không cung cấp bản vá cho kernel vậy bạn? :D 
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37612/231471.hva#231471</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37612/231471.hva#231471</link>
+				<pubDate><![CDATA[Sun, 20 Feb 2011 01:57:48]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Nhân Linux và BSD cái nào mạnh hơn?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">abc627 - ubuntu-vn.org wrote:</cite><br>
+		<blockquote>Theo mình biết thì Linux kernel ngày càng di xuống (nhiều bugs) do họ quản lí code của developer không tốt. Bên BSD thì họ làm chuyện này tốt hơn. Ông Linus Torvalds thì cho rằng bên BSD bày ra nhiều chuyện về bảo mật....&nbsp;
+		</blockquote>
+
+Một trong nhiều lí do khiến mình chỉ tham gia một forum duy nhất là HVA. :)<span class="link"> http://imgs.xkcd.com/comics/wikipedian_protester.png</span>
+
+<blockquote>
+Cho mình hỏi thêm tính ổn định của <b>một ứng dụng</b> phụ thuộc vào nhân hay môi trường làm việc (GNOME, KDE...)? &nbsp;
+		</blockquote>
+Bản thân KDE hay GNOME đã là "<b>nhiều ứng dụng</b>" rồi. :)
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37571/231227.hva#231227</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37571/231227.hva#231227</link>
+				<pubDate><![CDATA[Wed, 16 Feb 2011 21:59:08]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Sinh viên tình nguyện làm việc không lương</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tmd wrote:</cite><br>
+		<blockquote><b>Chai mặt</b> một tí gửi lung tung chổ,làm việc thì cũng phải có gì đó, đừng nói không lương. Tỏ ra mình là người có giá trị nhất định.&nbsp;
+		</blockquote>
+
+@nopain_nogain_e: Mới nghe thì có thể thấy hơi "khó nghe" với cách nói chuyện của tmd, nhưng mà nghĩ kĩ thì sẽ thấy là tmd nói có cái đúng trong đó. Bạn nên nhớ rằng chẳng ai cho không biếu không ai cái gì. 
+<blockquote>"Tôi làm việc cho anh, anh phải trả tiền cho tôi, đếch có chuyện tôi làm nô tỳ cho anh!"&nbsp;
+		</blockquote>
+Sức lao động của con người không phải rẻ mạt vậy đâu bạn. Hãy <b>tự định giá</b> sức lao động của mình. 
+
+Về Resumé của bạn thì mình có vài nhận xét (mang tính cá nhân) thế này:
+
+1. Nên... "nổ" thêm một tí (từ mà trên mạng hay dùng là "chém gió"). Bởi vì nếu thiếu kinh nghiệm thì hãy "nổ" là mình đã từng sử dụng/nghiên cứu những phần mềm ứng dụng nào (có liên quan đến công việc bạn apply) trước đây. Tuy nhiên, khi "nổ" nhớ là "nổ"... lựu đạn thôi, đừng cho... "nổ bom". :P Bởi vì nếu người ta hỏi thì mình còn có cái gì đó (ít thôi cũng được) để trả lời. Chứ CV ghi vào mà hỏi không biết gì hết là... out ngay!
+
+Ví dụ: Tui từng cài thử NFS, Samba ở nhà để share file giữa cái laptop và cái desktop bằng cách làm theo cái tutorial "mì ăn liền" nào đó trên mạng. Thế là tui ghi vô CV rằng tui có biết dùng NFS và Samba. Đến khi người phỏng vấn nhỡ có hỏi đến thì tui sẽ trả lời được những kiến thức cơ bản về chúng như file cấu hình của NFS là /etc/export chẳng hạn. Sau đó tui có thể chêm một câu là: 
+
+<blockquote>"Vì đã tự nghiên cứu NFS và Samba trước đây nên giờ em rất mong có cơ hội được làm việc một hệ thống chuyên nghiệp đang phục vụ cho nhu cầu chia sẻ dữ liệu của người dùng bên Cty anh để nâng cao kĩ năng làm việc và xử lí vấn đề của em với NFS và Samba."
+&nbsp;
+		</blockquote>
+2. Lượt bỏ <b>tất cả</b> những gì không cần thiết, không thật sự liên quan đến công việc. Nếu apply vào vị trí sysadmin thì bạn ghi Microsoft Office vào là vô nghĩa. Ngoài ra mình có cảm giác vì bạn còn ngại thiếu kinh nghiệm nên tìm cách nhét vào CV rất nhiều thông tin cực kì chi tiết về quá trình học của bạn. Điều này theo mình thấy là không thật sự cần thiết.
+
+Ví dụ thay vì ghi là biết dùng Microsoft Office hay Skype hay là email, hãy ghi là có kinh nghiệm làm việc nhóm chẳng hạn. (Vì đã làm việc nhóm thì có nghĩa là biết dùng email, office suite, IM client rồi).
+
+Thay vì ghi là tôi học Anh ngữ ở đâu, dịch phim ở đâu..., hãy ghi là tôi biết giao tiếp bằng tiếng Anh (sơ đẳng, lưu loát,...) và đọc/hiểu tài liệu tiếng Anh tốt (hoặc xuất sắc). (Nhớ là khoảng nào mà bạn <b>cực kì cực kì</b> tự tin thì đừng ngán gì mà không tự nhận xét là mình "xuất sắc" về khoảng đó).
+
+
+Nói chung thì trên đây chỉ là ý kiến cá nhân của mình để bạn tham khảo thêm thôi. Chúc bạn thành công và sớm tìm được công việc ưng ý.
+
+Thân mến.
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37543/231172.hva#231172</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37543/231172.hva#231172</link>
+				<pubDate><![CDATA[Tue, 15 Feb 2011 22:21:43]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Giúp em cấu hình con VPS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">thaihungdaklak wrote:</cite><br>
+		<blockquote>Total Memory 255416 kB&nbsp;
+		</blockquote>
+Mặc dù là muốn tối ưu hoá dể tận dụng phần cứng thì cũng làm được. Tuy nhiên, mình e là cũng sẽ chẳng cải thiện bao nhiêu. Bạn cứ thử nghĩ máy bàn đó chạy command-line thôi thì 512MB RAM đó đã ổn chưa mà VPS, nơi host website của bạn, thì chỉ có 256MB.
+
+Mình nghĩ chỉ có giải pháp nân cấp gói thuê VPS là hiệu quả nhất mà thôi.
+
+Thân.
+
+<p></p>
+		<cite class="blockquote">mr.lovev wrote:</cite><br>
+		<blockquote>Em cũng đang tìm con VPS 16G 
+anh chị nào có thì cho em xin một con.
+em cũng chỉ tìm hiểu về mấy cái này nên chưa biết gì nhiều
+anh chị nào có thì cho em 1 con nhé&nbsp;
+		</blockquote>
+
+Vui lòng không reply ngoài chủ đề. Nếu cần hãy mở một topic khác để hỏi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37458/230643.hva#230643</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37458/230643.hva#230643</link>
+				<pubDate><![CDATA[Sun, 30 Jan 2011 10:59:01]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Nhận biết kiểu mã hoá của file /etc/shadow</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vson89 wrote:</cite><br>
+		<blockquote>Các bạn, cho mình hỏi ví dụ như mình có một file được mã bằng một thuật toán nào đó giống như file /etc/shadow của linux, vậy làm ta có thể nhận biết được thuật toán được áp dụng trong file đó, mình cảm ơn nhiều&nbsp;
+		</blockquote><span class="link"> https://wiki.archlinux.org/index.php/Blowfish_passwords#Check_it.21</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37366/229791.hva#229791</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37366/229791.hva#229791</link>
+				<pubDate><![CDATA[Tue, 18 Jan 2011 19:01:17]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Di chuyển trên linux</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vson89 wrote:</cite><br>
+		<blockquote>các pro cho mình hỏi.
+Máy mình khi trước xài window xp, phân chia 3 ổ đĩa, một ổ C chứa window, 1 ổ DATA, và 1 ổ Software.
+Mình cài đặt lại bỏ window xp đi mình thay thế bằng OpenSuse, mình sử dụng tất cả dung lượng trong ổ C (30GB) để cài suse, một làm swap một làm /.
+Cho mình hỏi, mình muốn dùng terminal di chuyển đến 2 ổ DATA hoặc Software thì mình gõ lệnh như thế nào, mình cảm ơn.&nbsp;
+		</blockquote>
+
+Xin chào vson89,
+
+Bạn có thể dùng lệnh <b>mount</b>, có thể tham khảo manpage của lệnh đó bằng cách gõ 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ man mount</pre>
+		</div>
+
+Nếu bạn chưa quen với dòng lệnh thì man page của mount có lẽ sẽ hơi khó làm quen một tí. Tuy nhiên nói chung thì để truy cập data từ phân vùng của MS Windows, bạn sẽ cần một số gói như:
+<b>
+dosfstools</b> (DOS filesystem utilities)
+<b>mtools</b> (A collection of utilities to access MS-DOS disks)
+<b>ntfs-3g </b>(Stable read and write NTFS driver)
+<b>ntfsprogs </b>(NTFS filesystem utilities)
+
+Các gói này hỗ trợ đọc/ghi NTFS, FAT32, FAT16.
+
+Sau đó, bạn có thể vào /mnt, tạo thư mục (ví dụ /mnt/data) rồi mount phân vùng chứa data bên Windows vào.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># mount /dev/sda6 /mnt/data &#40;giả sữ /dev/sda6 là phân vùng cần sử dụng&#41;</pre>
+		</div>
+
+Tóm tắt là vậy.
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37363/229783.hva#229783</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37363/229783.hva#229783</link>
+				<pubDate><![CDATA[Tue, 18 Jan 2011 10:53:52]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Làm sao để Foresight Linux khởi động với GNOME trong VirtualBox?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">sunrise_vn wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">Ky0 wrote:</cite><br>
+		<blockquote>
+Bạn vui lòng cho biết file /var/log/Xorg.0.log có những gì? 
+-&nbsp;
+		</blockquote>
+Dùmg vim hả bạn? Mình thử thì thấy dày lắm :D
+Để mai mình sẽ upload hình lên :)&nbsp;
+		</blockquote>
+
+Quay trở lại topic của bạn: Để lấy thông tin từ /var/log/Xorg.0.log thì bạn có thể xem qua phần đầu file, nó có mô tả các kí hiệu quy ước., ví dụ:
+(EE) - Lỗi
+(WW) - Cảnh báo
+
+Ví dụ để xem xét trong file log nói trên có bao nhiêu lỗi, bao nhiêu cảnh báo thì dùng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ cat  /var/log/Xorg.0.log | grep -e "&#40;EE&#41;" -e "&#40;WW&#41;"</pre>
+		</div>
+
+Còn nếu bạn chưa quen làm việc với file log, thì hãy post nó lên pastebin rồi dẫn link vào đây. Đừng post vào diễn đàn.
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37341/229781.hva#229781</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37341/229781.hva#229781</link>
+				<pubDate><![CDATA[Tue, 18 Jan 2011 10:46:32]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Làm sao để Foresight Linux khởi động với GNOME trong VirtualBox?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">sunrise_vn wrote:</cite><br>
+		<blockquote>
+Mình hiểu Ky0 à, nhưng vấn đề là có hàng tỷ cách truyền đạt như Admin conmale đã nói, tại sao quanta không chọn cách tốt hơn cách quanta đang làm? Bức xúc này mình đã có từ hơn một năm nay khi có dịp nhờ quanta giúp đỡ nhưng không nhắc đến vì mình là mem còn quanta là mod mà, không chừng góp ý xong lại bị locked thì phải reg nick khác. Mình chỉ muốn nói thế này: ai muốn giúp đỡ người khác thì tốt nhất nên tiếp xúc, truyền đạt suy nghĩ của mình đến người khác thân thiện, hoà đồng hơn. Nếu có suy nghĩ cấp cao hơn thì không nên tham gia thảo luận mà chỉ nên làm nhiệm vụ locked và warn nick cấp thấp hơn. Mình nhớ trước đây cũng đã có 2 lần mod quanta được góp ý như thế.&nbsp;
+		</blockquote>
+
+Hơi off topic một xíu nhưng tớ khuyên bạn <b>sunrise_vn</b> hãy dành chút thời gian đọc (hoặc đọc lại) tài liệu "Đặt một câu hỏi thông minh như thế nào?" của Eric. S. Raymond. <b><font color='orange'>Đừng hiểu lầm</font></b>, tớ <b>không </b>nói cách bạn đặt tiêu đề bài viết và cách diễn đạt của bạn trong topic này có vấn đề hay là "không thông minh". Tớ khuyên bạn đọc tài liệu đó vì nó có vài đoạn khá hay nói về thái độ của một hacker khi trả lời câu hỏi. 
+
+Nói chung, là cách diễn đạt của anh <font color='orange'>quanta</font> rất ngắn gọn, súc tích và đi thẳng vào vấn đề. Bạn nên suy ngẫm và học hỏi anh ấy bởi vì các diễn đạt này là <b>cực kì cần thiết</b> trong môi trường làm việc cũng như khi cần giải quyết nhanh gọn, dứt khoát các vấn đề.
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37341/229779.hva#229779</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37341/229779.hva#229779</link>
+				<pubDate><![CDATA[Tue, 18 Jan 2011 10:39:49]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Làm sao để Foresight Linux khởi động với GNOME trong VirtualBox?</title>
+				<description><![CDATA[ Bạn đã kiểm tra xem GNOME và X11 đã được cài đặt vào hệ thống chưa?
+Nếu rồi (GNOME + X11) thì kiểm tra xem đã có Display Manager nào được cài đặt rồi? 
+Một số display manager: gdm (của GNOME), kdm, xdm, slim.
+Nếu đã có GNOME + X11 + Display Manager thì chạy cái Display Manager từ dòng lệnh (thường là với quyền root). 
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37341/229700.hva#229700</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37341/229700.hva#229700</link>
+				<pubDate><![CDATA[Mon, 17 Jan 2011 20:36:46]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>So sánh về độ an toàn của các protocols như XMPP, Skype, YMSG,...</title>
+				<description><![CDATA[ Hi all,
+
+Để chào năm mới 2011 thì mình muốn nêu ra một chủ đề để mọi người vào phân tích, thảo luận cho xôm tụ. Hiện nay có thể nói rằng việc trao đổi, liên lạc trên Internet thông qua các ứng dụng clients như Pidgin, Ekiga, Skype, Gtalk,... cũng như các protocols như YMSG, Skype protocol, XMPP, IRC,.. đã trở thành một phần cực kì quan trọng với rất nhiều người. Do vậy mình muốn nêu ra một chủ đề là trong các <b>giao thức</b> liên lạc phổ biến như vậy thì ưu điểm và nhược điểm của chúng trong khía cạnh an toàn thông tin là như thế nào? Nếu tạm thời không xét đến các vấn đề của clients thì từng protocol đó có những điểm nào an toàn và có những điểm nào dễ bị khai thác?
+
+Mời mọi người.
+-stk
+
+PS: Happy New Year, HVA!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37147/228340.hva#228340</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37147/228340.hva#228340</link>
+				<pubDate><![CDATA[Sat, 1 Jan 2011 02:35:30]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Dùng chung thư mục giữa các distro ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">m3onh0x84 wrote:</cite><br>
+		<blockquote>Em có cài vài distro trên cùng 1 hdd nên bị máy chạy hơi nặng tí, thiếu đất HDD , và dữ liệu bị phân tán. Em muốn dùng các distro linux của em dùng chung các thư mục như /tmp, /var, swap, /home, /dev, .... để tăng hiệu suất của máy.
+Em thấy /home, swap thì các bản linux có thể dùng chung được rồi. Nhưng còn các thư mục khác ? 
+Em đã thử 2 distro dùng chung /tmp mà k0 được :( làm lần nào cũng hỏng.Mong ae cho ý kiến &nbsp;
+		</blockquote>
+
+Đã bao nhiêu năm dùng Linux và đã có bao nhiêu forums, IRC channels khóa nick hoặc cấm IP của bạn rồi? Thiệt tình là mình không hiểu sao bao nhiêu năm rồi mà bạn vẫn không biết tìm trước khi hỏi và đặt một câu hỏi thông minh. <font color='orange'>Mr. Khoai</font> cất công viết 1 bài có 2 phần cực kì chi tiết về chủ đề này, xem ra cũng uổng với bạn. Tôi sẽ không dẫn link hay nêu tiêu đề bài viết đó để bạn... tự tìm kiếm. 
+
+Từ khóa với google "Mr. Khoai phân vùng Linux Windows hvaonline.net"
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/37049/227738.hva#227738</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/37049/227738.hva#227738</link>
+				<pubDate><![CDATA[Thu, 23 Dec 2010 23:13:51]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Chia sẻ ~/.screenrc hoặc ~/.tmux.conf của bạn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Mình gặp vấn đề là sau khi ssh rồi split, muốn remove (kill) current region với C-a X thì "có vẻ" là GNU Screen lại nhận là C-a x và lock luôn cái ssh session của mình lại. Mình đã thử với screen trong Terminal, Konsole, xterm. Bạn nào test hộ mình với.
+
+Chi tiết các bước như sau:
+<ul><li>ssh user@server
+screen
+C-a S
+C-a Tab
+C-a c
+C-a X</li></ul>&nbsp;
+		</blockquote>
+
+Anh quanta,
+
+Không biết là anh chỉ gặp vấn đề này khi ssh hay là bình thường cũng gặp? Em vừa thử trong tty, Konsole, xterm và ROXTerm nhưng đều không gặp vấn đề tương tự. Phiên bản em dùng là
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ screen -v
+Screen version 4.00.03 &#40;FAU&#41; 23-Oct-06</pre>
+		</div>
+
+Em đoán là có thể vấn đề của anh nằm ở:
+
+(1) Cách cấu hình bản GNU screen trên máy tính mà anh ssh vào có thể nhập nhằng về bindkeys.
+(2) Phím Shift của anh... bị trục trặc. :P
+
+Để em dạo vài vòng google xem có ai gặp trường hợp tương tự không.
+
+-stk]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/36783/226995.hva#226995</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/36783/226995.hva#226995</link>
+				<pubDate><![CDATA[Mon, 13 Dec 2010 09:58:21]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Antinetcut trong backtrack</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">shankstocdo wrote:</cite><br>
+		<blockquote><font color='orange'>Dù bị del vẫn mún hỏi!
+Sai ở đâu!</font>
+
+<font color='green'>khi muốn anti netcut! 
+dùng mạng bình thường!</font>
+
+<font color='red'>nói thật chưa bao giờ đọc nội quy bất kì frum nào!</font>
+lý do này chắc del cũng dc&nbsp;
+		</blockquote>
+
+Hãy khoan nói chuyện đến bạn tự xem mình là người dùng cuối hay người dùng dạng power user. Hãy bắt đầu với cách bạn đặt câu hỏi trước nhé? Bạn thử xem lại đoạn trên bạn viết vậy đã đúng với ngữ pháp tiếng Việt chưa?
+
+<font color='orange'>=&gt;</font> 
+1. Trong nội quy gửi bài có yêu cầu tránh sử dụng ngôn ngữ chat như &quot;<font color='orange'>mún</font>&quot;
+2. &quot;Sai ở đâu&quot; là câu hỏi thì không thể dùng dấu chấm than (<font color='orange'>!</font>)
+
+<font color='green'>=&gt;</font> Tôi dùng tiếng Việt gần 20 năm cũng chưa thấy kiểu ngôn ngữ nào què cụt tối nghĩa như vậy. 
+
+Bạn nên nhớ rằng khi viết bất cứ thứ gì thì cũng nên tỏ thái độ tôn trọng người sẽ đọc những gì bạn viết. Bạn viết què cụt tối nghĩa như vậy thì không thể nói là có chút sự tôn trọng nào dành cho người đọc. Cũng chỉ một vấn đề như bạn muốn nói, tôi đã cho bạn một mẫu câu ví dụ về cách diễn đạt. Tại sao bạn không chịu dành chút thời gian xem lại cách viết của bạn tối nghĩa đến mức nào? 
+<blockquote>
+
+&quot;Hi all,
+
+Mình có sử dụng một phần mềm tên là Antinetcut trên Windows để hạn chế băng thông trong mạng LAN. Trên Ubuntu Linux thì có thấy một phần mềm khác chức năng tương tự là Tuxcut. Tuy nhiên bản Tuxcut mình tìm được chỉ có định dạng *.deb, không biết có thể cài đặt trên BackTrack được không? Ngoài ra không biết trên BackTrack có sẵn phần mềm nào khác có chức năng tương tự hay không?
+
+Cám ơn. smilie&quot; &nbsp;
+		</blockquote>
+
+Với câu hỏi như trên thì chẳng cần phải biết gì về hệ thống Microsoft Windows hay GNU/Linux mới đặt được. Chỉ cần bỏ vài phút viết cho mạch lạc, trình bày sáng nghĩa là đủ rồi.
+
+Nói tóm lại bạn có tiếp thu hay không thì tùy ở bạn. Tuy nhiên bạn hãy thử nghĩ thế này, có phải sẽ đơn giản hơn cho tôi và các thành viên khác khi chỉ việc phớt lời bài viết của bạn không? Giữa việc còn có người chịu bỏ thời gian ra phản hồi cho bạn với việc họ chẳng thèm quan tâm bạn đang thắc mắc cái gì, bạn nghĩ điều gì tệ hơn? 
+
+Có lẽ bạn nên xem qua tài liệu &quot;Đặt một câu hỏi thông minh như thế nào?&quot;<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/13874.hva</span>
+
+-stk
+
+PS:
+<font color='red'>=&gt;</font> Rất tiếc HVA là nơi mọi người chia sẻ với nhau dựa trên tin thần tự nguyện chứ không ai được trả lương cho việc đó. Nếu bạn không biết cách tôn trọng luật chơi chung của sân chơi thì tốt nhất là không nên tham gia.
+
+Tiện đây, trước đây (khoảng 2 năm) tôi cũng thỉnh thoảng đặt ra những câu hỏi "<i>ngu ngốc</i>" với một số đàn anh và kết quả là tôi bị hầu hết trong số họ phớt lờ. Dần dần tôi mới thấy là chẳng thà có người ném vào mặt tôi mấy lời như RTFM hay JFGI thì vẫn còn tốt hơn là nhìn thấy câu hỏi của mình bị phớt lờ. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/36817/226389.hva#226389</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/36817/226389.hva#226389</link>
+				<pubDate><![CDATA[Sun, 5 Dec 2010 02:09:17]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+			<item>
+				<title>Chia sẻ ~/.screenrc hoặc ~/.tmux.conf của bạn</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mr.Khoai wrote:</cite><br>
+		<blockquote>Cái .screenrc của khoai rất đơn giản, cần gì thì mở thêm. Dạo này ít xài linux, và càng ít xài CLI smilie Screen của khoai vẫn bắt đầu từ 0, tại vì vẫn có thói quen sử dụng 0 làm session chính.
+
+Code:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>activity                "Active in %n &#40;%t&#41; &#91;%w:%s&#93;~"
+ defscrollback   3000
+ hardcopy_append on
+ caption always '%{= kG}&#91; %{G}%H %{g}&#93;&#91;%= %{= kw}%?%-Lw%?%{r}&#40;%{W}%n*%f%t%?&#40;%u&#41;%?%{r}&#41;%{w}%?%+Lw%?%?%= %{g}&#93;&#91;%{B} %m-%d %{W}%c %{g}&#93;'
+ shelltitle "$ |bash"</pre>
+		</div>
+
+khoai&nbsp;
+		</blockquote>
+Cool! Hoan nghênh anh Khoai! :)
+
+<p></p>
+		<cite class="blockquote">mR.Bi wrote:</cite><br>
+		<blockquote>screen cũng cắt ngang để hiển thị 2 screen sessions được, còn muốn cắt ngang dọc tùm lum thì tmux.
+&nbsp;
+		</blockquote>
+Anh Bi, _5tk nhớ là screen bản được đóng gói bởi các distro thường disable tính năng cắt dọc mà chỉ có tính năng cắt ngang. Nếu muốn cắt dọc thì phải git lôi source code của screen về tự build lấy thì phải?
+
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Anh có nói là không cắt ngang được đâu. Ý anh là hơi bất tiện khi cắt ngang rồi và chuyển qua lại giữa các sessions rồi scroll.&nbsp;
+		</blockquote>
+
+Ừm, đúng là hotkeys mặc định của GNU screen cũng như BSD tmux đều khá rối rắm và bất tiện. Do vậy thường thì mình cần phải xem tài liệu khá kĩ (mà cái man của nó thì dài như bộ kinh :P) để chỉnh lại theo ý muốn cá nhân. 
+Vỉ dụ như bật chức năng scroll back thì phải dùng dòng:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>defscrollback 1000</pre>
+		</div>
+Tuy nhiên sau một thời gian "vọc" GNU screen thì em thấy là các hotkeys mặc định hầu như không xung đột với chương trình nào khác. Còn hotkeys do mình tự thêm thì kiểu gì cũng sẽ xảy ra một ít xung đột. :P
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/36783/226385.hva#226385</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/36783/226385.hva#226385</link>
+				<pubDate><![CDATA[Sun, 5 Dec 2010 01:54:14]]> GMT</pubDate>
+				<author><![CDATA[ St Konqueror]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấp phát bộ nhớ con trỏ lỗi ?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấp phát bộ nhớ con trỏ lỗi ?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ Vì em không rõ lỗi chính xác có nằm ở việc cấp phát bộ nhớ con trỏ hay không nên em để tiêu đề chung chung, mong mọi người có thể giải đáp thắc mắc này, em có đoạn code sau :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;conio.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+int main&#40;&#41;
+{
+char *buffer = &quot;demo%20bai tap&quot;;
+char tempCode&#91;3&#93; = {0};
+int j;
+for&#40;int i = 0;i&lt; strlen&#40;buffer&#41;;i++&#41;
+{
+if&#40;buffer&#91;i&#93; == '%'&#41;
+{
+tempCode&#91;0&#93; = buffer&#91;i+1&#93;;
+tempCode&#91;1&#93; = buffer&#91;i+2&#93;;
+buffer&#91;i&#93; = strtol&#40;tempCode,NULL,16&#41;;
+j = i +1;
+do
+{
+buffer&#91;j&#93; = buffer&#91;j+2&#93;;
+}while&#40;buffer&#91;2+&#40;j++&#41;&#93;&#41;;
+}
+}
+printf&#40;&quot;\n %s \n&quot;,buffer&#41;;
+getch&#40;&#41;;
+return 0;
+}</pre>
+		</div>
+trong đoạn code trên nếu thay khai báo char *buffer = &quot;demo%20bai tap&quot;; thành char buffer[20] = &quot;demo%20bai tap&quot;; thì chương trình lại chạy bình thường, về mặt bản chất cả 2 khai báo trên là tương đương nhau vậy tại sao cách khai báo thứ nhất lại bị lỗi và lỗi xuất hiện tại dòng code sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>buffer&#91;i&#93; = strtol&#40;tempCode,NULL,16&#41;;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274102</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274102</link>
+				<pubDate><![CDATA[Thu, 14 Mar 2013 23:54:00]]> GMT</pubDate>
+				<author><![CDATA[ hoalong_317]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ bản chất 2 khai báo trên không tương đương nhau.
+
+với cách khai báo thứ nhất :
+char *buffer = "demo%20bai tap";
+ở đây trình dịch sẽ coi xâu "demo%20bai tap" là một resource và cất nó vào section .rdata sau đó cho buffer trỏ đến xâu này. do mặc định .rdata chỉ cho phép đọc nên khi bạn cố gắng ghi đè lên xâu cũ nó sẽ báo lỗi.
+
+với cách khai báo thứ 2:
+char buffer[20] = "demo%20bai tap";
+trình dịch sẽ cấp phát một vùng nhớ 20 byte trên stack cho buffer, sau đó copy nội dung của xâu "demo%20bai tap" từ .rdata vào buffer. Do đó bạn có thể dọc ghi thoải mái trên buffer.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274104</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274104</link>
+				<pubDate><![CDATA[Fri, 15 Mar 2013 01:20:13]]> GMT</pubDate>
+				<author><![CDATA[ n2tforever]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ char *buffer = &quot;demo%20bai tap&quot;;
+Đây là bạn lấy địa chỉ để lưu 1 giá trị cụ thể -&gt; sai. 
+Bạn có thê tưởng tượng *buffer là 1 ô nhớ nào đấy trên máy tính, còn  buffer[20] là 1 dãy ô nhớ 20 byte để lưu nội dung. Nếu *uuffer là cái địa chỉ nhà thì buffer là cái nhà rộng 20 byte.
+Bạn muốn lưu nội dung vào thì hình như tớ nhớ ko nhầm bạn cần phải cất thế này:
+**buffer: nghĩa là nội dung của con trỏ *buffer. 
+ví dụ demo cho bạn:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include&lt;iostream.h&gt;
+#include&lt;conio.h&gt;
+int main&#40;&#41;
+{
+    int a;
+    int *b;
+    cout&lt;&lt;&quot;\nNhap b&quot;;
+    cin&gt;&gt;*b;
+    cout&lt;&lt;&quot;b = &quot;&lt;&lt;*b;
+    cout&lt;&lt;&quot;\nDia chi con tro b&quot;&lt;&lt;b;
+    getch&#40;&#41;;
+    return 0;
+}</pre>
+		</div>&gt;]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274114</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274114</link>
+				<pubDate><![CDATA[Sat, 16 Mar 2013 04:32:43]]> GMT</pubDate>
+				<author><![CDATA[ startbkhn]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ <blockquote>
+char *buffer = &quot;demo%20bai tap&quot;; 
+Đây là bạn lấy địa chỉ để lưu 1 giá trị cụ thể -&gt; sai. 
+&nbsp;
+		</blockquote>
+Cái này không sai bạn à, con trỏ buffer ở trên dùng để trỏ tới vùng nhớ chứa chuỗi &quot;demo%20bai tap&quot; chứ không phải lấy địa chỉ của nó để lưu giá trị đó.
+<blockquote>
+Bạn muốn lưu nội dung vào thì hình như tớ nhớ ko nhầm bạn cần phải cất thế này: 
+**buffer: nghĩa là nội dung của con trỏ *buffer. 
+&nbsp;
+		</blockquote>
+Bạn lại nhầm về con trỏ rồi, khai báo **buffer là con trỏ trỏ tới con trỏ tức là buffer sẽ lưu địa chỉ của một con trỏ(bản chất con trỏ cũng là một biến nên nó cũng có địa chỉ trong ô nhớ) chứ không phải lưu nội dung của con trỏ , nội dung và địa chỉ là 2 cái khác nhau hoàn toàn
+Theo như giải thích của bạn n2tforever là có cơ sở, tôi cũng thấy kì lạ khi không thể write vào vùng nhớ được]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274120</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274120</link>
+				<pubDate><![CDATA[Sat, 16 Mar 2013 19:44:24]]> GMT</pubDate>
+				<author><![CDATA[ hoalong_317]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ Data của chương trình thì có 2 loại là read-only và read-write. Có thể tham khảo ở đây http://en.wikipedia.org/wiki/Data_segment
+Còn link này sẽ giải thích tại sao bạn bị lỗi http://c-faq.com/decl/strlitinit.html
+
+
+Thân,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274125</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274125</link>
+				<pubDate><![CDATA[Sun, 17 Mar 2013 00:58:41]]> GMT</pubDate>
+				<author><![CDATA[ Hatake_Kakashi]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ 1. Học lại các trình bày source.
+2. Đọc lại pointer.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+//#include &lt;conio.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+int main&#40;&#41;
+{
+	char *buffer;
+	buffer = malloc&#40;32&#41;;
+
+	if&#40;!buffer&#41;return -1; //can't malloc
+	strcpy&#40;buffer, &quot;demo%20bai tap&quot;&#41;;
+
+	char tempCode&#91;3&#93; = {0};
+	int j;
+	int i;
+
+	for&#40;i = 0;i&lt; strlen&#40;buffer&#41;;i++&#41;
+	{
+		if&#40;buffer&#91;i&#93; == '%'&#41;
+		{
+			tempCode&#91;0&#93; = buffer&#91;i+1&#93;;
+			tempCode&#91;1&#93; = buffer&#91;i+2&#93;;
+			buffer&#91;i&#93; = strtol&#40;tempCode,NULL,16&#41;;
+			j = i +1;
+			do
+			{
+				buffer&#91;j&#93; = buffer&#91;j+2&#93;;
+			}while&#40;buffer&#91;2+&#40;j++&#41;&#93;&#41;;
+		}
+	}
+	printf&#40;&quot;\n %s \n&quot;,buffer&#41;;
+	getchar&#40;&#41;;
+	if&#40;buffer&#41;free&#40;buffer&#41;;
+return 0;
+}</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274129</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274129</link>
+				<pubDate><![CDATA[Sun, 17 Mar 2013 05:26:58]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ Cái bạn khởi tạo được ngầm hiểu là const char*. Nên theo lý do các bạn ở trên đưa ra, nên nó lỗi do ghi lên vùng nhớ chỉ đọc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274130</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274130</link>
+				<pubDate><![CDATA[Sun, 17 Mar 2013 05:28:46]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Cấp phát bộ nhớ con trỏ lỗi ?</title>
+				<description><![CDATA[ Hồi mới ra trường đi phỏng vấn em bị hỏi câu này, trả lời không được bị fail về buồn không ăn cơm mấy ngày. Nhưng bù lại mình được kiến thức :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274132</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44412.hva#274132</link>
+				<pubDate><![CDATA[Sun, 17 Mar 2013 07:44:18]]> GMT</pubDate>
+				<author><![CDATA[ Hatake_Kakashi]]></author>
+			</item>
+	</channel>
+</rss>

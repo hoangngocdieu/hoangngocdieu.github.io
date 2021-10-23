@@ -1,0 +1,1085 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Base snort không hiển thị PortScan Traffic & restart banyard2 bị lỗi"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Base snort không hiển thị PortScan Traffic & restart banyard2 bị lỗi"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ Chào các bạn và các anh chị em
+Mình đã cài 5 lần 7 lượt snort theo các hướng dẫn tiếng việc và tiếng anh nhưng đều không hoạt động, qua 1 số lần có kinh nghiệm mình đã làm gần được rồi, mặc dù vấn đề các lỗi thường gặp khi triển khai snort mình đã tham khảo qua hết tất các các bài viết trên này và trên 4rum nhatnghe, nhưng vẫn còn 2 vần đề trục trặc sau mà mình muốn hỏi.
+Trước tiên Mình xin trình bày toàn bộ quá trình cài đặt snort của mình để mọi người tiện quan sát và xem thử có chỗ nào sai.
+Mô hình của mình là làm trên máy ảo VmWare, 1 máy ảo CentOS 6.4 i386 em dùng để triển khai Snort, mình dùng bản snort-2.9.5.5, 1 máy Windows XP dùng để test hoạt động của Snort. Lớp mạng mình dùng là 192.168.1.0/24 (máy CentOS có IP 192.168.1.2, máy Win XP có IP 192.168.1.3) Sau khi tiến hành cài các gói phần mềm cần thiết cho việc cài Snort thì mình tiến hành cài Snort theo hướng dẫn của trang snort.org như sau:
+Các file cài đặt và file rule của snort em để trong /usr/local/src/
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/src
+tar -xzvf snort-2.9.5.5.tar.gz
+cd snort-2.9.5.5</pre>
+		</div>
+Chỗ này mình tham khảo trên mạng nói là các bản snort 2.9.x.x trở lên không nên chạy với –with-mysql ngay từ đầu vì chắc chắn sẽ có lỗi mà chỉ chạy với --with-sourcefire
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./configure --enable-sourcefire
+make	
+make install</pre>
+		</div>
+Tạo thư mục làm việc của snort là /etc/snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /etc
+mkdir –p snort
+cd snort</pre>
+		</div>
+Chép hết các file trong snort-2.9.5.5/etc vừa giải nén được và vào /etc/snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp /usr/local/src/snort-2.9.5.5/etc/* .</pre>
+		</div>
+Bước giải nén và chép các rules
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>tar -xzvf /usr/local/src/snortrules-snapshot-2955.tar.gz 
+cp ./etc/* .
+touch /etc/snort/rules/white_list.rules
+touch /etc/snort/rules/black_list.rules
+mkdir /var/log/snort</pre>
+		</div>
+Tạo nhóm người dùng và user
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>groupadd -g 40000 snort
+useradd -g snort snort
+chown -R snort:snort *
+chown -R snort:snort /var/log/snort</pre>
+		</div>
+Sửa file cấu hình snort.conf các dòng sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/snort/snort.conf</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ipvar HOME_NET 192.168.1.0/24
+ipvar EXTERNAL_NET !$HOME_NET
+var RULE_PATH /etc/snort/rules
+var SO_RULE_PATH /etc/snort/so_rules
+var PREPROC_RULE_PATH /etc/snort/preproc_rules
+var WHITE_LIST_PATH /etc/snort/rules
+var BLACK_LIST_PATH /etc/snort/rules
+output unified2: filename snort.log, limit 128</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/src
+chown -R snort:snort daq-2.0.1
+chmod -R 755 daq-2.0.1
+chown -R snort:snort snort-2.9.5.5
+chmod -R 755 snort-2.9.5.5
+chown -R snort:snort snort_dynamicsrc
+chmod -R 700 snort_dynamicsrc</pre>
+		</div>
+Thiết lập snort khởi động cùng hệ thống
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/src/snort-2.9.5.5
+cd rpm
+cp snortd /etc/init.d
+chkconfig --add snortd
+ln -s /usr/local/bin/snort snort
+cd /usr/local/src/snort-2.9.5.5/rpm/
+cp snort.sysconfig /etc/sysconfig/snort
+chmod 755 /etc/init.d/snortd
+chmod 755 /etc/sysconfig/snort
+chmod 755 /var/log/snort
+cd /usr/local/lib
+chown -R snort:snort snort*
+chown -R snort:snort snort_dynamic*
+chown -R snort:snort pkgconfig
+chmod -R 755 snort*
+cd /usr/local/bin
+chown -R snort:snort daq-modules-config
+chown -R snort:snort u2*
+chmod -R 755 daq-modules-config
+chmod 755 u2*
+chown -R snort:snort snort
+chmod -R 755 snort</pre>
+		</div>
+Kiểm tra hoạt động của snort bằng 1 trong 2 dòng lệnh đưới đây
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./snort -T -i eth0 -u snort -g snort -c /etc/snort/snort.conf
+./snort -A fast -b -d -D -i eth0 -u snort -g snort -c /etc/snort/snort.conf -l /var/log/snort</pre>
+		</div>
+Thấy hiển thị 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort    28765  0.3 28.7 400772 146936 ? Ssl  02:36  0:00 ./snort -A fast -b -d -D -i eth0 -u snort -g snort -c 
+/etc/snort/snort.conf -l /var/log/snort
+root     28854  0.0  0.1   4356   752 pts/0  S+  02:39  0:00 grep -i snort</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>service snortd restart</pre>
+		</div>
+Thấy hiển thị
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Stopping snort:                                            &#91;  OK  &#93;
+Starting snort: Spawning daemon child...
+My daemon child 3090 lives...
+Daemon parent exiting &#40;0&#41;
+                                                           &#91;  OK  &#93;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>service snortd status</pre>
+		</div>
+Thấy hiển thị
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort &#40;pid 1886&#41; is running...</pre>
+		</div>
+Đến bước cài barnyard2-1.9
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /usr/local/src
+wget<span class="link"> http://pear.php.net/go-pear.phar</span>
+php go-pear.phar
+pear install Image_Graph-alpha Image_Canvas-alpha Image_Color Numbers_Roman
+tar -xzvf barnyard2-1.9.tar.gz
+cd barnyard2-1.9
+./configure --with-mysql
+make
+make install</pre>
+		</div>
+Copy file cấu hình barnyard2 vào /etc/snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp etc/barnyard2.conf /etc/snort/
+cp schemas/create_mysql /usr/local/src</pre>
+		</div>
+Sửa file cấu hình barnyard các dòng sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/snort/barnyard2.conf</pre>
+		</div>
+    <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>config reference_file: /etc/snort/reference.config
+    config classification_file: /etc/snort/classification.config
+    config gen_file: /etc/snort/gen-msg.map
+    config sid_file: /etc/snort/sid-msg.map
+    config hostname: localhost
+    config interface: eth0
+    output alert_fast: stdout
+    output database: log, mysql, user=snort password=123456
+    output database: alert, mysql, user=snort password=123456 dbname=snort host=localhost</pre>
+		</div>
+Thiết lập barnyard khởi động cùng hệ thống
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cp rpm/barnyard2 /etc/init.d
+chmod +x /etc/init.d/barnyard2
+cp rpm/barnyard2.config /etc/sysconfig/barnyard2
+chkconfig --add barnyard2
+ln -s /usr/local/etc/barnyard2.conf /etc/snort/barnyard.conf
+ln -s /usr/local/bin/barnyard2 /usr/bin/
+mkdir /var/log/barnyard2
+chmod 755 /var/log/barnyard2
+touch /var/log/snort/barnyard2.waldo
+chown snort.snort /var/log/snort/barnyard2.waldo
+cd /etc/init.d
+chkconfig barnyard2 on</pre>
+		</div>
+Ở bước này và các bước sau khi cài xong adodb, base hay tạo CSDL thì <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>service barnyard2 restart</pre>
+		</div> bị lỗi sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Shutting down Snort Output Processor &#40;barnyard2&#41;:          &#91;FAILED&#93;
+Starting Snort Output Processor &#40;barnyard2&#41;:               &#91;  OK  &#93;</pre>
+		</div>
+Kiểm tra thêm bằng lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>service barnyard2 status</pre>
+		</div>
+Thấy hiện thị
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>barnyard2 dead but subsys locked</pre>
+		</div>
+Bước tạo CSDL cho snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysqladmin -u root password 123456
+mysql -u root –p
+Enter password: 123456
+mysql&gt; use mysql;
+mysql&gt; CREATE USER 'snort'@'localhost' IDENTIFIED BY '123456';
+mysql&gt; create database snort;
+mysql&gt; grant create, insert, select, delete, update on snort.* to snort@localhost;
+mysql&gt; set password for snort@localhost=PASSWORD&#40;'123456'&#41;;
+mysql&gt; flush privileges;
+mysql&gt; exit;
+mysql -p
+Enter password:
+mysql&gt; show databases;
++--------------------+
+| Database            |
++--------------------+
+| information_schema|
+| mysql                 |
+| snort                  |
+| test                    |
++--------------------+</pre>
+		</div>
+Tạo bảng cho snort, Ở bước tạo table này mình không làm theo các cách như trên mạng hay như trong 1 số hướng dẫn như
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql –u root –p –D snort &lt; /usr/local/src/snort-2.9.5.5/schemas/create_mysql
+hay
+mysql –u root –p –D snort &lt; /usr/local/src/barnyard2-1.9/schemas/create_mysql</pre>
+		</div>
+vì thấy các file create_mysql trong các đường dẫn trên có sẵn rồi và cũng có thử cả 2 câu lệnh trên thấy nó báo mysql [-OPTION] [--help] gì đó và không tạo được, thấy trên mạng có 1 cách như dưới và mình làm thử thì đã tạo được bảng.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; use snort;
+mysql&gt; source /usr/local/src/create_mysql
+mysql&gt; show tables;
++------------------+
+| Tables_in_snort  |
++------------------+
+| data              |
+| detail            |
+| encoding       |
+| event            |
+| icmphdr        |
+| iphdr            |
+| opt               |
+| reference      |
+| reference_system|
+| schema            |
+| sensor             |
+| sig_class          |
+| sig_reference   |
+| signature        |
+| tcphdr            |
+| udphdr           |
++------------------+</pre>
+		</div>
+Bước cài base và adodb
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>cd /var/www/html
+tar -xzvf adodb511.tgz
+tar -xzvf base-1.4.5.tar.gz
+mv base-1.4.5/ base/
+cd base
+cp base_conf.php.dist base_conf.php</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi base_conf.php</pre>
+		</div>
+Sửa các dòng sau
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$BASE_urlpath = '/base';
+$DBlib_path = '/var/www/html/adodb5';
+$DBtype = 'mysql';
+$alert_dbname = 'snort';
+$alert_host = 'localhost';
+$alert_user = 'snort';
+$alert_password = '123456';
+$archive_exists = 1;
+$archive_dbname = 'snort';
+$archive_host = 'localhost';
+$archive_user = 'snort';
+$archive_password = '123456';</pre>
+		</div>
+chmod 777 /var/www/html/base
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/sysconfig/barnyard2</pre>
+		</div>
+sửa dòng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LOG_FILE=&quot;snort.log&quot;</pre>
+		</div>
+Trong quá trình khắc phục 1 số lỗi thì mình đã có chỉnh sửa 1 số file sau nên mình show hết ra lại cho anh em xem xét.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/sysconfig/barnyard2</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Config file for /etc/init.d/barnyard2
+LOG_FILE=&quot;snort.log&quot;
+# You probably don't want to change this, but in case you do
+SNORTDIR=&quot;/var/log/snort&quot;
+INTERFACES=&quot;eth0&quot;
+# Probably not this either
+CONF=/etc/snort/barnyard.conf
+EXTRA_ARGS=&quot;&quot;</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/init.d/barnyard2</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>!/bin/sh
+#
+# Init file for Barnyard2
+#
+# chkconfig: 2345 40 60
+# description:  Barnyard2 is an output processor for snort.
+#
+# processname: barnyard2
+# config: /etc/sysconfig/barnyard2
+# config: /etc/snort/barnyard.conf
+# pidfile: /var/lock/subsys/barnyard2.pid
+source /etc/rc.d/init.d/functions
+source /etc/sysconfig/network
+### Check that networking is up.
+&#91; &quot;${NETWORKING}&quot; == &quot;no&quot; &#93; && exit 0
+&#91; -x /usr/sbin/snort &#93; || exit 1
+&#91; -r /etc/snort/snort.conf &#93; || exit 1
+### Default variables
+SYSCONFIG=&quot;/etc/sysconfig/barnyard2&quot;
+### Read configuration
+&#91; -r &quot;$SYSCONFIG&quot; &#93; && source &quot;$SYSCONFIG&quot;
+RETVAL=0
+prog=&quot;barnyard2&quot;
+desc=&quot;Snort Output Processor&quot;
+start&#40;&#41; {
+        echo -n $&quot;Starting $desc &#40;$prog&#41;: &quot;
+        for INT in $INTERFACES; do
+                PIDFILE=&quot;/var/lock/subsys/barnyard2-$INT.pid&quot;
+                ARCHIVEDIR=&quot;$SNORTDIR/$INT/archive&quot;
+                WALDO_FILE=&quot;$SNORTDIR/$INT/barnyard2.waldo&quot;
+                BARNYARD_OPTS=&quot;-D -c $CONF -d $SNORTDIR/${INT} -w $WALDO_FILE -f $SNORTDIR/${INT} -a $ARCHIVEDIR -f $LOG_FILE -X $PIDFILE $EXTRA_ARGS&quot;
+                daemon $prog $BARNYARD_OPTS
+        done
+        RETVAL=$?
+        echo
+        &#91; $RETVAL -eq 0 &#93; && touch /var/lock/subsys/$prog
+        return $RETVAL
+}
+stop&#40;&#41; {
+        echo -n $&quot;Shutting down $desc &#40;$prog&#41;: &quot;
+        killproc $prog
+        RETVAL=$?
+        echo
+        &#91; $RETVAL -eq 0 &#93; && rm -f /var/lock/subsys/$prog
+        return $RETVAL
+}
+restart&#40;&#41; {
+        stop
+        start
+}
+reload&#40;&#41; {
+        echo -n $&quot;Reloading $desc &#40;$prog&#41;: &quot;
+        killproc $prog -HUP
+        RETVAL=$?
+        echo
+        return $RETVAL
+}
+case &quot;$1&quot; in
+  start&#41;
+        start
+        ;;
+  stop&#41;
+        stop
+        ;;
+  restart&#41;
+        restart
+        ;;
+  reload&#41;
+        reload
+        ;;
+  condrestart&#41;
+        &#91; -e /var/lock/subsys/$prog &#93; && restart
+        RETVAL=$?
+        ;;
+  status&#41;
+        status $prog
+        RETVAL=$?
+        ;;
+  dump&#41;
+        dump
+        ;;
+  *&#41;
+        echo $&quot;Usage: $0 {start|stop|restart|reload|condrestart|status|dump}&quot;
+        RETVAL=1
+esac
+exit $RETVAL</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/init.d/snortd</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# $Id$
+#
+# snortd         Start/Stop the snort IDS daemon.
+#
+# chkconfig: 2345 40 60
+# description:  snort is a lightweight network intrusion detection tool that \
+#                currently detects more than 1100 host and network \
+#                vulnerabilities, portscans, backdoors, and more.
+#
+# Source function library.
+. /etc/rc.d/init.d/functions
+# Source the local configuration file
+. /etc/sysconfig/snort
+# Convert the /etc/sysconfig/snort settings to something snort can
+# use on the startup line.
+if &#91; &quot;$ALERTMODE&quot;X = &quot;X&quot; &#93;; then
+   ALERTMODE=&quot;&quot;
+else
+   ALERTMODE=&quot;-A $ALERTMODE&quot;
+fi
+if &#91; &quot;$USER&quot;X = &quot;X&quot; &#93;; then
+   USER=&quot;snort&quot;
+fi
+if &#91; &quot;$GROUP&quot;X = &quot;X&quot; &#93;; then
+   GROUP=&quot;snort&quot;
+fi
+if &#91; &quot;$BINARY_LOG&quot;X = &quot;1X&quot; &#93;; then
+   BINARY_LOG=&quot;-b&quot;
+else
+   BINARY_LOG=&quot;&quot;
+fi
+if &#91; &quot;$CONF&quot;X = &quot;X&quot; &#93;; then
+   CONF=&quot;-c /etc/snort/snort.conf&quot;
+else
+   CONF=&quot;-c $CONF&quot;
+fi
+if &#91; &quot;$INTERFACE&quot;X = &quot;X&quot; &#93;; then
+   INTERFACE=&quot;-i eth0&quot;
+else
+   INTERFACE=&quot;-i $INTERFACE&quot;
+fi
+if &#91; &quot;$DUMP_APP&quot;X = &quot;1X&quot; &#93;; then
+   DUMP_APP=&quot;-d&quot;
+else
+   DUMP_APP=&quot;&quot;
+fi
+if &#91; &quot;$NO_PACKET_LOG&quot;X = &quot;1X&quot; &#93;; then
+   NO_PACKET_LOG=&quot;-N&quot;
+else
+   NO_PACKET_LOG=&quot;&quot;
+fi
+if &#91; &quot;$PRINT_INTERFACE&quot;X = &quot;1X&quot; &#93;; then
+   PRINT_INTERFACE=&quot;-I&quot;
+else
+   PRINT_INTERFACE=&quot;&quot;
+fi
+if &#91; &quot;$PASS_FIRST&quot;X = &quot;1X&quot; &#93;; then
+   PASS_FIRST=&quot;-o&quot;
+else
+   PASS_FIRST=&quot;&quot;
+fi
+if &#91; &quot;$LOGDIR&quot;X = &quot;X&quot; &#93;; then
+   LOGDIR=/var/log/snort
+Fi
+# These are used by the 'stats' option
+if &#91; &quot;$SYSLOG&quot;X = &quot;X&quot; &#93;; then
+   SYSLOG=/var/log/messages
+fi
+if &#91; &quot;$SECS&quot;X = &quot;X&quot; &#93;; then
+   SECS=5
+fi
+if &#91; ! &quot;$BPFFILE&quot;X = &quot;X&quot; &#93;; then
+   BPFFILE=&quot;-F $BPFFILE&quot;
+fi
+######################################
+# Now to the real heart of the matter:
+# See how we were called.
+case &quot;$1&quot; in
+  start&#41;
+        echo -n &quot;Starting snort: &quot;
+        cd $LOGDIR
+        if &#91; &quot;$INTERFACE&quot; = &quot;-i ALL&quot; &#93;; then
+           for i in `cat /proc/net/dev|grep eth|awk -F &quot;:&quot; '{ print $1; }'`
+           do
+                mkdir -p &quot;$LOGDIR/$i&quot;
+                chown -R $USER:$GROUP $LOGDIR
+                daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE -i $i -u $USER -g $GROUP $CONF -l $LOGDIR/$i $PASS_FIRST $BPFFILE $BPF
+           done
+        else
+           # check if more than one interface is given
+           if &#91; `echo $INTERFACE|wc -w` -gt 2 &#93;; then
+              for i in `echo $INTERFACE | sed s/&quot;-i &quot;//`
+                do
+                  mkdir -p &quot;$LOGDIR/$i&quot;
+                  chown -R $USER:$GROUP $LOGDIR
+                  daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE -i $i -u $USER -g $GROUP $CONF -l $LOGDIR/$i $PASS_FIRST $BPFFILE $BPF
+             done
+           else
+              # Run with a single interface &#40;default&#41;
+              daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE $INTERFACE -u $USER -g $GROUP $CONF -l $LOGDIR $PASS_FIRST $BPFFILE $BPF
+           fi
+        fi
+        touch /var/lock/subsys/snort
+        echo
+        ;;
+stop&#41;
+        echo -n &quot;Stopping snort: &quot;
+        killproc snort
+        rm -f /var/lock/subsys/snort
+        echo
+        ;;
+  reload&#41;
+        echo &quot;Sorry, not implemented yet&quot;
+        ;;
+  restart&#41;
+        $0 stop
+        $0 start
+        ;;
+  condrestart&#41;
+        &#91; -e /var/lock/subsys/snort &#93; && $0 restart
+        ;;
+  status&#41;
+        status snort
+        ;;
+  stats&#41;
+        TC=125                          # Trailing context to grep
+        SNORTNAME='snort'               # Process name to look for
+        if &#91; ! -x &quot;/sbin/pidof&quot; &#93;; then
+           echo &quot;/sbin/pidof not present, sorry, I cannot go on like this!&quot;
+           exit 1
+      fi
+        #Grab Snort's PID
+        PID=`pidof -o $$ -o $PPID -o %PPID -x ${SNORTNAME}`
+        if &#91; ! -n &quot;$PID&quot; &#93;; then        # if we got no PID then:
+           echo &quot;No PID found: ${SNORTNAME} must not running.&quot;
+           exit 2
+        fi
+        echo &quot;&quot;
+        echo &quot;*******&quot;
+        echo &quot;WARNING:  This feature is EXPERIMENTAL - please report errors!&quot;
+        echo &quot;*******&quot;
+        echo &quot;&quot;
+        echo &quot;You can also run: $0 stats &#91;long | opt&#93;&quot;
+        echo &quot;&quot;
+        echo &quot;Dumping ${SNORTNAME}'s &#40;$PID&#41; statistics&quot;
+        echo &quot;please wait...&quot;
+        # Get the date and tell Snort to dump stats as close together in
+        # time as possible--not 100%, but it seems to work.
+        startdate=`date '+%b %e %H:%M:%S'`
+        # This causes the stats to be dumped to syslog
+        kill -USR1 $PID
+        # Sleep for $SECS secs to give syslog a chance to catch up
+        # May need to be adjusted for slow/busy systems
+        sleep $SECS
+
+        if &#91; &quot;$2&quot; = &quot;long&quot; &#93;; then              # Long format
+            egrep -B 3 -A $TC &quot;^$startdate .* snort.*: ={79}&quot; $SYSLOG | \
+                grep snort.*:
+        elif &#91; &quot;$2&quot; = &quot;opt&quot; &#93;; then             # OPTimize format
+           # Just show stuff useful for optimizing Snort
+            egrep -B 3 -A $TC &quot;^$startdate .* snort.*: ={79}&quot; $SYSLOG | \
+                egrep &quot;snort.*: Snort analyzed |snort.*: dropping|emory .aults:&quot;
+        else                                    # Default format
+            egrep -B 3 -A $TC &quot;^$startdate .* snort.*: ={79}&quot; $SYSLOG | \
+                grep snort.*: | cut -d: -f4-
+        fi
+        ;;
+  *&#41;
+        echo &quot;Usage: $0 {start|stop|reload|restart|condrestart|status|stats &#40;long|opt&#41;}&quot;
+        exit 2
+esac
+exit 0</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /usr/local/etc/barnyard2</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#-------------------------------------------------------------
+#  Barnyard2 configuration file
+#
+# <span class="link"> http://www.securixlive.com/barnyard2</span>
+#   
+#  Contact: dev@securixlive.com
+#-------------------------------------------------------------
+#
+# This file contains a sample barnyard2 configuration. 
+# You can take the following steps to create your own custom configuration:
+#
+#   1&#41; Configure the variable declarations
+#   2&#41; Setup the input plugins
+#   3&#41; Setup the output plugins
+#
+# Step 1: configure the variable declarations
+#
+# in order to keep from having a commandline that uses every letter in the
+# alphabet most configuration options are set here.
+# use UTC for timestamps
+#
+#config utc
+# set the appropriate paths to the file&#40;s&#41; your Snort process is using.
+#
+config reference_file:	    /etc/snort/reference.config
+config classification_file: /etc/snort/classification.config
+config gen_file:            /etc/snort/gen-msg.map
+config sid_file:	        /etc/snort/sid-msg.map
+# define dedicated references similar to that of snort.
+#
+#config reference: mybugs<span class="link"> http://www.mybugs.com/?s=</span>
+# define explicit classifications similar to that of snort.
+#
+#config classification: shortname, short description, priority
+# set the directory for any output logging
+#
+#config logdir: /tmp
+# to ensure that any plugins requiring some level of uniqueness in their output
+# the alert_with_interface_name, interface and hostname directives are provided.
+# An example of usage would be to configure them to the values of the associated
+# snort process whose unified files you are reading.
+#
+# Example:
+#   For a snort process as follows:
+#     snort -i eth0 -c /etc/snort.conf
+#
+#   Typical options would be:
+#     config hostname:	thor
+#     config interface: eth0
+#     config alert_with_interface_name
+#
+config hostname:	localhost
+config interface:	eth0
+config alert_with_interface_name
+# enable printing of the interface name when alerting.
+#
+#config alert_with_interface_name
+# at times snort will alert on a packet within a stream and dump that stream to
+# the unified output. barnyard2 can generate output on each packet of that 
+# stream or the first packet only.
+#
+#config alert_on_each_packet_in_stream
+# enable daemon mode
+#
+#config daemon
+# make barnyard2 process chroot to directory after initialisation.
+#
+#config chroot: /var/spool/barnyard2
+# specifiy the group or GID for barnyard2 to run as after initialisation.
+#
+#config set_gid: 999
+# specifiy the user or UID for barnyard2 to run as after initialisation.
+#
+#config set_uid: 999
+# specify the directory for the barnyard2 PID file.
+#
+#config pidpath: /var/run/by2.pid
+# enable decoding of the data link &#40;or second level headers&#41;.
+#
+#config decode_data_link
+# dump the application data
+#
+#config dump_payload
+# dump the application data as chars only
+#
+#config dump_chars_only
+# enable verbose dumping of payload information in log style output plugins.
+#
+#config dump_payload_verbose
+# enable obfuscation of logged IP addresses.
+#
+#config obfuscate
+# enable the year being shown in timestamps
+#
+#config show_year
+# set the umask for all files created by the barnyard2 process &#40;eg. log files&#41;.
+#
+#config umask: 066
+# enable verbose logging
+#
+#config verbose
+# quiet down some of the output
+#
+#config quiet
+# define the full waldo filepath.
+#
+config waldo_file: /var/log/snort/barnyard2.waldo
+# specificy the maximum length of the MPLS label chain
+#
+#config max_mpls_labelchain_len: 64
+# specify the protocol &#40;ie ipv4, ipv6, ethernet&#41; that is encapsulated by MPLS.
+#
+#config mpls_payload_type: ipv4
+# set the reference network or homenet which is predominantly used by the
+# log_ascii plugin.
+#
+#config reference_net: 192.168.0.0/24
+#
+# CONTINOUS MODE 
+#
+# set the archive directory for use with continous mode
+#
+#config archivedir: /tmp
+# when in operating in continous mode, only process new records and ignore any
+# existing unified files
+#
+#config process_new_records_only
+# Step 2: setup the input plugins
+#
+# this is not hard, only unified2 is supported ;&#41;
+input unified2
+# Step 3: setup the output plugins
+# alert_cef
+#-----------------------------
+#
+# Purpose:
+#  This output module provides the abilty to output alert information to a
+# remote network host as well as the local host using the open standard
+# Common Event Format &#40;CEF&#41;.
+#
+# Arguments: host=hostname&#91;:port&#93;, severity facility
+#            arguments should be comma delimited.
+#   host		- specify a remote hostname or IP with optional port number
+#                 this is only specific to WIN32 &#40;and is not yet fully supported&#41;
+#	severity	- as defined in RFC 3164 &#40;eg. LOG_WARN, LOG_INFO&#41;
+#	facility	- as defined in RFC 3164 &#40;eg. LOG_AUTH, LOG_LOCAL0&#41;
+#
+# Examples:
+#	output alert_cef
+#	output alert_cef: host=192.168.10.1
+#	output alert_cef: host=sysserver.com:1001
+#	output alert_cef: LOG_AUTH LOG_INFO
+#
+# alert_bro
+#-----------------------------
+# 
+# Purpose: Send alerts to a Bro-IDS instance.
+#
+# Arguments: hostname:port
+#
+# Examples:
+#	output alert_bro: 127.0.0.1:47757
+# alert_fast
+#-----------------------------
+# Purpose: Converts data to an approximation of Snort's &quot;fast alert&quot; mode.
+# 
+# Arguments: file &lt;file&gt;, stdout
+#            arguments should be comma delimited.
+#   file - specifiy alert file
+#   stdout - no alert file, just print to screen
+# 
+# Examples:
+#   output alert_fast
+#   output alert_fast: stdout
+#
+output alert_fast: stdout
+# prelude: log to the Prelude Hybrid IDS system
+# ---------------------------------------------
+#
+# Purpose:
+#  This output module provides logging to the Prelude Hybrid IDS system
+#
+# Arguments: profile=snort-profile
+#   snort-profile	- name of the Prelude profile to use &#40;default is snort&#41;.
+#
+# Snort priority to IDMEF severity mappings:
+# high &lt; medium &lt; low &lt; info
+#
+# These are the default mapped from classification.config:
+# info   = 4
+# low    = 3
+# medium = 2
+# high   = anything below medium
+#
+# Examples:
+#   output alert_prelude
+#   output alert_prelude: profile=snort-profile-name
+#
+# alert_syslog
+#-----------------------------
+#
+# Purpose:
+#  This output module provides the abilty to output alert information to a
+# remote network host as well as the local host.
+#
+# Arguments: host=hostname&#91;:port&#93;, severity facility
+#            arguments should be comma delimited.
+#   host		- specify a remote hostname or IP with optional port number
+#                 this is only specific to WIN32 &#40;and is not yet fully supported&#41;
+#	severity	- as defined in RFC 3164 &#40;eg. LOG_WARN, LOG_INFO&#41;
+#	facility	- as defined in RFC 3164 &#40;eg. LOG_AUTH, LOG_LOCAL0&#41;
+#
+# Examples:
+#	output alert_syslog
+#	output alert_syslog: host=192.168.10.1
+#	output alert_syslog: host=sysserver.com:1001
+#	output alert_syslog: LOG_AUTH LOG_INFO
+#
+# log_ascii
+#-----------------------------
+# 
+# Purpose: This output module provides the default packet logging funtionality
+#
+# Arguments: None.
+#   
+# Examples:
+#   output log_ascii
+#
+# log_tcpdump
+# -------------------------------------------------
+#
+# Purpose
+#  This output module logs packets in binary tcpdump format
+#
+# Arguments:
+#   The only argument is the output file name.
+#
+# Examples:
+#   output log_tcpdump: tcpdump.log
+#
+# sguil
+#-----------------------------
+# 
+# Purpose: This output module provides logging ability for the sguil interface
+# See doc/README.sguil
+#
+# Arguments: agent_port &lt;port&gt;, sensor_name &lt;name&gt;
+#            arguments should be comma delimited.
+#   agent_port	- explicitly set the sguil agent listening port 
+#				  &#40;default: 7736&#41;
+#   sensor_name - explicitly set the sensor name 
+#				  &#40;default: machine hostname&#41;
+# 
+# Examples:
+#   output sguil
+#   output sguil: agent_port=7000
+#   output sguil: sensor_name=argyle
+#   output sguil: agent_port=7000, sensor_name=argyle
+#
+# database: log to a variety of databases
+# ---------------------------------------
+#
+# Purpose: This output module provides logging ability to a variety of databases
+# See doc/README.database for additional information.
+#
+# Examples:
+#   output database: log, mysql, user=root password=test dbname=db host=localhost
+output database: log, mysql, user=snort password=123456 dbname=snort host=localhost
+#   output database: alert, postgresql, user=snort dbname=snort
+#   output database: log, odbc, user=snort dbname=snort
+#   output database: log, mssql, dbname=snort user=snort password=test
+#   output database: log, oracle, dbname=snort user=snort password=test</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>vi /etc/snort/rules/local.rules</pre>
+		</div>
+Có các rule tự tạo
+     <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#-------------
+     # LOCAL RULES
+     #-------------
+     alert tcp any any -&gt; 192.168.1.2/24 any &#40;msg:&quot;Testing ScanPort 80&quot;; sid:10000        01;&#41;
+     alert tcp 192.168.1.3/24 any -&gt; 192.168.1.2/24 any &#40;msg:&quot;Testing ScanPort 22&quot;        ; sid:1000002;&#41;
+     alert ip any any -&gt; any any &#40;msg:&quot;IP Testing Rule&quot;; sid:1000003;&#41;
+     alert icmp any any -&gt; any any &#40;msg:&quot;ICMP Testing Rule&quot;; sid:1000004;&#41;
+     alert tcp any any -&gt; any any &#40;msg:&quot;TCP Testing Rule&quot;; sid:1000005;&#41;
+     alert udp any any -&gt; any any &#40;msg:&quot;UDP Testing Rule&quot;; sid:1000006;&#41;
+     alert tcp 192.168.1.3/24 any -&gt; any 80 &#40;msg:&quot;ScanPort 80&quot;; sid:1000007;&#41;
+     alert tcp 192.168.1.3/24 any -&gt; any 22 &#40;msg:&quot;ScanPort 22&quot;; sid:1000008;&#41;sid:1000008;&#41;</pre>
+		</div>
+Kiêm tra hoạt động của banyard2 bằng câu lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>barnyard2 -c /etc/snort/barnyard2.conf -d /var/log/snort/ -f snort.log -w /var/log/snort/barnyard2.waldo
+hoặc
+barnyard2 -c /etc/snort/barnyard2.conf -f merged.log -d /var/log/snort</pre>
+		</div>
+Thấy chạy ra nhiều nội dung nhưng đến dòng
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Opened spool file '/var/log/snort//snort.log.1384864281'
+Waiting for new data</pre>
+		</div>
+Thì thấy đứng lại rất lâu, chắc đang chạy tiếp
+Kiểm tra hoạt động của snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort -c /etc/snort/snort.conf -i eth0 -u snort -g snort
+hoặc
+snort -u snort -g snort -d -c /etc/snort/snort.conf</pre>
+		</div>
+Thấy chạy nhưng đến dòng này 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Commencing packet processing &#40;pid=5633&#41;</pre>
+		</div>
+Thì thấy đứng rất lâu chắc nó đang chạy tiếp.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ls -l /var/log/snort</pre>
+		</div>
+Thấy nội dung
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>total 19376
+-rw-r--r--. 1 root  root  11473353 Nov 19 04:29 alert
+-rwxr-xr-x. 1 snort snort     2056 Nov 19 04:26 barnyard2.waldo
+-rwxr-xr-x. 1 root  root         0 Nov 18 00:47 snort.alert
+-rwxr-xr-x. 1 root  root         0 Nov 18 00:47 snort.log
+-rw-------. 1 snort snort    10368 Nov 18 18:55 snort.log.1384829558
+-rw-------. 1 snort snort     2511 Nov 18 19:01 snort.log.1384829740
+-rw-------. 1 snort snort   412009 Nov 18 19:12 snort.log.1384830271
+-rw-------. 1 snort snort   342686 Nov 18 19:24 snort.log.1384830766
+-rw-------. 1 snort snort   264727 Nov 18 19:34 snort.log.1384831550
+-rw-------. 1 snort snort  1048649 Nov 18 19:51 snort.log.1384832827
+-rw-------. 1 snort snort    12114 Nov 18 20:03 snort.log.1384833256
+-rw-------. 1 snort snort    37632 Nov 19 01:38 snort.log.1384853634
+-rw-------. 1 snort snort  1825550 Nov 19 01:58 snort.log.1384853921
+-rw-------. 1 snort snort  4365676 Nov 19 04:29 snort.log.1384855103
+-rw-------. 1 snort snort     5922 Nov 19 04:25 snort.log.1384863836
+-rw-------. 1 snort snort     2710 Nov 19 04:26 snort.log.1384863949
+-rw-------. 1 root  root      1300 Nov 19 04:29 snort.log.1384864116</pre>
+		</div>
+Kiểm tra lại hoạt động của snort
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./snort -T -i eth0 -u snort -g snort -c /etc/snort/snort.conf</pre>
+		</div>
+Thấy chạy ra nhiều nội dung và kết thúc là
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Snort successfully validated the configuration!
+Snort exiting</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ps aux | grep -i &quot;snort&quot;</pre>
+		</div>
+Thấy hiển thị nội dung
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort     4062  0.3  0.9 400764  5016 ?        Ssl  03:48   0:10 /usr/sbin/snort -A fast -b -d -D -i eth0 -u snort -g snort -c /etc/snort/snort.conf -l /var/log/snort
+root      5383  0.0  1.1  14588  6108 ?        Ss   04:23   0:00 barnyard2 -c /etc/snort/barnyard2.conf -f merged.log -d /var/log/snort -D
+snort     5388  0.9  0.7 400704  3760 pts/0    Tl   04:23   0:10 snort -c /etc/snort/snort.conf -i eth0 -u snort -g snort
+snort     5475  1.1  0.7 400480  3592 pts/0    Tl   04:25   0:10 snort -u snort -g snort -d -c /etc/snort/snort.conf
+root      5545  0.0  2.0  28604 10576 pts/0    T    04:28   0:00 snort -dev -l /var/log/snort/
+snort     5633  1.7 28.5 400764 145928 pts/0   Tl   04:31   0:10 snort -u snort -g snort -d -c /etc/snort/snort.conf
+root      5657  2.3  1.2  14568  6560 pts/0    T    04:32   0:11 barnyard2 -c /etc/snort/barnyard2.conf -d /var/log/snort/ -f snort.log -w /var/log/snort/barnyard2.waldo
+root      5748  3.3  1.2  14568  6576 pts/0    T    04:35   0:11 barnyard2 -c /etc/snort/barnyard2.conf -f merged.log -d /var/log/snort
+root      5868  2.0  0.1   4356   724 pts/0    D+   04:40   0:00 grep -i snort</pre>
+		</div>
+Vấn đề thứ 2 mình muốn hỏi là sao đã thực hiện scanport bằng nmap, advance port scan, superscan4 như hình dưới
+<br>
+			<div align="center" class="limitview"><img src='http://i1095.photobucket.com/albums/i472/OLAKEN91/nm1_zps74dd8421.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://i1095.photobucket.com/albums/i472/OLAKEN91/aps_zps0bea78e5.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<br>
+			<div align="center" class="limitview"><img src='http://i1095.photobucket.com/albums/i472/OLAKEN91/sc_zps552c9624.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Base không hiển thị portscan traffic hay TCP
+<br>
+			<div align="center" class="limitview"><img src='http://i1095.photobucket.com/albums/i472/OLAKEN91/base_zps5b4a8131.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279039</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279039</link>
+				<pubDate><![CDATA[Tue, 19 Nov 2013 09:04:49]]> GMT</pubDate>
+				<author><![CDATA[ Nhóm Hắc Ker Tê]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ Bạn nào biết xem giúp với. hic]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279048</link>
+				<pubDate><![CDATA[Wed, 20 Nov 2013 08:40:10]]> GMT</pubDate>
+				<author><![CDATA[ Nhóm Hắc Ker Tê]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ Anh em đâu cả rồi, vào xem giúp mình tí]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279062</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279062</link>
+				<pubDate><![CDATA[Sat, 23 Nov 2013 03:46:48]]> GMT</pubDate>
+				<author><![CDATA[ Nhóm Hắc Ker Tê]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ trình bày kỹ thế mà không anh em nào xem giúp cái]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279074</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279074</link>
+				<pubDate><![CDATA[Sun, 24 Nov 2013 23:21:12]]> GMT</pubDate>
+				<author><![CDATA[ Nhóm Hắc Ker Tê]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ Để xem nào.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279412</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279412</link>
+				<pubDate><![CDATA[Sun, 5 Jan 2014 22:07:59]]> GMT</pubDate>
+				<author><![CDATA[ HarryS]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ có bác nào biết khắc phuc lỗi khi install snort không a? Em đã install và configure libpcap và libpcre rồi sao vẫn bi lỗi này. Help me!
+Error! Libpcre Library not found
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279921</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#279921</link>
+				<pubDate><![CDATA[Wed, 5 Mar 2014 06:01:26]]> GMT</pubDate>
+				<author><![CDATA[ kicktx]]></author>
+			</item>
+			<item>
+				<title>Base snort không hiển thị PortScan Traffic &amp; restart banyard2 bị lỗi</title>
+				<description><![CDATA[ @Nhóm HKT:
+- Snort của bạn chạy hoàn toàn bình thường.
+- Bạn chạy quá nhiều Snort instance. Mỗi instance ứng với một process của Snort ở dưới. Theo như tôi đếm được là 4. Tương tự với barnyard2 bạn cũng chạy đến 2 process. Lưu ý <b>chỉ chạy 1 tiến trình cho mỗi loại Snort và barnyard2</b> thôi.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>snort     4062  0.3  0.9 400764  5016 ?        Ssl  03:48   0:10 /usr/sbin/snort -A fast -b -d -D -i eth0 -u snort -g snort -c /etc/snort/snort.conf -l /var/log/snort
+root      5383  0.0  1.1  14588  6108 ?        Ss   04:23   0:00 barnyard2 -c /etc/snort/barnyard2.conf -f merged.log -d /var/log/snort -D
+snort     5388  0.9  0.7 400704  3760 pts/0    Tl   04:23   0:10 snort -c /etc/snort/snort.conf -i eth0 -u snort -g snort
+snort     5475  1.1  0.7 400480  3592 pts/0    Tl   04:25   0:10 snort -u snort -g snort -d -c /etc/snort/snort.conf
+root      5545  0.0  2.0  28604 10576 pts/0    T    04:28   0:00 snort -dev -l /var/log/snort/
+snort     5633  1.7 28.5 400764 145928 pts/0   Tl   04:31   0:10 snort -u snort -g snort -d -c /etc/snort/snort.conf
+root      5657  2.3  1.2  14568  6560 pts/0    T    04:32   0:11 barnyard2 -c /etc/snort/barnyard2.conf -d /var/log/snort/ -f snort.log -w /var/log/snort/barnyard2.waldo
+root      5748  3.3  1.2  14568  6576 pts/0    T    04:35   0:11 barnyard2 -c /etc/snort/barnyard2.conf -f merged.log -d /var/log/snort
+root      5868  2.0  0.1   4356   724 pts/0    D+   04:40   0:00 grep -i snort</pre>
+		</div>
+- Vấn đề portscan: để detect được tấn công portscan, bạn cần kích hoạt preprocessor sfportscan của Snort trong file snort.conf, đơn giản là uncomment nó (nếu cần) rồi restart lại Snort. Output của nó có 2 dạng là log dạng text hoặc unified2. Định dạng không giống các alert thông thường của Snort. Chi tiết bạn tìm hiểu ở đây:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>http://manual.snort.org/node78.html</pre>
+		</div>
+
+@kicktx: libpcre có thể được cài đặt qua yum hoặc apt-get (nếu bạn dùng Linux).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45305.hva#280011</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45305.hva#280011</link>
+				<pubDate><![CDATA[Thu, 13 Mar 2014 15:53:29]]> GMT</pubDate>
+				<author><![CDATA[ lightsea90]]></author>
+			</item>
+	</channel>
+</rss>

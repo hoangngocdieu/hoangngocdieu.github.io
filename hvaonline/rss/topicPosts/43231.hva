@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi khởi động apache tomcat trên ubuntu"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi khởi động apache tomcat trên ubuntu"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi khởi động apache tomcat trên ubuntu</title>
+				<description><![CDATA[ Em chào các anh.
+
+Em mới học cách sử dụng ubuntu trong thời gian gần đây. Em có thử cài apache tomcat lên nhưng khi khởi động gặp trục trặc như sau:
+
+INFO: The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: /usr/lib/jvm/java-6-openjdk/jre/lib/i386/server:/usr/lib/jvm/java-6-openjdk/jre/lib/i386:/usr/lib/jvm/java-6-openjdk/jre/../lib/i386:/usr/java/packages/lib/i386:/usr/lib/i386-linux-gnu/jni:/lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/lib/jni:/lib:/usr/lib
+Aug 22, 2012 7:54:51 PM org.apache.catalina.startup.SetAllPropertiesRule begin
+WARNING: [SetAllPropertiesRule]{Server/Service/Connector} Setting property 'maxSpareThreads' to '75' did not find a matching property.
+Aug 22, 2012 7:54:52 PM org.apache.catalina.startup.Catalina start
+SEVERE: Catalina.start: 
+org.apache.catalina.LifecycleException: An invalid Lifecycle transition was attempted ([before_start]) for component [StandardServer[8005]] in state [INITIALIZING]
+	at org.apache.catalina.util.LifecycleBase.invalidTransition(LifecycleBase.java:386)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:139)
+	at org.apache.catalina.startup.Catalina.start(Catalina.java:620)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:616)
+	at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:303)
+	at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:431)
+Aug 22, 2012 7:54:52 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 1 ms
+
+Khi em thử stop tomcat đi thì nhận tiếp được đoạn log như sau:
+
+Aug 22, 2012 10:32:58 PM org.apache.catalina.core.StandardServer await
+INFO: A valid shutdown command was received via the shutdown port. Stopping the Server instance.
+Aug 22, 2012 10:32:58 PM org.apache.catalina.startup.Catalina stop
+SEVERE: Catalina.stop
+org.apache.catalina.LifecycleException: An invalid Lifecycle transition was attempted ([before_stop]) for component [StandardServer[8005]] in state [INITIALIZING]
+	at org.apache.catalina.util.LifecycleBase.invalidTransition(LifecycleBase.java:386)
+	at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:212)
+	at org.apache.catalina.startup.Catalina.stop(Catalina.java:693)
+	at org.apache.catalina.startup.Catalina.start(Catalina.java:654)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:616)
+	at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:303)
+	at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:431)
+
+<b>Thông tin bổ sung khác:</b>
+OS: Ubuntu 11.04-natty
+Linux kernel: 2.6.38-8-generic
+Apache tomcat: 7.0.14
+Java version: jdk1.6.0_33
+
+Em cũng đã set JAVA_HOME và CATALINA_HOME trong ~/.bashrc rồi
+
+Các anh giúp em sửa lỗi này với ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43231.hva#268648</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43231.hva#268648</link>
+				<pubDate><![CDATA[Wed, 22 Aug 2012 10:43:36]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Lỗi khởi động apache tomcat trên ubuntu</title>
+				<description><![CDATA[ Em đã sửa được hết lỗi kể trên rồi. Tiện đây, em viết lại cách giải quyết cho những bạn mới chập chững như em luôn. Bạn nào bị như tớ thì làm thử thế này nhé.
+
+<b>INFO</b>: The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: /usr/lib/jvm/java-6-openjdk/jre/lib/i386/server:/usr/lib/jvm/java-6-openjdk/jre/lib/i386:/usr/lib/jvm/java-6-openjdk/jre/../lib/i386:/usr/java/packages/lib/i386:/usr/lib/i386-linux-gnu/jni:/lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/lib/jni:/lib:/usr/lib 
+
+Thông báo này xuất hiện là do Apache tomcat hiện thời bị thiếu JNI wrapper (libtcnative)
+Xem trong này: <span class="link"> http://tomcat.apache.org/tomcat-7.0-doc/apr.html#Linux</span>
+
+Tớ update lại repositories của ubuntu đã:
+sudo apt-get update. 
+Tải và cài đặt libtcnative từ repositories:
+sudo apt-get install libtcnative-1
+
+Hiện tại libtcnative trên repositories của Ubuntu mới chỉ lên đến phiên bản 1.1.20. Với bản tomcat mới nhất hiện nay 7.0.29, bạn cần dùng libtcnative 1.1.24. Con tomcat của tớ dùng là 7.0.14 thì tương thích với libtcnative 1.1.20 đấy.
+
+<b>WARNING</b>: [SetAllPropertiesRule]{Server/Service/Connector} Setting property 'maxSpareThreads' to '75' did not find a matching property. 
+
+Cái này là tớ đang cấu hình tomcat theo hướng dẫn để nó hỗ trợ https qua port 8443. Với con tomcat mới nguyên vừa download về, cấu hình mặc định của nó sẽ không có dòng maxSpareThreads nào trong server.xml cả đâu.
+
+<b>SEVERE</b>: Catalina.start:
+org.apache.catalina.LifecycleException: An invalid Lifecycle transition was attempted ([before_start]) for component [StandardServer[8005]] in state [INITIALIZING]
+at org.apache.catalina.util.LifecycleBase.invalidTransition(LifecycleBase.java:386)
+at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:139)
+at org.apache.catalina.startup.Catalina.start(Catalina.java:620)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:616)
+at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:303)
+at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:431)
+Aug 22, 2012 7:54:52 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 1 ms 
+
+Đoạn này là do cấu hình biến môi trường JAVA_HOME và CATALINA_HOME bị sai đấy :D
+
+Tớ xem lại trong ~/.bashrc thì thấy:
+JAVA_HOME=/usr/local/jdk1.6.0_33
+CATALINA_HOME=/home/secret/apache-tomcat-7.0.14
+PATH=$PATH:$JAVA_HOME/bin:$CATALINA_HOME/bin
+
+nhưng hoá ra đúng của nó phải là:
+<b>export</b> JAVA_HOME=/usr/local/jdk1.6.0_33
+<b>export</b> CATALINA_HOME=/home/secret/apache-tomcat-7.0.14
+<b>export</b> PATH=$PATH:$JAVA_HOME/bin:$CATALINA_HOME/bin
+
+Cũng lạ bởi dù chưa sử dụng export thì khi kiểm tra lại biến môi trường vừa set qua echo thì thấy vẫn trả về kết quả đúng nhưng khi chạy ./startup.sh thì lại in kết quả sai:
+Using CATALINA_BASE:   /home/secret/apache-tomcat-7.0.14
+Using CATALINA_HOME:   /home/secret/apache-tomcat-7.0.14
+Using CATALINA_TMPDIR: /home/secret/apache-tomcat-7.0.14/temp
+Using JRE_HOME:        /usr
+Using CLASSPATH:       /home/secret/apache-tomcat-7.0.14/bin/bootstrap.jar:/home/secret/apache-tomcat-7.0.14/bin/tomcat-juli.jar
+
+Còn sau khi dùng lệnh export thì khi chạy ./startup.sh thì in kết quả đúng như sau:
+Using CATALINA_BASE:   /home/secret/apache-tomcat-7.0.14
+Using CATALINA_HOME:   /home/secret/apache-tomcat-7.0.14
+Using CATALINA_TMPDIR: /home/secret/apache-tomcat-7.0.14/temp
+Using JRE_HOME:        /usr/local/jdk1.6.0_33
+Using CLASSPATH:       /home/secret/apache-tomcat-7.0.14/bin/bootstrap.jar:/home/secret/apache-tomcat-7.0.14/bin/tomcat-juli.jar
+
+Đến lúc này, tớ có thể start/stop tomcat thoải mái mà không có lỗi gì cả. Xong rồi nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/43231.hva#268726</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/43231.hva#268726</link>
+				<pubDate><![CDATA[Fri, 24 Aug 2012 11:47:32]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

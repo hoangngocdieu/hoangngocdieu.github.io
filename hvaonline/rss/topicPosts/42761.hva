@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Recv bị đứng khi lập trình Winsock"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Recv bị đứng khi lập trình Winsock"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Recv bị đứng khi lập trình Winsock</title>
+				<description><![CDATA[ Em đang tập tành lập trình trên windows trở lại, nên bắt tay viết một số cái demo code. Nhưng mà dạo này thức khuya nhiều em cứ như thằng bại não thế này. Anh em nào giúp em với giờ em thấy bí rồi.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+//#include &lt;windows.h&gt;
+#include &lt;winsock2.h&gt;
+#include &lt;ws2tcpip.h&gt;
+#include &lt;string.h&gt;
+//#define MAKEWORD2&#40;L,H&#41; &#40;H&lt;&lt;8&#41;|L
+
+
+#define ERF_NONE 0
+#define ERF_GETHOST 1
+#define ERF_CREATESCK 2
+#define ERF_CONNECFAIL 3
+#define ERF_STARTUPFAIL 4
+int main&#40;&#41;
+{
+    SOCKET sckID;
+    WSADATA wsaData;
+    SOCKADDR_IN sckAddr;
+    unsigned int sckPort = 80;
+    char *sckHost = &quot;truyen.vnsharing.net&quot;;
+    HOSTENT *sckHostent;
+    int errorFlag = ERF_NONE;
+
+    //Winsock application startup
+    if&#40;errorFlag == ERF_NONE&#41;
+        if&#40; WSAStartup&#40;MAKEWORD&#40;2,2&#41;, &wsaData&#41; != NO_ERROR &#41;
+            errorFlag = ERF_STARTUPFAIL;
+/**-------------------------------------------------------------------**/
+    //Get host by name
+    if&#40;errorFlag == ERF_NONE&#41;
+        if&#40; &#40;sckHostent = gethostbyname&#40;sckHost&#41;&#41; == NULL &#41;
+            errorFlag = ERF_GETHOST;
+
+    //Init data
+    if&#40; errorFlag == ERF_NONE &#41;{
+        memset&#40;&sckAddr, 0x00, sizeof&#40;SOCKADDR_IN&#41;&#41;;
+        sckAddr.sin_family = AF_INET;
+        sckAddr.sin_port = htons&#40;sckPort&#41;;
+        //sckAddr.sin_addr.s_addr = inet_addr&#40;&quot;120.138.69.101&quot;&#41;;
+        sckAddr.sin_addr = *&#40;&#40;IN_ADDR*&#41;sckHostent-&gt;h_addr&#41;;
+    }
+/**-------------------------------------------------------------------**/
+    //Create socket
+    if&#40; errorFlag == ERF_NONE&#41;
+        if&#40; &#40;sckID = socket&#40;AF_INET, SOCK_STREAM, IPPROTO_TCP&#41;&#41; == INVALID_SOCKET &#41;
+           errorFlag = ERF_CREATESCK;
+
+    //Connect now
+    if&#40; errorFlag == ERF_NONE &#41;
+        if&#40; connect&#40;sckID, &#40;SOCKADDR *&#41;&sckAddr, sizeof&#40;SOCKADDR&#41;&#41; == SOCKET_ERROR &#41;
+            errorFlag = ERF_CONNECFAIL;
+
+/**-------------------------------------------------------------------**/
+
+    size_t bzBytes = 0;
+    size_t sendBytes = 0;
+    size_t rcvBytes = 0;
+    char *ptr_sent;
+    char *ptr_rcv = malloc&#40;1024&#41;;
+
+
+    char ptr_tmp&#91;1025&#93;;
+    BOOL csflag = TRUE;
+
+
+    ptr_sent = &quot;GET / HTTP/1.1\nHost: truyen.vnsharing.net\n\n&quot;;
+
+    send&#40;sckID,ptr_sent, strlen&#40;ptr_sent&#41;,0 &#41;;
+
+    size_t t = 0;
+
+    do{
+        memset&#40;ptr_tmp,0x00,1025&#41;;
+        rcvBytes = recv&#40;sckID, &ptr_tmp, 1024, 0&#41;;
+        printf&#40;&quot;%s&quot;,&ptr_tmp&#41;;
+
+        if &#40; rcvBytes &gt; 0 &#41;
+            printf&#40;&quot;Bytes received: %d\n&quot;, rcvBytes&#41;;
+        else if &#40; rcvBytes == 0 &#41;
+            printf&#40;&quot;Connection closed\n&quot;&#41;;
+        else
+            printf&#40;&quot;recv failed: %d\n&quot;, WSAGetLastError&#40;&#41;&#41;;
+
+    }while&#40; rcvBytes &gt; 0 &#41;;
+    /*
+    while&#40; rcvBytes &gt; 0 || csflag == TRUE &#41;{
+        //Clear temp buffer
+        csflag = FALSE;
+        memset&#40;ptr_tmp,0x00,1025&#41;;
+        rcvBytes = recv&#40;sckID, &ptr_tmp, 1024, 0&#41;;
+
+        if&#40;rcvBytes &gt; 0&#41;{
+
+            realloc&#40;ptr_rcv, &#40; bzBytes + rcvBytes &#41; &#41;;
+            //memset&#40; &#40; ptr_rcv + bzBytes&#41;, 0x00, rcvBytes &#41;;
+            memcpy&#40; &#40; ptr_rcv + bzBytes&#41; , &ptr_tmp, rcvBytes &#41;;
+            bzBytes = bzBytes + rcvBytes;
+            //printf&#40;&quot;%s&quot;, &ptr_tmp&#41;;
+
+        }* /
+
+
+        printf&#40;&quot;%d\n&quot;, bzBytes&#41;;
+        printf&#40;&quot;-&gt;%d\n&quot;, rcvBytes&#41;;
+
+
+        t++;
+        printf&#40;&quot;\n%d\n&quot;, t&#41;;
+
+    }*/
+
+    printf&#40;&quot;\nData:\n\n%s&quot;, ptr_rcv&#41;;
+    closesocket&#40;sckID&#41;;
+    WSACleanup&#40;&#41;;
+    free&#40;ptr_rcv&#41;;
+    free&#40;ptr_tmp&#41;;
+
+    return 0;
+}</pre>
+		</div>
+Chuyện là thế này ! em muốn gửi một binary file (chẳng hạn như quá trình update của soft chẳng hạn, kích thước nó không quá lớn). Khi viết thử mã trên em dbg gặp lỗi ở memcpy(). Em thử lại xem winsock có lỗi gì không. Thì thấy là khi thực thi nó bị đứng, mặc dù em chưa biết nguyên nhân nằm đâu, WSAGetLastError() = 0. rcvBytes nó cũng bình thường, nhưng cái vòng lặp do{}while cứ ở trạng thái idle mãi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42761.hva#265874</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42761.hva#265874</link>
+				<pubDate><![CDATA[Sun, 1 Jul 2012 06:22:34]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Recv bị đứng khi lập trình Winsock</title>
+				<description><![CDATA[ Vấn đề trên đã được em giải quyết như sau, nếu có gì không thoản đáng xin được giúp đỡ.
+
+Đăt receiving timeout  & sending timeout:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>setsockopt&#40;sckID, SOL_SOCKET, SO_RCVTIMEO, &#40;char *&#41;&sckRcvt, sizeof&#40;DWORD&#41;&#41;;
+    setsockopt&#40;sckID, SOL_SOCKET, SO_SNDTIMEO, &#40;char *&#41;&sckSendt, sizeof&#40;DWORD&#41;&#41;;</pre>
+		</div>
+
+Sửa lại đoạn này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>size_t rcvBytes = 0;</pre>
+		</div>
+Thành:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int rcvBytes = 0;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42761.hva#265975</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42761.hva#265975</link>
+				<pubDate><![CDATA[Mon, 2 Jul 2012 10:10:44]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+	</channel>
+</rss>

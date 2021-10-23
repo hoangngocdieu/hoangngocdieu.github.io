@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "Ikut3"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/149518.hva</link>
+		<description><![CDATA[Messages posted by "Ikut3"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Hello Tuan (sorry vì mình reply trễ) 
+
+Nếu theo các thông số bạn đưa ra trên Webserver này, thì tuyệt nhiên mình không thấy có gì bất thường. Thậm chí là còn nhanh nữa là đằng khác. Đoán già đoán non thôi thì bạn thử gather lại với các thông tin tương tự trên các server khác để so sánh xem có sự chênh lệch ở điểm nào không ? Mình nghĩ nên chạy cho các server ở thời điểm có lượng người truy cập. 
+
+Mình chỉ hơi confuse ở 2 điểm này, nếu bạn tiếp tục được cùng mình thì tốt
+
+1. Bạn có hệ thống monitoring nào để lấy các thông tin của các server không ? Mình nghĩ sử dụng graph trong các trường hợp này sẽ thấy được nhiều mối tương quan hơn là chỉ dựa vào các thông số 
+
+2. Bạn có đảm bảo rằng Server chậm đang cài giống 100% cấu hình cả mềm lẫn cứng đối với các server khác ? 
+
+Kinh nghiệm của mình trong những case mà tất cả mọi thứ đều có sự logic như thế này là "so sánh & so sánh". Có thể 1 vài thông số  tunning của application dựa vào phần cứng đã bị sai lệch đi khi chạy trên những hardware profile khác nhau ?
+
+Mình có dùng thử 1 công cụ mới được giới thiệu ở Hacker News là <span class="link"> <span class="link"> http://www.sysdig.org/</span></span>. Mình thấy có sự khác biệt rất nhiều so với việc tự gather từ những thông số rời rạc như disk - ram - cpu thông qua các câu lệnh thường dùng. Với sysdig mình nắm được rõ mọi hành vi của bất kì request nào thông suốt từ application đến kernel, tiêu tốn bao nhiêu phần trăm tài nguyên hệ thống.  Biết đâu sự bình thường trong những tình huống bất thường diễn ra từ đó.
+
+Thân 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45758/281331.hva#281331</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45758/281331.hva#281331</link>
+				<pubDate><![CDATA[Sun, 17 Aug 2014 07:21:53]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Xin giúp đỡ vấn đề về high load avg</title>
+				<description><![CDATA[ Vấn đề ở đây cần focus thì bạn cũng đã nói được là do IO disk.
+
+Theo mình bạn nên focus 1 số điểm như 
+
+1. Kết nối mạng giữa NFS storage & Server Web Application 
+
+NFS Storage đang chạy raid mấy, có SSD ? kết nối mạng giữa NFS & Server đạt tốc độ bao nhiêu ? 
+
+NFS Storage của bạn có đang chạy 1 bản bundle giống như ( gluster , ZFS,  openfiler) ? 
+
+
+2. Với mô hình của bạn, mình hiểu bạn đang muốn làm 1 hệ thống clustering với nhiều node app, tất cả đều tập trung source lưu trữ tại NFS. Tuy nhiên sao bạn không sử dụng 1 số sản phẩm cluster có tích hợp Sync ví dụ Corosync, DRBD
+
+Mình nghĩ việc SYNC dựa trên các cơ chế đồng bộ của các sản phẩm HA có thể đáp ứng được những nhu cầu khắt khe nhất trong các mô hình Web - Application, thậm chí là Database :) 
+
+T]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45758/281275.hva#281275</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45758/281275.hva#281275</link>
+				<pubDate><![CDATA[Mon, 11 Aug 2014 23:43:51]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Hỏi về Namespace in Linux và docker</title>
+				<description><![CDATA[ Dựa vào tính chất linh động của Docker mà người ta có thể xây dựng nhiều kiến trúc khác nhau. Đặc biệt là Cloud. Thử tưởng tượng mình đang có 1 Farm với khoảng 200 node vật lí. Bình thường mình mất công sử dụng các sản phẩm như OpenVZ - KVM - VMWare hay Xen để tạo các máy guest phục vụ cho các nhu cầu khác nhau. Chỉ tính riêng bài toán quản trị & vận hành, phát triển mở rộng, hay đảm bảo hiệu năng công suất hoạt động 24/24 là một dấu chấm hỏi lớn rồi.
+
+Container đơn giản hơn, việc quản trị các container, tạo, thay đổi thậm chí là xóa có thể thực hiện trong vài câu lệnh. Thậm chí việc triển khai khoảng 100 guests ngay lập tức cũng không phải là một điều đó quá thách thức. 
+
+Người ta nói nhiều về docker, về sự hữu dụng của tính chất đơn giản, tinh tế mang lại từ container là vì lẽ đó.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45511/281235.hva#281235</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45511/281235.hva#281235</link>
+				<pubDate><![CDATA[Thu, 7 Aug 2014 23:11:39]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>HeartBleed là cái gì?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vequeemnhe wrote:</cite><br>
+		<blockquote>ai nói bảo mật chỉ biết ngồi chơi  =)) tôi không phải chuyên gia bảo mật, nhưng đam mê học bảo mật......Có thể nói nghề Bảo Mật y như ảo thuật........Có thể nói (Lập Trình + Quản Trị Mạng ==&gt; hacker ===&gt; Bảo Mật) Học bảo mật có thể nói là cấp bậc cao nhất của IT........&nbsp;
+		</blockquote>
+
+Cái gì nó cũng có sự cao quí nhất định của nó. Không phải cứ mang danh đi làm bảo mật mới thể hiện sự cao cấp nhất.
+
+Tôi làm hốt rác ở Singapore 1 năm nay, nghề nghiệp tôi tầm thường với xã hội nhưng vĩ đại với gia đình. Vì nó là nguồn thu nhập chính của cả nhà]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45568/280350.hva#280350</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45568/280350.hva#280350</link>
+				<pubDate><![CDATA[Thu, 17 Apr 2014 00:02:37]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Cho mình hỏi về vấn đề Load Balancer 2 web với Apache</title>
+				<description><![CDATA[ 1. Nó không làm việc theo roundrobin . Trừ khi bạn sử dụng DNS để làm việc này. Trong trường hợp của bạn, bạn đang sử dụng mod_proxy để làm việc này. 
+
+- Dễ nhận thấy là 2 instance Tomcat đang chạy ở port 8009 & 8209
+- Người dùng truy cập vào Port 80 sau đó được Forward (Forward Proxy) vào 2 port trong của Tomcat. Ngược lại Tomcat coi Apache như 1 Reverse Proxy để communicate với client bên ngoài thông qua Port 80
+
+2. Bạn thử truy cập domain/balancer-manager xem có ra cái page nào không ? 
+Nếu ra thì đó là page quản lí để bạn có thể điều chỉnh việc cách làm việc  cho từng node. 
+
+Về cách chia thời gian và quản lí phiên làm việc thông qua mod_proxy bạn tham khảo ở đây
+
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+
+Chú í phần router & loadfactor 
+
+Cheers]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45293/278994.hva#278994</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45293/278994.hva#278994</link>
+				<pubDate><![CDATA[Tue, 12 Nov 2013 06:13:17]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Xin các anh cho em ý kiến về chọn trường học quản trị mạng</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">vanhuy1023 wrote:</cite><br>
+		<blockquote>tớ thì trước học ở NIIT ra trường không xin được việc giờ đi làm kỹ thuật viên nè. luu ý ở mấy học viện đó mình học quản trị mạng thì họ không dạy kỹ thuật nhé. 1 phần không xin được việc là do năng lực từng người nhưng lớp mình thì có 24 nhưng đên 18 người không có việc kể cả kỹ thuật cũng không xin được nhé &nbsp;
+		</blockquote>
+
+Bạn cho mình hỏi , bạn học NIIT nào ở đâu được không 
+
+Theo mình biết NIIT có trung tâm tư vấn việc làm khá là nhiệt tình. Mình dùng từ "khá" ở đây là vì mình thấy họ rất chịu khó tìm kiếm những cơ hội cho sinh viên sau 1 hoặc 2 lần. Nếu bạn học xong ra, chưa có công việc làm, hoặc có công việc làm không phù hợp thì nên liên hệ với trung tâm đó.
+
+Tuy nhiên mình vẫn nghĩ học ở đâu ra chăng nữa thì cơ hội có 1 công việc tốt phải được chuẩn bị ngay từ những năm đầu trước khi đi học. Tức là nếu những năm đầu bạn chỉ lo cày cuốc cho qua môn, hay thậm chí là cày kiếm điểm cao thì khả năng có 1 công việc là rất thấp. So với việc bạn tham gia vào các cộng đồng, tìm kiếm các jobs free lance. Hay thậm chí chỉ đơn thuần là "giao lưu văn hoá với các tầng lớp "bề trên" có kinh nghiệm.
+
+Mình cũng học NIIT, nhưng bỏ ngay 1 tuần sau khi học. Đến giờ vẫn thất nghiệp nhưng nhờ quen mấy anh HVA như <i>(Ky0 - vikjava .v.v.)</i> nên giờ cũng có chân dọn dẹp, bơm mực máy in, và lau chùi tủ Rack. Khá lắm :D
+
+-T ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45117/278437.hva#278437</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45117/278437.hva#278437</link>
+				<pubDate><![CDATA[Thu, 12 Sep 2013 02:29:41]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về cấu hình BIND</title>
+				<description><![CDATA[ <blockquote>Mình thắc mắc là tại sao trong file named.conf không có phần thông tin cho root server hay thông tin forwarders mà nó vẫn lấy được thông tin truy vấn?
+&nbsp;
+		</blockquote>
+
+Bởi vì DNS của bạn đang sử dụng chức năng Recursion để làm nhiệm vụ phân giải domain. 
+Recursion sẽ chỉ hoạt động khi bạn có 1 trong 2 điều sau 
+
+- 1. File Root.Hints
+- 2. Cấu hình Recursion ACL đi đến trực tiếp 1 hoặc nhiều Master DNS được chỉ định 
+
+Trong trường hợp này Recursion sẽ forward cái câu hỏi  `google.com là IP bao nhiêu`(1) đi đến 13 DNS master để hỏi, nhằm mục đích phân giải IP cho (1)
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>recursion yes;</pre>
+		</div>
+
+Bạn xem lại trong file cấu hình DNS  có phần nào có từ root.hints hay không ? hoặc có dòng nào ấn định việc Recursion ACL hay không nhé. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45153/278435.hva#278435</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45153/278435.hva#278435</link>
+				<pubDate><![CDATA[Thu, 12 Sep 2013 01:36:43]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Kiểm soát truy cập mạng trái phép với người dùng nội bộ có ý đồ xấu</title>
+				<description><![CDATA[ <blockquote>Nhưng có cái đoạn bôi đỏ phía trên mình chưa rõ lắm, bạn chia sẻ cụ thể hơn chút được không, ý tưởng là bạn dùng giải pháp gì và ứng dụng ra sao để xác định đâu là Laptop của Công ty, đâu là laptop ngoài. Phải chăng là xác định theo device code?
+&nbsp;
+		</blockquote>
+
+Đơn giản là ở đây khía cạnh kỹ thuật chỉ chiếm 70%. Còn Pháp luật sẽ làm nốt 30% còn lại. 
+Ngoài những biện pháp như chip TPM,  block theo MAC address, port security Switch v.v... thì chuyện áp dụng quy chế cty ở đây rất cần thiết (pháp luật) 
+
+Mình thấy ở 1 số cty, việc nhân viên được phát máy tính cá nhân sử dụng được thông qua rất kỹ càng. Bình thường ngoài Desktop ra chỉ có những cấp độ chuyên biệt như Senior - Manager trở lên mới có laptop để sử dụng. =&gt; Việc thu hẹp phạm vi người sử dụng cũng là 1 cách. 
+
+Tuy nhiên nếu người sử dụng (Senior - Manager) ở đây chính là người có dã tâm xấu thì sẽ giải quyết thế nào ? Cái này đã thoát ra hẳn vấn đề về kỹ thuật, những tài liệu công việc của người quản lí cũng sẽ có bản cứng và mềm. Đối với các bản mềm chuyện lưu trữ trong máy dù có bảo vệ cỡ nào thì việc thất thoát là điều không tránh khỏi. Vậy nên sẽ rất khó để nói chuyện nếu như người làm quản lí có dã tâm xấu . :-D 
+
+Mình nghĩ vậy, còn chuyện xử trí thế nào với người có dã tâm xấu thì chắc là không nên bàn. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45083/278194.hva#278194</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45083/278194.hva#278194</link>
+				<pubDate><![CDATA[Tue, 20 Aug 2013 02:56:11]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Hỏi về thiết bị sms router kết hợp Mail Zimbra</title>
+				<description><![CDATA[ <blockquote>
+Ví dụ khi abc@zimbra.com có 1 email khẩn cần gửi đến yz@zimbra.com&quot;&gt;xyz@zimbra.com thì lúc soạn mail có thể có dấu check nào đó tích vào để gửi kèm 1 sms không? ở đây em đang nghĩ đến vấn đề phát triển 1 zimlets. Nhưng nó hơi khó, không biết là hiện tại có zimlets nào hỗ trợ được điều đó không? &nbsp;
+		</blockquote>
+
+Làm gì mà phải đến cả Zimlets bạn 
+Đơn giản là khi abc - gửi 1 cái mail quan trọng đến xyz thì làm 1 cái title [Alert] chẳng hạn
+<b>Sau đó dựa vào cái Log Zimbra như anh vd_ nói để parse ra. Khi phát hiện ra được rồi thì kích hoạt gửi sms đến số của account xyz như đã định sẵn </b>
+
+Nói dài dòng vậy nhưng thực ra, đoạn tô đậm bạn có thể dùng inotify để làm tốt nó 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45092/278192.hva#278192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45092/278192.hva#278192</link>
+				<pubDate><![CDATA[Tue, 20 Aug 2013 02:27:11]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Dictionary Attack và Brute Force attack - Vietnamese Password Dict</title>
+				<description><![CDATA[ @xnohat : anh cần đào sâu thêm 1 tầng lớp không nhỏ, đó là teen để giải quyết các vấn đề về các dạng Password sử dụng ngôn từ Việt Nam không chính thống]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44898/277022.hva#277022</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44898/277022.hva#277022</link>
+				<pubDate><![CDATA[Sun, 30 Jun 2013 21:05:34]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Thái độ đúng đắn cho một người thợ trong lĩnh vực công nghệ thông tin</title>
+				<description><![CDATA[ Mình bỏ học nửa chừng từ năm 16 tuổi rồi chứ không phải 18 nữa. Lớt ngớt lên được đại học thì bỏ hẳn luôn. Những ngày đó với mình như địa ngục vậy, không biết cái gì về ngành mình đam mê theo đuổi. Nói chuyện với những <i>"tấm lá to"</i> để được định nghĩa dẫn dắt nhưng cũng chỉ  là phần nào đó. Xong rồi mình cứ nghĩ, nghĩ và nghĩ mãi. Tệ 1 cái là mình chỉ nghĩ chứ không chịu làm. Đó là thứ mình cảm thấy day dứt và áy náy nhất đến tận bây giờ.
+
+Đến bây giờ thì mình vừa làm vừa nghĩ nhưng ít hơn so với ngày xưa, tuy nhiên mình luôn thấy thoải mái từ tâm trạng tinh thần & vật chất, duy chỉ có 1 cái mình còn tồn đọng là tư tưởng ngại khó ngại khổ vẫn chưa hoàn toàn được dẹp bỏ đi. Làm chung với mình bây giờ có đủ các kiểu từ <i>"thiên tài - thần đồng đến các nhà tiên tri ngoại cảm"</i> nhưng mà thứ duy nhất mình có thể học hỏi được ở họ là thái độ sẵn sàng chịu cực và chịu khổ - chịu thiệt thòi ở bất kì thời điểm nào. Bởi vì mình nghĩ chỉ có vượt qua được những khó khăn, khổ cực thì mới có những sự thoả mãn và tin tưởng hơn vào những điều đam mê. Sống cùng nó.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44733/275774.hva#275774</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44733/275774.hva#275774</link>
+				<pubDate><![CDATA[Thu, 16 May 2013 22:06:10]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Lỗi cài đặt thư viện libgcc cho Oracle</title>
+				<description><![CDATA[ @ikaZuchi 
+
+Mình nghĩ Nodeps không phải là một lựa chọn phù hợp cho việc cài cắm Oracle Database, trừ khi bạn biết rõ những Libraries nào cần thiết và tự link nó lại cho những chỗ thiếu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44709/275707.hva#275707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44709/275707.hva#275707</link>
+				<pubDate><![CDATA[Tue, 14 May 2013 05:02:30]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Cách gõ lệnh Linux thế nào cho đúng?</title>
+				<description><![CDATA[ Man dùng để xem Manual về lệnh muốn sử dụng. Vd: cat, less, vi, apropos
+
+Còn đối  với 1 tập lệnh với các tham số Options như 
+
+<blockquote>-vv -s0 -i &nbsp;
+		</blockquote>
+
+thì đọc help / man của lệnh đó. Chẳng hạn ở đây lệnh nguyên gốc là tcpdump.
+
+Tcpdump --help
+
+Đối với -vv sẽ thấy dẫn thích rất rõ 
+<blockquote>
+   -vv    Even more verbose output.  For example,  additional  fields  are
+              printed  from  NFS  reply  packets,  and  SMB  packets are fully
+              decoded.
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44634/275242.hva#275242</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44634/275242.hva#275242</link>
+				<pubDate><![CDATA[Thu, 25 Apr 2013 20:50:10]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Server OverLoad</title>
+				<description><![CDATA[ <blockquote>Tạm thời em đang dùng giải pháp hạn chế cpu cho mysql và exim, thấy load cũng đã giảm.
+&nbsp;
+		</blockquote>
+
+Theo mình hiểu cách bạn hạn chế CPU & MYSQL ở đây là dùng <b>Nice (Set Priority) cho CPU</b>. Điều này có thể được coi như việc cấp Quota cho 1 Process nhất định, nhưng nó cũng là cánh cửa sẵn sàng "bóp" luôn các process khác nếu như lượng request vượt quá số hạn. ;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44625/275192.hva#275192</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44625/275192.hva#275192</link>
+				<pubDate><![CDATA[Wed, 24 Apr 2013 03:13:07]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Nhờ vả: Tính toán resource cho VPS</title>
+				<description><![CDATA[ Trước khi sizing 1 cái gì từ thiết bị phần cứng, cho đến các tunning chỉnh sửa thì những thông tin như thế này bắt buộc phải có 
+
+- Tổng lượng User connect / tính trung bình
+- Lượng Concurrent Request thật đến dịch vụ tại mọi thời điểm 
+- Số lượng User mà bạn nhắm sẽ đáp ứng cho thời điểm hiện tại và tương lai
+
+Trong các thông số mà bạn đưa ở trên kia thì không có cái thông tin gì về lượng người bạn sẽ đáp ứng với cấu hình phần cứng hiện tại cả.
+<i>
+Theo mình, trước khi tunning hay quyết định gia tăng tài nguyên hệ thống nhằm mở rộng tính scalability 1 dịch vụ / 1 ứng dụng  phục vụ người dùng. Mình phải thấy được rõ những thông số thật mà hệ thống hiện tại đang phải chịu tải, kiểm tra từ các thành phần Application - Operating System - Network - Hardware xem có bị bottleneck ở đâu không rồi mới bắt đầu tiến hành nâng cấp. </i>
+
+Tất nhiên để làm được cái đoạn in nghiêng trên thì chỉ có 1 cách giúp bạn đó là <b>theo dõi</b>. Những công cụ  monitor như Dtracetool , Sysstat (có sẵn) v.v... đều có thể làm rất tốt việc này. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44630/275190.hva#275190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44630/275190.hva#275190</link>
+				<pubDate><![CDATA[Wed, 24 Apr 2013 03:08:34]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Làm sao cấm mọi truy cập tới website từ IP</title>
+				<description><![CDATA[ Virtual Hosting 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44583/274966.hva#274966</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44583/274966.hva#274966</link>
+				<pubDate><![CDATA[Mon, 15 Apr 2013 23:06:32]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Vài ngày học một lệnh (hoặc một tiện ích) trong Linux</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>chmod +t files/folders</pre>
+		</div>
+
+The sticky bit looks like: -rwx——T
+When the sticky bit is enabled, only the owner of the file can change its permissions or delete it. Without the sticky bit, anyone with write permissions can change the modes (including ownership) or delete a file. This one is also handy when sharing files with a group of people.
+<span class="link"> http://www.linuxnix.com/2012/01/sticky-bit-set-linux.html</span>
+
+:D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/19738/274454.hva#274454</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/19738/274454.hva#274454</link>
+				<pubDate><![CDATA[Wed, 27 Mar 2013 23:17:15]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>dò mật khẩu mail exchange = phương pháp nào </title>
+				<description><![CDATA[ 1. Force mọi người change Password với độ dài và sự phức tạp ở mức cao. Làm sao để làm được điểu này thì mình nghĩ Group Policy hoặc Mail exchange policy có thể làm tốt 
+
+2. Thiết lập Spam Filtering để chống chọi việc BruteForce và các hiểm hoạ từ bên ngoài, việc này là rất cần thiết vì nếu Public trực tiếp hệ thống Mail ra ngoài như bạn sẽ là hiểm hoạ nếu như attackers gain được quyền nhất định trên hệ thống 
+
+3. Tận dụng tối đa các chức năng trống BruteForce như BanIP - Lock account khi cố đăng nhập quá 3 lần v.v..
+
+4. Theo dõi :-D
+
+p/s : block not blog ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44477/274437.hva#274437</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44477/274437.hva#274437</link>
+				<pubDate><![CDATA[Wed, 27 Mar 2013 04:22:32]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Auto backup Chrome bookmark </title>
+				<description><![CDATA[ Hi
+
+Mình làm việc với trình duyệt web suốt ngày nên file Bookmark cũng ngày một tăng to.
+Vấn đề là sau khi chuyển qua Chrome thì file BookMark của Chrome đi theo 1 chuẩn riêng, không còn là HTML ở dạng thô như FireFox nữa. Nên Mình nghĩ ít nhiều mọi người sẽ thấy phiền toái khi suốt ngày chăm chăm đi lo  backup bằng cách Export to HTML. 
+
+Giải pháp này sẽ giải quyết tất cả những vấn đề này bằng 1 cách hoàn toàn tự động.
+
+1. Ở Linux, file bookmark của Chrome được lưu tại đường dẫn 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/home/&#91;username&#93;/.config/google-chrome/Default/</pre>
+		</div>
+
+Tại đường dẫn này bạn sẽ thấy 1 file BookMark & BookMark.Bak. Ok! Quên cái file BookMark.Bak đi
+
+2. Xử lí cái BookMark hiện tại ra HTML file thông qua code python của bdesham
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/python
+
+# py-chrome-bookmarks
+# 
+# A script to convert Google Chrome's bookmarks file to the standard HTML-ish
+# format.
+#
+# &#40;c&#41; Benjamin Esham, 2011.  See the accompanying README for this file's
+# license and other information.
+
+import json, sys, os, re
+
+script_version = &quot;1.1&quot;
+
+# html escaping code from<span class="link"> http://wiki.python.org/moin/EscapingHtml</span>
+
+html_escape_table = {
+	&quot;&&quot;: &quot;&amp;&quot;,
+	'&quot;': &quot;&quot;&quot;,
+	&quot;'&quot;: &quot;&#39;&quot;,
+	&quot;&gt;&quot;: &quot;&gt;&quot;,
+	&quot;&lt;&quot;: &quot;&lt;&quot;,
+	}
+
+def html_escape&#40;text&#41;:
+	return ''.join&#40;html_escape_table.get&#40;c,c&#41; for c in text&#41;
+
+def sanitize&#40;string&#41;:
+	res = ''
+	string = html_escape&#40;string&#41;
+
+	for i in range&#40;len&#40;string&#41;&#41;:
+		if ord&#40;string&#91;i&#93;&#41; &gt; 127:
+			res += '&#x%x;' % ord&#40;string&#91;i&#93;&#41;
+		else:
+			res += string&#91;i&#93;
+
+	return res
+
+def html_for_node&#40;node&#41;:
+	if 'url' in node:
+		return html_for_url_node&#40;node&#41;
+	elif 'children' in node:
+		return html_for_parent_node&#40;node&#41;
+	else:
+		return ''
+
+def html_for_url_node&#40;node&#41;:
+	if not re.match&#40;&quot;javascript:&quot;, node&#91;'url'&#93;&#41;:
+		return '&lt;dt&gt;&lt;a href="%s"&gt;%s&lt;/a&gt;\n' % &#40;sanitize&#40;node&#91;'url'&#93;&#41;, sanitize&#40;node&#91;'name'&#93;&#41;&#41;
+	else:
+		return ''
+
+def html_for_parent_node&#40;node&#41;:
+	return '&lt;dt&gt;&lt;h3&gt;%s&lt;/h3&gt;\n&lt;dl&gt;&lt;p&gt;%s&lt;/dl&gt;&lt;p&gt;\n' % &#40;sanitize&#40;node&#91;'name'&#93;&#41;,
+			''.join&#40;&#91;html_for_node&#40;n&#41; for n in node&#91;'children'&#93;&#93;&#41;&#41;
+
+def version_text&#40;&#41;:
+	old_out = sys.stdout
+	sys.stdout = sys.stderr
+
+	print &quot;py-chrome-bookmarks&quot;, script_version
+	print &quot;&#40;c&#41; 2011, Benjamin Esham&quot;
+	print &quot;https://github.com/bdesham/py-chrome-bookmarks&quot;
+
+	sys.stdout = old_out
+
+def help_text&#40;&#41;:
+	version_text&#40;&#41;
+
+	old_out = sys.stdout
+	sys.stdout = sys.stderr
+
+	print
+	print &quot;usage: python py-chrome-bookmarks input-file output-file&quot;
+	print &quot;  input-file is the Chrome bookmarks file&quot;
+	print &quot;  output-file is the destination for the generated HTML bookmarks file&quot;
+
+	sys.stdout = old_out
+
+# check for help or version requests
+
+if &quot;-v&quot; in sys.argv or &quot;--version&quot; in sys.argv:
+	version_text&#40;&#41;
+	exit&#40;&#41;
+
+if len&#40;sys.argv&#41; != 3 or &quot;-h&quot; in sys.argv or &quot;--help&quot; in sys.argv:
+	help_text&#40;&#41;
+	exit&#40;&#41;
+
+# the actual code here...
+
+in_file = os.path.expanduser&#40;sys.argv&#91;1&#93;&#41;
+out_file = os.path.expanduser&#40;sys.argv&#91;2&#93;&#41;
+
+try:
+	f = open&#40;in_file, 'r'&#41;
+except IOError, e:
+	print &gt;&gt; sys.stderr, &quot;py-chrome-bookmarks: error opening the input file.&quot;
+	print &gt;&gt; sys.stderr, e
+	exit&#40;&#41;
+
+j = json.loads&#40;f.read&#40;&#41;&#41;
+f.close&#40;&#41;
+
+try:
+	out = open&#40;out_file, 'w'&#41;
+except IOError, e:
+	print &gt;&gt; sys.stderr, &quot;py-chrome-bookmarks: error opening the output file.&quot;
+	print &gt;&gt; sys.stderr, e
+	exit&#40;&#41;
+
+out.write&#40;&quot;&quot;&quot;&lt;!DOCTYPE NETSCAPE-Bookmark-file-1&gt;
+
+&lt;meta http-equiv='Content-Type' content='text/html; charset=UTF-8' /&gt;
+&lt;title&gt;Bookmarks&lt;/title&gt;
+&lt;h1&gt;Bookmarks&lt;/h1&gt;
+
+&lt;dl&gt;&lt;p&gt;
+
+&lt;dl&gt;%&#40;bookmark_bar&#41;s&lt;/dl&gt;
+
+&lt;dl&gt;%&#40;other&#41;s&lt;/dl&gt;
+"""
+	% {'bookmark_bar': html_for_node&#40;j&#91;'roots'&#93;&#91;'bookmark_bar'&#93;&#41;,
+		'other': html_for_node&#40;j&#91;'roots'&#93;&#91;'other'&#93;&#41;}&#41;
+
+out.close&#40;&#41;</pre>
+		</div>
+
+3. Cách sử dụng 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>python convert.py Bookmarks /home/user/Dropbox/Bookmarks20132703.html</pre>
+		</div>
+
+convert.py là tên của mã nguồn Python do mình tự phịa 
+4.Script hoá toàn bộ 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+date=`date +%F-%H-%M-%S`
+/usr/bin/python /home/user/convert.py /home/user/.config/google-chrome/Default/ /home/user/Dropbox/bookmarks-$date.html</pre>
+		</div>
+
+5.Crontab 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0-59 * * * * sh /home/user/backupbookmarks.sh</pre>
+		</div> 
+
+Finish! 
+
+@Bài viết tham khảo cách viết script của anh <font color='orange'>QuanTa </font>:-D
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44476/274432.hva#274432</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44476/274432.hva#274432</link>
+				<pubDate><![CDATA[Tue, 26 Mar 2013 22:48:38]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Xoá Root Hints của DNS Server?</title>
+				<description><![CDATA[ Bạn tham khảo ở đây. 
+
+http://social.technet.microsoft.com/Forums/en-US/winserverNIS/thread/dd1ff222-0ab0-43b3-87eb-d3ba2aa7a862/
+
+http://support.microsoft.com/kb/818020/en-us
+
+Tuy nhiên theo mình, muốn 1 hạ tầng DNS làm việc theo ý mình không phải chỉ là việc xoá bỏ hay thêm bớt các Zone. Nên hiểu rõ bản chất của Forward - Recursion . Split DNS (Internal DNS / External DNS) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44434/274259.hva#274259</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44434/274259.hva#274259</link>
+				<pubDate><![CDATA[Wed, 20 Mar 2013 21:36:09]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>xin hỏi ý nghĩa của đoạn log này ?</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>The string “/w00tw00t.at.ISC.SANS.DFind:&#41;” can be found in error logs of web servers and it is generated by a &#91;b&#93;web scanner named DFind that scans IP addresses for vulnerabilities &#91;/b&#93;, looks like it scans all servers that have port 80 open.</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44325/273694.hva#273694</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44325/273694.hva#273694</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2013 01:54:43]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Window Web Server 2008 R2 : cách đóng các cổng 135, 445, 3306, 49152</title>
+				<description><![CDATA[ Phân tích các port này 1 tí trước khi xét đến việc đóng mở 
+
+135. TCP Port 135 - RPC Terminal Services Licensing
+
+Port này & port 389 RDP mà bạn đã đổi thành 999 đi kèm nhau, nhằm phục vụ cho Remote Desktop. Khi bạn khởi tạo 1 connection từ phía client, Server muốn thông qua giao thức RPC để get các thông tin như licensed, cert v.v.. thì sẽ sử dụng RPC. Nếu bạn đóng Port này thì sẽ có vấn đề đối với các dịch vụ khác cần sử dụng RPC Services  bao gồm cả RDesktop
+
+3306. Mysql, bạn có thể sử dụng chức Listen / Bind IP gì đó để thay vì nó listen all IP 0.0.0.0 thì bây giờ nó sẽ chỉ listen 1 dải IP hoặc thậm chí là chỉ listen chính nó (localhost). Tuy nhiên chú ý điểm này, nếu như MYSQL của bạn đang đặt tại 1 máy chủ khác có IP khác với địa chỉ IP server chạy Blog PHP 
+
+49152 - 49157 trong Windows Server 2008 , hay nói đúng hơn là từ (49152 - 65535) là số lượng port được W 2008 reserve phục vụ cho những application / services nào đó của hệ thống chạy sẽ sử dụng vào đó. Nếu như bạn kiểm tra thấy có port này đang mở kèm vào 1 số PID như hình thì có lẽ là do services SYstem Event Notification đang cần sử dụng nó. 
+
+445 thì đơn giản đó là SMB sử dụng cho các dịch vụ chia sẻ file. Chắc chắn rằng không có bất kì 1 folder/files nào trên hệ thống này được chia sẻ thì Port này sẽ đóng 
+
+Mình định trả lời tiếp cách nào để chặn các port này, nhưng mà thấy yêu cầu không dùng Firewall của bạn nên thôi vậy :D
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44323/273692.hva#273692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44323/273692.hva#273692</link>
+				<pubDate><![CDATA[Tue, 26 Feb 2013 01:49:57]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Restart một dịch vụ trên Linux với php code</title>
+				<description><![CDATA[ ANh quân ơi, hôm nào viết 1 bài về cách sử dụng strace & trace cho hiệu quả đi anh.
+Nhìn cách anh dùng strace mà thèm ghê :-D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44186/273280.hva#273280</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44186/273280.hva#273280</link>
+				<pubDate><![CDATA[Sat, 2 Feb 2013 10:45:48]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Cao thủ nào dò ra IP sever của apple giúp em</title>
+				<description><![CDATA[ Từ chuyện kiếm IP rồi thành Administrator của Apple thật là vãi ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44165/272922.hva#272922</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44165/272922.hva#272922</link>
+				<pubDate><![CDATA[Tue, 22 Jan 2013 03:16:13]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Cài nhiều server e mỏi tay qá </title>
+				<description><![CDATA[ iPXE
+Invisible Touch 
+Collins
+Phil
+KickStart
+Puppet 
+
+:-D mình cũng chưa bao giờ buil được 1 giải pháp hoàn chỉnh từ mấy công cụ này, Nhưng mà mình có thể tích hợp chúng sao cho thuận tiện nhất đối với những doanh nghiệp có số lượng server không quá 100 ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43884/271459.hva#271459</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43884/271459.hva#271459</link>
+				<pubDate><![CDATA[Thu, 29 Nov 2012 21:01:49]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Newbie xin hỏi về yum repolist</title>
+				<description><![CDATA[ 2. Nơi lưu trữ của man thường được đặt trong 
+
+/usr/share/man
+
+Tại đây chứa các bản document của các câu lệnh được nén lại dưới dạng .gz. Khi extract ra view nó được viết dưới kiểu LaTex 
+
+3. /bin được sử dụng như 1 bộ command tối thiểu dùng cho emergency repair/booting khi phân vùng filesystems (/usr) chưa được mount lên. Boot vào single user mode để hiểu rõ hơn này.
+
+/usr/bin là nơi lưu trữ chính tệp thực thi của các câu lệnh trên hệ thống.  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43696/270591.hva#270591</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43696/270591.hva#270591</link>
+				<pubDate><![CDATA[Mon, 29 Oct 2012 22:31:32]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>Giám sát server AIX</title>
+				<description><![CDATA[ <blockquote>Tuy nhiên, lại gặp phải khó khăn là log nhiều dòng (multiline)
+&nbsp;
+		</blockquote>
+
+Thông thường mỗi Action/Activities của Log bị chia ra nhiều dòng làdo mức độ Log Level chưa được ấn định 1 cách cụ thể. Chẳng hạn giữa mức độ Info & Debug thì có sự khác nhau rõ rệt trong cùng 1 hành động Login. Vì vậy tuỳ từng server với nhu cầu mục đích cụ thể mà lựa chọn cho phù hợp ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43664/270556.hva#270556</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43664/270556.hva#270556</link>
+				<pubDate><![CDATA[Mon, 29 Oct 2012 03:33:45]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+	</channel>
+</rss>

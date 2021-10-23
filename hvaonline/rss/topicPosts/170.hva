@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic " Thay thế BIND với djbdns - phần 2"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic " Thay thế BIND với djbdns - phần 2"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title> Thay thế BIND với djbdns - phần 2</title>
+				<description><![CDATA[ <b>4.2 Vài điểm quan trọng trước khi tạo các dịch vụ của bộ djbdns</b>
+
+4.2.1 Điều quan trọng đầu tiên
+Điều quan trọng đầu tiên cho những bạn đọc đang dùng BIND và đã có sẵn zones cho các domain mình làm chủ (hoặc quản lý) thì nên theo các bước sau để lưu trữ chúng và đưa vào tinydns data sau này. Lý do nên thực hiện bước lưu trữ zones của BIND ở giai đoạn này là để giảm thiểu những rắc rối sau khi tắt bỏ BIND và khởi tạo dnscache và tinydns sau này. Nếu bạn không dùng BIND hoặc không có database quá lớn cho zones thì bạn có thể bỏ qua bước sau:
+- Dùng một loại text processor nào đó theo ý thích (vi hoặc emacs) để kiểm tra hoặc thêm giá trị như sau trong hồ sơ 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/named.conf:
+allow-transer { 127.0.0.1; };</pre>
+		</div>
+
+cho loopback IP nếu bạn có thể dùng chính máy đang chạy BIND để lấy zone transfer. Hoặc đưa vào IP nào đó tùy thích, miễn sao trên máy có IP bạn đưa vào phải có tcpclient trong bộ ucspi-tcp đã đề cập ở phần 3.2.3. Nên thực hiện bước sau ngay chính trên máy chạy tinydns dùng để thay thế BIND để đơn giản hoá các bước thực hiện. Ví dụ minh hoạ ở đây tôi chỉ chú trọng ngay chính trên máy chạy BIND (và thay thể bởi tinydns).
+
+- thử nghiệm xem bạn có thể thực hiện zone transfer bằng cách dùng tiện ích host (có sẵn trên hầu hết các *nix flavours):
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ host -l 123.com
+123.com SOA 123.com. hostmaster.123.com 10 3600 180 25920 8640
+123.com name server ns1.123.com
+.....</pre>
+		</div>
+
+Nếu bạn không thể thực hiện bước này thì xem lại syslog (thông thường ở /var/log/messages) để tìm lỗi báo và điều chỉnh lại /etc/named.conf cho đúng.
+
+- Chuyển vào thư mục nào đó tạm thời chứa dữ liệu zone của BIND:
+
+<b># cd /tmp/bind
+# tcpclient -v 127.0.0.1 53 axfr-get 123.com 123.com.zone 123.com.tmp</b>
+
+Chuyện gì xảy ra ở đây? axfr-get chạy bên dưới tcpclient dùng để truy cập vào BIND server nội vi và "rút ruột" thông tin zones của domain 123.com dùng trong ví dụ này. Nếu lệnh axfr-get này thực hiện thành công, nó tự động đổi tên 123.com.tmp thành 123.com.zone và hồ sơ này chứa trọn bộ các thông tin liên hệ đến zones của domain 123.com. Hồ sơ này cũng có dạng hoàn toàn tương thích với "tinydns-data" mà chúng ta sẽ đề cập sau. Nên nhớ, phương pháp lấy zone của BIND ở trên rất tiện dụng và dễ dàng, tuy nhiên, nó có một giới hạn là nó chỉ có thể lấy zone của domain 123.com và làm ngơ các domain khác (nếu có trong zones của BIND). Nếu bạn có nhiều domains trong zone thì phải chạy lệnh trên nhiều lần cho mỗi domain name và lưu trữ thông tin đã lấy được ở các hồ sơ riêng biệt để tiện đưa vào "tinydns-data" sau này.
+
+<b>4.2.2 Điều quan trọng kế tiếp</b>
+Điều quan trọng kế tiếp trong bước thiết lập các dịch vụ của djbdns là phải tắt bỏ BIND (hoặc dịch vụ DNS nào khác) đang chạy trên server, nếu không các dịch vụ của djbdns sẽ không khởi động được vì socket đã bị chiếm trên cổng 53 UDP/TCP. Thử chạy lệnh:
+<b># netstat -natu | grep 53 </b>xem có dịch vụ DNS đang "lắng nghe" trên cổng 53 UDP và TCP hay không. Nếu có, tắt bỏ dịch vụ này.
+
+- nếu dùng BIND thì đơn giản chạy lệnh:
+<b># /etc/rc.d/init.d/named stop </b>(hoặc dùng đường dẫn đến init script cho named tùy theo distribution bạn dùng cho đúng)
+
+- sau đó, tháo gỡ hết các run level của named khỏi rc2.d, rc3.d, rc4.d, rc5.d bằng tay (xoá hết các symbolic links trong các run level) -7- hoặc dùng chkconfig nếu tiện ích này có trên máy:
+<b># chkconfig --del /etc/rc.d/init.d/named</b>
+
+- nếu dùng một nhu liệu nào khác để tạo dịch vụ DNS thì bạn nên tham khảo tài liệu dành riêng của nhu liệu ấy để tắt bỏ DNS trước khi cài dnscache.
+
+<b>4.2.3 Điều quan trọng sau cùng</b>
+Điều quan trọng sau cùng bạn cần ghi nhớ là không thể chạy dnscache và tinydns trên cùng một IP address vì lý do rất căn bản và đơn giản. Như đã sơ lược ở phần 2.2.1 và 2.2.2 ở trên, dnscache "lắng nghe" trên cổng 53 cho cả TCP và UDP, tinydns "lắng nghe" trên cổng 53 UDP. Nếu dnscache khởi động trước và dùng cùng một IP address với tinydns thì tinydns không thể khởi động được vì socket cổng 53 đã bị dnscache chiếm mất. Bởi vậy, bạn có hai lựa chọn:
+
+- chạy dnscache trên một server riêng, tinydns trên một server riêng
+- cùng chạy dnscache và tinydns trên một server nhưng phải dành riêng IP address cho mỗi dịch vụ này.
+
+Trên *nix nói chung, việc tạo IP ảo trên cùng một NIC là chuyện hết sức đơn giản và dễ dàng. Tuy nhiên, bạn nên biết điểm đòi hỏi căn bản này để tránh mất thời gian (vì không hiểu sao cả hai dịch vụ dnscache hoặc tinydns không thể cùng chạy vì đã được gán chung một IP address).
+
+<b>4.3 Thiết lập dnscache</b>
+Thiết lập dnscache cực kỳ đơn giản. Tùy cấu hình và nhu cầu nhưng tổng quát có hai dạng chính:
+
+<b>4.3.1 Local dnscache (nội vi)</b>
+"Nội vi" ở đây là giới hạn resolve -8- cho chính server chạy dnscache vì loopback address (127.0.0.1) sẽ được dùng để "lắng nghe". Đây là cấu hình gọn nhẹ nhất nếu công tác resolve chỉ phục vụ cho chính server này. Các yêu cầu resolve đến từ các máy khác (ngay cả trong nội mạng) không thể thực hiện được.
+
+Dùng tiện ích dnscache-conf thuộc bộ djbdns (sau khi đã cài thành công) để thiết lập dịch vụ dnscache trên loopback IP:
+<b># dnscache-conf dnscache dnslog /var/dns/dnscacheint 127.0.0.1</b>
+trong đó:
+- <b>dnscache-conf </b>là chương trình dùng để thiết lập dịch vụ dnscache
+- <b>dnscache </b>là tài khoản được tạo ở phần 4.1 dành riêng cho dịch vụ dnscache. Bạn có thể tạo tài khoản này với tên khác để tránh bối rối nếu cần.
+- <b>dnslog</b> là tài khoản được tạo dành riêng cho công tác "log".
+- <b>/var/dns/dnscacheint</b> là thư mục chứa các thông tin cần thiết cho dịch vụ dnscache cụ thể "lắng nghe" trên IP 127.0.0.1. Bạn cần phải tạo thư mục /var/dns/ trước khi chạy lệnh trên vì thư mục "dns" có lẽ chưa tồn tại. Đường dẫn đến thư mục này phải là đường dẫn tuyệt đối (absolute path) và tất nhiên là phải khởi đầu bằng dấu forward slash (/). Bạn có thể tùy chọn vị trí để chứa các thông tin cần thiết cho dịch vụ này, thông thường rất nhiều người dùng /etc/dnscache nhưng tôi tránh đưa vào /etc vì trong thư mục chứa dnscache bao gồm logs và nhiều thành phần khác (không chỉ là hồ sơ cấu hình). Chọn lựa này mang tính cá nhân mà thôi. dnscacheint chỉ cho dnscache internal (nội vi).
+- <b>127.0.0.1</b> là <b>loopback address </b>được ấn định để lắng nghe dịch vụ dnscache trong trường hợp này.
+
+Sau khi chạy lệnh trên, dnscache-conf sẽ tự động tạo các thành phần cần thiết để dịch vụ dnscache có thể hoạt động. Cấu trúc trong thư mục /var/dns/dnscacheint sau khi lệnh trên hoàn tất thành công:
+- <b>env/</b> Bất cứ hồ sơ nào thuộc thư mục này dùng để ấn định biến môi trường (environment variables) được dùng cho dnscache.
+- <b>log/</b> Bộ phận "logging" của dnscache được multilog lo liệu, mutilog là một phần của bộ nhu liệu "daemontools". multilog sẽ hoạt động trong phạm vi thư mục này (riêng cho dnscache).
+- <b>log/main</b> Các hồ sơ logs sẽ được lưu trữ và cập nhật ở đây. Các hồ sơ logs này sẽ tự động xoay vòng (một phần chức năng của bộ daemontools) và hồ sơ log hiện thời đang cập nhật thông tin mới nhất sẽ luôn luôn là hồ sơ "current" trong thư mục này.
+- <b>run</b> Đây là lệnh (đúng hơn là một shell đơn giản) để tiện ích "supervise" khởi động dnscache.
+- <b>supervise/</b> Thư mục này đặc biệt dành riêng cho "supervise" để duy trì hoạt động của dnscache.
+- <b>root/</b> Thư mục này là nơi trở thành thư mục "root" của tinydns sau khi nó được khởi tạo; tương tự như phương thức chroot (hoặc jailed), đây là một tính năng bảo mật của tinydns.
+- <b>root/ip/</b> Như đã phân tích ở phần 2.2.1, dnscache không trả lời từ các host nó không được phép (không ấn định). Khi một máy con gởi request đến dnscache, nó sẽ tìm trong thư mục root/ip/ này xem có hồ sơ nào ấn định và cho phép trả lời cho host ấy (thuộc chuỗi IP nào đó) hay không.
+- <b>root/servers/</b> Thư mục này chứa danh sách các servers dùng để liên hệ lấy thông tin cho từng zone. Theo mặc định, hồ sơ với tên @ chứa 13 "root" DNS servers -9- Đây là nơi bạn tạo hồ sơ để "ra lệnh" cho dnscache liên hệ đến tinydns (hoặc một "authoritative" DNS server nào đó để lấy thông tin.
+
+Tuy nhiên, dịch vụ này sẽ không hoạt động cho đến khi bạn "ra lệnh" cho svscan (đã đề cập trong phần 2.3.1) điều tác:
+<b># ln -s /var/dns/dnscacheint /service
+</b>
+Ra lệnh svc khởi động dnscacheint:
+<b># svc /service/dnscacheint</b>
+
+Lúc này, bạn hẳn sẽ thấy dịch vụ dnscache đang "lắng nghe" trên loopback address:
+<b># netstat -nau | grep 53</b>
+
+4.3.2 Thử nghiệm và điều chỉnh local dnscache
+- Thử dùng lệnh sau trên một console để theo dõi hoạt động của dnscache:
+<b># tail -f /var/dns/dnscacheint/log/main/current | tai64nlocal</b>
+
+- Thử thay đổi giá trị /etc/resolv.conf của máy thành nameserver 127.0.0.1 và sau đó thử ping, host, nslookup, dig, và dùng trình duyệt nào đó (lynx, wget, mozilla...) để thử nghiệm dnscache server mới vừa được tạo ra:
+<b># ping www.internic.net
+# host www.google.com
+# dig localhost www.microsoft.com</b>
+
+- Nếu không thể ping, host, dig như trên thì tham khảo log mà lệnh tail đang chạy trên console ở trên. Hầu hết các trường hợp error vì dnscache không thể khởi động (vì gán account không đúng, tạo dnscache sai cú pháp hoặc quên chưa tạo symbolic link từ nơi chứa dnscache đến /service). Một trường hợp trục trặc không thể loại trừ đó là gán giá trị trong /etc/resolv.conf không đúng. Để thử nghiệm internal dnscache trong trường hợp này, giá trị trong /etc/resolv.conf phải là nameserver 127.0.0.1.
+
+- Bộ djbdns cũng cung cấp một số tiện ích để thử nghiệm rất hay. Bạn có thể thử nghiệm internal dnscache của bạn bằng cách xác định variable DNSCACHEIP trước khi chạy dnsip, một tiện ích trong bộ djbdns:
+[/code]$ DNSCACHEIP=127.0.0.1 dnsip www.internic.net[/code]
+bạn hẳn sẽ nhận được kết quả IP gán cho www.internic.net nếu như internal dnscache làm việc hoàn chỉnh.
+
+- Nếu muốn tái tạo dnscache vì lý do nào đó, cách đơn giản nhất là:
+a) gởi tín hiệu tắt bỏ dịch vụ dnscache (xem lại phần 2.3.1), với ví dụ trên thì:
+<b># svc -d /service/dnscacheint</b>
+
+b) xóa symbolic link từ nơi chứa dnscache (tất nhiên ở chế độ root):
+<b># rm -f /service/dnscacheint</b>
+
+c) xóa trọn bộ thư mục chứa dnscache:
+<b># rm -rf /var/dns/dnscacheint</b>
+
+d) kiểm tra kỹ tài khoản cho dnscache và dnslog, những tài khoản này được dùng đúng (chính xác tên) trong lệnh tạo dnscache hay không. Thực hiện lại các bước trong phần 4.3.1 này.
+
+
+<b>4.3.3 External dnscache (ngoại vi)</b>
+"Ngoại vi" ở đây là giới hạn resolve cho các máy con thuộc các subnet mà server này được chỉ định phục vụ. Địa chỉ "thật" -10- của server này sẽ được dùng để "lắng nghe" và phục vụ công tác resolve. Bởi thế, các máy con trong cùng subnet hoặc những subnet khác có thể dùng dịch vụ dnscache trên server này nếu chúng có thể "thấy" được server này.
+
+Tương tự như trên (phần 4.3.1), dnscache-conf được dùng để thiết lập dnscache "ngoại vi" ở đây:
+<b># dnscache-conf dnscache dnslog /var/dns/dnscacheext 192.168.0.1</b>
+trong đó:
+- <b>dnscache-conf</b> là chương trình dùng để thiết lập dịch vụ dnscache
+- <b>dnscache</b> là tài khoản được tạo ở phần 4.1 dành riêng cho dịch vụ dnscache. Bạn có thể tạo tài khoản này với tên khác để tránh bối rối nếu cần.
+- <b>dnslog</b> là tài khoản được tạo dành riêng cho công tác "log".
+- <b>/var/dns/dnscacheext</b> là thư mục chứa các thông tin cần thiết cho dịch vụ dnscache cụ thể "lắng nghe" trên IP 192.168.0.1. dnscacheext chỉ cho dnscache external (ngoại vi).
+- <b>192.168.0.1</b> là IP address được ấn định để lắng nghe dịch vụ dnscache trong trường hợp này.
+
+Tương tự như phần 4.3.1, phương thức tạo dịch vụ dnscache trên một IP address "thật" cần đi xuyên qua bước tạo symbolic link từ /var/dns/dnscacheext đến /service để cho phép nó khởi động:
+<b># ln -s /var/dns/dnscacheext /service</b>
+
+Ra lệnh svc khởi động dnscacheext:
+<b># svc /service/dnscacheext</b>
+
+Thử liệt kê dịch vụ bạn sẽ thấy máy đang lắng nghe trên port 53 của IP 192.168.0.1:
+<b># netstat -nau | grep 53</b>
+
+Với ví dụ trên, dnscache cho ngoại vi hiện chỉ cho phép chính nó resolve vì chỉ có một giá trị ấn định duy nhất trong /var/dns/dnscacheext/root/ip là 192.168.0.1. Nếu bạn muốn cho phép trọn bộ subnet 192.168.0.0/24 truy cập vào dịch vụ resolve trên máy chủ này, chỉ đơn giản chạy lệnh sau:
+<b># touch /var/dns/dnscacheext/root/ip/192.168.0</b>
+
+Cho phép một subnet 172.16.0 khác chẳng hạn:
+<b># touch /var/dns/dnscacheext/root/ip/172.16.0</b>
+
+Và cứ theo cách này để thiết lập quyền truy cập cho các subnet khác nữa nếu cần.
+
+<b>4.3.4 Thử nghiệm và điều chỉnh external dnscache</b>
+
+Các bước thử nghiệm tương tự như phần 4.3.2, chỉ có điểm khác là thử nghiệm không phải trên chính máy chủ mà trên các máy con cần dùng dịch vụ resolve. Việc ấn định dns nào được dùng trên các máy con cho vấn đề resolve là tùy môi trường bạn quản lý. Ví dụ, chỉnh dns "bằng tay" cho mỗi máy con để trỏ đến dnscache server có IP là 192.168.0.1 ở trên, hoặc dùng DHCP server để áp đặt giá trị DNS server cho các máy con dùng dhcp client, hoặc ngay cả cách thay đổi giá trị /etc/resolv.conf trên máy con có hệ điều hành là *nix hoặc tương tự.
+
+Điều cần quan tâm đến cấu hình cho dnscache ngoại vi là vấn đề các máy con cần dùng dịch vụ này có thể "thấy" được máy chủ này. Có ba trường hợp chính cần lưu tâm cho việc "thấy":
+
+a. nếu máy chủ chạy dnscache nằm trên cùng một subnet với các máy con và không hề có bất cứ cơ chế cản lọc nào cả thì vấn đề "thấy" không có gì đáng đặt vấn đề. Với ví dụ trên, máy chủ chạy dnscache có IP là 192.168.0.1 có nghĩa là nó được trọn bộ subnet 192.168.0.0 "thấy", ngoại trừ trường hợp subnet mask được điều chỉnh khác đi. -11-
+
+b. nếu máy chủ chạy dnscache nằm trên cùng một subnet với các máy con và có cơ chế cản lọc nào đó thì vấn đề "thấy" ở đây cần phải xem xét lại thật kỹ lưỡng. Cho dù dnscache đã hoạt động và không báo lỗi thuộc về phạm trù hoạt động nhưng các máy con không thể truy cập được thì "lỗi" ở đây là vấn đề môi trường mạng xung quanh máy chủ cho phép máy con "thấy". -12-
+
+c. nếu máy chủ chạy dnscache nằm trên một subnet nhưng phục vụ resolve cho một hoặc nhiều subnet thì vấn đề căn bản của cơ chế routing giữa các subnet phải hoàn chỉnh trước khi các máy con trên các subnet có thể truy cập đến máy chủ này. Khi các máy con (từ các subnet) có thể ping đến máy chủ chạy dnscache hoặc có thể "telnet" đến một cổng dịch vụ nào đó thì mới xác thực được cấu hình mạng và khả năng giao tiếp giữa các subnet hoàn chỉnh.
+
+
+Còn tiếp
+<hnd - vninformatics.com - diendantinhoc.net - 10/2004>
+
+Chú thích:
+-7- System V run level: dùng để thiết lập các dịch vụ được khởi động hay tắt bỏ ở mỗi run level khác nhau. Xem thêm một tài liệu khá cụ thể ở:<span class="link"> http://www.yolinux.com/TUTORIALS/Lin...cess.html</span>
+
+-8- Name resolving: tạm dịch sang tiếng Việt là "giải danh". Nhiều nơi rải rác trong bài vẫn dùng cụm "name resolving" và có cùng tinh thần như "giải danh" vậy.
+
+-9- "root" DNS servers: gồm 13 servers tầng cao nhất:
+198.41.0.4        (a.root-servers.net)
+192.228.79.201     (b.root-servers.net)
+192.33.4.12     (c.root-servers.net)
+128.8.10.90     (d.root-servers.net)
+192.203.230.10     (e.root-servers.net)
+192.5.5.241     (f.root-servers.net)
+192.112.36.4     (g.root-servers.net)
+128.63.2.53     (h.root-servers.net)
+192.36.148.17     (i.root-servers.net)
+198.41.0.10     (j.root-servers.net)
+193.0.14.129     (k.root-servers.net)
+198.32.64.12     (l.root-servers.net)
+202.12.27.33     (m.root-servers.net)
+
+-10- Địa chỉ thật ở đây là IP address gán cho server. Thông thường các địa chỉ dùng cho công tác name resolving (với tư cách là "recursive resolver" như dnscache) thường là địa chỉ thuộc LAN vì nó chỉ (nên) dùng để phục vụ mạng nội bộ. Lý do đã giải thích ở phần 2.2.1
+
+-11- "thấy" trên bình diện các máy trong một subnet dựa trên sự áp đặt của netmask cho subnet này, tôi không đi sâu hơn vào phương diện mô hình mạng (network topology) vì nó nằm bên ngoài trọng tâm bài viết.
+
+-12- cơ chế cản lọc ở đây có thể là một packet filter vô tình cản các máy con truy cập vào dịch vụ trên cổng 53. Nếu thử nghiệm "tail" log ở trên không in ra kết quả nào, điều này chứng tỏ dnscache không nhận được đòi hỏi resolve của máy con hoặc máy con bị báo là "unknown host" chẳng hạn thì nên xét kỹ lại xem có cơ chế cản lọc nào thuộc dạng này trên máy chủ chạy dnscache hay không. Tất nhiên bạn phải nắm chắc log của dnscache không báo bất cứ lỗi nào thuộc về khả năng hoạt động của dnscache.
+
+Cập nhật:
+04-11-2004: Thêm chi tiết tạo thư mục /var/dns trước khi chạy lệnh dnscache-conf vì nó không tự động tạo thư mục dns.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/170.hva#576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/170.hva#576</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 04:16:15]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

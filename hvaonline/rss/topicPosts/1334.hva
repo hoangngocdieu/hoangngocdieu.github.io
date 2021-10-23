@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cấu hình SNMP"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cấu hình SNMP"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cấu hình SNMP</title>
+				<description><![CDATA[ <b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cấu hình SNMP
+   3. Tham khảo
+
+<b>Giới thiệu</b>
+
+SNMP: Simple Network Management Protocol
+
+<b>Cấu hình SNMP</b>
+
+Phần 1: Cài đặt snmp
+
+Cài những gói net-snmp, net-snmp-utils
+
+Cho người dùng FC:
+
+	<b># yum install net-snmp net-snmp-utils</b>
+
+<b>Phần 2: Cấu hình</b>
+
+Chỉnh sửa file cấu hình <b>snmpd.conf</b> (FC user: /etc/snmp/snmpd.conf)
+<blockquote>
+###########################################
+# Access Control (Quyền truy nhập thông tin)
+###########################################
+# First, map the community name "public" into a "security name"
+# thay "MậtkhẩuSNMP" bằng một chuỗi ký tự
+com2sec	local		localhost	MậtkhẩuSNMP
+com2sec	myLAN		192.168.1.0/24	MậtkhẩuSNMP
+
+# Second, map the security name into a group name:
+# RWGroup: quyền đọc/viết (Read, Write)
+# ROGroup: chỉ có quyền đọc (Read Only)
+group   RWGroup       v1      local
+group   RWGroup       v2c     local
+group   RWGroup       usm     local
+group   ROGroup       v1      myLAN
+group   ROGroup       v2c     myLAN
+group   ROGroup       usm     myLAN
+
+# Third, create a view for us to let the group have rights to:
+view    all     included        .1      80
+
+# Finally, grant the group read-only access to the systemview view.
+#	group	context	sec.model sec.level prefix read	write	notif
+access	ROGroup	""	any	noauth	exact	all	none	none
+access	RWGroup	""	any	noauth	exact	all	all	none
+
+##############################
+# System contact information
+##############################
+syslocation Công ty XXX
+syscontact Admin <email@domain.name>
+
+#######################################
+# disk checks (kiểm tra dung lượng HDD)
+#######################################
+# báo lỗi nếu / partition còn ít hơn 100 MB, /var còn ít hơn 500 MB
+disk	/	100000
+disk	/var	500000
+
+############################################
+# load average checks (kiểm tra tải của CPU)
+############################################
+# báo lỗi nếu vượt mức trung bình sau đây (1, 5, 15 phút)
+# load [1MAX=12.0] [5MAX=13.0] [15MAX=14.0]
+load 12 13 14&nbsp;
+		</blockquote>
+
+<b>Phần 3: Khởi động snmpd</b>
+
+Cho người dùng FC
+
+	// tự động chạy mỗi khi bật máy
+<b>	# chkconfig --level 3 snmpd on</b>
+	// khởi động cho lần đầu tiên
+<b>	# /etc/init.d/snmpd start</b>
+
+<b>Phần 4: Kiểm tra hoạt động</b>
+
+Sử dụng lệnh snmpwalk để xem một số thông tin hệ thống
+<blockquote>
+// -----------------------------------
+// phần memory còn thừa (chưa sử dụng)
+$snmpwalk -v 1 -c MậtkhẩuSNMP localhost .1.3.6.1.4.1.2021.4.6.0
+// kết quả: 120 MB RAM chưa sử dụng
+UCD-SNMP-MIB::memAvailReal.0 = INTEGER: 120400
+
+// -----------------------------------
+// dung lượng HDD, / partition
+$ snmpwalk -v 1 -c MậtkhẩuSNMP localhost .1.3.6.1.4.1.2021.9.1.9.1
+// kết quả: đã sử dụng 13%
+UCD-SNMP-MIB::dskPercent.1 = INTEGER: 13
+
+// -----------------------------------
+// số user đang login vào hệ thống
+$ snmpwalk -v 1 -c MậtkhẩuSNMP localhost hrSystemNumUsers.0
+// có 70 users
+HOST-RESOURCES-MIB::hrSystemNumUsers.0 = Gauge32: 70
+
+// -----------------------------------
+// số TCP connection đang mở
+$ snmpwalk -v 1 -c MậtkhẩuSNMP localhost .1.3.6.1.2.1.6.9.0
+// có 123 open connections
+TCP-MIB::tcpCurrEstab.0 = Gauge32: 123&nbsp;
+		</blockquote>
+
+<b>Tham khảo, thông tin thêm</b>
+
+   1. Xem MIB tree: Mbrowse is an SNMP MIB browser based on GTK and net-snmp. It is released under the GPL.
+
+
+James Nguyen.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1334.hva#6254</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1334.hva#6254</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 18:32:24]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

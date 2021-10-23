@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Access Control List in Linux"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Access Control List in Linux"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Access Control List in Linux</title>
+				<description><![CDATA[ <i>(Tham khảo từ Google với từ khóa chính là tiêu đề của bài viết)</i>
+
+<font color='yellow'>Bài viết cung cấp nền tảng và chức năng chính của ACLs trong hệ thống file của Linux. Bạn cũng sẽ học được cách mở rộng các khái niệm permissions truyền thống với ACLs và những thuận lợi trong việc cung cấp khái niệm này.</font>
+
+<font color='cyan'><b>Thuận lợi của ACLs</b></font>
+
+Thông thường 1 file trong Linux có 3 quyền: r, w, x với 3 nhóm người dùng: owner, group, other. 9 bits này được sử dụng để xác định đặc tính cho tất cả các hệ thống file trong Linux. Thêm vào đó, SUID, SGID, sticky bit có thể được dùng trong các trường hợp đặc biệt. 
+
+ACLs được sử dụng trong trường hợp mà các khái niệm permission của file thông thường không có hiệu lực. Chúng cho phép gán quyền cho một người, hoặc một nhóm cá nhân thậm chí không tương ứng với owner hoặc owning group. ACLs hỗ trợ các hệ thống file ReiserFS, Ext2, Ext3, JFS, XFS.
+
+Bạn có thể thấy rõ thuận lợi của ACLs khi thay thế 1 server chạy Windows bằng 1 server chạy Linux. Một số trạm kết nối vẫn có thể chạy trên Windows ngay cả sau khi chuyển đổi. Hệ thống Linux sẽ chuyển các file và dịch vụ về clients chạy windows với Samba. Samba cũng hỗ trợ ACLs và lúc đó quyền của người dùng có thể được cấu hình trên cả Linux và Windows bằng GUI. winbindd còn có khả năng gán quyền cho user chỉ tồn tại trên Windows domain mà ko có account nào trên Linux server. Mặt khác bạn có thể chỉnh sửa ACLs với getfacl và setfacl
+
+<font color='cyan'><b>Định nghĩa</b></font>
+
+POSIX sử dụng 3 lớp người dùng để gán quyền cho hệ thống file. 
+<ul><li>Access ACL: áp dụng cho cả file và thư mục
+Default ACL: chỉ áp dụng cho thư mục. Chúng xác định quyền kế thừa từ thư mục cha khi được tạo.
+ACL entry: Mỗi ACL sẽ bao gồm 1 tập hợp ACL entries. Một ACL entry sẽ chứa 1 loại, 1 hạn định mà user hoặc group nó tham chiếu đến, và một tập hợp các quyền.</li></ul>
+<font color='cyan'><b>Handing ACLs</b></font>
+
+<font color='#6699CC'>Cấu trúc của ACLs entries</font>
+
+Về cơ bản, ACL chia thành 2 lớp: <font color='orange'>minimum ACL</font> chỉ đơn giản gồm các quyền như hệ thống file truyền thống. <font color='orange'>Extended ACL</font> mở rộng hơn, nó chứa đựng 1 <b>mask entry</b>, và có thể bao gồm các entries cho loại <i>named user</i>, <i>named group</i>. Các permission được định nghĩa trong owner và other luôn luôn có hiệu lực. Ngoại trừ <i>mask entry</i> thì các entries khác luôn có hiệu lực hoặc là được masked. Nếu các quyền tồn tại trong 1 hoặc 1 số entry trên được mask thì chúng cũng có hiệu lực. Permission chỉ chứa mask hoặc duy nhất 1 entry thực sự thì sẽ không có hiệu lực.
+
+<font color='#6699CC'>ACL entries và File mode permission bits</font>
+
+ACL được cấu tạo theo 3 khối: 
+Không có mask: owning group map với group class
+có mask: mask map với group class
+
+Quá trình map này đảm bảo việc tương tác giữa các ứng dụng được và không được hỗ trợ bởi ACLs. Quyền truy cập được gán bởi bit quyền đại diện cho giới hạn cao nhất. Tất cả các quyền không phản ánh ở đây hoặc là ko được gán trong ACL hoặc là không có hiệu lực. 
+
+<font color='#6699CC'>Một thư mục với truy cập ACL</font>
+
+Việc xử lý ACL được giải thích theo 3 bước:
++ Tạo file
++ Chỉnh ACL
++ Dùng masks
+
+Trước khi bạn tạo thư mục hãy dùng <font color='orange'>umask</font> để xác định quyền truy cập ban đầu. 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ umask 027</pre>
+		</div>
+Sau đó tạo mydir:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ mkdir mydir</pre>
+		</div>
+Sau khi tạo <b>mydir</b> hãy dùng <font color='orange'>ls -dl</font> để kiểm tra lại là quyền đã được gán chính xác:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls -dl mydir/
+drwxrwx---+ 2 quanta quanta 4096 2007-12-29 22:53 mydir/</pre>
+		</div>
+Kiểm tra trạng thái khởi đầu của ACL và chèn một new user và new group entry
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/
+# file: mydir
+# owner: quanta
+# group: quanta
+user::rwx
+group::r-x
+other::---</pre>
+		</div>
+Đầu tiên hãy thử chỉnh sửa bằng cách: gán quyền đọc, ghi, thi hành cho user <b>kitty</b> và group <b>friends</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ setfacl -m user:kitty:rwx,group:friends:rwx mydir/</pre>
+		</div>
+Tuỳ chọn <font color='olive'>-m</font> sẽ nhắc setfacl chỉnh sửa một ACL đã tồn tại.
+
+Thử xem kết quả với lệnh <font color='orange'>getfacl</font> xem sao:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/
+# file: mydir
+# owner: quanta
+# group: quanta
+user::rwx
+user:kitty:rwx
+group::r-x
+group:friends:rwx
+mask::rwx
+other::---</pre>
+		</div>
+
+Ngoài các entries khởi tạo cho user <b>kitty</b> và group <b>friends</b>, <i>mask entry</i> cũng được tạo ra. <i>mask entry</i> này được gán tự động để giảm thiểu số lượng các entries trong group class để gọi tên thông thường. mask định nghĩa quyền truy cập có hiệu lực lớn nhất cho tất cả các entries trong group class: <i>named user</i>, <i>named grou</i>p, <i>owning group</i>. Do đó, <i>mask entry</i> tương ứng với bit quyền của group class - được hiển thị bằng lệnh <font color='orange'>ls -dl</font>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls -dl mydir/
+drwxrwx---+ 2 quanta quanta 4096 2007-12-29 22:53 mydir/</pre>
+		</div>
+Bạn chú ý, cột đầu tiên của output chứa đựng một dấu +, đây là ký tự đại diện cho một extended ACL
+
+Theo output trên, permission của mask entry cũng bao gồm quyền write, theo đó owning group cũng có quyền write thư mục mydir. 
+
+Bây giờ thử dùng <font color='orange'>chmod</font> hoặc <font color='orange'>setfacl</font> để disabled quyền write của group class xem sao, output của lệnh <b>ls</b> cho thấy mask bits đã được điều chỉnh với <b>chmod</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ sudo chmod g-w mydir/</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/
+# file: mydir
+# owner: quanta
+# group: quanta
+user::rwx
+user:kitty:rwx                  #effective:r-x
+group::r-x
+group:friends:rwx               #effective:r-x
+mask::r-x
+other::---</pre>
+		</div>
+<font color='#6699CC'>Một thư mục với default ACL</font>
+
+<b>default ACL</b> định nghĩa tất cả các quyền truy cập kế thừa từ thư mục này khi nó được tạo. <b>default ACL</b> ảnh hưởng đến các thư mục con cũng như là các files. 
+
+<i><u>Ảnh hưởng của Default ACLs</u></i>
+Về cơ bản quyền của ACL được handled theo 2 cách:
++ 1 thư mục kế thừa default ACL từ thư mục cha
++ 1 file kế thừa từ default ACL và nó sở hữu Access ACL
+
+Tất cả các hệ thống tạo file đều sử dụng mode parameter để định nghĩa quyền truy cập cho file mới được tạo:
++ Nếu thư mục không có default ACL,một sự giao nhau giữa các quyền trong mode parameter và trong umask hiện tại sẽ được tạo và gán cho đối tượng
++ Nếu default ACL tồn tại trong thư mục cha, bit quyền được xác định theo sự giao nhau giữa giá trị của mode parameter và quyền định nghĩa trong default ACL, và được gán cho đối tượng. 
+
+<i><u>Ứng dụng của default ACLs</u></i>
++ Tạo một default ACL cho một thư mục đã tồn tại
++ Tạo một thư mục con trong thư mục có default ACLs
++ Tạo một file trong thư mục có default ACLs
+
+Thêm một default ACLs vào một thư mục đã tồn tại <b>mydir</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ setfacl -d -m group:friends:r-x mydir/</pre>
+		</div>
+Tuỳ chọn <font color='olive'>-d</font> sẽ nhắc <font color='orange'>setfacl</font> thực hiện một "chỉnh sửa" trên default ACLs
+Xem kết quả của lệnh này:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/
+# file: mydir
+# owner: quanta
+# group: quanta
+user::rwx
+user:kitty:rwx                  #effective:r-x
+group::r-x
+group:friends:rwx               #effective:r-x
+mask::r-x
+other::---
+default:user::rwx
+default:group::r-x
+default:group:friends:r-x
+default:mask::r-x
+default:other::---</pre>
+		</div>
+<font color='orange'>getfacl</font> sẽ trả về cả access ACL và default ACL. 
+
+Tiếp theo thử tạo một thư mục con trong <b>mydir</b>, bạn sẽ thấy thư mục con này kế thừa default ACL từ <b>mydir</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ mkdir mydir/mysubdir</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/mysubdir/
+# file: mydir/mysubdir
+# owner: quanta
+# group: quanta
+user::rwx
+group::r-x
+group:friends:r-x
+mask::r-x
+other::---
+default:user::rwx
+default:group::r-x
+default:group:friends:r-x
+default:mask::r-x
+default:other::---</pre>
+		</div>
+Bạn thấy rõ là access ACL của <b>mysubdir</b> phản ánh chính xác default ACL của <b>mydir</b>.
+
+Sử dụng <font color='orange'><i>touch</i></font> để tạo một file trong thư mục <b>mydir</b>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ touch mydir/myfile</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ ls -l mydir/myfile 
+-rw-r-----+ 1 quanta quanta 0 2008-01-07 00:59 mydir/myfile</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$ getfacl mydir/myfile 
+# file: mydir/myfile
+# owner: quanta
+# group: quanta
+user::rw-
+group::r-x                      #effective:r--
+group:friends:r-x               #effective:r--
+mask::r--
+other::---</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18151.hva#108870</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18151.hva#108870</link>
+				<pubDate><![CDATA[Mon, 7 Jan 2008 03:25:16]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Access Control List in Linux</title>
+				<description><![CDATA[ Thanks quanta, nhưng mình đọc xong vẫn chưa hiểu hết cách hoạt động của ACL, mấy cái owning group, group class, mask ... nghe thấy lùng bùng luôn  :D , quanta có thể cho 1 VD cụ thể hơn để mình hiểu rõ được không ?
+VD mình có 3 user A B C và folder /mydir
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>drwxr-xr-x 2 root root 4096 2010-04-27 10:49 /mydir/</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># file: mydir/
+# owner: root
+# group: root
+user::rwx
+group::r-x
+other::r-x</pre>
+		</div>
+Mình muốn phân quyền:
+User A có quyền tạo mới, sửa, xoá file, folder của chính user A trong /mydir
+User B có quyền tạo mới, sửa, nhưng không được xoá file, folder của chính user B trong /mydir
+User C có toàn quyền nhưng không add C vào group root hay chown /mydir cho C
+Mình muốn tìm cách phân quyền 1 cách linh động trong linux, giống như bên Windows làm vậy, ngoài ACL còn có cách nào khác không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18151.hva#209879</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18151.hva#209879</link>
+				<pubDate><![CDATA[Mon, 26 Apr 2010 23:16:58]]> GMT</pubDate>
+				<author><![CDATA[ rocklee44]]></author>
+			</item>
+			<item>
+				<title>Access Control List in Linux</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;i&#93;Trước khi bạn tạo thư mục hãy dùng umask để xác định quyền truy cập ban đầu.
+Code:
+
+&#91;color=red&#93;$ umask 027&#91;/color&#93;
+
+
+Sau đó tạo mydir:
+Code:
+
+$ mkdir mydir
+
+
+Sau khi tạo mydir hãy dùng ls -dl để kiểm tra lại là quyền đã được gán chính xác:
+Code:
+
+ $ ls -dl mydir/
+&#91;color=red&#93; drwxrwx---&#91;/color&#93;+ 2 quanta quanta 4096 2007-12-29 22:53 mydir/
+
+&#91;/i&#93;</pre>
+		</div>
+em ko hiểu sao unmask 027 mà ls ra  drwxrwx---]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221736</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221736</link>
+				<pubDate><![CDATA[Tue, 28 Sep 2010 14:50:06]]> GMT</pubDate>
+				<author><![CDATA[ trancuongqb]]></author>
+			</item>
+			<item>
+				<title>Access Control List in Linux</title>
+				<description><![CDATA[ umask là 027 thì phải ra là 750 rwx r_x ___ mới đúng chứ :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221827</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221827</link>
+				<pubDate><![CDATA[Wed, 29 Sep 2010 21:50:37]]> GMT</pubDate>
+				<author><![CDATA[ Enel]]></author>
+			</item>
+			<item>
+				<title>Access Control List in Linux</title>
+				<description><![CDATA[ Cảm ơn 2 bạn đã chỉ ra chỗ nhầm lẫn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221940</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/18151.hva#221940</link>
+				<pubDate><![CDATA[Fri, 1 Oct 2010 08:59:22]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

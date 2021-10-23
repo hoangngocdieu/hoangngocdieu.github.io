@@ -1,0 +1,1075 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Tự làm VPN đơn giản với m0n0wall"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Tự làm VPN đơn giản với m0n0wall"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ <font size='+1'><b>Tự làm VPN đơn giản với m0n0wall</b></font>
+
+Chúng tôi là người dùng Windows. Nếu có lỡ viết câu nào sai về các hệ thống *NIX, xin mọi người hãy cười và bỏ qua cho nhé. 
+
+Bài này gửi tại forum của hiệp hội hacker HVA để tỏ lòng biết ơn sâu sắc tới những *NIX hackers đã viết ra m0n0wall, một phần mềm nguồn mở hết sức hữu ích. 
+
+
+<font size='+1'><b>1.	m0n0wall – đặc điểm</b></font>
+
+<b>m0n0wall</b> <span class="link"> http://www.m0n0.ch/wall</span>) là phần mềm chia xẻ Internet và kết nối VPN cho người dùng Internet đầu cuối. Là chọn lựa rất tốt khi bạn muốn:
+
+•	chia xẻ một kết nối Internet băng rộng duy nhất cho mạng LAN của mình;
+•	qua Internet, nối thông mạng LAN của mình với một hay nhiều mạng LAN ở xa (thường được gọi là <i>site-to-site</i>, <i>net-to-net</i> hay <i>gateway-to-gateway</i> VPN);
+•	sử dụng đồng thời dịch vụ DNS ở cả hai nơi, hay nhiều nơi (<i>split</i> DNS);
+•	thiết đặt mọi thứ qua giao diện Web; và
+•	một thiết bị, thường gọi là <i>VPN router</i>, phần cứng rẻ tiền, phần mềm miễn phí, nhưng vẫn đảm bảo ổn định, an toàn.
+
+
+Có nhiều phần mềm như thế, nhưng m0n0wall nổi bật với:
+•	kích thước rất nhỏ (&lt; 6 MB);
+•	không tiếng ồn, tiết kiệm điện (nó chỉ dùng bộ nhớ RAM, không dùng swap và tắt đĩa cứng trong khi làm việc); và
+•	một giao diện Web hoạt động thật nhanh nhẹn và hình thức thật dễ thương. 
+
+
+m0n0wall không phù hợp cho bạn (rất tiếc) nếu:
+•	bạn biết và thích dùng những thứ như console, command, config,... để chỉnh thiết bị;
+•	bạn cần một cache proxy như <b>squid</b> hay một IDS như <b>snort</b>;
+•	bạn có 2 hay nhiều kết nối Internet và vì thế cần giao thức định tuyến; hoặc
+•	bạn cần một địa chỉ IP cho kết nối VPN, qua đó có thể định tuyến, cản lọc gói, điều tiết băng thông trong mạng ảo y hệt như trong mạng thực.
+
+
+
+
+<font size='+1'><b>2. Chia xẻ kết nối Internet</b></font>
+
+<b>Chuẩn bị phần cứng:</b>
+
+•	một máy tính nhúng với 200-300 MHz x86 CPU, 64 MB RAM, ít nhất 2 giao diện mạng, một cổng serial, card CF (Compact Flash) hoặc IDE flash module 16MB cắm vào IDE slot; hoặc 
+
+•	một máy tính x86 PC cấu hình tương đương, có bàn phím và màn hình, tốt nhất nên chọn loại nào không dùng quạt mà chỉ dùng cánh tản nhiệt. Một ổ đĩa cứng bất kỳ có thể thay cho card CF / flash module. 
+
+
+Bạn có thể mua hoặc tự lắp một máy tính nhúng chỉ tiêu thụ khoảng 5 - 10W, với chi phí chừng 200 USD. (Trên thị trường, nhiều m0n0wall appliance được bán với giá gấp 2-3 lần như thế.) Máy PC (cũ) rẻ hơn nhiều, có thể rẻ đến mức... không tốn một xu, nhưng sẽ tốn điện hơn nhiều lần.
+
+
+<b>Chuẩn bị phần mềm:</b>
+
+•	m0n0wall binary image tùy theo platform của bạn. Thí dụ nếu platform là máy PC, bạn cần download file <b>generic-pc-xxx.img</b>, trong đó xxx là số hiệu phiên bản m0n0wall. CF và đĩa cứng đều cùng một image.
+
+•	một phần mềm làm Certification Authority (CA). Chúng tôi thường dùng một phần mềm nguồn mở chạy trên Windows tên là <b>XCA</b> <span class="link"> http://freshmeat.net/projects/xca</span>).  Đối với người dùng Linux phần mềm thích hợp có lẽ là <b>TinyCA</b> <span class="link"> http://tinyca.sm-zone.net/</span> )
+
+
+Để cài đặt và dùng m0n0wall bạn không cần phải biết một chút gì về các hệ thống *NIX nhưng xin viết thêm vài dòng tham khảo. Phiên bản m0n0wall chính thức mới nhất hiện nay là 1.22, dựa trên hệ điều hành FreeBSD 4.11. Việc chuyển đặt m0n0wall lên FreeBSD 6.1 đã diễn ra, nhưng rất chậm. Tác giả ban đầu của nó đã treo giải thưởng 1000 USD và thời hạn đến tháng 10/2006 cho người nào chuyển đặt thành công sớm nhất. Phiên bản 1.22 hiện thời chỉ hỗ trợ vài loại card mạng không dây với chip Prism. Vì thế, bài này sẽ không nói tới thiết lập điểm truy cập không dây - một chức năng sẵn có trong m0n0wall. Nếu bạn có card mạng không dây với chip Atheros, bạn có thể dùng tạm phiên bản 1.2 beta 7 dựa trên FreeBSD 5.3 hoặc 1.3 alpha 3 dựa trên FreeBSD 6.1.<span class="link"> http://chrisbuechler.com/m0n0wall/downloads/</span> ). Nhưng cần chú ý rằng về hiệu suất của phần mềm hệ thống mạng (network stack), so với FreeBSD 4.x, FreeBSD 5.x chậm hơn đến 40% còn FreeBSD 6.x chậm hơn đến 20%. Ở những máy có CPU yếu, sự giảm hiệu suất đó dẫn đến giảm băng thông và nâng cấp phần mềm chưa chắc đã là một quyết định sáng suốt.
+
+
+
+<b>Cài đặt: </b>
+
+Ghi image file vào card CF hoặc đĩa cứng. Việc này tương tự như ghi .iso image vào CD. Bạn có thể dùng một tiện ích nhỏ của Windows tên là <b>physwrite.exe</b> (có sẵn trên Website của m0n0wall). Chi tiết xem hướng dẫn sử dụng.
+
+Ghi xong, cắm CF / đĩa cứng vào đúng vị trí cũ. Nếu appliance là PC thì cắm màn hình, bàn phím, còn nếu là máy nhúng thì cắm một PC vào cổng serial để điều khiển (dùng Microsoft Hyperterminal). Boot máy. 
+
+Trong các giao diện mạng, chỉ định cái nào bạn chọn làm giao diện LAN và đặt cho nó một địa chỉ IP và netmask, mặc định là 192.168.1.1/24. Đây là lần duy nhất bạn dùng tới console. Từ giờ, bạn có thể rút bỏ màn hình, bàn phím (hoặc dây serial). 
+
+Cắm cổng LAN vào switch, cổng WAN vào modem. Nếu bạn dùng ADSL router thì tắt chế độ router, bật chế độ bridge để nó hoạt động như một modem.
+
+Từ Web browser truy nhập trang điều khiển qua địa chỉ IP, tên người dùng là mặc định là <b>admin</b> và mật khẩu mặc định là <b>mono</b>.
+
+m0n0wall boot mặc định với:
+•	một DHCP client nhận địa chỉ cho giao diện WAN;
+•	một DHCP server bật sẵn cung cấp địa chỉ IP cho mạng LAN và các địa chỉ DNS servers lấy từ nhà cung cấp dịch vụ Internet;
+•	một NTP client (<b>msntp</b>) dùng NTP server <b>pool.ntp.org</b>, còn bản thân m0n0wall không có dịch vụ NTP;
+•	NAT bật sẵn;
+•	DNS forwarder (<b>dnsmasq</b>) bật sẵn.
+•	bộ cản lọc gói (<b>ipfilter</b>) mở (thông) cho mọi kết nối hướng ra và đóng (chặn) cho mọi kết nối hướng vào;
+•	bộ điều tiết băng thông (traffic shaper) tắt.
+
+Bạn có thể bật tắt, chỉnh sửa các dịch vụ nói trên theo nhu cầu thực tế. 
+
+
+<b>Chú ý.</b> Có vài việc thường làm sau khi thiết lập xong đường hầm VPN nhưng chúng tôi viết trước luôn vào đoạn này cho tiện. 
+
+1. DNS forwarder cho phép bạn sử dụng DNS của ISP cho nhu cầu giải tên thông thường, đồng thời dùng DNS server khác cho nhu cầu giải tên miền đặc biệt nào đó (thí dụ, mycompany.local.) Khi DNS server "đặc biệt" như thế được đặt ở mạng LAN xa thì bạn chỉ có thể truy nhập được qua đường hầm VPN. Nếu bạn muốn chuyển DNS query vào một DNS server ở xa xuyên qua đường hầm VPN thì chỉ chỉnh DNS forwarder thôi là không đủ; m0n0wall phục vụ cho các máy khác rất tốt nhưng khi phục vụ bản thân nó dường như "lú lẫn", cứ "đâm đầu xin chết" ở giao diện WAN. Bạn phải giúp cho nó "tỉnh ra" bằng một static route hướng vào giao diện LAN. Thí dụ, với đường hầm:
+
+192.168.1.0/24---192.168.1.1, 50.51.52.53---Internet---60.61.62.63, 192.168.2.1---192.168.2.0/24
+
+muốn forward DNS query từ m0n0wall (192.168.1.1, 50.51.52.53) tới DNS server 192.168.2.10 chẳng hạn, cần thiết lập static route với Destination network = 192.168.2.10/32  (hoặc 192.168.2.0/24, /25,... gì đó cũng được), Interface = LAN và Gateway = 192.168.1.1.
+
+2. Bạn có thể cản lọc kết nối <b>hướng ra mạng xa</b> qua đường hầm VPN bằng luật Firewall trên giao diện LAN.
+
+3. Bạn có thể điều tiết băng thông (thí dụ, để ưu tiên VoIP) ở kết nối <b>hướng ra mạng xa</b> qua đường hầm VPN bằng luật Traffic Shaper trên giao diện <b>WAN</b>. (Chúng tôi chưa thử điều này.)
+
+
+
+Nếu kiểm tra thấy chia xẻ Internet tốt và mạng LAN vẫn thông bình thường như trước thì phần chia xẻ Internet coi như xong. Ta có thể bắt tay vào lập đường hầm VPN. 
+
+
+(còn nữa)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#6367</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#6367</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 11:26:15]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall (Phần 2)</title>
+				<description><![CDATA[ (tiếp theo)
+
+<font size='+1'><b>3.	Đường hầm VPN</b></font>
+
+Ở m0n0wall, đường hầm site-to-site VPN sử dụng IPsec.
+
+Để lập một đường hầm, bạn cần khai báo các tham số mạng và lựa chọn các tham số an ninh cho cả hai appliance ở hai đầu đường hầm. 
+
+Để xác định các tham số mạng, dễ nhất là nhìn vào hình vẽ:
+
+192.168.1.0/24---192.168.1.1, 50.51.52.53---Internet---60.61.62.63, 192.168.2.1--- 192.168.2.0/24
+
+(192.168.1.1, 50.51.52.53) gọi là thiết bị <i>bên trái</i>.
+
+(192.168.2.1, 60.61.62.63) gọi là thiết bị <i>bên phải</i>.
+
+Cả hai appliance đều <i>kết nối VPN qua giao diện</i> WAN.
+
+Giải sử thiết bị bên trái là m0n0wall. Đối với nó:
+50.51.52.53 gọi là <i>local gateway</i>.
+60.61.62.63 gọi là <i>remote gateway</i>.
+192.168.1.0/24 gọi là <i>local subnet</i>.
+192.168.2.0/24 gọi là <i>remote subnet</i>.
+
+Để ý hai subnet là rời nhau (không chứa địa chỉ nào chung). Đây là yêu cầu bắt buộc.
+
+Đoạn này hướng dẫn m0n0wall nối thông với m0n0wall. Thiết lập m0n0wall với các thiết bị IPsec khác sẽ được trình bày ở đoạn sau. Như thế thiết bị bên phải cũng là m0n0wall. Khi đó bạn cần khai báo tham số mạng ở bên phải giống như bên trái, nhưng phải đảo chiều để cho cái-gì-local của bên trái trở thành cái-đó-remote của bên phải, và ngược lại.
+
+Trong IPsec hai bên liên lạc là ngang hàng với nhau. Bất cứ bên nào cũng có thể là bên khởi xướng (<i>initiator</i>) còn bên kia sẽ là bên phúc đáp (<i>responder</i>) trong quá trình đàm phán. Đối chiếu với quan niệm về ứng dụng client-server thì cả hai bên đều có thể là "server", khi bên này là "server" thì bên kia là "client" và ngược lại. Điều quan trọng là có thể bạn tạo thành công đường hầm khi máy của bạn là intiator, nhưng không nhất thiết thành công khi nó ở vai trò responder.
+
+Vì thế, khi thử nghiệm một thiết bị, bạn nên tạo tình huống thử từng trường hợp. Cách đơn giản nhất là khai báo tắt <b>Keep Alive</b> ở cả hai bên rồi thử <b>ping</b> qua đường hầm từ bên initiator.
+
+Chú ý là đối với m0n0wall, remote gateway phải có địa chỉ IP công khai và tĩnh. Không đặt remote gateway sau NAT là để tránh rắc rối về bảo mật. Không dùng địa chỉ IP động vì m0n0wall chỉ cho phép khai báo remote gateway bằng địa chỉ IP chứ không cho phép dùng tên.
+
+Tham số mạng chỉ có bấy nhiêu ;-) Phần còn lại của đoạn này sẽ nói về các tham số an ninh.
+
+
+
+<b>a)	IPsec tunnel hay là IPIP over IPsec transport?</b>
+
+IPsec tunnel và IPIP over IPsec transport (IIPtran) là hai kiểu đường hầm có cùng định dạng gói. Vì thế chúng tương thích với nhau theo nghĩa thiết bị kiểu này có thể "nói chuyện được" (thông đường hầm) với thiết bị kiểu kia. IPsec tunnel không bắt buộc phải có (và cũng thường không có) giao diện ảo với địa chỉ IP. IIPtran có định nghĩa giao diện ảo với địa chỉ IP nên giúp dễ dàng giải quyết các vấn đề mạng như định tuyến động, cản lọc gói và điều tiết băng thông. IPsec tunnel có cơ chế kiểm soát truy nhập, chỉ cho phép gói từ local subnet đã khai báo đi vào đường hầm. IIPtran không có cơ chế này nên sau khi hình thành đường hầm, mọi gói đều có thể đi vào và việc kiểm soát truy nhập nếu cần phải được thực hiện bằng phương tiện ngoài giao thức (như tường lửa). Do IIPtran là kết hợp chồng chất của hai giao thức riêng biệt (IPIP thực hiện đường hầm và IPsec transport mã hóa), việc thực thi lệch lạc có thể dẫn đến sự cố an ninh. Sự cố có thể nhẹ như để gói lạ xâm nhập đường hầm, hay có thể rất nghiêm trọng như thả gói không mã hóa đi qua đường hầm mà người dùng không hề hay biết. (Đây cũng là vấn đề chung của mọi giao thức <i>đường-hầm-over-IPsec-transport</i>.) Tóm lại, trong khi trên nguyên tắc cả hai dạng đường hầm đều <i>có thể</i> tiện dụng và bảo mật như nhau, trên thực tế một cài đặt IIPtran <i>thường</i> tiện dụng hơn nhưng bảo mật <i>thường</i> thua một cài đặt IPsec tunnel. Cài đặt IIPtran phải cố gắng đạt tới độ bảo mật của IPsec tunnel bằng cách thực hiện thật chính xác từng giao thức và kết hợp hai giao thức thật ăn khớp. Cài đặt IPsec tunnel phải cố gắng đạt tới độ tiện dụng của IPsec transport bằng nhiều cách, kể cả cố gắng nặn ra giao diện ảo với địa chỉ IP.
+
+Với m0n0wall, bạn không thể chọn lựa: nó chỉ cho phép IPsec tunnel.
+
+
+
+<b>b) Lifetime?</b>
+
+Khi nói đến IPsec tunnel, thực ra chúng tôi nghĩ đến <i>ESP tunnel</i>. ESP (Encapsulating Security Payload) là giao thức truyền dữ liệu, bao gồm cả mã hóa dữ liệu và xác thực dữ liệu. Có thể nhìn một đường hầm ESP như một kênh an toàn.
+
+Để có chìa khóa bí mật cho ESP, hai bên dùng <i>IKE</i>. IKE (Internet Key Exchange) là giao thức để hai bên đàm phán, trao đổi chìa khóa, xác thực danh tính và cũng để trao đổi các thông tin tạo ra, duy trì và hủy bỏ các đường hầm trong vòng bí mật. IKE cũng dùng để tạo ra, duy trì và hủy bỏ các phiên liên lạc của chính bản thân IKE. Có thể nhìn một phiên IKE như một kênh an toàn khác.
+
+Như vậy đàm phán IKE có hai loại, gọi là 2 <i>phases</i>. <i>Phase 1</i> để tạo kênh IKE còn <i>Phase 2</i> để tạo kênh ESP trong khuôn khổ của một kênh IKE. Khi hủy bỏ một kênh IKE, mọi kênh ESP tạo ra trong khuôn khổ của kênh ấy cũng bị hủy theo. Kênh an toàn có thể được hủy bỏ do trục trặc kỹ thuật, khởi động lại máy hay đã hết thời hạn tồn tại (<i>lifetime</i>). Về thời gian, các kênh ESP tồn tại song song và nối tiếp (gối đầu) nhau. Nếu bạn bật <i>Keep alive</i>, hai bên sẽ duy trì ít nhất 1 cặp kênh (1 thu, 1 phát) luôn sẵn sàng làm việc. Khi cặp kênh sắp hết hạn, hai bên sẽ tự động đàm phán tạo cặp kênh mới.
+
+Mọi thông tin bí mật về một kênh an toàn, bao gồm các địa chỉ IP, tên thuật giải và quan trọng nhất là các chìa khóa mật mã, được hai bên chứa trong cái gọi là <i>SA</i> (Security Association). Trong thuật ngữ IPsec, SA của kênh IKE gọi là ISAKMP SA, SA của kênh ESP gọi là IPsec SA.
+
+Lựa chọn lifetime hợp lý được khuyến cáo như sau.
+
+Khi vận hành chính thức:
+•	ISAKMP SA lifetime = 24 tiếng,
+•	IPsec SA lifetime = 8 tiếng.
+
+Khi thử nghiệm:
+•	ISAKMP SA lifetime = 20 phút,
+•	IPsec SA lifetime = 10 phút.
+
+Khuyến cáo lifetime cho vận hành chính thức để duy trì độ bảo mật hợp lý đồng thời tránh nguy cơ rớt mạng khi thay đổi chìa khóa quá thường xuyên, nhưng quan trọng nhất để đảm bảo đàm phán thành công. Khi các mạng đều trong tầm kiểm soát của bạn, bạn có thể đặt cho mọi thiết bị một lifetime thống nhất nào đó khác. Chẳng hạn, khi vận hành chính thức chúng tôi thường sử dụng ISAKMP SA lifetime = 7 ngày đêm.
+
+
+
+<b>c)	PSK hay là certificate?</b>
+
+Sau khi trao đổi chìa khóa, hai máy ở hai bên bước vào vòng đàm phán bí mật trong đó có một việc là đôi bên xác thực danh tính của nhau. Có hai cách xác thực là <i>PSK</i> và <i>certificate</i> (chữ ký điện tử). 
+
+PSK nhanh hơn certificate nhiều. Có thể nói là PSK "nhanh như chớp".
+
+Nhưng PSK là một chìa khóa bí mật dùng chung nghĩa là cả hai bên cùng biết. Khi dùng certificate, mỗi bên có một chìa khóa bí mật riêng. Đối phương đứng giữa đường muốn nghe trộm cuộc liên lạc giữa hai máy A và B phải giả làm A để liên lạc với B và giả làm B để liên lạc với A. Trường hợp A, B dùng PSK, đối phương chỉ cần đột nhập được một máy (A hoặc B) là đủ lấy được PSK. Trường hợp A, B dùng certificate, đối phương phải đột nhập được vào cả hai máy A và B thì mới lấy được cả hai chìa khóa bí mật, việc này khó hơn so với trường hợp trước. Vậy certificate bảo mật hơn PSK.
+
+Việc lựa chọn là tùy ở bạn. Tuy nhiên, kể cả khi quyết định sẽ dùng certificate bạn nên luôn luôn thử nghiệm thiết bị với PSK trước và chỉ chuyển sang thử nghiệm với certificate khi sau khi liên lạc PSK đã thông suốt. Lý do: <b>identifier với certificate là điểm dễ bất đồng nhất trong kết nối giữa các cài đặt IPsec khác nhau</b>.
+
+
+
+<b>d)	Main mode, Base mode hay là Aggressive mode?</b>
+
+Aggressive mode nhanh nhất. Aggressive mode được dùng khi một bên (initiator, client) có địa chỉ IP biến động còn bên kia (responder, server) có địa chỉ IP tĩnh. (Khi client là một máy đơn lẻ, kết nối như thế thường gọi là road-warrior.) Aggressive mode có sai lầm nghiêm trọng về bảo mật khiến nó có thể lộ mật khi dùng với PSK. Ngay cả khi dùng certificate Aggresive mode cũng không an toàn bằng Main mode. Khi đàm phán Main mode bất thành, một vài loại appliance tự động chuyển sang Aggresive mode. Nhưng thật may mắn m0n0wall không thuộc loại đó.
+
+Base mode không có trong m0n0wall. 
+
+Main mode an toàn nhất. Theo chúng tôi, main mode là mode duy nhất chấp nhận được để net-to-net VPN thật sự an toàn.
+
+
+
+<b>e)	PFS hay là không PFS?</b>
+
+PFS (Perfect Forward Secrecy) là một lựa chọn tùy biến khi đàm phán trong khuôn khổ một ISAKMP SA để bên này yêu cầu bên kia trao đổi chìa khóa mới cho IPsec SA mới hoàn toàn độc lập với những chìa khóa đã dùng trong các IPsec SA trước đây. Như vậy, nếu bạn dùng PFS thì bảo mật sẽ rất là tốt.
+
+Nhưng thực tế khi liên lạc giữa các cài đặt khác nhau của IPsec (và đôi khi, kể cả giữa hai máy cùng kiểu, với cùng một cài đặt!) PFS là điểm khá problematic. Đàm phán dễ thất bại khi bạn bật PFS.
+
+Vì thế, người ta thường khuyến cáo thử nghiệm thiết bị tắt PFS trước. Chỉ khi liên lạc đã thông suốt mới bật PFS thử tiếp.
+
+
+
+<b>f)	SHA hay là MD5?</b>
+
+Đây là một câu hỏi về chọn lựa thuật giải. Những câu hỏi tương tự có thể là: AES hay là 3DES? AES128 hay là AES256? RSA hay là DSA? Để chọn lựa thuật giải, cần để ý:
+-	Diffie-Hellman (DH) không có gì thay thế được. 
+-	AES nhanh hơn 3DES vài lần.
+-	RSA nhanh hơn DSA vài lần, 
+-	MD5 nhanh hơn SHA1 vài lần.
+-	Khi dùng PSK, mỗi ký tự ngẫu nhiên tương đương với khoảng 5-6 bit.
+-	Ở thuật giải cho phép độ dài chìa khóa tùy biến, chìa khóa càng dài, tính toán càng chậm. 
+-	Độ bảo mật của các thuật giải (xem bảng).
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Độ bảo mật &#40;bit&#41;   Thuật giải
+             56    DES
+             80    Skipjack
+             96    ?
+            112    3DES
+            128    HMAC MD5, AES 128
+            160    HMAC SHA1
+            192    AES 192
+            256    AES 256
+
+Độ bảo mật &#40;bit&#41;   Thuật giải
+             56    DH,RSA,DSA   416
+             80    DH,RSA,DSA  1024
+             96    DH,RSA,DSA  1536
+            112    DH,RSA,DSA  2048
+            128    DH,RSA,DSA  3072
+            160    DH,RSA,DSA  4864
+            192    DH,RSA,DSA  7680
+            256    DH,RSA,DSA 15360</pre>
+		</div>(Nguồn: hai bảng trên do bạn LTVA cung cấp)
+
+Độ bảo mật của một hệ thống nhiều khâu bằng độ bảo mật ở khâu yếu nhất. Cái giá trả cho bảo mật cao là tiêu hao nhiều điện năng và thời gian CPU. Lựa chọn lệch với những giải thuật mạnh yếu khác nhau dẫn đến lãng phí điện năng và thời gian CPU vô ích. Để máy chạy được hiệu quả cao nhất, bạn cần chọn lựa các thuật giải có độ bảo mật đồng đều.
+
+Như vậy, với một đường hầm với cả hai gateway ở hai đầu đều là m0n0wall, chọn lựa giải thuật hợp lý như sau.
+
+Phase 1 dùng 
+•	DH 1536 DH key group (mức cao nhất có ở m0n0wall),
+•	PSK 20 ký tự hoặc X509 certificate với RSA 2048, 
+•	3DES (không có chọn lựa AES cho phase 1), và
+•	HMAC MD5.
+
+Phase 2 dùng
+•	DH 1536 PFS key group (mức cao nhất có ở m0n0wall), 
+•	AES 128, và
+•	HMAC MD5.
+
+Tuy nhiên, nhiều loại card mạng có chức năng offload IPsec có thể thực hiện các phép tính 3DES, SHA,... Với PC có những card mạng này, bạn nên chọn những thuật giải sẵn có trong phần cứng như vậy để giảm nhẹ công việc cho CPU. Việc offload IPsec là hoàn toàn tự động và bạn không có tuỳ biến nào để bật hay tắt nó trong giao diện Web của m0n0wall.
+
+
+
+(còn nữa)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#6952</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#6952</link>
+				<pubDate><![CDATA[Sat, 15 Jul 2006 11:20:00]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ Nếu muốn nhìn thấy tận mắt giao diện web admin của m0n0wall "in action", mời bạn xem địa chỉ sau:
+
+http://www.monowall.procad.sk/manual/system.php
+
+Chú ý. Trong trang web trên có mục 'OpenVPN' nhưng đó là giao diện m0n0wall phiên bản 1.2 beta 7. Việc tích hợp OpenVPN vào m0n0wall đã khởi động từ đầu năm 2005 nhưng đến nay vẫn còn chưa xong vì nhiều khó khăn kỹ thuật. Phiên bản ổn định hiện nay (1.22) không chứa OpenVPN.
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#7381</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#7381</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 07:51:03]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall (Phần 3)</title>
+				<description><![CDATA[ (tiếp theo)
+
+<font size='+1'><b>4. m0n0wall với các thiết bị khác</b></font>
+
+Việc kết nối giữa hai thiết bị IPsec khác loại là một việc mệt mỏi. IPsec có nhiều tham số tuỳ biến và bạn thường phải thử nghiệm thật lâu để chọn lựa được tuỳ biến tốt nhất có trong cả hai thiết bị.
+
+Sau đây là vài cấu hình hoạt động được. 
+
+
+
+<b>a) m0n0wall với pfsense</b>
+
+<b>pfsense</b><span class="link"> www.pfsense.com</span>) là một phần mềm VPN router nguồn mở xuất xứ từ m0n0wall, nhưng đã nâng cấp lên FreeBSD 6.1. Trong khi m0n0wall dùng <b>ipfilter</b>, pfsense dùng <b>pf</b>, bộ cản lọc gói nhanh chuyển đặt từ hệ điều hành OpenBSD. Cùng với vài tính năng khác nữa như failover, load balancing, OLSR (giao thức định tuyến mạng không dây), OpenVPN, các gói phần mềm cài thêm (squid, ntop,...) và SSH daemon, đối với một số doanh nghiệp, pfsense có thể là chọn lựa thích hợp hơn m0n0wall. 
+
+Vì pfsense xuất xứ từ m0n0wall, việc kết nối không có gì trở ngại. Thực tế, mọi hướng dẫn kết nối m0n0wall - m0n0wall đều có thể dùng cho trường hợp m0n0wall - pfsense. Hơn thế nữa, pfsense còn cho phép khai báo remote gateway bằng tên miền (thay vì địa chỉ IP), điều này có ích khi m0n0wall không có địa chỉ IP tĩnh.
+
+
+
+<b>b) m0n0wall với IPCop</b>
+
+IPCop (ipcop.org) là một phần mềm VPN router nguồn mở dựa trên Linux kernel 2.4.x, được dùng rất rộng rãi. Cũng tương tự như pfsense, IPCop với những tính năng như squid, snort, OpenVPN (gói cài thêm) có thể thích hợp hơn m0n0wall đối với một số doanh nghiệp.
+
+Theo thử nghiệm của chúng tôi, m0n0wall đàm phán tốt với IPCop nếu dùng PSK, nhưng đàm phán thất bại khi mưu toan dùng certificate. Lý do là IPCop không hiểu và không chấp nhận danh tính của m0n0wall.
+
+Kết nối m0n0wall - IPCop là một "ca" điển hình về bế tắc đàm phán giữa hai cài đặt IPsec khác hẳn nhau.
+
+(Một cài đặt IPsec thường có hai phần: <i>phần kerneland</i> thực hiện ESP và <i>phần userland</i> thực hiện IKE. Các hệ thống FreeBSD như m0n0wall và pfsense dùng <b>fast_ipsec</b> trong kerneland và <b>racoon</b> trong userland. Các hệ thống Linux có thể lựa chọn <b>netkey</b> hoặc <b>klips</b> cho kerneland và lựa chọn <b>racoon</b> hoặc <b>pluto</b> cho userland. Cấu trúc klips khác xa fast_ipsec. Cấu trúc netkey khá gần với fast_ipsec. Các distro Linux 2.6.x thường dùng netkey + racoon, IPCop dùng klips + pluto. Đàm phán racoon - pluto có lẽ sẽ thành công, cả hai đều là những cài đặt IPsec có tên tuổi, nhưng đàm phán m0n0wall - IPCop hầu như thất bại vì chúng là những Web GUI chỉ cho phép vài tuỳ biến trong số nhiều tuỳ biến của racoon - pluto.)
+
+
+
+
+<b>c) m0n0wall với Planet VRT311</b>
+
+Planet VRT311 là một VPN router rẻ tiền (khoảng 200 USD), phần cứng và phần mềm đều là <i>proprietary</i>. Web GUI của nó cho phép rất nhiều tuỳ biến IPsec. (Tuy nhiên, Web GUI có nhiều lỗi nặng, khiến chúng tôi đâm ra hoài nghi về chất lượng phần mềm chung của thiết bị này.)
+
+Đàm phán m0n0wall - VRT311 về cơ bản là khả dĩ. Hướng dẫn trong đoạn 3 vẫn dùng được cho m0n0wall - VRT311. Chỉ có những khác biệt sau:
+
+•	Trên VRT311, tắt IKE PFS (nhưng vẫn bật được ESP PFS ).
+•	Trên m0n0wall, phải có một bản sao certificate của VRT311.
+•	Certificate của m0n0wall phải có <i>subject alternative name</i> trùng với Identifier của nó.
+•	Dùng DH 1024 và RSA 1024.
+
+Lý do. Nếu VRT311 bật IKE PFS, m0n0wall xoá hết các SA sau khi đàm phán với tư cách initiator. VRT311 không gửi certificate cho m0n0wall trong một thông điệp yêu cầu phải chứa certificate. VRT311 bỏ qua <i>subject</i> và chỉ dựa vào <i>subject alternative name</i>. DH 1024 là mức bảo mật cao nhất của VRT311.
+
+
+
+
+Trên đây là ba thí dụ về m0n0wall interoperability mà bản thân chúng tôi đã có dịp trải qua. Còn vô số thí dụ khác bạn có thể tham khảo trong mail list lưu tại trang web của m0n0wall, một kho kinh nghiệm quý báu của cộng đồng người dùng phần mềm này.
+
+
+(còn nữa)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#7676</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#7676</link>
+				<pubDate><![CDATA[Tue, 18 Jul 2006 08:25:13]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Re: Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ Sau đây là một trình tự cài đặt dễ chịu hơn cho máy tính PC với một ổ CD boot được và có thể truy nhập được một Web server chứa file generic-pc-xxx.img. (Xin nhắc lại, file đó là binary image của m0n0wall, với xxx là số hiệu phiên bản; hiện nay xxx = 1.22.)
+
+<b>Cảnh báo.</b> Cài đặt m0n0wall vào đĩa cứng sẽ xoá sạch mọi phân vùng đĩa cứng.
+
+
+1. Chuẩn bị một Linux live CD, như Knoppix, DSL (Dam* Small Linux), Puppy, Hacao,...
+
+2. Boot máy từ live CD đó.
+
+3. Download generic-pc-xxx.img file, cất vào /ramdisk/home/knoppix (thư mục knoppix có thể xuất hiện dưới một tên gì đó khác tuỳ theo distro của bạn)
+
+4. Từ root shell, gõ dòng lệnh
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>gunzip -c /ramdisk/home/knoppix/generic-pc-xxx.img | dd of=/dev/hda bs=16k</pre>
+		</div>
+
+5. Xong. Chúc bạn may mắn. ;-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#10574</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#10574</link>
+				<pubDate><![CDATA[Fri, 28 Jul 2006 05:33:26]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall (Phần 4)</title>
+				<description><![CDATA[ (tiếp theo)
+
+<font size='+1'><b>5. Windows domain qua đường hầm VPN</b></font>
+
+Với các đoạn hướng dẫn trên, bạn đã có thể dùng mọi dịch vụ IP "thông thường" như DNS, Web, scp, rsync,... giữa các mạng LAN thông nhau qua đường hầm VPN.
+
+Nhưng với các dịch vụ của Windows, có thể còn trục trặc. Một ưu thế của site-to-site so với host-to-host VPN là admin chỉ cần thiết đặt các gateway chứ không phải cài đặt hay chỉnh sửa gì ở trên các host (mà số lượng host có thể rất nhiều!). Nhưng có điều là, Windows có thể không cho bạn may mắn với ưu thế đó.
+
+Đoạn này hướng dẫn giải quyết một trục trặc thông thường khi vận hành Windows domain qua đường hầm VPN ở Layer 3 mà m0n0wall IPsec tunnel là một kiểu đường hầm như thế. 
+
+Trục trặc này là hoàn toàn là lỗi của Windows.
+
+
+
+<b>Cấu hình trục trặc</b>: 
+
+- domain controller (DC) Windows 2000 + SP4
+- workstation Windows XP pro + SP2
+- Hai máy này nằm ở hai mạng LAN khác nhau thông với nhau qua đường hầm VPN.
+
+
+
+<b>Hiện tượng trục trặc</b>: 
+
+1. quá trình join domain rất chậm, người dùng logon domain rất chậm, hoặc connect (map) các share dữ liệu ở DC rất chậm. 
+
+Thế nào là "chậm"? Khi cả hai gateway có băng thông uplink tối thiểu 128 kb/s và không áp dụng roaming profile hay folder wwwection cho người dùng, quá trình join/logon/connect từ máy xa qua đường hầm so với từ máy nối trực tiếp qua mạng LAN 100 mb/s có tốc độ hầu như không khác gì nhau. Nếu không đạt được như vậy thì có thể coi là "chậm". Thực tế, "cái sự chậm" (tắc mạng) ấy thể hiện rất rõ. Để nhận biết nó, bạn không cần phải dùng tới đồng hồ. Thứ thích hợp hơn có lẽ là một tách cà phê. ;-)
+
+2. Lệnh <b>ping</b> qua đường hầm với độ dài payload 2048 bytes cho kết quả <b>Request Timeout</b>.
+
+3. Ở máy trạm Windows XP, Application log ghi lại sự kiện
+Source: SceCli
+Event ID: .... (Xin lỗi, vì hiện chúng tôi không logon as admin nên không xem được event này. Sẽ bổ sung sau.)
+Event Type: Error
+Description: ....
+
+4. Ở máy trạm Windows XP, Application log ghi lại sự kiện 
+Source: Userenv
+Event ID: 1054
+Event Type: Error
+Description: Windows cannot obtain the domain controller name for your computer network. (The specified domain either does not exist or could not be contacted. ). Group Policy processing aborted. 
+
+5. Ở máy trạm Windows XP, User Enviroment debug log (userenv.log) có thông báo lỗi "DSGetDCName failed with 59". (Xem thêm MS KB221833 và KB910206.)
+
+
+
+<b>Bản chất trục trặc</b>:
+
+Windows ước tính băng thông mạng dựa vào trễ mạng qua lệnh <b>ping</b> với một gói dữ liệu lớn. Khi không ping được (bị mất gói), Windows sẽ tưởng là rớt mạng.
+
+
+
+<b>Giải quyết trục trặc</b>:
+
+Có hai cách.
+
+a) Giảm <b>PingBufferSize</b>. Bạn cần đọc MS KB816045 và bạn phải có hotfix KB816045 và cài lên máy trạm Windows XP. Hotfix này có trong SP3, sắp phát hành.
+
+b) Tắt <b>PMTU Discovery</b> và tắt <b>Group Policy Slow Link Detection</b> (bằng cách thiết đặt <b>GroupPolicyMinTransferRate</b> =0) trên cả DC Windows 2000 lẫn máy trạm Windows XP. Xin nhấn mạnh là <b>tắt</b> chứ không <b>bật</b>. Xem thêm MS KB120642, KB314861, KB227260, KB227369.
+
+
+
+
+(-- hết --)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#10586</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#10586</link>
+				<pubDate><![CDATA[Fri, 28 Jul 2006 06:59:23]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Re: Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ <font size='+1'><b>Phụ lục A. Cấu hình mạng</b></font>
+
+Mọi tham số cấu hình chứa trong file <b>config.xml</b>. Để backup / restore toàn bộ hệ thống bạn chỉ cần backup / restore file duy nhất này.
+
+Từ file này, m0n0wall tự động sinh ra các file cấu hình cho các chương trình ứng dụng: 
+
+<b>resolv.conf</b> cho <b>dnsmasq</b>, 
+<b>dhcpd.conf</b> cho <b>dhcpd</b>,
+<b>racoon.conf</b> cho <b>racoon</b>, v.v. 
+
+Bạn có thể xem chi tiết tất cả các file cấu hình, cũng như trạng thái tức thời của hệ thống hiển thị trong một trang web với địa chỉ:
+<span class="link"> https://192.168.1.1/status.php</span>
+
+Dưới đây là vài trích đoạn từ báo cáo đó.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>System uptime 
+12:41AM  up 167 days, 22:50, 0 users, load averages: 0.00, 0.00, 0.00
+ 
+
+
+Processes 
+USER     PID %CPU %MEM   VSZ  RSS  TT  STAT STARTED      TIME COMMAND
+root       0  0.0  0.0     0    0  ??  DLs  28Feb06   0:00.00  &#40;swapper&#41;
+root   30865  0.0  0.9  1332  968  ??  SN   12:41AM   0:00.00 sh -c ps xauww 2&gt;&1
+root   30843  0.0  1.7  2376 1812  ??  S    12:41AM   0:00.05 /usr/local/sbin/mini_httpd -S -E...
+root   30842  0.0  1.7  2376 1812  ??  S    12:41AM   0:00.00 /usr/local/sbin/mini_httpd -S -E...
+root   30841  0.0  6.3  7388 6820  ??  SN   12:41AM   0:02.23 /usr/local/bin/php status.php
+root   59869  0.0  1.4  1880 1568  ??  INs  28Feb06   0:02.27 /usr/local/sbin/dhcpd -cf... xl0
+nobody 59864  0.0  0.8  1040  844  ??  SN   28Feb06   0:40.57 /usr/local/sbin/dnsmasq --server=...
+root   59818  0.0  2.0  2504 2152  ??  INs  28Feb06   5:09.18 /usr/local/sbin/racoon -d -f ...
+root   25043  0.0  0.8  1104  824  ??  IN   28Feb06   0:02.24 /usr/local/bin/msntp -r -P no -l ... 
+root   25042  0.0  0.9  1332  996  ??  IN   28Feb06   0:00.11 /bin/sh ...
+root     252  0.0  0.7  1016  788  ??  SN   28Feb06   0:09.24 /usr/local/bin/ez-ipupdate -c ...
+root     166  0.0  0.8  1336  904  ??  I    28Feb06   0:00.22 /bin/sh /etc/rc.initial console
+root     157  0.0  0.8  1224  856  ??  Is   28Feb06   0:05.02 /usr/sbin/dropbear -r ... -d...
+root     100  0.0  1.5  2292 1644  ??  Ss   28Feb06  12:28.75 /usr/local/sbin/mini_httpd -S -E -c... 
+root      97  0.0  0.7  1004  736  ??  Ss   28Feb06  14:35.56 /usr/sbin/syslogd -ss
+root      88  0.0  1.1  1456 1224  ??  Ss   28Feb06  20:00.48 /sbin/ipmon...
+root      77  0.0  1.0  1444 1100  ??  Is   28Feb06   0:10.13 /sbin/dhclient -nw -cf ... fxp0
+root       9  0.0  0.0     0    0  ??  DL   28Feb06   1:12.24  &#40;vnlru&#41;
+root       8  0.0  0.0     0    0  ??  DL   28Feb06   3:08.83  &#40;syncer&#41;
+root       7  0.0  0.0     0    0  ??  DL   28Feb06  57:42.83  &#40;bufdaemon&#41;
+root       6  0.0  0.0     0    0  ??  DL   28Feb06   0:10.76  &#40;pagedaemon&#41;
+root       5  0.0  0.0     0    0  ??  DL   28Feb06   0:00.00  &#40;usbtask&#41;
+root       4  0.0  0.0     0    0  ??  DL   28Feb06   0:01.64  &#40;usb0&#41;
+root       3  0.0  0.0     0    0  ??  DL   28Feb06   0:00.00  &#40;taskqueue&#41;
+root       2  0.0  0.0     0    0  ??  DL   28Feb06   0:00.00  &#40;cryptoret&#41;
+root       1  0.0  0.6  1060  696  ??  ILs  28Feb06   1:05.89 /sbin/init --
+root   30866  0.0  0.6  1084  676  ??  RN   12:41AM   0:00.00 ps xauww</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Interfaces 
+fxp0: flags=8843&lt;UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500
+	options=40&lt;POLLING&gt;
+	inet 50.51.52.53 netmask 0xffffff00 broadcast 50.51.52.255
+	ether 00:a0:49:e1:e2:e4
+	media: Ethernet autoselect &#40;100baseTX &lt;full-duplex&gt;&#41;
+	status: active
+xl0: flags=8843&lt;UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500
+	options=1&lt;RXCSUM&gt;
+	inet 192.168.1.1 netmask 0xffffff00 broadcast 192.168.1.255
+	ether 00:50:50:d8:a8:56
+	media: Ethernet autoselect &#40;100baseTX &lt;full-duplex&gt;&#41;
+	status: active
+xl1: flags=8802&lt;BROADCAST,SIMPLEX,MULTICAST&gt; mtu 1500
+	options=1&lt;RXCSUM&gt;
+	ether 00:50:50:d8:b1:8e
+	media: Ethernet autoselect &#40;none&#41;
+	status: no carrier
+lo0: flags=8049&lt;UP,LOOPBACK,RUNNING,MULTICAST&gt; mtu 16384
+	inet 127.0.0.1 netmask 0xff000000
+ 
+
+
+Routing tables 
+
+Internet:
+Destination        Gateway            Flags    Refs      Use  Netif Expire
+default            50.51.52.1         UGSc        5 70117308   fxp0
+50.51.52/24        link#1             UC          1        0   fxp0
+50.51.52.1         00:13:11:13:b4:ad  UHLW        5       67   fxp0   1199
+50.51.52.53        127.0.0.1          UGHS        0        0    lo0
+127.0.0.1          127.0.0.1          UH          1        0    lo0
+192.168.2.10/32    192.168.1.1        UGSc        1        2    xl0
+192.168.1          link#2             UC          3        0    xl0
+192.168.1.1        00:50:50:d8:a8:56  UHLW        4        0    lo0
+192.168.1.17       00:04:76:36:77:7c  UHLW        2   161523    xl0   1141
+192.168.3.16/32    192.168.1.1        UGSc        1     9145    xl0</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ipfw show 
+50000   723957  140632208 allow ip from 192.168.1.1 to any
+50001   479961   59527905 allow ip from any to 192.168.1.1
+50002  8873712  726357103 queue 7 tcp from any 6881-6999 to any in via fxp0
+50003        0          0 queue 7 tcp from any to any dst-port 6881-6999 in via fxp0
+50004        0          0 queue 5 tcp from any 6881-6999 to any out via fxp0
+50005  9107395  818207561 queue 5 tcp from any to any dst-port 6881-6999 out via fxp0
+50006        0          0 queue 7 ip from any 412 to any in via fxp0
+50007        0          0 queue 7 ip from any to any dst-port 412 in via fxp0
+50008        0          0 queue 5 ip from any 412 to any out via fxp0
+50009        0          0 queue 5 ip from any to any dst-port 412 out via fxp0
+50010     2291     829355 queue 7 ip from any 1044-1045 to any in via fxp0
+50011    40411    1926621 queue 7 ip from any to any dst-port 1044-1045 in via fxp0
+50012    40659    2961631 queue 5 ip from any 1044-1045 to any out via fxp0
+50013     2821     494679 queue 5 ip from any to any dst-port 1044-1045 out via fxp0
+50014        3        792 queue 7 ip from any 1214 to any in via fxp0
+50015     1091     305412 queue 7 ip from any to any dst-port 1214 in via fxp0
+50016     1137     155949 queue 5 ip from any 1214 to any out via fxp0
+50017        5        454 queue 5 ip from any to any dst-port 1214 out via fxp0
+50018        7        348 queue 7 ip from any 2340 to any in via fxp0
+50019     2139     571035 queue 7 ip from any to any dst-port 2340 in via fxp0
+50020     2307     411250 queue 5 ip from any 2340 to any out via fxp0
+50021        7       1034 queue 5 ip from any to any dst-port 2340 out via fxp0
+50022        0          0 queue 7 ip from any 4329 to any in via fxp0
+50023      283     104332 queue 7 ip from any to any dst-port 4329 in via fxp0
+50024      332      26344 queue 5 ip from any 4329 to any out via fxp0
+50025        0          0 queue 5 ip from any to any dst-port 4329 out via fxp0
+50026   301708   14926636 queue 7 ip from any 4661-4665 to any in via fxp0
+50027    33814    4297927 queue 7 ip from any to any dst-port 4661-4665 in via fxp0
+50028    33517    2342698 queue 5 ip from any 4661-4665 to any out via fxp0
+50029   309789   26084187 queue 5 ip from any to any dst-port 4661-4665 out via fxp0
+50030      354     148622 queue 7 ip from any 5190 to any in via fxp0
+50031        0          0 queue 7 ip from any to any dst-port 5190 in via fxp0
+50032        0          0 queue 5 ip from any 5190 to any out via fxp0
+50033      263      31657 queue 5 ip from any to any dst-port 5190 out via fxp0
+50034     2449     116307 queue 7 ip from any 5500-5503 to any in via fxp0
+50035        0          0 queue 7 ip from any to any dst-port 5500-5503 in via fxp0
+50036        0          0 queue 5 ip from any 5500-5503 to any out via fxp0
+50037     2502     167472 queue 5 ip from any to any dst-port 5500-5503 out via fxp0
+50038   339938   16902251 queue 7 ip from any 6346 to any in via fxp0
+50039        0          0 queue 7 ip from any to any dst-port 6346 in via fxp0
+50040        0          0 queue 5 ip from any 6346 to any out via fxp0
+50041   352959   37879703 queue 5 ip from any to any dst-port 6346 out via fxp0
+50042     3336     346923 queue 7 ip from any 6666-6668 to any in via fxp0
+50043        0          0 queue 7 ip from any to any dst-port 6666-6668 in via fxp0
+50044        0          0 queue 5 ip from any 6666-6668 to any out via fxp0
+50045     3461     198648 queue 5 ip from any to any dst-port 6666-6668 out via fxp0
+50046      230      15112 queue 7 ip from any 6699-6701 to any in via fxp0
+50047        0          0 queue 7 ip from any to any dst-port 6699-6701 in via fxp0
+50048        0          0 queue 5 ip from any 6699-6701 to any out via fxp0
+50049      372      49649 queue 5 ip from any to any dst-port 6699-6701 out via fxp0
+50050        5        904 queue 7 ip from any 7668 to any in via fxp0
+50051        0          0 queue 7 ip from any to any dst-port 7668 in via fxp0
+50052        0          0 queue 5 ip from any 7668 to any out via fxp0
+50053        5        519 queue 5 ip from any to any dst-port 7668 out via fxp0
+50054        0          0 queue 7 ip from any 7788 to any in via fxp0
+50055        0          0 queue 7 ip from any to any dst-port 7788 in via fxp0
+50056        0          0 queue 5 ip from any 7788 to any out via fxp0
+50057        2        182 queue 5 ip from any to any dst-port 7788 out via fxp0
+50058        0          0 queue 7 ip from any 8311 to any in via fxp0
+50059        0          0 queue 7 ip from any to any dst-port 8311 in via fxp0
+50060        0          0 queue 5 ip from any 8311 to any out via fxp0
+50061        0          0 queue 5 ip from any to any dst-port 8311 out via fxp0
+50062    52795    3242968 queue 7 ip from any 8888-8889 to any in via fxp0
+50063        0          0 queue 7 ip from any to any dst-port 8888-8889 in via fxp0
+50064        0          0 queue 5 ip from any 8888-8889 to any out via fxp0
+50065    53475    4417424 queue 5 ip from any to any dst-port 8888-8889 out via fxp0
+50066        0          0 queue 7 ip from any 28864-28865 to any in via fxp0
+50067        0          0 queue 7 ip from any to any dst-port 28864-28865 in via fxp0
+50068        0          0 queue 5 ip from any 28864-28865 to any out via fxp0
+50069        0          0 queue 5 ip from any to any dst-port 28864-28865 out via fxp0
+50070 19068605 1060939020 queue 3 tcp from any to any iplen 0-80 tcpflags ack out via fxp0
+50071  2339266  198780287 queue 1 ip from any to any iplen 0-100 out via fxp0
+50072      426      53888 queue 1 udp from any to any dst-port 53 out via fxp0
+50073        0          0 queue 1 ah from any to any out via fxp0
+50074   318665   46414984 queue 1 esp from any to any out via fxp0
+50075        0          0 queue 1 gre from any to any out via fxp0
+50076      208      39438 queue 2 icmp from any to any out via fxp0
+50077  5949458 1472340168 queue 4 ip from any to any out via fxp0
+50078    30577    2307318 queue 8 icmp from any to any in via fxp0
+50079 23943933  975608454 queue 8 ip from any to any iplen 0-100 in via fxp0
+50080        0          0 queue 8 ah from any to any in via fxp0
+50081   529415  271660772 queue 8 esp from any to any in via fxp0
+50082        0          0 queue 8 gre from any to any in via fxp0
+50083  2922832 3094296768 queue 6 ip from any to any in via fxp0
+65535 74736589 8762863319 allow ip from any to any</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ipfstat -nio 
+@1 pass out quick on lo0 from any to any
+@2 pass out quick on xl0 proto udp from 192.168.1.1/32 port = 67 to any port = 68
+@3 pass out quick on fxp0 proto udp from any port = 68 to any port = 67
+@4 pass out quick on fxp0 proto udp from 50.51.52.53/32 port = 500 to any
+@5 pass out quick on fxp0 proto esp from 50.51.52.53/32 to any
+@6 pass out quick on fxp0 proto ah from 50.51.52.53/32 to any
+@7 pass out quick on xl0 proto udp from 192.168.1.1/32 port = 500 to any
+@8 pass out quick on xl0 proto esp from 192.168.1.1/32 to any
+@9 pass out quick on xl0 proto ah from 192.168.1.1/32 to any
+@10 pass out quick on xl0 from any to any keep state
+@11 pass out quick on fxp0 from any to any keep state
+@12 block out log quick from any to any
+@1 pass in quick on lo0 from any to any
+@2 block in log quick from any to any with short
+@3 block in log quick from any to any with ipopt
+@4 pass in quick on xl0 proto udp from any port = 68 to 255.255.255.255/32 port = 67
+@5 pass in quick on xl0 proto udp from any port = 68 to 192.168.1.1/32 port = 67
+@6 block in log quick on fxp0 from 192.168.1.0/24 to any
+@7 block in log quick on fxp0 proto udp from any port = 67 to 192.168.1.0/24 port = 68
+@8 pass in quick on fxp0 proto udp from any port = 67 to any port = 68
+@9 skip 3 in on xl0 from 192.168.3.16/32 to any
+@10 skip 2 in on xl0 from 192.168.2.10/32 to any
+@11 skip 1 in on xl0 from 192.168.1.0/24 to any
+@12 block in log quick on xl0 from any to any
+@13 block in log quick on fxp0 from 10.0.0.0/8 to any
+@14 block in log quick on fxp0 from 127.0.0.0/8 to any
+@15 block in log quick on fxp0 from 172.16.0.0/12 to any
+@16 block in log quick on fxp0 from 192.168.0.0/16 to any
+@17 pass in quick on fxp0 proto udp from any to 50.51.52.53/32 port = 500
+@18 pass in quick on fxp0 proto esp from any to 50.51.52.53/32
+@19 pass in quick on fxp0 proto ah from any to 50.51.52.53/32
+@20 pass in quick on xl0 proto udp from any to 192.168.1.1/32 port = 500
+@21 pass in quick on xl0 proto esp from any to 192.168.1.1/32
+@22 pass in quick on xl0 proto ah from any to 192.168.1.1/32
+@23 skip 1 in proto tcp from any to any flags S/FSRA
+@24 block in log quick proto tcp from any to any
+@25 block in log quick on xl0 from any to any head 100
+@1 pass in quick from 192.168.1.0/24 to 192.168.1.1/32 keep state group 100
+@2 block in quick from 192.168.1.64/26 to 192.168.0.0/16 group 100
+@3 block in quick from 192.168.1.128/25 to any group 100
+@4 pass in quick from 192.168.1.0/24 to any keep state group 100
+@26 block in log quick on fxp0 from any to any head 200
+@27 block in log quick from any to any</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#14918</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#14918</link>
+				<pubDate><![CDATA[Mon, 14 Aug 2006 09:53:26]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Re: Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ <font size='+1'><b>Phụ lục B. Cấu hình VPN</b></font>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>racoon.conf 
+path pre_shared_key "/var/etc/psk.txt";
+
+path certificate  "/var/etc";
+
+remote 70.71.72.73 {
+	exchange_mode main;
+	my_identifier fqdn "1234.mycompany.com.vn";
+	certificate_type x509 "server1-signed.pem" "server1-key.pem";
+	peers_certfile "peer1-signed.pem";
+	peers_identifier address 70.71.72.73;
+	initial_contact on;
+	support_proxy on;
+	proposal_check obey;
+
+	proposal {
+		encryption_algorithm 3des;
+		hash_algorithm sha1;
+		authentication_method rsasig;
+		dh_group 2;
+		lifetime time 604800 secs;
+	}
+	lifetime time 604800 secs;
+}
+
+sainfo address 192.168.1.0/27 any address 192.168.3.0/27 any {
+	encryption_algorithm rijndael;
+	authentication_algorithm hmac_md5;
+	compression_algorithm deflate;
+	pfs_group 2;
+	lifetime time 28800 secs;
+}
+
+remote 60.61.62.63 {
+	exchange_mode main;
+	my_identifier fqdn "1234.mycompany.com.vn";
+	certificate_type x509 "server2-signed.pem" "server2-key.pem";
+	peers_identifier address 60.61.62.63;
+	initial_contact on;
+	support_proxy on;
+	proposal_check obey;
+
+	proposal {
+		encryption_algorithm 3des;
+		hash_algorithm sha1;
+		authentication_method rsasig;
+		dh_group 5;
+		lifetime time 604800 secs;
+	}
+	lifetime time 604800 secs;
+}
+
+sainfo address 192.168.1.0/27 any address 192.168.2.0/27 any {
+	encryption_algorithm rijndael;
+	authentication_algorithm hmac_md5;
+	compression_algorithm deflate;
+	pfs_group 5;
+	lifetime time 28800 secs;
+}
+
+ 
+
+
+SPD 
+192.168.1.0/24&#91;any&#93; 192.168.1.1&#91;any&#93; any
+	in none
+	spid=27 seq=5 pid=30876
+	refcnt=1
+192.168.3.0/27&#91;any&#93; 192.168.1.0/27&#91;any&#93; any
+	in ipsec
+	esp/tunnel/70.71.72.73-50.51.52.53/unique#16402
+	spid=30 seq=4 pid=30876
+	refcnt=1
+192.168.2.0/27&#91;any&#93; 192.168.1.0/27&#91;any&#93; any
+	in ipsec
+	esp/tunnel/60.61.62.63-50.51.52.53/unique#16404
+	spid=32 seq=3 pid=30876
+	refcnt=1
+192.168.1.1&#91;any&#93; 192.168.1.0/24&#91;any&#93; any
+	out none
+	spid=28 seq=2 pid=30876
+	refcnt=1
+192.168.1.0/27&#91;any&#93; 192.168.3.0/27&#91;any&#93; any
+	out ipsec
+	esp/tunnel/50.51.52.53-70.71.72.73/unique#16401
+	spid=29 seq=1 pid=30876
+	refcnt=1
+192.168.1.0/27&#91;any&#93; 192.168.2.0/27&#91;any&#93; any
+	out ipsec
+	esp/tunnel/50.51.52.53-60.61.62.63/unique#16403
+	spid=31 seq=0 pid=30876
+	refcnt=1
+ 
+
+
+SAD 
+50.51.52.53 70.71.72.73
+	esp mode=tunnel spi=3661296152&#40;0xda3af218&#41; reqid=16401&#40;0x00004011&#41;
+	E: rijndael-cbc  aa568542 7e3c4a68 47334abf 2a15fc36
+	A: hmac-md5  47ca65a4 e0698485 9b9041f0 0a0f82fc
+	seq=0x00000f14 replay=4 flags=0x00000000 state=mature
+	created: Aug 13 18:42:08 2006	current: Aug 14 00:41:53 2006
+	diff: 21585&#40;s&#41;	hard: 28800&#40;s&#41;	soft: 23040&#40;s&#41;
+	last: Aug 14 00:41:46 2006	hard: 0&#40;s&#41;	soft: 0&#40;s&#41;
+	current: 680448&#40;bytes&#41;	hard: 0&#40;bytes&#41;	soft: 0&#40;bytes&#41;
+	allocated: 3860	hard: 0	soft: 0
+	sadb_seq=3 pid=30878 refcnt=2
+70.71.72.73 50.51.52.53
+	esp mode=tunnel spi=145706343&#40;0x08af4d67&#41; reqid=16402&#40;0x00004012&#41;
+	E: rijndael-cbc  fcbc7fba 828b27a1 36415592 30c26179
+	A: hmac-md5  36e837c9 f772708e 5d4884cf 65014749
+	seq=0x00000ee2 replay=4 flags=0x00000000 state=mature
+	created: Aug 13 18:42:08 2006	current: Aug 14 00:41:53 2006
+	diff: 21585&#40;s&#41;	hard: 28800&#40;s&#41;	soft: 23040&#40;s&#41;
+	last: Aug 14 00:41:46 2006	hard: 0&#40;s&#41;	soft: 0&#40;s&#41;
+	current: 748767&#40;bytes&#41;	hard: 0&#40;bytes&#41;	soft: 0&#40;bytes&#41;
+	allocated: 3810	hard: 0	soft: 0
+	sadb_seq=2 pid=30878 refcnt=1
+50.51.52.53 60.61.62.63
+	esp mode=tunnel spi=45808782&#40;0x02bafc8e&#41; reqid=16403&#40;0x00004013&#41;
+	E: rijndael-cbc  818a7e9d 2115a45c f2271aff 171cecda
+	A: hmac-md5  9fc84bf5 8cacf00c 4cf615f4 890d9ffb
+	seq=0x00000289 replay=4 flags=0x00000000 state=mature
+	created: Aug 13 21:00:15 2006	current: Aug 14 00:41:53 2006
+	diff: 13298&#40;s&#41;	hard: 28800&#40;s&#41;	soft: 23040&#40;s&#41;
+	last: Aug 14 00:41:36 2006	hard: 0&#40;s&#41;	soft: 0&#40;s&#41;
+	current: 160040&#40;bytes&#41;	hard: 0&#40;bytes&#41;	soft: 0&#40;bytes&#41;
+	allocated: 649	hard: 0	soft: 0
+	sadb_seq=1 pid=30878 refcnt=2
+60.61.62.63 50.51.52.53
+	esp mode=tunnel spi=209810343&#40;0x0c8173a7&#41; reqid=16404&#40;0x00004014&#41;
+	E: rijndael-cbc  82d2908e 88368716 9da0d6b1 b8dac65c
+	A: hmac-md5  78fa014d 793d9706 1e095ae8 0d8e286f
+	seq=0x00000213 replay=4 flags=0x00000000 state=mature
+	created: Aug 13 21:00:15 2006	current: Aug 14 00:41:53 2006
+	diff: 13298&#40;s&#41;	hard: 28800&#40;s&#41;	soft: 23040&#40;s&#41;
+	last: Aug 14 00:41:36 2006	hard: 0&#40;s&#41;	soft: 0&#40;s&#41;
+	current: 82847&#40;bytes&#41;	hard: 0&#40;bytes&#41;	soft: 0&#40;bytes&#41;
+	allocated: 531	hard: 0	soft: 0
+	sadb_seq=0 pid=30878 refcnt=1</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#14922</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#14922</link>
+				<pubDate><![CDATA[Mon, 14 Aug 2006 10:09:44]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ <b>Bổ sung cho phần 5. Windows domain qua đường hầm VPN</b>
+
+<b>Giải quyết trục trặc </b>
+
+Thêm cách thứ ba:
+
+c) Thêm firewall rule(s) cho phép lưu thông qua đường hầm VPN với lựa chọn <b>Allow fragmented packets</b>. Bạn thường chỉ cần thêm một rule duy nhất ở mục firewall, tab LAN, trước default rule. Theo cách này bạn chỉ cần chỉnh sửa ở máy gateway, không cần chỉnh sửa gì ở các máy host. Cách c) này là cách giải quyết nhanh gọn nhất. 
+
+
+-------------------------------------------------------------------------------------
+
+<b>Bổ sung cho phần 3. Đường hầm VPN</b>
+
+<b>Mạng hình sao</b>
+
+Một mạng LAN tham gia vào VPN được gọi là một site. Muốn tạo một VPN có 3 sites  trở lên, từng cặp sites đều có đường hầm nối thẳng với nhau. Cách nối này gọi là mạng <i>lưới đủ</i> (full-mesh topology).
+
+Thí dụ, với 4 site A, B, C, D, để có full mesh bạn cần tạo 6 đường hầm AB, AC, AD, BC, BD, CD. Nếu thiếu đường hầm AB chẳng hạn thì A và B sẽ không thể thông với nhau.
+
+Còn một dạng VPN khác, với một site được chọn làm <i>trung tâm</i> và các site còn lại (gọi là <i>chi nhánh)</i> chỉ có 1 đường hầm nối với site trung tâm, nhưng các chi nhánh không những thông mạng với trung tâm mà còn thông được với nhau một cách gián tiếp qua trung tâm. Cách nối này gọi là mạng <i>hình sao</i> (star topology).
+
+Thí dụ, với 4 site A, B, C, D để có star bạn chỉ cần 3 tạo đường hầm AB, AC, AD. Trong đó A được chọn là site trung tâm.
+
+Bởi đường đi qua trung tâm thường dài hơn đường nối trực tiếp giữa hai chi nhánh, mạng hình sao thường có hiệu quả thấp hơn mạng full-mesh. Nhưng mạng hình sao cần tạo ít đường hầm hơn nên cài đặt, bảo trì cũng dễ hơn.
+
+Khi khai báo đường hầm cho mạng full-mesh, local subnet và remote subnet là hai mạng <b>rời nhau</b> (đã viết ở trên). Trái lại, ở đường hầm cho mạng star, local subnet và remote subnet được khai báo là hai mạng <b>lồng nhau</b>. Chi tiết cách làm được chỉ qua thí dụ sau đây.
+
+
+Thí dụ. Trong star topology, nhánh mạng
+
+192.168.1.0/24---192.168.1.1, 50.51.52.53---Internet---60.61.62.63, 192.168.2.1--- 192.168.2.0/24
+
+với site bên trái là trung tâm, site bên phải là chi nhánh, được thiết lập bằng một đường hầm với tham số như sau.
+
+Ở thiết bị bên trái (trung tâm)
+local gateway = 50.51.52.53
+remote gateway = 60.61.62.63
+local subnet = 192.168.<font color='orange'><b>0.0/16</b></font>
+remote subnet = 192.168.2.0/24
+ 
+Ở thiết bị bên phải (chi nhánh)
+local gateway = 60.61.62.63
+remote gateway = 50.51.52.53
+local subnet = 192.168.2.0/24
+remote subnet = 192.168.<font color='orange'><b>0.0/16</b></font>
+
+Mọi gói tin xuất phát từ chi nhánh 192.168.2.0/24 nhằm tới 192.168.27.65 chẳng hạn đều được gửi qua đường hầm tới trung tâm 192.168.1.1. Tại đây nó sẽ được vứt bỏ hoặc chuyển tới mạng 192.168.27.0/24, nếu mạng ấy tồn tại. Trường hợp mạng ấy cũng là một chi nhánh, gói tin sẽ lại được chuyển qua một đường hầm VPN.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#28734</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#28734</link>
+				<pubDate><![CDATA[Thu, 7 Dec 2006 02:35:58]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ Thanks bác dusan vì bài viết rất hữu ích. Lần trước có đọc bài viết rất hay của bác về bảo mật mạng cho doanh nghiệp nhỏ mà e search mãi ko thấy, chỉ có tìm thấy có phần 1 . Bác còn lưu post lại cho e tham khảo với.
+thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#201108</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#201108</link>
+				<pubDate><![CDATA[Thu, 17 Dec 2009 07:00:41]]> GMT</pubDate>
+				<author><![CDATA[ youmakemefeel]]></author>
+			</item>
+			<item>
+				<title>Tự làm VPN đơn giản với m0n0wall</title>
+				<description><![CDATA[ Tui xin đóng góp 2 dạng VPN nữa giữa m0n0 v.1.3 với thiết bị ipsec khác: Draytek Vigor 29xx và Fortinet Fortigate w/FortiOS v.4
+
+<u>1. m0n0 - Vigor</u>
+
+192.168.0.1/24 m0n0 111.0.0.1 --- INTERNET --- 222.0.0.2 Vigor 172.16.0.1/16
+
+<u>1.1. m0n0</u>
+
+Interface: WAN
+Enable NAT-T: No
+DPD Interval: bỏ trống
+Local subnet: LAN subnet
+Remote subnet: 172.16.0.0/16
+Remote gateway: 222.0.0.2
+
+Phase 1 proposal:
+Nego mode: main
+My Identifier: My IP address
+Encryption Algo: AES
+Hash Algo: SHA1
+DH key group: 2
+Lifetime: 86400 seconds
+Auth method: Pre-shared key
+Pre-Share Key: 0123456789ABCDEFGHIJKLMN
+
+Phase 2 proposal:
+Protocol: ESP
+Encryption Algo: 3DES, Rijndael (AES)
+Hash Algo: SHA1, MD5
+PFS key group: 2
+Lifetime: 3600 seconds
+
+
+<u>1.2. Vigor</u>
+
+LAN to LAN
+
+Common settings
+
+Enable this profile: yes
+VPN Dial-Out through: WAN1 only (hoặc WAN2 only)
+Call Direction: Both
+Always on: yes
+Enable ping to keep alive: yes
+PING to the IP: 192.168.0.1
+
+
+Dial-Out settings
+
+Type of server I'm calling: IPSec tunnel
+Server IP/hostname: 111.0.0.1
+IKE auth method: Pre-shared key
+Pre-shared key: 0123456789ABCDEFGHIJKLMN
+IPsec security method: High (ESP) - AES with auth
+Advanced: 
+IKE phase 1 mode: main mode
+IKE phase 1 proposal: AES128_SHA1_G2
+IKE phase 2 proposal: AES_SHA1
+IKE phase 1 key lifetime: 86400
+IKE phase 2 key lifetime: 3600
+Perfect Forward Secret: Enable
+Local ID: 222.0.0.2
+
+
+Dial-In settings
+
+Allowed Dial-In type: IPSec tunnel
+Specify remote VPN gateway: yes
+Peer VPN server IP: 111.0.0.1
+IKE auth method: Pre-shared key
+IKE pre-shared key: 0123456789ABCDEFGHIJKLMN
+IPSec Security method: 3DES, AES
+
+
+TCP/IP Network settings
+
+My WAN IP: 222.0.0.2
+Remote gateway IP: 111.0.0.1
+Remote network IP: 192.168.0.0
+Remote network mask: 255.255.255.0
+Local network IP: 172.16.0.0
+Local network mask: 255.255.0.0
+RIP direction: disable
+
+
+
+<u>2. m0n0 - Fortigate</u>
+
+192.168.0.1/24 m0n0 111.0.0.1 --- INTERNET --- 222.0.0.2 Fortigate 172.16.0.1/16
+
+<u>2.1. m0n0</u>
+
+Interface: WAN
+Enable NAT-T: No
+DPD Interval: bỏ trống
+Local subnet: LAN subnet
+Remote subnet: 172.16.0.0/16
+Remote gateway: 222.0.0.2
+
+Phase 1 proposal:
+Nego mode: main
+My Identifier: My IP address
+Encryption Algo: AES
+Hash Algo: SHA1
+DH key group: 5
+Lifetime: 86400 seconds
+Auth method: Pre-shared key
+Pre-Share Key: 0123456789ABCDEFGHIJKLMN
+
+Phase 2 proposal:
+Protocol: ESP
+Encryption Algo: 3DES, Rijndael (AES)
+Hash Algo: SHA1, MD5
+PFS key group: 5
+Lifetime: 3600 seconds
+
+
+<u>2.2. Fortigate</u>
+
+Phase 1
+
+Name: My Home
+Remote gateway: Static IP address
+IP address: 111.0.0.1
+Local interface: WAN1 (hoặc WAN2, WAN3,...)
+Mode: Main (ID protection)
+Auth method: preshared key
+Pre-shared key: 0123456789ABCDEFGHIJKLMN
+Advanced...
+Enable IPsec Interface mode: yes
+IKE version: 1
+Local gateway IP: Main Interface IP
+P1 proposal: 1-Encryption: AES128, Authentication: SHA1
+DH group: 5
+Keylife: 86400
+Local ID: bỏ trống
+XAUTH: disable
+NAT Traversal: no
+Keepalive frequency: 10
+Dead Peer Detection: no
+
+Phase 2
+
+P2 proposal: 
+1-Encryption: AES128, Authentication: SHA1
+2-Encryption: AES128, Authentication: MD5
+3-Encryption: 3DES, Authentication: SHA1
+4-Encryption: 3DES, Authentication: MD5
+Enable replay detection: no
+Enable perfect forward secrecy (PFS): yes
+DH group: 5
+Keylife: seconds 3600
+Autokey Keep Alive: enable
+
+Quick mode selector: 
+Source addr: 172.16.0.0/16
+Source port: 0
+Destination addr: 192.168.0.0/24
+Destination port: 0
+Protocol: 0 
+
+
+<u>Lưu ý:</u>
+
+Trường hợp sau Vigor/Fortigate có nhiều subnet (192.168...., 172...., 10....), muốn cho bao nhiêu subnet vào VPN thì:
+
+-- trên Vigor/Fortigate tạo bấy nhiêu phase 2 (trong một phase 1 duy nhất),
+
+-- trên m0n0 tạo bấy nhiêu VPN profile đầy đủ cả phase 1 lẫn phase 2 nhưng các phase 1 đều giống nhau, kể cả pre-shared key cũng phải trùng nhau; mỗi phase 2 cho 1 local subnet.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1358.hva#201150</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1358.hva#201150</link>
+				<pubDate><![CDATA[Thu, 17 Dec 2009 10:43:29]]> GMT</pubDate>
+				<author><![CDATA[ facialz]]></author>
+			</item>
+	</channel>
+</rss>

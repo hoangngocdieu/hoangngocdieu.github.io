@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm sao để exe file không gọi một thư viện dll?"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/36.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm sao để exe file không gọi một thư viện dll?"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Mình lại hỏi về vấn đề này: làm thế nào để chương trình chính bỏ gọi một file dll - file dll này riêng, không phải của máy và không phát sinh lối khi bỏ gọi. Một hướng khác là chỉnh sửa file dll cho nó không thực hiện thao tác gì - gọi xong trả về chương trình chính luôn, thì làm cách nào?
+
+Mình ko chuyên IT nên các bạn phân tích rõ dùm mình nhé.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264377</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264377</link>
+				<pubDate><![CDATA[Thu, 31 May 2012 22:42:33]]> GMT</pubDate>
+				<author><![CDATA[ longtran295]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Bạn đã không chuyên về IT, mà vấn đề này thuộc vấn đề chuyên môn thì có phân thích bạn cũng có hiểu đâu, như vậy mất công cho người phân thích và mất công cho người không biết gì cố gắng nắm bắt ?. Bạn bỏ thời gian học về RCE và sử dụng thuần thục một tool debug mọi chuyện sẽ sáng tỏ, còn bây giờ nói với bạn chẳng khác giải thích cho người mù, biết về màu trắng của sửa.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264382</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264382</link>
+				<pubDate><![CDATA[Thu, 31 May 2012 23:30:37]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ ^
+Thank bạn góp ý. RCE mình biết không nhiều nhưng ko phải không biết gì, mình cũng sử dụng Olly debug nhưng cũng chưa đạt đến mức thần thánh như bạn nói. Mình chỉ cần hướng giải quyết căn bản, với mỗi mức đô sẽ có cách hướng dẫn khác nhau, thêm vào đó mình tự tìm hiểu thêm những phần còn thiếu của bản thân, đó là cách học hỏi của mình.
+
+Mong mọi người giúp đỡ :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264386</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264386</link>
+				<pubDate><![CDATA[Fri, 1 Jun 2012 00:02:07]]> GMT</pubDate>
+				<author><![CDATA[ longtran295]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">longtran295 wrote:</cite><br>
+		<blockquote>Thank bạn góp ý. RCE mình biết không nhiều nhưng ko phải không biết gì, mình cũng sử dụng Olly debug nhưng cũng chưa đạt đến mức thần thánh như bạn nói.&nbsp;
+		</blockquote>
+
+Mình nói chổ nào ? Bạn chỉ chổ mình nói thần thánh ra.
+
+Học RCE rồi vậy đoạn này bạn hiểu không ?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;windows.h&gt;
+
+
+int WINAPI WinMain &#40;HINSTANCE hThisInstance,
+                     HINSTANCE hPrevInstance,
+                     LPSTR lpszArgument,
+                     int nCmdShow&#41;
+{
+  MessageBoxA&#40;0,&quot;Info&quot;,&quot;Title&quot;,0&#41;;
+  return 0;
+}</pre>
+		</div>
+Và:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>00401318  /$ 55             PUSH EBP
+00401319  |. 89E5           MOV EBP,ESP
+0040131B  |. 83EC 18        SUB ESP,18
+0040131E  |. C74424 0C 0000&gt;MOV DWORD PTR SS:&#91;ESP+C&#93;,0               ; |
+00401326  |. C74424 08 2430&gt;MOV DWORD PTR SS:&#91;ESP+8&#93;,Test2.00403024  ; |ASCII &quot;Title&quot;
+0040132E  |. C74424 04 2A30&gt;MOV DWORD PTR SS:&#91;ESP+4&#93;,Test2.0040302A  ; |ASCII &quot;Info&quot;
+00401336  |. C70424 0000000&gt;MOV DWORD PTR SS:&#91;ESP&#93;,0                 ; |
+0040133D  |. E8 0A000000    CALL &lt;JMP.&USER32.MessageBoxA&gt;           ; \MessageBoxA
+00401342  |. 83EC 10        SUB ESP,10
+00401345  |. 31C0           XOR EAX,EAX
+00401347  |. C9             LEAVE
+00401348  \. C2 1000        RETN 10</pre>
+		</div>
+
+Nếu hiểu nói chuyện tiếp.
+
+@nói riêng: tớ mới học RCE thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264389</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264389</link>
+				<pubDate><![CDATA[Fri, 1 Jun 2012 00:36:58]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ có thể edit lại IMAGE_IMPORT_DESCRIPTOR trong PE header nếu nó là autoload hoặc nop lệnh gọi hàm loadLibraryA khi manual load, nhưng thường thì khi import một dll tất yếu nó sẽ xử dụng các hàm cung cấp trong đó việc bác làm thế này sẽ dẫn đến lỗi khi chạy. Xin cho em hỏi làm sao bác biết nó không bị lỗi thế :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264391</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264391</link>
+				<pubDate><![CDATA[Fri, 1 Jun 2012 00:56:57]]> GMT</pubDate>
+				<author><![CDATA[ n2tforever]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Các bạn cho mình hỏi RCE là viết tắt của cụm từ gì vậy? Mình chỉ biết mỗi cụm RCA là Rồng Châu Á thôi.
+Cảm ơn nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264606</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264606</link>
+				<pubDate><![CDATA[Mon, 4 Jun 2012 01:06:13]]> GMT</pubDate>
+				<author><![CDATA[ xBoyx]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xBoyx wrote:</cite><br>
+		<blockquote>Các bạn cho mình hỏi RCE là viết tắt của cụm từ gì vậy? Mình chỉ biết mỗi cụm RCA là Rồng Châu Á thôi.
+Cảm ơn nhiều.&nbsp;
+		</blockquote>
+
+RCE theo định nghĩa của anh <font color='green'>TQN</font> là <font color='red'>RỜ XXX EM</font>  =)) .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264626</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264626</link>
+				<pubDate><![CDATA[Mon, 4 Jun 2012 05:07:42]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Em hỏi thiệt mà anh. Ai biết trả lời dùm em đi ạ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264713</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264713</link>
+				<pubDate><![CDATA[Tue, 5 Jun 2012 10:22:04]]> GMT</pubDate>
+				<author><![CDATA[ xBoyx]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xBoyx wrote:</cite><br>
+		<blockquote>Em hỏi thiệt mà anh. Ai biết trả lời dùm em đi ạ&nbsp;
+		</blockquote>
+Reverse code engineering
+Khoảng 81.800.000 kết quả (0,17 giây)<span class="link"> http://bit.ly/NgjsDJ</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264736</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#264736</link>
+				<pubDate><![CDATA[Tue, 5 Jun 2012 22:20:39]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265187</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265187</link>
+				<pubDate><![CDATA[Thu, 14 Jun 2012 00:46:46]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+
+Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. Bạn hoàn toàn có thể viết chương trình không sử dụng bất cứ một thư viện nào.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265214</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265214</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 00:10:58]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chiro8x-c wrote:</cite><br>
+		<blockquote>
+Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. Bạn hoàn toàn có thể viết chương trình không sử dụng bất cứ một thư viện nào.&nbsp;
+		</blockquote>
+
+à, không phaỏi winxp, mà là win2k trở lên.
+
+Không có time để chứng minh đâu, tự tìm giùm mình nhá]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265219</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265219</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 03:50:01]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ biết syscall không, hahaha, không cần bất cứ dll nào à, kể cả syscall cũng gọi mà... tới khi nào tìm được cách nào mà không sử dụng syscall để I/O(API) đi rồi nói nhá( không chơi DOS)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265221</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 03:53:08]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,<font color='yellow'>...</font> sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+Cái phần 3 chấm (...) ấy là gồm những gì vậy bạn?
+
+<p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote>Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. Bạn hoàn toàn có thể viết chương trình <font color='yellow'>không sử dụng bất cứ một thư viện nào</font>.&nbsp;
+		</blockquote>
+Cái này mình chưa thấy, mình nghĩ vẫn phải gọi các hàm API bằng 1 cách nào đó.
+
+<p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>biết syscall không, hahaha, không cần bất cứ dll nào à, kể cả syscall cũng gọi mà... tới khi nào tìm được cách nào mà không sử dụng syscall để I/O(API) đi rồi nói nhá( không chơi DOS)&nbsp;
+		</blockquote>
+IO thì liên quan gì ở đây nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265222</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265222</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 04:29:40]]> GMT</pubDate>
+				<author><![CDATA[ so61pi]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Chà mình quên nói rõ là mình sử dụng phương pháp để truy ngược về điểm mà kernell32 được nạp (sau đó tìm LoadLibraryA và GetProcAddress) khi sử dụng Dependency Walker sẽ không thấy thư viện nào "được gọi", chứ không "tự động load" như bạn MinhHung1122 (kute pro) nói.
+
+<p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>
+biết syscall không, hahaha, không cần bất cứ dll nào à, kể cả syscall cũng gọi mà... tới khi nào tìm được cách nào mà không sử dụng syscall để I/O(API) đi rồi nói nhá( không chơi DOS) 
+&nbsp;
+		</blockquote>
+
+Dạ em chưa biết ! anh chỉ em, em ngu mong được dạy bảo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265228</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265228</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 05:27:20]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Anh chiro có phân biệt được giữa được gọi / nạp với sử dụng không, khi nào mà chương trình của anh giao tiếp trực tiếp với phần cứng không cần hdh thì nó mới không sửa dụng thư viện của người khác.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265229</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265229</link>
+				<pubDate><![CDATA[Fri, 15 Jun 2012 06:07:03]]> GMT</pubDate>
+				<author><![CDATA[ tieucuong]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">so61pi wrote:</cite><br>
+		<blockquote>
+Cái phần 3 chấm (...) ấy là gồm những gì vậy bạn?
+&nbsp;
+		</blockquote>
+có rất nhiều,có 1 số nó không hiện lên, có một số sử dụng các chương trình thì ta thấy nó, nhưng một số không thể thấy... hal.dll chẳng hạn
+
+<p></p>
+		<cite class="blockquote">so61pi wrote:</cite><br>
+		<blockquote>IO thì liên quan gì ở đây nhỉ?&nbsp;
+		</blockquote>
+để xử lý thì cần IO, kể cả message thì cũng IO đấy thôi, IO ra màng hình đấy, hay read/write... tất cả điều phải IO]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265253</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265253</link>
+				<pubDate><![CDATA[Sat, 16 Jun 2012 02:08:44]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>có rất nhiều,có 1 số nó không hiện lên, có một số sử dụng các chương trình thì ta thấy nó, nhưng một số không thể thấy... hal.dll chẳng hạn&nbsp;
+		</blockquote>
+Xem bằng Process Explorer process explorer.exe, unikeynt.exe nhưng không thấy hal.dll xuất hiện, có gì sai chăng.
+
+<p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>để xử lý thì cần IO, kể cả message thì cũng IO đấy thôi, IO ra màng hình đấy, hay read/write... tất cả điều phải IO&nbsp;
+		</blockquote>
+Cái này thì dễ thấy rồi, nhưng nó liên quan gì tới việc "Làm sao để exe file không gọi một thư viện dll?" ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265262</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265262</link>
+				<pubDate><![CDATA[Sat, 16 Jun 2012 07:00:18]]> GMT</pubDate>
+				<author><![CDATA[ so61pi]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+Hahaha.  =)) Buồn cười quá. Thử xem cái Hello world này đi, nó chỉ import kernel32.dll với user32.dll thôi, còn cái ntdll.dll ở đâu rồi? (Tất nhiên những cái trong dấu ... nữa.)
+<span class="link"> http://www.mediafire.com/?nll1d3o4ix3achr</span>
+<p></p>
+		<cite class="blockquote">so61pi wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote>Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. Bạn hoàn toàn có thể viết chương trình <font color='yellow'>không sử dụng bất cứ một thư viện nào</font>.&nbsp;
+		</blockquote>
+Cái này mình chưa thấy, mình nghĩ vẫn phải gọi các hàm API bằng 1 cách nào đó.
+&nbsp;
+		</blockquote>
+Em thấy VC++ luôn phải dùng kernel32.dll để dùng cho các hàm môi trường, nhưng ko rõ các chương trình khác thì sao.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265265</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265265</link>
+				<pubDate><![CDATA[Sat, 16 Jun 2012 08:49:28]]> GMT</pubDate>
+				<author><![CDATA[ xwhitelight]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">xwhitelight wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+Hahaha.  =)) Buồn cười quá. Thử xem cái Hello world này đi, nó chỉ import kernel32.dll với user32.dll thôi, còn cái ntdll.dll ở đâu rồi? (Tất nhiên những cái trong dấu ... nữa.)
+<span class="link"> http://www.mediafire.com/?nll1d3o4ix3achr</span>
+Em thấy VC++ luôn phải dùng kernel32.dll để dùng cho các hàm môi trường, nhưng ko rõ các chương trình khác thì sao.&nbsp;
+		</blockquote>
+
+Nản]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265275</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265275</link>
+				<pubDate><![CDATA[Sat, 16 Jun 2012 21:39:21]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">so61pi wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>có rất nhiều,có 1 số nó không hiện lên, có một số sử dụng các chương trình thì ta thấy nó, nhưng một số không thể thấy... hal.dll chẳng hạn&nbsp;
+		</blockquote>
+Xem bằng Process Explorer process explorer.exe, unikeynt.exe nhưng không thấy hal.dll xuất hiện, có gì sai chăng.
+&nbsp;
+		</blockquote>
+
+nó nằm ở address lớn hơn 0x80000000, đương nhiên là không đọc được cái j ở đó, nhưng nó đã nằm ở đó, có nhiều cái k nhìn thấy được đâu.
+
+- Sau mình nói cái j cũng có người phản bác thế, sao k xem người khác nói cái j rồi phản bác lại-&gt; cái này người ta gọi là j nhỉ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265276</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265276</link>
+				<pubDate><![CDATA[Sat, 16 Jun 2012 21:43:37]]> GMT</pubDate>
+				<author><![CDATA[ MinhHung1122]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Ớ .... cho mình thắc mắc bạn chút :D
+
+Thế sau khi gọi API qua &quot;syscall/sysenter&quot; như ý 1 số bạn thì theo bạn là nó không gọi vào ntoskrnl.exe à ? :|
+
+1 khi đã sử dụng API từ 1 &quot;nguồn khác&quot; là bạn đã &quot;sử dụng thư viện&quot; nào rồi nhé.  :P 
+
+Tuy nhiên mình không có ý nói là "không có cách nào để tạo 1 chương trình không sử dụng bất kì thư viện nào".]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265279</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265279</link>
+				<pubDate><![CDATA[Tue, 19 Jun 2012 06:06:56]]> GMT</pubDate>
+				<author><![CDATA[ .lht.]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ @MinhHung1122: OK, tớ hiểu ý cậu rồi. Có lẽ là cậu nói đúng rồi. Nhưng chỉ có kernel32.dll và ntdll.dll thôi, ko có dấu ba chấm đâu.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265468</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265468</link>
+				<pubDate><![CDATA[Fri, 22 Jun 2012 20:27:07]]> GMT</pubDate>
+				<author><![CDATA[ xwhitelight]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+
+Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. <b><font color='yellow'>Bạn hoàn toàn có thể viết chương trình không sử dụng bất cứ một thư viện nào.</font></b>&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote>Chà mình quên nói rõ là mình sử dụng phương pháp để truy ngược về điểm mà kernell32 được nạp (sau đó tìm LoadLibraryA và GetProcAddress) <font color='yellow'><b>khi sử dụng Dependency Walker sẽ không thấy thư viện nào "được gọi"</b></font>, chứ không "tự động load" như bạn MinhHung1122 (kute pro) nói.
+
+<p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>
+biết syscall không, hahaha, không cần bất cứ dll nào à, kể cả syscall cũng gọi mà... tới khi nào tìm được cách nào mà không sử dụng syscall để I/O(API) đi rồi nói nhá( không chơi DOS) 
+&nbsp;
+		</blockquote>
+
+Dạ em chưa biết ! anh chỉ em, em ngu mong được dạy bảo.&nbsp;
+		</blockquote>
+
+Bạn chiro8x cho tui xem thử file .exe của bạn với ;-) .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265475</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265475</link>
+				<pubDate><![CDATA[Fri, 22 Jun 2012 23:39:19]]> GMT</pubDate>
+				<author><![CDATA[ bolzano_1989]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">bolzano_1989 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>không bao giờ có chuyện này xảy ra, vì từ winxp trở đi thì mọi ứng dụng chạy trên windows thì các thư viện kernel32.dll, ntdll.dll,... sẽ tự động load vào chương trình&nbsp;
+		</blockquote>
+
+Bạn chắc rằng bạn nói đúng chứ ? Tài liệu kỹ thuật nào cho phép bản khẳng định hùng hồn vậy. <b><font color='yellow'>Bạn hoàn toàn có thể viết chương trình không sử dụng bất cứ một thư viện nào.</font></b>&nbsp;
+		</blockquote>
+
+<p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote>Chà mình quên nói rõ là mình sử dụng phương pháp để truy ngược về điểm mà kernell32 được nạp (sau đó tìm LoadLibraryA và GetProcAddress) <font color='yellow'><b>khi sử dụng Dependency Walker sẽ không thấy thư viện nào "được gọi"</b></font>, chứ không "tự động load" như bạn MinhHung1122 (kute pro) nói.
+
+<p></p>
+		<cite class="blockquote">MinhHung1122 wrote:</cite><br>
+		<blockquote>
+biết syscall không, hahaha, không cần bất cứ dll nào à, kể cả syscall cũng gọi mà... tới khi nào tìm được cách nào mà không sử dụng syscall để I/O(API) đi rồi nói nhá( không chơi DOS) 
+&nbsp;
+		</blockquote>
+
+Dạ em chưa biết ! anh chỉ em, em ngu mong được dạy bảo.&nbsp;
+		</blockquote>
+
+Bạn chiro8x cho tui xem thử file .exe của bạn với ;-) .&nbsp;
+		</blockquote>
+
+Đang tính viết lại đây ! mà lười quá ! giờ lại cài window à =.=! hồi trước mình viết trên windows xp sp2. Compile với TASM32.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265495</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265495</link>
+				<pubDate><![CDATA[Sat, 23 Jun 2012 10:43:26]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Thùng rỗng kêu to =))
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265496</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265496</link>
+				<pubDate><![CDATA[Sat, 23 Jun 2012 11:52:23]]> GMT</pubDate>
+				<author><![CDATA[ versac]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chiro8x wrote:</cite><br>
+		<blockquote>
+Đang tính viết lại đây ! mà lười quá ! giờ lại cài window à =.=! hồi trước mình viết trên windows xp sp2. Compile với TASM32.&nbsp;
+		</blockquote>
+
+Vui cho bớt căng thẳng ở topic này chút thôi chiro8x không cần cài Windows đâu :D , mình đã tạo được một file .exe như bạn chiro8x miêu tả bằng NASM, khi chạy sẽ tạo một message box, nếu dùng Dependency Walker thì sẽ không thấy User32.dll cũng như bất cứ thư viện liên kết động nào khác được import nhưng khi chạy file .exe trong Windows, nếu xem bằng Process Explorer của Sysinternals thì sẽ thấy các DLL này (User32.dll, kernel32.dll,...)  được ánh xạ vào không gian địa chỉ của chương trình đang chạy. Mình cũng phải tìm địa chỉ cơ sở của DLL nếu theo đường này.
+=&gt; confirm ý của chiro8x.
+
+Bạn MinhHung1122 hình như bị lạc đề khi đề cập về kernel32.dll, ntdll.dll do chủ topic đã ghi rõ &quot;file dll này riêng, không phải của máy&quot;.
+
+Quay lại câu hỏi của chủ topic là &quot;làm thế nào để chương trình chính bỏ gọi một file dll - file dll này riêng, không phải của máy và không phát sinh lối khi bỏ gọi&quot;, theo ý của mình bạn có thể xóa cấu trúc IMAGE_IMPORT_DESCRIPTOR (của DLL được gọi) trong Import Directory và để không gặp lỗi bạn có thể xóa các lệnh gọi hàm được import từ DLL trên trong file .exe. Nhưng như vậy vẫn có thể gặp các lỗi nội tại khác của chương trình do bạn đã patch các lời gọi hàm trên, bạn cần tiếp tục điều chỉnh.
+
+Mình thấy nếu bạn chủ topic không tìm hiểu chuyên sâu về mảng này thì bạn chắc chắn không làm được đâu, cũng không có ai chỉ rõ tường tận cho bạn như bạn đề nghị &quot;phân tích rõ&quot; được. Đã vào Reverse Code Engineering thì không thể lấy lý do &quot;không chuyên IT&quot; để lười tự thân tìm hiểu được :) .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265497</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265497</link>
+				<pubDate><![CDATA[Sat, 23 Jun 2012 16:12:10]]> GMT</pubDate>
+				<author><![CDATA[ bolzano_1989]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ @bolzano_1989: Cậu viết trên windows 7 à ? máy tớ không đủ cấu hình để cài cái đó nên chuyển qua dùng Ubuntu lâu rồi. Haizz chuyện của tớ mà lại phiền cậu nhiều thật thất lễ. Tớ nhớ không lầm thì khi dùng ollydbg thì bên cạnh phần comment của nó vẫn hiện ra tên của API cậu sử dụng, chẳng hạn MessageBoxA, LoadLibraryA,Exitprocess,...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265500</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#265500</link>
+				<pubDate><![CDATA[Sat, 23 Jun 2012 22:04:41]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Có thể tìm hiểu về thêm Steath API ở trang này <span class="link"> http://syprog.blogspot.com/2011/10/stealth-import-of-windows-api.html</span>
+
+p/s: blogspot.com hiện tại không truy cập được ở VN, các bạn dùng Tor Proxy hay các trang Web Proxy để vào nhé :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266072</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266072</link>
+				<pubDate><![CDATA[Tue, 3 Jul 2012 21:04:00]]> GMT</pubDate>
+				<author><![CDATA[ computerline]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Có đi đâu, đi đằng nào đi nữa thì kernel32 và ntdll.dll cũng phải được Win load lên. Không có các API của nó thì chạy bằng cái gì.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266077</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266077</link>
+				<pubDate><![CDATA[Tue, 3 Jul 2012 21:33:38]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Có đi đâu, đi đằng nào đi nữa thì kernel32 và ntdll.dll cũng phải được Win load lên. Không có các API của nó thì chạy bằng cái gì.&nbsp;
+		</blockquote>
+dùng native API có được không anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266128</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266128</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 04:24:10]]> GMT</pubDate>
+				<author><![CDATA[ n2tforever]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Native thì cũng là các API trong ntdll và kernel32 export ra mà ra thôi :) Nói chung thì cuối cùng cũng chỉ có cách  ẩn đi các thư viện thôi, chứ không có cách nào mà làm cho nó không gọi thư viện được hết ^^ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266140</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266140</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 07:45:31]]> GMT</pubDate>
+				<author><![CDATA[ computerline]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">computerline wrote:</cite><br>
+		<blockquote>Native thì cũng là các API trong ntdll và kernel32 export ra mà ra thôi :) Nói chung thì cuối cùng cũng chỉ có cách  ẩn đi các thư viện thôi, chứ không có cách nào mà làm cho nó không gọi thư viện được hết ^^ &nbsp;
+		</blockquote>
+ntdll và kernel32 là các thư viện trong usermode ý mình là gọi trực tiếp các hàm export của ntoskrnl.exe thông qua ngắt 2E hoặc sysenter cơ  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266141</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266141</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 07:55:17]]> GMT</pubDate>
+				<author><![CDATA[ n2tforever]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ Thank bạn <b>n2tforever</b>, mình không nghĩ đến việc dùng ntoskrnl.exe là khả thi, vì theo mình được biết thì ntoskrnl đâu export ra địa chỉ nào đâu, mà việc gọi qua sysenter thì như là bị hệ điều hành nó cấm rồi hay sao đó mà ! Nhưng qua gợi ý của bạn và tìm hiểu một số thông tin thì mình tìm được một số nguồn tài liệu này, có lẽ sẽ có ích cho ai đó :)
+
+<span class="link"> http://alter.org.ua/docs/nt_kernel/procaddr/</span>
+<span class="link"> http://alter.org.ua/soft/nt_kernel/crossnt/</span>
+<span class="link"> http://netcode.cz/img/83/nativeapi.html</span>
+<span class="link"> http://zenwinx.sourceforge.net/doxy-doc/html/index.html</span>
+<span class="link"> http://hex.pp.ua/nt-native-applications-shell-eng.php</span>
+
+Đặc biệt trong <span class="link"> <span class="link"> http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span></span> có một loạt các tài liệu về Forensics và Reverse Engineering cũng có giá trị, bạn nào muốn tải có thể dùng cache của google để truy ra link tải về <span class="link"> cache:http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266145</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266145</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 08:46:16]]> GMT</pubDate>
+				<author><![CDATA[ computerline]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">computerline wrote:</cite><br>
+		<blockquote>Thank bạn <b>n2tforever</b>, mình không nghĩ đến việc dùng ntoskrnl.exe là khả thi, vì theo mình được biết thì ntoskrnl đâu export ra địa chỉ nào đâu, mà việc gọi qua sysenter thì như là bị hệ điều hành nó cấm rồi hay sao đó mà ! Nhưng qua gợi ý của bạn và tìm hiểu một số thông tin thì mình tìm được một số nguồn tài liệu này, có lẽ sẽ có ích cho ai đó :)
+
+<span class="link"> http://alter.org.ua/docs/nt_kernel/procaddr/</span>
+<span class="link"> http://alter.org.ua/soft/nt_kernel/crossnt/</span>
+<span class="link"> http://netcode.cz/img/83/nativeapi.html</span>
+<span class="link"> http://zenwinx.sourceforge.net/doxy-doc/html/index.html</span>
+<span class="link"> http://hex.pp.ua/nt-native-applications-shell-eng.php</span>
+
+Đặc biệt trong <span class="link"> <span class="link"> http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span></span> có một loạt các tài liệu về Forensics và Reverse Engineering cũng có giá trị, bạn nào muốn tải có thể dùng cache của google để truy ra link tải về <span class="link"> cache:http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span>&nbsp;
+		</blockquote>
+
+Chào bạn,
+
+Về vấn đề này mình cũng từng có 1 topic nhắc đến, bạn tham khảo xem :D
+<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/39127.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266160</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266160</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 14:42:00]]> GMT</pubDate>
+				<author><![CDATA[ .lht.]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">.lht. wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">computerline wrote:</cite><br>
+		<blockquote>Thank bạn <b>n2tforever</b>, mình không nghĩ đến việc dùng ntoskrnl.exe là khả thi, vì theo mình được biết thì ntoskrnl đâu export ra địa chỉ nào đâu, mà việc gọi qua sysenter thì như là bị hệ điều hành nó cấm rồi hay sao đó mà ! Nhưng qua gợi ý của bạn và tìm hiểu một số thông tin thì mình tìm được một số nguồn tài liệu này, có lẽ sẽ có ích cho ai đó :)
+
+<span class="link"> http://alter.org.ua/docs/nt_kernel/procaddr/</span>
+<span class="link"> http://alter.org.ua/soft/nt_kernel/crossnt/</span>
+<span class="link"> http://netcode.cz/img/83/nativeapi.html</span>
+<span class="link"> http://zenwinx.sourceforge.net/doxy-doc/html/index.html</span>
+<span class="link"> http://hex.pp.ua/nt-native-applications-shell-eng.php</span>
+
+Đặc biệt trong <span class="link"> <span class="link"> http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span></span> có một loạt các tài liệu về Forensics và Reverse Engineering cũng có giá trị, bạn nào muốn tải có thể dùng cache của google để truy ra link tải về <span class="link"> cache:http://files.keiranbolton.me/down/66.14.166.45/whitepapers/</span>&nbsp;
+		</blockquote>
+
+Chào bạn,
+
+Về vấn đề này mình cũng từng có 1 topic nhắc đến, bạn tham khảo xem :D
+<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/39127.hva&nbsp;</span>
+		</blockquote>
+
+Thanks bạn, từ phần code của bạn mình tham khảo thêm được rất nhiều :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266180</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#266180</link>
+				<pubDate><![CDATA[Wed, 4 Jul 2012 21:29:55]]> GMT</pubDate>
+				<author><![CDATA[ computerline]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">longtran295 wrote:</cite><br>
+		<blockquote>Mình lại hỏi về vấn đề này: làm thế nào để chương trình chính bỏ gọi một file dll - file dll này riêng, không phải của máy và không phát sinh lối khi bỏ gọi. Một hướng khác là chỉnh sửa file dll cho nó không thực hiện thao tác gì - gọi xong trả về chương trình chính luôn, thì làm cách nào?
+
+Mình ko chuyên IT nên các bạn phân tích rõ dùm mình nhé.&nbsp;
+		</blockquote>
+Cjác cái câu hỏi này liên wan đến online checking .
+Main Process gọi / connect đến server để call 1 method ( or tương tự ) và lấy kết wả trả về để check license ?
+Về logic có thể ngắt ngang khúc call đó và patch return result theo ý mình . Còn of course code thực tế thì ... làm mới biết]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#269576</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#269576</link>
+				<pubDate><![CDATA[Thu, 20 Sep 2012 11:47:39]]> GMT</pubDate>
+				<author><![CDATA[ Zombie]]></author>
+			</item>
+			<item>
+				<title>Làm sao để exe file không gọi một thư viện dll?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">longtran295 wrote:</cite><br>
+		<blockquote>Mình lại hỏi về vấn đề này: làm thế nào để chương trình chính bỏ gọi một file dll - file dll này riêng, không phải của máy và không phát sinh lối khi bỏ gọi. Một hướng khác là chỉnh sửa file dll cho nó không thực hiện thao tác gì - gọi xong trả về chương trình chính luôn, thì làm cách nào?
+
+Mình ko chuyên IT nên các bạn phân tích rõ dùm mình nhé.&nbsp;
+		</blockquote>
+
+Loại bỏ module thì cũng dùng ollydbg thui bạn. Khó chỗ là nó có cái gì load theo không đó bạn(HShied,Game Guard liên quan tới game tí :D). Không thì bạn unload module bằng chương trình process khác đó]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/42508.hva#278221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/42508.hva#278221</link>
+				<pubDate><![CDATA[Thu, 22 Aug 2013 02:42:10]]> GMT</pubDate>
+				<author><![CDATA[ dahiphop]]></author>
+			</item>
+	</channel>
+</rss>

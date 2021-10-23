@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm thế nào để stop tomcat khi vẫn monitoring file catalina.out"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm thế nào để stop tomcat khi vẫn monitoring file catalina.out"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm thế nào để stop tomcat khi vẫn monitoring file catalina.out</title>
+				<description><![CDATA[ Hi all.
+Em gặp một trường hợp như thế này ạ:
+1. Em cài đặt apache tomcat 7.0.53 trên Ubuntu server 12.04 64bit
+2. Khi mở 2 session kết nối vào server (session 1 dùng để monitoring, session 2 dùng để start/stop tomcat) thì có những vấn đề như sau:
+
+- Vấn đề 1 : Session 2 không start được tomcat khi session 1 kết nối vào và đang monitoring trên file catalina.out
+ 
+Nếu session 1  chạy lệnh tail -f /.../.../apache-tomcat-7.0.53/logs/catalina.out trước rồi mới chạy lệnh service tomcat start trên session 2 thì sẽ báo lỗi tomcat đã chạy rồi, không thể start tomcat lên được
+
+- Vấn đề 2 : Stop tomcat báo lỗi khi không tắt monitoring ở session khác
+
+Trường hợp session 2 start tomcat trước, rồi  session 1 mới chạy lệnh monitoring, trường hợp này nếu lệnh stop tomcat trên session 2 mà không stop monitoring trên session 1, thì trên session 1 sẽ báo lỗi như sau và tomcat vẫn chạy bình thường, không stop :
+
+WARNING: Failed to unregister MBean with name [Catalina:type=Connector,port=80] during component destruction
+javax.management.InstanceNotFoundException: Catalina:type=Connector,port=80
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.getMBean(DefaultMBeanServerInterceptor.java:1095)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.exclusiveUnregisterMBean(DefaultMBeanServerInterceptor.java:427)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.unregisterMBean(DefaultMBeanServerInterceptor.java:415)
+        at com.sun.jmx.mbeanserver.JmxMBeanServer.unregisterMBean(JmxMBeanServer.java:546)
+        at org.apache.catalina.util.LifecycleMBeanBase.unregister(LifecycleMBeanBase.java:194)
+        at org.apache.catalina.util.LifecycleMBeanBase.destroyInternal(LifecycleMBeanBase.java:73)
+        at org.apache.catalina.connector.Connector.destroyInternal(Connector.java:1061)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.core.StandardService.destroyInternal(StandardService.java:578)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.core.StandardServer.destroyInternal(StandardServer.java:821)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.startup.Catalina.stop(Catalina.java:763)
+        at org.apache.catalina.startup.Catalina.start(Catalina.java:724)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:321)
+        at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:455)
+
+Jul 16, 2014 1:59:09 PM org.apache.coyote.AbstractProtocol stop
+INFO: Stopping ProtocolHandler ["http-bio-81"]
+Jul 16, 2014 1:59:09 PM org.apache.coyote.AbstractProtocol destroy
+INFO: Destroying ProtocolHandler ["http-bio-81"]
+Jul 16, 2014 1:59:09 PM org.apache.catalina.util.LifecycleMBeanBase unregister
+WARNING: Failed to unregister MBean with name [Catalina:type=Connector,port=81] during component destruction
+javax.management.InstanceNotFoundException: Catalina:type=Connector,port=81
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.getMBean(DefaultMBeanServerInterceptor.java:1095)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.exclusiveUnregisterMBean(DefaultMBeanServerInterceptor.java:427)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.unregisterMBean(DefaultMBeanServerInterceptor.java:415)
+        at com.sun.jmx.mbeanserver.JmxMBeanServer.unregisterMBean(JmxMBeanServer.java:546)
+        at org.apache.catalina.util.LifecycleMBeanBase.unregister(LifecycleMBeanBase.java:194)
+        at org.apache.catalina.util.LifecycleMBeanBase.destroyInternal(LifecycleMBeanBase.java:73)
+        at org.apache.catalina.connector.Connector.destroyInternal(Connector.java:1061)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.core.StandardService.destroyInternal(StandardService.java:578)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.core.StandardServer.destroyInternal(StandardServer.java:821)
+        at org.apache.catalina.util.LifecycleBase.destroy(LifecycleBase.java:305)
+        at org.apache.catalina.startup.Catalina.stop(Catalina.java:763)
+        at org.apache.catalina.startup.Catalina.start(Catalina.java:724)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:321)
+        at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:455) 
+
+Em xin hỏi là vấn đề này do đâu ạ? Có cách nào để khắc phục trường hợp này không nhỉ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45732.hva#281133</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45732.hva#281133</link>
+				<pubDate><![CDATA[Mon, 28 Jul 2014 23:30:13]]> GMT</pubDate>
+				<author><![CDATA[ blackworm1991]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP</title>
+				<description><![CDATA[ Hi all.
+Mình đang cấu hình module ASM của thiết bị F5 BigIP bên phía khách hàng. ASM là một WAF đi kèm theo firewall này. Trong quá trình cấu hình, định kỳ phải gửi các bản scan security hole về cho khách hàng.
+
+Trên ASM, các cấu hình hiện thời đã chặn được các request có dấu hiệu thăm dò XSS, kết quả trả về có dạng sau, là thông điệp cảnh báo của ASM
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;html&gt;&lt;head&gt;&lt;title&gt;Request Rejected&lt;/title&gt;&lt;/head&gt;&lt;body&gt;The requested URL was rejected. Please consult with your administrator.&lt;br&gt;&lt;br&gt;Your support ID is: 12589574903111794332&lt;/body&gt;&lt;/html&gt;</pre>
+		</div>
+
+Tuy nhiên, response trả về sẽ là một tcp RST và Acunetix 8.0 nhận được response header như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>HTTP/1.1 200 OK
+Cache-Control: no-cache
+Connection: close
+Pragma: no-cache
+Content-Length: 189</pre>
+		</div>
+Mình nghĩ, với các HTTP code 200 như trên là lý do Acunetix vẫn cho rằng, request fuzzing nó gửi đi thành công và có thể exploit được, do đó trong kết quả nó vẫn liệt kê đó là một sec hole. 
+
+Trong báo cáo thì mình muốn nó "sạch", tức là không có report "nhầm" như đề cập ở trên. Các anh/chị hay bạn nào có kinh nghiệm làm việc với F5-ASM thì cho mình chỉ dẫn khắc phục với.
+Có thể cấu hình chỉnh sửa HTTP response thành 403 hay không?
+Nếu không, có thể drop cái response này không ?
+Nếu vẫn không, thì còn có giải pháp nào khác ?
+
+Xin cảm ơn mọi người.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272415</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272415</link>
+				<pubDate><![CDATA[Thu, 3 Jan 2013 21:54:54]]> GMT</pubDate>
+				<author><![CDATA[ docphongm41]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP</title>
+				<description><![CDATA[ Tớ hơi thắc mắc vài điểm.
+
+1. Detect XSS là detect inbound requests thì sao lại xét đến response?
+
+2. Nếu "response trả về sẽ là một tcp RST" thì hơi khó hiểu vì RST là một packet ở IP level thì làm sao lại hình thành được cái response với status 200?
+
+
+Bồ thử trình bày chi tiết hơn xem sao? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272424</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272424</link>
+				<pubDate><![CDATA[Thu, 3 Jan 2013 23:54:05]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP</title>
+				<description><![CDATA[ Hi anh conmale.
+Anh thông cảm vì em mô tả hơi vắn tắt ạ.
+1. Việc detect XSS được thực hiện bởi các attack-signatures (tương tự như các tập SecRule của ModSecurity). Hiện tại, các attack-signature này hoạt động đúng, tức là phát hiện và chặn được các inbound request, không tới được web server. Thay vào đó sẽ trả về một response page có nội dung như post đầu tiên em trình bày.
+Như vậy, em kết luận một cách chủ quan đó là việc chặn các fuzzing request được thực hiện thành công.
+
+Tuy nhiên, với mục tiêu sử dụng Acunetix để có report cho các thủ tục bảo hành/bảo trì thì đòi hỏi tool đó phải không ghi nhận các kết quả alert ở mức High.
+
+Với những request của tool này, em đã từng dùng ModSecurity (cho website khác) thực hiện cản với việc trả về mã 403 Forbidden thì Acunetix nó ghi nhận là test case đó fail, tức là không có lỗi tiềm ẩn ở đó. Tuy nhiên, với việc BigIP ASM trả về thông điệp 200 OK như trên thì Acunetix vẫn xem đó là lỗi.
+
+Trên đây là suy luận của em, còn không có tài liệu nào công khai nói về cách thức Acunetix đánh giá với response như thế nào thì coi là có lỗi bảo mật.
+
+2. Em đã không đọc kỹ và ghi chú lại cái tài liệu đã đọc nên cũng không trình bày lại được về nội dung này. Còn  đúng là với trình bày của em ở post 1 thì đúng là vô lý, khi rst đã gửi mà vẫn gửi lại được một http message. Về đoạn trình bày liên quan này em xin anh và mọi người bỏ qua ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272467</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272467</link>
+				<pubDate><![CDATA[Sat, 5 Jan 2013 01:53:33]]> GMT</pubDate>
+				<author><![CDATA[ docphongm41]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Tớ hơi thắc mắc vài điểm.
+
+2. Nếu "response trả về sẽ là một tcp RST" thì hơi khó hiểu vì RST là một packet ở IP level thì làm sao lại hình thành được cái response với status 200?
+
+ &nbsp;
+		</blockquote>
+Trong response trên, như bác đã thấy, connection: close. Do đó rõ ràng là ASM đã notify rằng kết nối tcp sẽ được đóng ngay khi response này hoàn thành. Như vậy có lẽ là sau khi ASM gửi lại http response trên, firewall sẽ gửi tiếp một tcp RST để ngắt kết nối của client hiện tại này.
+Lập luận của em có bị sai không ạ  :^) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272522</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272522</link>
+				<pubDate><![CDATA[Mon, 7 Jan 2013 20:45:15]]> GMT</pubDate>
+				<author><![CDATA[ docphongm41]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp về module ASM của thiết bị firewall F5 Big-IP</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">docphongm41 wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>Tớ hơi thắc mắc vài điểm.
+
+2. Nếu "response trả về sẽ là một tcp RST" thì hơi khó hiểu vì RST là một packet ở IP level thì làm sao lại hình thành được cái response với status 200?
+
+ &nbsp;
+		</blockquote>
+Trong response trên, như bác đã thấy, connection: close. Do đó rõ ràng là ASM đã notify rằng kết nối tcp sẽ được đóng ngay khi response này hoàn thành. Như vậy có lẽ là sau khi ASM gửi lại http response trên, firewall sẽ gửi tiếp một tcp RST để ngắt kết nối của client hiện tại này.
+Lập luận của em có bị sai không ạ  :^) &nbsp;
+		</blockquote>
+
+Đã gởi một response 200 rồi thì sau khi client nhận được thông điệp thì 2 đầu connnection đóng (bằng FIN) một cách hợp lệ. Lúc đó có gởi thêm RST cũng chẳng để làm gì. Thực sự, gởi RST khơi khơi như vậy bị rơi vào "INVALID" state và client cũng chẳng nhận được.
+
+Còn với comment trên của em thì có 2 chuyện:
+
+1. ASM của thiết bị firewall F5 Big-IP gởi một cái response <font color='red'>200</font> khi detect XSS.
+2. Acunetix dự phỏng nhận <font color='orange'>403</font>.
+
+Không may, hai cái trên không liên quan gì nhau và cũng chẳng tích hợp gì với nhau cho nên khó lòng mà thay đổi "thái độ" của một trong hai để thoả mãn cả hai. Nếu muốn dùng một công cụ ngoại biên như Acunetix để đánh giá tính bảo mật trong trường hợp này thì kẹt vì nó chẳng còn ý nghĩa "vulnerability detection" vì ASM đã làm chuyện này rồi. Cách tốt nhất là thu thập kết quả từ chính ASM cho mục đích report.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272527</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44076.hva#272527</link>
+				<pubDate><![CDATA[Tue, 8 Jan 2013 00:53:20]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

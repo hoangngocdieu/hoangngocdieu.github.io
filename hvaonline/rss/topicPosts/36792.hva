@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Nhận biết quá trình giải mã chuỗi"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Nhận biết quá trình giải mã chuỗi"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ <b>I. Thuật toán Base64Encode</b>
+Thuật toán chia đầu vào thành những nhóm gồm 6bits (giá trị từ 0-&gt;63) và rồi chuyển chúng lại thành mã ASCII theo hình sau. Kỹ thuật coding này làm gia tăng kích thước file lên 33%, bởi vì 3 bytes trở thành 4 ký tự.
+<br>
+			<div align="center" class="limitview"><img src='http://img576.imageshack.us/img576/8199/base64.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Lưu ý: Nếu như không đủ để gộp thành 6 thì thêm 0 cho đủ và có dấu = là ký tự đặc biệt để kết thúc trong trường hợp không đủ 3. Vì đầu vào theo encoding bằng base64 thì nó sẽ nhóm lần lượt 6 bit thành một và dựa theo bảng trên (64 kí tự) để quy đổi ngược lại ký tự. 
+
+Ví dụ:
+‘A’ chuyển sang bit sẽ là 01000001
+Nhóm 6 bit đầu sẽ trở thành 010000 còn dư 2 bit 01 thì thêm 0000 vào cho đủ 6 bit. Đối chiếu bảng trên ta có 010000 là Q. Vậy ký tự A sau khi encode base64 sẽ là QQ==. Sở dĩ có 2 dấu == là do, cứ 3 ký tự thông thường sẽ chuyển được 4 ký tự ở dạng Base64 và trường hợp này ko đủ nên xuất hiện hai dấu ==.
+
+<b>II. Kỹ thuật salt trong HASH.</b>
+Như ta đã biết MD5(haison) nó sẽ ra một HASH e9197849e07df68389b612875b22a03f (128 bits). Như vậy nếu có từ điển thì có thể so khớp hai HASH này với nhau nếu như trùng thì suy ngược lại chuỗi gốc. Để tránh tình trạng này thì có thể sử dụng kỹ thuật salt trong HASH như sau:
+MD5(MD5(haison):key) như vậy HASH cuối cùng sẽ là kết quả của 
+MD5(e9197849e07df68389b612875b22a03f:key), như vậy khả năng mà e9197849e07df68389b612875b22a03f:key có trong từ điển là rất thấp.
+Ví dụ trong Unix hash nó sẽ như sau: $uid:$salt:$password.
+
+<b>III. NT-LM</b>
+Sử dụng 32 ký tự và được sử dụng để mã hóa mật khẩu trong Windows. Và cũng giống như MD5, nó sử dụng salt để tăng tính an toàn. Trong Windows nó sử dụng như sau:
+username:random:LM:NT::::
+
+<b>IV. Các bước nhận biết và giải mã</b>
+<br>
+			<div align="center" class="limitview"><img src='http://img695.imageshack.us/img695/1554/routiner.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+Ban đầu ta sẽ có tập ký tự nếu như mà thực hiện giải mã ngay có thể vấp một số trường hợp mà người lập trình có thể sử dụng nhiều kỹ thuật kết hợp, do vậy dẫn đến tốn thời gian trong việc giải mã mà không có kết quả gì. Do vậy sau khi ta có tập ký tự thì phải quan  sát và phân tích nó trước, quy trình thì giống như hình trên.
+Ví dụ nếu bắt gặp trong chuỗi nhận được có ký tự & hoặc = thì có thể phỏng đoán nó là HTML hoặc Base64.
+
+Ví dụ 1 Bắt gặp một chuỗi như sau: JTNDcGFzc3dvcmQlM0QlMjJUJTNBaGFraW45JTNBVCUyMiUzRQ==. Ta nhận thấy có dấu = có thể phỏng đoán nó dùng Base64. Do vậy ta dùng Base64decode và kết quả ta nhận được là %3Cpassword%3D%22T%3Ahakin9%3AT%22%3E, chúng ta lại thấy chưa phải là kết quả cuối cùng nhận được, quan sát tiếp ta lại thấy %num, có thể đây là URL char code và chúng ta decode tiếp một lần nữa:!password=&quot;T:hakin9:?, nhìn chuỗi bây giờ có thể xác định là chuỗi đích cần tìm.
+
+Ví dụ 2: Bắt gặp một chuỗi như sau
+YWM2MThiODhmNmNkODA4ZDk1ZmEzN2NiYTA2YWU1ZTA%3D, ta có quan sát chỉ thấy %3D là có thể encode bởi URL char code nên ta đổi ngay %3D--&gt; = và ta có chuỗi mới YWM2MThiODhmNmNkODA4ZDk1ZmEzN2NiYTA2YWU1ZTA=. Có chuỗi mới ta lại phỏng đoán tiếp là có dấu =, khả năng này là Base64Encode, ta decode Base64 ta được như sau ac618b88f6cd808d95fa37cba06ae5e0 là một dang full hexa có chiều dài là 32, Do vậy nó là MD5
+
+Toàn bộ tất cả quá trình trên có thể sử dụng công cụ Hackvertor (<span class="link"> http://hackvertor.co.uk/public</span>) Nó sẽ có một số bước phân tích nhất định.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#226059</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#226059</link>
+				<pubDate><![CDATA[Wed, 1 Dec 2010 05:38:43]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ cảm ơn bạn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#233702</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#233702</link>
+				<pubDate><![CDATA[Tue, 22 Mar 2011 00:40:11]]> GMT</pubDate>
+				<author><![CDATA[ SEBO]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Trong bài viết của bạn mình thấy có rất nhiều điều thú vị, song mình vẫn thấy bạn chưa từng đề cập tới những dạng mã hoá kinh điễn như mã hoá đối xứng (của César), kiểu mã hoá thay thế.
+
+Đối với dạng mã hoá này người ta có thể xác định thông qua phương pháp tính tần số các kí tự của văn bản mã hoá. Dựa vào bản tần số và ngôn ngử của văn bản để tính tìm ra văn bản gốc.
+
+@góp ý: bài viết của bạn mình thấy không hợp lý trong việc chọn lựa và sắp xếp, bạn viết SHA vào kèm với Base64 rất dễ nhầm cho người mới. Hoặc muốn tìm hiểu về lĩnh vực này. Vì SHA, MD5 là những thuật giải một cửa và không có thuật toán đảo ngược, trong khi đó Base64 là mã hoá 2 chiều. Ngoài ra bạn đưa lưu đồ của việc giải mã vào đó, nó hoàn toàn không đúng với cái MD5, hay SHA. Theo kiến thức hạn hẹp của tớ thì MD5 và SHA được tìm ngược dựa trên một nguyên tắc chung nhất là brute froce. Với MD5 có một phương pháp khai thác mang tên thuật giải cầu vồng (rainbow). Bạn có thể tham khảo thêm tại Wiki pedia. Rất mong chờ bài viết tiếp theo của bạn về vấn đề này :).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#236335</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#236335</link>
+				<pubDate><![CDATA[Wed, 27 Apr 2011 16:12:30]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Thanks bạn nha.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#241865</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#241865</link>
+				<pubDate><![CDATA[Thu, 23 Jun 2011 09:11:27]]> GMT</pubDate>
+				<author><![CDATA[ auauau97]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Hay quá! em có 1 chuỗi như đây bác dịch giúp em được không?E chẳng biết dịch từ đâu
+@%^%@144@#^#@422822023523722722223023223323523822722622627323922422622122627622123627122822422922627122223323627727122527827827922323527822123722023323422126.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#246091</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#246091</link>
+				<pubDate><![CDATA[Sun, 28 Aug 2011 10:14:56]]> GMT</pubDate>
+				<author><![CDATA[ leanhthuong]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">leanhthuong wrote:</cite><br>
+		<blockquote>Hay quá! em có 1 chuỗi như đây bác dịch giúp em được không?E chẳng biết dịch từ đâu
+@%^%@144@#^#@422822023523722722223023223323523822722622627323922422622122627622123627122822422922627122223323627727122527827827922323527822123722023323422126.&nbsp;
+		</blockquote>
+nhìn kiểu này thì chắc là mấy kiểu mã hoá &quot;homebrewed&quot; (tự đặt) rồi, mấy cái @%^%@ và @#^#@ chắc là delimiter thôi.
+Nhìn số 144 đứng riêng lẻ thì ta có thể phỏng đoán một vài khả năng về ý nghĩa của nó, nhưng khi copy đống số từ 4228... đến 2126 ra 1 file txt thì ta thấy size của nó đúng là 144 bytes. Vậy rất có khả năng số 144 này là package-size, vậy nó chả giúp ích gì được cho việc giải mã, đành phải mò mẫm từ con số 0.
+Lại xem xét đống số kia, nếu may mắn thì là mã ASCII còn nếu không thì có thể là một dạng mật mã tự quy định nào đó. Nhưng khả năng nó là mã ASCII hơi khó vì ta đã biết mã ASCII cho các ký tự thường dùng vượt quá 99, nên nếu muốn dùng 1 chuỗi như vậy thường phải quy định cứ 3 digits vào 1 group, mà group đầu tiên là 422 đã vượt quá 255, hơn nữa tổng độ dài cũng không chia hết cho 3 --&gt; đây là trường hợp thứ 2, một dạng mã hóa tự quy định nào đó.
+Để giải quyết cái này, độ dài 144 bytes cũng có một số ý nghĩa nhất định vì nó chia hết cho 24, 36 và 72, một số thuật toán mã hóa sau này cũng lấy mấy độ dài không phải là lũy thừa của 2 như thế này để làm cho nó phức tạp thêm, nhưng chỉ dựa vào 1 chuỗi này rất khó phán đoán. Hơn nữa, các dạng mã hoá loại này thường cho ta 1 fixed-length output, mà đã fixed-length thì thường không phải thêm package-size vào trước làm gì nữa, cho nên có thể là phán đoán theo hướng này không chính xác, lần này gặp mã có độ dài 144bytes là trùng hợp thôi. Nhưng cũng có thể là người ta lo xa, sợ sau này đổi giải thuật nên cứ để phòng hờ vậy, hoặc cố tình tung hỏa mù, nói chung rất khó đoán.
+Tốt hơn hết là tìm thêm vài chục cái ví dụ như vậy nữa, kết hợp với dự đoán nội dung của package, là 1 string message, hay 1 hash tag, hay cái gì gì rồi mới tìm ra được pattern. Chớ còn chỉ dựa vào 1 sample này mà bro nào phá được thuật giải của người ta thì mình ngả mũ bái phục.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#246094</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#246094</link>
+				<pubDate><![CDATA[Sun, 28 Aug 2011 10:39:07]]> GMT</pubDate>
+				<author><![CDATA[ khuongduybui]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ mình không hiểu salt là gì lắm vì không thấy sự khác biệt trong hai cách
+cách sử dụng hàm crypt trong password của Linux để verify password trong trường hợp su lên user khác :-( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#248258</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#248258</link>
+				<pubDate><![CDATA[Thu, 6 Oct 2011 14:27:59]]> GMT</pubDate>
+				<author><![CDATA[ panfider]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Một đoạn python script nhỏ tên Hash-ID v1.1 tôi tìm được trên Google Code , đoạn mã nay giúp nhanh chóng xác định đoạn hash , đoạn chuỗi (mật khẩu) bị encode bằng thuật toán nào. Để chạy đoạn script này bạn cần cài Python vào máy, rồi click chạy sript này ( trước đó đã được save vào một file text có phần mở rộng là .py )
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/usr/bin/env python
+# encoding: utf-8
+# Hash Identifier v1.1
+# By Zion3R
+# www.Blackploit.com
+# Root@Blackploit.com
+
+logo='''   #########################################################################
+   #     __  __                     __           ______    _____           #
+   #    /\ \/\ \                   /\ \         /\__  _\  /\  _ `\         #
+   #    \ \ \_\ \     __      ____ \ \ \___     \/_/\ \/  \ \ \/\ \        #
+   #     \ \  _  \  /'__`\   / ,__\ \ \  _ `\      \ \ \   \ \ \ \ \       #
+   #      \ \ \ \ \/\ \_\ \_/\__, `\ \ \ \ \ \      \_\ \__ \ \ \_\ \      #
+   #       \ \_\ \_\ \___ \_\/\____/  \ \_\ \_\     /\_____\ \ \____/      #
+   #        \/_/\/_/\/__/\/_/\/___/    \/_/\/_/     \/_____/  \/___/  v1.1 #
+   #                                                             By Zion3R #
+   #                                                    www.Blackploit.com #
+   #                                                   Root@Blackploit.com #
+   #########################################################################'''
+
+algorithms={&quot;102020&quot;:&quot;ADLER-32&quot;, &quot;102040&quot;:&quot;CRC-32&quot;, &quot;102060&quot;:&quot;CRC-32B&quot;, &quot;101020&quot;:&quot;CRC-16&quot;, &quot;101040&quot;:&quot;CRC-16-CCITT&quot;, &quot;104020&quot;:&quot;DES&#40;Unix&#41;&quot;, &quot;101060&quot;:&quot;FCS-16&quot;, &quot;103040&quot;:&quot;GHash-32-3&quot;, &quot;103020&quot;:&quot;GHash-32-5&quot;, &quot;115060&quot;:&quot;GOST R 34.11-94&quot;, &quot;109100&quot;:&quot;Haval-160&quot;, &quot;109200&quot;:&quot;Haval-160&#40;HMAC&#41;&quot;, &quot;110040&quot;:&quot;Haval-192&quot;, &quot;110080&quot;:&quot;Haval-192&#40;HMAC&#41;&quot;, &quot;114040&quot;:&quot;Haval-224&quot;, &quot;114080&quot;:&quot;Haval-224&#40;HMAC&#41;&quot;, &quot;115040&quot;:&quot;Haval-256&quot;, &quot;115140&quot;:&quot;Haval-256&#40;HMAC&#41;&quot;, &quot;107080&quot;:&quot;Lineage II C4&quot;, &quot;106025&quot;:&quot;Domain Cached Credentials - MD4&#40;MD4&#40;&#40;$pass&#41;&#41;.&#40;strtolower&#40;$username&#41;&#41;&#41;&quot;, &quot;102080&quot;:&quot;XOR-32&quot;, &quot;105060&quot;:&quot;MD5&#40;Half&#41;&quot;, &quot;105040&quot;:&quot;MD5&#40;Middle&#41;&quot;, &quot;105020&quot;:&quot;MySQL&quot;, &quot;107040&quot;:&quot;MD5&#40;phpBB3&#41;&quot;, &quot;107060&quot;:&quot;MD5&#40;Unix&#41;&quot;, &quot;107020&quot;:&quot;MD5&#40;Wordpress&#41;&quot;, &quot;108020&quot;:&quot;MD5&#40;APR&#41;&quot;, &quot;106160&quot;:&quot;Haval-128&quot;, &quot;106165&quot;:&quot;Haval-128&#40;HMAC&#41;&quot;, &quot;106060&quot;:&quot;MD2&quot;, &quot;106120&quot;:&quot;MD2&#40;HMAC&#41;&quot;, &quot;106040&quot;:&quot;MD4&quot;, &quot;106100&quot;:&quot;MD4&#40;HMAC&#41;&quot;, &quot;106020&quot;:&quot;MD5&quot;, &quot;106080&quot;:&quot;MD5&#40;HMAC&#41;&quot;, &quot;106140&quot;:&quot;MD5&#40;HMAC&#40;Wordpress&#41;&#41;&quot;, &quot;106029&quot;:&quot;NTLM&quot;, &quot;106027&quot;:&quot;RAdmin v2.x&quot;, &quot;106180&quot;:&quot;RipeMD-128&quot;, &quot;106185&quot;:&quot;RipeMD-128&#40;HMAC&#41;&quot;, &quot;106200&quot;:&quot;SNEFRU-128&quot;, &quot;106205&quot;:&quot;SNEFRU-128&#40;HMAC&#41;&quot;, &quot;106220&quot;:&quot;Tiger-128&quot;, &quot;106225&quot;:&quot;Tiger-128&#40;HMAC&#41;&quot;, &quot;106240&quot;:&quot;md5&#40;$pass.$salt&#41;&quot;, &quot;106260&quot;:&quot;md5&#40;$salt.'-'.md5&#40;$pass&#41;&#41;&quot;, &quot;106280&quot;:&quot;md5&#40;$salt.$pass&#41;&quot;, &quot;106300&quot;:&quot;md5&#40;$salt.$pass.$salt&#41;&quot;, &quot;106320&quot;:&quot;md5&#40;$salt.$pass.$username&#41;&quot;, &quot;106340&quot;:&quot;md5&#40;$salt.md5&#40;$pass&#41;&#41;&quot;, &quot;106360&quot;:&quot;md5&#40;$salt.md5&#40;$pass&#41;.$salt&#41;&quot;, &quot;106380&quot;:&quot;md5&#40;$salt.md5&#40;$pass.$salt&#41;&#41;&quot;, &quot;106400&quot;:&quot;md5&#40;$salt.md5&#40;$salt.$pass&#41;&#41;&quot;, &quot;106420&quot;:&quot;md5&#40;$salt.md5&#40;md5&#40;$pass&#41;.$salt&#41;&#41;&quot;, &quot;106440&quot;:&quot;md5&#40;$username.0.$pass&#41;&quot;, &quot;106460&quot;:&quot;md5&#40;$username.LF.$pass&#41;&quot;, &quot;106480&quot;:&quot;md5&#40;$username.md5&#40;$pass&#41;.$salt&#41;&quot;, &quot;106500&quot;:&quot;md5&#40;md5&#40;$pass&#41;&#41;&quot;, &quot;106520&quot;:&quot;md5&#40;md5&#40;$pass&#41;.$salt&#41;&quot;, &quot;106540&quot;:&quot;md5&#40;md5&#40;$pass&#41;.md5&#40;$salt&#41;&#41;&quot;, &quot;106560&quot;:&quot;md5&#40;md5&#40;$salt&#41;.$pass&#41;&quot;, &quot;106580&quot;:&quot;md5&#40;md5&#40;$salt&#41;.md5&#40;$pass&#41;&#41;&quot;, &quot;106600&quot;:&quot;md5&#40;md5&#40;$username.$pass&#41;.$salt&#41;&quot;, &quot;106620&quot;:&quot;md5&#40;md5&#40;md5&#40;$pass&#41;&#41;&#41;&quot;, &quot;106640&quot;:&quot;md5&#40;md5&#40;md5&#40;md5&#40;$pass&#41;&#41;&#41;&#41;&quot;, &quot;106660&quot;:&quot;md5&#40;md5&#40;md5&#40;md5&#40;md5&#40;$pass&#41;&#41;&#41;&#41;&#41;&quot;, &quot;106680&quot;:&quot;md5&#40;sha1&#40;$pass&#41;&#41;&quot;, &quot;106700&quot;:&quot;md5&#40;sha1&#40;md5&#40;$pass&#41;&#41;&#41;&quot;, &quot;106720&quot;:&quot;md5&#40;sha1&#40;md5&#40;sha1&#40;$pass&#41;&#41;&#41;&#41;&quot;, &quot;106740&quot;:&quot;md5&#40;strtoupper&#40;md5&#40;$pass&#41;&#41;&#41;&quot;, &quot;109040&quot;:&quot;MySQL5 - SHA-1&#40;SHA-1&#40;$pass&#41;&#41;&quot;, &quot;109060&quot;:&quot;MySQL 160bit - SHA-1&#40;SHA-1&#40;$pass&#41;&#41;&quot;, &quot;109180&quot;:&quot;RipeMD-160&#40;HMAC&#41;&quot;, &quot;109120&quot;:&quot;RipeMD-160&quot;, &quot;109020&quot;:&quot;SHA-1&quot;, &quot;109140&quot;:&quot;SHA-1&#40;HMAC&#41;&quot;, &quot;109220&quot;:&quot;SHA-1&#40;MaNGOS&#41;&quot;, &quot;109240&quot;:&quot;SHA-1&#40;MaNGOS2&#41;&quot;, &quot;109080&quot;:&quot;Tiger-160&quot;, &quot;109160&quot;:&quot;Tiger-160&#40;HMAC&#41;&quot;, &quot;109260&quot;:&quot;sha1&#40;$pass.$salt&#41;&quot;, &quot;109280&quot;:&quot;sha1&#40;$salt.$pass&#41;&quot;, &quot;109300&quot;:&quot;sha1&#40;$salt.md5&#40;$pass&#41;&#41;&quot;, &quot;109320&quot;:&quot;sha1&#40;$salt.md5&#40;$pass&#41;.$salt&#41;&quot;, &quot;109340&quot;:&quot;sha1&#40;$salt.sha1&#40;$pass&#41;&#41;&quot;, &quot;109360&quot;:&quot;sha1&#40;$salt.sha1&#40;$salt.sha1&#40;$pass&#41;&#41;&#41;&quot;, &quot;109380&quot;:&quot;sha1&#40;$username.$pass&#41;&quot;, &quot;109400&quot;:&quot;sha1&#40;$username.$pass.$salt&#41;&quot;, &quot;1094202&quot;:&quot;sha1&#40;md5&#40;$pass&#41;&#41;&quot;, &quot;109440&quot;:&quot;sha1&#40;md5&#40;$pass&#41;.$salt&#41;&quot;, &quot;109460&quot;:&quot;sha1&#40;md5&#40;sha1&#40;$pass&#41;&#41;&#41;&quot;, &quot;109480&quot;:&quot;sha1&#40;sha1&#40;$pass&#41;&#41;&quot;, &quot;109500&quot;:&quot;sha1&#40;sha1&#40;$pass&#41;.$salt&#41;&quot;, &quot;109520&quot;:&quot;sha1&#40;sha1&#40;$pass&#41;.substr&#40;$pass,0,3&#41;&#41;&quot;, &quot;109540&quot;:&quot;sha1&#40;sha1&#40;$salt.$pass&#41;&#41;&quot;, &quot;109560&quot;:&quot;sha1&#40;sha1&#40;sha1&#40;$pass&#41;&#41;&#41;&quot;, &quot;109580&quot;:&quot;sha1&#40;strtolower&#40;$username&#41;.$pass&#41;&quot;, &quot;110020&quot;:&quot;Tiger-192&quot;, &quot;110060&quot;:&quot;Tiger-192&#40;HMAC&#41;&quot;, &quot;112020&quot;:&quot;md5&#40;$pass.$salt&#41; - Joomla&quot;, &quot;113020&quot;:&quot;SHA-1&#40;Django&#41;&quot;, &quot;114020&quot;:&quot;SHA-224&quot;, &quot;114060&quot;:&quot;SHA-224&#40;HMAC&#41;&quot;, &quot;115080&quot;:&quot;RipeMD-256&quot;, &quot;115160&quot;:&quot;RipeMD-256&#40;HMAC&#41;&quot;, &quot;115100&quot;:&quot;SNEFRU-256&quot;, &quot;115180&quot;:&quot;SNEFRU-256&#40;HMAC&#41;&quot;, &quot;115200&quot;:&quot;SHA-256&#40;md5&#40;$pass&#41;&#41;&quot;, &quot;115220&quot;:&quot;SHA-256&#40;sha1&#40;$pass&#41;&#41;&quot;, &quot;115020&quot;:&quot;SHA-256&quot;, &quot;115120&quot;:&quot;SHA-256&#40;HMAC&#41;&quot;, &quot;116020&quot;:&quot;md5&#40;$pass.$salt&#41; - Joomla&quot;, &quot;116040&quot;:&quot;SAM - &#40;LM_hash:NT_hash&#41;&quot;, &quot;117020&quot;:&quot;SHA-256&#40;Django&#41;&quot;, &quot;118020&quot;:&quot;RipeMD-320&quot;, &quot;118040&quot;:&quot;RipeMD-320&#40;HMAC&#41;&quot;, &quot;119020&quot;:&quot;SHA-384&quot;, &quot;119040&quot;:&quot;SHA-384&#40;HMAC&#41;&quot;, &quot;120020&quot;:&quot;SHA-256&quot;, &quot;121020&quot;:&quot;SHA-384&#40;Django&#41;&quot;, &quot;122020&quot;:&quot;SHA-512&quot;, &quot;122060&quot;:&quot;SHA-512&#40;HMAC&#41;&quot;, &quot;122040&quot;:&quot;Whirlpool&quot;, &quot;122080&quot;:&quot;Whirlpool&#40;HMAC&#41;&quot;}
+
+# hash.islower&#40;&#41;  minusculas
+# hash.isdigit&#40;&#41;  numerico
+# hash.isalpha&#40;&#41;  letras
+# hash.isalnum&#40;&#41;  alfanumerico
+
+def CRC16&#40;&#41;:
+    hs='4607'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;101020&quot;&#41;
+def CRC16CCITT&#40;&#41;:
+    hs='3d08'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;101040&quot;&#41;
+def FCS16&#40;&#41;:
+    hs='0e5b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;101060&quot;&#41;
+
+def CRC32&#40;&#41;:
+    hs='b33fd057'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;102040&quot;&#41;
+def ADLER32&#40;&#41;:
+    hs='0607cb42'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;102020&quot;&#41;
+def CRC32B&#40;&#41;:
+    hs='b764a0d9'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;102060&quot;&#41;
+def XOR32&#40;&#41;:
+    hs='0000003f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;102080&quot;&#41;
+
+def GHash323&#40;&#41;:
+    hs='80000000'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==True and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;103040&quot;&#41;
+def GHash325&#40;&#41;:
+    hs='85318985'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==True and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;103020&quot;&#41;
+
+def DESUnix&#40;&#41;:
+    hs='ZiY8YtDKXJwYQ'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False:
+        jerar.append&#40;&quot;104020&quot;&#41;
+
+def MD5Half&#40;&#41;:
+    hs='ae11fd697ec92c7c'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;105060&quot;&#41;
+def MD5Middle&#40;&#41;:
+    hs='7ec92c7c98de3fac'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;105040&quot;&#41;
+def MySQL&#40;&#41;:
+    hs='63cea4673fd25f46'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;105020&quot;&#41;
+
+def DomainCachedCredentials&#40;&#41;:
+    hs='f42005ec1afe77967cbc83dce1b4d714'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106025&quot;&#41;
+def Haval128&#40;&#41;:
+    hs='d6e3ec49aa0f138a619f27609022df10'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106160&quot;&#41;
+def Haval128HMAC&#40;&#41;:
+    hs='3ce8b0ffd75bc240fc7d967729cd6637'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106165&quot;&#41;
+def MD2&#40;&#41;:
+    hs='08bbef4754d98806c373f2cd7d9a43c4'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106060&quot;&#41;
+def MD2HMAC&#40;&#41;:
+    hs='4b61b72ead2b0eb0fa3b8a56556a6dca'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106120&quot;&#41;
+def MD4&#40;&#41;:
+    hs='a2acde400e61410e79dacbdfc3413151'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106040&quot;&#41;
+def MD4HMAC&#40;&#41;:
+    hs='6be20b66f2211fe937294c1c95d1cd4f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106100&quot;&#41;
+def MD5&#40;&#41;:
+    hs='ae11fd697ec92c7c98de3fac23aba525'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106020&quot;&#41;
+def MD5HMAC&#40;&#41;:
+    hs='d57e43d2c7e397bf788f66541d6fdef9'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106080&quot;&#41;
+def MD5HMACWordpress&#40;&#41;:
+    hs='3f47886719268dfa83468630948228f6'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106140&quot;&#41;
+def NTLM&#40;&#41;:
+    hs='cc348bace876ea440a28ddaeb9fd3550'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106029&quot;&#41;
+def RAdminv2x&#40;&#41;:
+    hs='baea31c728cbf0cd548476aa687add4b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106027&quot;&#41;
+def RipeMD128&#40;&#41;:
+    hs='4985351cd74aff0abc5a75a0c8a54115'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106180&quot;&#41;
+def RipeMD128HMAC&#40;&#41;:
+    hs='ae1995b931cf4cbcf1ac6fbf1a83d1d3'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106185&quot;&#41;
+def SNEFRU128&#40;&#41;:
+    hs='4fb58702b617ac4f7ca87ec77b93da8a'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106200&quot;&#41;
+def SNEFRU128HMAC&#40;&#41;:
+    hs='59b2b9dcc7a9a7d089cecf1b83520350'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106205&quot;&#41;
+def Tiger128&#40;&#41;:
+    hs='c086184486ec6388ff81ec9f23528727'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106220&quot;&#41;
+def Tiger128HMAC&#40;&#41;:
+    hs='c87032009e7c4b2ea27eb6f99723454b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106225&quot;&#41;
+def md5passsalt&#40;&#41;:
+    hs='5634cc3b922578434d6e9342ff5913f7'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106240&quot;&#41;
+def md5saltmd5pass&#40;&#41;:
+    hs='245c5763b95ba42d4b02d44bbcd916f1'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106260&quot;&#41;
+def md5saltpass&#40;&#41;:
+    hs='22cc5ce1a1ef747cd3fa06106c148dfa'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106280&quot;&#41;
+def md5saltpasssalt&#40;&#41;:
+    hs='469e9cdcaff745460595a7a386c4db0c'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106300&quot;&#41;
+def md5saltpassusername&#40;&#41;:
+    hs='9ae20f88189f6e3a62711608ddb6f5fd'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106320&quot;&#41;
+def md5saltmd5pass&#40;&#41;:
+    hs='aca2a052962b2564027ee62933d2382f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106340&quot;&#41;
+def md5saltmd5passsalt&#40;&#41;:
+    hs='de0237dc03a8efdf6552fbe7788b2fdd'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106360&quot;&#41;
+def md5saltmd5passsalt&#40;&#41;:
+    hs='5b8b12ca69d3e7b2a3e2308e7bef3e6f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106380&quot;&#41;
+def md5saltmd5saltpass&#40;&#41;:
+    hs='d8f3b3f004d387086aae24326b575b23'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106400&quot;&#41;
+def md5saltmd5md5passsalt&#40;&#41;:
+    hs='81f181454e23319779b03d74d062b1a2'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106420&quot;&#41;
+def md5username0pass&#40;&#41;:
+    hs='e44a60f8f2106492ae16581c91edb3ba'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106440&quot;&#41;
+def md5usernameLFpass&#40;&#41;:
+    hs='654741780db415732eaee12b1b909119'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106460&quot;&#41;
+def md5usernamemd5passsalt&#40;&#41;:
+    hs='954ac5505fd1843bbb97d1b2cda0b98f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106480&quot;&#41;
+def md5md5pass&#40;&#41;:
+    hs='a96103d267d024583d5565436e52dfb3'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106500&quot;&#41;
+def md5md5passsalt&#40;&#41;:
+    hs='5848c73c2482d3c2c7b6af134ed8dd89'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106520&quot;&#41;
+def md5md5passmd5salt&#40;&#41;:
+    hs='8dc71ef37197b2edba02d48c30217b32'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106540&quot;&#41;
+def md5md5saltpass&#40;&#41;:
+    hs='9032fabd905e273b9ceb1e124631bd67'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106560&quot;&#41;
+def md5md5saltmd5pass&#40;&#41;:
+    hs='8966f37dbb4aca377a71a9d3d09cd1ac'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106580&quot;&#41;
+def md5md5usernamepasssalt&#40;&#41;:
+    hs='4319a3befce729b34c3105dbc29d0c40'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106600&quot;&#41;
+def md5md5md5pass&#40;&#41;:
+    hs='ea086739755920e732d0f4d8c1b6ad8d'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106620&quot;&#41;
+def md5md5md5md5pass&#40;&#41;:
+    hs='02528c1f2ed8ac7d83fe76f3cf1c133f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106640&quot;&#41;
+def md5md5md5md5md5pass&#40;&#41;:
+    hs='4548d2c062933dff53928fd4ae427fc0'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106660&quot;&#41;
+def md5sha1pass&#40;&#41;:
+    hs='cb4ebaaedfd536d965c452d9569a6b1e'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106680&quot;&#41;
+def md5sha1md5pass&#40;&#41;:
+    hs='099b8a59795e07c334a696a10c0ebce0'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106700&quot;&#41;
+def md5sha1md5sha1pass&#40;&#41;:
+    hs='06e4af76833da7cc138d90602ef80070'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106720&quot;&#41;
+def md5strtouppermd5pass&#40;&#41;:
+    hs='519de146f1a658ab5e5e2aa9b7d2eec8'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;106740&quot;&#41;
+
+def LineageIIC4&#40;&#41;:
+    hs='0x49a57f66bd3d5ba6abda5579c264a0e4'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True and hash&#91;0:2&#93;.find&#40;'0x'&#41;==0:
+        jerar.append&#40;&quot;107080&quot;&#41;
+def MD5phpBB3&#40;&#41;:
+    hs='$H$9kyOtE8CDqMJ44yfn9PFz2E.L2oVzL1'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:3&#93;.find&#40;'$H$'&#41;==0:
+        jerar.append&#40;&quot;107040&quot;&#41;
+def MD5Unix&#40;&#41;:
+    hs='$1$cTuJH0Ju$1J8rI.mJReeMvpKUZbSlY/'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:3&#93;.find&#40;'$1$'&#41;==0:
+        jerar.append&#40;&quot;107060&quot;&#41;
+def MD5Wordpress&#40;&#41;:
+    hs='$P$BiTOhOj3ukMgCci2juN0HRbCdDRqeh.'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:3&#93;.find&#40;'$P$'&#41;==0:
+        jerar.append&#40;&quot;107020&quot;&#41;
+
+def MD5APR&#40;&#41;:
+    hs='$apr1$qAUKoKlG$3LuCncByN76eLxZAh/Ldr1'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash&#91;0:4&#93;.find&#40;'$apr'&#41;==0:
+        jerar.append&#40;&quot;108020&quot;&#41;
+
+def Haval160&#40;&#41;:
+    hs='a106e921284dd69dad06192a4411ec32fce83dbb'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109100&quot;&#41;
+def Haval160HMAC&#40;&#41;:
+    hs='29206f83edc1d6c3f680ff11276ec20642881243'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109200&quot;&#41;
+def MySQL5&#40;&#41;:
+    hs='9bb2fb57063821c762cc009f7584ddae9da431ff'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109040&quot;&#41;
+def MySQL160bit&#40;&#41;:
+    hs='*2470c0c06dee42fd1618bb99005adca2ec9d1e19'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:1&#93;.find&#40;'*'&#41;==0:
+        jerar.append&#40;&quot;109060&quot;&#41;
+def RipeMD160&#40;&#41;:
+    hs='dc65552812c66997ea7320ddfb51f5625d74721b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109120&quot;&#41;
+def RipeMD160HMAC&#40;&#41;:
+    hs='ca28af47653b4f21e96c1235984cb50229331359'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109180&quot;&#41;
+def SHA1&#40;&#41;:
+    hs='4a1d4dbc1e193ec3ab2e9213876ceb8f4db72333'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109020&quot;&#41;
+def SHA1HMAC&#40;&#41;:
+    hs='6f5daac3fee96ba1382a09b1ba326ca73dccf9e7'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109140&quot;&#41;
+def SHA1MaNGOS&#40;&#41;:
+    hs='a2c0cdb6d1ebd1b9f85c6e25e0f8732e88f02f96'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109220&quot;&#41;
+def SHA1MaNGOS2&#40;&#41;:
+    hs='644a29679136e09d0bd99dfd9e8c5be84108b5fd'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109240&quot;&#41;
+def Tiger160&#40;&#41;:
+    hs='c086184486ec6388ff81ec9f235287270429b225'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109080&quot;&#41;
+def Tiger160HMAC&#40;&#41;:
+    hs='6603161719da5e56e1866e4f61f79496334e6a10'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109160&quot;&#41;
+def sha1passsalt&#40;&#41;:
+    hs='f006a1863663c21c541c8d600355abfeeaadb5e4'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109260&quot;&#41;
+def sha1saltpass&#40;&#41;:
+    hs='299c3d65a0dcab1fc38421783d64d0ecf4113448'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109280&quot;&#41;
+def sha1saltmd5pass&#40;&#41;:
+    hs='860465ede0625deebb4fbbedcb0db9dc65faec30'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109300&quot;&#41;
+def sha1saltmd5passsalt&#40;&#41;:
+    hs='6716d047c98c25a9c2cc54ee6134c73e6315a0ff'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109320&quot;&#41;
+def sha1saltsha1pass&#40;&#41;:
+    hs='58714327f9407097c64032a2fd5bff3a260cb85f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109340&quot;&#41;
+def sha1saltsha1saltsha1pass&#40;&#41;:
+    hs='cc600a2903130c945aa178396910135cc7f93c63'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109360&quot;&#41;
+def sha1usernamepass&#40;&#41;:
+    hs='3de3d8093bf04b8eb5f595bc2da3f37358522c9f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109380&quot;&#41;
+def sha1usernamepasssalt&#40;&#41;:
+    hs='00025111b3c4d0ac1635558ce2393f77e94770c5'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109400&quot;&#41;
+def sha1md5pass&#40;&#41;:
+    hs='fa960056c0dea57de94776d3759fb555a15cae87'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;1094202&quot;&#41;
+def sha1md5passsalt&#40;&#41;:
+    hs='1dad2b71432d83312e61d25aeb627593295bcc9a'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109440&quot;&#41;
+def sha1md5sha1pass&#40;&#41;:
+    hs='8bceaeed74c17571c15cdb9494e992db3c263695'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109460&quot;&#41;
+def sha1sha1pass&#40;&#41;:
+    hs='3109b810188fcde0900f9907d2ebcaa10277d10e'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109480&quot;&#41;
+def sha1sha1passsalt&#40;&#41;:
+    hs='780d43fa11693b61875321b6b54905ee488d7760'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109500&quot;&#41;
+def sha1sha1passsubstrpass03&#40;&#41;:
+    hs='5ed6bc680b59c580db4a38df307bd4621759324e'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109520&quot;&#41;
+def sha1sha1saltpass&#40;&#41;:
+    hs='70506bac605485b4143ca114cbd4a3580d76a413'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109540&quot;&#41;
+def sha1sha1sha1pass&#40;&#41;:
+    hs='3328ee2a3b4bf41805bd6aab8e894a992fa91549'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109560&quot;&#41;
+def sha1strtolowerusernamepass&#40;&#41;:
+    hs='79f575543061e158c2da3799f999eb7c95261f07'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;109580&quot;&#41;
+
+def Haval192&#40;&#41;:
+    hs='cd3a90a3bebd3fa6b6797eba5dab8441f16a7dfa96c6e641'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;110040&quot;&#41;
+def Haval192HMAC&#40;&#41;:
+    hs='39b4d8ecf70534e2fd86bb04a877d01dbf9387e640366029'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;110080&quot;&#41;
+def Tiger192&#40;&#41;:
+    hs='c086184486ec6388ff81ec9f235287270429b2253b248a70'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;110020&quot;&#41;
+def Tiger192HMAC&#40;&#41;:
+    hs='8e914bb64353d4d29ab680e693272d0bd38023afa3943a41'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;110060&quot;&#41;
+
+def MD5passsaltjoomla1&#40;&#41;:
+    hs='35d1c0d69a2df62be2df13b087343dc9:BeKMviAfcXeTPTlX'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;32:33&#93;.find&#40;':'&#41;==0:
+        jerar.append&#40;&quot;112020&quot;&#41;
+
+def SHA1Django&#40;&#41;:
+    hs='sha1$Zion3R$299c3d65a0dcab1fc38421783d64d0ecf4113448'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:5&#93;.find&#40;'sha1$'&#41;==0:
+        jerar.append&#40;&quot;113020&quot;&#41;
+
+def Haval224&#40;&#41;:
+    hs='f65d3c0ef6c56f4c74ea884815414c24dbf0195635b550f47eac651a'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;114040&quot;&#41;
+def Haval224HMAC&#40;&#41;:
+    hs='f10de2518a9f7aed5cf09b455112114d18487f0c894e349c3c76a681'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;114080&quot;&#41;
+def SHA224&#40;&#41;:
+    hs='e301f414993d5ec2bd1d780688d37fe41512f8b57f6923d054ef8e59'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;114020&quot;&#41;
+def SHA224HMAC&#40;&#41;:
+    hs='c15ff86a859892b5e95cdfd50af17d05268824a6c9caaa54e4bf1514'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;114060&quot;&#41;
+
+def SHA256&#40;&#41;:
+    hs='2c740d20dab7f14ec30510a11f8fd78b82bc3a711abe8a993acdb323e78e6d5e'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115020&quot;&#41;
+def SHA256HMAC&#40;&#41;:
+    hs='d3dd251b7668b8b6c12e639c681e88f2c9b81105ef41caccb25fcde7673a1132'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115120&quot;&#41;
+def Haval256&#40;&#41;:
+    hs='7169ecae19a5cd729f6e9574228b8b3c91699175324e6222dec569d4281d4a4a'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115040&quot;&#41;
+def Haval256HMAC&#40;&#41;:
+    hs='6aa856a2cfd349fb4ee781749d2d92a1ba2d38866e337a4a1db907654d4d4d7a'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115140&quot;&#41;
+def GOSTR341194&#40;&#41;:
+    hs='ab709d384cce5fda0793becd3da0cb6a926c86a8f3460efb471adddee1c63793'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115060&quot;&#41;
+def RipeMD256&#40;&#41;:
+    hs='5fcbe06df20ce8ee16e92542e591bdea706fbdc2442aecbf42c223f4461a12af'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115080&quot;&#41;
+def RipeMD256HMAC&#40;&#41;:
+    hs='43227322be1b8d743e004c628e0042184f1288f27c13155412f08beeee0e54bf'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115160&quot;&#41;
+def SNEFRU256&#40;&#41;:
+    hs='3a654de48e8d6b669258b2d33fe6fb179356083eed6ff67e27c5ebfa4d9732bb'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115100&quot;&#41;
+def SNEFRU256HMAC&#40;&#41;:
+    hs='4e9418436e301a488f675c9508a2d518d8f8f99e966136f2dd7e308b194d74f9'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115180&quot;&#41;
+def SHA256md5pass&#40;&#41;:
+    hs='b419557099cfa18a86d1d693e2b3b3e979e7a5aba361d9c4ec585a1a70c7bde4'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115200&quot;&#41;
+def SHA256sha1pass&#40;&#41;:
+    hs='afbed6e0c79338dbfe0000efe6b8e74e3b7121fe73c383ae22f5b505cb39c886'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;115220&quot;&#41;
+
+def MD5passsaltjoomla2&#40;&#41;:
+    hs='fb33e01e4f8787dc8beb93dac4107209:fxJUXVjYRafVauT77Cze8XwFrWaeAYB2'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;32:33&#93;.find&#40;':'&#41;==0:
+        jerar.append&#40;&quot;116020&quot;&#41;
+def SAM&#40;&#41;:
+    hs='4318B176C3D8E3DEAAD3B435B51404EE:B7C899154197E8A2A33121D76A240AB5'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash.islower&#40;&#41;==False and hash&#91;32:33&#93;.find&#40;':'&#41;==0:
+        jerar.append&#40;&quot;116040&quot;&#41;
+
+def SHA256Django&#40;&#41;:
+    hs='sha256$Zion3R$9e1a08aa28a22dfff722fad7517bae68a55444bb5e2f909d340767cec9acf2c3'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:6&#93;.find&#40;'sha256'&#41;==0:
+        jerar.append&#40;&quot;117020&quot;&#41;
+
+def RipeMD320&#40;&#41;:
+    hs='b4f7c8993a389eac4f421b9b3b2bfb3a241d05949324a8dab1286069a18de69aaf5ecc3c2009d8ef'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;118020&quot;&#41;
+def RipeMD320HMAC&#40;&#41;:
+    hs='244516688f8ad7dd625836c0d0bfc3a888854f7c0161f01de81351f61e98807dcd55b39ffe5d7a78'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;118040&quot;&#41;
+
+def SHA384&#40;&#41;:
+    hs='3b21c44f8d830fa55ee9328a7713c6aad548fe6d7a4a438723a0da67c48c485220081a2fbc3e8c17fd9bd65f8d4b4e6b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;119020&quot;&#41;
+def SHA384HMAC&#40;&#41;:
+    hs='bef0dd791e814d28b4115eb6924a10beb53da47d463171fe8e63f68207521a4171219bb91d0580bca37b0f96fddeeb8b'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;119040&quot;&#41;
+
+def SHA256s&#40;&#41;:
+    hs='$6$g4TpUQzk$OmsZBJFwvy6MwZckPvVYfDnwsgktm2CckOlNJGy9HNwHSuHFvywGIuwkJ6Bjn3kKbB6zoyEjIYNMpHWBNxJ6g.'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:3&#93;.find&#40;'$6$'&#41;==0:
+        jerar.append&#40;&quot;120020&quot;&#41;
+
+def SHA384Django&#40;&#41;:
+    hs='sha384$Zion3R$88cfd5bc332a4af9f09aa33a1593f24eddc01de00b84395765193c3887f4deac46dc723ac14ddeb4d3a9b958816b7bba'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==False and hash&#91;0:6&#93;.find&#40;'sha384'&#41;==0:
+        print &quot; &#91;+&#93; SHA-384&#40;Django&#41;&quot;
+        jerar.append&#40;&quot;121020&quot;&#41;
+
+def SHA512&#40;&#41;:
+    hs='ea8e6f0935b34e2e6573b89c0856c81b831ef2cadfdee9f44eb9aa0955155ba5e8dd97f85c73f030666846773c91404fb0e12fb38936c56f8cf38a33ac89a24e'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;122020&quot;&#41;
+def SHA512HMAC&#40;&#41;:
+    hs='dd0ada8693250b31d9f44f3ec2d4a106003a6ce67eaa92e384b356d1b4ef6d66a818d47c1f3a2c6e8a9a9b9bdbd28d485e06161ccd0f528c8bbb5541c3fef36f'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;122060&quot;&#41;
+def Whirlpool&#40;&#41;:
+    hs='76df96157e632410998ad7f823d82930f79a96578acc8ac5ce1bfc34346cf64b4610aefa8a549da3f0c1da36dad314927cebf8ca6f3fcd0649d363c5a370dddb'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;122040&quot;&#41;
+def WhirlpoolHMAC&#40;&#41;:
+    hs='77996016cf6111e97d6ad31484bab1bf7de7b7ee64aebbc243e650a75a2f9256cef104e504d3cf29405888fca5a231fcac85d36cd614b1d52fce850b53ddf7f9'
+    if len&#40;hash&#41;==len&#40;hs&#41; and hash.isdigit&#40;&#41;==False and hash.isalpha&#40;&#41;==False and hash.isalnum&#40;&#41;==True:
+        jerar.append&#40;&quot;122080&quot;&#41;
+
+
+print logo
+while True:
+    jerar=&#91;&#93;
+    print &quot;&quot;&quot;
+   -------------------------------------------------------------------------&quot;&quot;&quot;
+    hash = raw_input&#40;&quot; HASH: &quot;&#41;
+    ADLER32&#40;&#41;; CRC16&#40;&#41;; CRC16CCITT&#40;&#41;; CRC32&#40;&#41;; CRC32B&#40;&#41;; DESUnix&#40;&#41;; DomainCachedCredentials&#40;&#41;; FCS16&#40;&#41;; GHash323&#40;&#41;; GHash325&#40;&#41;; GOSTR341194&#40;&#41;; Haval128&#40;&#41;; Haval128HMAC&#40;&#41;; Haval160&#40;&#41;; Haval160HMAC&#40;&#41;; Haval192&#40;&#41;; Haval192HMAC&#40;&#41;; Haval224&#40;&#41;; Haval224HMAC&#40;&#41;; Haval256&#40;&#41;; Haval256HMAC&#40;&#41;; LineageIIC4&#40;&#41;; MD2&#40;&#41;; MD2HMAC&#40;&#41;; MD4&#40;&#41;; MD4HMAC&#40;&#41;; MD5&#40;&#41;; MD5APR&#40;&#41;; MD5HMAC&#40;&#41;; MD5HMACWordpress&#40;&#41;; MD5phpBB3&#40;&#41;; MD5Unix&#40;&#41;; MD5Wordpress&#40;&#41;; MD5Half&#40;&#41;; MD5Middle&#40;&#41;; MD5passsaltjoomla1&#40;&#41;; MD5passsaltjoomla2&#40;&#41;; MySQL&#40;&#41;; MySQL5&#40;&#41;; MySQL160bit&#40;&#41;; NTLM&#40;&#41;; RAdminv2x&#40;&#41;; RipeMD128&#40;&#41;; RipeMD128HMAC&#40;&#41;; RipeMD160&#40;&#41;; RipeMD160HMAC&#40;&#41;; RipeMD256&#40;&#41;; RipeMD256HMAC&#40;&#41;; RipeMD320&#40;&#41;; RipeMD320HMAC&#40;&#41;; SAM&#40;&#41;; SHA1&#40;&#41;; SHA1Django&#40;&#41;; SHA1HMAC&#40;&#41;; SHA1MaNGOS&#40;&#41;; SHA1MaNGOS2&#40;&#41;; SHA224&#40;&#41;; SHA224HMAC&#40;&#41;; SHA256&#40;&#41;; SHA256s&#40;&#41;; SHA256Django&#40;&#41;; SHA256HMAC&#40;&#41;; SHA256md5pass&#40;&#41;; SHA256sha1pass&#40;&#41;; SHA384&#40;&#41;; SHA384Django&#40;&#41;; SHA384HMAC&#40;&#41;; SHA512&#40;&#41;; SHA512HMAC&#40;&#41;; SNEFRU128&#40;&#41;; SNEFRU128HMAC&#40;&#41;; SNEFRU256&#40;&#41;; SNEFRU256HMAC&#40;&#41;; Tiger128&#40;&#41;; Tiger128HMAC&#40;&#41;; Tiger160&#40;&#41;; Tiger160HMAC&#40;&#41;; Tiger192&#40;&#41;; Tiger192HMAC&#40;&#41;; Whirlpool&#40;&#41;; WhirlpoolHMAC&#40;&#41;; XOR32&#40;&#41;; md5passsalt&#40;&#41;; md5saltmd5pass&#40;&#41;; md5saltpass&#40;&#41;; md5saltpasssalt&#40;&#41;; md5saltpassusername&#40;&#41;; md5saltmd5pass&#40;&#41;; md5saltmd5passsalt&#40;&#41;; md5saltmd5passsalt&#40;&#41;; md5saltmd5saltpass&#40;&#41;; md5saltmd5md5passsalt&#40;&#41;; md5username0pass&#40;&#41;; md5usernameLFpass&#40;&#41;; md5usernamemd5passsalt&#40;&#41;; md5md5pass&#40;&#41;; md5md5passsalt&#40;&#41;; md5md5passmd5salt&#40;&#41;; md5md5saltpass&#40;&#41;; md5md5saltmd5pass&#40;&#41;; md5md5usernamepasssalt&#40;&#41;; md5md5md5pass&#40;&#41;; md5md5md5md5pass&#40;&#41;; md5md5md5md5md5pass&#40;&#41;; md5sha1pass&#40;&#41;; md5sha1md5pass&#40;&#41;; md5sha1md5sha1pass&#40;&#41;; md5strtouppermd5pass&#40;&#41;; sha1passsalt&#40;&#41;; sha1saltpass&#40;&#41;; sha1saltmd5pass&#40;&#41;; sha1saltmd5passsalt&#40;&#41;; sha1saltsha1pass&#40;&#41;; sha1saltsha1saltsha1pass&#40;&#41;; sha1usernamepass&#40;&#41;; sha1usernamepasssalt&#40;&#41;; sha1md5pass&#40;&#41;; sha1md5passsalt&#40;&#41;; sha1md5sha1pass&#40;&#41;; sha1sha1pass&#40;&#41;; sha1sha1passsalt&#40;&#41;; sha1sha1passsubstrpass03&#40;&#41;; sha1sha1saltpass&#40;&#41;; sha1sha1sha1pass&#40;&#41;; sha1strtolowerusernamepass&#40;&#41;
+
+    if len&#40;jerar&#41;==0:
+        print &quot;&quot;
+        print &quot; Not Found.&quot;
+    elif len&#40;jerar&#41;&gt;2:
+        jerar.sort&#40;&#41;
+        print &quot;&quot;
+        print &quot;Possible Hashs:&quot;
+        print &quot;&#91;+&#93; &quot;,algorithms&#91;jerar&#91;0&#93;&#93;
+        print &quot;&#91;+&#93; &quot;,algorithms&#91;jerar&#91;1&#93;&#93;
+        print &quot;&quot;
+        print &quot;Least Possible Hashs:&quot;
+        for a in range&#40;int&#40;len&#40;jerar&#41;&#41;-2&#41;:
+            print &quot;&#91;+&#93; &quot;,algorithms&#91;jerar&#91;a+2&#93;&#93;
+    else:
+        jerar.sort&#40;&#41;
+        print &quot;&quot;
+        print &quot;Possible Hashs:&quot;
+        for a in range&#40;len&#40;jerar&#41;&#41;:
+            print &quot;&#91;+&#93; &quot;,algorithms&#91;jerar&#91;a&#93;&#93;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#248968</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#248968</link>
+				<pubDate><![CDATA[Sat, 22 Oct 2011 05:11:38]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Mình có đoạn links này:
+<blockquote>http://daotao2.tnu.edu.vn/kcntt/(knvxrr55nmoe5tjmmagmkj55)/UserOnlineList.aspx&nbsp;
+		</blockquote>
+Cái chữ:
+<blockquote>knvxrr55nmoe5tjmmagmkj55&nbsp;
+		</blockquote> 
+chỉ có 24 ký tự. Chắc là không phải MD5 đâu nhỉ? Không biết giải mã nó kiểu gì thế bạn?
+//-----------------
+Mà tiện thể width của cái box này bị sao thế? Màn hình của mình 1280x1024 mà xem vẫn phải kéo rê thanh trượt ngang. Cũng thấy hơi bất tiện :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#250335</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#250335</link>
+				<pubDate><![CDATA[Fri, 25 Nov 2011 20:19:49]]> GMT</pubDate>
+				<author><![CDATA[ riverspart]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Nếu nó md5 ra rồi lấy 24 kí tự thì sao. Nói chung nếu người dùng md5 họ kĩ tính 1 chút là khó mà mò ra đó là cái gì.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>...
+$crypt = md5&#40;$value.md5&#40;$sig&#41;&#41;;
+...</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#254473</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#254473</link>
+				<pubDate><![CDATA[Sat, 18 Feb 2012 23:58:04]]> GMT</pubDate>
+				<author><![CDATA[ chiro8x]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Rất thank bác vì tinh thần chia sẻ, nhưng thực sự là..... em nhìn tới lòi con mắt mà chả hỉu j hết, có lẽ phải học hỏi thêm]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268110</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268110</link>
+				<pubDate><![CDATA[Sun, 5 Aug 2012 22:12:37]]> GMT</pubDate>
+				<author><![CDATA[ nhoall01]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ Cảm ơn nhiều. Tui đang cần cái này :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268243</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268243</link>
+				<pubDate><![CDATA[Thu, 9 Aug 2012 06:50:14]]> GMT</pubDate>
+				<author><![CDATA[ toanmom]]></author>
+			</item>
+			<item>
+				<title>Nhận biết quá trình giải mã chuỗi</title>
+				<description><![CDATA[ <blockquote>...
+ac618b88f6cd808d95fa37cba06ae5e0 là một dang full hexa có chiều dài là 32, Do vậy nó là MD5 &nbsp;
+		</blockquote>
+
+Nhưng cái này thì em lại không thích nó là MD5 mà em có thể cho nó là MD2 / MD4 / TipeMD128 (32  char)
+
+Mong anh sẽ có nhiều bài viết hơn về các thuật toán mã hoá.
+
+Cảm ơn anh vì bài viết này.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268370</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/36792.hva#268370</link>
+				<pubDate><![CDATA[Mon, 13 Aug 2012 02:28:01]]> GMT</pubDate>
+				<author><![CDATA[ quygia128]]></author>
+			</item>
+	</channel>
+</rss>

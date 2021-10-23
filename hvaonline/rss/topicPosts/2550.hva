@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm mail server với Postfix - Phần 2"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm mail server với Postfix - Phần 2"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm mail server với Postfix - Phần 2</title>
+				<description><![CDATA[ <b>Chống spam bằng DNS-based Blocklists (DNSBL, RBL)</b>
+
+<b>Nội dung</b>
+
+   1. Giới thiệu
+   2. Cài đặt, cấu hình cơ bản
+   3. Mở rộng, thông tin thêm
+   4. Tham khảo
+
+<b>Giới thiệu</b>
+
+UCE (unsolicited commercial email), hay spam, thường được gửi từ những mail server có vài đặc điểm nhất định. Ví dụ, từ những server có cấu hình không hoàn chỉnh (open relay, không tuân thủ tiêu chuẩn RFC), những server không có thông tin rõ ràng về người quản trị (máy kết nối bằng dial-up, máy không có reverse DNS), hay từ những server chuyên gửi spam. Người ta đã lập được danh sách những mail server như vậy, danh sách này được update thường xuyên, gọi chung là RBL (real-time blackhole list), hay DNSBL (DNS-based Blocklist).
+Bài viết này giới thiệu cách chống spam cho Postfix server (version 2) bằng cách dùng RBL. Đặc điểm của phương pháp này là kiểm tra nhanh và ít tốn tài nguyên của server, vì bước kiểm tra được thực hiện trước khi gửi dữ liệu mail, và việc kiểm tra chỉ dựa vào kết quả tìm kiếm DNS.
+
+Bắt đầu viết: tháng 5 năm 2003.
+Thay đổi lần cuối vào lúc: Sun Feb 1 12:47:44 JST 2004.
+
+<b>Cài đặt và cấu hình</b>
+
+Ghi thêm vào file main.cf (<b>/etc/postfix/main.cf</b>) những dòng sau
+
+<blockquote>smtpd_client_restrictions =
+	permit_mynetworks,
+	reject_rbl_client list.dsbl.org,
+	reject_rbl_client relays.ordb.org,
+	reject_rbl_client sbl-xbl.spamhaus.org
+
+smtpd_recipient_restrictions =
+	permit_mynetworks,
+	reject_rbl_client list.dsbl.org,
+	reject_rbl_client relays.ordb.org,
+	reject_rbl_client sbl-xbl.spamhaus.org&nbsp;
+		</blockquote>
+
+Và reload Postfix
+
+	<b># postfix reload</b>
+
+Phần này nói thêm về cách block spam bằng cách kiểm tra trước khi email thực sự được gửi đi. Không liên quan đến RBL, tuy nhiên có những đặc điểm giống cách lọc spam bằng RBL: chỉ kiểm tra header, dựa vào DNS.
+
+<blockquote>	# yêu cầu client phải gửi lệnh HELO (EHLO)
+	smtpd_helo_required = yes
+	smtpd_helo_restrictions = permit_mynetworks, reject_invalid_hostname
+	###----------------------------------------
+	# từ chối relay (Reject) nếu không tìm thấy A, MX record
+	# tham khảo bài viết về DNS để biết ý nghĩa của A, MX
+	smtpd_sender_restrictions = reject_unknown_sender_domain
+	###----------------------------------------
+	# từ chối relay từ một số địa chỉ IP nhất định (vì nhiễm virus?)
+	# ví dụ 192.168.1.100, 172.16.1.0/24
+	smtpd_client_restrictions =
+		permit_mynetworks,
+		check_client_access hash:/etc/postfix/reject_client
+	# nội dung file /etc/postfix/reject_client
+	192.168.1.100	REJECT
+	172.16.1	REJECT
+	# tạo database /etc/postfix/reject_client.db bằng lệnh sau
+	/usr/sbin/postmap /etc/postfix/reject_client
+	###----------------------------------------
+	# từ chối relay từ một số người nhất định (spammer)
+	# ví dụ spammer@domain1.name, *@domain2.name
+	smtpd_sender_restrictions =
+		reject_unknown_sender_domain,
+		reject_non_fqdn_sender,
+		hash:/etc/postfix/reject_sender
+	# file /etc/postfix/reject_sender có nội dung như sau
+	spammer@domain1.name	REJECT
+	domain2.name		REJECT
+	# tạo database /etc/postfix/reject_sender.db
+	/usr/sbin/postmap /etc/postfix/reject_sender&nbsp;
+		</blockquote>
+
+<b>Thông tin thêm</b>
+
+   1. Thế nào là open-relay server?
+   2. Những lỗi thường gặp (do vi phạm RFC)
+   3. Có bao nhiêu RBL? Hàng trăm cái như vậy. Mỗi loại RBL có những đặc điểm khác nhau: tiêu chuẩn đánh giá spam, có cho phép người dùng cung cấp thông tin và cập nhật database hay không, database có thường xuyên được cập nhật hay không v.v...; và những điều này quyết định uy tín, số người dùng của RBL. Tất nhiên chọn dùng những RBL khác nhau (và sử dụng theo những thứ tự khác nhau) sẽ dẫn đến những kết quả khác nhau. Trong số những RBL tốt, phổ biến có
+          * ORDB (Open Relay Database,<span class="link"> http://www.ordb.org</span>).
+          * DSBL (Distributed Server Boycott List,<span class="link"> http://www.dsbl.org</span>).
+          * Spamhaus (The Spamhaus Project,<span class="link"> http://www.spamhaus.org</span>).
+          * và đây là danh sách hàng trăm RBL. Hãy tìm kiếm, dùng thử và chọn cho mình những RBL thích hợp.
+           <span class="link"> http://moensted.dk/spam/</span>
+
+<b>Tham khảo</b>
+
+   1.<span class="link"> http://www.postfix.org/uce.html</span>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2550.hva#13863</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2550.hva#13863</link>
+				<pubDate><![CDATA[Thu, 10 Aug 2006 15:26:52]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "[Help]Config Apache"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "[Help]Config Apache"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>[Help]Config Apache</title>
+				<description><![CDATA[ Apache chạy bình thường với thư mục /var/www/html. Nhưng em mún chạy các trang web trong thư mục /home/user/public_html nên đã config như sau:
+File htttpd.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># UserDir: The name of the directory that is appended onto a user's home
+# directory if a ~user request is received.
+#
+# The path to the end user account 'public_html' directory must be
+# accessible to the webserver userid.  This usually means that ~userid
+# must have permissions of 711, ~userid/public_html must have permissions
+# of 755, and documents contained therein must be world-readable.
+# Otherwise, the client will only receive a "403 Forbidden" message.
+#
+# See also:<span class="link"> http://httpd.apache.org/docs/misc/FAQ.html#forbidden</span>
+#
+&lt;IfModule mod_userdir.c&gt;
+    #
+    # UserDir is disabled by default since it can confirm the presence
+    # of a username on the system &#40;depending on home directory
+    # permissions&#41;.
+    #
+    #UserDir disable
+
+    #
+    # To enable requests to /~user/ to serve the user's public_html
+    # directory, remove the "UserDir disable" line above, and uncomment
+    # the following line instead:
+    # 
+    UserDir public_html
+
+&lt;/IfModule&gt;
+
+#
+# Control access to UserDir directories.  The following is an example
+# for a site where these directories are restricted to read-only.
+#
+&lt;Directory /home/*/public_html&gt;
+    AllowOverride FileInfo AuthConfig Limit
+    Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec
+    &lt;Limit GET POST OPTIONS&gt;
+        Order allow,deny
+        Allow from all
+    &lt;/Limit&gt;
+    &lt;LimitExcept GET POST OPTIONS&gt;
+        Order deny,allow
+        Deny from all
+    &lt;/LimitExcept&gt;
+&lt;/Directory&gt;</pre>
+		</div>
+SeLinux
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Last login: Tue May  6 10:04:40 2008 from 192.168.1.2
+&#91;root@localhost ~&#93;# getsebool -a|grep httpd
+allow_httpd_anon_write --&gt; off
+allow_httpd_dbus_avahi --&gt; off
+allow_httpd_mod_auth_pam --&gt; off
+allow_httpd_sys_script_anon_write --&gt; off
+httpd_builtin_scripting --&gt; on
+httpd_can_network_connect --&gt; on
+httpd_can_network_connect_db --&gt; on
+httpd_can_network_relay --&gt; off
+httpd_can_sendmail --&gt; off
+httpd_enable_cgi --&gt; on
+httpd_enable_ftp_server --&gt; off
+httpd_enable_homedirs --&gt; on &lt;&lt; cái này em set on mà
+httpd_ssi_exec --&gt; off
+httpd_tty_comm --&gt; on
+httpd_unified --&gt; on
+httpd_use_cifs --&gt; off
+httpd_use_nfs --&gt; off
+&#91;root@localhost ~&#93;#</pre>
+		</div>
+Sau đó em tạo thư mục public_html trong /home/user và chmod nó là 755. Rùi copy các file *.html vào đó.
+Nhưng khi type<span class="link"> http://192.168.1.3/user/index.html</span> vào FF nó lại báo lỗi
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Not Found
+
+The requested URL /user/index.html was not found on this server.
+Apache/2.2.6 &#40;Fedora&#41; Server at 192.168.1.3 Port 80</pre>
+		</div>
+còn<span class="link"> http://192.168.1.3/index.html</span> lại chạy bình thường
+
+Các anh làm ơn chỉ giúp em cách cấu hình để chạy dc các file trong userDir như mấy site trên mạng ấy. :(
+thanks các anh nhìu ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129621</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129621</link>
+				<pubDate><![CDATA[Thu, 8 May 2008 04:30:08]]> GMT</pubDate>
+				<author><![CDATA[ cuti_ver2]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ thử http://xxx.xxx.xxx.xxx/~user/index.html xem :) có IfModule nhưng có LoadModule chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129681</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129681</link>
+				<pubDate><![CDATA[Thu, 8 May 2008 23:16:29]]> GMT</pubDate>
+				<author><![CDATA[ pnco]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ Chào anh!
+
+Anh cho em hỏi, nếu như trên 1 sever apache, nếu như có nhiều khách hàng, vậy phải tạo ra nhiều thư mục, ứng với mỗi thư mục đó với  một user phải không ạ. Giống như các công ty thiết ke web có nhiều khách hàng, mỗi khách hàng có một thư mục tương ứng: ví dụ /home/tên_khách_hàng/public_html, phải không anh <b>pnco</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129707</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129707</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 02:16:39]]> GMT</pubDate>
+				<author><![CDATA[ ngocxdy]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ Đó là <span class="link"> http://www.google.com.vn/search?q=virtual+host&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:official&client=firefox-a</span>
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129713</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129713</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 03:04:50]]> GMT</pubDate>
+				<author><![CDATA[ canh_nguyen]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">pnco wrote:</cite><br>
+		<blockquote>thử<span class="link"> http://xxx.xxx.xxx.xxx/~user/index.html</span> xem  có IfModule nhưng có LoadModule chưa?&nbsp;
+		</blockquote>
+Em chưa bít nhìu nhưng nhìn qua cái httpd.conf thấy có dòng này hok bít có phải là Loadmodule hok :"&gt;
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>LoadModule userdir_module modules/mod_userdir.so</pre>
+		</div>
+Em đã thử<span class="link"> http://xxx.xxx.xxx.xxx/~user/index.html</span> nhưng bây giờ nó lại báo là 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Forbidden
+
+You don't have permission to access /~zError/index.php on this server.
+Apache/2.2.6 &#40;Fedora&#41; Server at 192.168.1.3 Port 80</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@localhost home&#93;# ls -al
+total 24
+drwxr-xr-x  3 root   root   4096 2008-05-06 09:55 .
+drwxr-xr-x 21 root   root   4096 2008-05-08 22:44 ..
+drwxrwxr-x  4 zError apache 4096 2008-05-06 10:05 zError &lt;&lt; chmod 755
+&#91;root@localhost home&#93;# cd zError
+&#91;root@localhost zError&#93;# ls -al
+total 56
+drwxrwxr-x 4 zError apache 4096 2008-05-06 10:05 .
+drwxr-xr-x 3 root   root   4096 2008-05-06 09:55 ..
+-rw-r--rw- 1 zError apache   33 2008-05-06 09:55 .bash_logout
+-rw-r--rw- 1 zError apache  176 2008-05-06 09:55 .bash_profile
+-rw-r--rw- 1 zError apache  124 2008-05-06 09:55 .bashrc
+drwxrwxr-x 2 zError apache 4096 2008-05-06 09:55 .gnome2
+drwxrwxr-x 2 zError apache 4096 2008-05-06 10:07 public_html &lt;&lt; chmod 755</pre>
+		</div>
+
+Em chmod vậy mà sao nó lại ko cho phép truy cập nhỉ ? :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129738</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129738</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 10:03:36]]> GMT</pubDate>
+				<author><![CDATA[ cuti_ver2]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ cuti_ver2,
+
+Hai cái "chmod" của bạn là 775, không phải 755. Bạn chmod public_html thành 775, nhưng chắc gì file index.php đã được chmod.
+
+khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129745</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129745</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 10:57:30]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">cuti_ver2 wrote:</cite><br>
+		<blockquote>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Forbidden
+
+You don't have permission to access /~zError/index.php on this server.
+Apache/2.2.6 &#40;Fedora&#41; Server at 192.168.1.3 Port 80</pre>
+		</div>
+
+
+Em chmod vậy mà sao nó lại ko cho phép truy cập nhỉ ? :(&nbsp;
+		</blockquote>
+Bạn xem log trong /var/log/httpd, phần lớn sẽ biết nguyên nhân và cách khắc phục.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129748</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129748</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 11:18:40]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Re: [Help]Config Apache</title>
+				<description><![CDATA[ Lỗi trên là do <b>&lt;Directory &gt;</b>  :) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129755</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#129755</link>
+				<pubDate><![CDATA[Fri, 9 May 2008 11:32:11]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Config Apache</title>
+				<description><![CDATA[ bạn ơi, có cách nào cho apache có quyền root trong centos ko vậy??? Chỉ cho mình với?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#226996</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#226996</link>
+				<pubDate><![CDATA[Mon, 13 Dec 2010 10:35:12]]> GMT</pubDate>
+				<author><![CDATA[ hieubkit]]></author>
+			</item>
+			<item>
+				<title>Config Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hieubkit wrote:</cite><br>
+		<blockquote>bạn ơi, có cách nào cho apache có quyền root trong centos ko vậy??? Chỉ cho mình với?&nbsp;
+		</blockquote>
+Để làm gì vậy bạn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#226997</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#226997</link>
+				<pubDate><![CDATA[Mon, 13 Dec 2010 11:13:06]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Config Apache</title>
+				<description><![CDATA[ mình muốn cho apache chạy ssh và scp trên một số file của hệ thống.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#227012</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#227012</link>
+				<pubDate><![CDATA[Mon, 13 Dec 2010 22:31:58]]> GMT</pubDate>
+				<author><![CDATA[ hieubkit]]></author>
+			</item>
+			<item>
+				<title>Config Apache</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hieubkit wrote:</cite><br>
+		<blockquote>mình muốn cho apache chạy ssh và scp trên một số file của hệ thống.&nbsp;
+		</blockquote>
+Các file này do cái gì tạo ra và đặt ở đâu? ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/21792.hva#227015</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/21792.hva#227015</link>
+				<pubDate><![CDATA[Mon, 13 Dec 2010 23:12:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

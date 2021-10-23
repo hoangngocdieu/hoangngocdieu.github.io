@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "MySQLDumper Vulnerability: Bypassing Apache Access Control"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "MySQLDumper Vulnerability: Bypassing Apache Access Control"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>MySQLDumper Vulnerability: Bypassing Apache Access Control</title>
+				<description><![CDATA[ <b>MySQLDumper Vulnerability: Bypassing Apache Based Access Control Possible</b>
+------------------------------------------------------------------------
+
+<b>SUMMARY</b>
+The main purpose of  &lt;http://www.mysqldumper.de&gt; MySQLDumper is "to create full backups of large MySQL databases from a web interface without the need for a shell access. It also allows to administrate MySQL databases".
+
+To ensure that only authenticated users have access to an instance of MySQLDumper the tool offers a built-in feature to create a pair of htaccess and .htpasswd files to password protect the directory in which the tool has been installed on Apache web servers.
+
+A critical security issue has been found in the Open Source PHP backup tool MySQLDumper. The issue allows to bypass an Apache based access control created with MySQLDumper. Through this an attacker can easily gain full control about all features of MySQLDumper.
+
+<b>DETAILS</b>
+<b>Vulnerable Systems:</b>
+ * MySQLDumper version 1.23_pre_release_REV227
+ * MySQLDumper version 1.22
+ * MySQLDumper version 1.21b
+ * MySQLDumper Typo3-Extension version 0.0.5
+
+Inside of the generated .htaccess file the Apache directive LIMIT is used. 
+The parameters used within the LIMIT directive are not sufficient so that the folder protection is not reliable. In the php file main.php in line 52 (line number depends on the version of the tool, please search for "limit get") the content of the file .htaccess is created. Interesting is this section:
+
+  <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;Limit GET&gt;</pre>
+		</div>
+
+The problem is, that this means that the password protection is only valid for HTTP GET requests, but not for other request types like HTTP POST requests.
+
+To say it more clearly: If one requests a file inside of the protected MySQLDumper folder, one is not asked for user and password if you use a POST request to request the file. That means the whole.htaccess/.htpasswd 
+protection is useless.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;html&gt;&lt;body&gt;
+    &lt;form action="http://localhost/mysqldumper1.23/main.php" 
+method="post"&gt;
+       &lt;input type="submit" value="main"&gt;
+    &lt;/form&gt;
+&lt;/body&gt;&lt;/html&gt;</pre>
+		</div>
+
+In the same way it is possible to execute the functionality of MySQLDumper to delete .htaccess and .htpasswd file via a POST request.
+
+<b>Workaround:</b>
+1) Delete MySQLDumper folder from web space if it is installed in a 
+guessable path or
+2) Correct the content of .htaccess / .htpasswd files to make them 
+reliable.
+
+<b>ADDITIONAL INFORMATION</b>
+The information has been provided by <b>Henning Pingel</b> and <b>Lars Houmark</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/11932.hva#69058</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/11932.hva#69058</link>
+				<pubDate><![CDATA[Thu, 5 Jul 2007 07:28:45]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>MySQLDumper Vulnerability: Bypassing Apache Access Control</title>
+				<description><![CDATA[  2) Correct the content of .htaccess / .htpasswd files to make them
+reliable. 
+trước giò em vẫn dùng cái nì cho nó, thanks bác đã cập nhật, tý em lên vá lỗi cho nó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/11932.hva#76858</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/11932.hva#76858</link>
+				<pubDate><![CDATA[Sat, 4 Aug 2007 14:42:53]]> GMT</pubDate>
+				<author><![CDATA[ bmc_smile]]></author>
+			</item>
+	</channel>
+</rss>

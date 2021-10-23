@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thắc mắc về malware analyis"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/21.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thắc mắc về malware analyis"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Chào ae HVA, 
+
+mình mới tham gia diễn đàn cũng như mới bắt đầu RCE. Mình có vài thắc mắc mong ae HVA giúp newbie như mình nha: 
+1- Khi mình mở mấy file virus bằng IDA thì trong đó có quá nhiều function, mọi người có cách nào để nhận biết function nào chính để mình có thể tập trung RCE không.
+. 
+2- Khi RCE thì mình cần biết những behaviors nào để biết nó là 1 virus.
+
+3- Mình thấy anh TQN cùng mọi người phân tích ra code C/C++ rất rõ ràng. Mình không biết làm sao để có thể làm được vậy. Có phải đọc code từ Assembly rồi chuyển qua lại C/C++. Ngoài việc translate line by line ra thì mình có tools nào để hỗ trợ cho mình trong việc này không. Pseudo-Code cũng được ạ.
+
+4- Khi thấy được một chuỗi encrypt thì sao mình biết nó được encrypt bằng cách nào và làm sao mình tìm ra cách để decrypt nó. Ví dụ như sao mình biết nó được Xor với 0xXX để decrypt... 
+
+5- Mình cần phải đọc những tài liệu nào hoặc tham gia những courses nào để có thể tự RCE cũng như có thể làm việc cho mấy công ty AVs. 
+
+Thanks & best regards,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246596</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246596</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 00:08:46]]> GMT</pubDate>
+				<author><![CDATA[ v.H.v]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Bó tay chấm com. Tìm đọc những cuốn sách về RCE và malware analyze sẽ sáng hơn nhiều vấn đề.
+
+Quan trọng: cậu có biết và đã lập trình chưa ? Coder ấy ! Nếu RCE mà không biết code, không biết đào sâu vào bên dưới OS, compiler thì khó mà tiến sâu được. Cậu phải đặt mình vào vị trí thằng coder con malware ấy mới được.
+
+Vd nhé, gặp một mẫu mới của mấy anh em stl quen thuộc:
+1. Xác định mấy anh em coder đó dùng VC++ ver nào: quanh đi quẫn lại chỉ là VC++2008, 2010 thôi, hiếm khi mấy anh ấy dùng VC++ 2005. VC++6 thì tuyệt nhiên không, chỉ vừa rồi Drwatson32.exe của mấy anh ấy 
+
+2. Dùng PEView, ResHacker, PE Explorer kiểm tra sơ bộ xem mấy anh ấy có sơ hở, để lộ gì không trong quá trình mấy anh ấy build.
+
+3. Dùng PEid + Kanal plugin, Crypto Scanner, GUID scanner, sigsrch scan.... detect xem mấy anh ấy dùng thuật toán gì để mã hoá, encode các thông tin quan trọng. Cho các tool ấy export ra các thông tin crypto dưới dạng .log hay .idc
+
+4. Open malware của mấy anh với IDA, apply các signature tương ứng hay gần giống với với compiler VC++ mà mấy anh ấy dùng. Đồng thời, dùng OllyDbg, analysis code mấy anh ấy với các lib file tương ứng với compiler đó. Dùng thêm các plugin ComHelper2.plw, ClassInformer, Fubar.... 
+
+5. Apply bằng tay hay tự động các idc, .log file, .txt mà các tool ở bước 3 sinh ra.
+
+6. Run ms_ehsc.idc để find và reformat các exception handler của C+C++ trong code của mấy malware đó.
+
+7. Dựa vào kết quả của Class Informer plugin, xây dựng lại vtable, layout của các class mà coder của stl dùng.
+
+8. Bước quan trọng nhất, sau khi xác định được compiler version của các con malware mà anh em chúng ta đang phân tích, em tìm các mfcxxx.dll, msvcxx.dll, atlxxx.dll tương ứng với các compiler đó, get debugger symbol file từ MS server về, mở các file đó trong IDA, apply auto hay manual các .pdb đó. Sau đó lưu thành file xxxdiff.idb.
+
+9. Dùng PatchDiff2 plugin hay DarunGrim plugin, compare idb file của con malware mà chúng ta đang phân tích với các .idb trên, tập trung vào Match function và Identical function. Đồng thời mở thư mục Source của Visual Studio tương ứng với ver của con malware đó (VS 2005, 2008, 2010...) để apply name, comment, symbol... từ library của VC sang idb của con malware đó.
+
+10. Đánh dấu tất cả các hàm match, identical là library function. Số còn lại là code của mấy anh em stl đó và code inline của các 3rd library function, VC++
+
+11. Dựa vào kết quả của ClassInformer, các hard code string, search Google xem mấy anh stl coder chôm và xài open source nào, download cái open source đó về, chịu khó mày mò và apply bằng tay hay diff trên idb file của .lib, .dll của open source đó để xác định tiếp các hàm của open source.
+
+12. Còn lại, chỉ là code của stl coder hay các hàm inline của std, CString... library. Tiếp tục, build một app nhỏ dùng càng nhiều càng tốt các hàm của std::string, ATL/MFC:CString, build ở mode Release, Debug Symbol, và dùng các option compiler/linker tương tự như code của malware, aplly diff lần nữa. File compiler/build này để dành dùng về sau.
+
+13. Sau khi diff bước 12 xong, loại ra tiếp các hàm inline của Standard Template Library (std, stl), CString function. 100% còn lại là code đích thực của mấy coder stl.
+
+14. Quan trọng nhất, dùng HexRays plugin để decompiler các code, các function của stl coder. Chịu khó name, comment đầy đủ.
+
+15. Sau này, gặp con khác, nếu cùng compiler/linker version của con trên, chúng ta có thể bỏ qua 14 bước trên, dùng PatchDiff, DarunGrim để compare và apply trực tiếp malware này và malware kia ! Thật ra VC++ 2005, 2008, 2010 sinh code cũng na ná nhau, nếu đã từng build, debug, IDA các code đó nhìn là thấy liền.
+
+STL coder chủ yếu dùng các open source sau: CryptoPP, Zlib, libcurl, Socks45.... Bao nhiêu đó đủ để anh em RCE ra gần như 95% code của stl coder rồi.
+
+Vd như con mạo danh DrWatson của mấy anh stl trước và sau này, trong 88 hàm mà IDA và em force tìm ra,chỉ có 3 hàm là của mấy anh ấy tự code, còn 85 hàm còn lại là hàm library của VC++ 2008. Nhìn thấy ngay 3 hàm đó, nằm ngay đầu tiên của .text section. HexRays F5 cho các hàm đó là ra pesudo-code C/C++. Ngồi rename, type,comment một chút nữa là ra ngay code 99% nguyên thuỷ của mấy anh ấy.
+
+Và quan trọng nữa (sao nhiều quan trong thế): Tìm và đọc các topic, article về Reversing C++, về RTTI của C++, về exception handler của C++ (chủ yếu là nói về MS VC++ compiler).
+
+Đôi khi em mong mấy anh stl code mèo què = Delphi, em khoẻ biết mấy !
+
+Vài lời comment với anh em, hy vọng anh em đọc không thấy lùng bùng con mắt. Thông cảm, em viết văn tệ lắm ;)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246614</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246614</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 07:25:02]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ nếu có cái video demo tất cả các bước như trên thì hay nhỉ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246617</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246617</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 08:10:25]]> GMT</pubDate>
+				<author><![CDATA[ angel-pc]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Cám ơn anh TQN. Những lời hướng dẫn của anh làm em sáng ra rất nhiều. Giờ đây em đã biết mình cần những gì để có thể bắt đầu malware analyze.
+
+Em thực sự thần tượng anh TQN. Em nghĩ không chỉ riêng em mà mọi người trên HVA nói riêng và IT ở VN nói chung đều rất khâm phục anh. Tuy anh đã có gia đình và rất bận rộn với công việc hàng ngày (chế tạo cơ khí- theo như lời anh nói :) ) một công việc không hề liên quan tới lĩnh vực IT; anh vẫn bỏ chút thời gian quý báu để RCE, tham gia diễn đàn và hướng dẫn đàn em trong việc RCE; đều đó chứng tỏ anh rất đam mê và rất "lửa" trong sở thích của mình.
+
+Hihhi, lời văn lủng củng quá không biết diễn đạt làm sao. Nói túm lại là em rất ngưỡng mộ anh. Hi vọng trong tương lai không xa em có thể tự tin thảo luân với anh trong việc RCE và malware analys.
+
+Chúc anh TQN sức khoẻ và giữ "lửa" :).
+Chúc HVA vững mạnh.
+
+p/s: cùng suy nghĩ với angel-pc, nếu ai đó trên HVA viết 1 tut basic về malware analys (bao gồm tất cả các bước của anh TQN ) thì quá tuyệt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246621</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#246621</link>
+				<pubDate><![CDATA[Wed, 7 Sep 2011 12:25:00]]> GMT</pubDate>
+				<author><![CDATA[ v.H.v]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Anh TQN cho em hỏi với : Em mới chỉ biết C\C++ thôi , Vc++ vẫn chưa biết :) nhưng em thấy anh hay nhắc đến ngôn ngữ lập trình delphi vậy nó có lợi gì hơn VC++ không ạ ?  ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247826</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247826</link>
+				<pubDate><![CDATA[Tue, 27 Sep 2011 07:43:48]]> GMT</pubDate>
+				<author><![CDATA[ Small_happy]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Small_happy wrote:</cite><br>
+		<blockquote>Anh TQN cho em hỏi với : Em mới chỉ biết C\C++ thôi , Vc++ vẫn chưa biết :) nhưng em thấy anh hay nhắc đến ngôn ngữ lập trình delphi vậy nó có lợi gì hơn VC++ không ạ ?  &nbsp;
+		</blockquote>
+
+Delphi là Object Pascal. Nếu đơn thuần chỉ là compile/học Object Pascal thì nên dùng Borland Pascal with Objects 7.0 (16bit) hoặc Virtual Pascal 32-bit (biên dịch đc code Delphi 1-4)
+
+PS. Anh TQN đã RCE soft/crackme nào viết bằng Pascal/Obj Pascal mà kg phải viết từ Borland Pascal/Delphi chưa?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247843</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247843</link>
+				<pubDate><![CDATA[Tue, 27 Sep 2011 20:34:23]]> GMT</pubDate>
+				<author><![CDATA[ LIA]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Nói chung là trừ PHP ra, còn cái gì có P đều đã đụng tới "chút chút" RCE hết rồi em à. Trong đó, khoái RCE các app viết = Delphi, Pascal nhất.
+Dù là compiler khác nhau, nhưng đều dựa trên chuẩn của Object Pascal nên cơ chế name mangling, vptr, RTTI, TypeInfo... của các thằng Borland Pascal, Delphi, Free Pascal, Virtual Pascal đều như nhau.
+Hiện nay, ngoài IDA, tool decompiler tốt nhất cho Delphi app là IDR: <span class="link"> http://kpnc.org/idr32/en/</span>. Tool này được Kaspersky tài trợ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247845</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247845</link>
+				<pubDate><![CDATA[Tue, 27 Sep 2011 21:18:52]]> GMT</pubDate>
+				<author><![CDATA[ TQN]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">TQN wrote:</cite><br>
+		<blockquote>Nói chung là trừ PHP ra, còn cái gì có P đều đã đụng tới "chút chút" RCE hết rồi em à. Trong đó, khoái RCE các app viết = Delphi, Pascal nhất.
+Dù là compiler khác nhau, nhưng đều dựa trên chuẩn của Object Pascal nên cơ chế name mangling, vptr, RTTI, TypeInfo... của các thằng Borland Pascal, Delphi, Free Pascal, Virtual Pascal đều như nhau.
+Hiện nay, ngoài IDA, tool decompiler tốt nhất cho Delphi app là IDR: <span class="link"> http://kpnc.org/idr32/en/</span>. Tool này được Kaspersky tài trợ.&nbsp;
+		</blockquote>
+quá khâm phục anh]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247852</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247852</link>
+				<pubDate><![CDATA[Wed, 28 Sep 2011 00:06:49]]> GMT</pubDate>
+				<author><![CDATA[ minhhath]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Dạo gần đây em thấy có cả virus hay là botnet gì đó viết trên nền C# nghe lạ quá, có ai biết về khả năng của C# ở mảng virus không]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247882</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247882</link>
+				<pubDate><![CDATA[Wed, 28 Sep 2011 12:41:06]]> GMT</pubDate>
+				<author><![CDATA[ Small_happy]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Hi, đọc bài của a TQN giúp mình sáng ra được rất nhiều điều ! Tiện đây có cái ý cuối <blockquote>Và quan trọng nữa (sao nhiều quan trong thế): Tìm và đọc các topic, article về Reversing C++, về RTTI của C++, về exception handler của C++ (chủ yếu là nói về MS VC++ compiler). &nbsp;
+		</blockquote> mình có kiếm được ít tài liệu về Exception Handler <span class="link"> http://www.mediafire.com/?akk9bnj5eo3cccl</span> xin chia sẻ cho những bạn nào quan tâm !
+Chúc các bạn tìm hiểu tốt !
+
+ps/ bạn nào có tài liệu hay có thể giới thiệu với mình nhé !
+
+Thân !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247908</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#247908</link>
+				<pubDate><![CDATA[Thu, 29 Sep 2011 01:11:07]]> GMT</pubDate>
+				<author><![CDATA[ computerline]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về malware analyis</title>
+				<description><![CDATA[ Anh TQN cho em hỏi câu này : Có phải mấu chốt của 1 mã độc( virus hay trojan ) nằm ở phần mã hoá có phải không ạ ? Nếu mã hoá nó thì có thể đánh lừa được AV phải không anh , em cũng chỉ là tìm hiểu thôi không bít có động chạm vào nội qui diễn đàn không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/39997.hva#248600</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/39997.hva#248600</link>
+				<pubDate><![CDATA[Wed, 12 Oct 2011 15:59:42]]> GMT</pubDate>
+				<author><![CDATA[ Small_happy]]></author>
+			</item>
+	</channel>
+</rss>

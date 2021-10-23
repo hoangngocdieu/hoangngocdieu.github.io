@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "ỗi khi generate skeleton/stub file ( dùng eclipse)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "ỗi khi generate skeleton/stub file ( dùng eclipse)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>ỗi khi generate skeleton/stub file ( dùng eclipse)</title>
+				<description><![CDATA[ Tớ gặp lỗi này khi ant build để gen skeleton/stub file của web service từ eclipse
+Problem: failed to create task or type axis-java2wsdl
+Cause: The name is undefined.
+Action: Check the spelling.
+Action: Check that any custom tasks/types have been declared.
+Action: Check that any &lt;presetdef&gt;/&lt;macrodef&gt; declarations have taken place.
+Bạn nào có kinh nghiệm thì chỉ dùm nhé,mình cũng mới học :ym_blushing:
+
+hoặc chỉ mình cách gen skeleton/stub file bằng cách nhanh nhất có thể
+
+Dưới đây là nội dụng file build.xml
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&lt;?xml version="1.0"?&gt;
+
+&lt;project name="Axis-Soap Stub/Skeleton generation" default="main" basedir="."&gt;
+
+&lt;property name="webinf.home" value="${basedir}/Web Root/WEB-INF"/&gt;
+&lt;property name="lib.home" value="${webinf.home}/lib"/&gt;
+&lt;property name="generated.home" value="${basedir}/../soap_temp"/&gt;
+&lt;property name="service.classes" value="${webinf.home}/classes"/&gt;
+&lt;property name="persistence.classes" value="${basedir}/../PrimusPersistence/classes"/&gt;
+&lt;property name="service.src.home" value="${basedir}/src"/&gt;
+&lt;property name="service.src.dir" value="${basedir}/Java Source"/&gt;
+   
+&lt;!-- service endpoint stuff &#40;used also for deployment&#41; --&gt;
+&lt;property name="target.port" value="8080"/&gt;
+&lt;property name="target.server" value="localhost"/&gt;
+&lt;property name="target.appname" value="primus"/&gt;
+   
+&lt;path id="axis.classpath"&gt;
+   &lt;pathelement location="${lib.home}/axis-ant.jar"/&gt;
+   &lt;pathelement location="${lib.home}/axis.jar"/&gt;
+   &lt;pathelement location="${lib.home}/jaxrpc.jar"/&gt;
+   &lt;pathelement location="${lib.home}/wsdl4j.jar"/&gt;
+   &lt;pathelement location="${lib.home}/saaj.jar"/&gt;
+   &lt;pathelement location="${lib.home}/activation.jar"/&gt;
+   &lt;pathelement location="${lib.home}/mail.jar"/&gt;
+   &lt;pathelement location="${lib.home}/hibernate.jar"/&gt;
+   &lt;pathelement location="${lib.home}/log4j.jar"/&gt;
+   &lt;pathelement location="${lib.home}/commons-lang.jar"/&gt;
+   &lt;pathelement location="${lib.home}/commons-discovery.jar"/&gt;
+   &lt;pathelement location="${lib.home}/commons-beanutils.jar"/&gt;
+   &lt;pathelement location="${lib.home}/commons-collections.jar"/&gt;
+   &lt;pathelement location="${lib.home}/commons-logging.jar"/&gt;
+&lt;/path&gt;
+
+&lt;fileset id="generated_files" dir="${generated.home}"&gt;
+   &lt;include name="**/*Skeleton.java"/&gt;
+   &lt;include name="**/*Stub.java"/&gt;
+&lt;/fileset&gt;
+   
+&lt;fileset id="other_generated_files" dir="${generated.home}"&gt;
+   &lt;include name="**/*ServiceLocator.java"/&gt;
+   &lt;include name="**/*Service.java"/&gt;
+   &lt;include name="**/*SoapBindingImpl.java"/&gt;
+&lt;/fileset&gt;
+
+&lt;taskdef resource="axis-tasks.properties"
+  classpathref="axis.classpath" /&gt;
+
+&lt;target name="--init"&gt;
+   &lt;echo message="location=${basedir}"/&gt;
+   &lt;echo message="lib=${lib.home}"/&gt;
+   &lt;mkdir dir="${generated.home}"/&gt;
+   &lt;mkdir dir="${service.src.dir}"/&gt;
+&lt;/target&gt;
+
+&lt;target name="generate_wsdl" depends="--init"
+   description="Generates wsdl file for primus soap &#40;needed only to create stub/skeleton&#41;."&gt;
+      
+   &lt;axis-java2wsdl
+      typemappingversion="1.2"
+      implclass="com.routescape.primus.service.ceo.export.CEOExportImpl"
+      output="${generated.home}/ceoexport.wsdl"
+      classname="com.routescape.primus.service.ceo.export.CEOExport"
+      namespace="urn:PrimusWeb"
+      location="http://localhost:8080/primus/services/CEOExport"
+   &gt;
+      &lt;classpath&gt;
+         &lt;pathelement location="${service.classes}"/&gt;
+         &lt;pathelement location="${persistence.classes}"/&gt;
+      &lt;/classpath&gt;
+   &lt;/axis-java2wsdl&gt;
+
+   
+&lt;/target&gt;
+
+&lt;target name="generate_stubs" depends="--init"
+   description="Generates stub/skeletons for primus soap."&gt;
+      
+   &lt;axis-wsdl2java
+      output="${generated.home}"
+      url="${generated.home}/ceoexport.wsdl"
+      all="true"
+      deployscope="session"
+      serverside="true"
+      skeletondeploy="true"&gt;
+      &lt;classpath&gt;
+         &lt;pathelement location="${service.classes}"/&gt;
+      &lt;/classpath&gt;
+      &lt;mapping
+         namespace="urn:PrimusWeb"
+         package="com.routescape.primus.service.ceo.export" /&gt;
+   &lt;/axis-wsdl2java&gt;
+&lt;/target&gt;
+   
+&lt;target name="copy_files" unless="copy_all"&gt;
+   &lt;echo message="Copying only service skeleton/stub files &#40;set copy_all property to copy everything&#41;"/&gt;
+   &lt;echo message="NOTE: We do not use the Axis generated bean classes &#40;only the stub/skeleton&#41;." /&gt;
+   &lt;copy failonerror="true" verbose="true" todir="${service.src.dir}" &gt;
+      &lt;fileset refid="generated_files"/&gt;
+   &lt;/copy&gt;
+&lt;/target&gt;
+   
+&lt;target name="copy_all_files" if="copy_all"&gt;
+   &lt;echo message="Copying all generated service files &#40;except bean classes&#41;"/&gt;
+   &lt;copy failonerror="true" verbose="true" todir="${service.src.dir}" &gt;
+      &lt;fileset refid="generated_files"/&gt;
+   &lt;/copy&gt;
+   &lt;copy failonerror="true" verbose="true" todir="${service.src.dir}" &gt;
+      &lt;fileset refid="other_generated_files"/&gt;
+   &lt;/copy&gt;
+&lt;/target&gt;   
+   
+&lt;target name="--deploy_service"&gt;
+   &lt;echo message="Deploying service to Axis Server..."/&gt;
+   &lt;echo message="-- If this fails, check to make sure the primus webapp "/&gt;
+   &lt;echo message="-- is running at the following location:<span class="link"> http://${target.server}:${target.port}/${target.appname}</span>"/&gt;
+   &lt;echo message=" "/&gt;   
+   
+   &lt;echo message="Contacting axis admin service to undeploy..."/&gt;
+   &lt;axis-admin
+       port="${target.port}"
+       hostname="${target.server}"
+       failonerror="false"
+       servletpath="${target.appname}/services/AdminService"
+       debug="true"
+       xmlfile="${generated.home}/com/routescape/primus/service/ceo/export/undeploy.wsdd"
+       /&gt;
+
+   &lt;echo message="Contacting axis admin service to deploy..."/&gt;
+   &lt;axis-admin
+       port="${target.port}"
+       hostname="${target.server}"
+       failonerror="true"
+       servletpath="${target.appname}/services/AdminService"
+       debug="true"
+       xmlfile="${generated.home}/com/routescape/primus/service/ceo/export/deploy.wsdd"
+       /&gt;
+&lt;/target&gt;
+   
+&lt;target name="--copy_server_config" &gt;
+   &lt;echo message="Copying axis server-config.wsdd to primus web-inf..." /&gt;
+   &lt;echo message="-- Note, you should check in this file." /&gt;
+   &lt;echo message=" "/&gt;   
+
+   &lt;copy flatten="true" file="${tomcat.home}/webapps/primus/WEB-INF/server-config.wsdd" failonerror="true" verbose="true" todir="${webinf.home}" /&gt;
+&lt;/target&gt;
+   
+&lt;target name="clean"&gt;
+   &lt;delete dir="${generated.home}" /&gt;
+&lt;/target&gt;
+
+&lt;target name="main" depends="clean, --init, generate_wsdl, generate_stubs, copy_files, copy_all_files"
+   description="Generates Apache Axis SOAP stub/skeleton."&gt;
+&lt;/target&gt;
+   
+&lt;target name="deploy" depends="--init, --deploy_service, --copy_server_config"
+   description="Deploys the service and copies the server-config.wsdd back to primus WEB-INF."&gt;
+&lt;/target&gt;
+
+
+&lt;/project&gt;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24916.hva#150578</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24916.hva#150578</link>
+				<pubDate><![CDATA[Wed, 10 Sep 2008 19:39:39]]> GMT</pubDate>
+				<author><![CDATA[ haipt]]></author>
+			</item>
+			<item>
+				<title>Re: ỗi khi generate skeleton/stub file ( dùng eclipse)</title>
+				<description><![CDATA[ Câu trả lời ở đây :
+http://codeprovn.com/forums/viewtopic.php?f=23&t=1034]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/24916.hva#151466</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/24916.hva#151466</link>
+				<pubDate><![CDATA[Mon, 15 Sep 2008 20:24:04]]> GMT</pubDate>
+				<author><![CDATA[ haipt]]></author>
+			</item>
+	</channel>
+</rss>

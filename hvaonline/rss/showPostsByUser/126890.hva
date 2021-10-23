@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "M®TUAN"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/126890.hva</link>
+		<description><![CDATA[Messages posted by "M®TUAN"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Không kết nối được với Ubuntu Server</title>
+				<description><![CDATA[ Mình có server chạy Ubuntu 12.4. Server chạy Nginx làm reserve proxy và PHP-FPM, Apache xử lý php, db sử dụng mongodb
+SYN không nhiều ~150, Connections ~ 7000 (90% port 80)
+Hiện tại có vấn đề là ở PC hay không kết nối được tới server tại các port tồn tại cũng đều holding sau đó timeout (21, 22, 80...). Telnet tới port không có thì báo refuse. Hiện tượng lặp đi lặp lại khoảng 5' một lần. Không ssh được, không telnet được, nhưng kết nối ssh mở từ trước thì lại vẫn sử dụng bình thường, không bị treo.
+<font color='yellow'>Việc treo kết nối xảy ra ở điện thoại android, ở PC sử dụng Ubuntu kết nối tới. Test trên iPhone và Windows lại không vấn đề gì.</font>
+
+dmesg không có gì lạ, thi thoảng có những cái này
+<blockquote><font color='orange'>Peer 103.245.88.xxx:60352/80 unexpectedly shrunk window 4253769012:4253769013 (repaired)
+Peer 189.187.136.xxx:57952/80 unexpectedly shrunk window 1376271901:1376277661 (repaired)
+TCP: tcp_parse_options: Illegal window scaling value 161 &gt;14 received</font>
+&nbsp;
+		</blockquote>
+Nếu tắt nginx đi, không nhận request gì thì việc kết nối lại bình thường.
+Mình cũng đã thử đổi server, đổi đường truyền nhưng hiện tượng vẫn bị lặp lại. 
+Xác định là do phần config ở server, mình có config lại sysclt, nginx như sau
+Sysctl
+<blockquote><font color='orange'>net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv4.ip_local_port_range = 1024 65535
+# increase Linux autotuning TCP buffer limit
+net.ipv4.tcp_rmem = 4096 25165824 25165824
+net.ipv4.tcp_wmem = 4096 65536 25165824
+# increase TCP max buffer size settable using setsockopt()
+net.core.rmem_max = 25165824
+net.core.rmem_default = 25165824
+net.core.wmem_max = 25165824
+net.core.wmem_default = 65536
+net.core.optmem_max = 25165824
+# increase the length of the processor input queue
+net.core.netdev_max_backlog = 30000
+#20131227
+fs.file-max = 6553600
+net.netfilter.nf_conntrack_max = 196608
+net.nf_conntrack_max = 196608
+net.ipv4.tcp_max_syn_backlog = 4096</font>&nbsp;
+		</blockquote>
+
+nginx
+<blockquote><font color='orange'>user  nginx;
+worker_processes  8;
+worker_rlimit_nofile 1000000;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+#multi_accept on;
+events {
+    worker_connections 4096;
+}</font>&nbsp;
+		</blockquote>
+Limit của nginx:
+<blockquote><font color='orange'>Limit                     Soft Limit           Hard Limit           Units
+Max cpu time              unlimited            unlimited            seconds
+Max file size             unlimited            unlimited            bytes
+Max data size             unlimited            unlimited            bytes
+Max stack size            8388608              unlimited            bytes
+Max core file size        0                    unlimited            bytes
+Max resident set          unlimited            unlimited            bytes
+Max processes             128167               128167               processes
+Max open files            8192                 8192                 files
+Max locked memory         65536                65536                bytes
+Max address space         unlimited            unlimited            bytes
+Max file locks            unlimited            unlimited            locks
+Max pending signals       128167               128167               signals
+Max msgqueue size         819200               819200               bytes
+Max nice priority         0                    0
+Max realtime priority     0                    0
+Max realtime timeout      unlimited            unlimited            us</font>&nbsp;
+		</blockquote>
+
+Server mình 16GB RAM, CPU E3-1230, 2 SSD raid1 và 2 hdd raid1
+
+Mong các cao nhân chỉ giáo phuơng án xử lý cho hiện tượng này, cám ơn nhiều  :D ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45417/279525.hva#279525</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45417/279525.hva#279525</link>
+				<pubDate><![CDATA[Wed, 22 Jan 2014 04:21:41]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Sử dụng nhiều IP trên 1 server</title>
+				<description><![CDATA[ 2 cái eth0:0 và eth0:1 là virtual interface, liệu có cách cấu hình nào khác không vậy?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42379/263692.hva#263692</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42379/263692.hva#263692</link>
+				<pubDate><![CDATA[Mon, 21 May 2012 03:03:52]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Sử dụng nhiều IP trên 1 server</title>
+				<description><![CDATA[ Em có 1 server chạy Ubuntu 11.10, em có 3 ip cho server này, cấu hình card mạng của em là
+iface eth0 inet static
+        address x.x.x.10
+        netmask 255.255.255.192
+        network x.x.x.x
+        broadcast x.x.x.x
+        gateway x.x.x.x
+
+iface eth0:0 inet static
+        address x.x.x.11
+        netmask x.x.x.x
+        broadcast x.x.x.x
+        network x.x.x.x
+
+iface eth0:1 inet static
+        address x.x.x.12
+        netmask x.x.x.x
+        broadcast x.x.x.x
+        network x.x.x.x
+
+Ở apache tạo vhost cho các domain khác nhau trỏ về các ip khác nhau .11, .12 ok, nhưng đầu ra, public, front ip lại luôn là .10, Vậy cho em hỏi có giải pháp nào public IP thay đổi (sử dụng .11 và .12) được không ạ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/42379/263684.hva#263684</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/42379/263684.hva#263684</link>
+				<pubDate><![CDATA[Mon, 21 May 2012 01:17:44]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Re: Hỏi về khóa CMD trong windows</title>
+				<description><![CDATA[ ý em muốn hỏi là vẫn thực hiện được cmd chứ không phải disable nó ạ, vì cái này em dịch nó là phân quyền ngăn cách giữa các user trong cmd nhưng thực ra nó là disable hẳn cái cmd đi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25944/157384.hva#157384</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25944/157384.hva#157384</link>
+				<pubDate><![CDATA[Sun, 2 Nov 2008 11:11:04]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Hỏi về khóa CMD trong windows</title>
+				<description><![CDATA[ Ở phòng lab trường em thì khi vào run gõ cmd thì vẫn ra nhưng sẽ không thực hiện được 1 số quyền system, vd như đổi pass user: "net user admin password" sẽ báo lỗi, nhưng khi run C:\windows\system32\cmd.exe thì lại có thể thực hiện được các lệnh đó (user ở đây quyền admin). Hiện tại thì phòng lab không được vào nữa nên em chưa ngâm được xem nó như thế nào. Xin hỏi các anh cách làm như vậy vì em muốn dis 1 số tính năng của cmd không cho người khác nghịch linh tinh.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/25944/157242.hva#157242</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/25944/157242.hva#157242</link>
+				<pubDate><![CDATA[Sat, 1 Nov 2008 12:58:51]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Lỗi Windows Explorer - Oái oăm và rất thú vị</title>
+				<description><![CDATA[ máy em dùng xp sp2 vẫn bình thường mà, vẫn del nó vào sọt rác bình thường, chỉ có nhảy cà tưng vì lỗi windows]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/1085/7990.hva#7990</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/1085/7990.hva#7990</link>
+				<pubDate><![CDATA[Wed, 19 Jul 2006 11:55:03]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn sử dụng NetCat</title>
+				<description><![CDATA[ ơ hay mỗi khi connect vào 1 server thì phải gõ lệnh nc là khoá để chạy netcat, ai mà chả thế, bố hỏi thế thì con cũng chịu. có dùng cũng chả được gì đâu bố]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/157/6053.hva#6053</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/157/6053.hva#6053</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 00:58:45]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Chỉ mình cách xâm nhập máy chủ qua mạng LAN với (mình là newbie)</title>
+				<description><![CDATA[ không có command, không có quyền truy xuất mycomputer và các local disk, ai giúp xem cái soft này nó dùng regestry để khoá cái gì và mình có thể unlock được không <span class="link"> http://www.thaibinhtrade.com/tbnet/download/inetman219_setup.exe</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/1204/6048.hva#6048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/1204/6048.hva#6048</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 00:19:49]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Re: Vấn đề về host Pipni</title>
+				<description><![CDATA[ chmod lại file đó 755 hoặc có thể file đó nằm bên private_html . wa đó copy về public xem sao :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/1050/5394.hva#5394</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/1050/5394.hva#5394</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:49:34]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Re: code nhạc cool</title>
+				<description><![CDATA[ ko tương thích firefox thật, không khoái xài mấy cái kiểu này]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/1119/5390.hva#5390</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/1119/5390.hva#5390</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:37:29]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>cách cài localhost ?????</title>
+				<description><![CDATA[ bài viết khá chi tiết, cho tui hỏi thế config cái nameserver để tích hợp vào domain của mình kiểu gì. Tôi đã config modem để chạy localhost và phải dùng sub-domain, giờ có domain rồi thì cái nameserver ở đâu (localhost nha vì config trên domain ai mà chả biết) vd:ns1.yourserver.com 
+     ns2.yourserver.com]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/1197/5388.hva#5388</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/1197/5388.hva#5388</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:34:51]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Get winnt password</title>
+				<description><![CDATA[ vâng, md5 là mã hoá chỉ có encrypt mà không có decrypt, dùng Hirent Boot CD thì trước tôi cũng có dùng chưa test trên ổ NTFS, ko biết thế nào]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/948/5387.hva#5387</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/948/5387.hva#5387</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:27:09]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Get winnt password</title>
+				<description><![CDATA[ nhưng có soft nào giải mã md5 ko mí anh]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/948/5380.hva#5380</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/948/5380.hva#5380</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:06:58]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+			<item>
+				<title>Hack Lan bằng lênh thường trú</title>
+				<description><![CDATA[ em type vào nó báo lỗi : System error 67 has occurred
+là sao?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/460/5379.hva#5379</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/460/5379.hva#5379</link>
+				<pubDate><![CDATA[Sun, 9 Jul 2006 12:02:32]]> GMT</pubDate>
+				<author><![CDATA[ M®TUAN]]></author>
+			</item>
+	</channel>
+</rss>

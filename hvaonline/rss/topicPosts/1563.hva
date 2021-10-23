@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Sử dụng SYSLINUX làm bootloader"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Sử dụng SYSLINUX làm bootloader"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Sử dụng SYSLINUX làm bootloader</title>
+				<description><![CDATA[ <b>Sử dụng SYSLINUX làm bootloader</b>
+
+April 13th 2006
+
+Để tạo một đĩa (đĩa mềm hay CD) khởi động Linux, bạn cần phải ghi nhân Linux (Linux kernel) lên sector 0 của đĩa, hoặc dùng các chương trình bootloader như LILO, GRUB để đọc Linux kernel vào bộ nhớ. Tôi chưa sử dụng GRUB, nhưng với cách ghi thẳng Linux kernel lên sector 0 hay dùng LILO thì chúng ta cần phải làm một số việc như copy Linux kernel, sau đó thiết lập thông số ramdisk word và cuối cùng là copy root filesytem lên đĩa.
+
+SYSLINUX là một chương trình bootloader và tiện ích giúp ta làm toàn bộ các công việc trên một cách đơn giản chỉ với một dòng lệnh. Việc tạo một đĩa CD khởi động cũng đơn giản hơn rất nhiều khi sử dụng SYSLINUX. SYSLINUX được sử dụng trong rất nhiều các hệ thống Linux trên đĩa mềm phổ biến, cũng như trong các bản phân phối Linux (như đĩa cài đặt Fedora Core). Nếu khi khởi động một hệ thống Linux bằng đĩa mềm hay CD mà bạn thấy đầu tiên hiện ra dòng chữ SYSLINUX (với đĩa mềm) hay ISOLINUX (với CD) thì tức là hệ thống đó sử dụng SYSLINUX làm bootloader. Ngoài ra SYSLINUX còn có thể sử dụng cho network booting (với tên gọi PXELINUX).
+Đặc điểm của SYSLINUX
+
+SYSLINUX chỉ có thể khởi động Linux từ một đĩa sử dụng hệ thống file FAT. Do đó nó chỉ thích hợp để khởi động hệ thống Linux với các file kernel và root filesystem ghi trên đĩa mềm hay CD, chứ không thích hợp dùng để khởi động một hệ thống Linux cài đặt trên ổ cứng (thường sử dụng hệ thống file ext2 hay ext3).
+
+Lưu ý rằng điều này không có nghĩa là hệ thống Linux của bạn phải ghi trên FAT filesystem. Chỉ là yêu cầu về đĩa chứa file kernel và root filesystem. Sau khi Linux kernel đã được load lên, nó có thể hoạt động với bất kỳ hệ thống file nào mà nó hỗ trợ (được thiết lập khi biên dịch kernel).
+Cơ bản về cách tạo đĩa khởi động Linux với SYSLINUX
+
+Để tạo một đĩa khởi động Linux dùng SYSLINUX làm bootloader, cần chuẩn bị file nhân Linux (là file bzImage thu được khi compile kernel bằng lênh make bzImage, thường có tên là bzImage, vmlinuz hay kernel.bzi ...), một file chứa root filesystem (thường được nén lại và đặt tên là initrd.gz), một file cấu hình SYSLINUX trong đó báo cho bootloader biết tên của file nhân Linux và root filesystem. Dĩ nhiên là còn cần có chương trình syslinux để cài đặt bootloader hay chương trình mkisofs để tạo CD image. Hai chương trình này thường được cài sẵn trong nhiều hệ thống Linux (như Fedora Core hay RedHat).
+
+Cách tạo file nhân Linux hay file chứa root filesystem nằm ngoài phạm vi bài viết giới thiệu về SYSLINUX. Xem như bạn đã biết cách tạo hai file đó (nếu không thì chưa thể nghĩ đến việc làm đĩa khởi động Linux làm gì). Việc duy nhất còn lại phải chuẩn bị là tạo file cấu hình cho SYSLINUX, một công việc tương đối đơn giản. Khi có 3 file này là có thể sử dụng SYSLINUX để làm đĩa khởi động.
+
+<b>Cơ bản về file cấu hình SYSLINUX</b>
+
+File này có tên là syslinux.cfg. Một file syslinux.cfg điển hình như sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Đặt giá trị này thành 0 nếu bạn muốn bỏ qua dấu nhắc lúc khởi động.
+# Dấu nhắc cho phép bạn lựa chọn nhiều cấu hình khởi động khác nhau
+# bằng cách gõ tên của cấu hình đó tại dấu nhắc
+# &#40;đã được định nghĩa sẵn trong file syslinux.cfg&#41;
+PROMPT 1
+
+# Cấu hình khởi động mặc định.
+# Nếu bạn ấn ENTER tại dấu nhắc lúc khởi động &#40;mà không nhập tên cấu hình&#41;,
+# cấu hình mặc định sẽ được sử dụng.
+DEFAULT cauhinh1
+
+LABEL  cauhinh1
+KERNEL vmlinuz
+APPEND initrd=initrd.gz root=/dev/ram0 init=/rc
+
+LABEL  cauhinh2
+KERNEL vmlinuz
+APPEND initrd=initrd.gz root=/dev/ram0 init=/rc vga=0x301
+
+LABEL chỉ tên cấu hình, KERNEL báo cho SYSLINUX biết phải load file nhân Linux nào, APPEND thêm các thông số truyền cho nhân kernel.
+
+Nếu chỉ có một cấu hình duy nhất, thì file syslinux.cfg có thể chỉ đơn giản như sau:
+
+DEFAULT vmlinuz initrd=initrd.gz root=/dev/ram0 init=/rc</pre>
+		</div>
+
+Tạo đĩa mềm khởi động Linux
+
+Chép 3 file kernel, root filesystem, syslinux.cfg vào đĩa mềm rồi gõ lệnh:
+syslinux /dev/fd0
+(giả sử đĩa mềm là /dev/fd0).
+Tạo đĩa CD khởi động Linux
+
+Dùng chương trình mkisofs để tạo một CD image của đĩa khởi động Linux. Sau đó dùng một chương trình burn CD (trên Fedora Core có thể dùng k3b) để burn file này vào đĩa.
+
+Tạo một thư mục bất kỳ, rồi chép 3 file: nhân linux, file chứa root filesystem và file cấu hình (giống file <b>syslinux.cfg</b> như ở trên, nhưng đặt tên là<b> isolinux.cfg</b>). Sau đó chép thêm một file tên là isolinux.bin vào trong thư mục này. File này nằm trong package syslinux, có thể download về từ trang web của syslinux.
+
+Vào trong thư mục này rồi gõ lệnh sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mkisofs -o ../output.iso -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table .</pre>
+		</div>
+Lệnh này sẽ tạo ra một file CD image tên là output.iso nằm ởparent directory của thư mục hiện tại. Toàn bộ các file đặt trong thư mục hiện tại (không chỉ 4 file đã được đề cập ở trên) sẽ được chép vào CD image.
+
+Cú pháp của lệnh mkisofs là:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mkisofs -o file output iso \
+       -b &lt;file isolinux.bin&gt; -c &lt;file boot.cat&gt; \
+       -no-emul-boot -boot-load-size 4 -boot-info-table \
+       root-of-iso-tree</pre>
+		</div>
+
+trong đó file isolinux.bin và file boot.cat phải nằm trong root-of-iso-tree và được mô tả với đường dẫn tương đối tính từ root-of-iso-tree.
+Toàn bộ thư mục root-of-iso-tree là cấu trúc file và thư mục của CD muốn tạo, sẽ được chép vào CD image.
+
+<b>Tham khảo:</b>
+
+    * Trang web của SYSLINUX<span class="link"> http://syslinux.zytor.com/index.php</span>
+    * Tạo đĩa khởi động Linux<span class="link"> http://www.tldp.org/HOWTO/Bootdisk-HOWTO/x70</span>
+
+
+Trần Trung Thành : vnhacker.org]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1563.hva#7423</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1563.hva#7423</link>
+				<pubDate><![CDATA[Mon, 17 Jul 2006 11:53:25]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+			<item>
+				<title>Re: Sử dụng SYSLINUX làm bootloader</title>
+				<description><![CDATA[ Mình làm theo hướng dẩn như trên nhưng bị lỗi này khi boot
+
+"windows could not start because the following file is missing or corrupt:
+
+windows root \ayatwn32\hal.dll
+
+please re-install a copy of the a bove"
+
+Bác nào biết chỉ giúp em với..! em đang cài ubuntu 9.4
+em nghỉ chắc do edit file menu bị sai mong Bro chỉ giúp!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1563.hva#170619</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1563.hva#170619</link>
+				<pubDate><![CDATA[Mon, 23 Feb 2009 12:53:38]]> GMT</pubDate>
+				<author><![CDATA[ boyone.love]]></author>
+			</item>
+			<item>
+				<title>Re: Sử dụng SYSLINUX làm bootloader</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">boyone.love wrote:</cite><br>
+		<blockquote>Mình làm theo hướng dẩn như trên nhưng bị lỗi này khi boot
+
+"windows could not start because the following file is missing or corrupt:
+
+windows root \ayatwn32\hal.dll
+
+please re-install a copy of the a bove"
+
+Bác nào biết chỉ giúp em với..! em đang cài ubuntu 9.4
+em nghỉ chắc do edit file menu bị sai mong Bro chỉ giúp!&nbsp;
+		</blockquote>
+
+theo em, nó đã báo "windows ...." chứng tỏ rằng lỗi ở phía Windows.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1563.hva#170624</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1563.hva#170624</link>
+				<pubDate><![CDATA[Mon, 23 Feb 2009 14:15:06]]> GMT</pubDate>
+				<author><![CDATA[ hizit91]]></author>
+			</item>
+			<item>
+				<title>Sử dụng SYSLINUX làm bootloader</title>
+				<description><![CDATA[ mong bác sớm có 1 bài hướng dẫn về Boot PXE nữa  cho ace tham khảo.... sớm mong bài của bác]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1563.hva#267669</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1563.hva#267669</link>
+				<pubDate><![CDATA[Sun, 29 Jul 2012 11:11:01]]> GMT</pubDate>
+				<author><![CDATA[ kimcuongden1712]]></author>
+			</item>
+	</channel>
+</rss>

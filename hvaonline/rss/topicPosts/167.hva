@@ -1,0 +1,1828 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Snort - Detecting Intrusions"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Snort - Detecting Intrusions"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ <font color='violet'><b>Phát hiện xâm nhập - Detecting Intrusions</b></font>
+
+Phát hiện xâm nhập đơn giản là phát hiện những tín hiệu , biểu hiện của người xâm nhập trước khi thiệt hại xảy ra như các services bị denied hay mất dữ liệu và chúng ta có thể ngăn chặn thông qua các kĩ thuật khác nhau. Config những log của hệ thống mà lưu giữ những thông tin về services, user hay data. Người quản trị có thể phát hiện những thông tin lý thú trong các log này, nó thực sự quan trọng khi coi các log và là bước đầu tiên cơ bản nhất để phát hiện xâm nhập và system log đã cho thấy giá trị thực sự của nó
+
+Kế tiếp của sự phát hiện xâm nhập là dùng các tools tự động thường được xem là 1 HIDS ( host-based intrusion detection).HIDS tools bao gồm các software antivirus, persional firewall, NIDS đựơc cài đặt trên các host và nhiều software bảo vệ chống tràn bộ đệm hoặc sự cố gắng bẻ gãy policy của attacker
+
+Và cuối cùng là NIDS
+
+Ví dụ về các HIDS
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136263299_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<font color='violet'>NIDS - Network Instrusion Detection System là gì ? </font>
+Trên cấp độ căn bản, phát hiện xâm nhập được xem như là 1 tiến trình được quyết định khi 1 người không xác chứng thực đang cố gắng để bẻ gãy hệ thống của bạn. Phát hiện những kết nối không hợp lệ là bước khởi đầu tốt nhưng không phải là tẩt cả câu chuyện. Những hệ thống như Snort có thể phát hiện những sự cố gắng đang login vào hệ thống, truy cập vào những vùng share không được bảo vệ và nhiều điều khác nữa, nhưng nhiều loại xâm nhập không rõ ràng để chúng ta có thể phát hiện dễ dàng như là các các cuộc tấn công dùng phương pháp DoS tuy nó không thiệt hại nhiều chỉ chiếm bandwidth và Cpu, dung lượng ổ cứng trên IDS nhưng nó cũng là tín hiệu để có biện pháp phòng chống hữu hiệu
+
+NIDS như Snort có thể scan network traffic để phát hiện những tín hiệu nghi ngờ và các gói dữ liệu xấu, và bạn cũng có thể dùng những tools khác như Tcpdump hay ethereal để để xem các luồng thông tin trên các subnet khác nhau, từ những tools này chúng ta có thể sniff các packet để phân tích và debug hệ thống
+
+Một IDS sẽ kiểm tra tất cả các packet đi qua hệ thống và quyết định packet có vấn đề khả nghi. Bằng cách nào nó có thể biết packet đó khả nghi ? như Snort sẽ có các danh sách các loại packet được mô tả tỷ mỉ giúp hệ thống dựa vào đó mà phán quyết packet nào khả nghi ví dụ như nếu bạn nhận được 1 gói ICMP có kích thước lớn hơn bình thường và bạn có thể đoán được 1 người nào đó đang cố gắng ping of death vào mạng của bạn hoặc như bạn nhận đuợc các packet đựơc phân mảnh ra cực kì ngắn bạn cũng có thể suy ra rằng ai đó đang dùng kĩ thuật tấn công phản hồi làm đảo lộn các gói để lừa firewall thường đuợc gọi là fragmentation attack. Snort cũng như các IDS khác đuợc trang bị hàng ngàn tình huống để nhận dạng tấn công và đuợc cập nhật thường xuyên trên Snort website. Snort và các IDS khác thực sự quan trọng và là lựa chọn hàng đầu để phòng thủ, nếu một attacker xâm nhập và Server của bạn, bạn có thể phát hiện ở system log, mặc dù nhiều attacker tinh ranh xóa đi log của bạn
+
+Ví dụ đây là mô hình của NIDS
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136263853_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136263923_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Trong đó:
+
+- IDS sensor: Giám sát các traffic ở các segment / zone, gửi dữ liệu về centralize database server
+- Centralize database server: nơi tập trung các dữ liệu lấy từ sensor vào database (mysql chẳng hạn)
+- User interface: admin dùng giao diện web UI để giám sát
+
+Và đây là các module của nó ở mức luận lý
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136263980_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Giải thích cụ thể hơn 1 chút:
+
+Gói tin bị capture từ sensor - host system or network sniffer (có thể là ở cấp độ host hoặc là cấp độ mạng) sẽ được chuyển qua pre-processing
+Pre-processing: gồm bộ phận decoder và preprocess:
+
+- Decoder: đọc packet, nhận biết các trường trong packet
+- Preprocess: sắp xếp hoặc modify lại packet trước khi đi vào detection engine. Một số module này có khả năng phát hiện các packet dị thường trong header và sinh ra alert. Ngoài ra, nó có thể tái định dạng gói tin (defragment), sắp xếp lại chuỗi.
+
+Detection engine: xảy ra quá trình phân tích packet: so sánh mẫu (signature matching) hoặc phân tích các dị thường trong packet (statictical analysis) để đưa ra output (alert manager) quyết định.
+
+Knowledge base: database signature.
+
+Long-term storage: nơi chứa các phát hiện dị thường của packet (không được định nghĩa trước)
+
+Response manager: thực thi đáp ứng của alert manager như: ghi log, popup....
+GUI: giao diện đồ họa tương tác.
+Nhìn vào các sơ đồ trên ta có thể hình dung được phần nào về hệ thống của IDS, IDS can thiệp vào phần payload của các packet sâu hơn là các firewall, hình minh hoạ sau giúp ta phần biệt firewall và IDS dễ dàng hơn, rất dễ hiểu phần đầu là việc của firewall còn phần sau IDS làm tiếp việc kiểm tra của nó
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136264064_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<font color='violet'><b>Tại sao Snort là một NIDS ?</b></font>
+
+Snort được coi như là NIDS mang lại nhiều lợi ích và là 1 NIDS mạnh mẽ phù hợp cho nhiều công ty vì nhiều lý do
+
+Giá cả
+
+Là một software mã nguồn mở và tất nhiên là free nhưng dễ dùng đựơc đóng gói thành nhiều sản phẩm phù hợp cho từng doanh nghiệp. Snort đuợc phát triển do công ty Soucefire điều hành bởi Martin Roesch. Hiện tại công ty Check point đã mua lại Soucefire với giá 225 triệu USD
+
+Ổn định, Nhanh, Mạnh mẽ
+
+Ngay từ đầu đây là mục đích chính để các nhà phát triển Snort luôn luôn giữ nó nhỏ gọn, nhanh, và trong sáng dễ dùng, không chiếm dụng nhiều đường truyền.
+
+Tính năng tiền xử lý
+
+Dùng để xử lý trước các message trong network ở thời gian thực tăng khả năng nhận dạng các packet nghi ngờ, tăng khả năng nhận diện attacker dùng các kĩ thuật tấn công nhằm đánh lạc hướng IDS
+
+Tính Uyển Chuyển
+
+Có thể dễ dàng thiết lập những rules trên những mode khác nhau phù hợp với thực trạng của công ty. Có thể dùng các tools để quản lý tập trung như ACID hay SnortCenter. Nhiều Scripts có thể plug-ins để mở rộng chức năng Snort có thể tạo những Access Control List tự động trên các thiết bị Cisco routers là 1 ví dụ điển hình
+
+Được Support mạnh mẽ
+
+Nhiều công ty thường xuyên test và kiểm tra các lỗ hổng của Snort đưa ra nhiều biện pháp khắc phục như CERT và SANS. Là sản phẩm nguồn mở nên được support rất nhiều bởi cộng đồng người sử dụng trên internet và các thông báo sẽ gửi đến từng người sử dụng qua mail nếu đăng kí và quan tâm đến Snort.
+
+<font color='red'>TÀI LIỆU THAM KHẢO: SNORT COOKBOOK---OREILLY, SNORT INSTRUSION DETECTION 2.0--- SYNGRESS
+Bài viết sử dụng 1 số hình ảnh của omicron trong bài IDS/IDP vs firewall</font>
+
+
+<b><font color='violet'>::: Phần 2 Cài Đặt Và Cấu Hình Snort:::</font></b>
+
+Trong phần này em sẽ trình bày các kĩ thuật thường dùng để bắt các packet và phân tích nội dung của chúng, các kinh nghiệm cài đặt và sử dụng. Em sẽ bắt đầu với cách sử dụng Snort như là Sniffer, Packet logger và cuối cùng là sử dụng Snort thực sự là NIDS
+
+2.1.Vài dòng về Snort
+
+Ngày nay Snort có lẽ là sản phẩn IDS mã nguồn mở nổi tiếng nhất. Snort đuợc thiết kế dùng command line và nó có thể tích hợp chung với các sản phẩm khác và được dùng trên nhiều platforms khác nhau .
+Snort lần đầu tiên được phát triển năm 1998 lúc đó chức năng chính của nó là sniff các packet và đến nay nó phát triển vượt bậc với nhiều tính năng mạnh như đã biết. Hàng tuần Snort được download bởi hàng ngàn người và các nhà phát triển.Hiện nay nó được sử dụng như là IDS từ người dùng nhỏ đến các công ty lớn trên toàn thế giới trên nhiều platform khác nhau như Windows,FreeBSD,Linux,Solaris..
+
+2.2.Cài Đặt Snort
+
+Chúng ta có thể cài đặt Snort từ Souce code hay là các gói RPM .Theo kinh nghiệm nên download source code và sau đó biên dịch để cài đặt hơn là dùng các gói binary có sẵn. Ta có thể config Snort kết hợp với MySQL. Hiện tại phiên bản mới nhất của Snort là 2.4.3 ngày 18/10/05 và khuyên nên dùng bản này trước đó ngày 6/10/05 CERT và SANS đã phát hiện lỗ hổng của Snort trong phần tiền xử lý Back Orifice. 
+
+2.2.1Cài đặt từ Source code
+
+Cài Snort khá dễ dàng, có nhiều tuỳ chọn phù hợp với nhu cầu ngừơi dùng; phần quan trọng nhất của Snort là kết hợp với nhiều database để lưu trữ. Download và giải nén Snort từ địa chỉ<span class="link"> http://www.Snort.org</span> . tôi thường cài đặt vào thư mục /usr/local/src bạn có thể sử dụng các lệnh sau để cài đặt
+
+$ tar -xvft Snort-2.4.3.tar.gz
+$ cd Snort-2.4.3
+$ ./ configure
+$ make
+$ make install
+
+Nó sẽ cài vào thư mục /usr/local/bin, mọi user có thể chạy nó. Nếu nó không chạy lệnh configure sẽ thông báo cho bạn biết. Hầu hết các trường hợp đều do 2 thư viện libpcap và PCRE ( pert-compatible regular Expression ) có thể download libpcap ở<span class="link"> http://www.tcpdump.org</span> và PCRE ở<span class="link"> http://www.pcre.org</span>
+
+2.2.2 Cài đặt trên windows
+
+Nếu muốn sử dụng Snort trên Windows bạn phải download thư viện winpcap từ địa chỉ<span class="link"> http://winpcap.polito.it.</span> Sau khi cài đặt winpcap rồi ta sẽ download bản cho windows ỏ<span class="link"> http://www.Snort.org/dl/binaries/win32.</span> Snort sẽ chạy với các dòng lệnh trên windows
+Một phiên bản khác có thể download từ địa chỉ<span class="link"> http://winSnort.com</span> được quản lý bởi Michael E.Steele và tất nhiên cũng free. Bản dùng cho windows làm việc tốt với cơ sở dữ liệu Microsoft SQL server và cũng có rất nhiều tài liệu về Snort trên website này rất bổ ích.
+Nhiều cuộc thảo luận dài diễn ra bàn luận về các hệ điều hành dùng Snort cái nào nhanh nhất. Tổng hợp từ nhiều nguồn tin từ các người dùng bằng cách đo điểm benchmarks chỉ ra rằng bản dùng cho windows nhanh hơn trên Linux và BSD
+
+Các option trong câu lệnh của Snort
+
+Các option này cũng được mô tả rất kĩ trong file config của Snort ,nếu chỉ muốn thử và tìm hiểu thì ta nên dùng các command line còn nếu muốn lưu giữ luôn trong file lúc setting nên vào config file
+
+-A altert-mode
+
+Nhiều mode được hỗ trợ ở đây như : fast , full, none, unsock
+-b
+
+Log packet dạng tcpdump. file với format dạng tcmdump sẽ nhỏ hơn và là phương pháp tốt nhất khi cần lưu trữ với số luợng lớn log data và packet. dĩ nhiên nhỏ sẽ nhanh hơn và là sự lựa chọn trên các mạng tốc độ cao
+
+-B address-conversion-mask
+
+Giúp ẩn địa chỉ thực sự của internal network trong binary logs
+
+-c config-file
+
+Chỉ định conifg file nào muốn sử dụng, cần thiết khi Snort chạy ở mode NIDS
+
+-C
+
+In ra những kí tự tìm thấy trong packet payload, có thể hiển thị ở dạng hex
+
+-d
+
+Hiển thị dữ liệu ở tầng application khi dùng chế độ hiển thị đầy đủ hoặc trong packet logging mode
+
+-D
+
+Chạy Snort ở mode daemon. Daemon mode cần thiết khi ta cần chạy Snort tự động mỗi khi startup và sẽ hiển thị trong event khi ta khởi động, không có message nào được hiển thị trong console khi chạy ở mode này
+
+-e
+
+Hiển thị hoặc log các lớp liên kết paket headers. thường dùng khi capture packet khi chạy Snort ở chế độ Sniffing
+
+-F bpf-file
+
+Đọc Berkeley Packet Filters (BPF) từ bpf file.
+
+-g group
+
+Thay đổi group ID hoặc GID mặc định. Thường dùng khi ta muốn Snort chỉ cho dùng bởi những group đặc biệt mục đích để security hơn
+
+-h home-net
+
+Thiết lập "home network" chỉ định địa chỉ trong định dạng CIDR. Thường sử dụng để tạo biến HOME_NET trong file config
+
+-i interface
+
+Chỉ định interface nào Snort sẽ lắng nghe
+
+-I
+Trong thông báo, hiển thị interface nào mỗi packet khi packet đến nếu ta có nhiều interface cùng lúc sử dụng nhìêu sensor và các sensor gửi các packet đến database quản lý cùng 1 lúc
+
+-k checksum-mode
+
+Điều khiển các packet checksums Snort. Nhiều giá trị checksum mode bao gồm all,noip,notcp,noudp,noicmp,none
+
+-l logging-directory
+
+Chỉ định thư mục để log các alter. Mặc định thư mục log là /var/log/Snort, nhưng mặc định chỉ sử dụng khi Snort chạy ở -A mode
+
+-L binary-log-file
+
+Thiết lập filename của file binary, mặc định sẽ là thời gian thêm vào trước chữ Snort.log được lưu trong log
+
+-m umask
+
+Thiết lập chế độ tạo mặt nạ file, đơn giản chỉ là ngăn chặn xem log file trong khi đang capture packet, tránh hacker xoá log
+
+-n packet-count
+
+Đếm số luợng packet đang tồn tại. thường dùng khi muốn capture một traffic ở mạng nhỏ trong thời gian ngắn
+
+-N 
+
+Tắt packet logging nhưng chế độ alert vẫn hoạt động và chỉ hiển thị trên màn hình console. thường dùng để test những file cấu hình mới
+
+-o
+Thay đổi thứ tự các rules đựoc áp đặt đến packet. Thay vì các rules áp đặt theo dạng chuẩn alert  pass  Log, ta có thể áp đặt lại Pass  Alert  Log. Khuyên dùng đối với người dùng chạy SnortCenter hoặc các web interfaces khác. Option này thường sử dụng khi chắc chắn rằng nhựng pass rules sẽ applied trước những detection rules.
+
+-O
+Khi ở mode ASCII, nó sẽ thay thế địa chỉ ip hiển thị trên màn hình hoặc logfile với dạng”xxx.xxx.xxx.xxx”. nếu home-net đựoc set ở -h , chỉ có ip của home-net được hiển thị còn lại sẽ được thay thế. Sử dụng khi capture nhưng packet dùng để làm mẫu và share với mọi người trong các cuộc thảo luận ỏ các group hoặc qua mailing list
+
+-p
+
+Tắt chế độ sniff hỗn tạp, chỉ dùng để bảo vệ 1 host duy nhất.
+
+-P snap-length
+
+Thiết lập chiều dài tối đa cho các packet capture.Thiết lập để có thể bắt hết các packet, nếu thiết lập chiều dài quá ngắn có thể không coi hết được nội dung của packet khi cần thiết
+
+-q
+
+Không hiển thi banner hay những thông tin khi khởi động
+
+-r tcpdump-file
+
+Sử dụng option này khi dùng với file định dạng tcpdump
+
+-s
+
+Gửi alert message đến syslog server. Có thể gửi ở local hay remote server
+
+-S variable=value
+
+Gán giá trị cho biết ví dụ home-net, dn-server….
+
+-t chroot
+
+Thay đổi thư mục root của Snort là chroot sau khi khởi động. đường dẫn cho logfiles và các files alert sẽ liên quan trực tiếp đến thư mục mới này
+
+-T
+
+Khởi động Snort ơ chế độ selt-test. Hữu ích khi debug Snort trước khi chạy ở chế độ deamon
+
+-u user
+
+Thay đổi ID và UID của user giống như –g phía trước
+
+-U
+
+Áp đặt thời gian vào log files. Dùng trong các truờng hợp capture từ nhiều sources trên 1 syslog server và các sensor gửi thông qua WAN
+
+-v
+
+In toàn bộ packet trên console. Cẩn thận khi dùng, nó làm cho Snort chậm đi khi drop packet
+
+-V
+
+Hiển thị Version của Snort
+-x
+
+Hiển thị các packet “thô” cần dùng khi xem các ethernet headers và trailers
+
+-y
+
+Bao gồm năm trong log files
+
+-z
+
+Bật chức năng stream4
+
+-?
+
+Danh sách các option và thoát
+
+
+2.3. Các chế độ hoạt động của Snort
+
+Trong phần này, em sẽ trình bày tại sao cần Snort trong khi nó có vẻ giống các phần mềm khác như tcpdump cũng sniff packet và có thể đọc từ định dạng của libpcap. Sau đây là những lý do chứng tỏ Snort có nhiều điểm tốt trong giải pháp sniffing và phát hiện xâm nhập.
+ Mô tả sâu sắc về các dòng dữ liệu
+ Linh hoạt hơn tcpdump về khả năng đọc và output
+ Có thể dễ dàng chỉnh sửa , hiển thị nhiều trường đa dạng trong các headers
+ Viết các rules liên quan dễ dàng dễ hiểu và dễ chỉnh sửa
+ Có thể report trên các mạng wireless riêng biệt bằng cách sử dụng những patches đặc biệt
+
+Nhìn tổng quan về cơ chế hoạt động của snort
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-67588-1136455684_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+channhua - HVA]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#569</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#569</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 03:34:28]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Snort - A Sniffer</title>
+				<description><![CDATA[ <b><font color='violet'>2.3.1 Snort là một Sniffer</font></b>
+
+Snort rất dễ dàng sử dụng để sniff và ta cũng dễ dàng nhìn ra các thông tin từ các packet captured. Một đặc tính rất hay của Snort là bảng tóm tắt về traffic của mạng trong phần cuối của bảng capture nó rất hữu ích cho Adminstrator để troubleshooting mạng của mình.
+
+Bật chức năng Sniffer bằng cờ -v:
+
+Snort –v
+
+
+Running in packet dump mode
+
+Log directory = /var/log/Snort
+
+
+Initializing Network Interface eth0
+
+
+        --== Initializing Snort ==--
+
+Initializing Output Plugins!
+
+Decoding Ethernet on interface eth0
+
+
+        --== Initialization Complete ==--
+
+
+-*&gt; Snort! &lt;*-
+
+Version 2.1.x (Build 72)
+
+By Martin Roesch (roesch@sourcefire.com, www.Snort.org)
+
+06/24-11:19:32.257859 64.147.136.193:3131 -&gt; 192.168.0.15:9100
+
+TCP TTL:128 TOS:0x0 ID:21742 IpLen:20 DgmLen:48 DF
+
+******S* Seq: 0x5DB36D37  Ack: 0x0  Win: 0xFAF0  TcpLen: 28
+
+TCP Options (4) =&gt; MSS: 1460 NOP NOP SackOK
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+06/24-11:19:32.261606 64.147.136.5 -&gt; 224.0.0.10
+
+EIGRP TTL:2 TOS:0x0 ID:0 IpLen:20 DgmLen:60
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+06/24-11:19:34.470931 64.147.136.1 -&gt; 224.0.0.10
+
+EIGRP TTL:2 TOS:0xC0 ID:0 IpLen:20 DgmLen:60
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+06/24-11:19:34.482799 64.147.136.1 -&gt; 224.0.0.10
+
+EIGRP TTL:2 TOS:0xC0 ID:0 IpLen:20 DgmLen:60
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+===========================================================================
+
+Snort analyzed 38 out of 38 packets, dropping 0(0.000%) packets
+
+
+
+Breakdown by protocol:                Action Stats:
+
+    TCP: 1          (2.632%)          ALERTS: 0
+
+    UDP: 0          (0.000%)          LOGGED: 0
+
+  ICMP: 0          (0.000%)          PASSED: 0
+
+    ARP: 0          (0.000%)
+
+  EAPOL: 0          (0.000%)
+
+  IPv6: 0          (0.000%)
+
+    IPX: 0          (0.000%)
+
+  OTHER: 37        (97.368%)
+
+DISCARD: 0          (0.000%)
+
+===========================================================================
+
+Wireless Stats:
+
+Breakdown by type:
+
+    Management Packets: 0          (0.000%)
+
+    Control Packets:    0          (0.000%)
+
+    Data Packets:      0          (0.000%)
+
+===========================================================================
+
+Fragmentation Stats:
+
+Fragmented IP Packets: 0          (0.000%)
+
+    Fragment Trackers: 0
+
+  Rebuilt IP Packets: 0
+
+  Frag elements used: 0
+
+Discarded(incomplete): 0
+
+  Discarded(timeout): 0
+
+  Frag2 memory faults: 0
+
+===========================================================================
+
+TCP Stream Reassembly Stats:
+
+        TCP Packets Used: 0          (0.000%)
+
+        Stream Trackers: 0
+
+          Stream flushes: 0
+
+          Segments used: 0
+
+  Stream4 Memory Faults: 0
+
+===========================================================================
+
+
+
+Snort exiting
+
+
+Trong phần đầu Snort sẽ hiển thị đang chạy ở mode nào, thư mục chứa log, interface nào đang lắng nghe. Khi bắt đầu chạy và bắt gói tin hiển thị lên màn hình. Phần hiển thị ra chỉ ở mức độ đơn giản, nó chỉ hiện thị ip và TCP/UDP/ICMP headers và 1 số ít khác. Để thoát khỏi chế độ sniffer bấm CTRL - C Snort sẽ thoát hiển thị bảng tóm tắt tổng hợp về các packet bao gồm các protocols, tình trạng packet fragmentation, dòng dữ liệu tập hợp. Để xem ở tầng application ta sử dụng cờ -d thên vào sau:
+
+#Snort –vd
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+06/24-11:27:35.408290 ARP who-has 64.147.136.1 tell 64.147.136.144
+
+
+
+06/24-11:27:35.408860 64.147.136.144:50507 -&gt; 64.147.130.2:53
+
+UDP TTL:64 TOS:0x0 ID:0 IpLen:20 DgmLen:57 DF
+
+Len: 29
+
+E8 0A 01 00 00 01 00 00 00 00 00 00 03 6E 73 31  .............ns1
+
+03 6B 73 6C 03 63 6F 6D 00 00 01 00 01          .ksl.com.....
+
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+06/24-11:27:35.408838 ARP reply 64.147.136.1 is-at 0:D0:BC:ED:15:E4
+
+
+
+06/24-11:27:35.409465 64.147.130.2:53 -&gt; 64.147.136.144:50507
+
+UDP TTL:63 TOS:0x0 ID:0 IpLen:20 DgmLen:121 DF
+
+Len: 93
+
+E8 0A 85 80 00 01 00 01 00 02 00 01 03 6E 73 31  .............ns1
+
+03 6B 73 6C 03 63 6F 6D 00 00 01 00 01 C0 0C 00  .ksl.com........
+
+01 00 01 00 00 70 80 00 04 40 93 82 02 C0 10 00  .....p...@......
+
+02 00 01 00 00 70 80 00 02 C0 0C C0 10 00 02 00  .....p..........
+
+01 00 00 70 80 00 06 03 6E 73 32 C0 10 C0 47 00  ...p....ns2...G.
+
+01 00 01 00 00 70 80 00 04 40 93 82 03          .....p...@...
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+Để xem chi tiết hơn và kết quả giống như tcpdump gồm cả phần header của lớp data link và cả tầng application, sử dụng với cờ -e
+
+#Snort –vde
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+06/24-11:34:00.840645 0:8:74:F3:CC:F9 -&gt; 0:D0:BC:ED:15:E4 type:0x800 len:0x47
+
+64.147.136.144:50507 -&gt; 64.147.130.2:53 UDP TTL:64 TOS:0x0 ID:0 IpLen:20 DgmLen:57 DF
+
+Len: 29
+
+28 BF 01 00 00 01 00 00 00 00 00 00 03 6E 73 31  (............ns1
+
+03 6B 73 6C 03 63 6F 6D 00 00 01 00 01          .ksl.com.....
+
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+
+06/24-11:34:00.841157 0:D0:BC:ED:15:E4 -&gt; 0:8:74:F3:CC:F9 type:0x800 len:0x87
+
+64.147.130.2:53 -&gt; 64.147.136.144:50507 UDP TTL:63 TOS:0x0 ID:0 IpLen:20 DgmLen:121 DF
+
+Len: 93
+
+28 BF 85 80 00 01 00 01 00 02 00 01 03 6E 73 31  (............ns1
+
+03 6B 73 6C 03 63 6F 6D 00 00 01 00 01 C0 0C 00  .ksl.com........
+
+01 00 01 00 00 70 80 00 04 40 93 82 02 C0 10 00  .....p...@......
+
+02 00 01 00 00 70 80 00 02 C0 0C C0 10 00 02 00  .....p..........
+
+01 00 00 70 80 00 06 03 6E 73 32 C0 10 C0 47 00  ...p....ns2...G.
+
+01 00 01 00 00 70 80 00 04 40 93 82 03          .....p...@...
+
+
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+
+Các thông tin hiển thị với dạng hex. địa chỉ MAC được ẩn, chỉ thấy được địa chỉ IP. Khi chỉ cần test mạng, hoặc đơn giản thử sử dụng để capture dữ liệu trên Snort thì sử dụng với –vde đã hiển thị gần như đầy đủ các thông tin.
+
+Với nhiều mạng lơn có lưu luợng thông tin cao, khi bắt gói tin với Snort nó sẽ hiển thị rất nhanh và có thể ta theo dõi không kịp, để giải quyết vần đề trên ta có thể lưu nó vào trong log file với câu lệnh đơn giản Snort –dev &gt;temp.log
+
+Đây là vài lựa chọn trong mode sniffer của Snort:
+
+-v Đưa ra packet headers trong phần output
+-d Hiển thị packet payload
+-a Hiển thị ARP packets
+-e Hiển thị dữ liệu lớp data link
+
+Mô hình minh hoạ sniffing của snort
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136454351_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136454377_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+<b><font color='violet'>2.3.2 Snort là một packet logger</font></b>
+
+Phần tiếp theo sau khi bắt gói tin là lưu chúng lại vào trong log, để log chỉ đơn giản them cờ -l vào sau đó chỉ đường dẫn thư mục cần log. Mặc định nó sẽ log ở thư mục /var/log/Snort . Nếu ta chỉ định thư mục log mà không tồn tại nó sẽ báo lỗi. Ví dụ câu lệnh sau đây để log
+
+#Snort –l /usr/local/log/Snort –d
+
+Khi chạy ở chế độ này, Snort sẽ tập hợp tất cả các packet nó thấy được và đưa vào log theo cấu trúc phân tầng. Nói cách khác, 1 thư mục mới sẽ được tạo ra ứng với mỗi địa chỉ nó bắt đựơc, và dữ liệu sẽ phụ thuộc vào địa chỉ mà nó lưu trong thư mục đó. Snort đặt các packet vào trong files ASCII, với tên liên quan tới protocol và port. Sự sắp xếp này dễ dàng nhận ra ai đang connect vào network của mình và protocol và port nào đang sử dụng, đơn giản sử dụng ls - R hoặc (dir /s trong windows) để hiện danh sách các thư mục.Tuy nhiên sự phân cấp này sẽ tạo ra nhiều thư mục trong giờ cao điểm , thật khó có thể coi hết với hàng đống thư mục và files này. Nếu ai đó có ý định dùng chế độ full scan toàn mạng với 65536 Tcp ports và 65535 Udp ports, và sẽ tạo ra 131000 hoặc hơn từng ấy file như thế trong 1 thư mục , để xem hết đống này thì dùng thêm vài viên thuốc đau đầu nữa.
+
+Log với dạng nhị phân (binary) tất cả những gì có thể đọc được bời Snort, nó làm tăng đốc độ khả năng bắt gói tin của Snort. Hầu hết các hệ thống có thể capture và log ở tốc độ 100Mbps mà không có vấn đề gì.
+
+Để log packet ở chế độ nhị phân, sự dụng cờ -b.
+
+#Snort -b -l /usr/local/log/Snort/temp.log
+
+Khi đã capture, ta có thể đọc lại file mới vừa tạo ra ngay với cỡ -r và phần hiển thị giống như ở mode sniffer
+
+#Snort -r /usr/local/log/Snort/temp.log
+
+Trong phần này Snort không giới hạn để dọc các file binary trong chế độ sniffer. Ta có thể chạy Snort ở chế độ NIDS với việc set các rules hoặc filters để tìm những traffic nghi ngờ
+
+
+<b><font color='violet'>2.3.3 Snort là NIDS:</font></b>
+
+Trong khi Snort là sniffer tốt nó còn là 1 tools rất xuất sắc trong phát hiện xâm nhập. Khi sử dụng như NIDS, Snort cung gần thời gian thực nhất về khả năng xâm nhập. Ta sẽ trãi qua nhiều thời gian để tìm hiểu nhiều cách khác nhau về Snort với chức năng NIDS và các option của nó
+
+2.2.3.1 Lấy những rules mới nhất
+
+Ta thường lưu các rules ở vị trí nào đó có thể dễ dang theo dõi và thay đổi ngay lập tức khi cần, ví dụ ta tạo 1 thư mục để chứa các rules /usr/local/share, trong thư mục này ta sẽ tạo nhiều thư mục con với tháng và năm ví dụ November_2005 và khi update các rules ta lưu nó vào các vị trí đã tạo sẵn đó
+Nếu sử dụng Snort version là 2.4.3 ta có thể download những rules mới nhất từ địa chỉ<span class="link"> http://www.Snort.org/dl/rules/Snortrules-snapshot-2.4.tar.gz</span>
+Sau khi down về và giải nén ta có được khoảng 60 files, mỗi file có phần mở rộng là .rules chứa những tín hiệu (signatures) để Snort dựa vào đó mà nhận dạng nội dung của các packet. File Snort.conf chứa các thiết lập khi Snort chạy ở chế độ IDS. Các files này đã đuợc viết sẵn và test khá kĩ càng nên ta không cần config lại
+
+2.2.3.2 Khởi đầu cấu hình với file Snort.conf
+
+Ở chế độ báo động ( alert ), Snort yêu cầu phải có file cấu hình, files cấu hình mặc định lưu ở thư mục /etc/Snort.conf, nếu file nằm ở chỗ khác ta phải dùng cờ -c để chỉ tới files đó. Các báo động sẽ lưu ở thư mục /var/log/Snort ( mặc định ).Snort sẽ thoát ra nếu file .conf và thư mục log không có. Ta có thể chỉ định loại báo động nào ví dụ như full, fast,none hoặc Unix sockets bằng cách thêm cờ -A vào dòng lệnh
+
+Lần đầu nhìn vào file Snort.conf ta có thể nhìn thấy nhiều dòng chú thích rất dễ hiểu với màu sắc dễ phân biệt, ví dụ như tạo các biến, set các đường dẫn RULE_PATH để chỉ Snort các files rules 
+ví dụ:
+
+var RULE_PATH ../rules
+
+Thay đổi đường dẫn đầy đủ nơi chứa các rules
+
+var RULE_PATH /usr/local/share/Snort_rules/november_2005/rules
+
+Để cho Snort khởi động, sử dụng dòng lệnh:
+
+Snort -c /usr/local/share/Snort_rules/november_2005/rules/Snort.conf
+
+Nó sẽ hiển thị ra màn hình console
+
+
+Running in IDS mode
+
+Log directory = /var/log/Snort
+
+
+
+Initializing Network Interface eth0
+
+
+
+        --== Initializing Snort ==--
+
+Initializing Output Plugins!
+
+Decoding Ethernet on interface eth0
+
+Initializing Preprocessors!
+
+Initializing Plug-ins!
+
+Parsing Rules file /usr/local/share/Snort_rules/rules/Snort.conf
+
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Initializing rule chains...
+
+,-----------[Flow Config]----------------------
+
+| Stats Interval:  0
+
+| Hash Method:    2
+
+| Memcap:          10485760
+
+| Rows  :          4099
+
+| Overhead Bytes:  16400(%0.16)
+
+`----------------------------------------------
+
+No arguments to frag2 directive, setting defaults to:
+
+    Fragment timeout: 60 seconds
+
+    Fragment memory cap: 4194304 bytes
+
+    Fragment min_ttl:  0
+
+    Fragment ttl_limit: 5
+
+    Fragment Problems: 0
+
+    Self preservation threshold: 500
+
+    Self preservation period: 90
+
+    Suspend threshold: 1000
+
+    Suspend period: 30
+
+Stream4 config:
+
+    Stateful inspection: ACTIVE
+
+    Session statistics: INACTIVE
+
+    Session timeout: 30 seconds
+
+    Session memory cap: 8388608 bytes
+
+    State alerts: INACTIVE
+
+    Evasion alerts: INACTIVE
+
+    Scan alerts: INACTIVE
+
+    Log Flushed Streams: INACTIVE
+
+    MinTTL: 1
+
+    TTL Limit: 5
+
+    Async Link: 0
+
+    State Protection: 0
+
+    Self preservation threshold: 50
+
+    Self preservation period: 90
+
+    Suspend threshold: 200
+
+    Suspend period: 30
+
+Stream4_reassemble config:
+
+    Server reassembly: INACTIVE
+
+    Client reassembly: ACTIVE
+
+    Reassembler alerts: ACTIVE
+
+    Zero out flushed packets: INACTIVE
+
+    flush_data_diff_size: 500
+
+    Ports: 21 23 25 53 80 110 111 143 513 1433 
+
+    Emergency Ports: 21 23 25 53 80 110 111 143 513 1433 
+
+HttpInspect Config:
+
+    GLOBAL CONFIG
+
+      Max Pipeline Requests:    0
+
+      Inspection Type:          STATELESS
+
+      Detect Proxy Usage:      NO
+
+      IIS Unicode Map Filename: /usr/local/share/Snort_rules/rules/unicode.map
+
+      IIS Unicode Map Codepage: 1252
+
+    DEFAULT SERVER CONFIG:
+
+      Ports: 80 8080 8180 
+
+      Flow Depth: 300
+
+      Max Chunk Length: 500000
+
+      Inspect Pipeline Requests: YES
+
+      URI Discovery Strict Mode: NO
+
+      Allow Proxy Usage: NO
+
+      Disable Alerting: NO
+
+      Oversize Dir Length: 500
+
+      Only inspect URI: NO
+
+      Ascii: YES alert: NO
+
+      Double Decoding: YES alert: YES
+
+      %U Encoding: YES alert: YES
+
+      Bare Byte: YES alert: YES
+
+      Base36: OFF
+
+      UTF 8: OFF
+
+      IIS Unicode: YES alert: YES
+
+      Multiple Slash: YES alert: NO
+
+      IIS Backslash: YES alert: NO
+
+      Directory: YES alert: NO
+
+      Apache WhiteSpace: YES alert: YES
+
+      IIS Delimiter: YES alert: YES
+
+      IIS Unicode Map: GLOBAL IIS UNICODE MAP CONFIG
+
+      Non-RFC Compliant Characters: NONE
+
+rpc_decode arguments:
+
+    Ports to decode RPC on: 111 32771 
+
+    alert_fragments: INACTIVE
+
+    alert_large_fragments: ACTIVE
+
+    alert_incomplete: ACTIVE
+
+    alert_multiple_requests: ACTIVE
+
+telnet_decode arguments:
+
+    Ports to decode telnet on: 21 23 25 119 
+
+1652 Snort rules read...
+
+1652 Option Chains linked into 152 Chain Headers
+
+0 Dynamic rules
+
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
++-----------------------[thresholding-config]----------------------------------
+
+| memory-cap : 1048576 bytes
+
++-----------------------[thresholding-global]----------------------------------
+
+| none
+
++-----------------------[thresholding-local]-----------------------------------
+
+| gen-id=1      sig-id=2275      type=Threshold tracking=dst count=5  seconds=60 
+
++-----------------------[suppression]------------------------------------------
+
+-------------------------------------------------------------------------------
+
+Rule application order: -&gt;activation-&gt;dynamic-&gt;alert-&gt;pass-&gt;log
+
+
+
+        --== Initialization Complete ==--
+
+
+
+-*&gt; Snort! &lt;*-
+
+Version 2.1.x (Build 24)
+
+By Martin Roesch (roesch@sourcefire.com, www.Snort.org)
+
+Tới đây ta có thể kết thúc dùng lệnh CTRL – C sẽ xuất hiện các bảng tóm tắt: 
+
+
+
+===============================================================================
+
+Snort analyzed 3210 out of 3807 packets, dropping 597(15.682%) packets
+
+
+Breakdown by protocol:                Action Stats:
+
+    TCP: 2602      (68.348%)        ALERTS: 6        
+
+    UDP: 2          (0.053%)          LOGGED: 6        
+
+  ICMP: 8          (0.210%)          PASSED: 0        
+
+    ARP: 0          (0.000%)
+
+  EAPOL: 0          (0.000%)
+
+  IPv6: 0          (0.000%)
+
+    IPX: 0          (0.000%)
+
+  OTHER: 0          (0.000%)
+
+DISCARD: 0          (0.000%)
+
+===============================================================================
+
+Wireless Stats:
+
+Breakdown by type:
+
+    Management Packets: 0          (0.000%)
+
+    Control Packets:    0          (0.000%)
+
+    Data Packets:      0          (0.000%)
+
+===============================================================================
+
+Fragmentation Stats:
+
+Fragmented IP Packets: 0          (0.000%)
+
+    Fragment Trackers: 0        
+
+  Rebuilt IP Packets: 0        
+
+  Frag elements used: 0        
+
+Discarded(incomplete): 0        
+
+  Discarded(timeout): 0        
+
+  Frag2 memory faults: 0        
+
+===============================================================================
+
+TCP Stream Reassembly Stats:
+
+        TCP Packets Used: 2602      (68.348%)
+
+        Stream Trackers: 1559      
+
+          Stream flushes: 0        
+
+          Segments used: 0        
+
+  Stream4 Memory Faults: 0        
+
+===============================================================================
+
+Final Flow Statistics
+
+,----[ FLOWCACHE STATS ]----------
+
+Memcap: 10485760 Overhead Bytes 16400 used(%2.287951)/blocks (239909/1564) Overhead 
+
+blocks: 1 Could Hold: (73326)
+
+IPV4 count: 1563 frees: 0 low_time: 1080162455, high_time: 1080162458, diff: 0h:00:
+
+03s
+
+    finds: 2612 reversed: 1022(%39.127106) 
+
+    find_sucess: 1049 find_fail: 1563 percent_success: (%40.160796) new_flows: 1563
+
+Protocol: 1 (%0.306279) finds: 8  reversed: 3(%37.500000) 
+
+  find_sucess: 5 find_fail: 3 percent_success: (%62.500000) new_flows: 3
+
+Protocol: 6 (%99.617152) finds: 2602  reversed: 1018(%39.123751) 
+
+  find_sucess: 1043 find_fail: 1559 percent_success: (%40.084550) new_flows: 1559
+
+Protocol: 17 (%0.076570) finds: 2  reversed: 1(%50.000000) 
+
+  find_sucess: 1 find_fail: 1 percent_success: (%50.000000) new_flows: 1
+
+Snort exiting
+
+
+
+
+Bây giờ đã có 1 file báo động trong thư mục /var/log/Snort. File sẽ bao gồm các báo động từ Snort khi đang chạy ( trong bài này có sử dụng nmap SYN scan để cho Snort báo động )
+
+
+[**] [1:469:1] ICMP PING NMAP [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.187504 192.168.1.2 -&gt; 192.168.1.105
+
+ICMP TTL:51 TOS:0x0 ID:23210 IpLen:20 DgmLen:28
+
+Type:8  Code:0  ID:1290  Seq:0  ECHO
+
+[Xref =&gt;<span class="link"> http://www.whitehats.com/info/IDS162]</span>
+
+
+
+[**] [1:618:5] SCAN Squid Proxy attempt [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.583826 192.168.1.2:49641 -&gt; 192.168.1.105:3128
+
+TCP TTL:44 TOS:0x0 ID:56810 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+
+
+[**] [1:1421:3] SNMP AgentX/tcp request [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.589463 192.168.1.2:49641 -&gt; 192.168.1.105:705
+
+TCP TTL:44 TOS:0x0 ID:54050 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0013]</span>[Xref =&gt;<span class="link"> http://</span>
+
+cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0012]
+
+
+
+[**] [1:615:5] SCAN SOCKS Proxy attempt [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.674332 192.168.1.2:49641 -&gt; 192.168.1.105:1080
+
+TCP TTL:44 TOS:0x0 ID:9794 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+[Xref =&gt;<span class="link"> http://help.undernet.org/proxyscan/]</span>
+
+
+
+[**] [1:1420:3] SNMP trap tcp [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.696925 192.168.1.2:49641 -&gt; 192.168.1.105:162
+
+TCP TTL:44 TOS:0x0 ID:41259 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0013]</span>[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0012]</span>
+
+
+
+[**] [1:1418:3] SNMP request tcp [**]
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+03/24-15:07:35.827022 192.168.1.2:49641 -&gt; 192.168.1.105:161
+
+TCP TTL:44 TOS:0x0 ID:37753 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0013]</span>[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0012]</span>
+
+
+
+Ví dụ phân tích một báo động của Snort
+
+Đây là tên của báo động:
+
+[**] [1:1418:3] SNMP request tcp [**]
+
+Snort sẽ chia ra nhiều lớp cho từng loại báo động , ví dụ cái này là thuộc dang đang cố gắng đánh lừa thông tin “Attempted Information Leak” và mức độ ưu tiên của từng báo động
+
+
+[Classification: Attempted Information Leak] [Priority: 2] 
+
+Đây là phần header và thông tin của packet là nguyên nhân gây ra báo đông:
+
+
+03/24-15:07:35.827022 192.168.1.2:49641 -&gt; 192.168.1.105:161
+
+TCP TTL:44 TOS:0x0 ID:37753 IpLen:20 DgmLen:40
+
+******S* Seq: 0x4EB5A7C6  Ack: 0x0  Win: 0x400  TcpLen: 20
+
+
+
+Snort sẽ báo động bao gồm các đường dẫn tới mô tả các rules gây ra báo động 
+
+[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0013]</span>[Xref =&gt;<span class="link"> http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2002-0012]</span>
+
+link này rất hữu ích khi xem xét lại có bị báo động lỗi hay không.
+
+
+<b><font color='violet'>2.4. File Snort.conf</font></b>
+
+File Snort.conf điều khiển mọi thứ mà Snort thấy được, làm cách nào nó có thể chống lại các cuộc tấn công, những rules nào được sử dụng khi thấy nghi ngờ, và làm cách nào nó có thể phát hiện ra được những dấu hiệu nguy hiểm tìm tàng mặc dù nó không có các tín hiệu nhận dạng cụ thể để so sánh. Để hiểu và cấu hình nó thành công khi phát triển Snort thành 1 công cụ IDS thật sự. Tôi sẽ trình bày cụ thể những kinh nghiệm hiểu biết về Snort sau đây. Để tìm hiểu nó 1 cách nhanh nhất và dễ dàng nên mở sẵn nó ra trên máy tính hoặc in nó ra giấy theo dõi cho dễ dàng.
+Ví dụ file Snort.conf mở ra bằng gedit
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136454922_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+File conf được chia ra thành nhiều đoạn và có chú thích rất rõ ràng cho từng đoạn, những nội dung chính của nó gồm:
+
+• Thiết lập mạng và cấu hình các biến
+• Cấu hình phần giải mã (decoder) 1và phát hiện
+• Cấu hình tiền xử lý (preprocessor)
+• Cấu hình phần output
+• File được trỏ tới
+
+2.4.1 Thiết lập mạng và cấu hình các biến
+
+Các biến trong file conf được tạo ra thường để dễ dàng hơn trong việc theo dõi các địa chỉ IP, hoặc các port TCP,UDP được chỉ định mà nó đang lắng nghe.
+Mặc định các biến thường để giá trị là any chỉ tất cả các địa chỉ IP mà nó nhận được, nó cũng có thể là nguyên nhân gây ra nhiều báo động sai.
+
+Để chị định 1 địa chỉ ip, đơn gian chỉ làm theo cách sau:
+
+Var HOME_NET 192.168.1.1
+
+Hoặc khi muốn chỉ định nhiều địa chỉ cùng lúc, phải có dấu ngoặc vuông để chỉ định cho cả nhóm:
+
+Var HOME_NET [192.168.1.1,192.168.14.1,10.0.0.2]
+
+Ta cũng có cách khác để chỉ định luôn cả mạng:
+
+Var HOME_NET 10.10.10.0/24
+
+Hoặc cũng có thể gộp cả 2 cách trên vào chung 1 nhóm:
+
+Var HOME_NET [192.168.1.1,10.10.10.0/24,172.168.1.5/16,187.1.1.1/19]
+
+Nếu muốn chỉ định không dùng các ip này ngoại trừ … thì dùng thêm dấu “than” ! nghĩa là NOT
+
+Var EXTERNAL_NET !$HOME_NET
+
+Để chỉ định cho các port cũng làm tương tự ví dụng
+
+Var ORACLE_PORTS 1521
+
+Hoặc các port không phải là port 80
+
+Var SHELLCODE_PORTS !80
+
+2.4.1.1 Các biến mặc định trong Snort.conf
+
+HOME_NET : chỉ định địa chỉ mạng của mình đang bảo vệ
+EXTERNAL_NET: các mạng bên ngoài.
+
+Các biến để chỉ định các server đang chạy các service phục vụ cho hệ thống
+
+DNS_SERVERS
+SMTP_SERVERS
+HTTP_SERVERS
+SQL_SERVERS
+TELNET_SERVERS
+SNMP_SERVERS
+……
+
+Các port mặc định các biến khác:
+
+HTTP_PORTS
+SHELLCODE_PORTS
+ORACLE_PORTS
+AIM_SERVERS 
+RULES_PATH
+
+2.4.2 Cấu hình phần giải mã ( decoder ) và phát hiện ( detection )
+
+Snort sẽ giải mã cấu trúc các packet và so sánh cấu trúc theo những dấu hiệu đã được trang bị. Nếu packet có kích thước lạ, nhìêu cấu hình lạ không bình thường, Snort sẽ báo động. Nếu không báo động thì sẽ có 1 luợng lớn lỗi báo động sai. Ta có thể tắt chức năng này. Mặc định tất cả báo động đều bật. Để tắt 1 loại báo động cụ thể nào đó, ta nên để dấu thăng # vào trước dòng lệnh thành dòng comment ghi chú
+
+# config disable_decode_alerts
+
+# config disable_tcpopt_experimental_alerts
+
+# config disable_tcpopt_obsolete_alerts
+
+# config disable_tcpopt_ttcp_alerts
+
+# config disable_tcpopt_alerts
+
+# config disable_ipopt_alerts
+
+
+Mô hình làm việc của decode
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136455089_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Mô hình detect các packet
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136455127_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Ta cũng có thể thêm vào nhiều dòng lênh của Snort trong phần này của file Snort.conf
+
+
+Cấu Hình Option Của Snort.conf 
+
+
+
+Option ----------- Mô tả
+
+config order: [pass, alert, log, activation, or dynamic]  ----------- Thay đổi các giá trị điều khỉên của rules
+config alertfile: alerts  ----------- Thiết lập output của file báo động
+config decode_arp  -----------  Bật chức năng arp decoding (Snort -a).
+config dump_chars_only  ----------- Bật chức năng character dumps (Snort -C).
+config dump_payload  ----------- Hiện thông tin lớp application(Snort -d).
+config decode_data_link  ----------- giải mã  Layer2 headers (Snort -e).
+config bpf_file: filters.bpf  ----------- Chỉ định dùng bộ lọc BPF (Snort -F).
+config set_gid: 30  ----------- Thay đổi GID  đến GID khác (Snort -g).
+config daemon  -----------Chạy  Snort ở chế độ daemon (Snort -D).
+config interface: &lt;interface name&gt;  ----------- Thiết lập interface  (Snort -i).
+config alert_with_interface_name  ----------- Chỉ định interface cần báo động (Snort -I).
+config logdir: /var/log/Snort  ----------- Thiết lập lại thư mục log (Snort -l).
+config umask: &lt;umask&gt;  ----------- Thiết lập umask khi chạy (Snort -m).
+config pkt_count: N ----------- Thoát ra sau N packets (Snort -n).
+config nolog  ----------- Tăt  chế độ log  (Snort -N).
+config obfuscate  ----------- Ẩn địa chỉ  IP (Snort -O).
+config no_promisc ----------- Tắt chế độ cho chạy lẫn lộn (Snort -p).
+config quiet  ----------- Tắt banner và report trạng thái (Snort -q).
+config chroot: /home/Snort  ----------- Thay đổi lại thư mục root  (Snort-T).
+config checksum_mode : all  ----------- Các loại packet dùng để tính toán lại checksums: none, noip, notcp, noicmp, noudp, or all.
+config set_uid: &lt;id&gt;  ----------- Thay đổi UID ra uid mới  (Snort-u).
+config utc  ----------- Sử dụng UTC thay vì dùng thời gian máy local gán cho timestamps (Snort -U).
+config verbose  ----------- Sử dụng chế độ xem chi tiết  (Snort -v.)
+config dump_payload_verbose  ----------- Hiển thị những packet "thô" bắt đầu ở lớp linkdata (Snort-X ).
+config show_year  ----------- Hiển thị timestamps năm (Snort-y).
+
+ channhua - HVA]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#570</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#570</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 03:47:53]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Snort - A Preprocessor</title>
+				<description><![CDATA[ <b><font color='violet'>2.4.3 Cấu hình tiền xử lý (preprocessor)</font></b>
+
+Tiền xử lý phục vụ cho nhiều mục đích. Nó “bình thường hoá” traffic cho các services, để chắc chắn rằng dữ liệu trong các packet Snort đang theo dõi sẽ có cơ hội tốt nhất để so sánh với các tín hiệu nhận dạng (signatures ) mà Snort đuợc trang bị. Chức năng khác của quá trình tiền xử lý là tự phòng thủ. Các cuộc tấn công được phát triển để lẩn tránh hoặc làm tràn ngập NIDS sensor, vì thế attacker có thể lợi dụng làm những công việc mình cần. Chức năng frag2 và stream4 tiền xử lý có chức năng chính để chống lại các phương pháp này.
+Và chức năng cuối cùng cũng là chức năng quan trọng nhất là làm cho Snort có thêm chút thông minh để phát hiện ra các cuộc tấn công mang phong cách không bình thuờng mà Snort không được trang bị trong rules.
+
+Mô hình các gói tin đi vào ở mode preprocessor
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136455634_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+2.4.3.1 FLOW
+
+Flow preprocessor có một module là flow-portscan. Flow theo dõi tất cả traffic và giữ các track kết nối giữa hệ thống và port lạ, khi có 1 flow lạ mới thông tin sẽ chuyển qua hash (làm cho các track nhỏ hơn , nhanh hơn trong tracking các địa chỉ IP và PORTS) được lưu trữ trong bảng bộ nhớ dành sẵn. Các option cho flow preprocessor
+
+Memcap
+
+Chỉ định mức tối đa cho bộ nhớ khi tracking, mặc định là 10MB, thông số này để điều khỉên bộ nhớ của Snort khi cần
+
+Rows
+
+Chỉ định số dòng trên bảng hash, mặc định là 4,099 dòng
+
+Stats_interval
+
+Có thể chuyển tình trạng của flow preprocessor qua stdout, giá trị là một số nguyên đại diện cho thời gian tính bằng giây (s) , rất hữu ích khi dùng cho mục đích test
+
+Hash
+Phương pháp sử dụng hash thông tin vào bảng, có thể set hash có giá trị là 1 (byte) hoặc 2 (số nguyên ) dùng hash 2 nhanh hơn
+
+Đây là cấu hình khuyên của các nhà phát triên dùng cho flow:
+
+Preprocessor flow: stats_interval 0 hash 2
+
+2.4.3.2 frag2
+
+Khi một packet đi từ mạng này qua mạng khác, nó thường cần phân mảnh thành các packet nhỏ hơn, bởi vì mạng thứ 2 sẽ giới hạn kích thuớc của packet và tất nhiên nhỏ hơn mạng đầu tiên. Và tất cả các packet nhỏ sẽ đuợc sắp xếp lại khi đến nơi. Một trong những phương pháp của attacker là dùng các packet nhỏ để lừa firewall hoặc IDS. Ví dụ: rules của Snort đang dò tìm chuỗi /users.pwd trong các section của packet, một attacker có thể tạo ra một dãy các packet rất nhỏ chỉ chứa vài byte trong data của packet, mảnh đầu tiên có thể chứa /user , và cái packet phân mảnh thứ 2 có thể chứa s.pwd, các packet này sẽ không kích hoạt báo động bởi vì nó không giống các rules nào cả, frag2 preprocessor sẽ sắp xếp sự phân mảnh này vào chung và nó sẽ dễ dàng phát hiện sự ẩn dấu đó. Hoặc một ví dụ khác các attacker có thể đưa ra 1 dung lượng quá lớn các packet đã phân mảnh nó sẽ chiếm dung lưonng của hệ thống và làm overload có thể Snort sẽ từ chối tất cả và ảnh hưởng tới các packet không liên quan, các tools mà attacker thường dùng là Fragroute, frag2 có các options để chống lại các dạng tấn công này
+
+Timeout:
+
+Số dây trước khi tắt các sension để flush lại bộ nhớ, mặc định là 60s
+
+Memcap
+
+Số luợng bytes của memory set aside, mặc định là 4MB
+
+Detect_state_problems
+
+Bật chức năng báo động khi phát hiện điều kiện không bình thường trong các packet phân mảnh, nó nên được bật cho hầu hết các trường hợp
+
+Min_ttl
+
+Thiết lập time to live (TTL) tối thiểu đuợc chấp nhận của tiền xử lý, mặc định là 0
+
+Ttl_limit
+
+Thiết lập ttl maximum, nó không nên quá lớn ,mặc định là 5
+
+Thiết lập khuyến cáo nên dùng:
+
+Preprocessor frag2
+
+2.4.3.3 stream4
+
+stream4 được thiết kế để bảo vệ Snort từ 1 dạng tấn công mới của attacker tới các NIDS sensor bằng cách gửi tràn ngập các packet chứa các chuỗi dữ liệu giống như trong rules để kích các báo động, cũng có khá nhiều tools dùng cho việc này nhưng Snort của có cách chống lại.
+
+stream4 có 2 nhiệm vụ chính: sateful inspection ( kiểm tra tính nguyên ven ), awareness and session reassembly ( nhận biết và sắp xếp các session )
+
+Các option của stream4
+
+Detect_scans
+
+Mặc định là tắt. nó sẽ báo động khi phát hiện các tools scan ports
+
+Detect_state_problems
+
+Mặc định tắt. sẽ báo động khi có vấn đề về tình trạng của cuộc thoại bị phát hiện
+
+Disable_evasion_alerts
+
+Cũng mặc định tắt luôn. nếu bật nó có thể phát hiện attacker đang cố gắng từ chối IDS bằng cách gởi các packet đuơc sắp xếp lộn xộn, hoặc các packet là SYN trong data
+
+Min_ttl
+
+Thiết lập thời gian sống ít nhất để chấp nhận các packet vào stream4 preprocessor
+
+Ttl_limit
+
+Giống như trong phần của frag2
+
+keepstats [machine, binary]
+
+Mặc định tắt, nếu bật nó sẽ hiển thị tình trạng các senssion đã theo dõi ở 2 chế độ machine là text file, định dạng binary và dùng tools barnyard để thống nhất
+
+Noinspect
+
+Mặc định cũng off. tắt chức năng statefull inspection của tất cả các packets
+Ta có thể tham khảo về các tiến trình stateful ở hình này
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136455673_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Timeout mặc định là 30s
+
+log_flushed_streams
+
+Nếu một packet đang bị theo dõi và là nguyên nhân gây ra báo động, ta có thể dump session này và lưu thông tin từ stream4 vào đĩa cứng
+
+Memcap
+
+Giống phần frag2
+
+Đây là câu lệnh khuyến cáo nên dùng
+
+preprocessor stream4: detect scans, disable_evasion_alerts, timeout 60, ttl_limit 10
+
+2.4.3.4 stream4_reassemble
+
+Snort phản hồi những chuỗi kí tự nó đọc đuợc trong các gói tin đi qua nếu nó trùng với các kí tự nhận dạng trong signatures. Nếu attacker có thể phân chia các kí tự thành nhiều gói tin để tránh báo động của Snort, stream4_reassemble đóng vài trò sắp xếp lại các traffic giữa 2 hệ thống đàm thoại ( conversation ) của network, gia tăng khả năng match các signatures
+
+Các conversation network thường là các chương trình dùng bằng command line như Telnet, Ftp, Smtp có thể là các nguyên nhân nội dung của các packet lọt qua được hệ thống. Reassemble các traffic các services này là cần thiết để ngăn chặn các báo động lầm hoặc bỏ sót.
+Một kĩ thuật khác của attacker là nhúng các gói tin với các kí tự gây lỗi, reassemble vẫn có thể phát hiện được
+
+Các option của reassemble
+
+Clientonly
+
+Chỉ bật chức năng này trên client
+
+Serveronly
+
+Chỉ bật chức năng này trên server
+
+Both
+
+Bật trên cả server và client
+
+Noalerts
+
+Chế độ báo động vẫn hoạt động nhưng chỉ tắt chức năng reassembly
+
+Ports [list]
+
+Chỉ định những ports cụ thể để reassembly
+
+Câu lệnh khuyên dùng:
+
+Preprocessor stream4_reassemble: both
+
+
+2.4.3.5 Tiền xử lý các http inspect 
+
+Có nhiều cách thông tin có thể định dạng sang các http session và cũng có nhiều loại khác nhau biểu diễn các thông tin như là các http session như multimedia, .xml, .HTML, .asp, .php, .java,….và kết quả Snort phải “massage” nội dung của các HTTP conversation để định dạng lại data phục vụ cho quá trình phát hiện tốt nhất
+
+Có 2 kiểu cấu hình http_inspect là global và server. Global ảnh huởng trực tiếp tới http traffic ,cấu hình Server chứa các phần setting cho 1 máy server và các group servers như vậy, cái này rất thường dùng để cấu hình cho web server dùng apache hoặc IIS
+
+http_inspect ( global )
+
+Có 3 option trong phần này dùng để config http traffic:
+
+iis_unicode_map &lt;filename&gt; [codemap &lt;interger]
+
+Chỉ đuờng dẫn tới map file unicode.map. Nó sẽ chỉ cho bộ tiền xử lý biết làm cách nào để map các kí tự unicode sang ASCII dạng text đê match các signatures. Ta phải chỉ ra code dể map ví dụ 1252 là latin code
+
+detect_anomalous_servers
+
+Sẽ báo động khi gặp các ports lạ không tiêu chuẩn. thường không bật chế độ này
+
+proxy_alert
+
+Nếu bạn sử dụng proxy server cho các internet user, bật chức năng này để giám sát các user không dùng proxy để kết nối internet
+
+Đề nghị setting cho mode này:
+
+preprocessor http_inspect: global iis_unicode_map unicode.map 1252
+
+http_inspect_server
+
+Có thể dùng option này cho servers bất kì hoặc các servers trong môi truờng làm việc của mình. hầu hết các administrator đều dùng 1 server riêng dùng cho IIS và cái khác dùng Apache servers. Trong phần trình bày này sẽ có ví dụ cụ thể.
+
+Có 2 kiều cấu hình cho http_inspetct_server là “default” và “by IP address”, kiểu “default” chỉ cấu hình cho tất cả web traffic không liên quan gì đến IP address, còn kiểu “IP address” chỉ cấu hình cho các IP đựơc chỉ định hoặc 1 dãy các IP. Có các option là:
+
+Default hoặc &lt; IP address &gt;
+
+Như đã trình bày ở trên
+
+Profile &lt;all | apache | iis &gt;
+
+Có thể dùng apache hoặc chỉ dùng cho iis ta cũng có thể dùng all cho cả 2. Các bảng sau sẽ trình bày cụ thể của profile khi dùng từng loại 
+
+Bảng setting cho profile "all"
+
+
+Option                                            Setting
+
+flow_depth                                300
+chunk_encoding                            Báo động khi các chunks lớn hơn 500,000 bytes
+lis_unicode_map                            Map sử dụng cho mode globle
+ascii                                              No
+non_refc_char                              On
+multi_slash                                  No
+directory                                    No
+apache_whitespace                  Yes
+double_decode                            Yes
+j_encode                                  Yes
+bare_byte                                Yes
+lis_unicode                                  Yes
+lis_backslash                                No
+lis_delimiter                                  Yes
+
+
+Bảng setting cho profile "apache"
+
+
+Option                                          Setting
+
+flow_depth                              300
+chunk_encoding                          Báo động khi các chunks lớn hơn 500,000 bytes
+ascii                                            No
+non_rfc_char                            On
+multi_slash                              No
+directory                                No
+apache_whitespace              Yes
+
+
+
+Bảng setting cho profile "iis"
+
+
+Option                                          Setting
+
+flow_depth                              300
+lis_unicode_map                          Map sử dụng cho mode globle
+ascii                                            No
+multi_slash                                No
+directory                                  No
+double-decode                            Yes
+u_encode                              Yes
+bare_byte                              Yes
+lis_unicode                                Yes
+lis_backslash                              No
+lis_delimiter                                Yes
+apache_whitespace                Yes
+
+utf_8                                          No
+non_strict                                On
+
+
+
+Đây là phần cấu hình mặc định cho http_inspect_server:
+
+Preprocessor http_inspect_server: server default profile all ports {80 8080 }
+
+Đây là phần cấu hình cho IIS server http_inspect_server :
+
+Preprocessor http_inspect_server: server 10.10.10.33 profile iis ports { 80 8080 }
+
+Còn đây là cấu hình điển hình cho Apache server:
+
+Preprocessor http_inspect_server 10.1.1.125 profile apache ports { 80 8080 }
+
+<b><font color='violet'>2.4.3.6 rpc_decode</font></b>
+
+RPC’s traffic có thể phân chia ra nhiều packet và mã hoá theo nhiều kiểu khác nhau. Rpc_decode preprocessor sẽ bình thường hoá các traffic này cũng chỉ mục đích giúp nhận diện tốt hơn trong singnatures list. List của các ports mà RPC services đang chạy đuợc cung cấp trong các dòng cấu hình. Ở đây có 4 options cho rpc_decode
+
+Alert_fragments
+
+Báo động khi có fragmented RPC traffic
+
+No_alert_multiple_requests
+
+Không báo động khi nhiều hơn một RPC request đuợc chứa trong một packet.
+
+No_alert_large_fragments
+
+RPC fragments có thể lớn hơn size của các fragment hiện hành. Nếu bạn tìm lỗi xác thực, ta phải dùng chức năng này để disable
+
+No_alert_incomplete
+
+RPC messages có thể rất lớn, có khi nó lớn hơn có MTU của mạng nó đang đi qua, nó có thể gây nhiều lỗi cho các RPC network services. Có thể tắt chức năng này để phát hiện lỗi
+
+Đây là đề nghị config rpc_decode
+
+Preprocessor rpc_decode: 111 32771 1024
+
+
+2.4.3.7 bo
+
+Bo- Back orifice con virust nổi tiếng của các hacker trong các năm qua, dùng để điều khiển từ xa các client bị nhiễm nó, Snort có option để ngăn chặn điều này và phát hiện khá dễ dàng chỉ bằng một dòng lệnh ngắn gọn.
+
+Preprocessor bo
+
+2.4.3.8 telnet_decode
+
+Dùng chức năng này để bình thuờng hoá các kí tự ,chuổi không tiêu chuẩn , lạ của traffic FTP và telnet cũng đơn giản dùng 1 câu lệnh đơn giản.
+
+Preprocessor telnet_decode
+
+2.4.3.9 flow-portscan
+
+Flow-portscan thay thế portscan2 nó nhiều chức năng hơn và mạnh hơn. Có 3 components cơ bản cho flow-portscan
+
+Scoreboards
+
+Nó phát hiện đuợc 2 loại khác nhau của host , talker và scanner. Talker là tất cả các host đang active trong mạng. còn scanner là host đang connection tới 1 port trên server ở trong mạng
+
+Uniqueness tracker
+
+Theo dõi nếu có duy nhất 1 kết nối
+
+Server statistics tracker
+
+Sử dụng để theo dõi thời gian của các service trên các server nhằm theo dõi các kết nối
+
+Để phát hiện các attacker scan port rất khó vì hacker có thể dùng nhiều cách khác nhau: 
+Sau đây là các option ta có thể dùng để nâng cao hiệu quả của flow-portscan
+
+
+scoreboard-memcap-talker &lt; bytes&gt;
+scoreboard-rows-talker &lt; count&gt;
+scoreboard-rows-scanner &lt; count&gt;
+scoreboard-memcap-scanner &lt; bytes&gt;
+scanner-fixed-threshold &lt; integer&gt;
+scanner-sliding-threshold &lt; integer&gt;
+scanner-fixed-window &lt; integer&gt;
+scanner-sliding-window &lt; integer&gt;
+scanner-sliding-scale-factor &lt; float&gt;
+talker-fixed-threshold &lt; integer&gt;
+talker-sliding-threshold &lt; integer&gt;
+talker-fixed-window &lt; integer&gt;
+talker-sliding-window &lt; integer&gt;
+talker-sliding-scale-factor &lt; float&gt;
+unique-memcap &lt; bytes&gt;
+unique-rows &lt; integer&gt;
+server-memcap &lt; bytes&gt;
+server-rows &lt; integer&gt;
+server-watchnet &lt; ip list in Snort notation&gt;
+src-ignore-net &lt; ip list in Snort notation&gt;
+dst-ignore-net &lt; ip list in Snort notation&gt;
+tcp-penalties &lt;on|off&gt;
+server-learning-time &lt; seconds&gt;
+server-ignore-limit &lt; hit count&gt;
+server-scanner-limit &lt; hit count&gt;
+alert-mode &lt;once|all&gt;
+output-mode &lt;msg|pktkludge&gt;
+base-score &lt; integer&gt;
+dumpall &lt;1&gt;
+
+
+
+Đây là dòng cấu hình mẫu cho flow-portscan
+
+preprocessor flow-portscan: server-watchnet [10.10.10.0/24,10.10.20.0/24]
+
+2.4.3.10 arpspoof
+
+Arpspoof được thiết kế cho preprocessor dể detech các hoạt động spoof arp bất hợp pháp trên local nétwork. Các hacker dùng các tools man-in-the-middle attacks như ettercap hoặc arpspoof để nghe trộm giữa các máy trong mạng nội bộ. để cấu hình administrator phải biết địa chỉ MAC của card mạng, điều này thì quá dễ dàng:
+
+Sau đây là cấu hình đề nghị:
+
+# preprocessor arpspoof
+
+# preprocessor arpspoof_detect_host: 192.168.1.1 F0:AB:GH:10:12:53
+
+
+
+2.4.3.11 perfmonitor
+
+Một trong những khả năng rất hay của Snort là monitor tình trạng hiện tại của hể điều hành các thông số nó thể hiện nêu lên nhiều ý nghĩa mà dựa vào đó ta có thể đoán được nhiều đìều và đưa ra nhiều biện pháp điều chỉnh theo ý muốn, các thông số Snort monitor
+
+
+Packets received 
+Packets dropped 
+Percentage of packets dropped 
+Packets Received  
+Kpackets per second 
+Average bytes per packets 
+Mbits per second (wire) 
+Mbits per second (rebuilt) (Mbits trung bình Snort nhúng vào sau khi rebuil các packet) 
+Mbits per second (total) 
+Pattern-matching percent (Phần trăm dữ liệu average percent of data received that Snort processes 
+in pattern matching) 
+CPU usage (user time, system time, idle time) 
+Alerts per second 
+SYN packets per second 
+SYN/ACK packet per second 
+New sessions per second 
+Deleted sessions per second 
+Total sessions 
+Max sessions during time interval 
+Stream flushes per second 
+Stream faults per second 
+Stream timeouts 
+Frag completes per second 
+Frag inserts per second 
+Frag deletes per second 
+Frag flushes per second 
+Frag timeouts 
+Frag faults
+
+
+Khi dùng thêm từ “flow” , nó sẽ hiển thị tình trạng các traffic của protocal mà Snort dang soi, dùng “event” Snort sẽ mở chức năng reporting và hiển thị trạng thái số lượng signatures match, dùng từ “max” sẽ kích hoạt Snort hoạt động hết sức để nâng cao hiệu quả, dùng tư “pktcnt” điều chỉnh số lượng packets đang thực thi trước khi check thời gian sample mặc định set là 10,000.
+
+Ví dụ config và bật chức năng perfmonitor preprocessor:
+
+Preprocessor perfmonitor : time 30 events flow file stats.profile max console pktcnt 10000
+
+Preprocessor perfmonitor: time 30 file /var/tmp/Snortstat pktcnt 10000
+
+<b><font color='violet'>2.4.4 Cấu hình OUTPUT</font></b>
+
+Snort có thể output vào các file log hoặc output ra console, nhiều administrator thích dùng các phần mềm của hãng thứ 3 (third party ) để tăng thêm chức năng giám sát của Snort, các phần mềm data database đều có thể dùng được, lưu ý trước khi cài đặt Snort muốn dùng database nào thì cần chỉ rõ khi cài đặt ví dùng dùng MySQL , khi biên dịch source thêm vào - -mysql 
+ví dụ: ./configure  - -  mysql
+
+<br>
+			<div align="center" class="limitview"><img src='http://cartoyvn.com/image/SNORT/post-30356-1136530751_thumb.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+2.4.4.1 alert_syslog
+
+Output cấu hình theo kiểu
+
+Output alert_syslog : &lt;facility&gt; &lt;priority&gt;
+
+Các option sau là một trong nhưng syslog chuẩn và syslog mặc định là 
+
+LOG_AUTH
+
+LOG_AUTH
+LOG_AUTHPRIV
+LOG_DAEMON
+LOG_LOCAL0
+LOG_LOCAL1
+LOG_LOCAL2
+LOG_LOCAL3
+LOG_LOCAL4
+LOG_LOCAL5
+LOG_LOCAL6
+LOG_LOCAL7
+LOG_USER
+
+Các option ưu tiên sau cũng là các syslog ưu tiên chuẩn, mặc định là LOG_ALERT
+
+LOG_EMERG
+LOG_ALERT
+LOG_CRIT
+LOG_ERR
+LOG_WARNING
+LOG_NOTICE
+LOG_INFO
+LOG_DEBUG
+
+Đây là câu cấu hình mẫu cho alert_syslog
+
+output alert_syslog: LOG_AUTH LOG_ALERT
+
+và câu lệnh này dành cho bản windows của Snort nhìn vào cũng dễ hiểu
+
+output alert_syslog: host=192.168.1.100:80 LOG_AUTH LOG_ALERT
+
+2.4.4.2 log_tcpdump
+
+Log này sẽ định dạng sang dạng log_tcpdump, do có rất nhiều phần mềm có thể đọc được dạng log này, khi log sẽ có timestamp đính vào file name
+
+ví dụ: câu lệnh cấu hình
+
+output log_tcpdump /var/log/Snort/tcpdump.out
+
+2.4.4.3 database
+
+Khi log vào database , một khối luơng lớn thông tin của Snort sẽ được lưu trữ như các báo động (alert) , các host liên quan, các packet gây ra báo động, và ta dễ dàng log các báo động thật sự và các báo động lỗi, sai nhanh và nhiều hơn
+Đôi khi log vào database cũng quá tải gây ra hiện tượng thắt cổ chai dẫn đến 1 alert chỉ có thể được log trong một thời gian. Và phương pháp cấu hình Snort làm sao hợp lý nhất là các kinh nghiệm của các admin sau này ví dụ có thể dùng tuning hoặc thresholding để tạo hiệu quả hơn.
+
+Cấu trúc của câu lệnh output ra database
+
+output database: &lt;log | alert&gt;,&lt;database type&gt;,&lt;parameter list&gt;
+
+Câu lệnh trên nhìn vào ta có thể hiểu ngay được ý nghĩa của nó, còn &lt;parameter list&gt; bao gồm các phần sau :
+
+host
+
+Địa chỉ IP của database server
+
+port 
+Port của database đang lắng nghe
+
+dbname=&lt;database name&gt;
+
+Loại database ta đang logging
+
+user
+
+username Snort sử dụng để log trong database
+
+password
+
+Tất nhiên là có user phải có pass để vào rồi
+
+sensor_name
+
+Tên của sensor cấu hình, có thể thểm -I trong command line sử dụng IP address thay cho tên 
+
+encoding
+
+Sử dụng mã hoá để log vào database, ví dụ kiểu hex,base64,ascii và khuyên dùng ascii 
+
+detail
+
+Có thể chỉ định details level nào log vào database, ví dụ dùng full,fast và full được khuyên dùng nhất
+
+Với các loại database cụ thể ta phải biên dịch cho đúng khi cài đặt như đã nói phần trước
+
+CODEMySQL
+./configure - -with-mysql
+
+POSTGRESQL
+./configure - -with-postresql
+
+ODBC
+./configure - -with-odbc
+
+MSSQL
+Chỉ dùng cho bản windown, dùng odbc để log vào MSMSQL server
+
+ORACLE
+./configure - -with-oracle
+
+và các log khác ta sẽ coi trong phần khuyến cáo của database kèm theo
+
+2.4.5 File Inclusion
+
+Trong file Snort.conf, câu lệnh include chỉ cho Snort đọc các file sau từ include được lưu trong filesystem của Snort sensor, giống như trong lập trình vậy
+
+ví dụ : 
+
+$ include $RULE_PATH/bad-traffic.rules
+$ include $RULE_PATH/exploit.rules
+$ include $RULE_PATH/scan.rules
+
+Các rules trên ta có thể download trên internet, khi down về ta muốn phân nhóm hoặc chỉnh sửa,độ ưu tiên các rules ta có thể cấu hình trong file classification.config, file reference.config gồm các links tới web site với các thông tin cho tất cả các alerts, include nó rất hữu tích , nhanh gọn
+ví dụ:
+
+# include classification & priority settings
+
+include classification.config
+
+# include reference systems
+
+include reference.config
+
+ channhua - HVA]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#572</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#572</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 04:00:03]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ Các link hình đều không có. Mong mod edit lại các link hình. Mình đọc bài nhưng không thấy cái hình nào hết.
+Cảm ơn]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#203641</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#203641</link>
+				<pubDate><![CDATA[Wed, 20 Jan 2010 06:42:19]]> GMT</pubDate>
+				<author><![CDATA[ rongdennt]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ Ai có bài này đầy đủ hình ảnh thì cho mình xin với nhé, nhiều đoạn mô tả bằng hình nhưng lại không có nên -&gt; không hiểu. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#209849</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#209849</link>
+				<pubDate><![CDATA[Mon, 26 Apr 2010 13:21:24]]> GMT</pubDate>
+				<author><![CDATA[ tuan1912ha]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ Hình ảnh ko thấy là do chính sách bảo mật của diễn đàn?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#209947</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#209947</link>
+				<pubDate><![CDATA[Wed, 28 Apr 2010 02:38:12]]> GMT</pubDate>
+				<author><![CDATA[ phathuynh26]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phathuynh26 wrote:</cite><br>
+		<blockquote>Hình ảnh ko thấy là do chính sách bảo mật của diễn đàn?&nbsp;
+		</blockquote>
+Không phải đâu, bạn có thể thử nhấp vào phần "Trích" để biết rằng đường dẫn đến ảnh không còn tồn tại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#209969</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#209969</link>
+				<pubDate><![CDATA[Wed, 28 Apr 2010 09:28:23]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ Bạn Mod có thể share tài liệu này không?
+
+Trích:
+Bài viết sử dụng 1 số hình ảnh của omicron trong bài <b>IDS/IDP vs firewall </b>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#210315</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#210315</link>
+				<pubDate><![CDATA[Tue, 4 May 2010 11:29:53]]> GMT</pubDate>
+				<author><![CDATA[ phathuynh26]]></author>
+			</item>
+			<item>
+				<title>Snort - Detecting Intrusions</title>
+				<description><![CDATA[ Chào bạn MULAN , cám ơn bạn đã dịch rất chi tiết nhưng minh xin hỏi bạn : 
+1)Bạn đã thực hiện việc xây dựng hệ thống GIDS/IPS dưới hình thức  snort-inline trên centos 5.5 chưa bạn ?
+2)Nếu bạn đã thực hiện rồi mình mong bạn có thể đưa ra vài ý kiến được không ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/167.hva#234548</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/167.hva#234548</link>
+				<pubDate><![CDATA[Sun, 3 Apr 2011 09:49:59]]> GMT</pubDate>
+				<author><![CDATA[ lee_rae_ri]]></author>
+			</item>
+	</channel>
+</rss>

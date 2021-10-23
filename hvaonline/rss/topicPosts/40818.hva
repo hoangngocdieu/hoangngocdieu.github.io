@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Test iptables trước SYN Flood"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Test iptables trước SYN Flood"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[ Xin chào mọi người. Mình có một mô hình mạng như sau.
+Attacker----------------------------iptables------------------------------Web server
+						
+
+default của các chain là DROP và đã có sẵn rule sau ở chain INPUT
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0     0 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x12/0x12 state NEW reject-with tcp-reset
+0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:!0x17/0x02 state NEW</pre>
+		</div>
+Ngoài ra thì mình tạo rule NAT Inbound cho phép truy cập web từ bên ngoài đã thành công.
+
+Mong mọi hướng dẫn cách demo thiết lập rule trên iptables chống SYN Flood và kiểm tra tính hiệu quả của các rule đó. Cách mình đã làm là như sau, tuy nhiên không thấy được hiệu quả của các rule nên mạo muội xin góp ý của mọi người.
+
+Trước khi thiết lập rule:
+1. Ở máy Attacker mình sử dụng BackTrack với command: $hping3 --flood -S -p 80 111.11.1.10
+với 111.11.1.10 là địa chỉ là địa chỉ ip mặt ngoài của iptables.
+2. Ở máy web server mình chạy top để theo dõi + với tcpdump ($tcpdump -w http.pcap -i eth0 port 80) để kiểm tra số lượng packet đi vào hệ thống. Thì kiểm tra đc số packet mà tcpdump đã capture, số packet bị lọc bởi kernel và packet filter.
+3. Ngoài ra mình thử command $time wget -o /dev/null 111.11.1.10 --&gt; để kiểm tra thời gian đáp ứng của hệ thống.
+
+Sau đó mình thiết lập các rule chống SYN Flood như sau.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># Stop SYN Flooding
+iptables -N syn_flood
+iptables -A INPUT -p tcp --syn -j syn_flood
+iptables -A syn_flood -m limit --limit 1/s --limit-burst 3 -j RETURN
+iptables -A syn_flood -j DROP</pre>
+		</div>
+
+Sau đó mình flood lại và kiểm tra bằng các cách ở phần 1, 2, 3. Nhưng mình không thấy rõ sự khác biệt lắm.
+Vì web mình để test nên cũng không có gì, khi mình Flood thì user bên ngoài vẫn "có khả năng" truy cập web được.
+
+Vì vậy mong được sự hướng dẫn của mọi người để kiểm tra tính hiệu quả của rule.
+Thân]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251178</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251178</link>
+				<pubDate><![CDATA[Fri, 16 Dec 2011 07:18:14]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[ Chào bạn! 
+
+Để kiểm tra tính hiệu quả của firewall thì bạn cần các bước thử nghiệm như sau: 
+- Thử nghiệm  khả năng chống chịu của server khi bi SYN-flood khi không có firewall (iptables stop)
+- Thử nghiêm khả năng khi Server bật firrewall ở chế độ mặc định (không có rule cản lọc syn-flood)
+- Thử nghiệm khả năng hoạt động của các rule cản lọc syn-food 
+Trong lúc thử nghiệm bạn cần phải có thêm máy tính bên ngoài để kiểm tra xem, tốc độ vào trang web của bạn có bị ảnh hưởng hay không.
+
+Đồng thời bạn cần kiểm tra công cụ test của bạn có thể gửi bao nhiêu gói SYN trong 1 giây. Nó có đủ khả năng làm bão hòa đường truyền không. Và khi bão hòa đường truyền firewall có xử lý hiệu quả gói tin hay không. 
+Tốt nhất bạn nên dùng vài máy tính để gửi các gói Syn-flood cho khách quan. 
+Những rule của bạn còn thiếu rule đưa các gói tin vi phạm vào blackhole. Trên HVA có khá nhiều bài bàn về các rule này rồi bàn tìm lại nhé! 
+
+- Ky0 - ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251188</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251188</link>
+				<pubDate><![CDATA[Fri, 16 Dec 2011 20:02:00]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[  Chào Kyo. Cám ơn Kyo đã trả lời. Mình mắc phải một chỗ đó là.
+
+1. Web server được NAT ra ngoài nên khi tạo rule chống SYN Flood mình không biết nên tạo những rule đó ở chain nào. 
+Lúc đầu mình nghĩ nếu kẻ tấn công flood vô cồng 80 trên firewall thì firewall cũng tự đưa vào web server, nhưng khi tạo rule trong chain INPUT thì không thấy sự hiệu quả (mình kiểm tra các thông số trên web server).
+
+Sau đó mình tạo rule trên chain FORWARD như phía trên thì khi bị flood cũng &quot;thấy rõ&quot; được hiệu quả (giảm số kết nôi, lưu lượng gói tin vào cũng ít hơn, tcpdump bắt đc rất ít gói tin...). Tuy nhiên User thường lại không thể vô website được. ---&gt; hiện tại mình đang đau đầu với vấn đề tại sao user bt lại ko vô web được.
+
+2. Mình thử làm trên một distro FW nên mặc định nó cũng tạo sẵn một số rule. Đây là Rule mặc định ở bằng Filter.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Chain INPUT &#40;policy DROP 0 packets, 0 bytes&#41;
+num   pkts bytes target     prot opt in     out     source               destination         
+10    3788  152K DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID 
+11       0     0 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x12/0x12 state NEW reject-with tcp-reset 
+12       0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:!0x17/0x02 state NEW 
+
+Chain FORWARD &#40;policy DROP 0 packets, 0 bytes&#41;
+num   pkts bytes target     prot opt in     out     source               destination         
+6     2653  159M ACCEPT     tcp  --  eth0   *       0.0.0.0/0            10.0.0.2            tcp dpt:80 
+
+Chain OUTPUT &#40;policy DROP 0 packets, 0 bytes&#41;
+num   pkts bytes target     prot opt in     out     source               destination         
+ 11      12  1344 ACCEPT     all  --  *      eth0    0.0.0.0/0            0.0.0.0/0           
+
+Chain drop-lan &#40;0 references&#41;
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Chain PREROUTING &#40;policy ACCEPT 2056 packets, 97M bytes&#41;
+num   pkts bytes target     prot opt in     out     source               destination         
+1    24971 1499M DNAT       tcp  --  *      *       0.0.0.0/0            111.11.1.10         tcp dpt:80 to:10.0.0.2</pre>
+		</div>
+
+Một số rule không liên quan mình xoá bỏ bớt cho dễ nhìn.
+Mình vẽ lại mô hình cho dễ nhìn
+
+Attack---------------------(eth0)(Firewall)(eth2)-------------------------------Web server
+<b>Vấn đề cốt lõi mà mình vẫn chưa hiểu đó là với mô hình như vậy, Rule chống SYN Flood nên đặt ở chain nào?</b>[b]]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251339</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251339</link>
+				<pubDate><![CDATA[Tue, 20 Dec 2011 02:32:44]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote> 
+
+Attack---------------------(eth0)(Firewall)(eth2)-------------------------------Web server
+<b>Vấn đề cốt lõi mà mình vẫn chưa hiểu đó là với mô hình như vậy, Rule chống SYN Flood nên đặt ở chain nào?</b>&nbsp;
+		</blockquote>
+Bạn có thể đặt rule tại chain INPUT của eth0
+Cho cái hình để bạn dễ hình dung. 
+<br>
+			<div align="center" class="limitview"><img src='http://www.linuxhomenetworking.com/wiki/images/f/f0/Iptables.gif' border="0" onload="maxImg(this, 500px);" /></div>
+
+Và thêm rule đưa gói tin vi phạm vào blackhole.  
+Bạn có thể xem lại các bài viết trên forum về ngăn chặn Syn-flood để hiểu rõ hơn. 
+
+- Ky0 - ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251344</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251344</link>
+				<pubDate><![CDATA[Tue, 20 Dec 2011 03:51:36]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[ Mình quên mất, cám ơn Kyo về tấm hình. 
+Lần trước mình đặt ở chain INPUT nhưng ở web server vẫn ko có thay đổi gì, có lẽ mình đã làm sai ở một chỗ nào đó. Mình sẽ thử lại.
+blackhole ý Kyo có phải là đầy vô LOG không nhỉ. 
+
+Bổ sung.
+Theo như cái hình trên thì khi gói tin đi vào hệ thống nó sẽ vào chain Pre-routing trước. Do mình đã NAT nên nó sẽ đổi địa chỉ đích. Sau đó nó tiếp tục đi vào chain FORWARD (ko vào INPUT vì đã đổi đc ở trc).
+Ví dụ mình thiết lập rule như vầy
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>iptables -N syn_flood
+iptables -I FORWARD -p tcp --syn -j syn_flood
+iptables -A syn_flood -m limit --limit 1/s --limit-burst 3 -j RETURN
+ptables-A syn_flood -m limit --limit 3/s --limit-burst 1 -j LOG --log-prefix "SYN_Flood..:"
+iptables -A syn_flood -j DROP</pre>
+		</div>
+thì mọi gói tin có cờ syn đi vào FORWARD sẽ đẩy vào syn_flood, và <font color='orange'>khi chạm đỉnh là 3 thì mỗi giây nó chỉ cho phép một gói đi vào</font>. Vậy nếu kẻ tấn công cứ tiếp tục flood hệ thống thì người dùng bt đâu thể truy cập website được. Bởi khi hệ thống cấp cho một vé nào đều bị kẻ tấn công dành mất rồi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251346</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251346</link>
+				<pubDate><![CDATA[Tue, 20 Dec 2011 06:47:26]]> GMT</pubDate>
+				<author><![CDATA[ quangteospk]]></author>
+			</item>
+			<item>
+				<title>Test iptables trước SYN Flood</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quangteospk wrote:</cite><br>
+		<blockquote>Mình quên mất, cám ơn Kyo về tấm hình. 
+Lần trước mình đặt ở chain INPUT nhưng ở web server vẫn ko có thay đổi gì, có lẽ mình đã làm sai ở một chỗ nào đó. Mình sẽ thử lại.
+blackhole ý Kyo có phải là đầy vô LOG không nhỉ. &nbsp;
+		</blockquote>
+Blackhole có thể là /dev/null hoặc dscard service. Nếu bạn có theo dõi các bài viết chống DDOS trên diễn đàn thì sẽ thấy tác dụng của nó :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251349</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40818.hva#251349</link>
+				<pubDate><![CDATA[Tue, 20 Dec 2011 08:09:04]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+	</channel>
+</rss>

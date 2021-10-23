@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Hướng dẫn viết một chương trình Sniffer"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Hướng dẫn viết một chương trình Sniffer"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hướng dẫn viết một chương trình Sniffer</title>
+				<description><![CDATA[ Bài này mình hướng dẫn các bạn viết một sniffer (nghe lén) packet đơn giản trên Windows. Để lập trình được thì cần các bạn hiểu rõ cách lập trình socket trong ngôn ngữ C.
+Với cách lập trình socket thông thường chúng ta sử dụng SOCK_STREAM, SOCK_DGRAM tức lập trình ở mức Application của mạng mà thôi, để lập trình ở mức IP (tức tầng Network trong 4 tầng của Internet: Tầng vật lý --&gt; Tầng Ip--&gt; Tầng TCP --&gt; Tầng ứng dụng) sử dụng SOCK_RAW là một dạng socket "thô"
+Điều đầu tiên bao giờ chúng ta cũng phải khởi tạo thư viện Winsocket
+Hàm khởi tạo thư viện như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>void InitWinSock&#40;&#41;
+{
+	WSADATA wsaData;
+	if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return;
+}</pre>
+		</div>
+Chi tiết hàm WSAStartup có thể xem trợ giúp của MSDN ...
+
+Cách tạo một Raw Socket như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>int	CreateRawSocket&#40;&#41;
+{
+	int	sock;
+	if &#40;&#40;sock=WSASocket&#40;AF_INET,SOCK_RAW,0,NULL,NULL,WSA_FLAG_OVERLAPPED&#41;&#41;==INVALID_SOCKET&#41; return 0;
+	return sock;
+}</pre>
+		</div>
+Hàm trên trả về một sock mới nếu như không gặp lỗi
+
+Như chúng ta đã biết mô hình mạng Internet được phân chia thành 4 tầng (Tầng vật lý &lt;--&gt; Tầng Ip&lt;--&gt; Tầng TCP &lt;--&gt; Tầng ứng dụng) tương ứng với 7 tầng của mô hình OSI (Tầng vật lý &lt;--&gt; Tầng liên kết &lt;--&gt; Tầng mạng &lt;--&gt; Tầng vận chuyển &lt;--&gt; Tầng phiên &lt;---&gt; Tầng trình diễn &lt;--&gt; Tầng ứng dụng). Mình khỏi phải nhắc lại mô hình OSI như thế nào vì có rất nhiều bài viết trong diễn đàn đã nói đến OSI
+Giới thiệu cấu trúc của gói IP, TCP, ICMP
+a. Gói IP (ở tầng IP)
+Định nghĩa một struct mô tả gói IP
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>struct ip_hdr{
+	unsigned	char	ver_ihl;	//&lt;-- Version &#40;4 bits&#41; + Internet Header Length &#40;4 bits&#41;
+	unsigned	char	tos;	//&lt;-- Type Of Service
+	unsigned short	tol_len	//&lt;-- Total Length &#40;Ip Header + TCP Header + Data&#41;
+	unsigned	short	id	//&lt;-- Identification
+	unsigned	short	offset	//&lt;-- Frame Offset trong đó 8 bits cho flags
+	unsigned	char	ttl	//&lt;-- Time to Live
+	unsigned char	protocol	//&lt;-- Protocol
+	unsigned short	checksum//&lt;-- Header Checksum
+	unsigned int	saddr	//&lt;-- Source Address
+	unsigned	int	daddr	//&lt;-- Destination Address
+};</pre>
+		</div>
+b. Gói TCP
+Định nghĩa một struct mô tả gói TCP
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>struct tcp_hdr{
+	unsigned	short	sport	//&lt;-- Source Port
+	unsigned short	dport	//&lt;-- Destiantion Port
+	unsigned int	seq_num	//&lt;-- Sequence Number
+	unsigned	int	ack_num	//&lt;-- Acknowledgment Number
+	unsigned char	dataoffset//&lt;--Data Offset
+	unsigned char	flags	//Flags: SYN, ACK, FIN, RST, PUSH, URG &#40;2 bits&#41; + 6 bits Reserve
+	unsigned short	window	//Windows
+	unsigned short	checksum //Checksum
+	unsigned short	urgpointer //Urgent Pointer
+}</pre>
+		</div>
+c. Gói ICMP
+Định nghĩa một struct mô tả gói ICMP
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>struct icmp_hdr{
+	unsigned char	type	//Type
+	unsigned char	code	//Code
+	unsigned short	checksum
+	unsigned short	id	//Identification
+	unsigned short	sequence
+	unsigned short	timestamp
+}</pre>
+		</div>
+Ở trên là toàn bộ định nghĩa về các gói IP, ICMP, TCP. Trong bài này mình chỉ hướng dẫn bắt các gói TCP và ICMP mà thôi, còn các gói khác thì có thể làm tương tự
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;winsock2.h&gt;
+#include &lt;stdio.h&gt;
+#define SIO_RCVALL _WSAIOW&#40;IOC_VENDOR,1&#41;
+#pragma comment &#40;lib,"ws2_32.lib"&#41;
+void	InitWinSock&#40;&#41;;
+int		CreateRawSocket&#40;&#41;;
+int		Sniffer&#40;int	sock&#41;;
+int		packetcapture&#40;char *packet&#41;;
+int		tcp_display&#40;struct ip_hdr	*ip,struct tcp_hdr *tcp&#41;;
+int		icmp_display&#40;struct ip_hdr *ip,struct icmp_hdr *icmp&#41;;
+struct ip_hdr
+{
+	unsigned char	ver_ihl;//VER va IHL &#40;Internet Header Length&#41;
+	unsigned char	tos;	//Type of Server
+	unsigned short	tol_len;//Total Length=IpHeader + TCP Header + Data
+	unsigned short	id;		//Identification
+	unsigned short	offset;	//Frame offset
+	unsigned char	ttl;	//Time To Live
+	unsigned char	protocol;
+	unsigned short	checksum;
+	unsigned int	saddr;	//Source Address
+	unsigned int	daddr;	//Destination Address
+};
+
+struct tcp_hdr
+{
+	unsigned short	sport;	//Source Port
+	unsigned short	dport;	//Detinations Port	
+	unsigned int	seqnum;	//Sequence;
+	unsigned int	acknum;	//Acknowlege
+	unsigned char	dataoffset;	//Data Offset
+	unsigned char	flags;	//SYN, URG, FIN, ACK, RST, PUSH + Preserve
+	unsigned short  windows;
+	unsigned short	checksum;
+	unsigned short	urgpointer;
+};
+struct icmp_hdr
+{
+	unsigned char	type;
+	unsigned char	code;
+	unsigned short	checksum;
+	unsigned short	id;
+	unsigned short	sequence;
+	unsigned short	timestamp;
+};
+int	socksniffer;
+int	main&#40;&#41;
+{
+	InitWinSock&#40;&#41;;
+	socksniffer=CreateRawSocket&#40;&#41;;
+	printf&#40;"Seamoun &#40;http://nhomvicki.net&#41;\n"&#41;;
+	printf&#40;"Sniffer TCP, ICMP v1.0\n\n"&#41;;
+	printf&#40;"          Packet Capture ...\n"&#41;;
+	Sniffer&#40;socksniffer&#41;;
+	return 0;
+}
+//Ham khoi tao thu vien WinSock
+void InitWinSock&#40;&#41;
+{
+	WSADATA wsaData;
+	if &#40;WSAStartup&#40;MAKEWORD&#40;1,1&#41;,&wsaData&#41;!=0&#41; return;
+}
+//Ham tao RawSocket
+int	CreateRawSocket&#40;&#41;
+{
+	int	sock;
+	if &#40;&#40;sock=WSASocket&#40;AF_INET,SOCK_RAW,0,NULL,NULL,WSA_FLAG_OVERLAPPED&#41;&#41;==INVALID_SOCKET&#41; return 0;
+	return sock;
+}
+//Ham thuc hien Sniffer
+int	Sniffer&#40;int sock&#41;
+{
+	DWORD dwBufferLen&#91;10&#93;, dwBufferInLen = 1, dwBytesReturned = 0;
+
+	char *HostName=new char &#91;32&#93;;
+	unsigned long	nSize=32;
+	struct	hostent	*hp;
+	sockaddr_in	from,dest;
+	int	sread,fromlen=sizeof&#40;from&#41;;
+	
+	char *packet=new char &#91;2048&#93;;
+	if &#40;GetComputerName&#40;HostName,&nSize&#41;==0&#41; return -1;
+	if &#40;&#40;hp=gethostbyname&#40;HostName&#41;&#41;==0&#41; return -1;
+	delete&#40;HostName&#41;;
+	
+	int	i=0;
+	while &#40;&#40;hp-&gt;h_addr_list&#91;i+1&#93;&#41;!=NULL&#41;
+	{
+		i++;
+	}
+	memcpy&#40;&from.sin_addr.s_addr,hp-&gt;h_addr_list&#91;i&#93;,hp-&gt;h_length&#41;;
+	if &#40;&#40;hp=gethostbyname&#40;inet_ntoa&#40;from.sin_addr&#41;&#41;&#41;==NULL&#41; return -1;
+
+	memset&#40;&dest,0,sizeof&#40;dest&#41;&#41;;
+	memcpy&#40;&dest.sin_addr.s_addr,hp-&gt;h_addr_list&#91;0&#93;,hp-&gt;h_length&#41;;
+	dest.sin_family=AF_INET;
+	dest.sin_port=htons&#40;8000&#41;;
+	if &#40;bind&#40;sock,&#40;struct sockaddr *&#41;&dest,sizeof&#40;dest&#41;&#41;==SOCKET_ERROR&#41; return -1;
+	
+	//WSAIoctl : dieu khien vao ra socket
+	if&#40;WSAIoctl&#40;sock, SIO_RCVALL, &dwBufferInLen, sizeof&#40;dwBufferInLen&#41;, &dwBufferLen, sizeof&#40;dwBufferLen&#41;,&dwBytesReturned , NULL , NULL&#41; == SOCKET_ERROR&#41;		return&#40;-1&#41;;
+	
+	//Don nhan va su ly goi du lieu
+	while &#40;1&#41;
+	{
+		sread=recvfrom&#40;sock,packet,8191,0,&#40;struct sockaddr *&#41;&from.sin_addr,&fromlen&#41;;
+		if &#40;&#40;sread==SOCKET_ERROR&#41;||sread&lt;0&#41; continue ;
+		packetcapture&#40;packet&#41;;
+	}
+	delete&#40;packet&#41;;
+
+	return 0;
+}
+//Ham thuc hien phan tich goi du lieu
+int	packetcapture&#40;char *packet&#41;
+{
+	struct ip_hdr	*ip;
+	struct tcp_hdr	*tcp;
+	struct icmp_hdr	*icmp;
+	ip=&#40;struct ip_hdr *&#41;packet;
+	tcp=&#40;struct tcp_hdr *&#41;&#40;packet+sizeof&#40;struct ip_hdr&#41;&#41;;
+	icmp=&#40;struct icmp_hdr *&#41;&#40;packet+sizeof&#40;struct ip_hdr&#41;&#41;;
+	switch&#40;ip-&gt;protocol&#41;
+	{
+	case 6:
+		tcp_display&#40;ip,tcp&#41;;
+		break;
+	case 1:
+		icmp_display&#40;ip,icmp&#41;;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+//Ham hien thi goi TCP
+int	tcp_display&#40;ip_hdr *ip,tcp_hdr *tcp&#41;
+{
+	printf&#40;"TCP: &#91;%d&#93; %s:%d", ntohs&#40;ip-&gt;tol_len&#41;, inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;saddr&#41;, ntohs&#40;tcp-&gt;sport&#41;&#41;;
+	printf&#40;" &gt; %s:%d|ttl = %d|win = %d|checksum = %d|flag = %d\n\n", inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;daddr&#41;, 
+	ntohs&#40;tcp-&gt;dport&#41;, ip-&gt;ttl, ntohs&#40;tcp-&gt;windows&#41;, tcp-&gt;checksum, tcp-&gt;flags&#41;;
+	return 0;
+}
+//Ham hien thi goi ICMP
+int icmp_display&#40;struct ip_hdr *ip, struct icmp_hdr *icmp&#41;
+{  	
+
+	printf&#40;"ICMP: &#91;%d&#93; %s", ntohs&#40;ip-&gt;tol_len&#41;, inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;saddr&#41;&#41;;
+	printf&#40;" &gt; %s type = %d|code = %d|ttl = %d|seq = %x\n", inet_ntoa&#40;*&#40;struct in_addr *&#41;&ip-&gt;daddr&#41;, icmp-&gt;type, icmp-&gt;code, ip-&gt;ttl, ntohs&#40;icmp-&gt;sequence&#41;&#41;;
+	return 0;
+}</pre>
+		</div>
+
+Kết quả khi chạy chương trình
++ Thực hiện gửi gói ICMP bằng cách dùng lệnh PING
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\&gt;ping 10.0.0.2
+Reply from 10.0.0.2: bytes=32 time&lt;10ms TTL=64
+Reply from 10.0.0.2: bytes=32 time=15ms TTL=64
+Reply from 10.0.0.2: bytes=32 time=15ms TTL=64
+Reply from 10.0.0.2: bytes=32 time=15ms TTL=64
+
+Ping statistics for 10.0.0.2:
+    Packets: Sent = 4, Received = 4, Lost = 0 &#40;0% loss&#41;,
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum =  15ms, Average =  11ms
+
+Chương trình Sniffer:
+Seamoun &#40;http://nhomvicki.net&#41;
+Sniffer TCP, ICMP v1.0
+
+          Packet Capture ...
+ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3d00
+ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3d00
+ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3e00
+ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3e00
+ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 3f00
+ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 3f00
+ICMP: &#91;60&#93; 10.0.0.1 &gt; 10.0.0.2 type = 8|code = 0|ttl = 128|seq = 4000
+ICMP: &#91;60&#93; 10.0.0.2 &gt; 10.0.0.1 type = 0|code = 0|ttl = 64|seq = 4000</pre>
+		</div>
+
++Thực hiện gửi gói TCP bằng netcat
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\&gt;nx -vv -n 10.0.0.1
+
+Chương trình Sniffer:
+Seamoun &#40;http://nhomvicki.net&#41;
+Sniffer TCP, ICMP v1.0
+
+          Packet Capture ...
+TCP: &#91;64&#93; 10.0.0.1:80 &gt; 10.0.0.2:1033|ttl = 128|win = 64240|checksum = 55340|flag = 18
+TCP: &#91;60&#93; 10.0.0.2:1033 &gt; 10.0.0.1:80|ttl = 64|win = 5840|checksum = 5942|flag = 2
+TCP: &#91;52&#93; 10.0.0.2:1033 &gt; 10.0.0.1:80|ttl = 64|win = 5840|checksum = 23589|flag = 16</pre>
+		</div>
+
+Mình post lại bài này vì không thấy còn trên HVA . Chắc do mất DB đợt trước  8)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5557.hva#32690</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5557.hva#32690</link>
+				<pubDate><![CDATA[Mon, 25 Dec 2006 09:15:57]]> GMT</pubDate>
+				<author><![CDATA[ seamoun]]></author>
+			</item>
+			<item>
+				<title>Hướng dẫn viết một chương trình Sniffer</title>
+				<description><![CDATA[ Một sniffer open source viết bằng VB dễ đọc:
+http://www.rumint.org/software/rumint/rumint_v.211.zip
+Source: http://www.rumint.org/software/rumint/rumint_2.11_source.zip
+Trang chủ http://www.rumint.org/]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/5557.hva#60040</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/5557.hva#60040</link>
+				<pubDate><![CDATA[Fri, 18 May 2007 12:58:45]]> GMT</pubDate>
+				<author><![CDATA[ eyesdog]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Cài đặt nhanh và cấu hình qmail + vpopmail + procmail + daemontools"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Cài đặt nhanh và cấu hình qmail + vpopmail + procmail + daemontools"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Cài đặt nhanh và cấu hình qmail + vpopmail + procmail + daemontools</title>
+				<description><![CDATA[ bmuht_gpj.76252_a9753dd0257efecf683ccbc63f641a2a/6/8/6002/daolpu/enilnoavh/052.831.141.302//:ptth
+<b>Cài đặt nhanh và cấu hình qmail + vpopmail+procmail +  daemontools </b>
+
+Bài viết này dành cho những bạn reinstall qmail và các thiết bị quản lý qmail .
+thực hiện theo quá trình trong bài viết bạn có thể sử dụng được qmail , vpopmail , procmail , daemontools  nhanh chóng mà không cần phải đi kiếm link hoặc các patch và đọc documents . tuy nhiên ý nghĩa của từng chương trình và lệnh sẽ không có dính kèm giải thích nào . nếu bạn chưa cài đặt qmail lần nào xin đọc bài  viết &quot;Qmail as a Mail Gateway&quot; để biết thêm chi tiếc và cơ cấu cu. thể của qmail tại các link sau . 
+
+Phần 1 :<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/119.hva</span>
+Phần 2 :<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/120.hva</span>
+Phần 3 :<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/121.hva</span>
+Phần 4 :<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/122.hva</span>
+
+
+<b>1. Qmail </b><span class="link"> ftp://ftp.jp.qmail.org/qmail/qmail-1.03.tar.gz</span>
+<b>2. Tcpserver </b><span class="link"> ftp://ftp.jp.qmail.org/qmail/ucspi-tcp-0.88.tar.gz</span>
+<b>3. Vpopmail</b><span class="link"> http://www.inter7.com/index.php?page=vpopmail</span>
+<b>qmail-smtpd-relay-reject</b><span class="link"> http://www.qmail.org/qmail-smtpd-relay-reject</span>
+<b>4. Patch files </b><span class="link"> http://www.qmail.org/rpms/</span>
+<b>5. Procmail</b><span class="link"> http://www.procmail.org/</span>
+<b>6.  daemontools</b><span class="link"> http://cr.yp.to/daemontools/daemontools-0.76.tar.gz</span>
+
+<b>Tạo các thư mục cần thiết cho qmail </b>
+
+[root　]# mkdir /var/qmail
+[root ]# groupadd -g 710 nofiles
+[root ]# useradd -M -u 710 -g nofiles -s /bin/false -d /var/qmail/alias alias
+[root ]# useradd -M -u 711 -g nofiles -s /bin/false -d /var/qmail qmaild
+[root ]# useradd -M -u 712 -g nofiles -s /bin/false -d /var/qmail qmaill
+[roott]# useradd -M -u 713 -g nofiles -s /bin/false -d /var/qmail qmailp
+[root ]# groupadd -g 711 qmail
+[root ]# useradd -M -u 714 -g qmail -s /bin/false -d /var/qmail qmailq
+[root ]# useradd -M -u 715 -g qmail -s /bin/false -d /var/qmail qmailr
+[root ]# useradd -M -u 716 -g qmail -s /bin/false -d /var/qmail qmails
+
+<b>Vpopmail User and group </b>
+[root ]# groupadd -g 721 vchkpw
+[root ]# useradd -g vchkpw -u 721 vpopmail -M -s /bin/false
+[root ]# mkdir /home/vpopmail
+[root ]# chown vpopmail:vchkpw /home/vpopmail
+
+
+<b>Patch and compile qmail</b>
+[root src]# tar zxvf qmail-1.03.tar.gz
+[root src]# cd qmail-1.03
+[root src]# wget<span class="link"> http://www.qmail.org/rpms/patches/qmail-1.03.errno.patch</span>
+[root src]# wget<span class="link"> http://www.qmail.org/qmail-smtpd-relay-reject</span>
+[root qmail-1.03]# patch -p1 &lt; ../qmail-smtpd-relay-reject
+[root qmail-1.03]# patch -p1 &lt; ../qmail-1.03.errno.patch
+[root qmail-1.03]# make setup check
+[root qmail-1.03]# ./config-fast <font color='red'>mail.example.jp</font>
+
+
+<b>Cài đặt tcpserver </b>
+
+# tar xvfz ../ucspi-tcp-0.88.tar.gz
+# cd ucspi-tcp-0.88/
+#wget<span class="link"> http://www.qmail.org/rpms/patches/ucspi-tcp-0.88.errno.patch</span>
+#patch -p1 &lt; ucspi-tcp-0.88.errno.patch
+patching file error.h
+# make setup check
+
+
+<b>Cài đặt vpopmail</b>
+
+[root src]# tar zxvf vpopmail-5.3.20.tar.gz
+[root src]# cd vpopmail-5.3.20
+[rootvpopmail-5.3.20]#./configure \
+--enable-roaming-users=y \
+--enable-relay-clear-minutes=10 \
+--enable-tcpserver-file=/home/vpopmail/etc/tcp.smtp \
+--enable-logging=y \
+[root vpopmail-5.3.20]# make
+[root vpopmail-5.3.20]# make install-strip
+
+Khi chạy configure nếu bị <font color='red'>error  </font> 
+<blockquote>configure: error: Unable to find your tcp.smtp file, specify --enable-tcpserver-path=/full/path/to/tcp.smtp&nbsp;
+		</blockquote>
+
+dùng lệnh sau để giải quyết 
+<font color='red'># cp /etc/tcpserver/tcp.smtp /home/vpopmail/etc/</font>
+
+<b>Create virtual domain for vpopmail</b>
+
+[root etc]# cd /home/vpopmail/bin
+[root bin]# <font color='red'>./vadddomain example.jp</font>
+Please enter password for postmaster:
+enter password again:
+
+your virtual domain was create into /home/vpopmail/domains/example.jp
+
+<b>Tạo default domain cho vpopmail </b>
+# echo 'example.jp' &gt;<font color='red'> /home/vpopmail/etc/defaultdomain</font>
+
+<b>Create user for vpopmail</b>
+
+[root bin]# <font color='red'>./vadduser test@example.jp</font>
+Please enter password for test@example.jp:<font color='red'>*****</font>
+enter password again:<font color='red'>******</font>
+
+<b>POP before SMTP</b>
+
+Create file tcp.smtp.cdb for access control 
+
+# touch /home/vpopmail/etc/tcp.smtp
+
+File : /home/vpopmail/etc/tcp.smtp
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>127.:allow,RELAYCLIENT=&quot;&quot;</pre>
+		</div>
+
+[root etc]# tcprules /home/vpopmail/etc/tcp.smtp.cdb <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/home/vpopmail/etc/tcp.smtp.tmp &lt; /home/vpopmail/etc/tcp.smtp</pre>
+		</div>
+
+[root etc]# crontab -e　 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>0,10,20,30,40,50 * * * * /home/vpopmail/bin/clearopensmtp 2&gt;&1 &gt; /dev/null</pre>
+		</div>
+
+
+<b>Cài đặt Daemontools </b>
+
+# mkdir -p /package
+# chmod 755 /package
+# chmod +t /package
+
+# cd /package
+# wget<span class="link"> http://cr.yp.to/daemontools/daemontools-0.76.tar.gz</span>
+# tar xvpfz  daemontools-0.76.tar.gz
+# cd daemontools-0.76/src
+# wget<span class="link"> http://www.qmail.org/rpms/patches/daemontools-0.76.errno.patch</span>
+# patch -p1 &lt; daemontools-0.76.errno.patch
+  (error.h)
+# cd admin/daemontools-0.76
+# ./package/install
+
+<blockquote>Creating /service...
+Adding svscanboot to inittab...
+init should start svscan now.&nbsp;
+		</blockquote>
+
+chương trình sẽ tự động thêm dòng sau vào /etc/initab để khi khởi động linux svscan có thể tự động chạy .
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SV:123456:respawn:/usr/local/bin/svscanboot</pre>
+		</div>
+
+
+<b>Tạo directory cho svscan </b>
+
+# mkdir -p /var/service
+# chmod 0755 /var/service
+
+File : <b>/usr/local/bin/svscanboot</b> ( không cần thay đổi các dấu <font color='red'>.......</font>)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+# WARNING: This file was auto-generated. Do not edit!
+
+PATH=:/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/X11R6/bin
+
+exec &lt;/dev/null
+exec &gt;/dev/null
+exec 2&gt;/dev/null
+
+svc -dx /var/service/* /var/service/*/log
+
+env - PATH=$PATH svscan /var/service 2&gt;&1 | \
+env - PATH=$PATH readproctitle service errors: .........................&#40;kéo dài &#41;</pre>
+		</div>
+
+
+<b>Cấu hình cho daemontools</b> : setup chương trình cho deamontơols giám sát
+
+mkdir -p /var/qmail/supervise/<font color='red'>qmail</font>
+mkdir /var/qmail/supervise/<font color='red'>pop3d</font>
+mkdir /var/qmail/supervise/<font color='red'>smtpd</font>
+chmod +t /var/qmail/supervise/<font color='red'>qmail</font>
+chmod +t /var/qmail/supervise/<font color='red'>pop3d</font>
+chmod +t /var/qmail/supervise/<font color='red'>smtpd</font>
+
+File : <b>/var/qmail/supervise/qmail/run</b>
+# cp /usr/local/src/qmail-1.03/home /var/qmail/supervise/qmail/run
+
+Chuyển file rc của qmail từ <font color='red'>./Mailbox t</font>hành <font color='red'>./Maildir/</font> (/var/qmail/rc)
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/sh
+
+# Using splogger to send the log through syslog.
+# Using qmail-local to deliver messages to ~/Mailbox by default.
+
+exec env - PATH=&quot;/var/qmail/bin:$PATH&quot; \
+qmail-start ./Maildir/ splogger qmail</pre>
+		</div>
+
+File : <b>/var/qmail/supervise/smtpd/run</b>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#
+# smtpd/run : qmail-smtpd starting script
+#
+exec env - PATH=&quot;/var/qmail/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin&quot; \
+/usr/local/bin/tcpserver -v -x /home/vpopmail/etc/tcp.smtp.cdb -R -H -l0 -u `id -u qmaild` -g `id -g qmaild` 0 smtp \
+/var/qmail/bin/qmail-smtpd 2&gt;&1</pre>
+		</div>
+
+Tạo quyền thi hành cho file run 
+# chmod +x /var/qmail/supervise/smtpd/run
+
+file : <b>/var/qmail/supervise/pop3d/run</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+#
+# pop3d/run : qmail-pop3d starting script
+#
+exec env - PATH=&quot;/var/qmail/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin&quot; \
+tcpserver -v -x /etc/tcpserver/tcp.pop3.cdb -R -H 0 pop3 qmail-popup mail.example.jp \
+/home/vpopmail/bin/vchkpw \
+qmail-pop3d Maildir 2&gt;&1</pre>
+		</div>
+
+Tạo quyền thi hành cho file run 
+# chmod +x /var/qmail/supervise/pop3d/run
+
+Tạo symlink
+# ln -s /var/qmail/supervise/qmail /var/service/qmail
+# ln -s /var/qmail/supervise/smtpd /var/service/smtpd
+# ln -s /var/qmail/supervise/pop3d /var/service/pop3d
+
+Khỏi động lại init để enable svscan bằng lệnh sau 
+# kill -HUP 1
+
+Kiểm tra các service có hoạt động hay không 
+<font color='red'># svstat /var/service/*</font>
+/var/service/pop3d: up (pid 5021) <font color='red'>4 seconds</font>
+/var/service/qmail: up (pid 5022) <font color='red'>4 seconds</font>
+/var/service/smtpd: up (pid 5023) <font color='red'>4 seconds</font>
+
+<font color='red'>*</font> up seconds chỉ  báo <font color='red'>0 </font>hay <font color='red'>1</font> thì check lại permission của run scripts  hoặc syntax của chúng . 
+
+<b>Qmail configuration </b>
+/var/qmail/control/locals
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>localhost　　　　　　　　　　&#40;add&#41;
+mail.example.jp
+example.jp　　　　　　　　　&#40;add&#41;</pre>
+		</div>
+
+/var/qmail/control/rcpthosts
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>localhost　　　　　　　　　　&#40;add&#41;
+mail.example.jp
+example.jp　　　　　　　　　&#40;add&#41;</pre>
+		</div>
+
+
+<b>Start up scirpt cho qmail</b>
+
+<blockquote>#!/bin/sh
+
+[ -f /var/qmail/rc ] || exit 0
+PATH=$PATH:/var/qmail/bin:/usr/local/bin
+
+case &quot;$1&quot; in
+    start)
+        echo -n &quot;Starting... qmail&quot;
+        csh -cf '/var/qmail/rc &'
+
+################ SMTP #####################
+
+        /usr/local/bin/tcpserver -H -R -l <font color='red'>mail.example.jp</font> -v \
+        -x /home/vpopmail/etc/tcp.smtp.cdb -u 711 -g 710 0 smtp \
+        /var/qmail/bin/qmail-smtpd 2&gt;&1 | /var/qmail/bin/splogger smtpd 2 &
+
+################ POP #####################
+
+        /usr/local/bin/tcpserver -H -R -l <font color='red'>mail.example.jp</font> -v 0 pop3 \
+        /var/qmail/bin/qmail-popup <font color='red'>mail.example.jp </font>/home/vpopmail/bin/vchkpw \
+        /var/qmail/bin/qmail-pop3d Maildir 2&gt;&1 | /var/qmail/bin/splogger pop3d 2 &
+
+        touch /var/lock/qmail
+        ;;
+    stop)
+        echo &quot;Shutting down qmail.&quot;
+        PID=`/bin/ps -aefw | grep qmail | awk '{print $2}'`
+        if [ ! -z &quot;$PID&quot; ] ; then
+            /bin/kill ${PID} 1&gt; /dev/null 2&gt;&1
+        fi
+        rm -f /var/lock/qmail
+        ;;
+    *)
+        echo &quot;Usage: &quot;$0&quot; {start|stop}&quot;
+        exit 1
+esac
+exit 0&nbsp;
+		</blockquote>
+
+[root init.d]# chmod +x qmail
+[root init.d]# cd ../rc3.d/
+[root rc3.d]# ln -s ../init.d/qmail S84qmail
+
+<i>Check process tree </i>
+
+<blockquote>
+<u><b>pstree -ah</b></u>
+
+  |-svscanboot /usr/local/bin/svscanboot
+  |   |-readproctitle service errors: ...
+  |   `-svscan /var/service
+  |       |-supervise qmail 
+  |       |   `-qmail-send
+  |       |       |-qmail-clean
+  |       |       |-qmail-lspawn ./Maildir/
+  |       |       |-qmail-rspawn
+  |       |       `-splogger qmail
+  |       |-supervise smtpd
+  |       |   `-tcpserver -v -x /home/vpopmail/etc/tcp.smtp.cdb -R -H -l0 -u ...&nbsp;
+		</blockquote>
+
+<b>Remove sendmail </b>
+
+[root root]# rm /usr/lib/sendmail
+[root root]# rm /usr/sbin/sendmail
+[root root]# ln -s /var/qmail/bin/sendmail /usr/sbin/sendmail
+[root root]# ln -s /var/qmail/bin/sendmail /usr/lib/sendmail
+
+<b>Install procmail</b>
+
+# cd /usr/local/src
+# tar xfvz procmail-3.21.tar.gz
+# cd procmail-3.21
+# make
+# make install
+# make install-suid
+
+Tạo file .qmail vào <i>~vpopmail/domains/example.jp/777/.qmail</i> với nội dung sau 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>| /usr/bin/procmail -m ./.procmailrc</pre>
+		</div>
+
+chú ý khi thêm vào không được thêm <font color='red'>space</font> vào trước dấu <font color='red'>|</font>  . 
+
+
+Tại file .procmailrc vào <i>~vpopmail/domains/example.jp/777/.procmailrc</i> với nội dung sau 
+
+<blockquote>PATH=/usr/bin:/bin:/usr/local/bin
+HOME=/var/vpopmail/domains/<font color='red'>example.jp</font>/777
+MAILDIR=$HOME/Maildir
+DEFAULT=$HOME/Maildir/
+LOGFILE=$MAILDIR/procmail.log
+LOCKFILE=$MAILDIR/procmail.lock
+
+&nbsp;
+		</blockquote>
+
+=================================
+
+<font color='green'>06/07/25</font> :
+Thêm bước patch error cho qmail 
+Thêm bước  patch cho tcpserver (ucspi-tcp-0.88.errno.patch )
+
+<font color='green'>06/07/27</font> :
+Chỉnh sửa và thêm chi tiếc cấu hình daemontools
+Sửa đổi start up script cho qmail 
+
+Tác giả : 777
+Nguồn  : www.vnhacker.org
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1965.hva#9962</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1965.hva#9962</link>
+				<pubDate><![CDATA[Tue, 25 Jul 2006 17:57:01]]> GMT</pubDate>
+				<author><![CDATA[ tranvanminh]]></author>
+			</item>
+	</channel>
+</rss>

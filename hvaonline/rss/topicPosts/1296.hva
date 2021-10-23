@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Làm thế nào FakeIP khi sử dụng Squid"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Làm thế nào FakeIP khi sử dụng Squid"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ Làm thế nào để FakeIP trên hệ điều hành Linux Fedora khi PC của mình đứng đằng sau một trình Proxy server ví dụ như Squid vậy các bạn  :( 
+
+Trên linux có package manager nào cho phép mình làm điều trên hay không ? Vì khi mình muốn "ẩn IP" trên hệ điều hành Linux phải chuyển sang đường ADSL (kết nối Internet trực tiếp) và "bắt buộc" sử dụng hệ điều hành Windows mới làm được điều trên vì vậy rất bất tiện .
+
+Mong anh em tư vấn giùm mình việc ẩn IP trên hệ điều hành Linux .
+Cám ơn anh em rất nhiều  :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6101</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6101</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 10:06:42]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Golden Autumn wrote:</cite><br>
+		<blockquote>Làm thế nào để FakeIP trên hệ điều hành Linux Fedora khi PC của mình đứng đằng sau một trình Proxy server ví dụ như Squid vậy các bạn  :( 
+
+Trên linux có package manager nào cho phép mình làm điều trên hay không ? Vì khi mình muốn "ẩn IP" trên hệ điều hành Linux phải chuyển sang đường ADSL (kết nối Internet trực tiếp) và "bắt buộc" sử dụng hệ điều hành Windows mới làm được điều trên vì vậy rất bất tiện .
+
+Mong anh em tư vấn giùm mình việc ẩn IP trên hệ điều hành Linux .
+Cám ơn anh em rất nhiều  :mrgreen: &nbsp;
+		</blockquote>
+
+Anh không hiểu hoàn toàn ý em về cái gọi là <b>"dấu IP"</b> nên không thể trả lời cho thoả đáng được. Tuy nhiên, xét trên bình diện mạng thì không thể <b>dấu</b> hay <b>fake</b> IP được. Anh có thể giải thích điều này một cách tổng quát như sau:
+- một máy liên hệ với một máy khác và dùng TCP/IP thì <b>phải</b> có IP và IP này <b>phải tồn tại</b> trong quá trình gởi / nhận gói tin, bất kể là gói có đi qua bao nhiêu router đi chăng nữa.
+
+Giả sử máy em có IP là aaa.aaa.aaa.aaa và muốn nói chuyện với một máy có IP là bbb.bbb.bbb.bbb, IP của máy em phải tồn tại trong suốt xuất truy cập. Nếu IP của máy em bất thình lình thay đổi, xuất truy cập ấy triệt tiêu. Nếu xuất truy cập là một xuất HTTP, em có thể đổi HTTP headers, xoá cookie, xoá những thông tin khác trên HTTP header, tuy nhiên em không thể dùng một IP không tồn tại để truy cập đến một đích nào đó bởi vì đầu bên kia phải có địa chỉ IP nào đó để mà trả lời. Có chăng, em có thể tạm "mượn" một IP nào khác để truy cập mục tiêu và IP "mượn" kia sẽ thay em mà gởi nhận thông tin. IP "mượn" kia là IP của một proxy / nat server nào đó chẳng hạn.
+
+Khi một gói tin đòi hỏi truy cập được gởi đi trên Internet, nó <b>phải mang public IP</b>, không cần biết máy của em nằm sau bao nhiêu cái proxy / nat server. Ngay lúc gói tin đi ra ngoài Internet nó phải được mang một public IP hẳn hòi.
+
+Ví dụ:
+
+Máy em --> proxy 1 --> proxy 2 --> proxy 3 ----- Internet ----- proxy 4 --> máy bạn.
+
+Proxy 3 và proxy 4 phải mang public IP addresses. Nếu đằng trước chúng có NAT server, NAT server đó phải mang public IP. Nếu đằng trước chúng có router, router phải mang public IP. Vậy thì chuyện public IP dính dáng gì đến chuyện "dấu" IP? Tất nhiên là dính dáng vì <b>không thể dấu public IP</b>. Public IP được assign cho quốc gia / ISP / người dùng hoàn toàn có thể track và trace được.
+
+Có lẽ giới hạn "dấu" nằm ở chỗ:
+
+Máy em -->  Internet ---> proxy x  ---- proxy 4 --> máy bạn.
+Em tạm mượn IP của proxy x để truy cập máy bạn em. Bạn em chỉ biết IP của proxy x mà không biết IP thật của em. Tuy vậy, vẫn có thể trace ra được IP của của máy em nếu cần. Trên thực tế, các anonymous proxy có hàng ngàn người dùng truy cập một lượt để duyệt web thì việc trace ra IP nguyên thuỷ sẽ khó khăn nhưng không có nghĩa là "fake" hay "dấu" được.
+
+Cũng có những trường hợp hijack một ftp server bị lỗi làm bàn đạp để đi đến một mục tiêu và trường hợp này cực kỳ khó trace. Tuy nhiên, đây là chuyện hoàn toàn khác.
+
+Thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6158</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6158</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 12:31:27]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Re: Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ to anh conmale: 
+Vậy theo anh thì cơ chế hoạt động của các chương trình ẩn IP là lấy các Proxy có sẳn trên mạng để gán cho mình phải không anh ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6186</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6186</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 13:32:00]]> GMT</pubDate>
+				<author><![CDATA[ KHUNG LONG]]></author>
+			</item>
+			<item>
+				<title>Re: Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">KHUNG LONG wrote:</cite><br>
+		<blockquote>to anh conmale: 
+Vậy theo anh thì cơ chế hoạt động của các chương trình ẩn IP là lấy các Proxy có sẳn trên mạng để gán cho mình phải không anh ?&nbsp;
+		</blockquote>
+
+Tổng quát là thế. Các chương trình "FakeIP" là những chương trình thường có module gọi là "anonymizer". Module này chịu trách nhiệm liên lạc với một anonymous proxy server (từ database có sẵn hoặc từ phương pháp polling xem có một anonymous proxy nào đó có thể dùng được ngay lúc đó). Anonymous proxy này là "kẻ trung gian" giữa trình duyệt và web site đích. Nó có thể có khả năng "lột" hết các HTTP header được gởi từ trình duyệt đi và thay thế vào đó các header khác (cho mục đích "vô danh hoá"). Bởi nó là kẻ trung gian cho nên website đích chỉ có thể nhận được public IP của anonymous proxy mà không thể biết được IP nguyên thuỷ của trình duyệt.
+
+Tất nhiên dùng anonymous proxy thì chậm hơn hơn là không dùng nó :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6190</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6190</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 13:50:29]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ Ông anh viết để hiểu quá, đàn em khâm phục ông anh, em đã đọc hết các bài ông anh viết về các vụ dos vào hva. Hy vọng ông anh gắn bó với HVa lâu để tụi em mở rộng tầm mắt]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6208</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6208</link>
+				<pubDate><![CDATA[Wed, 12 Jul 2006 15:09:54]]> GMT</pubDate>
+				<author><![CDATA[ mrsinguyenus]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrsinguyenus wrote:</cite><br>
+		<blockquote>Ông anh viết để hiểu quá, đàn em khâm phục ông anh, em đã đọc hết các bài ông anh viết về các vụ dos vào hva. Hy vọng ông anh gắn bó với HVa lâu để tụi em mở rộng tầm mắt&nbsp;
+		</blockquote>
+
+Nếu "ổng" không gắn bó nữa chắc HVA dẹp tiệm mất tiêu rồi . 
+
+
+<blockquote>Giả sử máy em có IP là aaa.aaa.aaa.aaa và muốn nói chuyện với một máy có IP là bbb.bbb.bbb.bbb, IP của máy em phải tồn tại trong suốt xuất truy cập. Nếu IP của máy em bất thình lình thay đổi, xuất truy cập ấy triệt tiêu. Nếu xuất truy cập là một xuất HTTP, em có thể đổi HTTP headers, xoá cookie, xoá những thông tin khác trên HTTP header, tuy nhiên em không thể dùng một IP không tồn tại để truy cập đến một đích nào đó bởi vì đầu bên kia phải có địa chỉ IP nào đó để mà trả lời. Có chăng, em có thể tạm "mượn" một IP nào khác để truy cập mục tiêu và IP "mượn" kia sẽ thay em mà gởi nhận thông tin. IP "mượn" kia là IP của một proxy / nat server nào đó chẳng hạn.&nbsp;
+		</blockquote>
+
+Hi anh conmale 
+Điều này hoàn toàn đúng và gây khó khăn cho em, do cty của em sử dụng Squid/2.4.STABLE6 để làm HTTP Proxy server vì vậy khi em kết nối internet em phải thông qua nó và nó gán cho em địa chĩ IP sau 10.1.5.x và port mặc định là 3128 . Khi em muốn sử dụng internet, em setup cho browser của mình thành IP của proxy là 10.1.5.x (IP thực của em chẳng hạn như 203.x.x.x) thì em mới truy cập được Internet .
+IP LAN của em là 10.96.36.x và Submask 255.255.255.0
+
+Khi truy cập Internet thông qua Squid , nếu em vào một website nào đó nó BAN IP của VietNam thì em không thể nào truy cập được vào website này . 
+Điều mà em muốn hỏi, làm thế nào để thay đổi IP của em (địa chĩ IP ở VN) sang một địa chĩ IP ở nước nào đó ví dụ như nước Đức thông qua Squid . 
+Em phải làm như thế nào để thay đổi IP của mình, nếu em đổi IP trên browser thì em sẽ không thể truy cập được Internet . Mà em là client thì không thể nào thay đổi địa chĩ IP 10.1.5.x và port mặc định là 3128 sang IP ở một nước nào đó được vì vậy yêu cầu của em, trên Linux có cách nào cho phép mình "đổi" IP từ nước VN sang một nước nào đó, sử dụng Proxy server là Squid để em có thể truy cập vào các website đã bị BAN IP ViệtNam. 
+
+Em có cấu hình cho Squid thử nghiệm trên server đặt ở nhà chạy đường MegaVNN trên 2 card mạng sử dụng Linux Fedora Core 4 đều thành công . Thành công ở đây tức là em có thể cấu hình cho các client truy cập Internet thông qua địa chĩ nào đó mà em ấn định . Tất cả chúng đều nằm trong etc/squid/squid.conf . 
+
+Nhưng đối với ở công ty của em thì em chịu thua vì không biết phải làm như thế nào để "đổi" IP và vì em là client không có quyền root và giải pháp tạm thời của em sử dụng PHP script để "trèo tường" tuy nhiên như anh nói <b>tốc độ cực kỳ chậm</b>. 
+
+<blockquote>Cũng có những trường hợp hijack một ftp server bị lỗi làm bàn đạp để đi đến một mục tiêu và trường hợp này cực kỳ khó trace. Tuy nhiên, đây là chuyện hoàn toàn khác. &nbsp;
+		</blockquote>
+
+Lúc trước có người ở nước ngoài, họ "quậy" server nhưng em không thể Trace IP của họ xuất phát từ đâu anh ah mặc dù có thể trace được IP ở một số nước như VN, Đức, Mỹ, ... nhưng không thể nào trace được IP của người này . Đây là trường hợp Hijack mà anh nói chăng . 
+
+Cám ơn anh ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6323</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6323</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 03:01:34]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+			<item>
+				<title>Re: Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ Golden Autumn nằm sau một Proxy Server mà lại không có quyền config trên server thì theo Khoai biết chỉ có cách này là đơn giản nhất:
+Từ client connect đến một <b>site cung cấp anonimizer service</b> và dùng trang web này để surf the net. Khi đó conection của Golden Autumn sẽ có dạng như sau:
+
+G.A ---[...]--- [ Proxy Server ] ---- [...]----[ Anonimizer ]---[...] --- | Other host|
+
+G.A thay cho Golden Autumn, ý là cái client mà G.A đang ngồi :)
+Cái [...] là một "đống" router/proxy/... mà packet phải đi qua. Như vậy OtherHost chỉ nhận được from IP là Anominizer IP thôi. Khoai có kiếm được một list các site cung cấp dịch vụ anonimizer: <span class="link"> http://www.freeproxy.ru/en/free_proxy/cgi-proxy.htm</span>
+(Có khá nhiều ads)
+
+Khoai]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6328</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6328</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 03:39:11]]> GMT</pubDate>
+				<author><![CDATA[ Mr.Khoai]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ PS: Bác GA chú ý trên proxy server nó ghi lại hết log của các client khi lướt web.
+Hiện tại công ty tôi cũng đang dùng ISA nên nói chung nhất cử nhất động khi ở công ty nên cẩn thận :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6441</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6441</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 15:46:47]]> GMT</pubDate>
+				<author><![CDATA[ thangdiablo]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ :?: Có 1 số cái tớ đọc hơi hơi lạ tai. Theo tớ thì:
+
+1-  Thằng proxy nó ko bao giờ làm nhiệm vụ gán IP cho proxy client. Chỉ có 1 số thằng khác làm việc này: DHCP, BootP.
+2-  Nếu thay đổi IP của bạn làm cho IP của bạn ko cùng lớp địa chỉ với proxy, với gateway thì PC của bạn lập tức biến thành Robinson, chỉ còn "một mình ta với ta" :D. Cũng ko thể đổi IP của bất kỳ máy nào ở toàn bộ LAN của cty bạn. Vì nếu thay đổi, LAN sẽ ko thể liên lạc được với ISP và với Internet. Xem lại TCP/IP nha.
+3-  IP thực 203.x.x.x ko phải là IP của máy bạn, mà là IP của gateway của Cty bạn.
+
+Tớ đoán policy của cty bạn đv việc duyệt web đó là buộc phải khai báo proxy, nếu ko thì ko truy cập đc gì hết vì chỉ có proxy cty mới truy cập ra ngoài Internet. => chỉ còn nước sử dụng web proxy HTTP server giống như Mr.Khoai đã nói. Đọc<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/1034.hva</span> để hiểu thêm về web proxy HTTP server. (E hèm, giờ đang có 1 bên chống 1 bên trả đây  :shock: 8) )
+
+Có trace IP của họ thì xem như cũng chẳng làm gì đc, ngoại trừ việc ban IP. Nhưng làm sao mà biết họ có những IP nào? 1 hay 100???
+
+<p></p>
+		<cite class="blockquote">GA wrote:</cite><br>
+		<blockquote>Em có cấu hình cho Squid thử nghiệm trên server đặt ở nhà chạy đường MegaVNN trên 2 card mạng sử dụng Linux Fedora Core 4 đều thành công . Thành công ở đây tức là em có thể cấu hình cho các client truy cập Internet thông qua địa chĩ nào đó mà em ấn định . Tất cả chúng đều nằm trong etc/squid/squid.conf . &nbsp;
+		</blockquote>
+Cái này là access-list, tức là danh sách địa chỉ đc phép hoặc ko. Đâu có liên quan đến việc "fake IP"! ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6447</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6447</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 16:08:18]]> GMT</pubDate>
+				<author><![CDATA[ lQ]]></author>
+			</item>
+			<item>
+				<title>Làm thế nào FakeIP khi sử dụng Squid</title>
+				<description><![CDATA[ <blockquote>Có 1 số cái tớ đọc hơi hơi lạ tai. Theo tớ thì:
+1- Thằng proxy nó ko bao giờ làm nhiệm vụ gán IP cho proxy client. Chỉ có 1 số thằng khác làm việc này: DHCP, BootP.
+2- Nếu thay đổi IP của bạn làm cho IP của bạn ko cùng lớp địa chỉ với proxy, với gateway thì PC của bạn lập tức biến thành Robinson, chỉ còn "một mình ta với ta" . Cũng ko thể đổi IP của bất kỳ máy nào ở toàn bộ LAN của cty bạn. Vì nếu thay đổi, LAN sẽ ko thể liên lạc được với ISP và với Internet. Xem lại TCP/IP nha.
+3- IP thực 203.x.x.x ko phải là IP của máy bạn, mà là IP của gateway của Cty bạn.&nbsp;
+		</blockquote>
+
+Hi hì điều này bạn yên tâm, tớ không ngốc đến nỗi không phân biệt được cái nào là gateway đâu . Đúng như bạn nói nếu thay đổi IP không cùng lớp địa chĩ của proxy thì chĩ còn 1 mình một ngựa, cách tốt nhất lúc này , upload lên hosting một php script để "trèo tường" tuy nhiên kết quả cực kỳ "chuối" cho nên tớ muốn hỏi nếu thay đổi IP không cùng lớp địa chĩ của proxy vậy có thể fake ip được hay không . 
+Trên Window tất nhiên là được và không được (nếu sử dụng kết nối trực tiếp thì có thể sử dụng Totalnet, nếu sử dụng proxy server chẳng hạn như Squid thì cũng có cách trèo nhưng nó thường hay ngắt mạng ví dụ như SSL Tunnel là một ví dụ) còn trên linux thì không biết có package nào cho phép mình thay đổi IP không cùng dãy IP với proxy thì mình có thể sử dụng kết nối Internet được hay không ? 
+ 
+<blockquote>Tớ đoán policy của cty bạn đv việc duyệt web đó là buộc phải khai báo proxy, nếu ko thì ko truy cập đc gì hết vì chỉ có proxy cty mới truy cập ra ngoài Internet. => chỉ còn nước sử dụng web proxy HTTP server giống như Mr.Khoai đã nói. Đọc<span class="link"> http://www.hvaonline.net/hvaonline/posts/list/1034.hva</span> để hiểu thêm về web proxy HTTP server. (E hèm, giờ đang có 1 bên chống 1 bên trả đây)&nbsp;
+		</blockquote>
+
+Hầu hết các công ty đều sử dụng squid để share internet vì đơn giản, dễ cấu hình . Khi cấu hình trong Squid thì thiết lập cho các client dựa vào
+squid.conf, trong đây có đoạn Access Controls thì đưa địa chỉ IP của Proxy vào là xong và đoạn http_access và sua đó restart lại squid là OK liền :wink:  
+
+<blockquote>Có trace IP của họ thì xem như cũng chẳng làm gì đc, ngoại trừ việc ban IP. Nhưng làm sao mà biết họ có những IP nào? 1 hay 100???  &nbsp;
+		</blockquote>
+
+Tớ nhớ hình như trong linux để check IP giữa 2 node mạng thì trong linux có tcpdump mà . 
+ 
+<blockquote>Cái này là access-list, tức là danh sách địa chỉ đc phép hoặc ko. Đâu có liên quan đến việc "fake IP"!&nbsp;
+		</blockquote>
+
+Đoạn này là tớ hỏi thêm về Squid vì trước khi làm cái gì đó thì phải biết Squid là cái gì mới dám nghĩ chuyện "vượt", hỗng biết squid thì cái gì nếu làm thành công thì cũng máy móc quá vì vậy bước đầu tiên của tớ tìm hiểu cách thức làm cũng như cách vượt qua nó . 
+Tớ nêu ra cách thức làm của tớ ở server đặt ở nhà sử dụng megaVNN từ đó so sánh kết quả của mình làm ở nhà với những gì thu thập được trong công ty rồi tiến hành làm và thử nghiệm xem tụi này cấu hình cái gì, đoạn nào mà mình cần chú ý ....nhưng cuối cùng hoàn toàn bế tắc, muốn "thực hiện phi vụ" bắt buộc chuyển sang Windows . 
+
+Để làm được yêu cầu của tớ nó giống như "mò kim dưới đáy biển" . Khả năng phán đoán của tớ là 0% cho nên tớ mới hỏi câu hỏi ngớ ngẫn này (sử dụng ip proxy server nhưng vẫn có thể Fake IP được- sang một IP nào đó ở nước Đức chẳng hạn) xem anh em có kinh nghiệm vượt qua squid hay không thì hướng dẫn tớ để tớ học hỏi kinh nghiệm .  
+
+Cám ơn anh em quan tâm đến bài viết này
+Dấu ~ và dấu ? luôn luôn lẫn lộn, mong anh em thông cảm . ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6537</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/1296.hva#6537</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 22:46:10]]> GMT</pubDate>
+				<author><![CDATA[ subnetwork]]></author>
+			</item>
+	</channel>
+</rss>

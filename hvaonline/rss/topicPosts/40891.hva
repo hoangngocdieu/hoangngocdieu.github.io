@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "How to use Google Authenticator for sshd/OSX"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "How to use Google Authenticator for sshd/OSX"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ <b>Tóm tắt:</b>
+<blockquote>
+Hướng dẫn cách tích hợp Google Authenticator vào sshd trên môi trường OSX. Mục đích ngoài password thường dùng ra thì phải có one-time-password trên điện thoại mới có thể đăng nhập được vào hệ thống.
+&nbsp;
+		</blockquote>
+
+I was interested in Google Authenticator one month ago, if you don't know what Google Authenticator is, check this  description <font color='orange'>(1)</font>:
+<blockquote>
+The Google Authenticator project includes implementations of one-time passcode generators for several mobile platforms, as well as a pluggable authentication module (PAM). One-time passcodes are generated using open standards developed by the Initiative for Open Authentication (OATH) (which is unrelated to OAuth).
+&nbsp;
+		</blockquote>
+Google Authenticate can turn your mobile phone to an one-time-password (OTP) token. That means, beside your own password, you must provide a number from your phone to login to your system.
+
+Some applications have integrated Google Authenticator like Google Apps, LastPass, WordPress... So, I asked myself if i could use it for my Macbook ssh daemon?
+
+After some searches, I understood that Google Authenticator has not supported OSX officially. That's why it can not work with OSX although you can build it successfully. To have some funs, I decided to modify it. You can follow my steps to apply your Linux systems also because it's similar. Let's go:
+
+<b>1. Download source code <font color='orange'>(2)</font>:</b>
+You can use <i>hg</i> to grab the source code <font color='orange'>(3)</font>. Type the following command in console:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>hg clone --insecure<span class="link"> https://code.google.com/p/google-authenticator/</span></pre>
+		</div>
+If you get a certificate problem, try press R to ignore it (to fix this error, please contact <i>Google Security Team</i> :-P). The local source folder will be similar Google lastest repository <font color='orange'>(4)</font>.
+
+<b>2. Edit and compile:</b>
+Because of unofficially OSX supported, you can build the source code but you can't use it to login. You will always have this error:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>in _openpam_check_error_code&#40;&#41;: pam_sm_authenticate&#40;&#41;: unexpected return value 19</pre>
+		</div>
+A little modification for OSX required (Linux maybe not), edit <i>pam_google_authenticator.c</i>, insert those lines:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>static int drop_privileges&#40;pam_handle_t *pamh, const char *username, int uid,
+int *old_uid, int *old_gid&#41; {
+    // Try to become the new user. This might be necessary for NFS mounted home
+    // directories.
+
+    int old_uid1 = setuser&#40;uid&#41;;
+    if &#40;old_uid1 &lt; 0&#41; {
+        log_message&#40;LOG_ERR, pamh, &quot;Failed to change user id to \&quot;%s\&quot;&quot;, username&#41;;
+        return -1;
+    }
+    return old_uid1;</pre>
+		</div>
+Exit and execute &quot;make && make install&quot; in console. *Please keep in mind that this is my dirty hack to make it works, it is unsupported and I take no responsibles for this modification*.
+
+As a result, <i>pam_google_authenticator_testing.so</i> is complied.
+
+<b>3. Install:</b>
+Copy <i>pam_google_authenticator.so</i> module to PAM folder:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo cp pam_google_authenticator.so /usr/lib/pam/</pre>
+		</div>
+Add this line to <i>/etc/pam.d/sshd</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>auth       required       pam_google_authenticator.so</pre>
+		</div>
+Add this line to <i>/etc/sshd_config</i>:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ChallengeResponseAuthentication yes</pre>
+		</div>
+Finally, restart <i>sshd</i> <font color='orange'>(5)</font> by:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>sudo launchctl unload /System/Library/LaunchDaemons/ssh.plist
+sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist</pre>
+		</div>
+To here, you finished the installation process, we can move to next step: Setup.
+
+<b>4. Setup:</b>
+You must install Google Authenticator for your mobile phone, in my case, i used App Store to download and install.
+
+Run the following command in your server console:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>./google-authenticator</pre>
+		</div>
+Answer &quot;y&quot; for its questions.
+
+That's all for server settings, now, you should look at information Google Authenticator provided, there is a link likes:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>https://www.google.com/chart?chs=200x200&chld=</pre>
+		</div>
+
+<br>
+			<div align="center" class="limitview"><img src='http://www1.picturepush.com/photo/a/7259384/img/7259384.png' border="0" onload="maxImg(this, 500px);" /></div>
+Copy this link and paste it to your browser, a barcode image will appear.
+
+Open Google Authenticator on your phone, press Plus (+) button and move your mobile's camera to capture the barcode image, it will automatically display your own OTP.
+
+It's ok for mobile settings also.
+
+<b>5. Testing:</b>
+Try to login to your system via ssh, you will be required for password and verification code.
+
+This is the result:
+<br>
+			<div align="center" class="limitview"><img src='http://www2.picturepush.com/photo/a/7259365/img/7259365.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Two-factors authentication is now enabled.
+
+<font color='orange'><b>References:</b></font>
+(1)<span class="link"> http://code.google.com/p/google-authenticator/</span>
+(2)<span class="link"> http://code.google.com/p/google-authenticator/source/checkout</span>
+(3) hg client:<span class="link"> http://mercurial.selenic.com/downloads/</span>
+(4)<span class="link"> http://code.google.com/p/google-authenticator/source/browse/</span>
+(5) Enable sshd for OSX: go to Apple &gt; System Preferences &gt; Sharing, check Remote Login]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251728</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251728</link>
+				<pubDate><![CDATA[Sun, 1 Jan 2012 00:38:11]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Hay tuyệt :). 
+
+Bản thân anh không cho ssh hay bất cứ thứ gì truy cập đến MacBook của anh ;). Ngay cả đường ra (từ MacBook đi ra), anh cũng chỉ cho truy cập đến 1 số cổng nhất định mà thôi. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251744</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251744</link>
+				<pubDate><![CDATA[Sun, 1 Jan 2012 18:41:49]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Đầu năm lão Hoàng mở hàng bằng một bài quá đỉnh :x]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251755</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251755</link>
+				<pubDate><![CDATA[Mon, 2 Jan 2012 00:13:11]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Thank anh conmale và xnohat đã ủng hộ :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251932</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251932</link>
+				<pubDate><![CDATA[Thu, 5 Jan 2012 06:45:39]]> GMT</pubDate>
+				<author><![CDATA[ LeVuHoang]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Cho mình hỏi cái này có thể áp dụng để bảo mật cho cPanel 11 không và áp dụng thế nào? Thanks!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251950</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251950</link>
+				<pubDate><![CDATA[Thu, 5 Jan 2012 16:24:14]]> GMT</pubDate>
+				<author><![CDATA[ DanhNam]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">DanhNam wrote:</cite><br>
+		<blockquote>Cho mình hỏi cái này có thể áp dụng để bảo mật cho cPanel 11 không và áp dụng thế nào? Thanks!&nbsp;
+		</blockquote>
+
+SSH là tầng truy cập thấp hơn cPanel và sử dụng Google Authenticator cho SSH không dính dáng gì đến cPanel hết.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251951</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#251951</link>
+				<pubDate><![CDATA[Thu, 5 Jan 2012 18:33:06]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Hjc, mấy anh việt hoá giùm em cái, viết toàn bằng tiếng anh đọc chút là muốn xỉu]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#252794</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#252794</link>
+				<pubDate><![CDATA[Tue, 24 Jan 2012 08:04:01]]> GMT</pubDate>
+				<author><![CDATA[ sasser01052004]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">DanhNam wrote:</cite><br>
+		<blockquote>Cho mình hỏi cái này có thể áp dụng để bảo mật cho cPanel 11 không và áp dụng thế nào? Thanks!&nbsp;
+		</blockquote>
+
+Bạn có thể viết thêm một module cho cPanel để tích hợp với Google Authenticator. Đơn giản thế thôi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#252799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#252799</link>
+				<pubDate><![CDATA[Tue, 24 Jan 2012 11:08:20]]> GMT</pubDate>
+				<author><![CDATA[ K4i]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Hello mọi người 
+
+Em đào mồ vụ này lên 1 tí, do em vừa triển khai cho hệ thống bên em chạy SLES 11.
+
+1. Đặc điểm của SLES 11 là không có gói PAM-devel đi kèm, nó chỉ có ở trên phiên bản SLES-SDK, vậy nên mọi người download gói pam-devel 1.0.4 cho phiên bản pam 1.0.4  tại đây 
+<span class="link"> http://demeter.uni-regensburg.de/SLE11SP1-SDK-x64/DVD1/suse/x86_64/</span>
+
+2. Do cơ chế của Google Authenticator dựa trên algorithm Time-based, vì vậy c<b>hú ý điện thoại của mình phải cùng time với máy chủ</b>
+
+3. Có 1 số bạn thắc mắc là như vậy giữa đthoai & server luôn phải được đi Internet để cập nhật các passcode, nhưng chuyện đó là sai. Nó chỉ cần 1 algorithm, đúng hơn là 1 cipher thông qua BarCode & Secret Key ngay từ lúc khởi tạo từ phía Server để giải mã tất cả các password random sau đó. Vì vậy đthoai & Server không cần thiết phải có Internet mới áp dụng được 
+
+Sau khi chơi thử, thì mình tự tin phần password policy trong điểu khoản ISMS 27001 & PCI DSS nhẹ gánh hơn rất nhiều 
+
+Cheers,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266915</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266915</link>
+				<pubDate><![CDATA[Mon, 16 Jul 2012 23:31:22]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Ikut3 wrote:</cite><br>
+		<blockquote>2. Do cơ chế của Google Authenticator dựa trên algorithm Time-based, vì vậy c<b>hú ý điện thoại của mình phải cùng time với máy chủ</b>
+
+3. Có 1 số bạn thắc mắc là như vậy giữa đthoai & server luôn phải được đi Internet để cập nhật các passcode, nhưng chuyện đó là sai. Nó chỉ cần 1 algorithm, đúng hơn là 1 cipher thông qua BarCode & Secret Key ngay từ lúc khởi tạo từ phía Server để giải mã tất cả các password random sau đó. Vì vậy đthoai & Server không cần thiết phải có Internet mới áp dụng được 
+
+Sau khi chơi thử, thì mình tự tin phần password policy trong điểu khoản ISMS 27001 & PCI DSS nhẹ gánh hơn rất nhiều 
+
+Cheers,&nbsp;
+		</blockquote>
+Có đoạn nào ở topic này có nói phải kết nối internet mới auth được đâu mà thắc mắc nhỉ.  :) 
+
+Tớ cũng biết cái này nhưng chưa dám xài vì chưa thấy thông tin về backup-code nếu điện thoại bị mất, hoặc time máy chủ hỏng (nhanh/chậm), già rồi lười tìm kiếm vụ này nữa. :D
+
+Thêm cái nữa, trong ISMS 27001 có đoạn nào cần áp dụng 2nd-step-verification đâu nhỉ? Đây là policy riêng của cty bác thì đúng hơn chăng. :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266957</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266957</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 04:39:50]]> GMT</pubDate>
+				<author><![CDATA[ cino]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ @ cino : 1/ Chuyện Internet thì không phải các bạn thắc mắc ở topic đây mà ở các diễn đàn khác. Mình mượn lời để repply thôi. 
+
+2/ Chuyện ISMS không yêu cầu áp dụng nhưng nó có phần Password Policy với các yếu tố 
+Strength - Length - max age v.v... . N Factor đáp ứng được các yêu cầu trên phải không ? 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266967</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#266967</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 05:06:47]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ Hee, Ikute xem thử nếu lệch giờ hệ thống hoặc rơi rớt cái mobile thì có backup code để access được vào hệ thống không nhỉ, tớ cũng... tính dùng.  :P ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267019</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267019</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 22:41:58]]> GMT</pubDate>
+				<author><![CDATA[ cino]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ @CINO : 
+
+Lệch múi giờ có thể dùng Emergency Code để vào. Tuy nhiên chỉ có 4 emergency code. nếu đã sử dụng rồi thì không thể sử dụng lại.
+
+Mình nghĩ nên có 1 NTP server đồng bộ time với các thiết bị 
+Mình đang đọc thêm cái này.
+<span class="link"> http://www.infosec.co.uk/ExhibitorLibrary/557/WPEventsVs.Time20061023A4.pdf</span>
+
+Cheers,]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267026</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267026</link>
+				<pubDate><![CDATA[Tue, 17 Jul 2012 23:33:30]]> GMT</pubDate>
+				<author><![CDATA[ Ikut3]]></author>
+			</item>
+			<item>
+				<title>How to use Google Authenticator for sshd/OSX</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Ikut3 wrote:</cite><br>
+		<blockquote>Hello mọi người 
+
+Em đào mồ vụ này lên 1 tí, do em vừa triển khai cho hệ thống bên em chạy SLES 11.
+
+1. Đặc điểm của SLES 11 là không có gói PAM-devel đi kèm, nó chỉ có ở trên phiên bản SLES-SDK, vậy nên mọi người download gói pam-devel 1.0.4 cho phiên bản pam 1.0.4  tại đây 
+<span class="link"> http://demeter.uni-regensburg.de/SLE11SP1-SDK-x64/DVD1/suse/x86_64/</span>
+
+2. Do cơ chế của Google Authenticator dựa trên algorithm Time-based, vì vậy c<b>hú ý điện thoại của mình phải cùng time với máy chủ</b>
+
+3. Có 1 số bạn thắc mắc là như vậy giữa đthoai & server luôn phải được đi Internet để cập nhật các passcode, nhưng chuyện đó là sai. Nó chỉ cần 1 algorithm, đúng hơn là 1 cipher thông qua BarCode & Secret Key ngay từ lúc khởi tạo từ phía Server để giải mã tất cả các password random sau đó. Vì vậy đthoai & Server không cần thiết phải có Internet mới áp dụng được 
+
+Sau khi chơi thử, thì mình tự tin phần password policy trong điểu khoản ISMS 27001 & PCI DSS nhẹ gánh hơn rất nhiều 
+
+Cheers,&nbsp;
+		</blockquote>
+
+Thực tế trên server em có cài đặt Google Authenticator thì khi em tạo nó "sản sinh" ra 4 emergency code để em cất giữ mà không đến Internet, tuy nhiên nếu IP của server có địa chỉ Public thì em nên dùng nó, áp dụng với máy điện thoại của em chẳng hạn như Iphone có apps Google Authenticator để em tiện lợi dùng. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267174</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/40891.hva#267174</link>
+				<pubDate><![CDATA[Thu, 19 Jul 2012 23:58:10]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Image code verification "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Image code verification "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Image code verification </title>
+				<description><![CDATA[ <b>Image code verification (tạm gọi là ICV)</b>
+<br>
+			<div align="center" class="limitview"><img src='http://www.codeproject.com/KB/aspnet/ImageVerifier/main.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+-<b>Mục đích</b>: chính của IVC đó là ngăn chặn  các đệ trình(submission) tự động
+của các automated script. Nếu một form bình thường không có việc xác thực bằng ICV những kẻ phá hoại sẽ tìm cách gửi tự động các khối thông điệp khổng lồ và gây ra Flood, và để tránh mã phát sinh lưu trong view state hoặc các url. IVC được sử dụng để đảm bảo rằng image code chỉ có thể đọc được bởi 1 người cụ thể(nghe có vẻ quái lạ !) nhưng thực tế là vậy, đó là lý do tại sao những Image Code lại có nền và các ký hiệu khó đọc nhằm tránh các chương trình phân tích text từ image, Còn gọi là <b>Captcha image validation</b>.
+  <b>Captcha</b>(Completely Automated Public Turing test to Tell Computers and Humans Apart) có thể xem them tại<span class="link"> http://www.captcha.net/</span>
+-<b>Các kĩ thuật</b>:
+  Tùy thuộc vào ngôn ngữ lập trình mà có mỗi source riêng để thực hiện ICV
+  +<b> PHP</b>
+<br>
+			<div align="center" class="limitview"><img src='http://www.thewebhelp.com/php/php_contact_form_with_image_validation/form_preview.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+<b>Nội dung form Contact:</b>
+---------------------------------------------------------------------------------------------------------------------------
+Form này chứa 1 link đến mà thực chất là link đến trang php phát sinh mã ảnh. User phải điền đúng mã ảnh thì quá trình submit sẽ được thực hiện
+1.	&lt;form action="mailer.php" method="post" name="form1" id="form1" style="margin:0px; font-family:Verdana, Arial, Helvetica, sans-serif;font-size:11px; width:300px;" onsubmit="MM_validateForm('from','','RisEmail','subject','','R','verif_box','','R','message','','R');return document.MM_returnValue"&gt;
+2.	 
+3.	Your e-mail:&lt;br /&gt;
+4.	&lt;input name="from" type="text" id="from" style="padding:2px; border:1px solid #CCCCCC; width:180px; height:14px; font-family:Verdana, Arial, Helvetica, sans-serif;font-size:11px;" value="&lt;?php echo $_GET['from'];?&gt;"/&gt;
+5.	&lt;br /&gt;
+6.	&lt;br /&gt;
+7.	 
+8.	Subject:&lt;br /&gt;
+9.	&lt;input name="subject" type="text" id="subject" style="padding:2px; border:1px solid #CCCCCC; width:180px; height:14px;font-family:Verdana, Arial, Helvetica, sans-serif; font-size:11px;" value="&lt;?php echo $_GET['subject'];?&gt;"/&gt;
+10.	&lt;br /&gt;
+11.	&lt;br /&gt;
+12.	 
+13.	Type verification image:&lt;br /&gt;
+14.	&lt;input name="verif_box" type="text" id="verif_box" style="padding:2px; border:1px solid #CCCCCC; width:180px; height:14px;font-family:Verdana, Arial, Helvetica, sans-serif; font-size:11px;"/&gt;
+15.	&lt;img src="verificationimage.php?&lt;?php echo rand(0,9999);?&gt;" alt="verification image, type it in the box" width="50" height="24" align="absbottom" /&gt;&lt;br /&gt;
+16.	&lt;br /&gt;
+17.	 
+18.	&lt;!-- if the variable "wrong_code" is sent from previous page then display the error field --&gt;
+19.	&lt;?php if(isset($_GET['wrong_code'])){?&gt;
+20.	&lt;div style="border:1px solid #990000; background-color:#D70000; color:#FFFFFF; padding:4px; padding-left:6px;width:295px;"&gt;Wrong verification code&lt;/div&gt;&lt;br /&gt; 
+21.	&lt;?php ;}?&gt;
+22.	 
+23.	Message:&lt;br /&gt;
+24.	&lt;textarea name="message" cols="6" rows="5" id="message" style="padding:2px; border:1px solid #CCCCCC; width:300px; height:100px; font-family:Verdana, Arial, Helvetica, sans-serif; font-size:11px;"&gt;&lt;?php echo $_GET['message'];?&gt;&lt;/textarea&gt;
+25.	 
+26.	&lt;input name="Submit" type="submit" style="margin-top:10px; display:block; border:1px solid #000000; width:100px; height:20px;font-family:Verdana, Arial, Helvetica, sans-serif; font-size:11px; padding-left:2px; padding-right:2px; padding-top:0px; padding-bottom:2px; line-height:14px; background-color:#EFEFEF;" value="Send Message"/&gt;
+27.	&lt;/form&gt;
+---------------------------------------------------------------------------------------------------------------------------
+<b>Nội dung của image verification script</b>
+---------------------------------------------------------------------------------------------------------------------------
+1.	&lt;?php
+2.	header('Content-type: image/jpeg');
+3.	 
+4.	$width = 50;
+5.	$height = 24;
+6.	 
+7.	$my_image = imagecreatetruecolor($width, $height);
+8.	 
+9.	imagefill($my_image, 0, 0, 0xFFFFFF);
+10.	 
+11.	// add noise
+12.	for ($c = 0; $c &lt; 40; $c++){
+13.		$x = rand(0,$width-1);
+14.		$y = rand(0,$height-1);
+15.		imagesetpixel($my_image, $x, $y, 0x000000);
+16.		}
+17.	 
+18.	$x = rand(1,10);
+19.	$y = rand(1,10);
+20.	 
+21.	$rand_string = rand(1000,9999);
+22.	imagestring($my_image, 5, $x, $y, $rand_string, 0x000000);
+23.	 
+24.	setcookie('tntcon',(md5($rand_string).'a4xn'));
+25.	 
+26.	imagejpeg($my_image);
+27.	imagedestroy($my_image);
+28.	?&gt;
+<b>Mã php khi submit</b>
+---------------------------------------------------------------------------------------------------------------------------
+1.	&lt;?php
+2.	// remember to replace you@email.com with your own email address lower in this code.
+3.	 
+4.	// load the variables form address bar
+5.	$subject = $_REQUEST["subject"];
+6.	$message = $_REQUEST["message"];
+7.	$from = $_REQUEST["from"];
+8.	$verif_box = $_REQUEST["verif_box"];
+9.	 
+10.	// remove the backslashes that normally appears when entering " or '
+11.	$message = stripslashes($message); 
+12.	$subject = stripslashes($subject); 
+13.	$from = stripslashes($from); 
+14.	 
+15.	// check to see if verificaton code was correct
+16.	if(md5($verif_box).'a4xn' == $_COOKIE['tntcon']){
+17.		// if verification code was correct send the message and show this page
+18.		mail("you@email.com", 'Online Form: '.$subject, $_SERVER['REMOTE_ADDR']."\n\n".$message, "From: $from");
+19.		// delete the cookie so it cannot sent again by refreshing this page
+20.		setcookie('tntcon','');
+21.	} else {
+22.		// if verification code was incorrect then return to contact page and show error
+23.		header("Location:".$_SERVER['HTTP_REFERER']."?subject=$subject&from=$from&message=$message&wrong_code=true");
+24.		exit;
+25.	}
+26.	?&gt;
+---------------------------------------------------------------------------------------------------------------------------
+Code demo<span class="link"> http://www.thewebhelp.com/php/php_contact_form_with_image_validation/thewebhelp_contact_form_with_validation.zip</span>
+<b>+ ASP.Net</b>
+ Xem ví  dụ tại đây:<span class="link"> http://www.codeproject.com/KB/aspnet/ImageVerifier.aspx</span>
+
+Mọi người hãy cho ý kiến thêm để có cái nhìn toàn diện về ICV.  :-/ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20565.hva#122182</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20565.hva#122182</link>
+				<pubDate><![CDATA[Sun, 30 Mar 2008 17:30:44]]> GMT</pubDate>
+				<author><![CDATA[ itnhl]]></author>
+			</item>
+			<item>
+				<title>Re: Image code verification </title>
+				<description><![CDATA[ Theo mình thì cái code ICV PHP nên dùng session, không nên dùng Cookie. Vì nếu dùng Cookie thì nó sẽ lưu cái  
+<blockquote>md5($rand_string).'a4xn'&nbsp;
+		</blockquote>
+xuống cookie tức là ở client. Như vậy client vẫn có thể Flood được.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/20565.hva#178132</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/20565.hva#178132</link>
+				<pubDate><![CDATA[Wed, 22 Apr 2009 13:42:17]]> GMT</pubDate>
+				<author><![CDATA[ phstiger]]></author>
+			</item>
+	</channel>
+</rss>

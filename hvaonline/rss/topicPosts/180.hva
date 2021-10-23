@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Ký sự các vụ DDoS đến HVA - Phần 6"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Ký sự các vụ DDoS đến HVA - Phần 6"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <b>Trưa 14/10:</b>
+Đã đến giờ ăn trưa. Gần bốn giờ ròng rã vùi đầu trong đống công việc, tôi hầu như quên bẵng chuyện HVA. Giờ này chắc JAL đã hồi âm. Tôi hâm nóng mớ thức ăn mang theo cho buổi trưa và log vào diễn đàn HVA (vừa ăn vừa táy máy server). Đúng như dự tưởng, tôi nhận được hai thông điệp từ JAL và một mớ thông điệp khác có dạng <i>"giúp em hack yahoo pass".</i> Tôi lầm bầm <i>"suối ngày cứ yahoo pass, yim pass, không biết chán sao trời"</i> và tôi để chúng qua một bên.
+
+Đại khái trong thông điệp JAL "phán" rằng: <i>"lão cần làm gì thì cứ làm".</i> Vậy thì không có vấn đề gì. Tôi thử xem tình hình server lúc này ra sao bằng một số lệnh thông thường sau khi log vào HVA server. Chà, giờ này bên VN mới có 9 giờ sáng mà đã vào diễn đàn khá đông. Đành phải vậy thôi:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>kill -SIGTERM `cat /var/run/httpd.pid` && rm -f /var/run/httpd.pid && rm -f /var/lock/subsys/httpd</pre>
+		</div>
+Để cho chắc ăn, tôi phóng tiếp:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ps -ef | grep httpd</pre>
+		</div>
+Hèm, sạch sẽ đâu đó, không còn một mảnh httpd "vương vấn". Hai lệnh trên có mục đích gì? Lệnh thứ nhất thật ra là một lệnh tổng hợp ba việc khác nhau. Phần thứ nhất của lệnh này dùng lệnh <b>cat</b> để xác định parent pid (process id) của httpd đang chạy trên máy để lệnh <b>kill</b> có thể kết thúc nó với tín hiệu <b>SIGTERM</b> <font color='orange'>-38-</font>. Phần thứ nhì và thứ ba của lệnh này chỉ đơn giản xoá bỏ giá trị httpd.pid và httpd trên máy để lần sau httpd mới được khởi tạo, nó không bị "bối rối". Lệnh thứ nhì đi theo chỉ đơn giản dùng để xác nhận không còn process nào thuộc httpd đang chạy.
+
+Tôi thử khởi động httpd mới xuyên qua một init script (xem lại chú thích 24) tôi tạo ra, đặc biệt dùng cho httpd mới và các thư viện cũng như hồ sơ cấu hình nó cần dùng. Ôi chao, không khởi động được, nó càm ràm không tìm thấy ba modules. Tôi nghĩ là tôi kỹ lưỡng đến thế mà vẫn sót lại vài cái modules "thừa hưởng" từ hồ sơ cấu hình cũ. Trong nháy mắt, chúng biến khỏi hồ sơ cấu hình. A lê hấp, khởi động lại xem sao.... thông điệp ngắn gọn và "tròn trĩnh":
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>HVA webserver is sucessfully started</pre>
+		</div>
+hiện ra trên màn hình. 
+
+Tôi nôn nóng mở thêm hai console đến HVA server nữa, một dùng cho cái "đuôi" tail đến firewall log, một cho cái "đuôi" tail đến webserver error log, một cái nữa cho "đuôi" tail đến webserver access log và cái cuối cùng dùng để chạy lệnh lai rai như <b>top, ps, netstat</b> dùng để theo dõi tình hình chung. Cái màn hình 21 inches gắn thêm vào laptop bị HVA "lấn chiếm" gần hết (may mà tay xếp hơi bị... mù về unix nên hắn không hề để ý xem mấy cái console này là cho việc công hay việc tư những lúc hắn đi ngang qua bàn làm việc của tôi ).
+
+Bạn đoán thử cái "tail" nào tôi đổ dồn ngay cặp mắt vào trước tiên? Đúng rồi, cái "tail" đến web server error log. Tôi mở trình duyệt trên máy của tôi, trỏ đến HVA forum và... nhấn F5 lia lịa. access log ghi nhận truy cập từ trình duyệt của tôi đều đặn và cần mẫn như một ông thư ký già. Trong khi đó, error log hoàn toàn im ắng. Im ắng thế này là tốt lắm. Bạn có thể thắc mắc <i>chỉ có mấy cái "child exit" do segfault mà làm gì quan trọng đến thế?</i>. Sở dĩ tôi chú trọng đến cái log này vì những lỗi thông báo segfault, theo tôi còn nghiêm trọng hơn những cú "x-flash" đang "đấm thùi thụi" vào HVA server. 
+
+Hãy thử mở rộng hơn một chút về tính nghiêm trọng ở đây. Trọn bộ quy trình hệ thống nhận một request từ client đến giai đoạn child process bị SEGFAULT tiêu phí rất nhiều tài nguyên của máy chủ nhưng lại bị hủy đi một cách vô lý vì không thể ấn định memory cho nó (share memory trong trường hợp này vì mmap báo lỗi trong lúc debug), đây là chuyện dễ hiểu. Chuyện đáng đề cập hơn nữa là ảnh hưởng phát tán đến trọn bộ dịch vụ của webserver như sau:
+- phí tài nguyên dùng để tường trình lỗi liên tục vào error log (gia tăng công tác input / ouput)
+- vì dùng php làm công nghệ bên dưới để tải diễn đàn HVA và php không phải là "thread safe" nên buộc web server phải dùng cơ cấu prefork (xem lại chú thích 35). prefork ở đây có nghĩa là khi server khởi động, nó tạo sẵn một số lượng process để xử lý các truy cập đã được socket đón nhận trên cổng HTTP. Mỗi process này chỉ được tiếp nhận một lượng truy cập nào đó rồi bị huỷ (dựa trên giá trị ấn định <b>MaxRequestsPerChild</b>) và process mới lại được tạo ra để tiếp tục phục vụ. Nếu các truy cập đều chất lượng và không hề bị SEGFAULT thì process ấy chỉ bị hủy khi tới giới hạn đã định và nó sẽ... thọ hơn. Nếu có một SEGFAULT xảy ra và không cần biết là process này đã phục vụ bao nhiêu request, nó cũng bị kết liễu, chết non, yểu mệnh... tuỳ cách bạn gọi. Server buộc phải tạo thêm process để tiếp tục phục vụ và đây là "cái chậm sơ bộ".
+
+Vậy "cái chậm chi tiết" là sao? Trên một hệ thống *nix, việc đóng mở các sockets, tạo process, phân bố tài nguyên là do kernel lo và mỗi hoạt động này phải đi theo một nguyên tắc nhất định. Đặc biệt trên Linux và trên kernel series 2.4.x, vấn đề điều tác ưu tiên cho mỗi process tùy tính chất và quy chế dành cho process này <font color='orange'>-40-</font>. Khi web server đòi hỏi tạo một process, không phải lúc nào đòi hỏi này cũng được thực hiện ngay lập tức. Kernel phải thực hiện mọi yêu cầu theo đúng trình tự không thì hệ thống sẽ biến thành cái ổ nhện. Thời gian và tài nguyên để máy chủ tạo process với nhịp độ như trên chắc chắn sẽ không còn hiệu quả để phục vụ cho clients. Server load sẽ lên cao, số lượng công việc sẽ dồn đống, tài nguyên dần dần sẽ cạn kiệt và đến một lúc nào đó, không những dịch vụ chết mà cả máy chủ cũng sẽ chết vì quá tải.
+
+Sở dĩ người dùng truy cập HVA server thường xuyên cảm thấy chậm là vì một phần bị những quả "x-flash" kia chen chân, một phần request của họ bị mất tăm theo những cái SEGFAULT. Trong những trường hợp này, trình duyệt lại phải gởi request (retry) và nếu không may thì request lần này cũng có số phận không khác gì lần trước. Nếu tầng IP đã giới hạn mức truy cập và tầng application lại bị SEGFAULT thì cơ hội người dùng hợp lệ truy cập đến HVA ở tình trạng thành công lại <b>càng giảm sút.</b> Lý do: mức giới hạn ở tầng IP dùng để giảm thiểu tầng số xâm nhập của "x-flash" (để bảo tồn tài nguyên cho máy chủ) trực tiếp giảm thiểu tầng số truy cập của người dùng hợp lệ. Bạn có thể hình dung trường hợp một vận động trường mở toang hai cánh cổng cho 100 người vào cùng một lúc gồm cả "người ngay, kẻ gian" và làm như thế thì số lượng người tràn vào nhanh nhưng lại khó kiểm soát. Nếu đóng bớt một cánh cổng thì chỉ còn có 50 người có thể vào cùng một lúc và làm như thế thì dễ kiểm soát hơn nhưng cũng làm ảnh hưởng đến những "người ngay".
+
+Cho đến lúc này, sau gần 30 phút theo dõi sát tình hình các truy cập xảy ra trên máy, trên logs, trên socket status... tôi có thể xác định rằng segfault đã hoàn toàn được loại trừ. Bởi php không "thread-safe" nên mỗi request đi vào, web server phải tạo một process hẳn hòi để phục vụ. Tôi điều chỉnh cho web server khởi tạo sẵn 50 processes để chờ tiếp nhận requests. Lúc này số lượng truy cập đến HVA forum bắt đầu gia tăng (giờ này đã gần 10 giờ sáng giờ VN). Dựa trên số lượng access từ access log của web server, tôi ước chừng cứ mỗi 20 giây có một request đến server. Tôi cho phép 256 "MaxRequestsPerChild", như vậy phải sau 85 phút thì một child process mới bị huỷ. 50 child processes đứng chờ sẵn kia với tình hình này thì quá dư nhưng liệu có đủ đáp ứng trong khoản thời gian cao điểm vào ban đêm? Như đã giải thích ở trên về quy chế tạo process, một request đi vào nếu không có sẵn process để phục vụ ngay thì khả năng trình duyệt tiếp tục gởi request đến (vì bị timeout). Vậy trong hoàn cảnh web server cực kỳ bận rộn vào ban đêm thì cần bao nhiêu process nằm sẵn để "nhận công tác" là thích hợp?
+
+Tôi nhẩm tính trong đầu, vào khoảng thời gian 2 giờ cao điểm ban đêm sẽ có khoảng 12000 x-flash requests như đã phân tích ở bài đầu:
+<b>(12000 requests / 120 phút) / 60 giây = 1.6 request mỗi giây</b>
+
+Trong 2 giờ, web server sẽ tiếp nhận requests và tạo ra bao nhiêu processes? Thử xem:
+- 1 process được tiếp nhận 256 request rồi bị huỷ
+- 12000 requests trong 120 phút (7200 giây) = 1.6 requests cho mỗi giây.
+<b>12000 requests / 256 max request per child process = 47 processes</b>
+
+Thử ước tính server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?
+<b>( 15 phút x 47 processes ) / 120 = 5.8 processes
+5.8 / 15 = 0.38</b> (xem thêm chú thích 43)
+
+Con số process quá lớn nhưng nếu tính tra mức server load trung bình ở mức <b>0.86</b> thì nó lại ở mức bình thường. Hơn nữa con số process trên cũng không đáng ngạc nhiên vì số request đến HVA server quá cao do x-flash và những dạng tấn công khác. Ở bước này, điều tôi cần kiến tạo là bảo đảm HVA webserver không bị chậm vì liên tục có quá nhiều request đi vào khiến nó không kịp thời tạo process để phục vụ và sẽ đi đến tình trạng giảm sút hiệu xuất. Điều kế tiếp tôi cần kiến tạo là nắm chắc web service và các modules không bị memory leak. Thật ra, dựa trên logic đã được thiết lập sẵn, web service có khả năng tự điều tác việc tắt bỏ và tái tạo các process hết sức nhịp nhàng và quân bình. Tuy nhiên, đối với một site đang bị DoS nặng nề như HVA thì giá trị mặc định không còn thích hợp nữa. Tôi không muốn server phải bị "chết" vì quá tải, tôi cũng chẳng muốn người dùng hợp lệ phải "khổ sở" với vấn đề truy cập. Nếu tôi có một chuỗi 10 máy chủ (chẳng hạn) thì sự thể đã khác, nhưng tôi phải máy mó trong giới hạn cho phép. Tôi tin rằng các con số này sẽ phải điều chỉnh nhiều lần cho đến khi chúng mang giá trị thích hợp nhất cho HVA server. 
+
+Đến đây, tôi hy vọng bạn đã nhận ra được một điểm quan trọng sau khi theo dõi diễn tiến từ đầu câu chuyện đến giai đoạn này: <b>"đỡ" các cú DoS không chỉ ở socket level mà còn phải tối ưu hoá dịch vụ ở mức cao nhất có thể được.</b> Cản lọc ở socket level là phương pháp giảm thiểu biên độ và trường độ của các truy cập đến máy chủ với mục đích bảo tồn tài nguyên và hoạt động của nó. Tuy nhiên, việc nâng cao khả năng phục vụ của chính dịch vụ mình muốn bảo vệ cần được quan tâm không kém gì việc cản lọc. Mối tương quan và sự bình quân của hai vấn đề trên chính là chìa khoá của sự bền bỉ và hiệu xuất của máy chủ.
+
+Bước kế tiếp trong giai đoạn điều chỉnh và kiện toàn web service là bước ứng dụng một bộ phận cản lọc trên tầng ứng dụng (application layer). Hẳn bạn đã nghe đến cái tên mod_security <font color='orange'>-41-</font>, một module được dùng rộng rãi cho một số web server. Bạn có thể hỏi nhưng <i>mod_security đâu phải là một mod chuyên chống DoS, tại sao lại dùng để chống DoS?.</i> Câu trả lời rất đơn giản: <i>nó dùng để cản cụ thể những gì firewall ở tầng IP không thể cản hết được.</i> 
+
+Các cơ chế cản lọc đã được ứng dụng trên HVA server cho đến giai đoạn này là những cản lọc nặng tính hiệu xuất bởi vì chúng loại bỏ những gói tin vi phạm một cách âm thầm, tầng dịch vụ web server không hề biết đến và cũng không cần biết đến. Tuy các cơ chế này có tính hiệu xuất cao nhưng những ứng dụng cản lọc tầng thấp (đã nêu trên) không thể hoàn toàn loại bỏ những gói tin vi phạm đi vào. Dựa trên các thông tin thu thập được từ các log files, cơ chế cản ở IP layer cho đến lúc này có hiệu năng chừng 65-75% (tính theo kiểu khách quan). Vậy có khoảng 30% các gói tin tấn công vẫn có cơ hội đi vào và tiêu phí tài nguyên của máy chủ. 
+
+mod_security được chọn làm tấm "bình phong" để cản lọc phần còn lại của các gói tin vi phạm này. Ở đây tôi không tiện giới thiệu cụ thể các filtering rules đã được dùng cho mod_security nhưng điều tổng quát tôi có thể giới thiệu với bạn là mod_security có khả năng kiểm soát các request đến HTTP dựa trên phương pháp regex <font color='orange'>-42-</font>. Nó có thể bắt gặp và cản trở những request vi phạm trong một biên độ khá rộng và linh động. Biết rằng những công cụ dùng để lọc và cản trở gói tin ở application layers đòi hỏi nhiều tài nguyên của máy chủ nhưng trong trường hợp này:
+- mod_security chỉ đảm đương 30% các gói tin vi phạm còn lại
+- ước lượng tài nguyên dành cho mod_security để xử lý 30% các gói tin vi phạm này <b>ít hơn rất nhiều</b> số lượng tài nguyên web server và database server phải phục vụ nếu cứ để các gói tin mặc nhiên đi vào.
+- mod_security còn loại bỏ hàng loạt các dạng tấn công mang tính nguy hại khác đến web services.
+
+Bởi lẽ mod_security làm "tấm bình phong" cho web service, mọi requests trước khi đi vào tới web service đều bị mod_security chặn lại và xét duyệt. Bước này làm gia tăng thời gian đáp ứng request cho người dùng hợp lệ. Đây là cái giá phải trả để bảo tồn cho tài nguyên và sự an toàn của máy chủ. Tuy nhiên, "chậm" hơn một chút ở bước này hoàn toàn có thể chấp nhận được vì nếu không có nó bảo vệ, hàng loạt requests vào được bên trong web service rồi tiếp tục đụng đến csdl và những thứ nhì nhằng bên trong thì cái chậm ở mức này khó có thể đo lường được nếu máy chủ đang bị tấn công. Sau một khoảng thời gian nào đó, người dùng sẽ không những thấy chậm mà còn có thể đi đến tình trạng không thể truy cập được máy chủ nữa vì nó quá bận rộn.
+
+Mọi chuyện xem như tạm ổn, tôi quyết định tái khởi động web server và để bảo đảm dịch vụ web này ứng hiệu với những điều tôi vừa áp đặt, tôi không dùng graceful restarting mà ép buộc nó hoàn toàn ngưng hoạt động, tắt bỏ trọn bộ các process và khởi động lại từ đầu. Tôi gởi JAL một PM thông báo tình hình. Nhìn đồng hồ, tôi biết hôm nay mình không còn bao nhiêu thời gian để táy máy với HVA server nữa. Điều tôi muốn tìm hiểu nhưng không có thời gian theo dõi là tổng số server load <font color='orange'>-43-</font> trước, sau và trong khi HVA "bị" tấn công sau khi đã trang bị tất cả những cơ chế thắt chặt từ lúc khởi đầu cho đến bây giờ. Thế nên tôi "whip" ra một đoạn shell script như sau:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#!/bin/bash
+# 60 sec x 180 min
+i=10800
+while &#91; ${i} -gt 0 &#93;; do
+w | grep load | awk '{print$1, $10, $11, $12}' &gt;&gt; /tmp/load
+sleep 120
+let i=$i-120
+done</pre>
+		</div>
+rồi thêm đoạn script này vào cronjob của server để nó chạy từ lúc 7 giờ tối trở đi. Hy vọng sáng hôm sau khi tôi vào server sẽ có sẵn một hồ sơ có tên là <b>load</b> nằm chễm chệ trong /tmp chờ tôi xem xét. Tôi sẽ dùng thông tin trong hồ sơ này để "vẽ" một cái biểu đồ để xem lúc cao điểm vào ban đêm, server load sẽ lên tới bao nhiêu. Tôi cũng muốn xem mức gia tăng của server load có tính chất thế nào (gia tăng đột biến hay gia tăng leo thang...). Từ đó sẽ hình thành các bước thắt chặt và tối ưu khác nếu có thể được. À, bạn thắc mắc đoạn script ở trên làm gì? . Nó làm một chuyện hết sức đơn giản như sau: cứ trước khi script nó ngủ một giấc 120 giây, nó bèn:
+- chạy lệnh <b>w</b> (để lấy thông tin server load)
+- thông tin này được <b>awk</b> tuyển lọc chỉ lấy cột số 1, 10, 11 và 12
+- sau khi lấy được thông tin này, nó bèn chép vào dòng kế tiếp trong hồ sơ <b>load</b> trong thư mục /tmp
+- trừ bớt trên bộ đếm <b>i</b> giá trị thời gian mỗi lần nó ngủ 120 giây.
+- nó lặp lại y hệt các bước 90 lần trong 3 giờ đồng hồ rồi tự... kết liễu (vì đã hoàn tất vòng lặp).
+
+Tôi lẩm nhẩm <i>"để xem sự thể ra sao!"</i>
+
+<i>Các bạn có thể theo dõi tiếp phần 7 tại</i> <span class="link"> http://hvaonline.net/hvaonline/posts/list/181.hva</span> 
+
+<b>Chú thích:</b>
+
+<font color='orange'>-38-</font> Tín hiệu gởi đi để xử lý process bằng lệnh <b>kill.</b> Tùy ứng dụng của mỗi *nix flavour. Trên linux nói chung, để biết các tín hiệu có thể dùng được thử lệnh <b>kill -l.</b> Mỗi tín hiệu (signal) này được gởi đi sẽ được hàm signal() của hệ thống điều tác mà xử lý. Xem thêm <b>man kill</b> và các tài liệu liên quan (được đề cập đến trong phần cuối của kill manual).
+
+<font color='orange'>-39-</font> memory leak, tình trạng rò rỉ bộ nhớ nói theo kiểu nôm na. Tình trạng memory sau khi đã dùng xong không thể lấy lại được để tái dụng cho những hoạt động khác trên hệ thống nói theo kiểu kỹ thuật hơn một chút. Memory được dùng như chỗ chứa thông tin để một chương trình nào đó hoạt động. Có những thông tin chỉ cần chỗ chứa tạm thời và ngắn hạn. Sau khi đã tính toán xong và đã xử dụng xong giá trị tính toán, "chỗ chứa" này không được cần nữa, nội dung trong "chỗ chứa" được xoá bỏ và "chỗ chứa" này được trưng dụng cho những việc khác. Memory leak là tình trạng "chỗ chứa" không còn được dùng nữa nhưng không thể xoá để trưng dụng cho việc khác, nhu liệu bị memory leak cứ tiếp tục đòi thêm "chỗ chứa" nhưng không hề trả lại những "chỗ chứa" cũ không còn cần tới.
+
+<font color='orange'>-40-</font> process policy hay là quy chế điều tác process. Linux điều tác process dựa trên căn bản "time slice", có nghĩa là các process được đưa vào "queue" (sắp hàng) và tuần tự được đưa vào tình trạng "runable" (có thể được chạy), mỗi process sẽ được cơ hội vào chế độ "runnable". Tình trạng runnable này được "scheduler" (người sắp xếp thứ tự) sắp xếp và quyết định, nó xét mọi process nằm trong queue hiện có và quyết định process nào đáng được ưu tiên nhất thì process này có ưu tiên cao nhất. Thông thường khi một hệ thống có nhiều process (xem như) có cùng ưu tiên như nhau thì process nào đứng đầu trong running queue thường được chọn để chạy. Tuy nhiên, trong khi một processs đang chạy, ưu tiên của các process còn lại trong queue có thể lại được thay đổi tuỳ theo tình hình lúc ấy và rốt cuộc mọi process đều có cơ hội để chạy (còn được biết với thuật ngữ "round-robin"), chỉ có chờ lâu hay không mà thôi.
+
+<font color='orange'>-41-</font> mod_security ở<span class="link"> http://www.modsecurity.org.</span> mod_security là một nhu liệu open source do Ivan Ristic viết. Nó có tính năng gần giống như tổng hợp của một intrusion detection system và một application layer firewall. Dù không đa năng nhưng những nhu liệu chuyên về cản lọc hay phát hiện nhưng mod_security là một nhu liệu tuyệt vời để hỗ trợ thêm vào những cơ chế bảo vệ hiện có trên hệ thống. mod_security làm việc như một tấm bình phong, cản lọc mọi request trước khi thật sự đi vào web server.
+
+<font color='orange'>-42-</font> regex hay <b>reg</b>ular <b>ex</b>pression. Đối với những ai có nhu cầu phải tiếp cận với những vấn đề cần phải dùng "pattern matching" thì regex không có gì là mới mẻ. Tuy nhiên, đối với những ai chưa từng có cơ hội hay nhu cầu phải dùng đến regex thì tôi muốn giới thiệu nó đến bạn như một phương tiện hết sức cần thiết và quan trọng cho phương diện phân tích và ứng dụng bảo mật. Bạn muốn thu thập những thông tin hữu ích nhất và quan trọng nhất theo ý muốn từ hàng "tấn" log files? Đọc thêm về regex, một trang tutorial rất hay ở:<span class="link"> http://www.regular-expressions.info/tutorial.html</span>
+
+<font color='orange'>-43-</font> server load là giá trị trung bình của số lượng công việc đi xuyên qua "job queue" được xử lý trong khoảng 1 phút, 5 phút và 15 phút. Ví dụ, server load có giá trị là 0.5 1.0 0.8 có nghĩa là:
+- trong 1 phút có: 0.5 job / 1 phút = 0.5
+- trong 5 phút có: 5 jobs / 5 phút = 1.0
+- trong 15 phút có: 12 jobs / 15 phút = 0.8
+Đây là các con số rất bình thường cho một máy chủ không bận rộn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#593</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#593</link>
+				<pubDate><![CDATA[Wed, 21 Jun 2006 09:02:02]]> GMT</pubDate>
+				<author><![CDATA[ prof]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thử ước tính server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?
+<b>( 15 phút x 47 processes ) / 120 = 5.8 processes
+15 phút / 5.8 = 0.86</b> (xem thêm chú thích 43)
+&nbsp;
+		</blockquote>
+Sao 15 chia 5.8 lại bằng 0.86 vậy anh?
+
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+<font color='orange'>-43-</font> server load là giá trị trung bình của số lượng công việc đi xuyên qua "job queue" được xử lý trong khoảng 5 phút, 15 phút và 30 phút. Ví dụ, server load có giá trị là 0.5 1.0 0.8 có nghĩa là:
+- trong 5 phút có: 5 phút / 10 jobs = 0.5
+- trong 15 phút có: 15 phút / 15 jobs = 1.0
+- trong 30 phút có: 30 phút / 37.5 jobs = 0.8
+Đây là các con số rất bình thường cho một máy chủ không bận rộn.&nbsp;
+		</blockquote>
+- Em đọc man page thấy là 1, 5, và 15 phút mà.
+- Liệu lấy số phút chia cho số lượng công việc có đúng không anh nhỉ? Nếu vậy, số lượng công việc tăng lên thì server load lại giảm ạ?
+
+Em hiểu thế này: với máy có 1 processor, ví như một cái cầu chứa được 5 con ô tô. Bây giờ nếu có 10 con ô tô xếp hàng, 5 con đang trên cầu và 5 con đang đợi để đến lượt thì server load bằng 2. Ngược lại nếu chỉ có 2 con trên cầu thì server load bằng 0.4.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#212946</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#212946</link>
+				<pubDate><![CDATA[Wed, 9 Jun 2010 22:53:51]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thử ước tính server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?
+<b>( 15 phút x 47 processes ) / 120 = 5.8 processes
+15 phút / 5.8 = 0.86</b> (xem thêm chú thích 43)
+&nbsp;
+		</blockquote>
+<font color='red'>Sao 15 chia 5.8 lại bằng 0.86 vậy anh?</font>
+
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+<font color='orange'>-43-</font> server load là giá trị trung bình của số lượng công việc đi xuyên qua "job queue" được xử lý trong khoảng 5 phút, 15 phút và 30 phút. Ví dụ, server load có giá trị là 0.5 1.0 0.8 có nghĩa là:
+- trong 5 phút có: 5 phút / 10 jobs = 0.5
+- trong 15 phút có: 15 phút / 15 jobs = 1.0
+- trong 30 phút có: 30 phút / 37.5 jobs = 0.8
+Đây là các con số rất bình thường cho một máy chủ không bận rộn.&nbsp;
+		</blockquote>
+- Em đọc man page thấy là 1, 5, và 15 phút mà.
+- Liệu lấy số phút chia cho số lượng công việc có đúng không anh nhỉ? Nếu vậy, số lượng công việc tăng lên thì server load lại giảm ạ?
+
+Em hiểu thế này: với máy có 1 processor, ví như một cái cầu chứa được 5 con ô tô. Bây giờ nếu có 10 con ô tô xếp hàng, 5 con đang trên cầu và 5 con đang đợi để đến lượt thì server load bằng 2. Ngược lại nếu chỉ có 2 con trên cầu thì server load bằng 0.4.&nbsp;
+		</blockquote>
+
+À cái này có lẽ anh thiếu sót khi gõ. Đúng ra phải là 2.5.
+
+Em đọc man page nào vậy?
+
+Việc sử dụng số phút để chia cho số lượng công việc chỉ là một phương pháp tạo đơn vị tính mà thôi em. Đúng hay sai còn được xét trong hoàn cảnh và đòi hỏi thế nào nữa. Mọi tính toán đều có sai số (tolerance) nhất định.
+
+Về ví dụ ô tô của em thì chỉ có 5 con ô tô đó được xét (như công việc đối với processor) nhưng em thiếu đơn vị thời gian trong ví dụ của em cho nên khó liên tưởng sang khái niệm "server load".
+
+Thân mến.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213042</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213042</link>
+				<pubDate><![CDATA[Thu, 10 Jun 2010 22:33:39]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Em đọc man page nào vậy?
+&nbsp;
+		</blockquote>
+Bất kể man page nào anh à: w, uptime
+<blockquote>w  displays information about the users currently on the machine, and their processes.  The header shows, in this order,  the current time, how long the system has been running,  how  many  users  are  currently logged on, and the system load averages for the past 1, 5, and 15 minutes.
+&nbsp;
+		</blockquote>
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Việc sử dụng số phút để chia cho số lượng công việc chỉ là một phương pháp tạo đơn vị tính mà thôi em. Đúng hay sai còn được xét trong hoàn cảnh và đòi hỏi thế nào nữa. Mọi tính toán đều có sai số (tolerance) nhất định.
+&nbsp;
+		</blockquote>
+Em không nói đến sai số ở đây. Cái em nói là số lượng công việc (run-queue length) phải nằm ở tử số chứ không thể là mẫu số được.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Về ví dụ ô tô của em thì chỉ có 5 con ô tô đó được xét (như công việc đối với processor) nhưng em thiếu đơn vị thời gian trong ví dụ của em cho nên khó liên tưởng sang khái niệm "server load".
+
+Thân mến.&nbsp;
+		</blockquote>
+Cho đơn vị thời gian vào thì cũng thế thôi mà anh, em thấy dễ hình dung đấy chứ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213043</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213043</link>
+				<pubDate><![CDATA[Thu, 10 Jun 2010 22:51:20]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Em đọc man page nào vậy?
+&nbsp;
+		</blockquote>
+Bất kể man page nào anh à: w, uptime
+<blockquote>w  displays information about the users currently on the machine, and their processes.  The header shows, in this order,  the current time, how long the system has been running,  how  many  users  are  currently logged on, and the system load averages for the past 1, 5, and 15 minutes.
+&nbsp;
+		</blockquote>
+&nbsp;
+		</blockquote>
+Cái này có lẽ anh lẫn lộn.
+
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Việc sử dụng số phút để chia cho số lượng công việc chỉ là một phương pháp tạo đơn vị tính mà thôi em. Đúng hay sai còn được xét trong hoàn cảnh và đòi hỏi thế nào nữa. Mọi tính toán đều có sai số (tolerance) nhất định.
+&nbsp;
+		</blockquote>
+Em không nói đến sai số ở đây. Cái em nói là số lượng công việc (run-queue length) phải nằm ở tử số chứ không thể là mẫu số được.
+&nbsp;
+		</blockquote>
+Cái này thì em có thể đưa ý kiến đến nhóm soạn thảo định nghĩa và ứng dụng "server load" cho Linux. Anh chỉ sử dụng cách tính toán của họ. Theo anh,
+
+L = M / J (L: load, M: minutes, J: jobs) là để tính số load trong đơn vị thời gian đã được ấn định.
+
+Nếu L = J / M (e.g 10 jobs / 5 minutes = 2) thì kết quả nó là gì? Chẳng lẽ em muốn tính mỗi minute có bao nhiêu jobs à? Cái này hoá ra tính số lượng job trong mỗi phút chớ đâu có tính ra server load đâu?
+
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Về ví dụ ô tô của em thì chỉ có 5 con ô tô đó được xét (như công việc đối với processor) nhưng em thiếu đơn vị thời gian trong ví dụ của em cho nên khó liên tưởng sang khái niệm "server load".
+
+Thân mến.&nbsp;
+		</blockquote>
+Cho đơn vị thời gian vào thì cũng thế thôi mà anh, em thấy dễ hình dung đấy chứ.&nbsp;
+		</blockquote>
+Sao cũng thế được em? Phải có đơn vị thời gian thì mới đo được load của processor trong giới hạn nào đó chớ không thì vô cùng à?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213044</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213044</link>
+				<pubDate><![CDATA[Thu, 10 Jun 2010 23:02:56]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Cái này thì em có thể đưa ý kiến đến nhóm soạn thảo định nghĩa và ứng dụng "server load" cho Linux. Anh chỉ sử dụng cách tính toán của họ. Theo anh,
+
+L = M / J (L: load, M: minutes, J: jobs) là để tính số load trong đơn vị thời gian đã được ấn định.
+&nbsp;
+		</blockquote>
+Anh có link nào nói về công thức này không? Ở đây,<span class="link"> http://www.teamquest.com/resources/gunther/display/5/index.htm,</span> em thấy công thức "hàn lâm" quá.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Nếu L = J / M (e.g 10 jobs / 5 minutes = 2) thì kết quả nó là gì? Chẳng lẽ em muốn tính mỗi minute có bao nhiêu jobs à? Cái này hoá ra tính số lượng job trong mỗi phút chớ đâu có tính ra server load đâu?
+&nbsp;
+		</blockquote>
+Em chỉ nói J ở tử số chứ em đã nói cái gì ở mẫu số đâu :). Theo em, mẫu số có thể hiểu là khả năng xử lý của CPU trong một đơn vị thời gian. Như đã biết, server load là một con số không đơn vị, nếu coi đơn vị của tử số là tasks, đơn vị của mẫu số là tasks/minute, lấy tử chia cho mẫu và chia tiếp cho khoảng thời gian 1, 5, 15 phút ta sẽ được con số như ý.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213046</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213046</link>
+				<pubDate><![CDATA[Thu, 10 Jun 2010 23:57:40]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Cái này thì em có thể đưa ý kiến đến nhóm soạn thảo định nghĩa và ứng dụng "server load" cho Linux. Anh chỉ sử dụng cách tính toán của họ. Theo anh,
+
+L = M / J (L: load, M: minutes, J: jobs) là để tính số load trong đơn vị thời gian đã được ấn định.
+&nbsp;
+		</blockquote>
+Anh có link nào nói về công thức này không? Ở đây,<span class="link"> http://www.teamquest.com/resources/gunther/display/5/index.htm,</span> em thấy công thức "hàn lâm" quá.
+&nbsp;
+		</blockquote>
+Chẳng có gì là "hàn lâm" hết chỉ là một công thức đơn giản biểu thị cho kết quả load trung bình ở đâu ra mà thôi. Link em cho ở trên rất hay nhưng thông tin anh tìm hiểu về "server load" khi viết bài này hồi đó là cuốn "Unix PowerTool" của O'Reily.
+
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Nếu L = J / M (e.g 10 jobs / 5 minutes = 2) thì kết quả nó là gì? Chẳng lẽ em muốn tính mỗi minute có bao nhiêu jobs à? Cái này hoá ra tính số lượng job trong mỗi phút chớ đâu có tính ra server load đâu?
+&nbsp;
+		</blockquote>
+Em chỉ nói J ở tử số chứ em đã nói cái gì ở mẫu số đâu :). Theo em, mẫu số có thể hiểu là khả năng xử lý của CPU trong một đơn vị thời gian. Như đã biết, server load là một con số không đơn vị, nếu coi đơn vị của tử số là tasks, đơn vị của mẫu số là tasks/minute, lấy tử chia cho mẫu và chia tiếp cho khoảng thời gian 1, 5, 15 phút ta sẽ được con số như ý.&nbsp;
+		</blockquote>
+Thì tử số. Bởi J là tử số thì mới sinh ra số "jobs" trong mỗi phút. Tại sao load lại là con số không đơn vị? Nó rõ ràng là chỉ số của số "job per period of time" (j/t) mà?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213048</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213048</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 00:28:37]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thì tử số. Bởi J là tử số thì mới sinh ra số "jobs" trong mỗi phút. Tại sao load lại là con số không đơn vị? Nó rõ ràng là chỉ số của số "job per period of time" (j/t) mà?&nbsp;
+		</blockquote>
+Em cho rằng server load là một con số không đơn vị bởi vì: như đã nói, em nghĩ server load biểu thị cho mức độ "chịu nhiệt" của CPU. Với một processor, server load thường nhỏ hơn 1, cũng như với một con quad core, server load bằng 4 nghĩa là nó đã chạy hết công suất. Tương tự, bằng 8 nghĩa là vẫn còn một số lượng các processes bằng đúng khả năng xử lý của nó đang xếp hàng đằng sau.
+
+Nếu anh cho rằng J là tử số và đơn vị là j/t thì tại sao công thức lại là M/J như anh nói ở trên được?
+
+Mặc dù man page (của getloadavg) có viết:
+<blockquote>
+The  getloadavg()  function returns the number of processes in the system run queue averaged over various periods of time
+&nbsp;
+		</blockquote>
+nhưng em vẫn có gì đó đang lấn cấn ở đây. 
+
+PS: có chỗ cho rằng đơn vị của load average là vaston mới hay chứ:<span class="link"> http://everything2.com/user/strib/writeups/vaston</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213052</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213052</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 02:21:07]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thì tử số. Bởi J là tử số thì mới sinh ra số "jobs" trong mỗi phút. Tại sao load lại là con số không đơn vị? Nó rõ ràng là chỉ số của số "job per period of time" (j/t) mà?&nbsp;
+		</blockquote>
+Em cho rằng server load là một con số không đơn vị bởi vì: như đã nói, em nghĩ server load biểu thị cho mức độ "chịu nhiệt" của CPU. Với một processor, server load thường nhỏ hơn 1, cũng như với một con quad core, server load bằng 4 nghĩa là nó đã chạy hết công suất. Tương tự, bằng 8 nghĩa là vẫn còn một số lượng các processes bằng đúng khả năng xử lý của nó đang xếp hàng đằng sau.
+
+Nếu anh cho rằng J là tử số và đơn vị là j/t thì tại sao công thức lại là M/J như anh nói ở trên được?
+&nbsp;
+		</blockquote>
+M/J có nghĩa là "<font color='red'>M</font>inutes chia cho <font color='red'>J</font>obs" và j/t có nghĩa là "<font color='orange'>j</font>obs trong khoảng <font color='orange'>t</font>ime" (tương tự như km/h - cây số giờ). Một cái là biểu thức toán học, một cái là đơn vị.
+
+M chia cho J tạo ra kết quả L và L này có đơn vị là j/t [L (j/t) = M (minutes) / J (jobs)].
+
+"jobs" ở đây là số lượng "công việc" <b>đang được thực hiện</b> chớ không phải <b>đang đứng đợi</b> (mà em gọi là "xếp hàng đứng đằng sau"). Bất kể có bao nhiêu cores đi chăng nữa, nếu "jobs" đang đứng đợi và chưa được xử lý thì không thể dùng để tính vào "load" tạo ra được nó đâu hao tốn gì đâu mà tính? Tất nhiên, nếu em xem ở bình diện micro thì tất cả các task scheduling đều tốn tài nguyên và xét ở bình diện này thì giá trị "load" chỉ mang tính tương đối (mà anh đã nói ở trên là mọi giá trị đều có mức tolerance nhất địnhh là vậy).
+
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+Mặc dù man page (của getloadavg) có viết:
+<blockquote>
+The  getloadavg()  function returns the number of processes in the system <font color='#6699CC'>run queue</font> <font color='red'>averaged over various periods of time</font>
+&nbsp;
+		</blockquote>
+nhưng em vẫn có gì đó đang lấn cấn ở đây. 
+
+PS: có chỗ cho rằng đơn vị của load average là vaston mới hay chứ:<span class="link"> http://everything2.com/user/strib/writeups/vaston&nbsp;</span>
+		</blockquote>
+
+Đoạn màu đỏ ở trên đòi hỏi giá trị "time" chớ không phải "không cần time" như em đã nghĩ trước đây và đoạn màu xanh nhấn mạnh từ khoá "run" chỉ cho số công việc đang được thưc thi chớ không phải đang đợi.
+
+Lần đầu tiên anh được biết đến "vaston" đó. Anh chưa hề thấy nó trong những cuốn sách và tài liệu anh tham khảo từ trước đến giờ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213056</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213056</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 02:56:08]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+M/J có nghĩa là "<font color='red'>M</font>inutes chia cho <font color='red'>J</font>obs" và j/t có nghĩa là "<font color='orange'>j</font>obs trong khoảng <font color='orange'>t</font>ime" (tương tự như km/h - cây số giờ). Một cái là biểu thức toán học, một cái là đơn vị.
+
+M chia cho J tạo ra kết quả L và L này có đơn vị là j/t [L (j/t) = M (minutes) / J (jobs)].
+&nbsp;
+		</blockquote>
+Có biểu thức toán học nào mà tử số có đơn vị là minutes, chia cho mẫu số có đơn vị là jobs lại được một đại lượng có đơn vị là jobs/time không anh?
+
+Chốt lại, ý em là thế này: anh lấy 1, 5, 15 chia cho số jobs để ra load average (như ví dụ trong bài ký sự) là không chuẩn.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+"jobs" ở đây là số lượng "công việc" <b>đang được thực hiện</b> chớ không phải <b>đang đứng đợi</b> (mà em gọi là "xếp hàng đứng đằng sau"). Bất kể có bao nhiêu cores đi chăng nữa, nếu "jobs" đang đứng đợi và chưa được xử lý thì không thể dùng để tính vào "load" tạo ra được nó đâu hao tốn gì đâu mà tính? Tất nhiên, nếu em xem ở bình diện micro thì tất cả các task scheduling đều tốn tài nguyên và xét ở bình diện này thì giá trị "load" chỉ mang tính tương đối (mà anh đã nói ở trên là mọi giá trị đều có mức tolerance nhất địnhh là vậy).
+&nbsp;
+		</blockquote>
+Anh có cách nào chứng minh cái này không chứ tất cả các links em đọc họ đều tính running và runnable vào đấy (trừ cái man page của getloadavg kia ra).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213058</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213058</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 03:29:33]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+M/J có nghĩa là "<font color='red'>M</font>inutes chia cho <font color='red'>J</font>obs" và j/t có nghĩa là "<font color='orange'>j</font>obs trong khoảng <font color='orange'>t</font>ime" (tương tự như km/h - cây số giờ). Một cái là biểu thức toán học, một cái là đơn vị.
+
+M chia cho J tạo ra kết quả L và L này có đơn vị là j/t [L (j/t) = M (minutes) / J (jobs)].
+&nbsp;
+		</blockquote>
+Có biểu thức toán học nào mà tử số có đơn vị là minutes, chia cho mẫu số có đơn vị là jobs lại được một đại lượng có đơn vị là jobs/time không anh?
+
+Chốt lại, ý em là thế này: anh lấy 1, 5, 15 chia cho số jobs để ra load average (như ví dụ trong bài ký sự) là không chuẩn.
+&nbsp;
+		</blockquote>
+Và có cái gì quy định rằng biểu thức toán học  <b>không được</b> có tử số là đơn vị minutes, chia cho mẫu số là đơn vị jobs và có đại lượng có đơn vị là jobs/time?
+
+Em cho là không chuẩn thì không sao hết nhưng anh không hiểu thế nào là "chuẩn" cả.
+
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+"jobs" ở đây là số lượng "công việc" <b>đang được thực hiện</b> chớ không phải <b>đang đứng đợi</b> (mà em gọi là "xếp hàng đứng đằng sau"). Bất kể có bao nhiêu cores đi chăng nữa, nếu "jobs" đang đứng đợi và chưa được xử lý thì không thể dùng để tính vào "load" tạo ra được nó đâu hao tốn gì đâu mà tính? Tất nhiên, nếu em xem ở bình diện micro thì tất cả các task scheduling đều tốn tài nguyên và xét ở bình diện này thì giá trị "load" chỉ mang tính tương đối (mà anh đã nói ở trên là mọi giá trị đều có mức tolerance nhất địnhh là vậy).
+&nbsp;
+		</blockquote>
+Anh có cách nào chứng minh cái này không chứ tất cả các links em đọc họ đều tính running và runnable vào đấy (trừ cái man page của getloadavg kia ra).&nbsp;
+		</blockquote>
+getLoadAvg là hàm chính thức để tính Average Load mà definition không tin tưởng vào nó thì tin tưởng vào cái gì? Cái này em không nên bắt anh phải "bào chữa" cho getLoadAvg mà em nên đòi hỏi người tạo ra hàm này. Anh chỉ là người dùng nó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213078</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213078</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 06:39:51]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+<p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote>
+Mặc dù man page (của getloadavg) có viết:
+<blockquote>
+The  getloadavg()  function returns the number of processes in the system <font color='#6699CC'>run queue</font> <font color='red'>averaged over various periods of time</font>
+&nbsp;
+		</blockquote>
+nhưng em vẫn có gì đó đang lấn cấn ở đây. 
+&nbsp;
+		</blockquote>
+...và đoạn màu xanh nhấn mạnh từ khoá "run" chỉ cho số công việc đang được thưc thi chớ không phải đang đợi.
+&nbsp;
+		</blockquote>
+Chưa chắc đâu anh, cụm "run queue" có thể được hiểu là cả running và waiting đấy (vì ở đây nó có chữ "queue" và chỉ "run" thôi chứ không phải running). Hơn nữa, tất cả tài liệu mà em đọc được đều tính như thế.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Và có cái gì quy định rằng biểu thức toán học <b>không được</b> có tử số là đơn vị minutes, chia cho mẫu số là đơn vị jobs và có đại lượng có đơn vị là jobs/time?
+
+Em cho là không chuẩn thì không sao hết nhưng anh không hiểu thế nào là "chuẩn" cả.
+&nbsp;
+		</blockquote>
+Không có cái gì quy định như thế cả, nhưng chỉ cần đọc lại định nghĩa có thể thấy rằng cách tính như trên là sai. "không chuẩn" ý em ở đây là sai chứ không phải là chuẩn theo nghĩa standard.
+<p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+Thử ước tính server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?
+<b>( 15 phút x 47 processes ) / 120 = 5.8 processes
+15 phút / 5.8 = 0.86</b> (xem thêm chú thích 43)
+&nbsp;
+		</blockquote>
+- phép tính thứ nhất trả về số lượng processes trung bình mà CPU phải xử lý trong 15 phút
+- phép tính thứ hai tại sao anh lại lấy 15 phút chia cho đại lượng này để ra load average vậy?
+
+Nếu theo định nghĩa trên: <i>Load average là số lượng processes trung bình trong run queue (ở đây chưa thống nhất run queue có bao gồm những thằng đang đợi để chạy hay không) qua các khoảng thời gian khác nhau</i>, thì với câu hỏi <i>"server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?"</i>, hoặc là không có câu trả lời hoặc là: load average bằng 5.8 trong 15 phút vừa qua, và bằng 1.9x trong 5 phút vừa qua...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213109</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213109</link>
+				<pubDate><![CDATA[Fri, 11 Jun 2010 11:51:42]]> GMT</pubDate>
+				<author><![CDATA[ huyente]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ Hôm nay ăn no, ngủ say thức dậy đầu óc tỉnh táo, sảng khoái. Coi kỹ lại thì <b>huyente</b> nhận xét hoàn toàn đúng. "Jobs" phải là tử số.
+
+Cám ơn <b>huyente</b>.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213138</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213138</link>
+				<pubDate><![CDATA[Sat, 12 Jun 2010 02:42:21]]> GMT</pubDate>
+				<author><![CDATA[ conmale]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ Vài dòng cùng thảo luận:
+Bác conmale:
+<blockquote>
+(12000 requests / 120 phút) / 60 giây = 1.6 request mỗi giây 
+
+Trong 2 giờ, web server sẽ tiếp nhận requests và tạo ra bao nhiêu processes? Thử xem: 
+- 1 process được tiếp nhận 256 request rồi bị huỷ 
+- 12000 requests trong 120 phút (7200 giây) = 1.6 requests cho mỗi giây. 
+12000 requests / 256 max request per child process = 47 processes 
+
+Thử ước tính server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ? 
+[<font color='red'>1</font>]( 15 phút x 47 processes ) / 120 = 5.8 processes 
+[<font color='red'>2</font>]15 phút / 5.8 = 0.86 (xem thêm chú thích 43) &nbsp;
+		</blockquote>
+
+[1] và [2] được rút gọn thành 15 / [  (15 * 47) / 120 ] = 120 / 47 = 2,55 phút / job :)
+
+Ý tưởng của công thức này có lẽ là: Nếu mỗi lần chỉ có một job được thực hiện, thì mỗi job được thực hiện trung bình 2,55 phút trên hệ thống:P
+
+Không biết bác conmale và bác huyente hiểu về jobs là như thế nào? Riêng em nghĩ mỗi job là một &quot;tiến trình&quot; trên hệ thống,mỗi OS sẽ quản lý danh sách (DS) các tiến trình, mỗi tiến trình sẽ có một trạng thái.
+
+Theo:<span class="link"> http://en.wikipedia.org/wiki/Load_(computing</span>)
+Thì load averg đơn giản là số tiến trình có trạng thái là  running (on CPU) or runnable (waiting for CPU) trong DS các tiến trình, được lấy trung bình trong các khoảng thời gian 1 5 15 phút
+ 
+Một ví dụ: load averg: 3 4 5.
+Thì: trong 1 phút vừa qua, trung bình lúc nào cũng có 3 tiến trình Đang Chạy trên hệ thống, nói chi tiết, chính xác hơn: với 1 CPU, tại mỗi thời điểm chỉ có một tiến trình được chạy, và 2 tiến trình đang chờ (tất nhiên là luân phiên nhau)
+
+Tương tự cho 5, 15 phút
+
+Nếu lấy 4 * 5 = 20, sẽ không chính xác khi xem rằng có 20 tiến trình chạy trong vòng 5 phút qua, có thể chỉ có 4 tiến trình, mỗi tiến trình đều tồn tại trên hệ thống &gt;= 20 phút (song song với nhau) , thì hiển nhiên trung bình lúc nào cũng có 4 tiến trình (1 chạy, 3 chờ được chạy, với  1 CPU) trên DS=&gt; load averg = 4.
+
+
+bác huyente nói:
+<blockquote>Nếu theo định nghĩa trên: Load average là số lượng processes trung bình trong run queue (<font color='red'>ở đây chưa thống nhất run queue có bao gồm những thằng đang đợi để chạy hay không)</font> qua các khoảng thời gian khác nhau, thì với câu hỏi &quot;server load sẽ là bao nhiêu nếu nó phải tạo 47 processes trong 2 giờ?&quot;,<b> hoặc là không có câu trả lời</b> hoặc là: load average bằng 5.8 trong 15 phút vừa qua, và bằng 1.9x trong 5 phút vừa qua...
+&nbsp;
+		</blockquote>
+
+Câu <b>IN ĐẬM</b> là khá chính xác với dữ kiện đã cho, vì load averg phụ thuộc vào số tiến trình đang chạy vào mỗi thời điểm, điều này lại phụ thuộc vào khoảng thời gian mỗi tiến trình chạy trên hệ thống, ở đây lại phục thuộc vào tốc độ xữ lý của CPU, tốc độ truy xuất của đĩa cứng, RAM, ...
+
+Với câu <font color='red'>màu đỏ</font>: mỗi CPU chỉ có thể chạy một tiến trình tại mỗi thời điểm :D
+
+thân.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#213139</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#213139</link>
+				<pubDate><![CDATA[Sat, 12 Jun 2010 03:03:44]]> GMT</pubDate>
+				<author><![CDATA[ Xcode]]></author>
+			</item>
+			<item>
+				<title>Ký sự các vụ DDoS đến HVA - Phần 6</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">huyente wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">conmale wrote:</cite><br>
+		<blockquote>
+...và đoạn màu xanh nhấn mạnh từ khoá "run" chỉ cho số công việc đang được thưc thi chớ không phải đang đợi.
+&nbsp;
+		</blockquote>
+Chưa chắc đâu anh, cụm "run queue" có thể được hiểu là cả running và waiting đấy (vì ở đây nó có chữ "queue" và chỉ "run" thôi chứ không phải running). Hơn nữa, tất cả tài liệu mà em đọc được đều tính như thế.
+&nbsp;
+		</blockquote>
+Bổ sung thêm một ý quan trọng nữa: load average còn bao gồm cả uninterruptible sleep processes nữa. State của process loại này được ký hiệu là D, các bạn có thể đọc thêm trong man page:
+<blockquote>D    Uninterruptible sleep (usually IO)
+R    Running or runnable (on run queue)
+S    Interruptible sleep (waiting for an event to complete)
+T    Stopped, either by a job control signal or because it is being traced.
+W    paging (not valid since the 2.6.xx kernel)
+X    dead (should never be seen)
+Z    Defunct ("zombie") process, terminated but not reaped by its parent.&nbsp;
+		</blockquote>
+
+Và cái này nhiều khi gây ra load cao khủng khiếp:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># w
+10:58:38 up 225 days,  2:22,  2 users,  load average: 410.88, 411.68, 409.01</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>top -b -n 1 | awk '{if &#40;$8 == "D"&#41; {print; count++} } END {print "Total status D: "count}'
+...
+Total status D: 408</pre>
+		</div>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># ps -eo pid,ppid,state,cmd | awk '$3 = /&#91;RD&#93;/ {print $0}' | wc -l
+435</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/180.hva#217969</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/180.hva#217969</link>
+				<pubDate><![CDATA[Mon, 9 Aug 2010 00:28:11]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Những điều cần biết về SSL"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Những điều cần biết về SSL"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ <font size='+1'><font color='yellow'>I. Giới thiệu về SSL</font></font>
+
+<b>1.1 SSL là gì?</b>
+
+SSL(Secure Socket Layer) là một giao thức(protocol) cho phép bạn truyền đạt thông tin một cách an toàn qua mạng.
+
+<b>1.2 Thuật toán mã hóa</b>
+
+Mã hóa(encrypt) và giải mã(decrypt) thông tin dùng các hàm toán học đặt biệt được biết đến với cái tên là thuật toán mã hóa (cryptographic algorithm) và thường được gọi tắt là cipher.
+
+<b>1.3 Khóa là gì?</b>
+
+Khóa(key) là một thông tin quan trọng dùng để mã hóa thông tin hoặc giải mã thông tin đã bị mã hóa. Bạn có thể hiểu nôm na khóa là mật khẩu(password).
+
+<b>1.4 Các phương pháp mã hóa</b>
+
+Có hai phương pháp mã hóa được sử dụng phổ biến hiện nay là mã hóa bằng khóa đối xứng và mã hóa dùng cặp khóa chung - khóa riêng..
+
+<b>1.4.1 Mã hóa bằng khóa đối xứng(symmetric-key)</b>
+
+
+
+Khóa dùng để mã hóa cũng là khóa dùng để giải mã.
+
+<b>1.4.2 Mã hóa dùng cặp khóa chung - khóa riêng (public key - private key)</b>
+
+Một khe hở trong mã hóa đối xứng là bạn phải chuyển khóa cho người nhận để họ có thể giải mã. Việc chuyển khóa không được mã hóa qua mạng là một điều cực kì mạo hiểm. Nhở như khóa này rơi vào tay người khác thế là họ có thể giải mã được thông tin mà bạn đã chuyển đi. Phương pháp mã hóa bằng khóa chung - khóa riêng ra đời nhằm giải quyết vấn đề này. Thay vì chỉ có một khóa duy nhất dùng chung cho mã hóa và giải mã, bạn sẽ có một cặp khóa gồm khóa chung chỉ dùng để mã hóa và khóa riêng chỉ dùng để mã hóa. Bạn cho người khác biết khóa chung của bạn để họ mã hóa các thông tin gởi đến bạn. Chỉ có bạn mới có khóa riêng để giải mã các thông tin này. Nhở như thông tin này có rơi vào tay người khác thì họ cũng không thể giải mã được vì chỉ có bạn mới có khóa riêng mà.
+
+
+
+<b>1.5. Độ dài khóa (key-length)</b>
+
+Độ dài khóa được tính theo bit: 128bit, 1024bit hay 2048bit,... Khóa càng dài thì càng khó phá. Chằng hạn như khóa RSA 1024bit đồng nghĩa với việc chọn 1 trong 2^1024 khả năng.
+
+<b>1.6 Password & passparse</b>
+
+Password và passparse gần giống nhau. Password không bao giờ hết hạn(expire). Passparse chỉ có hiệu lực trong một khoảng thời gian nhất định có thể là 5 năm, 10 năm hay chỉ là vài ba ngày. Sau thời gian đó, bạn phải thay đổi lại mật khẩu mới. Nói chung, mọi thứ trong SSL như passparse, khóa, giấy chứng nhận, chữ kí số (sẽ nói sau), ... đều chỉ có thời hạn sử dụng nhất định. Passparse được dùng để mở (mã hóa/giải mã) khóa riêng.
+<font color='yellow'><font size='+1'>II. Cơ chế làm việc của SSL</font></font>
+
+Để dễ hiểu, phần này sẽ trình bày qua ví dụ cụ thể: Alice trao đổi thông tin với Bob bằng công nghệ khóa chung. {something}key có nghĩa là something được mã hóa hoặc giải mã bằng key.
+
+Alice cần chắc chắn là mình sẽ nói chuyện với Bob mà không phải là một ai khác. Alice sẽ tiến hành xác thực(authenticate) Bob.Bob có một cặp khóa gồm một khóa chung và một khóa riêng. Bob cho Alice biết trước khóa chung của mình (sẽ nói sau bằng cách nào). Alice tạo ra một thông điệp ngẫu nhiên(random message) và gởi nó đến Bob:
+
+<blockquote>A-&gt;B message ngẫu nhiên&nbsp;
+		</blockquote>
+
+Bob dùng khóa riêng của mình để mã hóa thông điệp vừa nhận được và gởi trả lại cho Alice:
+
+<blockquote>B-&gt;A {message ngẫu nhiên}khóa-riêng-của-bob&nbsp;
+		</blockquote>
+
+Alice nhận được message từ Bob, dùng khóa chung của Bob để giải mã message này và sau đó so sánh message vừa giải mã được với random-message đã gởi đi. Nếu giống nhau, Alice có thể tin chắc rằng mình đang nói chuyện với Bob.
+
+<b>1. Bản tóm tắt (digest)</b>
+
+Thay vì phải mã hóa toàn bộ message nhận được từ Alice, Bob có thể xây dựng một bản tóm tắt(digest) của message bằng hàm băm một chiều (hash one-way), sau đó mã hóa digest bằng khóa riêng của mình và gởi cho Alice. Alice sẽ dùng khóa chung của Bob để giải mã digest do Bob gởi tới và tính digest của message đã được gởi đi, sau đó so sánh hai digest này với nhau. Nếu trùng nhau, có nghĩa Alice có thể tin chắc là mình đang nói chuyện với Bob.
+
+Digest thực chất là chỉ là một số nguyên(integer). Hai thuật toán phổ biến được dùng để tạo digest là MD5 hash 128bit, SHA hash 160 bit. Ai đó có được digest của Bob cũng không thể nào suy luận ra được message nguyên bản(original) vì digest chỉ là giá trị hash một chiều. Hai message khác nhau sẽ có digest khác nhau, khả năng trùng nhau xấp xỉ là 0.
+
+<b>2. Chữ kí điện tử (digital signature)</b>
+
+Theo cách ở trên thì Bob đã kí(sign) message do Alice gởi tới, nhở như ai đó đã thay đổi message này thì sao? Vì vậy cần thay đổi một chút như sau:
+
+<blockquote>A-&gt;B Chào, Có phải Bob đó không?
+B-&gt;A Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob&nbsp;
+		</blockquote>
+
+Như bạn thấy Bob không hề kí message của Alice. Thay vào đó, Bob sẽ gởi một mesage khác(không bị mã hóa) và digest của của message này (đã được mã hóa bằng khóa riêng của Bob) đến cho Alice. Bob chỉ tin tưởng vào chính mình. Alice dễ dàng thẩm tra Bob bằng cách dùng khóa chung của Bob giải mã digest nhận được, sau đó tính digest của message nhận từ Bob và so sánh hai digest này với nhau. Digest mà Bob gởi tới Alice chính là một chữ kí điện tử. Nó kí cho message "Alice, Mình là Bob đây!" để đảm bảo chắc chắn là message này không bị ai đó thay đổi gì khi đến Alice. Nếu thay đổi Alice sẽ biết ngay qua việc thẩm tra digest.
+
+
+
+<b>3. Trao khóa chung</b>
+
+Bob trao khóa chung của mình cho Alice bằng cách nào? Bạn hãy xem thử giao thức sau:
+
+<blockquote>A-&gt;B Xin chào!
+B-&gt;A Chào, Mình là Bob. Đây là khóa chung của mình!
+A-&gt;B Hãy đưa bằng chứng đi!
+B-&gt;A Alice, Mình là Bob đây!
+digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob&nbsp;
+		</blockquote>
+
+Với cách này thì ai cũng có thể giả mạo Bob và trao khóa chung của họ cho Alice, làm cho Alice tưởng lầm là mình đang nói chuyện với Bob.
+
+Để giải quyết vấn đề này, Alice và Bob có thể dùng giấy chứng nhận điện tử
+
+<b>4. Giấy chứng nhận điện tử (digital certificate)</b>
+
+Giấy chứng nhận điện tử dùng để chứng nhận khóa chung của một cá nhân nào đó. Một giấy chứng nhận điện tử thường bao gồm các thứ sau:
+tên cơ quan cấp giấy chứng nhận (issuer's name)
+tên thực thể(entity) được cấp giấy chứng nhận(còn được gọi là đối tượng - subject)
+khóa chung của subject
+tem thời gian(time-stamps) cho biết thời gian có hiệu lực của giấy chứng nhận
+Chỉ có các cơ quan có thẩm quyền Certificate Authority (thường được gọi tắt là CA) mới đươc phép cấp giấy chứng nhận. Giấy chứng nhận được kí bằng khóa riêng của người cấp. CA cũng được tổ chức theo dạng cây "hierarchy" tương tự như domain-name. Dĩ nhiên bạn cũng có thể tạo ra một CA mới cho riêng cho mình.
+
+Chúng ta hãy xem giao thức mới này:
+
+<blockquote>A-&gt;B Xin chào!
+B-&gt;A Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+A-&gt;B Hãy đưa bằng chứng đi!
+B-&gt;A Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob&nbsp;
+		</blockquote>
+
+Ai đó dùng giấy chứng nhận của Bob để giả mạo Bob sẽ bị Alice phát hiện ngay!
+
+<blockquote>A-&gt;M Xin chào
+M-&gt;A Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+A-&gt;M Hãy đưa bằng chứng đi!
+M-&gt;A ???&nbsp;
+		</blockquote>
+
+Mallet không biết khóa riêng của Bob nên không thể xây dựng được message để Alice có thể tin mình là Bob.
+
+<b>5. Trao đổi khóa bí mật (secret-key)</b>
+
+Sau khi Alice đã xác thực mình đang nói chuyện với Bob, Alice sẽ gởi cho Bob một message đã bị mã hóa bằng khóa chung của Bob:
+
+<blockquote>A-&gt;B {khóa bí mật}khóa-chung-của-bob&nbsp;
+		</blockquote>
+
+<u>Bằng cách này, chỉ có Bob mới có thể giải mã message trên và lấy được khóa bí mật bởi vì chỉ có Bob mới biết được khóa riêng để giải mã</u>. Trao đổi khóa bí mật bằng công nghệ khóa chung cực kì an toàn. Không một ai ngoại trừ Alice và Bob biết được khóa bí mật. Khóa bí mật này còn được biết đến với cái tên là khóa phiên(session key). Kể từ đây Alice và Bob sẽ dùng khóa phiên để trao đổi dữ liệu cho nhau. Khóa phiên được tạo ra trong mỗi phiên kết nối SSL và hoàn toàn bí mật(chỉ có Alice và Bob biết) nên rất an toàn. Công nghệ chuyên chở khóa phiên bằng khóa chung và dùng khóa phiên như một khóa đối xứng bí mật để trao đổi dữ liệu cho nhau còn được biết đến với cái tên là mã hóa dùng khóa lai ghép(hybrid), tức là kết hợp cả hai phương pháp mã hóa dung khóa đối xứng và khóa chung-khóa riêng.
+
+Đây là giao thức mới:
+
+<blockquote>A-&gt;B Xin chào!
+B-&gt;A Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+A-&gt;B Hãy đưa bằng chứng đi!
+B-&gt;A Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob
+A-&gt;B Ok Bob, Đây là {khóa bí mật}khóa-chung-của-bob
+B-&gt;A {message 1}khóa-bí-mật
+B-&gt;A {message 2}khóa-bí-mật
+...&nbsp;
+		</blockquote>
+<b>6. Tấn công man-in-the-middle</b>
+
+Giao thức trên chưa phải là an toàn tuyệt đối. Mallet ngồi giữa Alice và Bob có thể chơi trò tấn công man-in-the-middle như sau:
+
+<blockquote>A-&gt;M Xin chào!
+M-&gt;B Xin chào!
+
+B-&gt;M Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+M-&gt;A Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+
+A-&gt;M Hãy đưa bằng chứng đi!
+M-&gt;B Hãy đưa bằng chứng đi!
+
+B-&gt;M Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob
+M-&gt;A Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob
+
+A-&gt;M Ok Bob, đây là {khóa bí mật}khóa-chung-của-bob
+M-&gt;B Ok Bob, đây là {khóa bí mật}khóa-chung-của-bob
+
+B-&gt;M {some message}khóa-bí-mật
+M-&gt;A Xén[{some message}khóa-bí-mật]&nbsp;
+		</blockquote>
+Mallet sẽ chuyển tiếp dữ liệu giữa Alice và Bob cho đến khi họ trao đổi khóa bí mật. Tại thời điểm này Alice nghĩ rằng mình đang nói chuyện với Bob nên tin tưởng hoàn toàn vào các message do Bob gởi tới. Thực chất không phải là như vậy. Mallet mặc dù không biết khóa bí mật nhưng hoàn toàn có thể xén, thêm hoặc sửa đổi gì đó trên các dữ liệu được gởi từ Bob đến Alice.
+
+<b>7. Mã xác thực thông điệp (MAC)</b>
+
+Để ngăn chặn cuộc tấn công man-in-the-middle trên, Alice và Bob có thể dùng thêm mã xác thực thông điệp (Message Authentication Code) thường được gọi tắt là MAC. Thuật toán tạo MAC khá đơn giản:
+
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>MAC = Digest&#91;some message, khóa bí mật&#93;</pre>
+		</div>
+
+Mallet không biết khóa bí mật nên không tài nào tính đúng giá trị digest của message. Thậm chí nếu Mallet có cắt xén random các message thì tỉ lệ thành công là rất thấp vì dữ liệu digest vô cùng lớn. Ví dụ, nếu dùng MD5, Alice và Bob có thể gởi kèm MAC 128bit trong các message. Mallet cần trúng giá trị MAC nếu muốn tấn công man-in-the-middle với khả năng thành công là 1/18.446.744.073.709.551.616 khả năng trong một thời gian vô cùng ngắn.
+
+Đây là toàn bộ giao thức:
+
+<blockquote><b>A-&gt;B Xin chào!
+B-&gt;A Chào, Mình là Bob. Đây là giấy chứng nhận của mình!
+A-&gt;B Hãy đưa bằng chứng đi! 
+B-&gt;A Alice, Mình là Bob đây!
+{digest[Alice, Mình là Bob đây!]}khóa-riêng-của-bob
+A-&gt;B Ok Bob, đây là {khóa bí mật}khóa-chung-của-bob
+{some message, MAC}khóa-bí-mật</b>&nbsp;
+		</blockquote>
+
+(bài viết của vicky group)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#80214</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#80214</link>
+				<pubDate><![CDATA[Tue, 21 Aug 2007 13:42:19]]> GMT</pubDate>
+				<author><![CDATA[ hung1910]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ Vậy cho mình hỏi SSL hoạt động ở tầng nào của mô hình OSI ? :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#219849</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#219849</link>
+				<pubDate><![CDATA[Sun, 5 Sep 2010 04:03:22]]> GMT</pubDate>
+				<author><![CDATA[ Nguyễn Vũ Long]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ SSL và TLS đều hoạt động ở tầng  5 (Session) 
+
+- Ky0 -]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#219850</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#219850</link>
+				<pubDate><![CDATA[Sun, 5 Sep 2010 04:10:43]]> GMT</pubDate>
+				<author><![CDATA[ Ky0]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ Mình đang tìm hiểu về vấn đề bảo mật mail server.
+Giải pháp dùng VPN nhưng ko biết chọn SSL hay IPSec]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#220504</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#220504</link>
+				<pubDate><![CDATA[Fri, 10 Sep 2010 21:57:14]]> GMT</pubDate>
+				<author><![CDATA[ batman.cc]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ SSL có liên quan gì đến HTTPS không mấy anh?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#220587</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#220587</link>
+				<pubDate><![CDATA[Sun, 12 Sep 2010 08:59:18]]> GMT</pubDate>
+				<author><![CDATA[ tanviet12]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ Sẵn đây xin được hỏi anh em có kinh nghiệm là làm cách nào để chuyển đổi từ SSL v2 lên SSL v3 hoặc TLS v1 nếu như mình dùng hệ điều hành cho server là win2k3. Hệ điều hành trên Linux thì mình đã làm được rồi. Mới nhập môn an ninh bảo mật mong anh em có kinh nghiệm chỉ giáo.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#226723</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#226723</link>
+				<pubDate><![CDATA[Thu, 9 Dec 2010 02:06:26]]> GMT</pubDate>
+				<author><![CDATA[ quybeo83]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ Chào các bạn. Mình vừa đọc xong bài viết "Những điều cần biết về SSL". Mình có đoạn này không hiểu rõ lắm:
+
+<blockquote>Mallet sẽ chuyển tiếp dữ liệu giữa Alice và Bob cho đến khi họ trao đổi khóa bí mật. Tại thời điểm này Alice nghĩ rằng mình đang nói chuyện với Bob nên tin tưởng hoàn toàn vào các message do Bob gởi tới. <b>Thực chất không phải là như vậy. Mallet mặc dù không biết khóa bí mật nhưng hoàn toàn có thể xén, thêm hoặc sửa đổi gì đó trên các dữ liệu được gởi từ Bob đến Alice.</b> &nbsp;
+		</blockquote>
+
+Như tác giả đã trình bày trong bài viết thì sau khi trao đổi khoá bí mật một cách an toàn bằng phương pháp mã hoá bất đối xứng, Alice và Bob sẽ trao đổi thông điệp được mã hoá bằng khoá bí mật này.
+
+Mallet ở giữa cố gắng cắt xén để làm hỏng thông điệp dù không biết nội dung thông điệp vì hắn ta không có khoá bí mật. 
+
+Mình thắc mắc ở chỗ là: Khi Alice nhận được một message không toàn vẹn nữa (do bị Mallet cắt xén) thì cô ta có gặp khó khăn gì khi giải mã không ?  Vi dụ như gặp thông báo lỗi cho biết thông điệp khi đó không thể giải mã nữa chẳng hạn. Nếu có thông báo lỗi như vậy rồi thì cũng chả cần MAC nữa. 
+Hay là mã hoá đối xứng vẫn giải mã bình thường dù cho nội dung đầu vào mã hoá bị thay đổi  miễn là key hợp lệ ? Như vậy thì két quả trả về sẽ méo mó lộn xộn, chả lẽ Alice lại không nhận thấy sự bất thường đó.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227396</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227396</link>
+				<pubDate><![CDATA[Sat, 18 Dec 2010 14:57:42]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tanviet12 wrote:</cite><br>
+		<blockquote>SSL có liên quan gì đến HTTPS không mấy anh?&nbsp;
+		</blockquote>
+
+HTTPS = HTTP + SSL
+chỉ vậy thôi .]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227663</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227663</link>
+				<pubDate><![CDATA[Wed, 22 Dec 2010 19:13:04]]> GMT</pubDate>
+				<author><![CDATA[ cupid1575]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ theo mình , khi Alice nhận gói tin , bước đầu là giải mã lần I ( dùng private key của Alice hoặc public của Bob ) ,
+sau đó check hàm HASH của gói tin , nếu phù hợp HASH thì giải mã lần tiếp theo = 1 trong 2 key còn lại sau khi mã lần I .
+Nếu HASH ko ra thì đã biết gói tin bị chỉnh sửa .
+Còn việc xử lý thế nào là do OS quy định ở lớp network]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227664</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227664</link>
+				<pubDate><![CDATA[Wed, 22 Dec 2010 19:13:05]]> GMT</pubDate>
+				<author><![CDATA[ cupid1575]]></author>
+			</item>
+			<item>
+				<title>Những điều cần biết về SSL</title>
+				<description><![CDATA[ Haizzz. Câu hỏi của mình ở trên thật ngu ngốc  :( 
+MAC chỉ là một loại message digest. Mục đích sử dụng MAC chỉ là để:
+<ul><li>Đảm bảo tính toàn vẹn cho message bên trong, nhờ đó phát hiện sự cắt xén data của Mallet trong cuộc hội thoại giữa Alice và Bob.
+Đảm bảo tính xác thực: Vì MAC sử dụng secret key làm một trong hai input để tính digest. Alice sẽ biết được người gửi message này phải là người có secret key như của cô ấy.</li></ul>
+
+Đến đây, mình lại có câu hỏi thế này:
+Tại sao MAC = digest{message, secret key} ? Mình thấy chỉ cần MAC = digest{message} là cũng đủ rồi mà.
+
+Lý do mình dẫn đến thắc mắc này:
+Bởi vì thông điệp được truyền đi ở dạng {message, MAC}secret key. Mallet ở giữa đâu biết được secret key. Mallet cũng chỉ cắt xén thôi chứ đâu có đọc được message. Mà việc cắt xén đó có thể nhận ra chỉ bằng so khớp digest{message} và MAC mà (Ở đây, mình giả định MAC = digest{message}).
+
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227712</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/13472.hva#227712</link>
+				<pubDate><![CDATA[Thu, 23 Dec 2010 12:22:20]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

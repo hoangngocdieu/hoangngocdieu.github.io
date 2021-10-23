@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi trong triển khai MySQL cluster "]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi trong triển khai MySQL cluster "]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi trong triển khai MySQL cluster </title>
+				<description><![CDATA[ Chào các anh em,
+
+Hiện tại tớ đã dựng thử mô hình MySQL cluster để nghiên cứu nhưng gặp vài lỗi không biết xử lý sao. Mong anh em giúp đỡ.
+
+<b>Mô hình</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Mô hình của tớ gồm 4 máy ảo VirtualBox
+Node 1: management node, địa chỉ 192.168.56.205
+Node 2: sql node, địa chỉ 192.168.56.206
+Node 3: data node 1, địa chỉ 192.168.56.207
+Node 4: data node 2, địa chỉ 192.168.56.208</pre>
+		</div>
+
+<b>Thông tin chung cho cả 4 máy</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>- Sử dụng Centos 6.4, 32 bits
+- Linux kernel 2.6.32-358.el6.i686
+- Phiên bản MySQL Cluster MySQL-Cluster-gpl-7.3.6-2.el6.i686.rpm-bundle.tar
+- RAM 128MB
+- Đã tắt firewall iptables trên tất cả 4 máy: service iptables stop
+- Đã disable selinux</pre>
+		</div>
+
+<b>Thông tin cài đặt</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>- Trên cả 4 node, tớ đều cài gói MySQL-Cluster-server-gpl-7.3.6-2.el6.i686.rpm và MySQL-Cluster-shared-compat-gpl-7.3.6-2.el6.i686.rpm
+- Riêng trên node 2 - sql node, tớ còn bổ sung thêm gói cài MySQL-Cluster-client-gpl-7.3.6-2.el6.i686.rpm</pre>
+		</div>
+
+<b>Thông tin cấu hình</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Trên node 1 - management node
+- Tớ tạo thư mục /var/lib/mysql-cluster, gán quyền sở hữu mysql:mysql
+- Thiết lập file cấu hình /var/lib/mysql-cluster/config.ini có nội dung:
+
+&#91;ndbd default&#93;
+NoOfReplicas=2   
+DataMemory=80M   
+IndexMemory=18M                
+
+&#91;tcp default&#93;
+portnumber=2202  
+
+&#91;ndb_mgmd&#93;
+hostname=192.168.56.205        
+datadir=/var/lib/mysql-cluster
+
+&#91;ndbd&#93;
+hostname=192.168.56.207        
+datadir=/usr/local/mysql/data
+
+&#91;ndbd&#93;
+hostname=192.168.56.208          
+datadir=/usr/local/mysql/data  
+
+&#91;mysqld&#93;
+hostname=192.168.56.206
+
+Trên node 2 - sql node
+&#91;mysqld&#93;
+datadir = /var/lib/mysql
+port = 3306
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+ndbcluster
+
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.56.205
+
+Trên node 3 và node 4 - các data node
+- Tạo thư mục /usr/local/mysql/data, gán quyền sở hữu mysql:mysql
+- Cấu hình /etc/my.cnf như sau:
+&#91;mysqld&#93;
+ndbcluster                    
+
+&#91;mysql_cluster&#93;
+ndb-connectstring=192.168.56.205</pre>
+		</div>
+<b>Thứ tự khởi động cluster</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Tại management node, tớ chạy:
+    ndb_mgmd -f /var/lib/mysql-cluster/config.ini
+Lần lượt trên các data node 1 và 2, tớ chạy
+    ndbd
+Cuối cùng trên sql node, tớ chạy
+    mysqld_safe &</pre>
+		</div>
+
+<b>Kết quả</b>
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>ndb_mgm&gt; show
+Connected to Management Server at: localhost:1186
+Cluster Configuration
+
+&#91;ndbd&#40;NDB&#41;&#93;     2 node&#40;s&#41;
+id=2 &#40;not connected, accepting connect from 192.168.56.207&#41;
+id=3    @192.168.56.208  &#40;mysql-5.6.19 ndb-7.3.6, starting, Nodegroup: 0&#41;
+
+&#91;ndb_mgmd&#40;MGM&#41;&#93; 1 node&#40;s&#41;
+id=1    @192.168.56.205  &#40;mysql-5.6.19 ndb-7.3.6&#41;
+
+&#91;mysqld&#40;API&#41;&#93;   1 node&#40;s&#41;
+id=4 &#40;not connected, accepting connect from any host&#41;</pre>
+		</div>
+
+<b>Lỗi gặp phải</b>
+Node 2 được thông báo là: Node 2: Forced node shutdown completed. Occured during startphase 0. Initiated by signal 11.
+Trong /usr/local/mysql/data của Node 2 có một file ndb_2_error.log
+Cả ba node: node 2, node 3 và node 4 đều được cảnh báo:
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.208. Returned error: No free node id found for mysqld(API).
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.207. Returned error: No free node id found for mysqld(API).
+2014-07-28 09:47:23 [MgmtSrvr] WARNING  Failed to allocate nodeid for API at 192.168.56.206. Returned error: No free node id found for mysqld(API).
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45737.hva#281178</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45737.hva#281178</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 05:12:07]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+			<item>
+				<title>Lỗi trong triển khai MySQL cluster </title>
+				<description><![CDATA[ Đã fix ! Lỗi là do data node có tài nguyên quá hạn chế. MySQL cluster là in-memory database nên nó sẽ load khá nhiều memory ngay tại thời điểm khởi động cluster (dù nó không dùng hết tất cả memory đó ngay). Thông báo: "Forced node shutdown completed. Occured during startphase 0. Initiated by signal 11. " cho đầu mối signal 11. Tra bảng signal thì 11 là segment fault signal. Kernel sẽ gửi signal này khi có sự xâm phạm memory từ process. 
+
+Tớ đã deploy lại cluster với những data node trên các máy tính khoẻ hơn (từ 4G Ram, 4CPUs) và chạy rất mượt.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45737.hva#281182</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45737.hva#281182</link>
+				<pubDate><![CDATA[Sun, 3 Aug 2014 10:07:45]]> GMT</pubDate>
+				<author><![CDATA[ explorer88]]></author>
+			</item>
+	</channel>
+</rss>

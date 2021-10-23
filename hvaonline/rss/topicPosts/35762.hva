@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Phân quyền trên NTFS và ZFS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Phân quyền trên NTFS và ZFS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Phân quyền trên NTFS và ZFS</title>
+				<description><![CDATA[ Bài này có hai tập. Tập 1 nói về phân quyền trên NTFS. Tập 2 nói về phân quyền trên ZFS.
+
+
+<font size='+1'><b>KIỂM SOÁT TRUY NHẬP HỆ THỐNG TỆP NTFS
+trên Windows Server 2003 và 2008
+</b></font>
+
+<b>1  Phân quyền đơn giản</b>
+
+Windows có một cơ chế kiểm soát truy nhập rất đơn giản là share đồng thời phân quyền. Muốn share một folder, hãy click nút phụ của con chuột vào folder ấy, sẽ hiện context menu, chọn lệnh Share..., lần lượt Add từng nhóm người dùng (hay từng người dùng), cứ mỗi nhóm chọn Permission Level để phân quyền cho nhóm ấy. Xong ấn nút Share.
+
+Theo cách này, mỗi nhóm có thể có một trong ba quyền truy nhập.
+<ul><li>Viewer (người xem). Xem toàn bộ nội dung folder.
+Contributor (người đóng góp). Xem toàn bộ nội dung folder, có thể tạo thêm file và folder và sửa file / folder mà bản thân đã thêm.
+Co-owner (đồng chủ sở hữu). Xem và sửa toàn bộ nội dung của folder, kể cả các file/folder mà người khác tạo ra.</li></ul>
+Ba quyền này không độc lập với nhau. Co-owner bao hàm Contributor, và Contributor lại bao hàm Viewer.
+
+Cơ chế này rất dễ dùng và tiện dùng, nhưng không dùng được trong nhiều trường hợp. Hơn nữa, cơ chế này không có trên Windows Server 2003 mà chỉ có ở Windows Server 2008.
+
+
+
+<b>2  Phân quyền cơ bản</b>
+
+<b>2.1. Giới thiệu cơ chế phân quyền NTFS</b>
+
+Cơ chế kiểm soát truy nhập cơ bản trên Windows Server là kết hợp giữa hai cơ chế phân quyền: phân quyền trên hệ thống tệp NTFS và phân quyền trên giao thức chia xẻ tệp CIFS (hay còn gọi là phân quyền share). 
+Phân quyền CIFS có ba quyền:
+<ul><li>Read (đọc),
+Change (sửa), và
+Full Control (toàn quyền).</li></ul> 
+Ba quyền này không độc lập với nhau. Full Control bao hàm Change, và Change lại bao hàm Read.
+
+Phân quyền NTFS có sáu quyền:
+<ul><li>Full Control (toàn quyền),
+Modify (sửa),
+Read & Execute (đọc tệp và chạy chương trình),
+List folder contents (hiện nội dung thư mục),
+Read (đọc), và
+Write (viết).</li></ul>
+Sáu quyền này không độc lập với nhau. Full Control bao hàm tất cả các quyền còn lại. Thực sự, mỗi quyền trong số đó là một tập hợp gồm nhiều quyền nhặt ra từ 13 quyền <b>cơ sở</b> (special access permissions) hoàn toàn độc lập với nhau. Full Control cấu thành từ tất cả cả 13 quyền cơ sở này. Xem chi tiết ở đoạn sau.
+
+Khi truy nhập server từ máy trạm, quyền truy nhập là giao giữa hai quyền CIFS và NTFS. Ví dụ, khi một nhóm có quyền Full Control trên một NTFS folder truy nhập vào folder ấy được share với quyền Modify cho nhóm ấy thì quyền kết quả chỉ là Modify. Do đó, trong thực tiễn làm việc, để giảm bớt sự phức tạp, khi tạo nhiều share trên một server, có thể và nên tạo các share ấy theo cùng một quyền (CIFS) thống nhất cho mọi share và mọi người dùng, cụ thể: 
+<ul><li>Trên mọi share tự quản, Everyone có quyền Full Control.
+Trên mọi share quản chế, Everyone có quyền Change.</li></ul>
+Lưu ý. Trường hợp hộp thư tự quản (xem ở dưới) người dùng phải tự đổi quyền thư mục của mình. Để việc này có thể thi hành từ máy trạm, Full Control share là bắt buộc. Trong những trường hợp share tự quản khác, Everyone chỉ cần quyền Change là đủ.
+
+Sự phân biệt quyền truy nhập giữa các nhóm khác nhau và trên các share khác nhau khi đó sẽ chỉ thể hiện ở phân quyền NTFS.
+
+
+
+<b>2.2. Các công cụ phân quyền NTFS</b>
+
+Mười ba quyền truy nhập cơ sở của NTFS là
+<ul><li><b>Traverse folder/execute file</b> (đi xuyên qua folder / thi hành file). Đối với folder, cho phép đi xuyên qua folder đó để truy cập vào folder con. Đối với file, cho phép thi hành (chạy). Tất nhiên, việc thi hành (chạy) chỉ có tác dụng nếu file ấy là một file chương trình.
+<b>List folder/read data</b> (hiện thư mục, đọc dữ liệu). Đối với folder, cho phép xem thư mục. Đối với file, cho phép đọc.
+<b>Read attributes</b> (đọc thuộc tính). Cho phép đọc các thuộc tính của file và folder.
+Read extended attributes (đọc thuộc tính mở rộng). Cho phép đọc các thuộc tính mở rộng của file và folder.
+<b>Create files/write data</b> (tạo file, viết dữ liệu). Đối với folder, cho phép tạo file trong folder ấy. Đối với file, cho phép viết đè vào trong file.
+<b>Create folders/append data</b> (tạo folder, nối dữ liệu). Đối với folder, cho phép tạo folder con trong folder ấy. Đối với file, cho phép viết thêm vào cuối file (việc viết thêm không thay đổi nội dung hiện hữu mà sẽ làm cho file dài ra thêm một phần nội dung mới.)
+<b>Write attributes</b> (viết thuộc tính). Cho phép thay đổi các thuộc tính của file và folder.
+<b>Write extended attributes</b> (viết thuộc tính mở rộng). Cho phép thay đổi các thuộc tính mở rộng của file và folder.
+<b>Delete subfolders and files</b> (xóa folder con và file). Đối với folder, cho phép xóa các folder con và file bên trong folder ấy. Quyền này không tồn tại đối với file.
+<b>Delete</b> (xóa). Đối với folder và file, cho phép xóa bản thân folder ấy/file ấy.
+<b>Read permissions</b> (đọc quyền). Cho phép đọc các quyền truy nhập folder/file.
+<b>Change permissions</b> (đổi quyền). Cho phép thay đổi các quyền truy nhập folder/file.
+<b>Take ownership</b> (đoạt chủ quyền). Cho phép đoạt quyền sở hữu folder/file.</li></ul>
+Khi phân quyền cho một folder, quyền đã phân sẽ có thể sẽ áp dụng lên cả các folder con và file bên trong, việc này gọi là <b>thừa kế</b>. Việc thừa kế thực hiện theo một trong sáu kiểu sau đây.
+<ul><li><b>This folder only</b> (chỉ folder này thôi). Quyền chỉ áp dụng cho folder này, không thừa kế.
+<b>This folder, subfolders and files</b> (folder này, các folder con và các file). Quyền áp dụng cho folder này, các folder con và các file. Thừa kế toàn phần.
+<b>This folder and subfolders</b> (folder này và các folder con). Quyền áp dụng cho folder này và các folder con. Các folder con thừa kế.
+<b>This folder and files</b> (folder này và các file). Quyền áp dụng cho folder này và các file. Các file thừa kế.
+<b>Subfolders and files only</b> (các folder con và các file thôi). Quyền áp dụng chỉ cho các folder con và các file. Thừa kế toàn phần ngoại trừ bản thân.
+<b>Subfolders only</b> (chỉ các folder con thôi). Quyền áp dụng chỉ cho các folder con. Các folder thừa kế ngoại trừ bản thân.</li></ul>
+Ngoài ra, việc thừa kế còn được điều khiển bởi một check box tên là <b>Apply these permissions to objects / container within this container only</b> (chỉ áp dụng những quyền này cho các đối tượng hay container ngay trong container này mà thôi). Ý nghĩa chính xác của check box này cần xem ở trong sách giáo khoa Windows, nhưng tinh thần cơ bản là thừa kế chỉ áp dụng lên các folder con / file ở cấp 1 là hết, không áp dụng lên các folder con / file ở cấp 2 và các cấp sâu hơn bên trong.
+
+
+
+<b>2.3. Các quyền cơ bản của dữ liệu doanh nghiệp</b>
+
+Hệ thống dữ liệu doanh nghiệp thường sử dụng 5 quyền cơ bản đối với một folder, kể cả folder con bên trong nó:
+<ul><li><b>Xem quyền</b>. Xem ai có quyền gì đối với folder.
+<b>Xem thư mục</b>. Xem danh sách file/folder con cùng các thông tin cơ bản như ngày giờ biên tập, độ dài file,...
+<b>Sử dụng</b>. Xem quyền, xem thư mục (kể cả các thư mục con) và đọc nội dung mọi file bên trong.
+<b>Đóng góp</b>. Sử dụng, tạo file/folder con và đổi tên, sửa, xóa những file bản thân đã tạo ra.
+<b>Biên tập</b>. Đóng góp và đổi tên, sửa, xóa mọi file/folder con kể cả những file / folder con mà người khác tạo ra.</li></ul>
+
+
+
+<b>2.4.  Thực hiện các quyền cơ bản của dữ liệu doanh nghiệp trên NTFS</b>
+
+Trong hệ thống tệp NTFS, năm quyền cơ bản trên folder dữ liệu doanh nghiệp được thực hiện theo những công thức sau đây.
+<ul><li>Quyền sử dụng = Read & Execute, List Folder Contents và Read this folder, subfolders and files.
+Quyền đóng góp = quyền sử dụng + Create files / Write data và Create folders/Append data this folder and subfolders.
+Quyền biên tập = quyền sử dụng + Modify và Write this folder, subfolders and files.
+Quyền xem thư mục = List folder / Read data this folder and subfolders.
+Quyền xem quyền = Read Permissions this folder and subfolders. 
+Quyền xem quyền = Read Permissions this folder, subfolders and files.</li></ul>
+Để ý rằng quyền xem quyền có thể thực hiện bằng một trong hai công thức. Công thức thứ nhất chỉ cho phép xem quyền cả thư mục chứ không cho phép xem quyền từng file. Công thức thứ hai cho phép xem quyền cả thư mục và từng file. Thông thường, công thức thứ nhất là đủ, và tiện lợi hơn vì có thể thực hiện quyền xem quyền cùng với quyền xem thư mục đồng thời chỉ bằng 1 luật phân quyền. Nhưng khi thật cần thiết, có thể dùng công thức thứ hai, khi đó, xem quyền và xem thư mục phải thực hiện bằng hai luật khác nhau.
+
+
+
+<b>2.5. Tổ chức share tự quản</b>
+
+Một share <b>tự quản</b> là một share cấp cho một nhóm nhỏ người dùng (thường là một Phòng) để cất chứa dữ liệu dùng chung giữa những người trong nhóm. Gọi là tự quản vì người dùng tự tổ chức công tác quản lý dữ liệu, ai cũng có thể tạo ra folder cấp 1 (và các cấp dưới) đặt tên một cách tùy ý. Việc phân quyền do Admin thi hành nhưng đơn giản, nên có thể yêu cầu miệng, không cần yêu cầu bằng văn bản.
+
+Đối với folder được share (tức folder cấp 0 trong con mắt của người sử dụng máy trạm), quyền truy nhập thích hợp là:
+<ul><li>Administrators có quyền Full Control this folder, subfolders and files.
+CREATOR OWNER có quyền Full Control subfolders and files only.
+0, 1, nhiều người hay mọi người trong nhóm có quyền biên tập, những người còn lại có quyền đóng góp. Chế độ không người biên tập, một người biên tập, nhiều người biên tập hay mọi người biên tập được áp dụng là tùy theo mức độ tin tưởng lẫn nhau giữa những người trong nhóm, số lượng người của nhóm và sơ đồ tổ chức của nhóm.</li></ul>
+Đối với folder con (tức folder cấp 1, 2, 3,... trong con mắt của người sử dụng máy trạm) quyền truy nhập thích hợp là quyền mặc định, nghĩa là chỉ thừa kế những quyền đã được cho phép thừa kế từ folder mẹ, không thêm bớt quyền nào.
+
+
+
+<b>2.6.  Tổ chức share quản chế</b>
+
+Một share <b>quản chế</b> là một share cấp cho một nhóm lớn người dùng (thường là toàn thể công ty) để cất chứa dữ liệu dùng chung giữa những người trong nhóm. Sở dĩ được gọi là quản chế vì công tác quản lý dữ liệu thực hiện theo một chế độ nhất quán và cứng rắn do bộ phận chuyên trách (IT) xây dựng. Chỉ có Admin mới có quyền tạo các folder cấp cao còn người dùng chỉ có quyền tạo các folder con ở cấp thấp. Các folder cấp cao được quản lý trong những danh bạ và được gọi bằng một thuật ngữ riêng. Mọi cấp folder cao cũng đều được gọi bằng một thuật ngữ riêng. Ví dụ, các folder cấp cao bao gồm cấp 1 và cấp 2. Trong đó mỗi folder cấp 1 được gọi là một <b>nhóm hồ sơ</b>, mỗi folder cấp 2 được gọi là một <b>hồ sơ</b>. Danh bạ quản lý các hồ sơ dữ liệu công cộng được gọi là <b>thư viện</b>. Danh bạ quản lý các hồ sơ dữ liệu công ty được gọi là <b>tàng thư</b>. Thủ tục lập hồ sơ và phân quyền được xây dựng trên cơ sở yêu cầu thi hành bằng văn bản và việc thi hành được xác nhận bằng văn bản.
+
+Đối với một folder được share (tức folder cấp 0 trong con mắt của người sử dụng máy trạm) quyền truy nhập thích hợp là
+<ul><li>Administrators có quyền Full Control this folder, subfolders and files.
+CREATOR OWNER có mọi quyền, ngoại trừ Change Permissions và Take Ownership, đối với subfolders and files only.
+Nhân viên giám sát an ninh thông tin có quyền xem quyền và xem thư mục.
+Authenticated Users có quyền  Read & Execute, List Folder Contents và Read this folder, subfolders and files, nhưng chỉ Apply these permissions to objects / containers within this containers only. Lưu ý: quyền này khác hẳn quyền sử dụng.</li></ul>
+Đối với một folder nhóm hồ sơ (tức folder cấp 1 trong con mắt của người sử dụng máy trạm), quyền truy nhập thích hợp là mặc định.
+
+Đối với một folder hồ sơ (tức folder cấp 2 trong con mắt của người sử dụng máy trạm), quyền truy nhập thích hợp là:
+<ul><li>Mọi quyền thừa kế từ folder mẹ.
+Các quyền sử dụng, đóng góp, biên tập, cấp theo quyết định của người quản lý hồ sơ.</li></ul>
+Đối với folder con của hồ sơ (tức folder cấp 3 trong con mắt của người sử dụng máy trạm) và mọi folder cấp thấp hơn, quyền truy nhập thích hợp là mặc định.
+
+Trường hợp một hồ sơ cần tách ra thành vài phần với quyền truy nhập khác nhau thì nên thực hiện mỗi phần bằng một folder cấp 2, tức là mỗi phần xem như ngang với một hồ sơ độc lập.
+
+
+
+<b>3  Phân quyền nâng cao</b>
+
+<b>3.1. Tổ chức hộp thư tự quản</b>
+
+Một share <b>trung chuyển</b> là một share phục vụ cho việc trao đổi dữ liệu giữa những người dùng với nhau, chỉ cất dữ liệu tạm thời. Chú ý rằng nếu người sử dụng trao đổi dữ liệu bằng cách dời (move) hơn là sao chép (copy) dữ liệu vào share / từ share thì việc này thường gây ra lỗi thừa kế quyền khi thư mục nguồn và đích nằm trên cùng một NTFS partition. Vì lẽ đó, để tránh lỗi, mỗi share nhất là share trung chuyển nên được tạo trên một máy chủ riêng, một ổ cứng riêng hay ít ra một partition riêng, cách biệt hoàn toàn với các share khác.
+
+Một <b>hộp thư</b> là một folder của một người dùng trên share trung chuyển để nhận dữ liệu của người khác gửi đến. Nếu các hộp thư được tổ chức trên một share tự quản, ta bảo chúng tự quản. Khi tổ chức hộp thư tự quản, ai cũng có thể tự tạo hộp thư cho mình và ai cũng có thể gửi dữ liệu vào hộp thư của bất cứ người nào.
+
+Đối với một folder được share thành share trung chuyển (tức folder cấp 0 trong con mắt của người sử dụng máy trạm) để chứa các hộp thư tự quản, quyền truy nhập thích hợp là
+<ul><li>Administrators có quyền Full Control this folder, subfolders and files.
+CREATOR OWNER quyền Full Control subfolders and files only.
+Nhân viên giám sát an ninh thông tin có quyền xem quyền và xem thư mục.
+Authenticated Users có quyền  Create folders / append data this folder and subfolders.
+Authenticated Users có quyền  List folder / read data và Read Permissions this folder and subfolders, nhưng chỉ Apply these permissions to objects / containers within this containers only.
+Authenticated Users có quyền Create files/write data subfolders only.</li></ul>
+Share này phải được share với quyền (CIFS) Full Control.
+
+Để nhận dữ liệu, mỗi người sử dụng tự tạo một folder (cấp 1) làm hộp thư cho mình, tự phân cho bản thân quyền biên tập trên hộp thư này. 
+
+Người gửi dữ liệu sao chép folder dữ liệu / file dữ liệu vào hộp thư của người nhận. 
+
+Mọi người đều có đủ quyền cần thiết. Ai cũng có quyền xem quyền folder cấp 0 để biết chính xác hộp thư nào của ai và có quyền mở hộp thư của bất cứ ai để bỏ dữ liệu vào. Chủ nhân của hộp thư có quyền xem, sửa, đổi tên và xóa mọi file/folder trong hộp thư, kể cả xem quyền để biết dữ liệu nào của ai gửi đến. Ai gửi file/folder nào thì có quyền xem, sửa, đổi tên và xóa file/folder nấy. Người thứ ba khi mở hộp thư xem  không thể xem được file/folder, thậm chí không biết được file/folder ấy của ai gửi đến.
+
+
+
+<b>3.2. Tổ chức hộp thư quản chế</b>
+
+Nếu các hộp thư được tổ chức trên một share (trung chuyển) quản chế thì ta bảo chúng là được quản chế. Khi quản chế, chỉ một số người nhất định (<b>Receivers</b>) là có quyền nhận dữ liệu và chỉ một số người nhất định (<b>Senders</b>) có quyền gửi dữ liệu cho người khác, hai nhóm người này không nhất thiết trùng nhau, mọi hộp thư đều do bộ phận chuyên trách (IT) lập ra và phân quyền.
+ 
+Đối với một folder được share thành share trung chuyển (tức folder cấp 0 trong con mắt của người sử dụng máy trạm) để chứa các hộp thư quản chế, quyền truy nhập thích hợp là
+<ul><li>Administrators có quyền Full Control this folder, subfolders and files.
+CREATOR OWNER có mọi quyền ngoại trừ Delete subfolders and files, Change Permissions và Take ownership, đối với subfolders and files only.
+Nhân viên giám sát an ninh thông tin có quyền xem quyền và xem thư mục.
+Receivers có quyền Traverse folder / execute file, List folder / read data, Read attributes, Read extended attributes, Read permissions đối với this folder only.
+Senders có quyền Traverse folder / execute file, List folder / read data, Create files / write data, Create folders / append data, Read permissions đối với subfolders only, nhưng chỉ Apply these permissions to objects / containers within this containers only.</li></ul>
+Để nhận dữ liệu, Admin tạo cho mỗi người trong nhóm Receivers một hộp thư (tức folder cấp 1 trong con mắt của người sử dụng máy trạm) và phân quyền bổ sung cho từng hộp thư như sau.
+<ul><li>Chủ nhân của hộp thư (tức người nhận dữ liệu gửi đến hộp thư) có quyền Read & Execute, List folder contents, Read và Delete subfolders and files trên this folder, subfolders and files.</li></ul>
+Người gửi dữ liệu copy folder dữ liệu/file dữ liệu vào hộp thư của người nhận. 
+
+Mọi Senders đều có quyền xem quyền folder cấp 0 để biết chính xác hộp thư nào của ai và có quyền mở hộp thư của bất cứ ai để bỏ dữ liệu vào. Chủ nhân của hộp thư có quyền xem và xóa mọi file/folder trong hộp thư, kể cả xem quyền để biết chính xác từng file/folder nào của ai gửi đến. Ai gửi file/folder nào có quyền xem, sửa, đổi tên và xóa file/folder ấy. Người thứ ba nếu thuộc nhóm Senders xem hộp thư có thể biết được file/folder của ai gửi đến, nhưng không xem được nội dung những file/folder đó. Người ngoài nhóm Senders không có quyền mở hộp thư người khác, thậm chí không có quyền biết những hộp thư khác của ai.
+
+
+
+<b>4. Kết luận</b>
+
+Với Windows và hệ thống file NTFS và giao thức CIFS, có vài phương thức phân quyền khác nhau để kiểm soát truy nhập dữ liệu, từ đơn giản đến phức tạp. Tùy theo nhu cầu của doanh nghiệp mà ta có thể chọn phương thức thích hợp mà áp dụng.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35762.hva#219877</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35762.hva#219877</link>
+				<pubDate><![CDATA[Sun, 5 Sep 2010 08:34:53]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Phân quyền trên NTFS và ZFS</title>
+				<description><![CDATA[ <font size='+1'><b>KIỂM SOÁT TRUY NHẬP HỆ THỐNG TỆP ZFS
+trên NexentaStor v. 3
+</b></font>
+
+<b>1  Giới thiệu</b>
+
+Tài liệu này được viết như là "tập 2", nối tiếp theo tài liệu "kiểm soát truy nhập hệ thống tệp NTFS trên Windows Server". Người đọc cần nắm vững "tập 1" trước khi đọc và thực hành "tập 2" này.
+
+Mặc dù tương tự nhưng giữa ZFS với NTFS vẫn có những sự khác biệt. Sự khác biệt này đôi khi không thể hiện ra khi dùng client này mà chỉ thể hiện ra khi dùng client khác. Vì sự khác biệt đó, nói chung không thể áp dụng các công thức phân quyền trên NTFS sang ZFS một cách máy móc được. Vì sự khác biệt đó, mỗi công thức phân quyền đều phải được thử nghiệm thật kỹ trên tất cả các client (trên cả hai môi trường, Windows và *NIX) trước khi đưa vào sử dụng.
+
+
+
+<b>2  Phân quyền cơ bản</b>
+
+<b>2.1. Quan hệ giữa ZFS, CIFS với việc thi hành quản chế</b>
+
+Tương tự như việc kiểm soát truy nhập trên Windows Server, nơi có sự kết hợp giữa cơ chế phân quyền hệ thống tệp (NTFS) và phân quyền giao thức chia sẻ (CIFS), trên NexentaStor hệ thống tệp là ZFS và giao thức chia sẻ cơ bản dùng cho Windows và Linux cũng là CIFS. Giống như NTFS, trong ZFS chủ nhân của một file/folder luôn có quyền thay đổi quyền trên file/folder ấy bất kể quyền này có được ghi một cách tường minh trong danh sách kiểm soát truy nhập (ACL) hay không. Khác với CIFS server của Windows vốn dĩ có ba mức (quyền) truy cập Read, Change, và Full Control, CIFS server của NexentaStor chỉ có một mức truy cập là Full Control. 
+
+Do đó, khác với Windows, trên NexentaStor phân quyền share (CIFS) không phải là công cụ thực thi quản chế (ngăn chặn chủ nhân của một file/folder thay đổi quyền trên file/folder ấy). Việc thay đổi quyền bởi chủ nhân chỉ có thể giới hạn trong khuôn khổ nhất định, nhưng không thể ngăn chặn hoàn toàn; nói cách khác, trên NexentaStor, mọi share dữ liệu đều ít nhiều có tính chất tự quản.
+
+
+
+<b>2.2. Các công cụ phân quyền ZFS</b>
+
+Mười ba quyền truy nhập cơ sở của ZFS là
+
+<ul><li><b>execute</b> (x) -- thi hành file / tìm kiếm trong thư mục. Đối với file, cho phép thi hành (chạy). Đối với thư mục, cho phép tìm kiếm (search). Quyền này tương tự như quyền Traverse folder / Execute file của NTFS.
+<b>read_data / list_directory</b> (r) -- đọc dữ liệu / hiện thư mục. Đối với file, cho phép đọc. Đối với thư mục, cho phép xem thư mục. Quyền này tương tự như quyền List folder / Read data của NTFS. 
+<b>read_attributes</b> (a) -- đọc thuộc tính. Cho phép đọc các thuộc tính của file và thư mục. Quyền này tương tự như quyền Read attributes của NTFS.
+<b>read_xattr</b> (R) -- đọc thuộc tính mở rộng. Cho phép đọc các thuộc tính mở rộng của file và thư mục. Quyền này tương tự như quyền Read extended attributes của NTFS.
+<b>add_file / write_data</b> (w) -- thêm file, viết dữ liệu. Đối với file, cho phép viết đè vào trong file. Đối với thư mục, cho phép tạo file trong thư mục ấy. Quyền này tương tự như quyền Create files / Write data của NTFS.
+<b>add_subdirectory / append_data</b> (p) -- thêm thư mục con, nối dữ liệu. Đối với file, cho phép viết thêm vào cuối file1 (không cho phép thay đổi nội dung hiện hữu mà chỉ cho phép nối file dài ra thêm một đoạn với nội dung mới).) Đối với thư mục, cho phép tạo thư mục con trong thư mục ấy. Quyền này tương tự như quyền Create folders / Append data của NTFS.
+<b>write_attributes</b> (A) -- viết thuộc tính. Cho phép thay đổi các thuộc tính của file và thư mục. Quyền này tương tự như quyền Write attributes của NTFS.
+<b>write_xattr</b> (W) -- viết thuộc tính mở rộng. Cho phép thay đổi các thuộc tính mở rộng của file và thư mục. Quyền này tương tự như quyền Write extended attributes của NTFS.
+<b>delete_child</b> (D) -- xóa con. Đối với thư mục, cho phép xóa các file bên trong và các thư mục con của thư mục ấy. Đối với file, quyền này không tác dụng. Quyền này tương tự như Delete subfolders and files của NTFS.
+<b>delete</b> (d) -- xóa. Đối với file và thư mục, cho phép xóa bản thân file ấy / thư mục ấy. Quyền này tương tự như quyền Delete của NTFS.
+<b>read_acl</b> (c) -- đọc ACL. Cho phép đọc các quyền truy nhập thư mục/file. Quyền này tương tự như quyền Read permissions của NTFS.
+<b>write_acl</b> (C) -- viết ACL. Cho phép thay đổi các quyền truy nhập thư mục/file. Quyền này tương tự như quyền Change permissions của NTFS.
+<b>write_owner</b> (o) -- viết chủ nhân. Cho phép gán tên chủ sở hữu file / thư mục. Quyền này tương tự như quyền Take ownership của NTFS.</li></ul> 
+Tương tự như NTFS, quyền trong ZFS khi xác lập cho một thư mục cũng có thể được thừa kế bởi các thư mục con hay các file bên trong nó. Có 3 tùy chọn thừa kế.
+<ul><li><b>file_inherit</b> (f). Các file sẽ thừa kế.
+<b>dir_inherit</b> (d). Các thư mục con sẽ thừa kế.
+<b>inherit_only</b> (i). Chỉ để thừa kế. Không tác dụng lên bản thân thư mục.</li></ul>
+Tổ hợp từ 0 đến 3 trong số 3 tùy chọn trên sẽ được 6 kiểu thừa kế tương tự như trên NTFS.
+<ul><li>Không chọn gì, có tác dụng tương tự như This folder only của NTFS.
+Chọn file_inherit + dir_inherit có tác dụng tương tự như This folder, subfolders and files của NTFS.
+Chọn dir_inherit có tác dụng tương tự như This folder and subfolders của NTFS.
+Chọn file_inherit có tác dụng tương tự như This folder and files của NTFS.
+Chọn file_inherit + dir_inherit + inherit_only có tác dụng tương tự như Subfolders and files only của NTFS.
+Chọn dir_inherit + inherit_only có tác dụng tương tự như Subfolders only của NTFS.</li></ul>
+Ngoài ra, việc thừa kế còn được điều khiển bởi một tùy chọn thứ tư.
+<ul><li><b>no_propagate</b> (n). Không loan truyền xa. Chỉ các đối tượng cấp 1, tức các file/ thư mục con ngay bên trong thư mục này, mới được thừa kế. Các đối tượng cấp 2 và sâu hơn sẽ không thừa kế. Tùy chọn này có tác dụng tương tự như <b>Apply these permissions to objects / container within this container only</b> của NTFS.</li></ul>
+Trong ZFS, việc phân quyền và thừa kế quyền còn chịu tác động các tùy biến <b>aclmode</b> và <b>aclinheritance</b>. Ý nghĩa chính xác của các tùy biến này cần xem ở trong sổ tay Solaris ZFS Admin Guide, nhưng tinh thần cơ bản là aclmode giới hạn tác dụng của ACL (danh sách kiểm soát truy nhập) trong khuôn khổ các cờ phân quyền (permission flags) của hệ điều hành UNIX, còn aclinheritance hạn chế tác dụng của việc thừa kế ACL bằng việc tước bỏ quyền thừa kế hai quyền nhạy cảm nhất: write_acl và write_owner. Giá trị mặc định của aclmode là <b>groupmask</b>, giá trị mặc định của aclinheritance là <b>restricted</b>. Với giá trị đó việc thừa kế còn chịu ràng buộc và giới hạn nhất định. Để triệt bỏ hoàn toàn mọi ràng buộc và giới hạn (nghĩa là để có một hệ thống ACL thuần túy, làm cho việc phân quyền trở nên giống NTFS hơn) cần phải chỉnh cả hai giá trị thành <b>passthrough</b>. Tuy nhiên, cần lưu ý rằng một thư mục với passthrough sẽ trở thành  hoàn toàn tự quản, không thể thi hành quản chế. Các công thức phân quyền sẽ trình bày trong tài liệu này với aclmode = mặc định và aclinheritance = passthrough hay mặc định đều được cả.
+
+NexentaStor có công cụ phân quyền bằng giao diện Web và giao diện dòng lệnh, tuy nhiên công cụ này không hoàn thiện bằng giao diện đồ họa hay dòng lệnh của Windows / Linux. Vì thế, phương án sử dụng được chính nhà cung cấp NexentaStor khuyến cáo là phân quyền từ xa, mà tốt nhất là từ DC hay từ một máy chủ hay máy trạm Windows thuộc cùng một miền Active Directory với thiết bị NexentaStor.
+
+Do đó, một thủ tục tối thiểu để setup một thiết bị NAS với NexentaStor cho môi trường mạng AD có cả Windows lẫn Linux client gồm các bước như sau.
+<ol><li>Cài đặt NexentaStor. Cấu hình DNS client và NTP client. Update / Upgrade nếu cần.
+Nếu dùng giao diện Web, đưa giao diện Web sang chế độ Expert_mode.
+Tạo các volume từ các ổ cứng của thiết bị.
+Join thiết bị vào Active Directory domain.
+Ứng với mỗi nhóm của AD, tạo một nhóm tương ứng trên NexentaStor và thiết lập ánh xạ định danh (ID mapping) hai chiều thể hiện sự tương ứng đó. Ví dụ, nếu trong AD của domain tên là mycompany.com có một nhóm tên là Designers thì trên NexentaStor ta cũng tạo một nhóm đặt tên là designers và lập ánh xạ wingroup:designers@mycompany.com = unixgroup:designers.
+Thiết lập ánh xạ định danh hai chiều để nhóm staff = Administrators / Domain Admins (hay một nhóm người dùng nào đó chuyên trách về an ninh) của AD, hoặc người dùng admin = Administrator (hay một người dùng nào đó chuyên trách về an ninh) của AD.</li></ol>
+Và một thủ tục tối thiểu để setup một CIFS share trên NexentaStor cho môi trường mạng nói trên  gồm các bước như sau.
+<ol><li>Trên NexentaStor, tạo folder. Bật Mixed case sensitivity filename và bật Unicode (UTF8) filename only để tăng độ tương thích giữa các hệ điều hành. (Khuyến cáo: tắt Access time update để tăng tốc độ truy cập; bật Deduplication để tiết kiệm dung lượng.)
+Bật share với giao thức CIFS. Tắt Anonymous sharing để bảo mật.
+Cấp quyền, tối thiểu write_acl và write_owner, cho group:staff hoặc user:admin.
+Từ DC, từ một máy chủ hay một máy trạm Windows đã đăng nhập bằng một tên tương ứng với nhóm staff hoặc người dùng admin, truy nhập share. Dùng công cụ đồ họa hay dòng lệnh của Windows để hoàn thành việc phân quyền.</li></ol>
+Chú ý rằng việc cấp quyền phân quyền cho staff hay admin để có thể phân quyền từ máy tính Windows chỉ cần thiết để thiết lập các share tự quản, share quản chế hay các loại hình tổ chức dữ liệu nâng cao khác, còn để thiết lập các share chứa dữ liệu cá nhân thì không cần thiết. Việc tạo một ZFS share chứa dữ liệu cá nhân, nhìn chung, chỉ dựa vào phân quyền mặc định. Thủ tục như sau.
+<ol><li>Kiểm tra khẳng định rằng owner@ có quyền list_directory, read_data, add_file, write_data, add_subdirectories, append_data, read_xattr, write_xattr, execute, read_attributes, write_attributes, read_acl, write_acl, write_owner, synchronize.
+Kiểm tra khẳng định rằng group@ có quyền list_directory, read_data, read_xattr, execute, read_attributes, read_acl, synchronize.
+Kiểm tra khẳng định rằng everyone@ có quyền list_directory, read_data, read_xattr, execute, read_attributes, read_acl, synchronize.
+Cấp quyền mặc định cho các nhóm người dùng cần tạo các thư mục chứa dữ liệu cá nhân. Kiểm tra khẳng định rằng mỗi nhóm như thế có quyền  list_directory, read_data, add_subdirectory, append_data, write_xattr, execute, write_attributes, synchronize.</li></ol>
+Chú ý rằng khi phân quyền bằng công cụ Windows, nếu cho cùng một người dùng hay nhóm người dùng có hai hay nhiều luật phân quyền áp dụng thì trên giao diện Web của NexentaStor sẽ có dòng chữ màu đỏ cảnh báo “duplicate entries” và NexentaStor sẽ gợi ý hãy “reset ACL”. Đừng reset.
+
+Vì từ đây ta sẽ sử dụng công cụ phân quyền của Windows, trong những đoạn sau, các công thức phân quyền sẽ được trình bày bằng <b>thuật ngữ NTFS</b> thay vì các thuật ngữ ZFS đã được giới thiệu ở trên. Chẳng hạn, <b>folder</b> thay vì <b>thư mục</b>, <b>create folders</b> thay vì <b>add_subdirectories</b>. Nhưng phải luôn luôn nhớ rằng đó là những công thức <b>dùng cho ZFS</b>, mà nhìn chung là <b>không giống</b> như công thức NTFS tương đương.
+
+
+
+<b>2.3. Các quyền cơ bản của dữ liệu doanh nghiệp</b>
+
+Nhắc lại tập 1, hệ thống dữ liệu doanh nghiệp thường sử dụng 5 quyền cơ bản đối với một folder, kể cả folder con bên trong nó.
+<ul><li><b>Xem quyền.</b> Xem ai có quyền gì đối với folder.
+<b>Xem thư mục.</b> Xem danh sách file/thư mục con cùng các thông tin cơ bản như ngày giờ biên tập, độ dài file,...
+<b>Sử dụng.</b> Xem quyền, xem thư mục folder/folder con và đọc nội dung mọi file bên trong.
+<b>Đóng góp.</b> Sử dụng, tạo file/folder con, đổi tên, sửa, xóa những file/folder bản thân tạo ra.
+<b>Biên tập.</b> Đóng góp và đổi tên, sửa, xóa mọi file/folder con kể cả những file/folder con mà người khác tạo ra.</li></ul>
+
+
+<b>2.4. Thực hiện các quyền cơ bản của dữ liệu doanh nghiệp trên ZFS</b>
+
+Trong ZFS, năm quyền cơ bản trên một folder dữ liệu doanh nghiệp được thực hiện theo những công thức như sau.
+<ul><li>Quyền sử dụng = Read & Execute, List Folder Contents và Read this folder, subfolders and files.
+Quyền đóng góp = quyền sử dụng + Create folders/Append data this folder and subfolders.
+Quyền biên tập = quyền sử dụng + Modify và Write this folder, subfolders and files.
+Quyền xem thư mục = List folder / Read data this folder and subfolders.
+Quyền xem quyền = Read Permissions this folder and subfolders (hoặc this folder, subfolders and files, đã giải thích trong tập 1).</li></ul>
+Để ý rằng khác với NTFS, quyền đóng góp ở ZFS thật ra là <b>chỉ đóng góp folder</b>. Muốn đóng góp file vào một folder của người khác, phải tạo một folder con rồi ghi các file đóng góp vào trong folder con đó.
+
+
+
+<b>2.5. Tổ chức share tự quản</b>
+
+Khái niệm <b>share tự quản</b> đã được định nghĩa trong tập 1. Trên share tự quản, quyền truy nhập thích hợp trên folder cấp 0 là:
+<ul><li>Administrators (hoặc Administrator) có quyền Full Control this folder, subfolders and files.
+Current Owner có quyền Modify subfolders and files only.
+Current Group có quyền Read & Execute this folder only.
+Everyone có quyền Read & Execute this folder only.
+0, 1, nhiều người hay mọi người trong Phòng có quyền biên tập, những người còn lại có quyền đóng góp.</li></ul>
+CHÚ Ý. Quyền của Current Group và Everyone như trên là mặc định. Quyền của Current Group như trên dùng khi mọi người dùng không phân biệt Phòng đều có primary group = Domain Users (thiết đặt mặc định của Microsoft AD). Ngược lại khi mỗi người dùng có primary group = Phòng thì quyền thích hợp cho Current Group là quyền sử dụng.
+
+Đối với folder con (tức folder cấp 1, 2, 3,... trong con mắt của người sử dụng máy trạm) quyền truy nhập thích hợp là quyền mặc định, nghĩa là chỉ thừa kế những quyền đã được cho phép thừa kế từ folder mẹ, không thêm bớt quyền nào.
+
+
+
+<b>2.6. Tổ chức share quản chế</b>
+
+Khái niệm <b>share quản chế</b> đã được định nghĩa trong tập 1. Trên share quản chế, trên folder cấp 0 quyền truy nhập thích hợp là
+<ul><li>Administrators  (hoặc Administrator) có quyền Full Control this folder, subfolders and files.
+Nhân viên giám sát an ninh thông tin có quyền xem quyền và xem thư mục.
+Current Owner có quyền Modify subfolders and files only.
+Current Group có quyền  Read & Execute, List Folder Contents và Read this folder, subfolders and files, nhưng chỉ Apply these permissions to objects / containers within this containers only.
+Everyone có quyền giống như Current Group.</li></ul>
+Trên một folder cấp 1 (tức nhóm hồ sơ), quyền truy nhập thích hợp là mặc định.
+
+Trên một folder cấp 2 (tức hồ sơ), quyền truy nhập thích hợp là:
+<ul><li>Mọi quyền thừa kế từ folder mẹ.
+Các quyền sử dụng, đóng góp, biên tập, cấp theo quyết định của người quản lý hồ sơ.</li></ul>
+Trên một folder cấp 3 và mọi folder cấp thấp hơn (tức thành phần, thành phần con của hồ sơ), quyền truy nhập thích hợp là mặc định.
+
+Trường hợp một hồ sơ cần tách ra thành vài phần với quyền truy nhập khác nhau thì nên thực hiện mỗi phần bằng một folder cấp 2, tức là mỗi phần xem như ngang với một hồ sơ độc lập.
+
+
+
+<b>3  Kết luận</b>
+
+Phân quyền ZFS tương tự như NTFS, vì thế khi chia xẻ hệ thống file thông qua CIFS, có thể  phân quyền bằng giao diện đồ họa hay công cụ dòng lệnh từ một máy Windows.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35762.hva#219882</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35762.hva#219882</link>
+				<pubDate><![CDATA[Sun, 5 Sep 2010 08:57:29]]> GMT</pubDate>
+				<author><![CDATA[ dusan]]></author>
+			</item>
+			<item>
+				<title>Phân quyền trên NTFS và ZFS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dusan wrote:</cite><br>
+		<blockquote>
+<ul><li>A.Quyền sử dụng = Read & Execute, List Folder Contents và Read this folder, subfolders and files.
+B.Quyền đóng góp = quyền sử dụng + Create files / Write data và Create folders/Append data this folder and subfolders.
+C.Quyền biên tập = quyền sử dụng + Modify và Write this folder, subfolders and files.
+D.Quyền xem thư mục = List folder / Read data this folder and subfolders.
+E.Quyền xem quyền = Read Permissions this folder and subfolders. 
+F.Quyền xem quyền = Read Permissions this folder, subfolders and files.</li></ul>
+
+&nbsp;
+		</blockquote>
+Gửi các ace, cho em hỏi về Quyền D và quyền A như các anh chị hướng dẫn ở đây. Theo em hiểu thì Quyền D là tập con của A phải không ạh. 
+
+Có nghĩa là với quyền D thì việc đọc, nhìn thấy files, sửa, xoá, với file đều không được đúng không các ace.
+
+Em cảm ơn 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/35762.hva#271360</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/35762.hva#271360</link>
+				<pubDate><![CDATA[Mon, 26 Nov 2012 21:47:46]]> GMT</pubDate>
+				<author><![CDATA[ meoneo]]></author>
+			</item>
+	</channel>
+</rss>

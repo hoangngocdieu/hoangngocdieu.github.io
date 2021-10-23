@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Thắc mắc về Nagios, nhận SMS"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Thắc mắc về Nagios, nhận SMS"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Thắc mắc về Nagios, nhận SMS</title>
+				<description><![CDATA[ Chào các anh chị!
+Em đang thực hiện một đề tài xây hệ thống giám sát với nagios trong đó có chức năng cảnh báo qua SMS và Email. Hiện em đã xây dựng được một hệ thống giám sát các dịch vụ cơ bản cả máy Linux và Window đã gửi thành công cảnh báo qua SMS và Email. 
+ - Hệ thống sử dụng Nagios giám sát, Gammu để gửi SMS...
+- Em muốn hỏi
+1. Liệu khi giám sát máy Linux/ Window ở xa khi phát hiện dịch vụ (SSH) chẳng hạn nó bị tắt, vậy ta sẽ nhận được cảnh báo qua SMS. Em có thể gửi SMS lại cho server nagios yêu câu nó restart lại dịch vụ SSH ấy được không ạ.
+2. Nếu được thì cơ chế của nó sẽ như thế nào ạ?
+Theo em hiểu thì Gammu sẽ kiểm tra inbox rồi đọc tin nhắn kiểm tra tin nhắn đó có chuỗi đã được định nghĩa trước hay không sau đó truyền lại cho Nagios thực hiện. Em mơ hồ quá mong các anh giúp em giải thích với ạ.
+Em cảm ơn!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277648</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277648</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 06:02:05]]> GMT</pubDate>
+				<author><![CDATA[ mrtinkcf]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về Nagios, nhận SMS</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">mrtinkcf wrote:</cite><br>
+		<blockquote>
+- Em muốn hỏi
+1. Liệu khi giám sát máy Linux/ Window ở xa khi phát hiện dịch vụ (SSH) chẳng hạn nó bị tắt, vậy ta sẽ nhận được cảnh báo qua SMS. Em có thể gửi SMS lại cho server nagios yêu câu nó restart lại dịch vụ SSH ấy được không ạ.
+
+2. Nếu được thì cơ chế của nó sẽ như thế nào ạ?
+Theo em hiểu thì Gammu sẽ kiểm tra inbox rồi đọc tin nhắn kiểm tra tin nhắn đó có chuỗi đã được định nghĩa trước hay không sau đó truyền lại cho Nagios thực hiện. Em mơ hồ quá mong các anh giúp em giải thích với ạ.
+&nbsp;
+		</blockquote>
+Bạn tìm hiểu về Event Handlers nhé:<span class="link"> http://nagios.sourceforge.net/docs/3_0/eventhandlers.html</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277656</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277656</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 10:26:19]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Thắc mắc về Nagios, nhận SMS</title>
+				<description><![CDATA[ Mình thì ko dùng gammu mà dùng gnokii với thiết bị Dcom 3G để send sms  (việc khó nhất đối với mình đó là tìm thiết bị tích hợp)
+
+Việc phản hồi và điều khiển lại server thì bạn suy nghĩ đúng rồi đó
+Mình xin hướng dẫn lại như sau
+
+1. Bạn sẻ phải biết lệnh đọc SMS từ thiết bị  thay vì gởi sms là --sendsms thì đọc sms là lệnh khác
+ mình dùng gnokii thì là #gnokii --getsms SM 0 -F /root/inbox.txt -d . đọc sms đầu tiên (vị trí 0) trên sim (SM)và lưu vào file inbox.txt trên máy tính và xoa nó--&gt; bạn pải tìm hiểu lệnh getsms trên gammu như thế nào
+2. Trong file inbox.txt  nó khá dài dòng, nhưng ở dòng nào đó sẻ là nội dung chính của bạn gởi về
+ví dụ: gnokii sau khi lấy sms thì nội dung chính là ở dòng thứ 10
+bạn phải lưu nội dung này vào chuổi để xử lý các công việc mà bạn quy ước trước
+
+Để làm được việc đó bạn phải viết Shell script để thực hiện
+và lập lịch crontab -e để thực hiện script đó
+
+Trước đây mình làm đề tài về cảnh báo xâm nhập Snort thì mình điều khiển lại Snort bằng shell script như sau:
+
+#!/usr/bin/sh
+##---------Lay tin nhan SMS luu vao file---------
+/usr/local/bin/gnokii --getsms SM 0 -F /root/Desktop/inbox.txt -d
+file='/root/Desktop/inbox.txt'
+#Doc noi dung SMS tai dong 10 trong file va luu vao chuoi
+chuoi=`sed -n 10p $file`
+cat &gt; $file
+##-------Viet rules cho Snort qua SMS tu xa-----
+    substring='alert'
+    substring2='log'
+  #Neu SMS co chua tu 'alert' hoac 'log'.(Co the dinh nghia them).
+  #Thi luu SMS do vao file /rules/local.rule
+    if [ &quot;${chuoi#*$substring}&quot; != &quot;$chuoi&quot; ] || [ &quot;${chuoi#*$substring2}&quot; != &quot;$chuoi&quot; ]
+    then
+	echo $chuoi &gt;&gt; /etc/snort/rules/local.rules
+	/etc/init.d/snortd stop
+      	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+    fi
+##------Xoa rules moi tao qua SMS--------
+if [ &quot;$chuoi&quot; = &quot;xoa rule&quot; ]
+   then
+        cat &gt; /etc/snort/rules/local.rules
+	/etc/init.d/snortd stop
+        /usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1 	
+   fi
+##------Tat hoac mo canh bao qua SMS------
+if [ &quot;$chuoi&quot; = &quot;gnokii off&quot; ]
+   then
+	mv /etc/SnortNotify.conf /etc/SnortNotifybk.conf
+   fi
+if [ &quot;$chuoi&quot; = &quot;gnokii on&quot; ]
+   then
+	mv /etc/SnortNotifybk.conf /etc/SnortNotify.conf
+   fi
+##------Tat hoac mo canh bao Ping-of-death-----
+if [ &quot;$chuoi&quot; = &quot;ping off&quot; ]
+   then
+	cp /etc/snort/rules/ping-of-death.rules /etc/snort/rules/ping-of-deathbk.rules
+	cat &gt; /etc/snort/rules/ping-of-death.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+if [ &quot;$chuoi&quot; = &quot;ping on&quot; ]
+   then
+	cp /etc/snort/rules/ping-of-deathbk.rules /etc/snort/rules/ping-of-death.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+##-----Tat hoac mo canh bao SQL injection---
+if [ &quot;$chuoi&quot; = &quot;sql off&quot; ]
+   then
+	cp /etc/snort/rules/sqlin.rules /etc/snort/rules/sqlinbk.rules
+        cat &gt; /etc/snort/rules/sqlin.rules	
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+   fi
+if [ &quot;$chuoi&quot; = &quot;sql on&quot; ]
+  then
+	cp /etc/snort/rules/sqlinbk.rules /etc/snort/rules/sqlin.rules
+	/etc/init.d/snortd stop
+	/usr/local/bin/snort -u snort -g snort -c /etc/snort/snort.conf -i eth1
+  fi
+exit 0]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277659</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44989.hva#277659</link>
+				<pubDate><![CDATA[Mon, 22 Jul 2013 12:26:59]]> GMT</pubDate>
+				<author><![CDATA[ yeubaomat]]></author>
+			</item>
+	</channel>
+</rss>

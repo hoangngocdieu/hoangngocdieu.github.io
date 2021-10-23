@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Xin trợ giúp sửa lỗi named trên centos 6.5"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Xin trợ giúp sửa lỗi named trên centos 6.5"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Xin trợ giúp sửa lỗi named trên centos 6.5</title>
+				<description><![CDATA[ Gửi các chuyên gia,
+
+Mình cài BIND để làm máy chủ dns riêng. Mình đã từng cài thành công một lần, sau đó không dùng nữa, giờ cài lại thì gặp lỗi.
+
+
+Tên domain của mình: domain.com / ns1.domain.com / ns2.domain.com
+IP của mình: 123.123.123.123
+
+Hiện tại thực hiện truy vấn ở localhost thì thành công:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@www6 ~&#93;# nslookup domain.com
+Server:         127.0.0.1
+Address:        127.0.0.1#53
+
+Name:   domain.com
+Address: 123.123.123.123</pre>
+		</div>
+
+Nhưng khi truy vấn từ máy khác thì không được:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>C:\Users\HVA&gt;nslookup domain.com
+DNS request timed out.
+    timeout was 2 seconds.
+Server:  UnKnown
+Address:  fe80::1
+
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+*** Request to UnKnown timed-out</pre>
+		</div>
+
+
+File cấu hình của mình như sau:
+named.conf
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>options {
+	listen-on port 53 { any; };
+	listen-on-v6 port 53 { any; };
+	directory 	&quot;/var/named&quot;;
+	dump-file 	&quot;/var/named/data/cache_dump.db&quot;;
+        statistics-file &quot;/var/named/data/named_stats.txt&quot;;
+        memstatistics-file &quot;/var/named/data/named_mem_stats.txt&quot;;
+	allow-query     { any; };
+	recursion yes;
+
+	dnssec-enable yes;
+	dnssec-validation yes;
+	dnssec-lookaside auto;
+
+	/* Path to ISC DLV key */
+	bindkeys-file &quot;/etc/named.iscdlv.key&quot;;
+
+	managed-keys-directory &quot;/var/named/dynamic&quot;;
+};
+
+logging {
+        channel default_debug {
+                file &quot;data/named.run&quot;;
+                severity dynamic;
+        };
+};
+
+zone &quot;.&quot; IN {
+	type hint;
+	file &quot;named.ca&quot;;
+};
+
+zone&quot;domain.com&quot; IN {
+type master;
+file &quot;/var/named/fwd.domain.com&quot;;
+allow-update { none; };
+};
+zone&quot;123.123.123.123.in-addr.arpa&quot; IN {
+type master;
+file &quot;/var/named/rev.domain.com&quot;;
+allow-update { none; };
+};
+
+include &quot;/etc/named.rfc1912.zones&quot;;
+include &quot;/etc/named.root.key&quot;;</pre>
+		</div>
+
+File: fwd.domain.com
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 86400
+@   IN  SOA     ns1.domain.com. root.domain.com. &#40;
+        2011071001  ;Serial
+        3600        ;Refresh
+        1800        ;Retry
+        604800      ;Expire
+        86400       ;Minimum TTL
+&#41;
+@       IN  NS          ns1.domain.com.
+@       IN  NS          ns2.domain.com..
+@       IN  A           123.123.123.123
+@       IN  A           123.123.123.124
+
+ns1    IN  A   123.123.123.123
+ns2    IN  A   123.123.123.124
+
+@      IN A 123.123.123.123
+www    IN A 123.123.123.123
+*      IN A 123.123.123.123</pre>
+		</div>
+
+File:rev.domain.com
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>$TTL 86400
+@   IN  SOA     ns1.domain.com. root.domain.com. &#40;
+        2011071001  ;Serial
+        3600        ;Refresh
+        1800        ;Retry
+        604800      ;Expire
+        86400       ;Minimum TTL
+&#41;
+@       IN  NS          ns1.domain.com.
+@       IN  NS          ns2.domain.com.
+
+ns1    IN  A   123.123.123.123
+ns2    IN  A   123.123.123.124
+
+@      IN A 123.123.123.123
+*      IN A 123.123.123.123
+
+123     IN  PTR         ns1.domain.com.
+124     IN  PTR         ns2.domain.com.</pre>
+		</div>
+
+Mong nhận được sự giúp đỡ ;)
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280215</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280215</link>
+				<pubDate><![CDATA[Mon, 7 Apr 2014 09:44:56]]> GMT</pubDate>
+				<author><![CDATA[ Mahoa]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp sửa lỗi named trên centos 6.5</title>
+				<description><![CDATA[ theo như em thấy vấn đề ở trên là do lỗi phân giải ipv6 ở máy khách, nếu bác dùng windows thì nên tắt ipv6 trong phần cấu hình ip, còn đây là đường dẫn cách bỏ phân giải ipv6 của Bind trên centOS : http://crashmag.net/disable-ipv6-lookups-with-bind-on-rhel-or-centos]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280222</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280222</link>
+				<pubDate><![CDATA[Tue, 8 Apr 2014 12:05:59]]> GMT</pubDate>
+				<author><![CDATA[ bao0730]]></author>
+			</item>
+			<item>
+				<title>Xin trợ giúp sửa lỗi named trên centos 6.5</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">bao0730 wrote:</cite><br>
+		<blockquote>theo như em thấy vấn đề ở trên là do lỗi phân giải ipv6 ở máy khách, nếu bác dùng windows thì nên tắt ipv6 trong phần cấu hình ip, còn đây là đường dẫn cách bỏ phân giải ipv6 của Bind trên centOS :<span class="link"> http://crashmag.net/disable-ipv6-lookups-with-bind-on-rhel-or-centos&nbsp;</span>
+		</blockquote>
+
+
+Cảm ơn bạn đã trả lời topic.
+
+Tình hình là vẫn chưa khắc phục được :(]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280232</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/45559.hva#280232</link>
+				<pubDate><![CDATA[Wed, 9 Apr 2014 03:15:52]]> GMT</pubDate>
+				<author><![CDATA[ Mahoa]]></author>
+			</item>
+	</channel>
+</rss>

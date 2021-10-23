@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Script backup: chạy trực tiếp & cron khác nhau"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Script backup: chạy trực tiếp & cron khác nhau"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Script backup: chạy trực tiếp &amp; cron khác nhau</title>
+				<description><![CDATA[ Em đang test backup Zimbra offline. Cùng 1 script khi em chạy trực tiếp thì kết quả backup tốt, nhưng add vào cron để chạy thì có 2 vấn đề
+1. File không đúng - thiếu
+2. Không start được service zimbra
+
+Đây là kết quả sau khi chạy trực tiếp & cron
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@mail backup&#93;# ll -tsh
+total 8.2G
+2.7G -rw-r--r--  1 root root 2.7G Jun 12 07:13 2013-06-12.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 Jun  8 22:25 2013-06-08.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 Jun  1 22:23 2013-06-01.zimbra.tgz
+2.0G -rw-r--r--  1 root root 2.0G May 30 22:02 2013-05-30.zimbra.tgz
+8.0K -rw-r--r--  1 root root   20 May 25 23:05 2013-05-25.zimbra.tgz
+1.3G -rw-r--r--  1 root root 1.3G May 22 11:26 2013-05-22.zimbra.tgz
+1.3G -rw-r--r--  1 root root 1.3G May 21 11:25 2013-05-21.zimbra.tgz
+1.2G -rw-r--r--  1 root root 1.2G May 20 22:12 2013-05-20.zimbra.tgz
+8.0K drwxr-xr-x 51 root root 4.0K May 13 17:33 zimbra
+&#91;root@mail backup&#93;# crontab -l
+22 22 * * 6 /root/tools/backup.sh
+&#91;root@mail backup&#93;#</pre>
+		</div>
+
+Còn đây là nội dung của file backup
+
+<blockquote>
+[root@mail backup]# cat /root/tools/backup.sh
+# Stop Zimbra Services
+su - zimbra -c "zmcontrol stop"
+#sleep 20
+
+# Sync to backup directory
+rsync -avHK --delete /opt/zimbra/ /media/backup/zimbra
+
+# Restart Zimbra Services
+su - zimbra -c "zmcontrol start"
+
+# Create archive of backed-up directory for offsite transfer
+# cd /backup/zimbra
+tar -zcvf /media/backup/$(date +%Y-%m-%d).zimbra.tgz /media/backup/zimbra/*
+&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276527</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276527</link>
+				<pubDate><![CDATA[Wed, 12 Jun 2013 03:40:24]]> GMT</pubDate>
+				<author><![CDATA[ thanhtamntp]]></author>
+			</item>
+			<item>
+				<title>Script backup: chạy trực tiếp &amp; cron khác nhau</title>
+				<description><![CDATA[ Trong quá trình em backup , em nên dùng zmcontrol status để kiểm tra từng dịch vụ xem nó có stop hay start lên OK hay chưa 
+
+<blockquote> su - zimbra -c"/opt/zimbra/bin/zmcontrol stop"
+ sleep 15
+ kill -9 `ps -u zimbra -o "pid="`&nbsp;
+		</blockquote>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276540</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276540</link>
+				<pubDate><![CDATA[Wed, 12 Jun 2013 10:55:41]]> GMT</pubDate>
+				<author><![CDATA[ tranhuuphuoc]]></author>
+			</item>
+			<item>
+				<title>Script backup: chạy trực tiếp &amp; cron khác nhau</title>
+				<description><![CDATA[ Tại mỗi bước trong script backup: stop, rsync, start, tar, ... nên có một cơ chế nào đó để log lại thông tin xem chúng đang làm gì, có lỗi gì khi chạy không?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276550</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276550</link>
+				<pubDate><![CDATA[Wed, 12 Jun 2013 19:16:31]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Script backup: chạy trực tiếp &amp; cron khác nhau</title>
+				<description><![CDATA[ Hi, cho mình hỏi bạn backup thế nào vậy !?! bạn có test thử sync cho zimbra chưa nhỉ ? mình đang test thử sysn cho nó mà bị vấn đề bước cuối làm hoài hok đc, cũng đang xem làm sao backup cho nó đây !!!
+
+http://www.hvaonline.net/hvaonline/posts/list/0/44739.hva#276354]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276555</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44837.hva#276555</link>
+				<pubDate><![CDATA[Thu, 13 Jun 2013 04:52:09]]> GMT</pubDate>
+				<author><![CDATA[ tommysmith]]></author>
+			</item>
+	</channel>
+</rss>

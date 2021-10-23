@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "ví dụ về drool rule trong graylog2"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/8.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "ví dụ về drool rule trong graylog2"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>ví dụ về drool rule trong graylog2</title>
+				<description><![CDATA[ Graylog2 dùng làm log analysis rất khá. Tuy nhiên cài đặt mặc định không parse được các mẫu log thông dụng như access_log của apache httpd, modsecurity core rule set, Cisco ASA.
+
+Gửi kèm đây là một số drool rule (xem graylog2-server.conf, phần rewrite log message) để tách field cho các mẫu log thông dụng.
+
+Lưu ý các bạn sử dụng rule nhớ chỉnh lại facility cho đúng với cấu hình syslog thực tế.
+
+Trang web<span class="link"> http://www.regexplanet.com/advanced/java/index.html</span> sẽ cực kỳ hữu ích cho các bạn viết regular expression tách field giống tui.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>import org.graylog2.plugin.logmessage.LogMessage
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+rule &quot;ModSecurity Logging to GELF&quot;
+
+        // sample log line httpd: &#91;error&#93; &#91;client a.b.c.d&#93; ModSecurity: Warning. Operator LT matched 5 at TX:inbound_anomaly_score. &#91;file &quot;modsecurity_crs_60_correlation.conf&quot;&#93; &#91;line &quot;33&quot;&#93; &#91;id &quot;981203&quot;&#93; &#91;msg &quot;Inbound Anomaly Score &#40;Total Inbound Score: 2, SQLi=, XSS=&#41;: Request Missing an Accept Header&quot;&#93; &#91;hostname &quot;www&quot;&#93; &#91;uri &quot;/index.php&quot;&#93; &#91;unique_id &quot;UUl6i38AAA&quot;&#93;        
+
+        when
+            m : LogMessage&#40; facility == &quot;local6&quot;, shortMessage matches &quot;&#40;?s&#41;.*ModSecurity:.*&quot; &#41;
+        then
+        Matcher matcher = Pattern.compile&#40;&quot;\\&#91;client &#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#93; .*?\\&#91;id \&quot;&#40;.*?&#41;\&quot;\\&#93; .*?\\&#91;msg \&quot;&#40;.*?&#41;\&quot;\\&#93;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_modsec_id&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_modsec_msg&quot;,matcher.group&#40;3&#41;&#41;;
+        }
+end
+
+
+rule &quot;Parsing Snort to GELF&quot;
+
+    //sample log line snort: &#91;1:2402000:2907&#93; ET DROP Dshield Block Listed Source &#91;Classification: Misc Attack&#93; &#91;Priority: 2&#93;: {TCP} a.b.c.d:24495 -&gt; a.b.c.d:8081
+
+    when
+        m : LogMessage&#40; facility == &quot;local5&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;snort: +\\&#91;&#40;\\d+:\\d+:\\d+&#41;\\&#93; &#40;.*?&#41; \\&#91;Classification:.*?\\&#93; \\&#91;Priority:.*?\\&#93;: \\{&#40;.*?&#41;\\} &#40;\\d+.\\d+.\\d+.\\d+&#41;:?&#40;\\d*&#41; -&gt; &#40;\\d+.\\d+.\\d+.\\d+&#41;:?&#40;\\d*&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_snort_id&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_snort_msg&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;7&#41;&#41;;
+        }
+
+end
+
+rule &quot;Parsing access_log to GELF&quot;
+        // sample log line httpd: a.b.c.d - - &#91;21/Mar/2013:15:36:15 +0700&#93; &quot;GET /a/b.css.jsf?ln=primefaces-aristo HTTP/1.0&quot; 304 - &quot;http://www/index.jsf&quot; &quot;Mozilla/5.0 &#40;Windows NT 5.1&#41;&quot; 1203 287
+
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;httpd: +&#40;\\d+.\\d+.\\d+.\\d+&#41; .*?\&quot;&#40;&#91;A-Z&#93;+&#41; &#40;&#91;^\&quot;&#93;+&#41; HTTP..?.?.?\&quot; &#40;\\d+&#41; &#40;&#91;0-9-&#93;+&#41; \\\&quot;&#40;&#91;^\&quot;&#93;+&#41;\\\&quot; \\\&quot;&#40;&#91;^\&quot;&#93;+&#41;\\\&quot;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_verb&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_request&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_status&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_referer&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_ua&quot;,matcher.group&#40;7&#41;&#41;;
+        }
+end 
+
+rule &quot;Parsing core switch&quot;
+    // sample log line 321533: Jun 26 08:11:17.164: %SEC-6-IPACCESSLOGP: list ACL1 denied udp a.b.c.d&#40;6387&#41; &#40;TenGigabitEthernet1/1 x.y.z&#41; -&gt; a.b.c.d&#40;137&#41;, 1 packet
+
+    when
+        m : LogMessage&#40; shortMessage matches &quot;&#40;?s&#41;.*%SEC-6-IPACCESSLOGP.*&quot; && facility == &quot;local7&quot; &#41;
+    then
+
+        Matcher matcher = Pattern.compile&#40;&quot;%SEC-6-IPACCESSLOGP: +list +&#40;&#91;A-Za-z0-9\\-&#93;+&#41; +&#40;&#91;a-zA-Z0-9&#93;+&#41; +&#40;&#91;a-z&#93;+&#41; +&#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#40;&#40;\\d+&#41;\\&#41; +\\&#40;&#40;&#91;A-Za-z0-9/&#93;+&#41; +&#40;&#91;0-9a-z\\.&#93;*&#41;\\&#41; +-&gt; +&#40;\\d+.\\d+.\\d+.\\d+&#41;\\&#40;&#40;\\d+&#41;\\&#41;, +&#40;\\d+&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_ACL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PERM&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_INT&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MAC&quot;,matcher.group&#40;7&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;8&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;9&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_COUNT&quot;,matcher.group&#40;10&#41;&#41;;
+
+        }
+
+end
+
+rule &quot;Parsing ASA log 106023 to GELF&quot;
+// sample SA-4-106023: Deny tcp src XXX:a.b.c.d/41258 dst YYY:a.b.c.d/1051 by access-group &quot;XXXX&quot;
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; && shortMessage matches &quot;&#40;?s&#41;.*%ASA-&#91;0-9&#93;-106023:.*&quot; &#41;
+    then
+        #System.out.println&#40;&quot;&#91;m&#93;&quot;+m.getShortMessage&#40;&#41;+&quot;&#91;/m&#93;&quot;&#41;;
+        Matcher matcher = Pattern.compile&#40;&quot;%ASA-&#40;&#91;0-9&#93;&#41;-&#40;&#91;0-9&#93;+&#41;: +Deny +&#40;&#91;A-Za-z &#93;+&#41; +src +&#40;&#91;A-Za-z_0-9-&#93;+&#41;:&#40;\\d+\\.\\d+\\.\\d+\\.\\d+&#41;/&#40;\\d+&#41; &#91;A-Za-z &#93;+ &#40;&#91;A-Za-z_0-9-&#93;+&#41;:&#40;\\d+\\.\\d+\\.\\d+\\.\\d+&#41;/&#40;\\d+&#41; by access-group \&quot;&#40;&#91;A-Za-z_0-9-&#93;+&#41;\&quot;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_LVL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSGID&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_PROTO&quot;,matcher.group&#40;3&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SNAME&quot;,matcher.group&#40;4&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SRC&quot;,matcher.group&#40;5&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_SPT&quot;,matcher.group&#40;6&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DNAME&quot;,matcher.group&#40;7&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DST&quot;,matcher.group&#40;8&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_DPT&quot;,matcher.group&#40;9&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_ACL&quot;,matcher.group&#40;10&#41;&#41;;
+        }
+end 
+
+
+rule &quot;Parsing other ASA log to GELF&quot;
+    when
+        m : LogMessage&#40; facility == &quot;local4&quot; && shortMessage not matches &quot;&#40;?s&#41;%ASA-&#91;0-9&#93;-&#40;106023&#41;:.*&quot; &#41;
+    then
+        Matcher matcher = Pattern.compile&#40;&quot;%ASA-&#40;&#91;0-9&#93;&#41;-&#40;&#91;0-9&#93;+&#41;: &#40;.*&#41;&quot;&#41;.matcher&#40;m.getShortMessage&#40;&#41;&#41;;
+        if &#40;matcher.find&#40;&#41;&#41; {
+            m.addAdditionalData&#40;&quot;_LVL&quot;,matcher.group&#40;1&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSGID&quot;,matcher.group&#40;2&#41;&#41;;
+            m.addAdditionalData&#40;&quot;_MSG&quot;,matcher.group&#40;3&#41;&#41;;
+        }
+end</pre>
+		</div>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44977.hva#277590</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44977.hva#277590</link>
+				<pubDate><![CDATA[Fri, 19 Jul 2013 01:31:19]]> GMT</pubDate>
+				<author><![CDATA[ vd_]]></author>
+			</item>
+	</channel>
+</rss>

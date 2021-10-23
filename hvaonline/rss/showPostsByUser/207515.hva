@@ -1,0 +1,1500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Messages posted by "mr.tee"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/listByUser/207515.hva</link>
+		<description><![CDATA[Messages posted by "mr.tee"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>httpd báo error log : server seems busy</title>
+				<description><![CDATA[ Mấy ngày hôm nay server chạy web bên mình hay báo lỗi này : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server seems busy, &#40;you may need to increase StartServers, or Min/MaxSpareServers&#41;, spawning 16 children, there are 13 idle, and 129 total children</pre>
+		</div>
+
+Đây là cấu hình trong file httpd.cnf 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># prefork MPM
+# StartServers: number of server processes to start
+# MinSpareServers: minimum number of server processes which are kept spare
+# MaxSpareServers: maximum number of server processes which are kept spare
+# ServerLimit: maximum value for MaxClients for the lifetime of the server
+# MaxClients: maximum number of server processes allowed to start
+# MaxRequestsPerChild: maximum number of requests a server process serves
+&lt;IfModule prefork.c&gt;
+StartServers       20
+MinSpareServers    20
+MaxSpareServers   50
+ServerLimit      1000
+MaxClients       1000
+MaxRequestsPerChild  1000
+&lt;/IfModule&gt;
+
+# worker MPM
+# StartServers: initial number of server processes to start
+# MaxClients: maximum number of simultaneous client connections
+# MinSpareThreads: minimum number of worker threads which are kept spare
+# MaxSpareThreads: maximum number of worker threads which are kept spare
+# ThreadsPerChild: constant number of worker threads in each server process
+# MaxRequestsPerChild: maximum number of requests a server process serves
+&lt;IfModule worker.c&gt;
+StartServers         20
+MaxClients         300
+MinSpareThreads     20
+MaxSpareThreads     75 
+ThreadsPerChild     25
+MaxRequestsPerChild  0
+&lt;/IfModule&gt;</pre>
+		</div>
+
+Cho mình hỏi là worker MPM và prefork MPM có gì khác nhau, và với thông báo lỗi như thế kia thì mình cần tăng giá trị nào lên ( mình có thử tăng cả StartServers, MinSpareThreads,   MaxSpareThreads  nhưng httpd vẫn báo busy & gây treo server )       ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45327/279113.hva#279113</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45327/279113.hva#279113</link>
+				<pubDate><![CDATA[Fri, 29 Nov 2013 23:39:15]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Process hpahcisr0 stuck in D state</title>
+				<description><![CDATA[ Đây là kernel log ạ.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Aug 18 10:51:49 hocdan kernel: SysRq : Show Blocked State
+Aug 18 10:51:49 hocdan kernel:  task                        PC stack   pid father
+Aug 18 10:51:49 hocdan kernel: hpahcisr0     D 0000000000000001     0   273      2 0x00000000
+Aug 18 10:51:49 hocdan kernel: ffff8801ffd01dd0 0000000000000046 0000000000000000 ffffffffa004aad9
+Aug 18 10:51:49 hocdan kernel: 0000000000000000 0000000000000286 ffff8801ffd01d50 ffffffff81012bd9
+Aug 18 10:51:49 hocdan kernel: ffff880201563ab8 ffff8801ffd01fd8 000000000000fb88 ffff880201563ab8
+Aug 18 10:51:49 hocdan kernel: Call Trace:
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa004aad9&gt;&#93; ? surface_iteration_raid1+0xb9/0x190 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff81012bd9&gt;&#93; ? read_tsc+0x9/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff814febc2&gt;&#93; schedule_timeout+0x192/0x2e0
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8107e1a0&gt;&#93; ? process_timeout+0x0/0x10
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff814fed2e&gt;&#93; schedule_timeout_uninterruptible+0x1e/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8107f240&gt;&#93; msleep+0x20/0x30
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa0067506&gt;&#93; hpsrahci_intr_bh_handler+0xb6/0x170 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff810097cc&gt;&#93; ? __switch_to+0x1ac/0x320
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8100c14a&gt;&#93; child_rip+0xa/0x20
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffffa0067450&gt;&#93; ? hpsrahci_intr_bh_handler+0x0/0x170 &#91;hpahcisr&#93;
+Aug 18 10:51:49 hocdan kernel: &#91;&lt;ffffffff8100c140&gt;&#93; ? child_rip+0x0/0x20
+Aug 18 10:51:49 hocdan kernel: Sched Debug Version: v0.09, 2.6.32-279.9.1.el6.x86_64 #1
+Aug 18 10:51:49 hocdan kernel: now at 308531843.410559 msecs
+Aug 18 10:51:49 hocdan kernel:  .jiffies                                 : 4603199139
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_latency                    : 15.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_min_granularity            : 3.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_wakeup_granularity         : 3.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_child_runs_first           : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_features                   : 3183
+Aug 18 10:51:49 hocdan kernel:  .sysctl_sched_tunable_scaling            : 1 &#40;logaritmic&#41;
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#0, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 323404164
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 98363470
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.199131
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451831.716060
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 64093
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 328121254
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 156626511
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 163778376
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 5351152
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 282
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;0&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 50604835.635516
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 47392716.885792
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 3143
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;0&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#1, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 267703357
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 150007465
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 1
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.199332
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451843.734463
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 4
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 84097
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 269944992
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 128498470
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 909177
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 133929670
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 26902139
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 178
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;1&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 69847291.005358
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 69988221.218036
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 22595504.332244
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 4479
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;1&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#2, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 135610169
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 42962641
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.198998
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 0
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451698.829222
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 44454
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 137370737
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 63008296
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 65945609
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 7265158
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 106
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;2&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 20919991.255608
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 50457228.749128
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : 3064511.863336
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 12244
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 0
+Aug 18 10:51:49 hocdan kernel:  .load                          : 0
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;2&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cpu#3, 3093.159 MHz
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 1
+Aug 18 10:51:49 hocdan kernel:  .load                          : 1024
+Aug 18 10:51:49 hocdan kernel:  .nr_switches                   : 115531550
+Aug 18 10:51:49 hocdan kernel:  .nr_load_updates               : 24244536
+Aug 18 10:51:49 hocdan kernel:  .nr_uninterruptible            : 0
+Aug 18 10:51:49 hocdan kernel:  .next_balance                  : 4603.198995
+Aug 18 10:51:49 hocdan kernel:  .curr-&gt;pid                     : 10514
+Aug 18 10:51:49 hocdan kernel:  .clock                         : 308451843.733337
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;0&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;1&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;2&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;3&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .cpu_load&#91;4&#93;                   : 0
+Aug 18 10:51:49 hocdan kernel:  .yld_count                     : 33399
+Aug 18 10:51:49 hocdan kernel:  .sched_switch                  : 0
+Aug 18 10:51:49 hocdan kernel:  .sched_count                   : 117097912
+Aug 18 10:51:49 hocdan kernel:  .sched_goidle                  : 50443785
+Aug 18 10:51:49 hocdan kernel:  .avg_idle                      : 1000000
+Aug 18 10:51:49 hocdan kernel:  .ttwu_count                    : 58211209
+Aug 18 10:51:49 hocdan kernel:  .ttwu_local                    : 19922027
+Aug 18 10:51:49 hocdan kernel:  .bkl_count                     : 274
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: cfs_rq&#91;3&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .exec_clock                    : 9036686.026945
+Aug 18 10:51:49 hocdan kernel:  .MIN_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .min_vruntime                  : 31997132.585060
+Aug 18 10:51:49 hocdan kernel:  .max_vruntime                  : 0.000001
+Aug 18 10:51:49 hocdan kernel:  .spread                        : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .spread0                       : -15395584.300732
+Aug 18 10:51:49 hocdan kernel:  .nr_spread_over                : 8342
+Aug 18 10:51:49 hocdan kernel:  .nr_running                    : 1
+Aug 18 10:51:49 hocdan kernel:  .load                          : 1024
+Aug 18 10:51:49 hocdan kernel:  .load_avg                      : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_period                   : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .load_contrib                  : 0
+Aug 18 10:51:49 hocdan kernel:  .load_tg                       : 0
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: rt_rq&#91;3&#93;:/
+Aug 18 10:51:49 hocdan kernel:  .rt_nr_running                 : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_throttled                  : 0
+Aug 18 10:51:49 hocdan kernel:  .rt_time                       : 0.000000
+Aug 18 10:51:49 hocdan kernel:  .rt_runtime                    : 950.000000
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:51:49 hocdan kernel: runnable tasks:
+Aug 18 10:51:49 hocdan kernel:            task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+Aug 18 10:51:49 hocdan kernel: ----------------------------------------------------------------------------------------------------------
+Aug 18 10:51:49 hocdan kernel: R           bash 10514  31997125.085060        73   120  31997125.085060        15.933171     36545.173769 /
+Aug 18 10:51:49 hocdan kernel: 
+Aug 18 10:53:45 hocdan auditd&#91;1986&#93;: Audit daemon rotating log files
+Aug 18 10:57:29 hocdan auditd&#91;1986&#93;: Audit daemon rotating log files</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45084/278149.hva#278149</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45084/278149.hva#278149</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 23:01:33]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Process hpahcisr0 stuck in D state</title>
+				<description><![CDATA[ Mấy ngày hôm nay, IO wait của server em tăng cao hơn bình thường. Load Average cũng tăng từ ~1 lên 4-5
+Em có thử chạy  : 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># while true; do date; ps auxf | awk '{if&#40;$8==&quot;D&quot;&#41; print $0;}'; sleep 1; done</pre>
+		</div>
+
+Thì nhận được kết quả : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Sat Aug 17 17:27:31 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+root       353  0.0  0.0      0     0 ?        D    Aug14   4:05  \_ &#91;jbd2/sda3-8&#93;
+Sat Aug 17 17:27:32 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:33 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:34 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:35 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:36 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+Sat Aug 17 17:27:37 ICT 2013
+root       273  0.0  0.0      0     0 ?        D    Aug14   0:03  \_ &#91;hpahcisr0&#93;
+root       353  0.0  0.0      0     0 ?        D    Aug14   4:05  \_ &#91;jbd2/sda3-
+8&#93;</pre>
+		</div>
+
+Chạy :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>top -b -n 1 | awk '{if &#40;NR &lt;=7&#41; print; else if &#40;$8 == &quot;D&quot;&#41; {print; count++} } END {print &quot;Total status D: &quot;count}'</pre>
+		</div>
+
+thì được 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre># top -b -n 1 | awk '{if &#40;NR &lt;=7&#41; print; else if &#40;$8 == &quot;D&quot;&#41; {print; count++} } END {print &quot;Total status D: &quot;count}'
+top - 17:49:05 up 2 days, 20:39,  1 user,  load average: 3.96, 3.08, 3.07
+Tasks: 215 total,   1 running, 214 sleeping,   0 stopped,   0 zombie
+Cpu&#40;s&#41;: 10.3%us,  1.9%sy,  0.0%ni, 81.3%id,  10.3%wa,  0.0%hi,  0.1%si,  0.0%st
+Mem:   8015636k total,  7255852k used,   759784k free,   280508k buffers
+Swap:  8392696k total,    20956k used,  8371740k free,  5407328k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+  273 root      20   0     0    0    0 D  0.0  0.0   0:03.29 hpahcisr0
+  353 root      20   0     0    0    0 D  0.0  0.0   4:06.56 jbd2/sda3-8
+Total status D: 2</pre>
+		</div>
+
+
+Em có search thì thấy process hpahcisr0 là raid controller của HP, nhưng không rõ tại sao nó lại kẹt ở D state, phiền mọi người chỉ giáo.
+
+Em cảm ơn ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/45084/278143.hva#278143</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/45084/278143.hva#278143</link>
+				<pubDate><![CDATA[Sat, 17 Aug 2013 05:52:57]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nginx làm reverse proxy với virtual host của apache bị lỗi</title>
+				<description><![CDATA[ mình vừa kiểm tra thì không phải do virtual host, mà do bộ source wordpress.
+
+website domain1.com sử dụng wordpress, cứ vào domain1.com thì sẽ bị loop wwwect, nhưng nếu vào admin qua domain1.com/wp-admin/ thì lại được, chỉ không vào được trang chủ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44731/275759.hva#275759</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44731/275759.hva#275759</link>
+				<pubDate><![CDATA[Thu, 16 May 2013 06:49:21]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nginx làm reverse proxy với virtual host của apache bị lỗi</title>
+				<description><![CDATA[ bạn post giùm mình nội dung file proxy.conf nữa nhé, cảm ơn bạn :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44731/275754.hva#275754</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44731/275754.hva#275754</link>
+				<pubDate><![CDATA[Thu, 16 May 2013 03:24:04]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Cấu hình Nginx làm reverse proxy với virtual host của apache bị lỗi</title>
+				<description><![CDATA[ Hiện tại server mình quản lý có chừng 8-9 site chạy trên đó. Hiện giờ đang sử dụng apache làm webserver.
+Mình đã cài đặt nginx, sau đó sửa đổi file httpd.cnf với các thông số sau :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Listen 127.0.0.1:8080
+NameVirtualHost *:8080
+
+&lt;VirtualHost *:8080&gt;
+
+        ServerAdmin nightwishx@gmail.com
+        ServerName domain1.com
+        ServerAlias www.domain1.com
+
+       
+	 # Indexes + Directory Root.
+        DirectoryIndex index.html index.htm index.php
+        DocumentRoot /home/domain1/public_html
+        # CGI Directory
+        ScriptAlias /cgi-bin/ /home/domain1/cgi-bin/
+        &lt;Directory /home/domain1/public_html/&gt;
+                Options FollowSymLinks MultiViews
+                AllowOverride All
+                Order allow,deny
+                allow from all
+        &lt;/Directory&gt;
+        &lt;Location /cgi-bin&gt;
+                Options +ExecCGI
+        &lt;/Location&gt;
+
+        # Logfiles
+        ErrorLog /home/domain1/error.log
+	CustomLog /home/domain1/access.log combined
+
+&lt;/VirtualHost&gt;
+
+
+&lt;VirtualHost *:8080&gt;
+
+        ServerAdmin nightwishx@gmail.com
+        ServerName domain2.com
+        ServerAlias www.domain2.com
+
+       
+	 # Indexes + Directory Root.
+        DirectoryIndex index.html index.htm index.php
+        DocumentRoot /home/domain2/public_html
+        # CGI Directory
+        ScriptAlias /cgi-bin/ /home/domain2/cgi-bin/
+        &lt;Directory /home/domain1/public_html/&gt;
+                Options FollowSymLinks MultiViews
+                AllowOverride All
+                Order allow,deny
+                allow from all
+        &lt;/Directory&gt;
+        &lt;Location /cgi-bin&gt;
+                Options +ExecCGI
+        &lt;/Location&gt;
+
+        # Logfiles
+        ErrorLog /home/domain2/error.log
+	CustomLog /home/domain2/access.log combined
+
+&lt;/VirtualHost&gt;</pre>
+		</div>
+
+
+Trong thư mục conf.d tại /etc/nginx, mình tạo 2 file cấu hình : 
+
+domain1.com.conf
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+ listen 80;
+root /home/domain1/public_html; 
+ index index.php index.html index.htm;
+server_name www.domain1.com domain1.com;
+location / {
+ try_files $uri $uri/ /index.php;
+ }
+location ~ \.php$ {
+ 
+ proxy_set_header X-Real-IP $remote_addr;
+ proxy_set_header X-Forwarded-For $remote_addr;
+ proxy_set_header Host $host;
+ proxy_pass<span class="link"> http://127.0.0.1:8080;</span>
+
+}
+
+location ~ /\.ht {
+ deny all;
+ }
+}</pre>
+		</div>
+
+và domain2.com.conf
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>server {
+ listen 80;
+root /home/domain2/public_html; 
+ index index.php index.html index.htm;
+server_name www.domain2.com domain2.com;
+location / {
+ try_files $uri $uri/ /index.php;
+ }
+location ~ \.php$ {
+ 
+ proxy_set_header X-Real-IP $remote_addr;
+ proxy_set_header X-Forwarded-For $remote_addr;
+ proxy_set_header Host $host;
+ proxy_pass<span class="link"> http://127.0.0.1:8080;</span>
+
+}
+
+location ~ /\.ht {
+ deny all;
+ }
+}</pre>
+		</div>
+
+Sau khi mình restart httpd và nginx, thì virtual host của domain1 chạy ok, nhưng domain2 bị như sau :
+
+<br>
+			<div align="center" class="limitview"><img src='http://nx5.upanh.com/b1.s37.d4/19cc10805b3ef46dbc6c7e55077e2157_55650445.untitled.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Nhờ các bạn chỉ ra lỗi sai giùm mình. Cảm ơn các bạn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44731/275752.hva#275752</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44731/275752.hva#275752</link>
+				<pubDate><![CDATA[Thu, 16 May 2013 01:44:29]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Hỏi về rule trên mod_security</title>
+				<description><![CDATA[ Mình vừa đọc hướng dẫn sử dụng mod_security để hạn chế số lượng request của một IP đến server. Mình có chèn thử đoạn rule sau vào virtual host của website :
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>SecAction "initcol:ip=%{REMOTE_ADDR},nolog,id:'40007'" 
+	SecRule REQUEST_URI "^/$" "nolog,phase:1,id:'40006',setvar:ip.ddos=+1,deprecatevar:ip.ddos=5/60,expirevar:ip.ddos=600"
+	SecRule IP:DDOS "@gt 5" "phase:1,log,id:'40008',drop,msg:'DDoS'"</pre>
+		</div>
+
+Theo mình hiểu thì đoạn rule trên sẽ drop các request từ những IP có số lượt request lớn hơn 5 lần / 60s. Tuy nhiên khi chèn vào phần cấu hình virtual host của 1 tên miền trong httpd.cnf, đã reboot apache thì không thấy hiệu quả.
+
+Mình có thử chèn vào /etc/httpd/conf.d/mod_security.conf, sau đó thử lại thì cũng không thấy hoạt động.
+
+Nhờ các bạn kiểm tra lại giùm mình & chỉ giùm lỗi sai :D
+
+Cảm ơn các bạn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44700/275540.hva#275540</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44700/275540.hva#275540</link>
+				<pubDate><![CDATA[Tue, 7 May 2013 11:24:27]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Nhờ config FTP</title>
+				<description><![CDATA[ Sever mình đang dùng centos 6.3 64bit. Hiện giờ mình đã thử cài proftpd nhưng khi dùng client như filezilla vào thì nó đều chuyển sang sftp, còn cuteftp thì không connect được . Tắt sftpd thì bị lỗi đều không connect được. 
+Còn cài vsftpd thì bị lỗi passivemode.
+sftp thì vẫn sử dụng được nhưng nó lại cấp full access server cho user( có /bin/bash vì user không có /bin/bash không thể connect đến được)
+Tuy nhiên trong các trường hợp trên dùng command của window ftp đến thì vẫn được với cả user không có /bin/bash. 
+Mình muốn nhờ ai có kinh nghiệm hướng dẫn trong trường hợp như này thì nên cài ftp sever nào và config như nào?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/44125/272662.hva#272662</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/44125/272662.hva#272662</link>
+				<pubDate><![CDATA[Sat, 12 Jan 2013 11:16:37]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ có em ạ.
+Thường ngày thì em tải về, mở bằng notepad++ để chỉnh rồi up lên bình thường, không thấy vấn đề gì :D
+Hôm đó ngồi máy của bạn, mở đại bằng wordpad rồi táng, sau đó upload lên.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270511.hva#270511</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270511.hva#270511</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 11:04:46]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Bạn tạo account `username` như nào?
+&nbsp;
+		</blockquote>
+
+Account username là account từ trước của em, tạo để chạy một site nhỏ trên server. Em cứ 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#useradd username
+#chown username -R /home/username/</pre>
+		</div>
+<p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Cái này bí hiểm lắm. Chắc phải Cafe mới nói được :&quot;&gt;
+&nbsp;
+		</blockquote>
+A ở Hà Nội là em điều 1 em chân dài tới bẹn cafe với anh ngay ạ  ;-) ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270509.hva#270509</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270509.hva#270509</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 10:45:53]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>
+Ơ, có khi mình đoán được nguyên nhân rồi. Giờ bạn chạy `chsh -s /bin/bash`, logout rồi thử login lại xem, mình đồ rằng lại ngon.
+&nbsp;
+		</blockquote>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>#chsh -s /bin/bash username</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Last login: Sat Oct 27 05:11:21 2012 from 171.225.106.115
+&#91;username@localhost ~&#93;$</pre>
+		</div>
+
+Lần này thì lại được. Nguyên nhân ở đâu vậy anh :|]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270505.hva#270505</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270505.hva#270505</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 10:14:18]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ Cảm ơn anh quanta và các bạn, em đã change về /bin/sh, ok rồi.
+<br>
+			<div align="center" class="limitview"><img src='http://i105.photobucket.com/albums/m227/thienthannoiloan/Untitled.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+Như thế này là do shell /bin/bash của server bên em bị corrupt phải không ạ ? 
+Cho em hỏi thêm là các shell như /bin/bash, /bin/sh, /bin/csh có khác biệt gì nhau không, và nếu không thì tại sao trên server lại có nhiều shell, sử dụng chung 1 mục đích như vậy ạ
+
+Em cảm ơn.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270491.hva#270491</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270491.hva#270491</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 05:18:23]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ bên DC đã cắm lại rồi.
+Em đang boot vào single user mode để thử change sang shell khác. Có gì em sẽ post lên ngay.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270488.hva#270488</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270488.hva#270488</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 04:36:33]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <br>
+			<div align="center" class="limitview"><img src='http://nr7.upanh.com/b3.s11.d1/534ec2da52318b64f42ed39d63f93d08_50322567.output6.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Em thắc mắc 1 tẹo, đấy là cái đoạn session opened for user hanoistory by LOGIN (uid=0)
+
+uid của hanoistory chắc chắn là một số # 0, vậy cái đoạn uid=0 ở đây là lỗi ?]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270478.hva#270478</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270478.hva#270478</link>
+				<pubDate><![CDATA[Fri, 26 Oct 2012 00:55:22]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">dungnguyen31 wrote:</cite><br>
+		<blockquote>
+<blockquote>
+Kiểm tra xem shell của root đang là gì?
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>getent passwd root</pre>
+		</div>
+&nbsp;
+		</blockquote>
+
+output: 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>root: x:0:0:root:/root:bin/bash</pre>
+		</div>&nbsp;
+		</blockquote>
+
+Mình mới thử boot vào single user mode, thử cat /bin/bash vẫn thấy có nội dung file, nên chắc là file ấy vẫn tồn tại.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270469.hva#270469</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270469.hva#270469</link>
+				<pubDate><![CDATA[Thu, 25 Oct 2012 20:57:04]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">hoanglan87 wrote:</cite><br>
+		<blockquote>Mình nghĩ do bạn sửa file /etc/passwd bằng tay nên nó bị lỗi, đối với desktop thì boot bằng live CD sau đó chroot và undo thay đổi trên file passwd. Còn trên server bạn có thể nhờ supporter bên đó giúp đỡ.&nbsp;
+		</blockquote>
+
+Cậu kĩ thuật bên kia báo là em chưa gặp lỗi này bao giờ, gợi ý tháo 1 ổ ( cắm raid 1 ) ra, cài lại OS lên ổ còng lại rồi cắm vào và tính phí 1 củ ...
+
+Mình muốn hỏi mọi người xem có giải pháp khác không  =(( ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270439.hva#270439</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270439.hva#270439</link>
+				<pubDate><![CDATA[Thu, 25 Oct 2012 02:58:33]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ 
+usermod --shell /bin/bash root
+
+Đã chạy lệnh trên, không có out put. reboot vào normal mode login vẫn vậy...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270433.hva#270433</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270433.hva#270433</link>
+				<pubDate><![CDATA[Thu, 25 Oct 2012 01:43:12]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ Mình vừa mới chuyển sang server này khoảng 2 tuần, tổng data chưa tới 8gb nên không nghĩ tới trường hợp là /home/ bị full.
+
+Đây là caption màn hình khi đăng nhập ( Chỉ nháy lên cái thông báo bên dưới, sau đó là lại hỏi đăng nhập tiếp )
+
+<br>
+			<div align="center" class="limitview"><img src='http://nr0.upanh.com/b6.s33.d3/bdf83781569b95ee58e0f70c4e4f2c41_50289080.errorlogin.jpg' border="0" onload="maxImg(this, 500px);" /></div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270417.hva#270417</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270417.hva#270417</link>
+				<pubDate><![CDATA[Wed, 24 Oct 2012 21:23:23]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ <br>
+			<div align="center" class="limitview"><img src='http://nr6.upanh.com/b4.s11.d1/b510254064deec9cc218850f839e578e_50287186.untitled.png' border="0" onload="maxImg(this, 500px);" /></div>
+
+
+Đây là log security của server. Cứ ngay sau khi login thành công, 1 session được tạo ra thì session đó ngay lập tức bị closed.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270413.hva#270413</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270413.hva#270413</link>
+				<pubDate><![CDATA[Wed, 24 Oct 2012 19:41:28]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Mất pass root server - nhờ datacenter reset nhưng không được</title>
+				<description><![CDATA[ Chiều nay, khoảng 3h chiều, mình nhận được tin báo là không vào được website của bên minnhf, mình vào kiểm tra thì thấy service mysqld trên server không hoạt động. Mình đang ở trường bị chặn proxy, nên teamviewer vào một máy bạn trong team, sử dụng bitvise ssh và sftp để load về file /var/log/mysqld.log, đọc thấy 4 dòng cuối báo cant not open mysql.sock, mình chưa fix gì hết thì thấy một bạn trong team đã báo lại là chạy bt. Bên mình không can thiệp gì vào.
+
+Khoảng 6h tối nay, mình phải add thêm 1 user ftp cho một bạn coder php, mình chỉ thực hiện các thao tác sau
+
+1. Log vào ssh.
+2. useradd username
+3. chown username -R /home/website.username/
+
+Sau đó bạn coder báo lại là ftp defaut vào folder /home/username( do khi useradd thì tự động gán trực tiếp vào folder này )
+mình dùng sftp của bitvise load file /etc/passwd về, sửa dòng cuối cùng từ
+
+username:x:505:506::/home/username:/bin/bash
+Thành
+username:x:505:506::/home/website.username:/bin/bash
+
+sau đó thì upload lên server ( chép đè lên file cũ )
+
+Sau khi upload lên thì gặp phải tinh trạng là không thể connect được với user username
+Mình đã thử change pass rất nhiều lần bằng cách
+
+4. passwd username
+
+=&gt; báo successful, nhưng mình thử connect bằng ftp vẫn không được.
+
+Mình bỏ qua, tạo user ftp khác là website.username cho bạn coder kia làm việc, vì thời gian hơi gấp.
+
+
+5. useradd website.username
+6. chown đúng folder mình cần
+7. passwd để set pass cho user này.
+
+Sau đó thì login thử trên cuteftp client. Mọi thứ ok, Mình log out ssh rồi tắt máy.
+
+Đến tối, khi mình connect lại thì không thể đc vì báo sai pass.
+
+
+Mình có liên hệ với data center, thông báo về sự cố này. Họ trả lời như sau
+
+<blockquote>Sau khi reset lại password như anh yêu cầu thì mình thử login trực tiếp trên màn hình console, màn hình báo login thành công nhưng ngay sau đó màn hình quay trở lại màn hình login, bên mình thử login tiếp tục nhưng tình trạng vẫn như cũ, vậy phiền anh sắp xếp thời gian quan DC để trực tiếp kiểm tra lại tình trạng server nhé.&nbsp;
+		</blockquote>
+Datacenter đặt ở TPHCM, mình ở HN nên không thể vô kiểm tra trực tiếp đc. Hiện tại mình muốn hỏi có bạn nào đã gặp tình trạng ntn chưa, và hướng khắc phục ra sao.
+
+//Hiện tại bên DC đã gắn KVM vào máy, mình vào được single user mode của centos.
+
+Đã thử passwd root, change pass về pass của mình, sau đó reboot server, ra màn hình đăng nhập, gõ đúng user + pass vẫn báo login incorrect..]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43669/270412.hva#270412</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43669/270412.hva#270412</link>
+				<pubDate><![CDATA[Wed, 24 Oct 2012 12:05:59]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ Đây là một đoạn log bắt trong buổi chiều hôm nay
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>42.119.160.250 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/images/star.gif HTTP/1.1" 200 362 "http://domain.com/forum/index.php?topic=10142.0" "Mozilla/5.0 &#40;Windows NT 6.1; WOW64&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+42.119.160.250 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/images/www_sm.gif HTTP/1.1" 200 292 "http://domain.com/forum/index.php?topic=10142.0" "Mozilla/5.0 &#40;Windows NT 6.1; WOW64&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+175.103.58.55 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+211.100.49.9 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+59.37.163.156 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+184.169.168.27 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+42.119.160.250 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /templates/widget/forumtop.php HTTP/1.1" 200 10623 "http://domain.com/forum/index.php?topic=10142.0" "Mozilla/5.0 &#40;Windows NT 6.1; WOW64&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+42.119.160.250 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/index.php?action=dlattach;attach=2287;type=avatar HTTP/1.1" 200 25640 "http://domain.com/forum/index.php?topic=10142.0" "Mozilla/5.0 &#40;Windows NT 6.1; WOW64&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+210.213.245.230 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+222.74.98.234 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+117.211.123.62 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.0" 403 3700 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/default/css/webkit.css HTTP/1.1" 200 283 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+117.41.182.188 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/style.css?fin12 HTTP/1.1" 200 19018 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/default/him.js HTTP/1.1" 200 27012 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/scripts/theme.js?fin20 HTTP/1.1" 200 3688 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/css/index.css?fin20 HTTP/1.1" 200 65273 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+157.55.33.253 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/index.php?action=emailuser;sa=email;msg=105689 HTTP/1.1" 200 4561 "-" "Mozilla/5.0 &#40;compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm&#41;"
+115.73.155.118 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/Themes/GuitarLearning/scripts/script.js?fin11 HTTP/1.1" 200 47795 "http://domain.com/forum/index.php?topic=24011.1" "Mozilla/5.0 &#40;Windows NT 5.1&#41; AppleWebKit/537.4 &#40;KHTML, like Gecko&#41; Chrome/22.0.1229.79 Safari/537.4"
+157.55.33.253 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET /forum/index.php?action=emailuser;sa=email;msg=105690 HTTP/1.1" 200 4943 "-" "Mozilla/5.0 &#40;compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm&#41;"
+190.85.133.162 - - &#91;05/Oct/2012:16:27:40 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+92.39.54.161 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+200.7.193.243 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+113.160.113.54 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET /forum/index.php?action=dlattach;attach=5342;type=avatar HTTP/1.1" 200 19009 "http://subdomain.domain.com/video/5552/lien-khuc-nhac-quang-cao" "Mozilla/5.0 &#40;Windows NT 5.1; rv:15.0&#41; Gecko/20100101 Firefox/15.0.1"
+113.160.113.54 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET /forum/index.php?action=dlattach;attach=6826;type=avatar HTTP/1.1" 200 23514 "http://subdomain.domain.com/video/5552/lien-khuc-nhac-quang-cao" "Mozilla/5.0 &#40;Windows NT 5.1; rv:15.0&#41; Gecko/20100101 Firefox/15.0.1"
+113.160.113.54 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET /forum/index.php?action=dlattach;attach=1865;type=avatar HTTP/1.1" 200 26399 "http://subdomain.domain.com/video/5552/lien-khuc-nhac-quang-cao" "Mozilla/5.0 &#40;Windows NT 5.1; rv:15.0&#41; Gecko/20100101 Firefox/15.0.1"
+187.16.62.130 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.1" 403 3700 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+173.13.200.181 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+177.135.241.245 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+180.76.5.140 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET /user/78880/ksvdai/connect/follow HTTP/1.1" 404 283 "-" "Mozilla/5.0 &#40;compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html&#41;"
+213.131.41.6 - - &#91;05/Oct/2012:16:27:41 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+125.216.144.199 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+202.181.176.3 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+187.5.248.219 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 403 3700 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+1.53.169.82 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET /memgroup/w2g/519/dien-dan-hocdan-com/9610 HTTP/1.1" 404 283 "http://subdomain.domain.com/video/5656/adele-rolling-in-the-deep-olesya-feat-tuanvu090" "Mozilla/5.0 &#40;Windows NT 6.1; WOW64; rv:15.0&#41; Gecko/20100101 Firefox/15.0.1"
+201.148.26.81 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+202.181.176.3 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+222.74.98.234 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+124.205.18.183 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+219.234.82.53 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 403 3700 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+219.234.82.86 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 403 3700 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+41.222.209.77 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"
+178.33.34.48 - - &#91;05/Oct/2012:16:27:42 +0700&#93; "GET / HTTP/1.0" 200 1001 "-" "Mozilla/4.0 &#40;compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705&#41;"</pre>
+		</div>
+
+
+Cho em hỏi là đoạn request này có "vấn đề" không ạ ?
+<font color='red'>
+124.205.18.183 - - [05/Oct/2012:16:27:42 +0700] "GET / HTTP/1.1" 200 1001 "-" "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705)"</font>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269920.hva#269920</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269920.hva#269920</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2012 23:37:12]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ <span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>apache    6268  3.3  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6269  3.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6270  3.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6271  3.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6272  3.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6273  3.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6274  3.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6275  3.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6276  2.6  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6277  4.5  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6278  4.5  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6279  4.5  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6281  5.5  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6282  5.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6283  5.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6284  4.5  0.4  45380 18324 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6285  4.5  0.4  45380 18324 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6286  4.5  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6328 10.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6329  9.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6330  0.0  0.2  33980  9784 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6333 10.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6335  0.0  0.2  33628  8668 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6336  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6337  0.0  0.1  33068  6912 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6338  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6339  0.0  0.1  33068  6916 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6340  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6345  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6346 10.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6347 10.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6349  9.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6350 10.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6354  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6358 10.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6366  9.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6367  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6368  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6372 11.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6374  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6376 10.0  0.4  45380 18324 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6377  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6379 10.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6380  9.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6382  9.0  0.4  45380 18332 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6383  9.0  0.4  45380 18328 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+Fri Oct  5 11:11:24 ICT 2012
+apache    4997  1.9  0.4  45384 18840 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5009  1.3  0.4  45380 18968 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5014  1.2  0.4  45344 18764 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5015  1.7  0.4  45376 18804 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5026  1.2  0.4  45364 18788 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5027  1.4  0.4  45364 18900 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5028  0.9  0.4  45080 18420 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5031  1.6  0.4  45348 18768 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5037  1.2  0.4  45384 18924 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5038  1.0  0.4  45344 18760 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5039  1.2  0.4  45348 18792 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5042  1.0  0.4  45364 18908 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5047  1.3  0.4  45364 18792 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5050  0.9  0.4  45344 18744 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5061  1.0  0.4  45344 18812 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5069  0.9  0.4  45344 18756 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5083  0.8  0.4  45344 18796 ?        D    11:10   0:00  \_ /usr/sbin/h
+ttpd
+apache    5953  0.9  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    5969  0.9  0.4  45324 18464 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    5975  0.8  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6043  0.9  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6058  1.2  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6062  1.0  0.4  45332 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6063  1.1  0.4  45324 18448 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6075  1.1  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6081  1.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6105  1.1  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6125  1.7  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6151  1.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6160  1.5  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6176  0.8  0.2  33976  9992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6203  2.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6209  2.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6212  2.2  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6222  1.8  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6255  3.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6261  2.2  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6268  2.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6274  2.2  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6279  3.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6283  3.3  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6336  5.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6337  2.5  0.3  37428 13300 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6345  4.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6346  5.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6350  5.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6366  5.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6367  4.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6374  4.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6376  5.0  0.4  45324 18448 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6377  4.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6382  4.5  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6383  4.5  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6399 12.0  0.4  45324 18448 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6402  9.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6404  4.0  0.3  37436 13324 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6408  9.0  0.4  45324 18448 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6409  0.0  0.2  33980  9780 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6413  9.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6416  1.0  0.2  33980  9788 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6417 10.0  0.4  45332 18520 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6418 10.0  0.4  45332 18516 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6419  5.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6420  9.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6425 10.0  0.4  45324 18456 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6426  0.0  0.3  37428 13264 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6427  0.0  0.2  36356 12124 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6428  0.0  0.4  45324 18452 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6430  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6434  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6436  0.0  0.3  37428 13252 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6437  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6438  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6439  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6449  0.0  0.3  37428 13248 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+Fri Oct  5 11:11:25 ICT 2012
+apache    6416  0.5  0.2  33980  9788 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6469  0.0  0.0   6868  1772 ?        D    11:11   0:00  |       \_ /us
+r/sbin/postdrop -r
+apache    6477  0.0  0.1  33068  6860 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6480  0.0  0.1  33068  6860 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+Fri Oct  5 11:11:27 ICT 2012
+apache    6469  0.0  0.0   6868  1772 ?        D    11:11   0:00  |       \_ /us
+r/sbin/postdrop -r
+apache    6539  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6540  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6541  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6542  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6550  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6553  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6554  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6555  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6556  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6558  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6559  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6560  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6562  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6563  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6564  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6565  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6566  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6567  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6568  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6569  0.0  0.1  33068  6984 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+apache    6570  0.0  0.1  33068  6992 ?        D    11:11   0:00  \_ /usr/sbin/h
+ttpd
+Fri Oct  5 11:11:28 ICT 2012
+Fri Oct  5 11:11:29 ICT 2012</pre>
+		</div>
+
+Đây là out put khi thực hiện "while true; do date; ps auxf | awk '{if($8=="D") print $0;}'; sleep 1; done"
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269917.hva#269917</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269917.hva#269917</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2012 23:12:10]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ Em đã disable luôn cái selinux ( vì không dùng đến ) - Server vẫn treo.
+đây là top của server tại thời điểm bị treo ( Em đang duyệt web thì thấy down, may mà vẫn đang bật ssh - bình thường nếu bị thì không vào ssh được luôn )
+
+Ram free vẫn còn nhiều, nhưng CPU thì tăng cao khủng khiếp. Bình thường load average chỉ khoảng 6-7
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Last login: Thu Oct  4 19:57:28 2012 from 1.55.63.81
+&#91;root@localhost ~&#93;# top
+top - 19:59:43 up 11:15,  1 user,  load average: 176.85, 130.67, 66.17
+Tasks: 156 total,   1 running, 155 sleeping,   0 stopped,   0 zombie
+Cpu&#40;s&#41;:  1.2%us,  4.4%sy,  0.0%ni,  0.0%id, 91.5%wa,  0.9%hi,  2.0%si,  0.0%st
+Mem:   4149456k total,   593756k used,  3555700k free,     4704k buffers
+Swap:  8193140k total,    12180k used,  8180960k free,   142252k cached
+
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 7200 mysql     10  -5  761m 295m 5676 S 23.3  7.3  40:40.37 mysqld
+ 2263 root      10  -5     0    0    0 S  9.0  0.0  15:31.65 kondemand/2
+    8 root      RT  -5     0    0    0 S  1.0  0.0   1:39.31 migration/2
+   16 root      10  -5     0    0    0 S  0.7  0.0   2:51.38 events/2
+   27 root      10  -5     0    0    0 S  0.3  0.0  16:54.62 kblockd/2
+ 2264 root      10  -5     0    0    0 S  0.3  0.0   0:06.75 kondemand/3
+22497 root      15   0  2436 1140  800 R  0.3  0.0   0:00.13 top
+    1 root      15   0  2072  624  536 S  0.0  0.0   0:02.13 init
+    2 root      RT  -5     0    0    0 S  0.0  0.0   0:00.25 migration/0
+    3 root      34  19     0    0    0 S  0.0  0.0   0:00.02 ksoftirqd/0
+    4 root      RT  -5     0    0    0 S  0.0  0.0   0:00.00 watchdog/0
+    5 root      RT  -5     0    0    0 S  0.0  0.0   0:00.23 migration/1
+    6 root      35  19     0    0    0 S  0.0  0.0   0:00.03 ksoftirqd/1
+    7 root      RT  -5     0    0    0 S  0.0  0.0   0:00.00 watchdog/1
+    9 root      39  19     0    0    0 S  0.0  0.0   0:00.06 ksoftirqd/2
+   10 root      RT  -5     0    0    0 S  0.0  0.0   0:00.00 watchdog/2
+   11 root      RT  -5     0    0    0 S  0.0  0.0   0:02.51 migration/3
+   12 root      34  19     0    0    0 S  0.0  0.0   0:00.00 ksoftirqd/3
+&#91;root@localhost ~&#93;#</pre>
+		</div>
+
+Để em check log xem có gì lạ thì sẽ quẳng lên.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269901.hva#269901</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269901.hva#269901</link>
+				<pubDate><![CDATA[Thu, 4 Oct 2012 08:07:05]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ E đã disable selinux, sau khi reboot lại server, start apache với command "service httpd start" thì gặp lỗi 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>address already in use make_sock could not bind to address 80</pre>
+		</div>
+
+Em kill các process đang sử dụng port 80 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>for i in `lsof -i :80 | grep http | awk {' print $2'}`; do kill -9 $i; done</pre>
+		</div>
+
+Sau đấy start lại httpd thì đã ok.
+
+Đây là file audit.log, thú thật là em đọc không hiểu các thông tin trong này.
+<span class="link"> https://docs.google.com/open?id=0By7Th2rBSylveFRsMi05eWRWU3c</span>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269878.hva#269878</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269878.hva#269878</link>
+				<pubDate><![CDATA[Wed, 3 Oct 2012 21:31:46]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">tranhuuphuoc wrote:</cite><br>
+		<blockquote>Trong error_log thì chủ yếu liên quan dính đến Apache, tạm thời tắt bỏ selinux sau đó restart lại server để tiến hành tìm hiểu nguyên nhân và cách khắc phục. 
+Cho xem mấy cái log trong /var/log , bạn nên cung cấp rõ các thông tin của con server này &nbsp;
+		</blockquote>
+
+Anh cần thêm log gì trong /var/log để em up lên ạ.
+Đây là message log của server 
+<span class="link"> https://docs.google.com/open?id=0By7Th2rBSylvU2s0YlRTazhqU1k</span>
+Đây là cấu hình server em đang sử dụng : 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>Last login: Wed Oct  3 22:14:14 2012 from 1.55.63.81
+&#91;root@localhost ~&#93;# cat /proc/cpuinfo
+processor       : 0
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 15
+model name      : Intel&#40;R&#41; Xeon&#40;R&#41; CPU           X3210  @ 2.13GHz
+stepping        : 11
+cpu MHz         : 1596.000
+cache size      : 4096 KB
+physical id     : 0
+siblings        : 4
+core id         : 0
+cpu cores       : 4
+apicid          : 0
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 10
+wp              : yes
+flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov
+pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni
+ monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr lahf_lm
+bogomips        : 4256.14
+
+processor       : 1
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 15
+model name      : Intel&#40;R&#41; Xeon&#40;R&#41; CPU           X3210  @ 2.13GHz
+stepping        : 11
+cpu MHz         : 1596.000
+cache size      : 4096 KB
+physical id     : 0
+siblings        : 4
+core id         : 1
+cpu cores       : 4
+apicid          : 1
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 10
+wp              : yes
+flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov
+pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni
+ monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr lahf_lm
+bogomips        : 4255.39
+
+processor       : 2
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 15
+model name      : Intel&#40;R&#41; Xeon&#40;R&#41; CPU           X3210  @ 2.13GHz
+stepping        : 11
+cpu MHz         : 1596.000
+cache size      : 4096 KB
+physical id     : 0
+siblings        : 4
+core id         : 2
+cpu cores       : 4
+apicid          : 2
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 10
+wp              : yes
+flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov
+pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni
+ monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr lahf_lm
+bogomips        : 4255.42
+
+processor       : 3
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 15
+model name      : Intel&#40;R&#41; Xeon&#40;R&#41; CPU           X3210  @ 2.13GHz
+stepping        : 11
+cpu MHz         : 1596.000
+cache size      : 4096 KB
+physical id     : 0
+siblings        : 4
+core id         : 3
+cpu cores       : 4
+apicid          : 3
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 10
+wp              : yes
+flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov
+pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pni
+ monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr lahf_lm
+bogomips        : 4255.42
+
+&#91;root@localhost ~&#93;# cat /proc/meminfo
+MemTotal:      4149456 kB
+MemFree:        143144 kB
+Buffers:        136700 kB
+Cached:        3149300 kB
+SwapCached:       8440 kB
+Active:        2377668 kB
+Inactive:      1516976 kB
+HighTotal:     3274156 kB
+HighFree:        26820 kB
+LowTotal:       875300 kB
+LowFree:        116324 kB
+SwapTotal:     8193140 kB
+SwapFree:      8175700 kB
+Dirty:             356 kB
+Writeback:           0 kB
+AnonPages:      606844 kB
+Mapped:          18924 kB
+Slab:            90360 kB
+PageTables:       7448 kB
+NFS_Unstable:        0 kB
+Bounce:              0 kB
+CommitLimit:  10267868 kB
+Committed_AS:  1442320 kB
+VmallocTotal:   116728 kB
+VmallocUsed:      7656 kB
+VmallocChunk:   108592 kB
+HugePages_Total:     0
+HugePages_Free:      0
+HugePages_Rsvd:      0
+Hugepagesize:     2048 kB
+&#91;root@localhost ~&#93;#</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269871.hva#269871</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269871.hva#269871</link>
+				<pubDate><![CDATA[Wed, 3 Oct 2012 11:53:27]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Server bị treo liên tục, nhờ tìm nguyên nhân ?</title>
+				<description><![CDATA[ 3-4 ngày nay, con Centos em đang dùng thường xuyên bị treo ở tình trạng không ssh được, các dịch vụ như ftp, httpd, mysql đều ko hoạt động.
+
+Đây là error_log 3 ngày gần đây nhất
+
+<span class="link"> https://docs.google.com/open?id=0By7Th2rBSylvNUVrZ3pQWkJoRlE</span>
+
+Em kiểm tra error_log thì thấy có đoạn sau ở mỗi thời điểm server bị treo
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;Mon Oct 01 16:05:11 2012&#93; &#91;error&#93; server reached MaxClients setting, consider raising the MaxClients setting
+&#91;Mon Oct 01 16:21:19 2012&#93; &#91;notice&#93; SELinux policy enabled; httpd running as context root:system_r:httpd_t
+&#91;Mon Oct 01 16:21:19 2012&#93; &#91;notice&#93; suEXEC mechanism enabled &#40;wrapper: /usr/sbin/suexec&#41;
+&#91;Mon Oct 01 16:21:19 2012&#93; &#91;notice&#93; Digest: generating secret for digest authentication ...
+&#91;Mon Oct 01 16:21:19 2012&#93; &#91;notice&#93; Digest: done
+&#91;Mon Oct 01 16:21:20 2012&#93; &#91;notice&#93; Apache/2.2.22 &#40;Unix&#41; DAV/2 PHP/5.3.10 SVN/1.6.13 configured -- resuming normal operations
+&#91;Mon Oct 01 16:45:15 2012&#93; &#91;error&#93; server reached MaxClients setting, consider raising the MaxClients setting
+&#91;Mon Oct 01 17:10:50 2012&#93; &#91;notice&#93; SELinux policy enabled; httpd running as context root:system_r:httpd_t
+&#91;Mon Oct 01 17:10:50 2012&#93; &#91;notice&#93; suEXEC mechanism enabled &#40;wrapper: /usr/sbin/suexec&#41;
+&#91;Mon Oct 01 17:10:50 2012&#93; &#91;notice&#93; Digest: generating secret for digest authentication ...
+&#91;Mon Oct 01 17:10:50 2012&#93; &#91;notice&#93; Digest: done
+&#91;Mon Oct 01 17:10:51 2012&#93; &#91;notice&#93; Apache/2.2.22 &#40;Unix&#41; DAV/2 PHP/5.3.10 SVN/1.6.13 configured -- resuming normal operations
+&#91;Mon Oct 01 17:44:32 2012&#93; &#91;notice&#93; caught SIGTERM, shutting down
+&#91;Mon Oct 01 17:44:33 2012&#93; &#91;notice&#93; SELinux policy enabled; httpd running as context root:system_r:httpd_t
+&#91;Mon Oct 01 17:44:33 2012&#93; &#91;notice&#93; suEXEC mechanism enabled &#40;wrapper: /usr/sbin/suexec&#41;
+&#91;Mon Oct 01 17:44:33 2012&#93; &#91;notice&#93; Digest: generating secret for digest authentication ...
+&#91;Mon Oct 01 17:44:33 2012&#93; &#91;notice&#93; Digest: done
+&#91;Mon Oct 01 17:44:33 2012&#93; &#91;notice&#93; Apache/2.2.22 &#40;Unix&#41; DAV/2 PHP/5.3.10 SVN/1.6.13 configured -- resuming normal operations
+&#91;Mon Oct 01 17:55:43 2012&#93; &#91;warn&#93; child process 5918 still did not exit, sending a SIGTERM
+&#91;Mon Oct 01 17:55:48 2012&#93; &#91;warn&#93; child process 5039 still did not exit, sending a SIGTERM
+&#91;Mon Oct 01 17:55:48 2012&#93; &#91;warn&#93; child process 5923 still did not exit, sending a SIGTERM
+&#91;Mon Oct 01 17:55:48 2012&#93; &#91;warn&#93; child process 5974 still did not exit, sending a SIGTERM
+&#91;Mon Oct 01 17:55:48 2012&#93; &#91;warn&#93; child process 5943 still did not exit, sending a SIGTERM
+&#91;Mon Oct 01 17:55:48 2012&#93; &#91;warn&#93; child process 5049 still did not exit, sending a SIGTERM</pre>
+		</div>
+
+Nhờ mọi người cho em hướng dẫn khắc phục. Em xin cảm ơn.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43528/269864.hva#269864</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43528/269864.hva#269864</link>
+				<pubDate><![CDATA[Wed, 3 Oct 2012 09:44:15]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>sau khi cài kloxo : mất vsftpd, start httpd: httpd : bad user name </title>
+				<description><![CDATA[ <blockquote>Kloxo không dùng vsftpd xem cho kỹ bài viết từ trang chủ của nó và đọc tham khảo ở đây<span class="link"> http://www.miblog.indomita.org/en/2010/12/instalacion-kloxo-64bits-sobre-centos-5-5-kloxo-64bits-iptables-webmin-csf-lfd-mod_evasive-ocultar-versiones-trucos.html&nbsp;</span>
+		</blockquote>
+
+Trước khi cài kloxo lên server, con server ấy của em đã cài sẵn các service httpd, mysqld, memcached, postfix, dovecot, vsftpd..., phục vụ như một webserver để gửi mail, chạy website thông thường. 
+
+Vậy là sau khi cài kloxo lên ( mặc dù cài lỗi ), một số service mà kloxo không sử dụng như vsftpd, postfix sẽ bị remove đi ạ ? 
+
+Hiện tại em đã cài thêm proftpd để dùng thay vsftpd, nhưng mail server thì lại lỗi ...]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43415/269630.hva#269630</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43415/269630.hva#269630</link>
+				<pubDate><![CDATA[Fri, 21 Sep 2012 11:24:22]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>sau khi cài kloxo : mất vsftpd, start httpd: httpd : bad user name </title>
+				<description><![CDATA[ cat /etc/*-release 
+
+CentOS 5.5 (Final)
+
+Bản 64bit ạ.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43415/269468.hva#269468</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43415/269468.hva#269468</link>
+				<pubDate><![CDATA[Mon, 17 Sep 2012 22:34:46]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Nhờ mọi người chuẩn đoán server chạy chậm, connect lâu </title>
+				<description><![CDATA[ Mình không thấy có sql trên top :-?  :-/ ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43338/269454.hva#269454</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43338/269454.hva#269454</link>
+				<pubDate><![CDATA[Mon, 17 Sep 2012 07:37:22]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+			<item>
+				<title>Lỗi khi start= httpd : httpd : bad user name apache </title>
+				<description><![CDATA[ Cảm ơn bạn.
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>/etc/init.d/httpd configtest
+Syntax OK</pre>
+		</div>
+
+
+/edited : Đã fix =,=. Mở file .sh của kloxo, thấy nó set enforce = 1. Set lại về 0 là được.
+
+
+
+Giờ thì mình mất luôn service vsftpd, đã thử 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>yum install vsftpd</pre>
+		</div>
+nhận được kết quả như sau :
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>no package vsftpd available</pre>
+		</div>
+
+Mình đã thử update yum, nhưng vẫn không được.
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/preList/43415/269453.hva#269453</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/preList/43415/269453.hva#269453</link>
+				<pubDate><![CDATA[Mon, 17 Sep 2012 07:35:43]]> GMT</pubDate>
+				<author><![CDATA[ mr.tee]]></author>
+			</item>
+	</channel>
+</rss>

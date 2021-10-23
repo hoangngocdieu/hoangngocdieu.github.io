@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Mẹo tăng tốc web khi sử dụng Squid Proxy."]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Mẹo tăng tốc web khi sử dụng Squid Proxy."]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Mẹo tăng tốc web khi sử dụng Squid Proxy.</title>
+				<description><![CDATA[ <b>Mở đầu</b>
+Rảnh muốn chia sẻ với các bạn vài thủ thuật nhỏ, cái này đúng ra là tiểu xảo sử dụng phần mềm, nhưng ngặt một nỗi tớ chưa đủ đẳng cấp để post vô đó, nên cho vào đây là hợp nhất.
+Hiện tại bạn ở cơ quan hoặc doanh nghiệp, nếu có tăng tốc truy cập web bằng cách sử dụng Squid Proxy hoặc dự định sử dụng nó, thì có thể áp dụng thủ thuật này để tăng thêm chút đỉnh tốc độ.
+
+<b>Đặt vấn đề</b>
+Theo thói quen thì các nhân viên văn phòng rất hay vào vnexpress.net hay dantri.com.vn (hoặc các site tin tức tương tự). Cái dở của mấy tay làm các web site này là tụi nó có quá nhiều quảng cáo dạng flash, hơn nữa lại hay áp dụng kỹ thuật chống "cache", có thể chỉ với mục đích thống kê, nhưng tiêu tốn băng thông một cách không cần thiết. Cách chống cache thường áp dụng ở các site này là thêm '?xxx' vào sau URI. Ví dụ<span class="link"> http://vnexpress.net/ad/abc.swf,</span> khi viết src trong thẻ object thường ghi thành:<span class="link"> http://vnexpress.net/ad/abc.swf?param=xxxx.</span> Mỗi file flash quảng cáo không phải nhỏ (cỡ khoảng 50KB), trang chủ có thể có đến 10 cái như thế, mỗi cú click vào trang là 500KB down về là ít, bất chấp có cache tăng tốc hay không và nội dung  chỉ thay đổi 1 chút.
+Như các bạn đã biết với squid, khi gặp cái URL nào có dấu ? thì nó sẽ không cache lại cái object đó, ngay cả khả năng cache IE hoặc Firefox cũng bị vô hiệu hoá nếu các tham số là ngẫu nhiên.
+Với 1 văn phòng 100 nhân viên, 50% họ vào duyệt vnexpress.net, thì mỗi view của họ, 500*50 ~ 25MegaByte, tải trên 1 kênh 3Mbit/s full speed có thể mất tới 10 giây. Và lúc nào cái kênh 3Mbit đó cùng đầy nghẹt, với 70-80% dung lượng chỉ để vào vnexpress.net.
+
+<b>Giải quyết</b>
+Squid có 1 cái tuyệt với gọi là cho phép url wwwector (với bác nào đã dùng squidGuard hoặc tương tự). Dựa vào nó ta có thể có cách xử lý với các URL kiểu vớ vẩn như kia.
+giả định rằng các bạn chạy với hệ thống squid proxy trên linux, dùng perl, ta có thể tự viết 1 cái wwwector đơn giản và cho vào trong squid.conf như sau:
+Tạo 1 file bằng các lệnh sau, tại vị trí /opt (hoặc tuỳ bạn), có tên /opt/www.pl:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>echo '#!/usr/bin/perl' &gt; /opt/www.pl
+echo '$| = 1;while&#40;&lt;&gt;&#41; { print &#40;/^&#40;http:\/\/.+\.&#40;swf|flv|gif|jpg&#41;&#41;\?/ ? qq{301:$1\n} : qq{\n}&#41;; }' &gt;&gt; /opt/www.pl
+chmod +x /opt/www.pl</pre>
+		</div>
+
+Mở file squid.conf (với squid 2.xx, tương thích với 3.x), tìm, bỏ comment và sửa hoặc thêm 2 dòng sau:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>wwwect_program /opt/www.pl
+wwwect_children 5</pre>
+		</div>
+Save lại và khởi động lại squid.
+Cái embeded wwwector này hỗ trợ xử lý các URL với các file swf, flv (flash), gif và jpg.
+
+<b>Kết quả</b>
+Sau khi áp dụng cái wwwector đơn giản này vào squid-proxy của 1 doanh nghiệp, với hơn 100 người sử dụng, 1 kênh ADSL MegaNET của FPT với 3Mbit, tốc độ duyệt web nói chung và vào vnexpress.net tăng lên đáng kể, dù số hit do proxy thống kê không ít hơn. Dung lượng mà vnexpress.net giờ đây chỉ chiếm khoảng 20-30% tổng kênh 3Mbit, vào các site khác cũng nhanh đáng kể do rảnh kênh. Squid cũng chỉ làm việc là trả lại các URL "cache được" với các file flash, nên IE/Firefox cũng không cần tải về.
+Cái dở: có lẽ 1 số site có tiểu xảo thống kê như vnexpress.net cũng bị vô hiểu hoá, nhưng không thấy ai kêu cả.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/25992.hva#157569</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/25992.hva#157569</link>
+				<pubDate><![CDATA[Tue, 4 Nov 2008 00:31:17]]> GMT</pubDate>
+				<author><![CDATA[ myquartz]]></author>
+			</item>
+	</channel>
+</rss>

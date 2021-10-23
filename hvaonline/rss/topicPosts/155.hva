@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Các kĩ thuật lây nhiễm của virus"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/28.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Các kĩ thuật lây nhiễm của virus"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ <font color='red'><b>Kĩ thuật lây nhiễm</b></font>
+(Bài viết của Hackett)
+
+<font color='blue'>1/Kĩ thuật lây nhiễm BootRecord/MasterBoot của đĩa mềm , đĩa cứng :</font>
+MasterBoot (MB) là sector đầu tiên của đĩa cứng (sector1 , head 0, Cylinder 0).MB bao gồm hai phần bảng phân vùng (Partition Table) và chương trình khởi động.Bảng phân vùng được đặt bắt đầu tại offset 01BEh trong MB.Bảng này chứa các thông số xác định các phân vùng : điểm bắt đầu , kết thúc (về mặt vật lí )của một phân vùng trên đĩa cứng …và xác định các phân vùng hoạt động (Active Partition).Chương trình khởi động (cón gọi là chương trình mồi) chứa một đoạn mã lệnh (bắt đầu từ offset 0 của MB) có tác dụng kiểm tra các phân vùng , tìm kiếm phân vùng hoạt động .Nếu thấy một phân vùng hoạt động , chương trình này chuyển toàn bộ đoạn mã MB lên một vùng nhớ khác , sau đó tiến hành đọc BootRecord (BR) của phân vùng đó lên địa chỉ 0000:07C00h sau đó trao quyền điều khiển cho hệ điều hành.
+Mỗi khi máy tính được khới động, một đoạn mã chương trình trong ROM sẽ được thực hiện .Đoạn chương trình này sẽ tiến hành quá trình POST (Power On Self Test-tự kiểm tra khi khởi động).Quá trình này sẽ lần lượt kiểm tra thanh ghi , kiểm tra bộ nhớ , khởi tạo các chip điều khiển DMA , bộ điều khiển ngắt đĩa…Nếu quá trình này hoàn thành tốt đẹp thì công việc tiếp theo là dò tìm các chương trình khởi tạocủa các card thiết bị gắn thêm và trao quyền điều khiển đẻ chúng tự khơỉ tạo.Sau đó đoạn chương trình trong ROM sẽ tiến hành đọc MB trên đĩa cứng hoặc BR trên đĩa mềm (nếu tồn tại đĩa cứng /đĩa mềm trên máy tính) vào RAM tại một địa chỉ cố định 0000:07C00h.Thứ tự kiểm tra đĩa cứng / đĩa mềm tùy thuộc vào thiết lập mà người sử dụng đã đặt trong CMOS.Nếu việc đọc không thành công , ngắt 018h sẽ được gọi.Nếu đọc thành công, quyền điều khiển sẽ được trao cho đoạn mã đã đọc bằng một lệnh nhảy xa : JMP FAR 0000:07C00.
+Như vậy nếu đoạn chương trình MB/BR bị thay thế bởi một đoạn mã chương trình khác (có thể là một chương trình virus) , chương trình đó sẽ được trao quyền điểu khiển mỗi khi máy tính được khởi động.
+Đối với đĩa mềm , việc lây nhiễm đơng giản là thay thế BR với một đoạn chương trình virus.
+Đối với đĩa cứng , vì MB và BR trên phân vùng hoạt động đều được trao quyền khới động nên có thể thay thế MB hoặc BR trên phân vùng hoạt động với chương trìng virus.Nếu chọn MB , virus sẽ luôn được nạp và kích hoạt , không phụ thuộc vào việc sau đó hệ điều hành nàp sẽ được nạp. Tuy nhiên nếu chọn BR , phại tìm kiếm BR trên phân vùng hoạt động đẻ đảm bảo virus được kích hoạt.Thực tế hầu như các virusBoot đều chọn lây nhiễm MB thay vì lây nhiễm BR.
+Trong MB có chứa bảng phân vùng , trong BR chứa các tham số BIOS , là những thông tin rất quan trọng đối với các HĐH.Virus cần lưu giữ những thông tin này để cung cấp chio các chương trình khác (HĐH và một số chương trình ứng dụng), đảm bảo các chương trình khác hoạt động bình thường .Mặt khác , đoạn chương trình trong MB/BR cũng có thể được thiết kế để tiến hành những nhiệm vụ đặc biệt (có thể là một virus khác) nên cũng cấn thiết phải được lưu giữ (tuy nhiên vẫn có những loại virus không tiến hành lưu giữ MB/BR).
+Một số virus cần tiến hành những tác vụ đặc biệt , đòi hỏi mã lệnh phức tạp với kích thước lớn.
+Như vậy cần tìm một vị trí trên đĩa để lưu phần mã vượt trội và MB/BR cũ phải được đảm bảo không bị sử dụng vào mục đích khác (không bị ghi đè).Virus có thể sử dụng một số vùng đĩa sau vào mục đích đó :
+*Đối với đĩa mềm :
++Có thể dùng những vùng đĩa ít khi được sử dụng như sector cuối của thư mục gốc , những secotr cuối trên đĩa.
++Dùng một số sector còn trống , sau đó đánh dấu các sector này đã hỏng để HĐH không sử dụng nữa.
++Một số phương pháp khác là định dạng thêm track mới cho đĩa mềm , sau đó sử dụng những sector trên đĩa này.
+*Đối với đĩa cứng :
++Trên track0 thường chỉ chứa MB trên sector 1, do đó có rất nhiều secotr không sử dụng đến có thể sử dụng vào mục đích này.
++Có thể sử dụng hai phương pháp đầu đã sử dụng với đĩa mềm.
+Như vậy khi được trao quyền điều khiển , virus Boot sẽ tiến hành các tác vụ lây nhiễm , cài đặt …sau đó đọc MB/BR cũ vào RAM và trả điều khiển cho đoạn mã trong MB/BR tiến hành như bình thường.
+Do các đĩa cứng là cố định trong suốt phiên làm việc của máy tính , hầu hết các virus Boot đều tiến hành lây nhiễm lên đĩa cứng(nếu tìm thấy) ngay khi khởi động.
+Để lây nhiễm lên các đĩa mềm , các virus Boot thường tiến hành phân phối vùng nhớ riêng để thường trú , chiếm một số ngắt để phục vụ việc lây lan (thường là ngắt 013h).Mỗi khi phát hiện thấy BR trên đĩa mềm chưa bị lây nhiễm , virus sẽ tiến hành lây nhiễm lên đĩa mềm đó.
+
+<font color='blue'>2/Các kĩ thuật lây nhiễm file thi hành :</font>
+Trên môi trường DOS có các file thi hành dạng .COM ,.EXE và BAT.Do hạn chế của tập lệnh DOS có thể sử dụng trong file .BAT, các virus lây nhiễm file .BAT có khả năng lây nhiễm không cao, và hầu hết chỉ tồn tại trong phòng thí nghiệm và có ý nghĩa lí thuyết nhiều hơn.Đẻ mở rộng khả năng lây nhiễm , virus thường sử dụng thêm các lệnh ngoại trú đồng thời kết hợp lại với các dạng virus lây nhiễm file .EXE , .COM.
+Các file dạng .COM có cấu trúc đơn giản, nội dung file chính là hình ảnh của các chương trình trên bộ nhớ khi chương trình được thi hành.
+Các file dạng .EXE có cấu trúc phức tạp, bao gồm phần header ở đầu file , chứa các thông tin về phần mỗi file , phục vụ cho việc tổ chức thi hành file.
+Windows có các dạng file thi hành riêng ,có thể chỉ ra một số dạng sau : NE (NewExecutable), LE (LinearExecutable),PE (Portable Executable).
+Kĩ thuật lây nhiễm các file thi hành bao gồm những kĩ thuật chung tiến hành lây nhiễm và kĩ thuật ghép chương trình virus vào file chủ.
+*Những kĩ thuật chung :
+Bao gồm những kĩ thuật để tiến hành thao tác : mở/đóng file, xoá/đặt thuộc tính file , lấy/đặt ngày giờ tạo file , đọc/ghi file.
+Đối với các virus lây nhiễm file thi hành trên môi trường DOS , những kĩ thuật này tương đối đơn giản , thường sử dụng các dịch vụ file của ngắt 021h của DOS.
+Đối với các virus lây nhiễm file thi hành trên môi trường windows , cáckĩ thuật này rất đa dạng , phong phú dựa trên các dích vụ file khác nhau mà Windows cung cấp. Bao gồm một số kĩ thuật sau :
++Sử dụng các dịch vụ của ngắt 021h , tương tự như kĩ thuật mó cấu trúc đơn giản, nội dung file chính là hình ảnh của các chương trình trên bộ nhớ khi chương trình được thi hành.
+Các file dạng .EXE có cấu trúc phức tạp, bao gồm phần header ở đầu file , chứa các thông tin về phần mỗi file , phục vụ cho việc tổ chức thi hành file.
+Windows có các dạng file thi hành riêng ,có thể chỉ ra một số dạng sau : NE (NewExecutable), LE (LinearExecutable),PE (Portable Executable).
+Kĩ thuật lây nhiễm các file thi hành bao gồm những kĩ thuật chung tiến hành lây nhiễm và kĩ thuật ghép chương trình virus vào file chủ.
+*Những kĩ thuật chung :
+Bao gồm những kĩ thuật để tiến hành thao tác : mở/đóng file, xoá/đặt thuộc tính file , lấy/đặt ngày giờ tạo file , đọc/ghi file.
+Đối với các virus lây nhiễm file thi hành trên môi trường DOS , những kĩ thuật này tương đối đơn giản , thường sử dụng các dịch vụ file của ngắt 021h của DOS.
+Đối với các virus lây nhiễm file thi hành trên môi trường windows , cáckĩ thuật này rất đa dạng , phong phú dựa trên các dích vụ file khác nhau mà Windows cung cấp. Bao gồm một số kĩ thuật sau :
++Sử dụng các dịch vụ của ngắt 021h , tương tự như kĩ thuật mà các virus lây nhiễm file thi hành trên môi trường DOS sử dụng, kĩ thuật này có thể tiến hành trên hầu hết các HĐH Windows dựa trên nền DOS như Windows 3x , Windows 9x.
++Sử dụng các dịch vụ IFS (Installable file system) mà các trình điều khiển thiết bị ảo (Virtual Device Driver) cung cấp.Kĩ thuật này đòi hỏi virus phải làm việc ở Ring 0 (mức đặc quyền cao nhất).Hàm dịch vụ thường sử dụng là IFSMgr_Ring0_FileIO.Hàm này cung cấp hàu hết các dịch vụ như mở/đóng file, lấy/đặt thuộc tính, đọc/ghi file , tìm kiếm file…
++Sử dụng các hàm API hỗ trợ dịch vụ file : kĩ thuật này cà các virus lây nhiễm file thi hành trên môi trường DOS sử dụng, kĩ thuật này có thể tiến hành trên hầu hết các HĐH Windows dựa trên nền DOS như Windows 3x , Windows 9x.
++Sử dụng các dịch vụ IFS (Installable file system) mà các trình điều khiển thiết bị ảo (Virtual Device Driver) cung cấp.Kĩ thuật này đòi hỏi virus phải làm việc ở Ring 0 (mức đặc quyền cao nhất).Hàm dịch vụ thường sử dụng là IFSMgr_Ring0_FileIO.Hàm này cung cấp hàu hết các dịch vụ như mở/đóng file, lấy/đặt thuộc tính, đọc/ghi file , tìm kiếm file…
++Sử dụng các hàm API hỗ trợ dịch vụ file : kĩ thuật này có thể áp dụng với tất cả các HĐH Windows.Kĩ thuật này có thể áp dụng ngay khi virus đang làm việc ở Ring3(mức đặc quyền thấp nhất).
+
+Khác với virus file trên môi trường Windows , các virus lây nhiễm trên môi trường DOS cần tiến hành một lĩ thuật quan trọng : bẫy lỗi khi mở file để ghi.Nếu file chủ nằm trên đĩa mềm có được chống ghi , khi mở file sẽ sinh lỗi nghiêm trọng , lỗi này được kiểm soát bằng ngắt 024h của DOS (ngắt kiểm soát lỗi Criterial Error Handle).Virus cần chặn ngắt này với thủ tục sử lí ngắt tương đối đơn giản , thhường có dạng sau :
+INT_24_Handle :
+MOV ax,0003h ;mã lỗi
+IRET
+Mã lỗi 3 báo lỗi sai trong chức năng DOS và chỉ thị cho DOS trả lại quyền điều khiển cho chương trình ứng dụng.
+*Kĩ thuật ghép chương trình virus vào file chủ :
++Nối thêm: Virus được ghi vào cuối file chủ , file chủ bị sửa đổi để chuyển quyền điều khiển đến mã lệnh virus mỗi khi chương trình được thi hành.
+Đối với các file .COM virus thường lưu vào byte đầu (thường 3-5 byte, đủ kích thước cho một lệnh nhảy) và thay thế bởi một lệnh nhảy đến mã lệnh của virus.
+Đối với các file .³ thể áp dụng với tất cả các HĐH Windows.Kĩ thuật này có thể áp dụng ngay khi virus đang làm việc ở Ring3(mức đặc quyền thấp nhất).
+
+Khác với virus file trên môi trường Windows , các virus lây nhiễm trên môi trường DOS cần tiến hành một lĩ thuật quan trọng : bẫy lỗi khi mở file để ghi.Nếu file chủ nằm trên đĩa mềm có được chống ghi , khi mở file sẽ sinh lỗi nghiêm trọng , lỗi này được kiểm soát bằng ngắt 024h của DOS (ngắt kiểm soát lỗi Criterial Error Handle).Virus cần chặn ngắt này với thủ tục sử lí ngắt tương đối đơn giản , thhường có dạng sau :
+INT_24_Handle :
+MOV ax,0003h ;mã lỗi
+IRET
+Mã lỗi 3 báo lỗi sai trong chức năng DOS và chỉ thị cho DOS trả lại quyền điều khiển cho chương trình ứng dụng.
+*Kĩ thuật ghép chương trình virus vào file chủ :
++Nối thêm: Virus được ghi vào cuối file chủ , file chủ bị sửa đổi để chuyển quyền điều khiển đến mã lệnh virus mỗi khi chương trình được thi hành.
+Đối với các file .COM virus thường lưu vào byte đầu (thường 3-5 byte, đủ kích thước cho một lệnh nhảy) và thay thế bởi một lệnh nhảy đến mã lệnh của virus.
+Đối với các file .EXE trên DOS : virus sẽ sửa đổi các giá trị trong EXE Header để chuyển đầu chương trình đến mã lệnh của virus.
+Đối với file PE,NE,LE trên Windows , virus sữa các bảng tham số NE Header ,LE Header , PE Header tương ứng để chuyển đầu vào của chương trình đến phần mã lệnh của virus .Các thông số bị sửa đổi thường được lưu lại trong mã lệnh của virus.
+Một vấn đề đặt ra khi sử dụng phương pháp này là khi chương trình được thi hành và virus được trao quyền điều khiển , đoạn mã của virus sẽ nằm ở vị trí khác nhau tuỳ thuộc vàokích thước file gốc và bộ nhớ của HĐH (DOS cũng nhưWindows).
+Do đó các tham chiếu đến mã lệnh và dữ liệu trong chương trình virus sẽ không còn giống như virus được thiết kế.Để sử dụng các tham chiếu này virus phải tiến hành định vị lại trên vùng nhớ.
++Chèn giữa file :
+Virus ghi mã lệnh của nó vào bắt đầu từ một điểm ngẫu nhiên giữa file đối tượng , phần dữ liệu ghi đè sẽ được ghi xuống cuối file. Các thao tác để lấy quyền điều khiễXE trên DOS : virus sẽ sửa đổi các giá trị trong EXE Header để chuyển đầu chương trình đến mã lệnh của virus.
+Đối với file PE,NE,LE trên Windows , virus sữa các bảng tham số NE Header ,LE Header , PE Header tương ứng để chuyển đầu vào của chương trình đến phần mã lệnh của virus .Các thông số bị sửa đổi thường được lưu lại trong mã lệnh của virus.
+Một vấn đề đặt ra khi sử dụng phương pháp này là khi chương trình được thi hành và virus được trao quyền điều khiển , đoạn mã của virus sẽ nằm ở vị trí khác nhau tuỳ thuộc vàokích thước file gốc và bộ nhớ của HĐH (DOS cũng nhưWindows).
+Do đó các tham chiếu đến mã lệnh và dữ liệu trong chương trình virus sẽ không còn giống như virus được thiết kế.Để sử dụng các tham chiếu này virus phải tiến hành định vị lại trên vùng nhớ.
++Chèn giữa file :
+Virus ghi mã lệnh của nó vào bắt đầu từ một điểm ngẫu nhiên giữa file đối tượng , phần dữ liệu ghi đè sẽ được ghi xuống cuối file. Các thao tác để lấy quyền điều khiển tương tự nhưđối với phương pháp Appending.Phương pháp này cũng có thể áp dụng file .EXE, .COM (Trên DOS và Windows) .Phương phá này được sử dụng với mục đích gây khó khăn cho việc khôi phục file cũ.Tuy nhiên phương pháo này sẽ gây lỗi nếu chương trình cần đọc lại file trên đĩa vào đúng vị trì bị ghi đè.
+Cũng như phương pháp trên , virus cần tiến hành lại trên cùng nhớ để sử dụng các tham chiếu.
++Định hướng lại lệnh nhảy:
+Đây là phương pháp cải tiến lại từ hai phương pháp trên, mã lệnh virus có thể được gắn vào file gốc như phương pháp nối thêm hay chèn giữa, chỉ khác ở điểm virus sẽ tìm một lệnh FUMP hay CALL trong mã lệnh của chương trình, định hướng lại để JUMP/CALL đếm đoạn mã virus.
+Phương pháp này được sữ dụng với mục đích gây khó khăn để xác định lại lệnh nhảy khi sửa đổi.
++Điền vào lhoảng trống :
+Virus tìm các khoảng trống (vd như các phần tróng trong file NE , PE , LE) trong file chủ để ghi mã virus vào.Nếu không có khoảng trống đủ lớn , có thể sử dụng nhiều khoảng để lưu giữ đủ mã lệnh của virus.
+Phương pháp này có điểm mạnh là không làm tănn tương tự nhưđối với phương pháp Appending.Phương pháp này cũng có thể áp dụng file .EXE, .COM (Trên DOS và Windows) .Phương phá này được sử dụng với mục đích gây khó khăn cho việc khôi phục file cũ.Tuy nhiên phương pháo này sẽ gây lỗi nếu chương trình cần đọc lại file trên đĩa vào đúng vị trì bị ghi đè.
+Cũng như phương pháp trên , virus cần tiến hành lại trên cùng nhớ để sử dụng các tham chiếu.
++Định hướng lại lệnh nhảy:
+Đây là phương pháp cải tiến lại từ hai phương pháp trên, mã lệnh virus có thể được gắn vào file gốc như phương pháp nối thêm hay chèn giữa, chỉ khác ở điểm virus sẽ tìm một lệnh FUMP hay CALL trong mã lệnh của chương trình, định hướng lại để JUMP/CALL đếm đoạn mã virus.
+Phương pháp này được sữ dụng với mục đích gây khó khăn để xác định lại lệnh nhảy khi sửa đổi.
++Điền vào lhoảng trống :
+Virus tìm các khoảng trống (vd như các phần tróng trong file NE , PE , LE) trong file chủ để ghi mã virus vào.Nếu không có khoảng trống đủ lớn , có thể sử dụng nhiều khoảng để lưu giữ đủ mã lệnh của virus.
+Phương pháp này có điểm mạnh là không làm tăng kích thước file , tuy nhiên phương ph1p này cũng như chèn giữa , nó có thể gây ra lỗi nếu như chương trình cần đọc lại file đúng vào vị trí ghi đè.
++Ghi đè:
+Áp dụng với các file dạng COM, đơng giản là ghi đè mã lệnh lên đầu file chủ, mỗi khi chương trình chủ được thi hành , virus sẽ chiếm quyền điều khiển.Do virus không lưu giữ phần dữ liệu của chương trình chủ bị ghi đè nên nó không thể trả quyền điều khiển trở lại cho chương trình chủ.Do đó loại virus này mang tính chất phá hoại nhiều hơn và rất khó lây lan mạnh vì dễ bị phát hiện.Phương pháp này đưg kích thước file , tuy nhiên phương ph1p này cũng như chèn giữa , nó có thể gây ra lỗi nếu như chương trình cần đọc lại file đúng vào vị trí ghi đè.
++Ghi đè:
+Áp dụng với các file dạng COM, đơng giản là ghi đè mã lệnh lên đầu file chủ, mỗi khi chương trình chủ được thi hành , virus sẽ chiếm quyền điều khiển.Do virus không lưu giữ phần dữ liệu của chương trình chủ bị ghi đè nên nó không thể trả quyền điều khiển trở lại cho chương trình chủ.Do đó loại virus này mang tính chất phá hoại nhiều hơn và rất khó lây lan mạnh vì dễ bị phát hiện.Phương pháp này được sử dụng chủ yếu bởi người viết virus không có kĩ thuật để định vị lại trên vùng nhớ.
++ Ghi đè bảo toàn :
+Áp dụng với các file dạng .COM , cải tiến từ kĩ thuật ghi đè : phần dữ liệu bị ghi đè được virus ghi xuống cuối file.Sau khi trả lại dữ liệu đã được lưu lại ,virus có thể trả lại quyền điều khiển cho chương trình chủ.
++Dịch chuyển :
+Áp dụng với các file dạng .COM, có thể áp với các dạng file .EXE.Loại file virus này lây nhiễn bằng cách đặt mã lệnh của virus ở đầu file, sau đó chuyển toàn bộ dữ liệu của chương trình chủ như loại ghi đè bảo toàn.Cũng như hai phương pháp trên , phương pháp này được sử dụng do ngươì viết không giải quyết được định vị lại trên bộ nhớ.
++Song hành:
+Kĩ thuật lây nhiễm này chỉ lây nhiễn file .COM (thực tế chương trình virus không hề gắn vào file) dựa trên tính năng của MSDOS : Khi thi hành một file nếu không gõ phần mở rộng thì HĐH sẽ tìm các file theo thứ tự phần mở rộng .COM, .EXE, .BAT .Do đó khi phát hiện một file .EXE , virus sẽ rạo một file mới cùng tên với phần mở rộng .COM , mỗi khi người sử dụng muốn thi hành chương ợc sử dụng chủ yếu bởi người viết virus không có kĩ thuật để định vị lại trên vùng nhớ.
++ Ghi đè bảo toàn :
+Áp dụng với các file dạng .COM , cải tiến từ kĩ thuật ghi đè : phần dữ liệu bị ghi đè được virus ghi xuống cuối file.Sau khi trả lại dữ liệu đã được lưu lại ,virus có thể trả lại quyền điều khiển cho chương trình chủ.
++Dịch chuyển :
+Áp dụng với các file dạng .COM, có thể áp với các dạng file .EXE.Loại file virus này lây nhiễn bằng cách đặt mã lệnh của virus ở đầu file, sau đó chuyển toàn bộ dữ liệu của chương trình chủ như loại ghi đè bảo toàn.Cũng như hai phương pháp trên , phương pháp này được sử dụng do ngươì viết không giải quyết được định vị lại trên bộ nhớ.
++Song hành:
+Kĩ thuật lây nhiễm này chỉ lây nhiễn file .COM (thực tế chương trình virus không hề gắn vào file) dựa trên tính năng của MSDOS : Khi thi hành một file nếu không gõ phần mở rộng thì HĐH sẽ tìm các file theo thứ tự phần mở rộng .COM, .EXE, .BAT .Do đó khi phát hiện một file .EXE , virus sẽ rạo một file mới cùng tên với phần mở rộng .COM , mỗi khi người sử dụng muốn thi hành chương trình chủ mà không chỉ ra phần mở rộng thì virus sẽ chiếm quyền điều khiển.
+Để tiến hành lây nhiễm một số virus áp dụng các kĩ thuật đặc biệt , trình chủ mà không chỉ ra phần mở rộng thì virus sẽ chiếm quyền điều khiển.
+Để tiến hành lây nhiễm một số virus áp dụng các kĩ thuật đặc biệt , đối phó với những cơ chế bảo vệ của HĐH mới .Ví dụ chư cơ chế bảo vệ của Windows 2000.
+Windows 2000 sử dụng một cơ chế bảo vệ , ngăn chặn sự thay thế hay sữa đổi các file được bảo vệ , có tác dụng hạn chế lỗi sai hỏng trên các file hệ thống được gọi là SystemFileProtect(SFP).Nếu một virus file lây nhiễm trên một máy tính sử dụng Win20000 ,một hộp thoại sẽ xuất hiện và thông báo :
+A file replacement was attempted on the protect system file <file name>.To maintain system stability , the file has been restores to the correct Microsoft version.If problems occur with your application , please contact the application vendor for support“.
+Windows 2000 lư giữ một danh sách các file hệt thống và sẽ hủy bỏ bất cứ sự thay thế hay sửa đổi trong khi thông báo trên được hiển thị.
+Hệ thống bảo vệ này có thể bị loại bỏ bằng cách thay thế một khoá trong registry của máy tính , lưu giữ cấu hình của hệ thống bảo vệ:
+HKEY_LOCAL_MACHINE
+\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\
+SfcBugcheck
+SfcDisable
+SfcQuota
+SfcScan
+
+Virus có thể sửa giá trị khóa SfcDisable thành TRUE (01), và ở lần khởi động sau hệ thống bảo vệ sẽ bị vô hiệu hoÄối phó với những cơ chế bảo vệ của HĐH mới .Ví dụ chư cơ chế bảo vệ của Windows 2000.
+Windows 2000 sử dụng một cơ chế bảo vệ , ngăn chặn sự thay thế hay sữa đổi các file được bảo vệ , có tác dụng hạn chế lỗi sai hỏng trên các file hệ thống được gọi là SystemFileProtect(SFP).Nếu một virus file lây nhiễm trên một máy tính sử dụng Win20000 ,một hộp thoại sẽ xuất hiện và thông báo :
+A file replacement was attempted on the protect system file <file name>.To maintain system stability , the file has been restores to the correct Microsoft version.If problems occur with your application , please contact the application vendor for support“.
+Windows 2000 lư giữ một danh sách các file hệt thống và sẽ hủy bỏ bất cứ sự thay thế hay sửa đổi trong khi thông báo trên được hiển thị.
+Hệ thống bảo vệ này có thể bị loại bỏ bằng cách thay thế một khoá trong registry của máy tính , lưu giữ cấu hình của hệ thống bảo vệ:
+HKEY_LOCAL_MACHINE
+\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\
+SfcBugcheck
+SfcDisable
+SfcQuota
+SfcScan
+
+Virus có thể sửa giá trị khóa SfcDisable thành TRUE (01), và ở lần khởi động sau hệ thống bảo vệ sẽ bị vô hiệu hoá.Tuy nhiên , HĐH lại thông báo với người dùng về việc Sfc bị vô hiệu hóa và trong phiên làm việ sau đó , hệ thống sẽ cho phép SFP hoạt động trở lại. Có thể sử dụng một giá trị khác thay thế 04 thay cho 01 , khi đó Windows2000 sẽ không thông báo về sự thay đổi chế độ làm việc nhưng vẫn cho phép SFP hoạt động trở lại trong phiên làm việc sau.
+Một giải pháp tạm thời có thể sử dụng là không lây nhiễm các file được Windows bảo vệ.Sử dụng hàm API SfcFileProtected ta có thể xác định một file có thể được HĐH bảo vệ hay không
+If(SfcFileProtected(NULL,szFileName)==0)
+{
+¡.Tuy nhiên , HĐH lại thông báo với người dùng về việc Sfc bị vô hiệu hóa và trong phiên làm việ sau đó , hệ thống sẽ cho phép SFP hoạt động trở lại. Có thể sử dụng một giá trị khác thay thế 04 thay cho 01 , khi đó Windows2000 sẽ không thông báo về sự thay đổi chế độ làm việc nhưng vẫn cho phép SFP hoạt động trở lại trong phiên làm việc sau.
+Một giải pháp tạm thời có thể sử dụng là không lây nhiễm các file được Windows bảo vệ.Sử dụng hàm API SfcFileProtected ta có thể xác định một file có thể được HĐH bảo vệ hay không
+If(SfcFileProtected(NULL,szFileName)==0)
+{
+printf(“File không được bảo vệ \n”);
+}
+Else printf(“File không được bảo vệ \n”);
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#543</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#543</link>
+				<pubDate><![CDATA[Tue, 20 Jun 2006 03:59:26]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ <font color='blue'>3/Kĩ thuật lây nhiễm của virus macro</font>
++Sử dụng tính năng Import/Export:
+Đối tượng VBCompoment có một phương thức là Import cho phép nhập thêm các thành phần VBA (Form/Module/Class) từ một file.Mỗi thành phần VBCompoment cũng có một phương thức là Export cho phèp xuất chính nó ra thành một file (.FRM , .BAS , .CLA).
+Mỗi khi muốn sao chép các chương trình virus sang một file văn bản trước hết sử dụng lệnh Export để xuất chương trình ra một file , sau đó sử dụng lệnh Imort để nhập chương trình virus và file văn bản mới.
++Sử dụng đối tượng VBCompoment có đối tượng con là CodeModule cho phép thao tác trên các module chương trình có trong file văn bản. Virus có thể sử dụng các thuộc tính , phương thức để thao tác trực tiếp trên các module này.
++Sử dụng phương thức OrganizeCopy của đối tượng Application để sao chép chương trình virus sang một file văn bản khác.
+4/Kĩ thuật lây lan của virus Script:
+Ngôn ngữ Script còn gọi là ngôn ngữ nhúng , được sử dụng để nâng cao tính linh hoạt của các ứng dụng , chẳng hạn như hai sản phẩm VBScript và JavaScript của Microsoft sử dụng với các trang web hay các file kịch bản của MIRC..
+Mặc dù đã được thiết kế đảm bảo độ bảo mật , an toàn song các ngôn nhữ này vẫ tồn tại những khuyết điểm nhất định , tạo khe hở để thiết kế các chương trình virus (cũng như hack).
+Một điểm thiếu an toàn rất quan trọng được các virus script khai thác là khả năng sử dụng đối tượng ActiveX từ trong đoạn mã Script. Virus có thể sử dụng các đối tượng ActiveX này đẻ tiến hành hoạt động lây nhiễm , phá hoại trên máy tính khi người sử dụng duyệt Web.Các trình duyệt Web đều có tuỳ chọn cho phép/cấm sử dụng các đối tượng ActiveX, tuy nhiên không phải lúc nào người dùng cũng có đủ trình độ để thiết lập những tuỳn chọn đó.Mặt khác có rất nhiều trang Web cũng sử dụng kĩ thuật này nên cũng khó hạn chế.
+Các virus Script thường sử dụng một đối tượng có tên FileSystemObject cho phép tiến hành đọc/ghi file.Nếu người dùng cho phép trình duyệt Web sử dụng các đối tượng ActiveX thì đối tượng này có thể được tạo và sử dụng với mục đích lây nhiễm virus hay các mục đích khác.
+Để tạo một đối tượng ta sử dụng lệnh CreatObject (class).Lệnh này tạo và trả về mộ đối tượng động (Automation Object). Trong đó class là một chuỗi ký tự gồm hai phần : tên chương trình chủ (tên của ứng dụng cung cấp đối tượng) và tên kiểu đối tượng ngăn cách bởi một dấu chấm.
+Ví dụ sau tạo một bảng tính Exel và một đối tượng FileSystemObject :
+Dim ExelObj , FSO
+Set ExelObj = CreatObject(“Exel , Workbook”) 
+Set FSO = CreatObject(“Script.FileSytemObject”)
+
+Đối tượng FileSystemObject cho phép tiến hành một số thao tác với đĩa , thư mục và file như copy , rename , delete …và mở file để đọc/ghi.
+Virus có thể tiến hành mở các file .HTML hay .VBS , .JS để tiến hành lây nhiễm.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#544</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#544</link>
+				<pubDate><![CDATA[Tue, 20 Jun 2006 04:00:31]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ He có góp ý chút nhá MuLan
+
+FileSystemObject đã bị vô hiệu hóa từ bản IE6 còn các Trình Duyệt khác thì không hỗ trợ nên việc gắn Virus vào web bằng kĩ thuật script coi như hết cứu.
+
+Ngày nay virus gần như đã lui vào dĩ vãng mà nó đc thay thế bằng một hậu duệ siêu thông minh là Worm lây lan bằng chính khả năng lừa siêu hạng của nó ( hay các lập trình viên tinh quái tạo ra nó ).Không còn các kĩ thuật lây lan vào tệp exe hay bootsector như xưa nữa mà ngày này là tệp xls,doc ( các lỗ hổng 0-day ),các tệp media ( với tính năng nhúng script ) các virus ngày nay không phá giữ liệu nữa mà dùng để DDoS hay tống tiền ,ect 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#984</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#984</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 12:24:30]]> GMT</pubDate>
+				<author><![CDATA[ xnohat]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ Bài viết có tính chất tham khảo của bạn Hackett từ lâu rồi.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#1027</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#1027</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 13:47:00]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ He he he..
+Còn mỗi kỹ thuật quan trong nữa là kỹ thuật khai thác lỗi.
+Mọi người rảnh đọc thư
+http://igates.net/bikip.htm
+Virus đấy! Nhưng ko có gì đâu. Chỉ đùa thôi mà!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#1082</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#1082</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 15:10:51]]> GMT</pubDate>
+				<author><![CDATA[ Luke]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ rat cam on cac anh em da share kien thuc ! rat can thiet de hoc ve virus ! ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#1226</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#1226</link>
+				<pubDate><![CDATA[Mon, 26 Jun 2006 20:28:57]]> GMT</pubDate>
+				<author><![CDATA[ jackly]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ Bài viết này khá lâu rùi,rất có ích cho thành viên mới
+cám ơn bạn đã share
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#2960</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#2960</link>
+				<pubDate><![CDATA[Sat, 1 Jul 2006 16:23:07]]> GMT</pubDate>
+				<author><![CDATA[ trojon]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ Cái của Luke hay đấy... Bác có thể share code cái đó cho em không? Đi hù mấy đứa bạn cũng vui :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#3957</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#3957</link>
+				<pubDate><![CDATA[Tue, 4 Jul 2006 19:40:43]]> GMT</pubDate>
+				<author><![CDATA[ Kevin Duong]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ Bài của bác Luke hay quá, bac phổ biến chung cho mọi người đi bác! Cám ơn bác nhiều!!!!]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#4948</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#4948</link>
+				<pubDate><![CDATA[Fri, 7 Jul 2006 16:45:47]]> GMT</pubDate>
+				<author><![CDATA[ hoangle56]]></author>
+			</item>
+			<item>
+				<title>Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ He he he.. 
+Còn mỗi kỹ thuật quan trong nữa là kỹ thuật khai thác lỗi. 
+Mọi người rảnh đọc thư 
+http://igates.net/bikip.htm 
+Virus đấy! Nhưng ko có gì đâu. Chỉ đùa thôi mà! 
+
+cái này là bug WMF
+nhưng em chỉ test được trên máy thui hic
+còn đưa vô html để đưa lên web thì chịu 
+pác nói rõ rùm cái được hông thía 
+thank man]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#6536</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#6536</link>
+				<pubDate><![CDATA[Thu, 13 Jul 2006 22:42:49]]> GMT</pubDate>
+				<author><![CDATA[ Master_ran]]></author>
+			</item>
+			<item>
+				<title>Re: Các kĩ thuật lây nhiễm của virus</title>
+				<description><![CDATA[ bai nay hay qua cam on cac ban nhieu lam 
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/155.hva#9616</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/155.hva#9616</link>
+				<pubDate><![CDATA[Mon, 24 Jul 2006 14:47:25]]> GMT</pubDate>
+				<author><![CDATA[ langtu_yenthanh]]></author>
+			</item>
+	</channel>
+</rss>

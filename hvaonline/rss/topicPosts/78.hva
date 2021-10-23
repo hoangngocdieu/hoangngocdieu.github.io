@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "8 bước bảo vệ router cisco"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/31.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "8 bước bảo vệ router cisco"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>8 bước bảo vệ router cisco</title>
+				<description><![CDATA[ <b>1- Điều khiển việc truy cập đến router của bạn</b>
+
+Việc đầu tiên là áp dụng vài quy tắc để hạn chế tất cả việc truy cập từ bên ngoài đến một số cổng của router. Bạn có thể khóa tất cả cổng, nhưng điều đó không cần thiết. Những lệnh bên dưới sẽ bảo vệ router của bạn chống lại vài cuộc tấn công thăm dò và, tất nhiên, sẽ hạn chế việc truy cập đến những cổng đó:
+
+<i>access-list 110 deny tcp any host $yourRouterIP eq 7
+access-list 110 deny tcp any host $yourRouterIP eq 9
+access-list 110 deny tcp any host $yourRouterIP eq 13
+access-list 110 deny tcp any host $yourRouterIP eq 19
+access-list 110 deny tcp any host $yourRouterIP eq 23
+access-list 110 deny tcp any host $yourRouterIP eq 79
+int x0/0
+access-group in 110</i>
+
+Ở đây $yourRouterIP là IP router của bạn và x0/0 là external interface của bạn. Chúng ta sẽ dùng nó trong cả bài này.
+
+<b>2- Hạn chế việc truy cập bằng telnet</b>
+
+Telnet không phải là giao thức an toàn để dùng, nhưng nếu thực sự bạn muốn dùng nó (nên dùng ssh thì tốt hơn) thì hạn chế tất cả việc truy cập đến nó (nên nhớ rằng việc truyền thông tin sẽ không được mã hóa). Cách tốt nhất để làm là dùng lệnh access-list và access-class.
+
+<i>access-list 50 permit 192.168.1.1
+access-list 50 deny any log
+line vty 0 4
+access-class 50 in
+exec-timeout 5 0</i>
+
+Ở đây 192.168.1.1 là địa chỉ IP cho phép telnet đến router
+
+<b>3- Block những gói tin xấu</b>
+
+Bạn không bao giờ cho phép những IP loopback/reserve từ Internet đến external interface và bạn có thể từ chối broadcast và địa chỉ multicast.
+
+<i>access-list 111 deny ip 127.0.0.0 0.255.255.255 any
+access-list 111 deny ip 192.168.0.0 0.0.0.255 any
+access-list 111 deny ip 172.16.0.0 0.0.255.255 any
+access-list 111 deny ip 10.0.0.0 0.255.255.255 any
+access-list 111 deny ip host 0.0.0.0 any
+access-list 111 deny ip 224.0.0.0 31.255.255.255 any
+access-list 111 deny icmp any any wwwect
+int x0/0
+access-group in 111</i>
+
+<b>4- Hạn chế SNMP</b>
+
+SNMP phải luôn luôn hạn chế, trừ khi bạn muốn mọi người lấy thông tin của mình trên mạng.
+
+<i>access-list 112 deny udp any any eq snmp
+access-list 112 permit ip any any
+interface x0/0
+access-group 112 in</i>
+
+Và nếu bạn không định dùng SNMP thì vô hiệu hóa nó luôn:
+
+no snmp-server
+
+<b>5- Mã hóa tất cả mật khẩu</b>
+
+Một điều rất quan trọng để bảo vệ tất cả mật khẩu của bạn là dùng thuật toán mạnh nhất nếu có thể. Mật khẩu từ chế độ exec được cấp quyền truy cập đến hệ thống IOS. Có thể dùng MD5, hiện giờ mạnh nhất trong Cisco IOS.
+
+enable secret $yourpassword
+
+Lệnh dùng để mã hóa tất cả mật khẩu hiện thời trong hệ thống là
+
+service password-encryption
+
+<b>6- Vô hiệu hóa tất cả những dịch vụ không dùng đến</b>
+
+6.1 – Disable Echo, Chargen và discard
+
+no service tcp-small-servers
+no service udp-small-servers
+
+6.2 – Disable finger
+
+no service finger
+
+6.3 – Disable httpd interface
+
+no ip http server
+
+6.4 - Disable ntp (nếu không dùng)
+
+ntp disable
+
+<b>7- Thêm vài tùy chọn bảo mật</b>
+
+7.1 – Disable source routing
+
+no ip source-route
+
+7.2 - Disable Proxy Arp
+
+no ip proxy-arp
+
+7.3 - Disable ICMP wwwects
+
+interface s0/0 (external interface của bạn)
+no ip wwwects
+
+7.4 - Disable Multicast route Caching
+
+interface s0/0 (external interface của bạn)
+no ip mroute-cache
+
+7.5 - Disable CDP
+
+no cdp run
+
+7.6 - Disable direct broadcast (protect against Smurf attacks)
+
+no ip directed-broadcast
+
+<b>8- Ghi lại mọi thứ (Log)</b>
+
+Để kết thúc, bạn phải ghi lại mọi thứ trên một Log Server bên ngoài. Bạn phải theo dõi thường xuyên hệ thống và luôn phân tích file log.
+
+<i>logging trap debugging
+logging 192.168.1.10</i>
+
+Ở đây 192.168.1.10 là ip của log server (cấu hình như một Syslog server)
+
+<b>Tóm lại</b>
+Với những bước như trên bạn có thể bảo vệ cho router chống lại những cuộc tấn công và tăng khả năng bảo mật cho mình.
+Ở đây có một ví dụ, bạn có thể thấy kết quả của nmap trước và sau khi áp dụng những cách trên:
+
+<b>Trước:</b>
+<i>bash-2.05b# nmap -O 192.168.1.1
+Starting nmap V. 3.00 ( www.insecure.org/nmap/ )
+Interesting ports on (192.168.1.1):
+Port State Service
+7/tcp open echo
+9/tcp open discard
+13/tcp open daytime
+19/tcp open chargen
+23/tcp open telnet
+79/tcp open finger
+80/tcp open http
+Remote OS guesses: AS5200, Cisco 2501/5260/5300 terminal server IOS 11.3.6(T1),
+Cisco IOS 11.3 - 12.0(11)</i>
+
+<b>Sau:</b>
+<i>bash-2.05b# nmap -P0 -O 192.168.1.1
+Starting nmap V. 3.00 ( www.insecure.org/nmap/ )
+Warning: OS detection will be MUCH less reliable because we did not find at least 1
+open and 1 closed TCP port
+All 1601 scanned ports on (192.168.1.1) are: filtered
+Too many fingerprints match this host for me to give an accurate OS guess
+Nmap run completed -- 1 IP address (1 host up) scanned in 403 seconds</i>
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/78.hva#356</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/78.hva#356</link>
+				<pubDate><![CDATA[Thu, 15 Jun 2006 08:41:28]]> GMT</pubDate>
+				<author><![CDATA[ LeonHart]]></author>
+			</item>
+			<item>
+				<title>8 bước bảo vệ router cisco</title>
+				<description><![CDATA[ <blockquote>access-list 110 deny tcp any host $yourRouterIP eq 7
+access-list 110 deny tcp any host $yourRouterIP eq 9
+access-list 110 deny tcp any host $yourRouterIP eq 13
+access-list 110 deny tcp any host $yourRouterIP eq 19
+access-list 110 deny tcp any host $yourRouterIP eq 23
+access-list 110 deny tcp any host $yourRouterIP eq 79 
+&nbsp;
+		</blockquote>
+
+Ghi chú thêm để các bạn dễ hiểu. Mấy số 9 13 19 23 79 những reserved port UDP và TCP.
+9 là Discard
+13 là Daytime
+19 là Chargen
+23 là Telnet 
+25 là SMTP
+
+Với TCP/IP thì ACLs có 2 loại chính là Standard IP và Extended IP (có thể accpet or deny các port)
+Nhìn cách cấu hình IP phía trên chúng ta có thể thấy đó là ACLs Extended IP.
+
+Và với ACLs Extended này chúng ta nên đặt gần Router Source.
+ <blockquote>Một điều rất quan trọng để bảo vệ tất cả mật khẩu của bạn là dùng thuật toán mạnh nhất nếu có thể. Mật khẩu từ chế độ exec được cấp quyền truy cập đến hệ thống IOS. Có thể dùng MD5, hiện giờ mạnh nhất trong Cisco IOS.
+
+enable secret $yourpassword
+
+Lệnh dùng để mã hóa tất cả mật khẩu hiện thời trong hệ thống là
+
+service password-encryption &nbsp;
+		</blockquote>
+
+Command thứ 1 là creat password để vào Exec mode có encryption với thuật toán MD5 của Cisco .
+Command thú 2 để encryption password khi muốn access vào user mode, telnet , aux. ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/78.hva#473</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/78.hva#473</link>
+				<pubDate><![CDATA[Sun, 18 Jun 2006 12:27:08]]> GMT</pubDate>
+				<author><![CDATA[ thangdiablo]]></author>
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "WSUS - Step by Step (Phần 1)"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/23.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "WSUS - Step by Step (Phần 1)"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>WSUS - Step by Step (Phần 1)</title>
+				<description><![CDATA[ <font size='+1'><font color='#6699CC'>Step by Step Guide to Getting Started with Microsoft Windows Server Update Services</font>  </font>
+
+Microsoft Windows Server Update Services (WSUS) cung cấp giải pháp cho việc quản lý toàn diện các vấn đề về update. Bạn hãy tưởng tượng, tại công ty của bạn làm việc có 1000 máy trạm sử dụng hệ điều hành Windows và máy nào cũng kết nối internet để download và cài đặt các bản update của Windows thì lượng băng thông sẽ tiêu tốn sẽ khủng khiếp như thế nào.
+WSUS server sẽ giải quyết vấn đề này. WSUS server sẽ download các bản update để cung cấp lại cho 1000 máy trạm kia. Vậy là lượng băng thông tiêu tốn sẽ giảm đi chỉ còn 1/1000. Chắc bạn cũng chả quan tâm băng thông nội bộ với dây 100 Mbps đúng không  :))
+
+ Tài liệu này sẽ cung cấp từng bước cơ bản cho việc triển khai WSUS cho mạng của bạn: 
+•             Cài đặt WSUS cho hệ điều hành Microsoft Windows Server 2003.
+•	Cấu hình WSUS để  nhận các bản update từ Microsoft.
+•	Cấu hình các máy trạm để có thể tự cập nhật từ WSUS.
+•	Kiểm tra, chạy thử và phân phối các bản update.
+
+<font color='green'>Step 1: Tổng quan các yêu cầu cho việc cài đặt WSUS.</font>           
+Tài liệu này hướng dẫn việc cài đặt Microsoft Windows Server Update Services (WSUS) trên hệ điều hành Microsoft Windows Server 2003 (trừ bản Web Edition và tất cả các phiên bản 64-bit). Nếu máy chủ wsus của bạn chạy hệ điều hành Microsoft Windows 2000 Server hoặc bạn cần thêm thông tin, bạn có thể đọc thêm tài liệu “Deploying Microsoft Windows Server Update Services”. 
+Cấu hình phần cứng cho server với 500 máy trạm (recommend) là:
+•	1 gigahertz (GHz) processor 
+•	1 gigabyte (GB) RAM
+Software Requirements
+Để cài đặt WSUS với các tùy chọn mặc định, bạn phải cài các software sau đây. 
+•	Microsoft Internet Information Services (IIS) 6.0. For instruction about how to install IIS, see the “Deploying Microsoft Windows Server Update Services” white paper or Help and Support Center in Windows Server 2003.
+•	Microsoft .NET Framework 1.1 Service Pack 1 for Windows Server 2003. To obtain this software, go to the Download Center at<span class="link"> http://go.microsoft.com/fwlink/?LinkId=47358.</span> 
+An alternative is to go to<span class="link"> http://www.windowsupdate.com</span> and scan for Critical Updates and Service Packs – Install Microsoft .NET Framework 1.1 Service Pack 1 for Windows Server 2003.
+•	Background Intelligent Transfer Service (BITS) 2.0. BITS 2.0 for Windows Server 2003 is not available from the Download Center at this time. To obtain this software, go to the Microsoft Web site for Windows Server Update Services Open Evaluation at<span class="link"> http://go.microsoft.com/fwlink/?LinkId=47357.</span>
+
+Yêu cầu về dung lượng đĩa cứng
+Để cài đặt WSUS, hệ thống tập tin của server phải đáp ứng các yêu cầu sau đây:
+•	Cả partition cài đặt windows và partition cài đặt WSUS phải là NTFS.
+•	Tối thiểu phải có 1 Gb trống cho partition hệ thống.
+•	Tối thiểu phải có 6 Gb trống cho partition cài các bản update cho Wsus, recommend là 30 Gb.
+•	Tối thiểu phải có 2 Gb trống trên ổ đĩa mà WSUS sẽ cài đặt Windows SQL Server 2000 Desktop Engine (WMSDE).
+Các yêu cầu về Automatic Updates
+Automatic Updates là một  thành phần client của WSUS. Automatic Updates không đòi hỏi gì về phần cứng đặc biệt ngoài việc phải được kết nối với network. Bạn có thể sử dụng Automatic Updates với WSUS trên bất kỳ máy tính nào chạy các hệ điều hành sau đây:
+•	Microsoft Windows 2000 Professional with Service Pack 3 (SP3) or Service Pack 4 (SP4), Windows 2000 Server with SP3 or SP4, or Windows 2000 Advanced Server with SP3 or SP4.
+•	Microsoft Windows XP Professional, with or without Service Pack 1 or Service Pack 2.
+•	Microsoft Windows Server 2003, Standard Edition; Windows Server 2003, Enterprise Edition; Windows Server 2003, Datacenter Edition; or Windows Server 2003, Web Edition.
+
+<font color='green'>Step 2: Cài đặt WSUS trên Server của bạn  </font>           
+Sau khi dạo qua mấy bước về các đòi hỏi cho việc cài đặt, chúng ta đã sẵn sàng để bắt đầu. Đầu tiên, bạn phải log on vào server dự định cài WSUS với account thuộc nhóm Administrator. Chỉ thành viên thuộc nhóm này mới có thể cài đặt WSUS.
+ Để cài đặt WSUS trên Windows Server 2003
+1.	Nháy đúp chuột vào file WSUSSetup.exe. 
+ Note: 
+The latest version of WSUSSetup.exe is available on the<span class="link"> http://go.microsoft.com/fwlink/?LinkId=47374.</span>
+2.	Trên cửa sổ Welcome, click Next.
+3.	Đọc cẩn thận cái “license agreement” rồi nhấn vào I accept the terms of the License Agreement, và click Next. 
+4.	Tại trang Select Update Source, bạn có thể chỉ định nơi các máy trạm có thể lấy các update. Nếu bạn chọn vào ô Store updates locally, các bản update sẽ được chứa trên WSUS server rồi bạn chọn một vị trí để chứa các update này. Nếu bạn không chứa các bản update này trên server thì các máy trạm phải kết nối tới Microsoft Update mới có thể update. 
+Tại đây, chúng ta cứ giữ các thông số mặc định rồi nhấn Next.
+
+Select Update Source Page
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/3d14f40c4138d33b5140a2693b8b9c06_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+5.	Tại trang Database Options, bạn chọn phần mềm được sử dụng để quản lý WSUS database. Mặc định, WSUS Setup sẽ cài đặt WMSDE nếu như máy tính của bạn cài đặt hệ điều hành Windows Server 2003.
+Nếu bạn không sử dụng WMSDE,  bạn phải cung cấp một SQL Server cho WSUS dùng bằng cách click vào Use an existing database server on this computer và gõ vào tên SQL Server trong ô SQL instance name. 
+For more information about database software options besides WMSDE, see the “Deploying Microsoft Windows Server Update Services” white paper. 
+Tại đây, chúng ta cứ giữ các thông số mặc định rồi nhấn Next.
+
+Database Options Page
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/e10212da06fb78cf665a0d8baf777abc_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+6.	Tại trang Web Site Selection, bạn chỉ định trang web mà WSUS sẽ sử dụng. Trang này sẽ liệt kê 2 URL quan trọng sau: URL mà bạn sẽ dùng để các WSUS client sẽ trỏ vào để nhận các bản update và một URL để bạn có thể cấu hình WSUS.
+Web Site Selection Page
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/cd2732d1000b9fc32ec0702f615cf3a6_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+7.	Tại trang Mirror Update Settings, bạn có thể chỉ định trang quản lý (management role) cho WSUS server này. Nếu đây là WSUS server đầu tiên trong mạng của bạn hoặc bạn muốn quản lý theo topology phân tán thì hãy bỏ qua trang này.
+Nếu bạn muốn quản lý theo topology tập trung và đây không phải là WSUS server đầu tiên trong network của bạn, hãy tick vào check box và gõ tên của WSUS server đã có trong Server name box.
+Vì đây đang là cài đặt mới nên ta cứ để các thông số là mặc định rồi nhấn Next.
+Mirror Update Settings Page
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/db365742d8c0f86d468fb91bb0cb0656_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+8.	Tại trang Ready to Install Windows Server Update Services, chúng ta có thể xem lại các thông tin đã chọn ở các bước trước. Nếu thấy OK, hãy click Next. 
+Ready to Install Windows Server Update Services Page
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/38bc589a3502ef9da0a3555651624470_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+9.	Bảng thông báo quá trình cài đặt thành công, nhấn nhấn Finish. 
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#13383</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#13383</link>
+				<pubDate><![CDATA[Tue, 8 Aug 2006 20:39:28]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>WSUS - Step by Step (Phần 2)</title>
+				<description><![CDATA[ OK, tiếp theo là việc config WSUS server để nó có thể nhận được các bản update và phân phối lại cho các máy trạm.
+
+Bạn khởi động WSUS bằng cách vào IIS, chọn cây Website/Default Website/WSUSAdmin (mặc định). Nhấn phải chuột và chọn Browse.
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/cc1cccd256391ea7399ff266d51dbb1e_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Tại Option/Synchronize Options bạn có thể thiết đặt các thông số như sẽ cập nhật các bản update từ M$ vào thời điểm nào, các bản update cho những hệ điều hành nào.
+Nếu như network của bạn có một ISA đứng trước như một proxy thì hãy khai báo proxy đó và account nếu cần.
+Bạn cũng có thể chọn một WSUS khác để nhận các bản update bằng cách chọn Update Source phía dưới.
+Nhấn Save Setting và Synchronize Now nếu như bạn muốn nhận các bản update ngay lập tức.
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/48b348526008e52d01f82f4c017bd8d6_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Các thông tin về Status bạn có thể xem tại trang Home
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/b66cbffbc1bc4771dca4859e2a13a12d_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Tại trang Computers, nó sẽ liệt kê tình trạng của các máy client đã nhận các bản update.
+Tại đây sẽ liệt kê chi tiết các máy client đã không update từ cách thời điểm hiện tại bao nhiêu ngày, IP của máy đó là gì v..v....
+Như bạn xem ở hình dưới, khi mới cài đặt, trang Computers sẽ không có một máy client nào cả:
+
+<br>
+			<div align="center" class="limitview"><img src='/hvaonline/upload/2006/8/8/ea278eba08cc5488f00965111edb0a0e_761.jpg' border="0" onload="maxImg(this, 500px);" /></div>
+
+Công việc cuối cùng của bạn là chỉ cho các máy client biết làm cách nào để nhận các update từ WSUS.
+Tại các máy client, bạn soạn một file với tên là xxx.reg với nội dung:
+
+<blockquote>Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"WUServer"="http://wsusadmin"
+"WUStatusServer"="http://wsusadmin"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU]
+"UseWUServer"=dword:00000001
+"NoAutoRebootWithLoggedOnUsers"=dword:00000001
+"RescheduleWaitTimeEnable"=dword:00000001
+"RescheduleWaitTime"=dword:0000001f
+"NoAutoUpdate"=dword:00000000
+"AUOptions"=dword:00000004
+"ScheduledInstallDay"=dword:00000006
+"ScheduledInstallTime"=dword:0000000a
+"RebootRelaunchTimeoutEnabled"=dword:00000001
+"RebootRelaunchTimeout"=dword:00000064&nbsp;
+		</blockquote>
+
+với<span class="link"> http://wsusadmin</span> là tên WSUS bạn vừa cài đặt bên trên.
+Tại các máy client, bạn click đúp chuột lên file xxx.reg ở trên và khởi động lại máy.
+Từ bây giờ, các máy client sẽ tự nhận các bản update từ WSUS server chứ không connect thẳng lên M$ nữa :D
+
+Viết vội nên chắc sẽ có sai sót, mong mọi người đóng góp thêm để bài viết hoàn thiện hơn.
+Chat chit và spam sẽ bị xoá không cần báo trước.
+
+Mulan
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#13386</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#13386</link>
+				<pubDate><![CDATA[Tue, 8 Aug 2006 21:00:43]]> GMT</pubDate>
+				<author><![CDATA[ Mulan]]></author>
+			</item>
+			<item>
+				<title>WSUS - Step by Step (Phần 1)</title>
+				<description><![CDATA[ Trong hệ thống sever của công ty mình xài toàn bộ là windows 2003 sever 64bits. nên khi cài đặt và deploy theo hướng dẫn của bạn nó phát sinh một số vấn đề. Vậy mình muốn hỏi rằng với windows 2003 sever 64bits có thể dùng WSUS này được hay ko? Và nếu được xin bạn hãy mô tả chi tiết.
+
+Cảm ơn rất nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#240884</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#240884</link>
+				<pubDate><![CDATA[Wed, 15 Jun 2011 01:56:14]]> GMT</pubDate>
+				<author><![CDATA[ phongcnttbk]]></author>
+			</item>
+			<item>
+				<title>WSUS - Step by Step (Phần 2)</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">Mulan wrote:</cite><br>
+		<blockquote>
+Công việc cuối cùng của bạn là chỉ cho các máy client biết làm cách nào để nhận các update từ WSUS.
+Tại các máy client, bạn soạn một file với tên là xxx.reg với nội dung:
+
+<blockquote>Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"WUServer"="http://wsusadmin"
+"WUStatusServer"="http://wsusadmin"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU]
+"UseWUServer"=dword:00000001
+"NoAutoRebootWithLoggedOnUsers"=dword:00000001
+"RescheduleWaitTimeEnable"=dword:00000001
+"RescheduleWaitTime"=dword:0000001f
+"NoAutoUpdate"=dword:00000000
+"AUOptions"=dword:00000004
+"ScheduledInstallDay"=dword:00000006
+"ScheduledInstallTime"=dword:0000000a
+"RebootRelaunchTimeoutEnabled"=dword:00000001
+"RebootRelaunchTimeout"=dword:00000064&nbsp;
+		</blockquote>
+
+với<span class="link"> http://wsusadmin</span> là tên WSUS bạn vừa cài đặt bên trên.
+Tại các máy client, bạn click đúp chuột lên file xxx.reg ở trên và khởi động lại máy.
+Từ bây giờ, các máy client sẽ tự nhận các bản update từ WSUS server chứ không connect thẳng lên M$ nữa :D
+&nbsp;
+		</blockquote>
+
+Giả sử mạng của bạn có 1000 client, 1000 nhát click đúp chuột lên file xxx.reg xem ra cũng mệt phết đấy! :D]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241644</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241644</link>
+				<pubDate><![CDATA[Tue, 21 Jun 2011 13:05:18]]> GMT</pubDate>
+				<author><![CDATA[ zinxu]]></author>
+			</item>
+			<item>
+				<title>WSUS - Step by Step (Phần 1)</title>
+				<description><![CDATA[ Tiếc là trên technet không có hình minh hoạ step-by-step như phần trên bạn đã viết <span class="link"> http://technet.microsoft.com/en-us/library/cc720533(WS.10).aspx</span>
+
+Giải pháp sẽ trở nên hoàn thiện nếu được bổ sung thêm phần triển khai bằng Group Policy.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241690</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241690</link>
+				<pubDate><![CDATA[Wed, 22 Jun 2011 00:01:23]]> GMT</pubDate>
+				<author><![CDATA[ zinxu]]></author>
+			</item>
+			<item>
+				<title>WSUS - Step by Step (Phần 1)</title>
+				<description><![CDATA[ cho minh hoi minh lam theo huong dan tren, cai dat moi thu xong xuoi.
+khi vao IIS &gt; Website/Default Website thi khong co mục WSUSAdmin. 
+nếu mình cài đặt để sử dụng port 8530 thì khi vao http://&lt;wsus_server_name&gt;:8530 thì gặp lỗi: you are not authorized to view this page.
+mong mọi người giúp đỡ. cảm ơn nhiều.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241744</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/2499.hva#241744</link>
+				<pubDate><![CDATA[Wed, 22 Jun 2011 15:05:32]]> GMT</pubDate>
+				<author><![CDATA[ no_thing_1320]]></author>
+			</item>
+	</channel>
+</rss>

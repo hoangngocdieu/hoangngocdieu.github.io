@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title><![CDATA[Latest posts for the topic "Lỗi database trên Centos"]]></title>
+		<link>http://www.hvaonline.net/hvaonline/posts/list/24.hva</link>
+		<description><![CDATA[Latest messages posted in the topic "Lỗi database trên Centos"]]></description>
+		<generator>JForum - http://www.jforum.net</generator>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ Ai giúp mình sửa lỗi database này với . Mình dùng nginx + php-fpm
+
+Database error in vBulletin :
+
+mysqli_real_connect(): (08004/1040): Too many connections
+/home/admin/domains/domain.com/public_html/includes/class_core.php on line 1317
+
+MySQL Error   :
+Error Number  :
+Request Date  : Wednesday, May 29th 2013 @ 04:13:04 AM
+Error Date    : Wednesday, May 29th 2013 @ 04:13:04 AM
+Script        : http://domain.com/external.php?type=feed&forumids=127
+Referrer      :
+IP Address    : xxx.28.36.82
+Username      :
+Classname     : vB_Database_MySQLi
+MySQL Version :]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276079</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276079</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 00:54:24]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">phuongtnotv wrote:</cite><br>
+		<blockquote>
+mysqli_real_connect(): (08004/1040): Too many connections
+&nbsp;
+		</blockquote>
+Nghĩa là hiện đang có quá nhiều kết nối đến DB. Nếu bạn cũng không vào được thì chỉ còn cách đợi thôi.
+
+Khi nào login vào DB được thì bạn chạy lệnh sau và gửi kết quả lên:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show global variables like '%timeout';
+mysql&gt; show global variables like '%connections';</pre>
+		</div>
+
+Nhân tiện cũng nên gửi `my.cnf` lên. Server bạn có bao nhiêu RAM, dùng InnoDB hay MyISAM là chủ yếu?
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276083</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276083</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 01:39:15]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">phuongtnotv wrote:</cite><br>
+		<blockquote>
+mysqli_real_connect(): (08004/1040): Too many connections
+&nbsp;
+		</blockquote>
+Nghĩa là hiện đang có quá nhiều kết nối đến DB. Nếu bạn cũng không vào được thì chỉ còn cách đợi thôi.
+
+Khi nào login vào DB được thì bạn chạy lệnh sau và gửi kết quả lên:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show global variables like '%timeout';
+mysql&gt; show global variables like '%connections';</pre>
+		</div>
+
+Nhân tiện cũng nên gửi `my.cnf` lên. Server bạn có bao nhiêu RAM, dùng InnoDB hay MyISAM là chủ yếu?
+
+&nbsp;
+		</blockquote>
+
+mysql&gt; show global variables like '%timeout';
++----------------------------+-------+
+| Variable_name              | Value |
++----------------------------+-------+
+| connect_timeout            | 10    |
+| delayed_insert_timeout     | 300   |
+| innodb_lock_wait_timeout   | 50    |
+| innodb_rollback_on_timeout | OFF   |
+| interactive_timeout        | 28800 |
+| net_read_timeout           | 30    |
+| net_write_timeout          | 60    |
+| slave_net_timeout          | 3600  |
+| table_lock_wait_timeout    | 50    |
+| wait_timeout               | 28800 |
++----------------------------+-------+
+10 rows in set (0.00 sec)
+
+
+
+mysql&gt; show global variables like '%connections';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| max_connections      | 100   |
+| max_user_connections | 0     |
++----------------------+-------+
+2 rows in set (0.00 sec)
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276084</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276084</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 01:44:35]]> GMT</pubDate>
+				<author><![CDATA[ tichuot07]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ Giảm `wait_timeout` xuống. Theo mình, khoảng 5 phút cũng là nhiều rồi.
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; set global wait_timeout = 300;</pre>
+		</div>
+
+Nên có cơ chế monitor số lượng connections, lúc nào thấy đông đông thì vào chạy thử:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql -e &quot;show full processlist\G&quot; | awk -F &quot;: &quot; '/Command/ { print $2 }' | sort | uniq -c | sort -rn</pre>
+		</div>
+
+xem có bao nhiêu processes đang Sleep.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276086</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276086</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 01:55:48]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote><p></p>
+		<cite class="blockquote">phuongtnotv wrote:</cite><br>
+		<blockquote>
+mysqli_real_connect(): (08004/1040): Too many connections
+&nbsp;
+		</blockquote>
+Nghĩa là hiện đang có quá nhiều kết nối đến DB. Nếu bạn cũng không vào được thì chỉ còn cách đợi thôi.
+
+Khi nào login vào DB được thì bạn chạy lệnh sau và gửi kết quả lên:
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show global variables like '%timeout';
+mysql&gt; show global variables like '%connections';</pre>
+		</div>
+
+Nhân tiện cũng nên gửi `my.cnf` lên. Server bạn có bao nhiêu RAM, dùng InnoDB hay MyISAM là chủ yếu?
+
+&nbsp;
+		</blockquote>
+
+Đây là show global variables like '%timeout';
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show global variables like '%timeout';
++----------------------------+-------+
+| Variable_name              | Value |
++----------------------------+-------+
+| connect_timeout            | 60    |
+| delayed_insert_timeout     | 300   |
+| innodb_lock_wait_timeout   | 50    |
+| innodb_rollback_on_timeout | OFF   |
+| interactive_timeout        | 120   |
+| net_read_timeout           | 30    |
+| net_write_timeout          | 60    |
+| slave_net_timeout          | 3600  |
+| table_lock_wait_timeout    | 50    |
+| wait_timeout               | 60    |
++----------------------------+-------+
+10 rows in set &#40;0.00 sec&#41;</pre>
+		</div>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; show global variables like '%connections';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| max_connections      | 1024  |
+| max_user_connections | 0     |
++----------------------+-------+
+2 rows in set &#40;0.00 sec&#41;</pre>
+		</div>
+
+đây là my.cnf 
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;mysqld&#93;
+back_log                        = 100
+open-files-limit                = 2048
+open-files                      = 256
+#max_connect_errors = 100000
+
+skip-external-locking
+skip-name-resolve
+log_error                       = mysql-error.err
+log_slow_queries                = mysql-slow.log
+
+## Per-Thread Buffers * &#40;max_connections&#41; = total per-thread mem usage
+thread_stack                    = 64K     #default: 32bit: 192K, 64bit: 256K
+sort_buffer_size                = 2M      #default: 2M, larger may cause perf issues
+read_buffer_size                = 1M      #default: 128K, change in increments of 4K
+read_rnd_buffer_size            = 2M      #default: 256K
+join_buffer_size                = 1M      #default: 128K
+#binlog_cache_size              = 64K     #default: 32K, size of buffer to hold TX queries
+#table_definition_cache = 10000
+#table_open_cache = 10000
+thread_cache_size = 1024
+## total per-thread buffer memory usage: 8832000K = 8.625GB
+
+## Query Cache
+#query_cache_type               = 1
+query_cache_size                = 1M    #global buffer
+query_cache_limit               = 128M  #max query result size to put in cache
+
+## Table and TMP settings
+max_heap_table_size             = 256M  #recommend same size as tmp_table_size
+bulk_insert_buffer_size         = 256M  #recommend same size as tmp_table_size
+tmp_table_size                  = 256M    #recommend 1G min
+#net_buffer_length = 16384
+## Table cache settings
+table_cache                     = 1000  #5.0.x &lt;default: 64&gt;
+
+## Thread settings
+thread_concurrency              = 8  #recommend 2x CPU cores
+thread_cache_size               = 10  #recommend 5% of max_connections
+
+#Query cache
+#query_cache_size = 52428800;
+query_cache_type = 1
+
+local-infile=0
+socket=/var/lib/mysql/mysql.sock
+skip-locking
+#skip-innodb
+#query_cache_type=1
+#query_cache_limit=32M
+#query_cache_size=512M
+max_connections=1024
+interactive_timeout=120
+wait_timeout=15
+connect_timeout=60
+
+key_buffer= 1M
+record_buffer=1M
+
+myisam_sort_buffer_size=256M
+myisam_max_sort_file_size       = 2048M
+
+
+#innodb_read_ahead = none
+innodb_file_per_table = 1
+innodb_open_files = 1000
+#innodb_data_home_dir = /var/lib/mysql/ibdatadir
+innodb_data_file_path= ibdata1:4G:autoextend
+innodb_buffer_pool_size = 8G
+innodb_additional_mem_pool_size = 64M
+
+#innodb_log_group_home_dir = /var/lib/mysql/ibdlogdir
+innodb_log_files_in_group = 2
+innodb_log_file_size = 128M
+innodb_log_buffer_size = 256M
+innodb_flush_log_at_trx_commit = 2
+#innodb_thread_concurrency = 0
+#innodb_lock_wait_timeout=50
+#innodb_flush_method = O_DIRECT
+innodb_support_xa=0
+
+# 200 * # DISKS
+# plugin only
+#innodb_io_capacity = 400
+#innodb_read_io_threads = 4
+#innodb_write_io_threads = 4
+
+max_allowed_packet=128M
+max_heap_table_size=32M
+key_buffer_size = 512M
+#low_priority_updates=1
+#concurrent_insert=2
+server-id=1
+
+&#91;safe_mysqld&#93;
+err-log=/var/log/mysqld.log
+nice = -5
+open_files_limit=8192
+
+&#91;mysqldump&#93;
+quick
+max_allowed_packet=256M
+
+&#91;mysql&#93;
+no-auto-rehash
+#safe-updates
+
+&#91;isamchk&#93;
+key_buffer=2048M
+sort_buffer=2048M
+read_buffer=512M
+write_buffer=512M
+
+&#91;myisamchk&#93;
+key_buffer=2048M
+sort_buffer=2048M
+read_buffer=512M
+write_buffer=512M
+
+&#91;mysqlhotcopy&#93;
+interactive-timeout</pre>
+		</div>
+
+Mình dùng InnoDB ]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276094</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276094</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 02:55:44]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ `wait_timeout` của bạn đã set là 1 phút, đủ nhỏ rồi. Vậy lý do có thể là gì nhỉ? 
+
+Nói chung là mình muốn có cơ chế giám sát `Threads_connected`, khi nào gần chạm `max_connections` thì chạy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql -e "show full processlist\G" | awk -F ": " '/User/ { print $2 }' | sort | uniq -c | sort -rn</pre>
+		</div>
+xem ai đang mở nhiều connections nhất.
+
+PS: không phải cứ tăng max_connections lên vô tội vạ là sẽ giải quyết được vấn đề này đâu.
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276118</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276118</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 12:59:52]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>`wait_timeout` của bạn đã set là 1 phút, đủ nhỏ rồi. Vậy lý do có thể là gì nhỉ? 
+
+Nói chung là mình muốn có cơ chế giám sát `Threads_connected`, khi nào gần chạm `max_connections` thì chạy:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql -e "show full processlist\G" | awk -F ": " '/User/ { print $2 }' | sort | uniq -c | sort -rn</pre>
+		</div>
+xem ai đang mở nhiều connections nhất.
+
+PS: không phải cứ tăng max_connections lên vô tội vạ là sẽ giải quyết được vấn đề này đâu.
+&nbsp;
+		</blockquote>
+
+KQ khi chạy tại thời điểm cao
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@server ~&#93;# mysql -e "show full processlist\G" | awk -F ": " '/User/ { print $2 }' | sort | uniq -c | sort -rn
+    145 admin_db
+      1 Lan_nana A new account by the name of &#91;URL=http://www.domain.com/member.php?u=196398&#93;Hân_nana&#91;/URL&#93; has been registered. The new account has been moved to the Prevention Usergroup.\r\n\r\nOther recognized logins for this user are
+      1 da_admin</pre>
+		</div>
+
+Cho mình hỏi luôn 1 chút , cứ 1 tiếng mình lại nhận đc 1 mail cảnh báo này .
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>A new message or response with subject:
+
+The service 'dovecot' on server server.domain.com is currently down
+
+has arrived for you to view.
+Follow this link to view it:
+<span class="link"> http://domain.com:2222/CMD_TICKET?action=view&number=000014857&type=ticket</span>
+
+
+======================================================
+Automatically generated email produced by DirectAdmin 1.38.3</pre>
+		</div>
+
+
+]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276127</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276127</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 22:07:30]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ 145 chưa phải là cao lắm nhỉ, mình thấy bạn để max_connections những 1024 mà.
+
+Lúc nào chạm ngưỡng, bạn lọc tiếp theo Command (post #4) xem chúng đang làm gì:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql -e "show full processlist\G" | awk -F ": " '/Command/ { print $&#40;NF-2&#41; }' | sort | uniq -c | sort -rn</pre>
+		</div>
+Nên lập một chủ đề khác cho câu hỏi liên quan đến Dovecot.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276131</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276131</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 23:21:04]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>145 chưa phải là cao lắm nhỉ, mình thấy bạn để max_connections những 1024 mà.
+
+Lúc nào chạm ngưỡng, bạn lọc tiếp theo Command (post #4) xem chúng đang làm gì:
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql -e "show full processlist\G" | awk -F ": " '/Command/ { print $&#40;NF-2&#41; }' | sort | uniq -c | sort -rn</pre>
+		</div>
+Nên lập một chủ đề khác cho câu hỏi liên quan đến Dovecot.&nbsp;
+		</blockquote>
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@server ~&#93;# mysql -e "show full processlist\G" | awk -F ": " '/Command/ { print $&#40;NF-2&#41; }' | sort | uniq -c | sort -rn
+    186 Command: Query
+     15 Command: Sleep</pre>
+		</div>
+
+Mình dùng php-fpm . khi connections lên đến 260 là lỗi 502 bad gateway rồi 
+
+Kiểm tra status của php-fpm 
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>pool:                 domain
+process manager:      static
+accepted conn:        6139
+listen queue len:     0
+max listen queue len: -1
+idle processes:       1
+active processes:     255
+total processes:      256
+max children reached: 0</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276133</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276133</link>
+				<pubDate><![CDATA[Wed, 29 May 2013 23:45:45]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ - Cho mình xem full processlist luôn nhé.
+- Cài mysqltuner, chạy và gửi kết quả lên.
+- Kiểm tra lại phía ứng dụng xem có chỗ nào dùng persistent connection không.]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276136</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276136</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 01:26:12]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>- Cho mình xem full processlist luôn nhé.
+- Cài mysqltuner, chạy và gửi kết quả lên.
+- Kiểm tra lại phía ứng dụng xem có chỗ nào dùng persistent connection không.&nbsp;
+		</blockquote>
+
+processlist mysql full
+
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>mysql&gt; SHOW FULL PROCESSLIST\G
+ERROR 2006 &#40;HY000&#41;: MySQL server has gone away
+No connection. Trying to reconnect...
+Connection id:    758726
+Current database: *** NONE ***
+
+*************************** 1. row ***************************
+     Id: 758695
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 2. row ***************************
+     Id: 758697
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 3. row ***************************
+     Id: 758704
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 4. row ***************************
+     Id: 758706
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 5. row ***************************
+     Id: 758711
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 6. row ***************************
+     Id: 758712
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 7. row ***************************
+     Id: 758713
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 8. row ***************************
+     Id: 758714
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 9. row ***************************
+     Id: 758722
+   User: admin_domain
+   Host: localhost
+     db: admin_domain
+Command: Sleep
+   Time: 0
+  State:
+   Info: NULL
+*************************** 10. row ***************************
+     Id: 758726
+   User: root
+   Host: localhost
+     db: NULL
+Command: Query
+   Time: 0
+  State: NULL
+   Info: SHOW FULL PROCESSLIST
+10 rows in set &#40;0.01 sec&#41;</pre>
+		</div>
+
+mysqltuner
+<span class="quotetxt"><b>Code:</b></span><br/>
+		<div class="coded"">
+		<pre>&#91;root@server ~&#93;# ./mysqltuner.pl
+
+ &gt;&gt;  MySQLTuner 1.0.1 - Major Hayden &lt;major@mhtx.net&gt;
+ &gt;&gt;  Bug reports, feature requests, and downloads at<span class="link"> http://mysqltuner.com/</span>
+ &gt;&gt;  Run with '--help' for additional options and output filtering
+
+-------- General Statistics --------------------------------------------------
+&#91;--&#93; Skipped version check for MySQLTuner script
+&#91;OK&#93; Currently running supported MySQL version 5.0.51a-community-log
+&#91;OK&#93; Operating on 64-bit architecture
+
+-------- Storage Engine Statistics -------------------------------------------
+&#91;--&#93; Status: +Archive -BDB -Federated +InnoDB -ISAM -NDBCluster
+&#91;--&#93; Data in MyISAM tables: 3G &#40;Tables: 258&#41;
+&#91;--&#93; Data in InnoDB tables: 14G &#40;Tables: 146&#41;
+&#91;--&#93; Data in MEMORY tables: 14M &#40;Tables: 32&#41;
+&#91;!!&#93; Total fragmented tables: 27
+
+-------- Performance Metrics -------------------------------------------------
+&#91;--&#93; Up for: 3h 4m 34s &#40;7M q &#91;690.153 qps&#93;, 723K conn, TX: 167B, RX: 3B&#41;
+&#91;--&#93; Reads / Writes: 76% / 24%
+&#91;--&#93; Total buffers: 8.8G global + 6.1M per thread &#40;1024 max threads&#41;
+&#91;OK&#93; Maximum possible memory usage: 15.0G &#40;47% of installed RAM&#41;
+&#91;OK&#93; Slow queries: 0% &#40;536/7M&#41;
+&#91;OK&#93; Highest usage of available connections: 33% &#40;340/1024&#41;
+&#91;OK&#93; Key buffer size / total MyISAM indexes: 512.0M/3.2G
+&#91;OK&#93; Key buffer hit rate: 97.7% &#40;56M cached / 1M reads&#41;
+&#91;OK&#93; Query cache efficiency: 37.6% &#40;1M cached / 4M selects&#41;
+&#91;!!&#93; Query cache prunes per day: 16234235
+&#91;OK&#93; Sorts requiring temporary tables: 0% &#40;314 temp sorts / 629K sorts&#41;
+&#91;!!&#93; Joins performed without indexes: 493
+&#91;OK&#93; Temporary tables created on disk: 2% &#40;3K on disk / 120K total&#41;
+&#91;OK&#93; Thread cache hit rate: 96% &#40;22K created / 723K connections&#41;
+&#91;!!&#93; Table cache hit rate: 0% &#40;64 open / 1M opened&#41;
+&#91;OK&#93; Open file limit used: 0% &#40;32/5K&#41;
+&#91;OK&#93; Table locks acquired immediately: 97% &#40;7M immediate / 7M locks&#41;
+&#91;!!&#93; InnoDB data size / buffer pool: 14.8G/8.0G
+
+-------- Recommendations -----------------------------------------------------
+General recommendations:
+    Run OPTIMIZE TABLE to defragment tables for better performance
+    MySQL started within last 24 hours - recommendations may be inaccurate
+    Adjust your join queries to always utilize indexes
+    Increase table_cache gradually to avoid file descriptor limits
+Variables to adjust:
+    query_cache_size &#40;&gt; 1M&#41;
+    join_buffer_size &#40;&gt; 1020.0K, or always use indexes with joins&#41;
+    table_cache &#40;&gt; 64&#41;
+    innodb_buffer_pool_size &#40;&gt;= 14G&#41;</pre>
+		</div>]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276145</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276145</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 03:56:56]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ Mình cần full processlist lúc gần chạm ngưỡng ấy chứ 10 cái mà lại toàn Sleep thế kia thì có tác dụng gì.
+
+`my.cnf` nhìn tạm ổn ngoài việc nên tăng `innodb_buffer_pool_size` lên nữa. Bạn có 32G RAM, trước mắt cứ tăng lên... gấp đôi con số hiện tại (16G), sau này có thể tăng lên 24G cũng được (nếu server này không chạy dịch vụ gì khác ngoài MySQL).]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276147</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276147</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 04:06:18]]> GMT</pubDate>
+				<author><![CDATA[ quanta]]></author>
+			</item>
+			<item>
+				<title>Lỗi database trên Centos</title>
+				<description><![CDATA[ <p></p>
+		<cite class="blockquote">quanta wrote:</cite><br>
+		<blockquote>Mình cần full processlist lúc gần chạm ngưỡng ấy chứ 10 cái mà lại toàn Sleep thế kia thì có tác dụng gì.
+
+`my.cnf` nhìn tạm ổn ngoài việc nên tăng `innodb_buffer_pool_size` lên nữa. Bạn có 32G RAM, trước mắt cứ tăng lên... gấp đôi con số hiện tại (16G), sau này có thể tăng lên 24G cũng được (nếu server này không chạy dịch vụ gì khác ngoài MySQL).&nbsp;
+		</blockquote>
+
+Mình dùng nginx + php-fpm . Do php-fpm chiếm nhiều ram quá (~ 25G) nên mình giảm innodb_buffer_pool_size xuống 8G]]></description>
+				<guid isPermaLink="true">http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276148</guid>
+				<link>http://www.hvaonline.net/hvaonline/posts/list/44787.hva#276148</link>
+				<pubDate><![CDATA[Thu, 30 May 2013 04:22:04]]> GMT</pubDate>
+				<author><![CDATA[ phuongtnotv]]></author>
+			</item>
+	</channel>
+</rss>
